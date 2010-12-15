@@ -1,0 +1,10 @@
+
+######################################################################
+# MALT-parsning
+
+- swemalt.mco
+
+Tränad av: Joakim Nivre
+Tränad på: Talbanken-05, med SUC-taggar
+Modell: Maltparser-modell
+Format: Maltparser-format 

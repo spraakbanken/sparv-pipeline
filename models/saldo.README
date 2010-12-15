@@ -1,0 +1,48 @@
+
+######################################################################
+# SALDO-lexikon
+
+
+- saldo.json
+
+Lexikon: Saldo, basversionen
+Format: Json
+Kodning: UTF8
+
+
+- saldo.lemma.pickle
+
+Lexikon: Saldo, mappning från ordform till grundform
+Format: Python pickle
+Kodning: UTF8
+Skapad av: Python-modulen sb.saldo, från saldo.json
+
+>>> import sb.saldo as saldo
+>>> lex = saldo.read_json("saldo.json", "head")
+>>> saldo.PickledLexicon.save("saldo.lemma.pickle", lex)
+
+
+- saldo.lemmaid.pickle
+
+Lexikon: Saldo, mappning från ordform till Saldo lemgram
+Format: Python pickle
+Kodning: UTF8
+Skapad av: Python-modulen sb.saldo, från saldo.json
+
+>>> import sb.saldo as saldo
+>>> lex = saldo.read_json("saldo.json", "id")
+>>> saldo.PickledLexicon.save("saldo.idlemma.pickle", lex)
+
+
+- saldo.cstlemma.lemmas
+
+Lexikon: Saldo, i format som passar till träning av CST-lemmatizer
+Format: tab-separerad
+Kodning: Latin1
+Skapad av: Python-modulen sb.saldo, från saldo.json
+
+>>> import sb.saldo as saldo
+>>> lex = saldo.read_json("saldo.json", "head")
+>>> saldo.save_to_cstlemmatizer("saldo.cstlemma.lemmas", lex)
+
+I övrigt, se cstlemma.README

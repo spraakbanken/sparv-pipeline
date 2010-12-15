@@ -1,0 +1,31 @@
+
+######################################################################
+# SUC-lexikon
+
+- suc.cstlemma.lemmas
+
+Lexikon: SUC-ordlista, i format som passar till träning av CST-lemmatizer
+Format: tab-separerad
+Kodning: Latin1
+Skapad av: Perl
+
+# kopiera frekvensfilen from SUC2
+cat ../suc2/original/rådata/SUC2.0/WORDLISTS/tagged/freqtextw.txt 
+
+# transformera till cstlemma-ordlistefil
+# ordningen är FBT: Fullform Baseform Tag
+  | perl -ne '($freq,$full,@tag)=split; $base=pop(@tag); $tag=join(".",@tag); print "$full\t$base\t$tag\n";' 
+
+# ta bort tal 
+  | perl -ne 'print unless /\bRG.NOM/ && /^[\d\W]+\t/'
+
+# ta bort alla ord som innehåller "," 
+# (cstlemma gillar inte kommatecken)
+  | perl -ne 'print unless /,/'
+
+  > suc.cstlemma.lemmas
+
+I övrigt, se cstlemma.README
+
+
+

@@ -1,0 +1,23 @@
+
+######################################################################
+# HunPos-modeller
+
+- hunpos.suc2.parole-tags.default-setting.utf8.model
+
+Tränad av: Markus Forsberg
+Tränad på: SUC2
+Taggar: Parole
+Kodning: UTF8
+Hunpos-inställningar: default
+
+- hunpos.suc2+parole-bootstrap.granskaish-tags.e3t3-setting.model
+- hunpos.suc2+parole-bootstrap.granskaish-tags.e3t4-setting.model
+- hunpos.suc2+parole-bootstrap.granskaish-tags.e4t4-setting.model
+
+Tränad av: Eva Forsbom
+Tränad på: SUC2, samt bootstrappad på Parole
+Taggar: Granskaish
+Kodning: Latin1
+Hunpos-inställningar: -e3 -t3 / -e3 -t4 / -e4 -t4
+Mer info: http://stp.lingfil.uu.se/~evafo/resources/taggermodels/HunPosmodels.html
+
