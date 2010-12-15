@@ -1,0 +1,31 @@
+#!/bin/bash
+
+echo "This is not fixed yet, QUITTING"
+exit 1
+
+usage() { 
+    echo
+    echo "Usage: $0 [-h] [-e encoding] [-m maxcount] sgml-files..."
+    echo
+    exit 1
+}
+
+ENC="UTF-8"
+MAX="0"
+
+while getopts "e:m:h" opt
+do
+    case $opt in
+	e) ENC="$OPTARG" ;;
+	m) MAX="$OPTARG" ;;
+	*) usage ;;
+    esac
+done
+shift $((OPTIND-1))
+
+if [ $# == 0 ] ; then usage ; fi
+
+SOURCES=$@
+
+python -m sb.teiparser --analyze --encoding "$ENC" --maxcount "$MAX" --sources "$SOURCES"
+
