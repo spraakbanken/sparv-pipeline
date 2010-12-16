@@ -28,7 +28,7 @@ def export_to_vrt(out, order, annotations, encoding=CWB_ENCODING):
     vrt = defaultdict(dict)
     for n, annot in enumerate(annotations):
         for key, value in util.read_annotation_iteritems(annot):
-            vrt[key][n] = value
+            vrt[key][n] = value or UNDEF
     sortkey = util.read_annotation(order).get
     rows = sorted(vrt, key=sortkey)
     cols = range(len(annotations))
