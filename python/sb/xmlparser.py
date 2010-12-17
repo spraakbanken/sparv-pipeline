@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
-A parser for TEI pseuo-XML documents.
+A parser for pseuo-XML documents.
 Pseudo-XML is almost like XML, but admits overlapping elements.
-There are two modes: parsing and analyzing:
-- default: parses the document and creates DBM annotations from the XML markup
-- analyze: parses the document(s) and prints statistics 
 """
 
 import os
@@ -13,19 +10,20 @@ import re
 from collections import defaultdict
 
 import util
+from xmlanalyzer import problematic_entity, is_control_code
 
-TEIHEADER = "teiheader"
+# TODO: lägg till metadata-annoteringar, ungefär som i obsolete/tei_parser.py
+# ELLER: skapa ett annat skript: headerparser.py, som endast parsar och annoterar metadata
 
-# this regexp specifies possible tokens, between each token an anchor point is inserted:
 REGEXP_TOKEN = re.compile(r"([^\W_\d]+|\d+| +|\s|.)", re.UNICODE)
-# note about REGEXP_TOKEN: the first group matches sequences of letters,
+# This above regexp specifies possible tokens,
+# between each token an anchor point is inserted
+# Note: the first group matches sequences of letters,
 # but we cannot use \w directly, since it matches [_\d], so we have to
 # exclude these in the first group above, hence [^\W_\d];
 # idea taken from http://stackoverflow.com/questions/1673749
 
-# TODO: lägg till metadata-annoteringar, ungefär som i obsolete/tei_parser.py
-
-def parse(source, prefix, text, elements, annotations, skip=(), overlap=(), encoding=util.UTF8):
+def parse(source, prefix, text, elements, annotations, skip=(), overlap=(), header="teiheader", encoding=util.UTF8):
     """Parse one pseudo-xml source file, into the specified corpus."""
     if isinstance(elements, basestring): elements = elements.split()
     if isinstance(annotations, basestring): annotations = annotations.split()
@@ -49,7 +47,7 @@ def parse(source, prefix, text, elements, annotations, skip=(), overlap=(), enco
 
     with open(source) as SRC:
         content = SRC.read().decode(encoding)
-    parser = XMLParser(elem_annotations, skipped_elems, can_overlap, prefix, text, len(content))
+    parser = XMLParser(elem_annotations, skipped_elems, can_overlap, header, prefix, text, len(content))
     parser.feed(content)
     parser.close()
 
@@ -59,10 +57,11 @@ def parse(source, prefix, text, elements, annotations, skip=(), overlap=(), enco
 from HTMLParser import HTMLParser
 
 class XMLParser(HTMLParser):
-    def __init__(self, elem_annotations, skipped_elems, can_overlap, prefix, textfile, corpus_size):
+    def __init__(self, elem_annotations, skipped_elems, can_overlap, header_elem, prefix, textfile, corpus_size):
         HTMLParser.__init__(self)
         self.reset()
         self.tagstack = []
+        self.header_elem = header_elem
         self.inside_header = False
         self.elem_annotations = elem_annotations
         self.skipped_elems = skipped_elems
@@ -123,7 +122,7 @@ class XMLParser(HTMLParser):
         the name, attrs and anchor on a stack, which we read from
         when the matching closing tag comes along.
         """
-        if name == TEIHEADER or self.inside_header:
+        if name == self.header_elem or self.inside_header:
             self.inside_header = True
             return
 
@@ -133,7 +132,10 @@ class XMLParser(HTMLParser):
             if not (elem in self.elem_annotations or elem in self.skipped_elems):
                 self.skipped_elems.add(elem)
                 if attr:
-                    util.log.warning(self.pos() + "Skipping XML element <%s %s=%s>", name, attr, value)
+                    if (name, "") in self.elem_annotations:
+                        util.log.warning(self.pos() + "Skipping XML attribute <%s %s=%s>", name, attr, value)
+                    else:
+                        util.log.warning(self.pos() + "Skipping XML element <%s %s=%s>", name, attr, value)
                 elif not attrs:
                     util.log.warning(self.pos() + "Skipping XML element <%s>", name)
 
@@ -151,7 +153,7 @@ class XMLParser(HTMLParser):
         an annotation. The annotation group depends on the tag name.
         """
         if self.inside_header:
-            self.inside_header = (name != TEIHEADER)
+            self.inside_header = (name != self.header_elem)
             return
         # Retrieve the open tag in the tagstack:
         try:
@@ -239,95 +241,6 @@ class XMLParser(HTMLParser):
     def handle_decl(self, decl):
         """SGML declarations <!...> are not allowed."""
         util.log.error(self.pos() + "SGML declaration: <!%s>", decl)
-
-
-######################################################################
-# problematic html entities
-
-def problematic_entity(name):
-    if name.startswith('#x'):
-        return is_control_code(int(name[2:], 16))
-    elif name.startswith('#'):
-        return is_control_code(int(name[1:]))
-    else:
-        return name not in html_entities
-
-def is_control_code(code):
-    return code < 0x20 or 0x80 <= code < 0xA0
-
-
-######################################################################
-# html entities
-
-import htmlentitydefs
-
-# Entities defined in HTML Latin-1 (ISO 8859-1)
-html_entities = htmlentitydefs.name2codepoint
-
-# Entity defined in XML
-html_entities['apos'] = ord("'")
-
-# Additional entities defined in HTML Latin-2 (ISO 8859-2)
-html_entities.update(
-    Aogon   = 260,  # capital letter A with ogonek
-    breve   = 728,  # breve (spacing accent)
-    Lstrok  = 321,  # capital letter L with stroke
-    Lcaron  = 317,  # capital letter L with caron
-    Sacute  = 346,  # capital letter S with acute accent
-    Scaron  = 352,  # capital letter S with caron
-    Scedil  = 350,  # capital letter S with cedil
-    Tcaron  = 356,  # capital letter T with caron
-    Zacute  = 377,  # capital letter Z with acute accent
-    Zcaron  = 381,  # capital letter Z with caron
-    Zdot    = 379,  # capital letter Z with dot above
-    aogon   = 261,  # small letter a with ogonek
-    ogon    = 731,  # small letter o with ogonek
-    lstrok  = 322,  # small letter l with stroke
-    lcaron  = 318,  # small letter l with caron
-    sacute  = 347,  # small letter s with acute accent
-    caron   = 711,  # caron (spacing accent)
-    scaron  = 353,  # small letter s with caron
-    scedil  = 351,  # small letter s with cedil
-    tcaron  = 357,  # small letter t with caron
-    zacute  = 378,  # small letter z with acute accent
-    dblac   = 733,  # double accute (spacing accent)
-    zcaron  = 382,  # small letter z with caron
-    zdot    = 380,  # small letter z with dot above
-    Racute  = 340,  # capital letter R with acute accent
-    Abreve  = 258,  # capital letter A with breve
-    Lacute  = 313,  # capital letter L with acute accent
-    Cacute  = 262,  # capital letter C with acute accent
-    Ccaron  = 268,  # capital letter C with caron
-    Eogon   = 280,  # capital letter E with ogonek
-    Ecaron  = 282,  # capital letter E with caron
-    Dcaron  = 270,  # capital letter D with caron
-    Dstrok  = 272,  # capital letter D with stroke
-    Nacute  = 323,  # capital letter N with acute accent
-    Ncaron  = 327,  # capital letter N with caron
-    Odblac  = 336,  # capital letter O with double accute accent
-    Rcaron  = 344,  # capital letter R with caron
-    Uring   = 366,  # capital letter U with ring
-    Udblac  = 368,  # capital letter U with double accute accent
-    Tcedil  = 354,  # capital letter T with cedil
-    racute  = 341,  # small letter r with acute accent
-    abreve  = 259,  # small letter a with breve
-    lacute  = 314,  # small letter l with acute accent
-    cacute  = 263,  # small letter c with acute accent
-    ccaron  = 269,  # small letter c with caron
-    eogon   = 281,  # small letter e with ogonek
-    ecaron  = 283,  # small letter e with caron
-    dcaron  = 271,  # small letter d with caron
-    dstrok  = 273,  # small letter d with stroke
-    nacute  = 324,  # small letter n with acute accent
-    ncaron  = 328,  # small letter n with caron
-    odblac  = 337,  # small letter o with double acute accent
-    rcaron  = 345,  # small letter r with caron
-    uring   = 367,  # small letter u with ring
-    udblac  = 369,  # small letter u with double acute accent
-    tcedil  = 355,  # small letter t with cedil
-    dot     = 729,  # dot (spacing accent)
-    cir     = 9675, # white circle
-    )
 
 
 ######################################################################

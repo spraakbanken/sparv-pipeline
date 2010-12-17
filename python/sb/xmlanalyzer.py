@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
-A parser for TEI pseuo-XML documents.
+An analyzer for pseuo-XML documents.
 Pseudo-XML is almost like XML, but admits overlapping elements.
-There are two modes: parsing and analyzing:
-- default: parses the document and creates DBM annotations from the XML markup
-- analyze: parses the document(s) and prints statistics 
 """
 
 import os
@@ -13,41 +10,8 @@ import re
 from collections import defaultdict
 
 import util
-import util.teidata as TEI
 
-# TODO: lägg till metadata-annoteringar, ungefär som i obsolete/tei_parser.py
-
-# A mapping with the TEI elements for each annotation type
-# Each annotation type creates a directory below the corpus annotation directory
-TEI_annotation_types = {util.TEXT: TEI.text_elements | TEI.toplevel_elements,
-                        util.DIV: TEI.div_elements,
-                        util.PARAGRAPH: TEI.paragraph_elements,
-                        util.SENTENCE: TEI.sentence_elements,
-                        util.LINK: TEI.link_elements,
-                        util.TOKEN: TEI.token_elements,
-                        util.MARKUP: TEI.markup_elements,
-                        util.METADATA: TEI.header_elements,
-                        }
-
-# A reverse mapping of the above, from TEI elements to annotation types
-TEI_get_annotation_type = dict((elem, typ) for typ in TEI_annotation_types
-                               for elem in TEI_annotation_types[typ])
-
-
-def parse(source, xml, out, anchorprefix, text, encoding=util.UTF8):
-    """Parse one pseudo-xml source file, into the specified corpus.
-    """
-    if isinstance(xml, basestring): xml = xml.split()
-    if isinstance(out, basestring): out = out.split()
-    assert len(xml) == len(out), "xml and out must be the same length"
-    with open(source) as SRC:
-        content = SRC.read().decode(encoding)
-    parser = TEIParser(xml, out, anchorprefix, text, len(content))
-    parser.feed(content)
-    parser.close()
-
-
-def analyze(sources, encoding=util.UTF8, maxcount=0):
+def analyze(sources, header="teiheader", encoding=util.UTF8, maxcount=0):
     """Analyze a list of source files, and print statistics.
     The maxcount is a cutoff; we only count information about
     things less frequent than maxcount.
@@ -56,16 +20,15 @@ def analyze(sources, encoding=util.UTF8, maxcount=0):
     if isinstance(sources, basestring):
         sources = sources.split()
 
-    parser = TEIParser()
-    parser.init_info()
+    parser = XMLAnalyzer()
     total_starttime = util.log.starttime
     for source in sources:
         util.log.init()
         util.log.header()
         util.log.info(source)
         with open(source) as F:
-            corpusname, _ext = os.path.splitext(os.path.basename(source))
-            parser.init_parser(corpusname)
+            corpus, _ext = os.path.splitext(os.path.basename(source))
+            parser.init_parser(corpus, header)
             for line in F:
                 parser.feed(line.decode(encoding))
             parser.close()
@@ -83,45 +46,17 @@ def analyze(sources, encoding=util.UTF8, maxcount=0):
 
 from HTMLParser import HTMLParser
 
-class TEIParser(HTMLParser):
-    # this regexp specifies possible tokens, between each token
-    # an anchor point is inserted:
-    regexp_token = re.compile(r"([^\W_\d]+|\d+| +|\s|.)", re.UNICODE)
-    # note about regexp_token: the first group matches sequences of letters,
-    # but we cannot use \w directly, since it matches [_\d], so we have to
-    # exclude these in the first group above, hence [^\W_\d];
-    # idea taken from http://stackoverflow.com/questions/1673749
-
-    def __init__(self, xml=None, out=None, anchorprefix=None, text=None, corpus_size=None):
+class XMLAnalyzer(HTMLParser):
+    def __init__(self):
         HTMLParser.__init__(self)
-        self.info = None
-        self.init_parser(xml, out, anchorprefix, text, corpus_size)
-
-    def init_parser(self, xml, out, anchorprefix, text, corpus_size):
-        """This should be called once for every new corpus.
-        """
-        self.reset()
-        self.tagstack = []
-        self.inside_header = False
-        self.xml = xml
-        self.out = out
-        self.anchorprefix = anchorprefix
-        self.textfile = text
-        self.position = 0
-        self.pos2anchor = {}
-        self.anchor2pos = {}
-        self.textbuffer = []
-        self.dbs = defaultdict(lambda: defaultdict(dict))
-        util.resetIdent(self.anchorprefix, maxidents=corpus_size)
-
-    def init_info(self):
-        """This should be called if we want to use the parser as an analyzer.
-        """
         self.info = {'tag': {'files': defaultdict(dict),
                              'freq': defaultdict(int),
-                             'non-tei': defaultdict(int),
                              'attrs': defaultdict(set),
                              },
+                     'header': {'files': defaultdict(dict),
+                                'freq': defaultdict(int),
+                                'attrs': defaultdict(set),
+                                },
                      'char': {'files': defaultdict(dict),
                               'freq': defaultdict(int),
                               },
@@ -132,95 +67,59 @@ class TEIParser(HTMLParser):
                      'warning': defaultdict(int),
                      }
 
+    def init_parser(self, corpus, header_elem):
+        """This should be called once for every new corpus.
+        """
+        self.reset()
+        self.tagstack = []
+        self.inside_header = False
+        self.corpus = corpus
+        self.header_elem = header_elem
+
+    def pos(self):
+        return "{%d:%d}" % self.getpos()
+
     def err(self, msg, *args):
         """Print an error message, including the current position.
         """
-        util.log.error("{%d:%d} " + msg, * self.getpos() + args)
-        if self.info:
-            self.info['error'][self.base] += 1
+        util.log.error(self.pos() + " " + msg, *args)
+        self.info['error'][self.corpus] += 1
 
     def warn(self, msg, *args):
         """Print a warning message, including the current position.
         """
-        util.log.warning("{%d:%d} " + msg, * self.getpos() + args)
-        if self.info:
-            self.info['warning'][self.base] += 1
+        util.log.warning(self.pos() + " " + msg, *args)
+        self.info['warning'][self.corpus] += 1
 
     def close(self):
         """This should be called at the end of the file. If in parser mode,
         it saves the corpus text and the annotations to files.
         """
         while self.tagstack:
-            t, _, a = self.tagstack[0]
+            t, a = self.tagstack[0]
             self.err("(at EOF) Autoclosing tag </%s>, starting at %s", t, a)
             self.handle_endtag(t)
-        self.anchor()
-
-        if not self.info:
-            text = u"".join(self.textbuffer)
-            util.write_corpus_text(self.corpustext, text, self.pos2anchor)
-            for name, annot in self.dbs.iteritems():
-                for key, db in annot.iteritems():
-                    filename = name
-                    if key: filename += "." + key
-                    util.write_annotation(os.path.join(self.dir, self.base, filename), db)
-        
         HTMLParser.close(self)
 
-    def anchor(self):
-        """Return the anchor for the currect position. If there is no
-        anchor yet, create one and return it. The anchors are pseudo-random,
-        so that we can shuffle the text if we want.
-        """
-        position = self.position
-        try:
-            anchor = self.pos2anchor[position]
-        except KeyError:
-            anchor = self.pos2anchor[position] = util.mkIdent(self.base + ".", identifiers=self.anchor2pos)
-            self.anchor2pos[anchor] = position
-        return anchor
-    
-    def add_token(self, token):
-        """Add a token to the text, creating anchors before and after.
-        """
-        if token:
-            self.anchor()
-            self.textbuffer.append(token)
-            self.position += len(token)
-            self.anchor()
-
-    def handle_starttag(self, tagname, attrs):
+    def handle_starttag(self, name, attrs):
         """When we come to a start tag <name attrs=...>, we save
         the name, attrs and anchor on a stack, which we read from
         when the matching closing tag comes along.
         """
-        if self.info:
-            self.info['tag']['freq'][tagname] += 1
-            self.info['tag']['files'][tagname].setdefault(self.base, self.getpos())
-            for attr, _value in attrs:
-                self.info['tag']['attrs'][tagname].add(attr)
-
-        name = TEI.mixed_case_elements.get(tagname)
-        if not name:
-            self.warn("Not a TEI element: <%s>", tagname)
-            if self.info:
-                self.info['tag']['non-tei'][tagname] += 1
-            return
-        
-        if name == TEI.header or self.inside_header:
+        if name == self.header_elem:
             self.inside_header = True
-            return
 
-        annotation = TEI_get_annotation_type.get(name)
-        if annotation in (None, util.METADATA):
-            self.warn("TEI element not allowed in body: <%s>", name)
-            return
+        tag_or_header = 'header' if self.inside_header else 'tag'
+        self.info[tag_or_header]['freq'][name] += 1
+        self.info[tag_or_header]['files'][name].setdefault(self.corpus, self.getpos())
+        for attr, _value in attrs:
+            self.info[tag_or_header]['attrs'][name].add(attr)
 
         # we use a reversed stack (push from the left), which
         # simplifies searching for elements below the top of the stack
-        self.tagstack.insert(0, (name, self.anchor(), attrs))
+        self.tagstack.insert(0, (name, self.pos()))
 
-    def handle_endtag(self, tagname):
+    def handle_endtag(self, name):
         """When there is a closing tag, we look for the matching open tag
         in the stack. Since we allow overlapping elements, the open tag
         need not be first in the stack.
@@ -229,22 +128,8 @@ class TEIParser(HTMLParser):
         to the corresponding annotation. Each xml attr also gets added to
         an annotation. The annotation group depends on the tag name.
         """
-        name = TEI.mixed_case_elements.get(tagname)
-        if not name:
-            self.warn("Not a TEI element: <%s>", tagname)
-            if self.info:
-                self.info['tag']['non-tei'][tagname] += 1
-            return
-
         if self.inside_header:
-            self.inside_header = (name != TEI.header)
-            return
-
-        # Retrieve the annotation group:
-        annotation = TEI_get_annotation_type.get(name)
-        if annotation in (None, util.METADATA):
-            self.warn("TEI element not allowed in body: <%s>", name)
-            return
+            self.inside_header = (name != self.header_elem)
 
         # Retrieve the open tag in the tagstack:
         try:
@@ -253,19 +138,12 @@ class TEIParser(HTMLParser):
             self.err("Closing element </%s>, but it is not open", name)
             return
         
-        name, start, attrs = self.tagstack.pop(ix)
-        end = self.anchor()
+        name, start = self.tagstack.pop(ix)
         if ix > 0:
             overlaps = self.tagstack[:ix]
-            if not TEI.can_overlap(name, [t[0] for t in overlaps]):
-                self.warn("Tag <%s> [%s:%s], overlapping with %s", name, start, end,
-                          ", ".join("<%s> [%s:]" % (t[0], t[1]) for t in overlaps)) 
-
-        span = (start, end)
-        edge = util.mkEdge(name, span)
-        if not self.info:
-            for key, value in attrs + [(None, None)]:
-                self.dbs[annotation][key][edge] = value
+            end = self.pos()
+            self.warn("Tag <%s> at %s - %s, overlapping with %s", name, start, end,
+                      ", ".join("<%s> at %s" % (n,s) for (n,s) in overlaps)) 
 
     def handle_data(self, content):
         """Plain text data are tokenized and each 'token' is added to the text.
@@ -273,35 +151,19 @@ class TEIParser(HTMLParser):
         if "&" in content: self.err("XML special character: &")
         if "<" in content: self.err("XML special character: <")
         if ">" in content: self.err("XML special character: >")
-        if self.position == 0 and isinstance(content, unicode):
-            content = content.replace(u"\ufeff", u"")
-        if self.info:
-            for char in content:
-                self.info['char']['freq'][char] += 1
-                self.info['char']['files'][char].setdefault(self.base, self.getpos())
-        if self.inside_header:
-            return
-        for token in self.regexp_token.split(content):
-            self.add_token(token)
+        for char in content:
+            self.info['char']['freq'][char] += 1
+            self.info['char']['files'][char].setdefault(self.corpus, self.getpos())
 
     def handle_charref(self, name):
         """Character references &#nnn; are translated to unicode and
         added as single tokens.
         """
         entity = '#' + name
-        if self.info:
-            self.info['entity']['freq'][entity] += 1
-            self.info['entity']['files'][entity].setdefault(self.base, self.getpos())
+        self.info['entity']['freq'][entity] += 1
+        self.info['entity']['files'][entity].setdefault(self.corpus, self.getpos())
         if problematic_entity(entity):
             self.err("Control character reference: &%s;", entity)
-            return
-        if self.inside_header:
-            return
-        if name.startswith('x'):
-            code = int(name[1:], 16)
-        else:
-            code = int(name)
-        self.add_token(unichr(code))
 
     def handle_entityref(self, name):
         """Entity refs &bullet; are lookep up in a database and
@@ -309,14 +171,9 @@ class TEIParser(HTMLParser):
         """
         if self.info:
             self.info['entity']['freq'][name] += 1
-            self.info['entity']['files'][name].setdefault(self.base, self.getpos())
+            self.info['entity']['files'][name].setdefault(self.corpus, self.getpos())
         if problematic_entity(name):
             self.err("Unknown HTML entity: &%s;", name)
-            return
-        if self.inside_header:
-            return
-        code = html_entities[name]
-        self.add_token(unichr(code))
 
     def handle_comment(self, comment):
         """XML comments are added as annotations themselves.
@@ -324,12 +181,9 @@ class TEIParser(HTMLParser):
         if "--" in comment or comment.endswith('-'):
             self.err("Comment contains '--' or ends with '-'")
         if self.inside_header:
-            self.warn("[SKIPPING] Comment in TEI header")
-            return
-        self.warn("Comment: %d characters wide", len(comment))
-
-        self.handle_starttag('comment', [('value', comment)])
-        self.handle_endtag('comment')
+            self.warn("Comment in TEI header: %d characters wide", len(comment))
+        else:
+            self.warn("Comment: %d characters wide", len(comment))
 
     def handle_pi(self, data):
         """XML processing instructions are not allowed,
@@ -356,7 +210,8 @@ def statistics(result, maxcount):
     print "## Statistics"
     stat_chars(result['char'], maxcount)
     stat_entities(result['entity'], maxcount)
-    stat_tags(result['tag'], maxcount)
+    stat_tags(result['tag'], maxcount, "Body tags")
+    stat_tags(result['header'], maxcount, "Header tags")
     stat_errors(result['warning'], result['error'])
 
 def strfiles(files):
@@ -375,13 +230,13 @@ def items_by_frequency(freqdist):
     frequency = lambda x: x[1]
     return sorted(freqdist.iteritems(), key=frequency, reverse=True)
 
-def stat_chars(charinfo, maxcount):
+def stat_chars(charinfo, maxcount, title="Characters"):
     """Statistics about the characters in the corpus.
     """
     chars = charinfo['freq']
     if not chars: return
     print
-    print "   Count    Code point        Char                          Files"
+    print "%-60sFiles" % title
     print "-" * 100
     for char, count in items_by_frequency(chars):
         if 0 < maxcount < count: continue
@@ -398,13 +253,13 @@ def stat_chars(charinfo, maxcount):
         print "      Replace with &amp; &lt; &gt;"
         print
 
-def stat_entities(entinfo, maxcount):
+def stat_entities(entinfo, maxcount, title="Entities"):
     """Statistics about the entities in the corpus.
     """
     entities = entinfo['freq']
     if not entities: return
     print
-    print "   Count    Entity name                                     Files"
+    print "%-60sFiles" % title
     print "-" * 100
     problematic = set()
     for name, count in items_by_frequency(entities):
@@ -419,13 +274,13 @@ def stat_entities(entinfo, maxcount):
         print "      Replace them with better entities"
         print
 
-def stat_tags(taginfo, maxcount):
+def stat_tags(taginfo, maxcount, title="Tags"):
     """Statistics about the xml tags in the corpus.
     """
     tags = taginfo['freq']
     if not tags: return
     print
-    print "   Count    Tag               Attributes                    Files"
+    print "%-30s%-30sFiles" % (title, "Attributes")
     print "-" * 100
     for tag, count in items_by_frequency(tags):
         if 0 < maxcount < count: continue
@@ -433,11 +288,6 @@ def stat_tags(taginfo, maxcount):
         files = strfiles(taginfo['files'][tag])
         print "%8d    %-18s%-30s%s" % (count, "<"+tag+">", attrs, files)
     print
-    if taginfo['non-tei']:
-        print "NOTE: The following non-TEI elements were encountered:"
-        for tag, count in taginfo['non-tei'].items():
-            print "  %10s %d times" % ("<"+tag+">", count)
-        print
 
 def stat_errors(warnings, errors):
     """Statistics about the errors and warnings.
@@ -544,4 +394,4 @@ html_entities.update(
 ######################################################################
 
 if __name__ == '__main__':
-    util.run.main(parse, analyze=analyze)
+    util.run.main(analyze)
