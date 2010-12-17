@@ -3,11 +3,11 @@
 """
 Usage: sgml_extract sgml-file sgml-element [marker]
 
-Extracts all content of a given SGML element from a SGML file - one on each line.
+Extracts all content of a given XML element from an XML file - one on each line.
 The optional marker is printed before and after each content line.
 """
 
-from sb.teiparser import html_entities, problematic_entity
+from sb.xmlanalyzer import html_entities, problematic_entity
 from HTMLParser import HTMLParser
 import sys
 
