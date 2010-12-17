@@ -168,6 +168,6 @@ def parse_structural_attributes(structural_atts):
 
 if __name__ == '__main__':
     util.run.main(export=export_to_vrt,
-                  finalize=cwb_encode,
+                  encode=cwb_encode,
                   align=cwb_align)
 
