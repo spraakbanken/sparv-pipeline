@@ -6,7 +6,9 @@ Tools for exporting, encoding and aligning corpora for Corpus Workbench.
 
 import os
 import re
+from tempfile import TemporaryFile
 from glob import glob
+from collections import defaultdict
 
 import util
 
@@ -21,53 +23,55 @@ CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 ######################################################################
 # Saving as Corpus Workbench data file
 
-def export_to_vrt(out, order, annotations, encoding=CWB_ENCODING):
-    if isinstance(annotations, basestring):
-        annotations = annotations.split()
-    from collections import defaultdict
+def export_to_vrt(out, order, annotations, columns=(), structs=(), encoding=CWB_ENCODING):
+    """
+    Export 'annotations' to the VRT file 'out'.
+    The order of the annotation keys is decided by the annotation 'order'.
+    The columns to be exported are taken from 'columns', default all 'annotations'.
+    The structural attributes are specified by 'structs', default no structs.
+    If an attribute in 'columns' or 'structs' is "-", that annotation is skipped.
+    The structs are specified by "elem:attr", giving <elem attr=N> xml tags.
+    """
+    if isinstance(annotations, basestring): annotations = annotations.split()
+    if isinstance(columns, basestring): columns = columns.split()
+    if not columns: columns = annotations
+    structs = parse_structural_attributes(structs)
+
     vrt = defaultdict(dict)
     for n, annot in enumerate(annotations):
-        for key, value in util.read_annotation_iteritems(annot):
-            vrt[key][n] = value or UNDEF
+        for tok, value in util.read_annotation_iteritems(annot):
+            vrt[tok][n] = value 
+
     sortkey = util.read_annotation(order).get
-    rows = sorted(vrt, key=sortkey)
-    cols = range(len(annotations))
+    tokens = sorted(vrt, key=sortkey)
+    column_nrs = [n for (n, col) in enumerate(columns) if col and col != "-"]
+
     with open(out, "w") as OUT:
-        for key in rows:
-            line = [vrt[key].get(n, UNDEF) for n in cols]
-            print >>OUT, "\t".join(line).encode(encoding)
-    util.log.info("Exported %d rows, %d columns: %s", len(rows), len(cols), out)
-
-
-def insert_structural_tags(vrt, out, structs, encoding=CWB_ENCODING):
-    structs = parse_structural_attributes(structs)
-    with open(vrt) as VRT:
-        with open(out, "w") as OUT:
-            old_attr_values = dict((elem, None) for (elem, _attrs) in structs)
-            for line in VRT:
-                line = line.rstrip("\n\r")
-                cols = line.split("\t")
-                new_attr_values = {}
-                for elem, attrs in structs:
-                    new_attr_values[elem] = ''.join(' %s="%s"' % (attr, cols[n])
-                                                    for (attr, n) in attrs
-                                                    if cols[n] and cols[n] != UNDEF)
-                    if old_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
-                        print >>OUT, "</%s>" % elem
-                        old_attr_values[elem] = None
-                for elem, _attrs in reversed(structs):
-                    if new_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
-                        print >>OUT, "<%s%s>" % (elem, new_attr_values[elem])
-                        old_attr_values[elem] = new_attr_values[elem]
-                print >>OUT, line
-            for elem, _attrs in structs:
-                if old_attr_values[elem]:
+        old_attr_values = dict((elem, None) for (elem, _attrs) in structs)
+        for tok in tokens:
+            cols = vrt[tok]
+            new_attr_values = {}
+            for elem, attrs in structs:
+                new_attr_values[elem] = ''.join(' %s="%s"' % (attr, cols[n])
+                                                for (attr, n) in attrs if cols.get(n))
+                if old_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
                     print >>OUT, "</%s>" % elem
-    util.log.info("Exported %d structural attrs: %s", len(structs), out)
+                    old_attr_values[elem] = None
+            for elem, _attrs in reversed(structs):
+                if new_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
+                    print >>OUT, "<%s%s>" % (elem, new_attr_values[elem])
+                    old_attr_values[elem] = new_attr_values[elem]
+            line = "\t".join(cols.get(n, UNDEF) for n in column_nrs)
+            print >>OUT, line.encode(encoding)
+        for elem, _attrs in structs:
+            if old_attr_values[elem]:
+                print >>OUT, "</%s>" % elem
+
+    util.log.info("Exported %d tokens, %d columns, %d structs: %s", len(tokens), len(column_nrs), len(structs), out)
 
 
-def finalize(master, columns, structs, vrtdir=None, vrtfiles=None,
-             encoding=CWB_ENCODING, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY):
+def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
+               encoding=CWB_ENCODING, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY):
     """
     Encode a number of VRT files, by calling cwb-encode.
     params, structs describe the attributes that are exported in the VRT files.
@@ -92,7 +96,8 @@ def finalize(master, columns, structs, vrtdir=None, vrtfiles=None,
         for vrt in vrtfiles:
             encode_args += ["-f", vrt]
     for col in columns:
-        encode_args += ["-P", col]
+        if col != "-":
+            encode_args += ["-P", col]
     for struct, attrs in structs:
         encode_args += ["-S", "%s:0+%s" % (struct, "+".join(attr for attr, _n in attrs))]
     util.system.call_binary("cwb-encode", encode_args, verbose=True)
@@ -102,7 +107,7 @@ def finalize(master, columns, structs, vrtdir=None, vrtfiles=None,
     util.log.info("Encoded and indexed %d columns, %d structs", len(columns), len(structs))
 
 
-def align(master, other, link, aligndir=ALIGNDIR):
+def cwb_align(master, other, link, aligndir=ALIGNDIR):
     """
     Align 'master' corpus with 'other' corpus, using the 'link' annotation for alignment.
     """
@@ -163,7 +168,6 @@ def parse_structural_attributes(structural_atts):
 
 if __name__ == '__main__':
     util.run.main(export=export_to_vrt,
-                  insert_structs=insert_structural_tags,
-                  finalize=finalize,
-                  align=align)
+                  finalize=cwb_encode,
+                  align=cwb_align)
 
