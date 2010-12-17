@@ -179,9 +179,9 @@ class XMLParser(HTMLParser):
 
     def handle_data(self, content):
         """Plain text data are tokenized and each 'token' is added to the text."""
-        if "&" in content: self.log(util.log.error, "XML special character: &")
-        if "<" in content: self.log(util.log.error, "XML special character: <")
-        if ">" in content: self.log(util.log.error, "XML special character: >")
+        if "&" in content: util.log.error(self.pos() + "XML special character: &")
+        if "<" in content: util.log.error(self.pos() + "XML special character: <")
+        if ">" in content: util.log.error(self.pos() + "XML special character: >")
         if self.position == 0 and isinstance(content, unicode):
             content = content.lstrip(u"\ufeff")
         if self.inside_header:
@@ -193,7 +193,7 @@ class XMLParser(HTMLParser):
         """Character references &#nnn; are translated to unicode."""
         entity = '#' + name
         if problematic_entity(entity):
-            self.log(util.log.error, "Control character reference: &%s;", entity)
+            util.log.error(self.pos() + "Control character reference: &%s;", entity)
             return
         if self.inside_header:
             return
@@ -208,7 +208,7 @@ class XMLParser(HTMLParser):
         added as single tokens.
         """
         if problematic_entity(name):
-            self.log(util.log.error, "Unknown HTML entity: &%s;", name)
+            util.log.error(self.pos() + "Unknown HTML entity: &%s;", name)
             return
         if self.inside_header:
             return
@@ -218,11 +218,11 @@ class XMLParser(HTMLParser):
     def handle_comment(self, comment):
         """XML comments are added as annotations themselves."""
         if "--" in comment or comment.endswith('-'):
-            self.log(util.log.error, "Comment contains '--' or ends with '-'")
+            util.log.error(self.pos() + "Comment contains '--' or ends with '-'")
         if self.inside_header:
-            self.log(util.log.warning, "[SKIPPING] Comment in TEI header")
+            util.log.warning(self.pos() + "[SKIPPING] Comment in TEI header")
             return
-        self.log(util.log.warning, "Comment: %d characters wide", len(comment))
+        util.log.warning(self.pos() + "Comment: %d characters wide", len(comment))
         self.handle_starttag('comment', [('value', comment)])
         self.handle_endtag('comment')
 
@@ -232,13 +232,13 @@ class XMLParser(HTMLParser):
         """
         if data.startswith(u'xml ') and data.endswith(u'?'):
             if self.getpos() != (1,0):
-                self.log(util.log.error, "XML declaration not first in file")
+                util.log.error(self.pos() + "XML declaration not first in file")
         else:
-            self.log(util.log.error, "Unknown processing instruction: <?%s>", data)
+            util.log.error(self.pos() + "Unknown processing instruction: <?%s>", data)
 
     def handle_decl(self, decl):
         """SGML declarations <!...> are not allowed."""
-        self.log(util.log.error, "SGML declaration: <!%s>", decl)
+        util.log.error(self.pos() + "SGML declaration: <!%s>", decl)
 
 
 ######################################################################
