@@ -10,7 +10,7 @@ import re
 from collections import defaultdict
 
 import util
-from xmlanalyzer import problematic_entity, is_control_code
+from xmlanalyzer import problematic_entity, is_control_code, html_entities
 
 # TODO: lägg till metadata-annoteringar, ungefär som i obsolete/tei_parser.py
 # ELLER: skapa ett annat skript: headerparser.py, som endast parsar och annoterar metadata
