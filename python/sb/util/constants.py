@@ -40,6 +40,7 @@ def mkEdge(name, *spans):
     return _safe_join(_EDGE_SEP, [name] + spans)
 
 def edgeName(edge):
+    # These are equivalent, but .partition is faster:
     # return edge.split(_EDGE_SEP, 1)[0]
     return edge.partition(_EDGE_SEP)[0]
 
@@ -47,11 +48,13 @@ def edgeSpans(edge):
     return [span.split(_SPAN_SEP) for span in edge.split(_EDGE_SEP)[1:]]
 
 def edgeStart(edge):
+    # These are equivalent, but .partition is faster:
     # return edgeSpans(edge)[0][0]
     # return edge.split(_EDGE_SEP, 1)[1].split(_SPAN_SEP, 1)[0]
     return edge.partition(_EDGE_SEP)[2].partition(_SPAN_SEP)[0]
 
 def edgeEnd(edge):
+    # These are equivalent, but .rpartition is faster:
     # return edgeSpans(edge)[-1][-1]
     # return edge.rsplit(_SPAN_SEP, 1)[1]
     return edge.rpartition(_SPAN_SEP)[2]

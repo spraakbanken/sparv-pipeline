@@ -69,6 +69,7 @@ class XMLParser(HTMLParser):
         self.prefix = prefix
         self.textfile = textfile
         self.position = 0
+        self.max_nr_zeros = len(str(corpus_size))
         self.pos2anchor = {}
         self.anchor2pos = {}
         self.textbuffer = []
@@ -173,6 +174,9 @@ class XMLParser(HTMLParser):
 
         edge = util.mkEdge(name, (start, end))
         for attr, value in attrs:
+            # Zero-pad integers 234 to 0000234, so that sorting works:
+            try: value = "%0*d" % (self.max_nr_zeros, int(value))
+            except ValueError: pass
             try:
                 annotation = self.elem_annotations[name, attr]
                 self.dbs[annotation][edge] = value
