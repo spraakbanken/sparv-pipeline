@@ -166,7 +166,7 @@ class XMLParser(HTMLParser):
         name, start, attrs = self.tagstack.pop(ix)
         end = self.anchor()
         overlaps = [t[:2] for t in self.tagstack[:ix]
-                    if (name, t[0]) not in self.can_overlap]
+                    if ( (name, t[0]) not in self.can_overlap and (name, "*") not in self.can_overlap and (t[0], "*") not in self.can_overlap )]
         if overlaps:
             overlapping_elems = ["<%s> [%s:]" % t for t in overlaps]
             util.log.warning(self.pos() + "Tag <%s> [%s:%s], overlapping with %s",
