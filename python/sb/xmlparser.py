@@ -175,8 +175,9 @@ class XMLParser(HTMLParser):
         edge = util.mkEdge(name, (start, end))
         for attr, value in attrs:
             # Zero-pad integers 234 to 0000234, so that sorting works:
-            try: value = "%0*d" % (self.max_nr_zeros, int(value))
-            except ValueError: pass
+            # Problem: Might result in different number of digits in parallel corpora.
+            #try: value = "%0*d" % (self.max_nr_zeros, int(value))
+            #except ValueError: pass
             try:
                 annotation = self.elem_annotations[name, attr]
                 self.dbs[annotation][edge] = value
@@ -226,7 +227,8 @@ class XMLParser(HTMLParser):
         if "--" in comment or comment.endswith('-'):
             util.log.error(self.pos() + "Comment contains '--' or ends with '-'")
         if self.inside_header:
-            util.log.warning(self.pos() + "[SKIPPING] Comment in TEI header")
+            # We skip everything in the header for now, so no need to warn about a skipped comment here
+            # util.log.warning(self.pos() + "[SKIPPING] Comment in TEI header")
             return
         util.log.warning(self.pos() + "Comment: %d characters wide", len(comment))
         self.handle_starttag('comment', [('value', comment)])
