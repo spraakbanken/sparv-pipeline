@@ -88,7 +88,7 @@ def save_to_logfile():
         for l in lastmessage:
             for v in constants.COLORS.values():
                 l = l.replace(v, "")
-            o.write(l + "\n")
+            o.write(l.encode(constants.UTF8) + "\n")
         o.write(process_id_prefix + "^" * 80)
         o.write("\n\n\n")
 

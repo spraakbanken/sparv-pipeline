@@ -185,11 +185,11 @@ def read_xml(xml, value_element='gf', tagset='SUC', verbose=True):
         i += 1
         if event == "end":
             if elem.tag == 'LexicalEntry':
-                #value = elem.findtext(value_element)
                 valuelist = elem.findall(value_element)
                 if valuelist:
                     value = "|".join(v.text for v in valuelist)
                 else:
+                    assert False, "Missing value"
                     value = "UNKNOWN"
                 pos = elem.findtext("pos")
                 inhs = elem.findtext("inhs")
