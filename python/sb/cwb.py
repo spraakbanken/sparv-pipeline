@@ -12,7 +12,7 @@ from collections import defaultdict
 
 import util
 
-ALIGNDIR = "tmp/align"
+ALIGNDIR = "annotations/align"
 UNDEF = "__UNDEF__"
 
 CWB_ENCODING = os.environ.get("CWB_ENCODING", "utf8")
@@ -117,7 +117,7 @@ def cwb_align(master, other, link, aligndir=ALIGNDIR):
     util.log.info("Aligning %s <-> %s", master, other)
 
     try:
-        [(link_name, [(link_attr, _path)])] = parse_structural(link)
+        [(link_name, [(link_attr, _path)])] = parse_structural_attributes(link)
     except ValueError:
         raise ValueError("You have to specify exactly one alignment link.")
     link_attr = link_name + "_" + link_attr
@@ -129,6 +129,8 @@ def cwb_align(master, other, link, aligndir=ALIGNDIR):
         print >>F, result
     _, lastline = result.rsplit("Alignment complete.", 1)
     util.log.info("%s", lastline.strip())
+    if " 0 alignment" in lastline.strip():
+        util.log.warning("No alignment regions created")
     util.log.info("Alignment file/result: %s/.result", alignfile)
 
     # add alignment parameter to registry
