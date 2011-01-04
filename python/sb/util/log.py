@@ -3,12 +3,15 @@
 import time
 import sys
 import os
+import constants
 
 totalwarnings = 0
 totalerrors = 0
 starttime = 0
 timeformat = "%H.%M.%S"
 process_id_prefix = ""
+lastmessage = []
+logfile = "/warnings.log"
 
 def init(level=None, format=None, timefmt=None, showpid=False):
     """Initialise logging to <stderr>.
@@ -35,6 +38,9 @@ def line(ch):
 def output(msg="", *args):
     """Prints a message (plus newline) on stderr."""
     print >>sys.stderr, process_id_prefix + "|", msg % args
+    m = process_id_prefix + "| " + (msg % args)
+    global lastmessage
+    lastmessage.append(m)
 
 def header():
     newline()
@@ -50,21 +56,39 @@ def warning(msg, *args):
     if not starttime: init()
     global totalwarnings
     totalwarnings += 1
-    output("warning : " + msg, *args)
+    output(constants.COLORS["yellow"] + "warning : " + msg + constants.COLORS["default"], *args)
 
 def error(msg, *args):
     """Prints/logs an error message."""
     if not starttime: init()
     global totalerrors
     totalerrors += 1
-    output("-ERROR- : " + msg, *args)
+    output(constants.COLORS["red"] + "-ERROR- : " + msg + constants.COLORS["default"], *args)
 
 def statistics():
+    """Prints statistics and summary."""
     info("Total time: %.2f s", time.time() - starttime)
-    if totalerrors or totalwarnings:
-        output("%d warnings were reported", totalwarnings)
-        output("%d ERRORS were reported", totalerrors)
+    if totalwarnings:
+        output(constants.COLORS["yellow"] + constants.COLORS["bold"] + "%d warnings were reported" + constants.COLORS["default"], totalwarnings)
+    if totalerrors:
+        output(constants.COLORS["red"] + constants.COLORS["bold"] + "%d ERRORS were reported" + constants.COLORS["default"], totalerrors)
+    if totalwarnings or totalerrors:
+        save_to_logfile()
     line("^")
     newline()
+    global lastmessage
+    lastmessage = []
 
+def save_to_logfile():
+    """Append last warning or error to logfile."""
+    global lastmessage
+    with open(os.getcwd() + logfile, "a") as o:
+        o.write(process_id_prefix + "_" * 80)
+        o.write("\n")
+        for l in lastmessage:
+            for v in constants.COLORS.values():
+                l = l.replace(v, "")
+            o.write(l + "\n")
+        o.write(process_id_prefix + "^" * 80)
+        o.write("\n\n\n")
 
