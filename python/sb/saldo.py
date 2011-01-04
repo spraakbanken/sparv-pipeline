@@ -144,7 +144,7 @@ def _split_lemmatagpair(lemma_tags):
 def read_json(json, lemma_key='head', tagset='SUC', verbose=True):
     """Read the json version of Saldo.
     Return a lexicon dictionary, {wordform: {lemma: set(possible tags)}}
-     - lemma_key is the json key for the lemma (currently: 'head' or 'id')
+     - lemma_key is the json key for the lemma (currently: 'head' for baseform or 'id' for lemgram)
      - tagset is the tagset for the possible tags (currently: 'SUC', 'Parole', 'Saldo')
     """
     import cjson
@@ -163,6 +163,55 @@ def read_json(json, lemma_key='head', tagset='SUC', verbose=True):
     if verbose: util.log.info("OK, read")
     return lexicon
 
+def read_xml(xml, value_element='gf', tagset='SUC', verbose=True):
+    """Read the XML version of Saldo.
+    Return a lexicon dictionary, {wordform: {value: set(possible tags)}}
+     - value_element is the XML element for the value (currently: 'gf' for baseform, 'lem' for lemgram or 'saldo' for SALDO id)
+     - tagset is the tagset for the possible tags (currently: 'SUC', 'Parole', 'Saldo')
+     
+    Does not handle multi word entries yet, but we don't keep them anyway.
+    """
+    value_element = value_element.replace("head", "gf").replace("id", "lem")
+    import xml.etree.cElementTree as cet
+    tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower())
+    if verbose: util.log.info("Reading XML lexicon")
+    lexicon = {}
+    
+    context = cet.iterparse(xml, events=("start", "end"))
+    context = iter(context)
+    event, root = context.next()
+    i = 0
+    for event, elem in context:
+        i += 1
+        if event == "end":
+            if elem.tag == 'LexicalEntry':
+                #value = elem.findtext(value_element)
+                valuelist = elem.findall(value_element)
+                if valuelist:
+                    value = "|".join(v.text for v in valuelist)
+                else:
+                    value = "UNKNOWN"
+                pos = elem.findtext("pos")
+                inhs = elem.findtext("inhs")
+                if inhs == "-":
+                    inhs = ""
+                inhs = inhs.split()
+                table = elem.find("table")
+                for form in list(table):
+                    word = form.findtext("wf")
+                    param = form.findtext("param")
+                    saldotag = " ".join([pos] + inhs + [param])
+                    tags = tagmap.get(saldotag)
+                    if tags:
+                        lexicon.setdefault(word, {}).setdefault(value, set()).update(tags)
+            # Done parsing section. Clear tree to save memory
+            if elem.tag in ['LexicalEntry', 'frame', 'resFrame']:
+                root.clear()
+    
+    test_lemmas(lexicon)
+    if verbose: util.log.info("OK, read")
+    return lexicon
+    
 
 def save_to_cstlemmatizer(cstfile, lexicon, encoding="latin-1", verbose=True):
     """Save a JSON lexicon as an external file that can be used for
@@ -210,7 +259,7 @@ testwords = [u"äggtoddyarna",
 ######################################################################
 
 if __name__ == '__main__':
-    util.run.main(lemmatize)
+    util.run.main(lemmatize, read_xml=read_xml)
 
 
 
