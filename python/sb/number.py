@@ -3,9 +3,11 @@
 from collections import defaultdict
 import random
 import util
+import re
 
 
 def number_by_position(out, texts, chunks, prefix=""):
+    """ Number chunks by their position. """
     if isinstance(chunks, basestring): chunks = chunks.split()
     if isinstance(texts, basestring): texts = texts.split()
     assert len(chunks) == len(texts), "You must supply the same number of texts and chunks."
@@ -16,13 +18,14 @@ def number_by_position(out, texts, chunks, prefix=""):
         anchors.append(anchor2pos)
 
     def order(chunknr, edge, _value):
-        value = anchors[chunknr][util.edgeStart(edge)]
+        value = anchors[chunknr][util.edgeStart(edge)] # Position in corpus
         return (chunknr, value)
 
     read_chunks_and_write_new_ordering(out, chunks, order, prefix)
 
 
 def number_by_random(out, chunks, prefix=""):
+    """ Number chunks randomly. """
     def order(chunknr, edge, _value):
         random.seed(edge)
         return (chunknr, random.random())
@@ -31,16 +34,19 @@ def number_by_random(out, chunks, prefix=""):
 
 
 def renumber_by_attribute(out, chunks, prefix=""):
+    """ Renumber chunks, with the order determined by an attribute. """
     def order(_chunknr, _edge, value):
-        return value
+        return natural_sorting(value)
 
     read_chunks_and_write_new_ordering(out, chunks, order, prefix)
 
 
 def renumber_by_shuffle(out, chunks, prefix=""):
+    """ Renumber already numbered chunks, in new random order.
+        Retains the connection between parallelly numbered chunks. """
     def order(_chunknr, _edge, value):
         random.seed(value)
-        return random.random(), value
+        return random.random(), natural_sorting(value)
 
     read_chunks_and_write_new_ordering(out, chunks, order, prefix)
 
@@ -72,6 +78,8 @@ def read_chunks_and_write_new_ordering(out, chunks, order, prefix=""):
                                 for nr, key in enumerate(sorted(new_order))
                                 for edge in new_order[key]))
 
+def natural_sorting(astr):
+    return tuple(int(s) if s.isdigit() else s for s in re.split(r'(\d+)', astr))
 
 ######################################################################
 
