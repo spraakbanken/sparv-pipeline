@@ -3,35 +3,48 @@
 # SALDO-lexikon
 
 
-- saldo.json
+- saldom.xml
 
-Lexikon: Saldo, basversionen
-Format: Json
+Lexikon: SALDOs morfologiska lexikon, utvecklingsversion
+Format: XML
 Kodning: UTF8
+Hämtad från: https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/saldom/saldom.xml
 
 
-- saldo.lemma.pickle
+- saldo.baseform.pickle
 
 Lexikon: Saldo, mappning från ordform till grundform
 Format: Python pickle
 Kodning: UTF8
-Skapad av: Python-modulen sb.saldo, från saldo.json
+Skapad av: Python-modulen sb.saldo, från saldom.xml
 
 >>> import sb.saldo as saldo
->>> lex = saldo.read_json("saldo.json", "head")
->>> saldo.PickledLexicon.save("saldo.lemma.pickle", lex)
+>>> lex = saldo.read_xml("saldom.xml", "gf")
+>>> saldo.SaldoLexicon.save_to_picklefile("saldo.baseform.pickle", lex)
 
 
-- saldo.lemmaid.pickle
+- saldo.lemgram.pickle
 
 Lexikon: Saldo, mappning från ordform till Saldo lemgram
 Format: Python pickle
 Kodning: UTF8
-Skapad av: Python-modulen sb.saldo, från saldo.json
+Skapad av: Python-modulen sb.saldo, från saldom.xml
 
 >>> import sb.saldo as saldo
->>> lex = saldo.read_json("saldo.json", "id")
->>> saldo.PickledLexicon.save("saldo.idlemma.pickle", lex)
+>>> lex = saldo.read_xml("saldom.xml", "lem")
+>>> saldo.SaldoLexicon.save_to_picklefile("saldo.lemgram.pickle", lex)
+
+
+- saldo.saldoid.pickle
+
+Lexikon: Saldo, mappning från ordform till Saldo-ID
+Format: Python pickle
+Kodning: UTF8
+Skapad av: Python-modulen sb.saldo, från saldom.xml
+
+>>> import sb.saldo as saldo
+>>> lex = saldo.read_xml("saldom.xml", "zlem")
+>>> saldo.SaldoLexicon.save_to_picklefile("saldo.lemgram.pickle", lex)
 
 
 - saldo.cstlemma.lemmas
@@ -39,10 +52,11 @@ Skapad av: Python-modulen sb.saldo, från saldo.json
 Lexikon: Saldo, i format som passar till träning av CST-lemmatizer
 Format: tab-separerad
 Kodning: Latin1
-Skapad av: Python-modulen sb.saldo, från saldo.json
+Skapad av: Python-modulen sb.saldo, från saldom.xml
 
 >>> import sb.saldo as saldo
->>> lex = saldo.read_json("saldo.json", "head")
+>>> lex = saldo.read_xml("saldom.xml", "gf")
 >>> saldo.save_to_cstlemmatizer("saldo.cstlemma.lemmas", lex)
 
 I övrigt, se cstlemma.README
+

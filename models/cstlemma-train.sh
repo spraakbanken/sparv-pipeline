@@ -4,8 +4,8 @@ lemmafile="$1"
 dictfile="$2"
 flexfile="$3"
 
-# för att skapa lemmafile, spara från saldo.json
-# genom sb.annotate.saldo.save_to_cstlemmatizer
+# för att skapa lemmafile, spara från saldom.xml
+# genom sb.saldo.save_to_cstlemmatizer
 
 if [ ! -f "$lemmafile" ] || [ ! "$dictfile" ] || [ ! "$flexfile" ]
 then
