@@ -130,7 +130,7 @@ class XMLParser(HTMLParser):
         elem_attrs = attrs + [("", "")]
         for attr, value in elem_attrs:
             elem = (name, attr)
-            if not (elem in self.elem_annotations or elem in self.skipped_elems):
+            if not (elem in self.elem_annotations or elem in self.skipped_elems or (attr != "" and (name, "*") in self.skipped_elems)):
                 self.skipped_elems.add(elem)
                 if attr:
                     if (name, "") in self.elem_annotations:
