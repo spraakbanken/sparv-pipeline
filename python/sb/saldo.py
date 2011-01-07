@@ -142,7 +142,7 @@ def _split_lemmatagpair(lemma_tags):
 # converting between different file formats
 
 def read_json(json, lemma_key='head', tagset='SUC', verbose=True):
-    """Read the json version of Saldo.
+    """Read the json version of SALDO. Deprecated, use read_xml instead!
     Return a lexicon dictionary, {wordform: {lemma: set(possible tags)}}
      - lemma_key is the json key for the lemma (currently: 'head' for baseform or 'id' for lemgram)
      - tagset is the tagset for the possible tags (currently: 'SUC', 'Parole', 'Saldo')
@@ -164,7 +164,7 @@ def read_json(json, lemma_key='head', tagset='SUC', verbose=True):
     return lexicon
 
 def read_xml(xml, value_element='gf', tagset='SUC', verbose=True):
-    """Read the XML version of Saldo.
+    """Read the XML version of SALDO's morphological lexicon (saldom.xml).
     Return a lexicon dictionary, {wordform: {value: set(possible tags)}}
      - value_element is the XML element for the value (currently: 'gf' for baseform, 'lem' for lemgram or 'saldo' for SALDO id)
      - tagset is the tagset for the possible tags (currently: 'SUC', 'Parole', 'Saldo')
@@ -256,10 +256,16 @@ testwords = [u"äggtoddyarna",
              u"in"]
 
 
+def xml_to_pickle(xml, value_element, filename):
+    """Read an XML dictionary and save as a pickle file."""
+    
+    xml_lexicon = read_xml(xml, value_element)
+    SaldoLexicon.save_to_picklefile(filename, xml_lexicon)
+
 ######################################################################
 
 if __name__ == '__main__':
-    util.run.main(lemmatize, read_xml=read_xml)
+    util.run.main(lemmatize, xml_to_pickle=xml_to_pickle)
 
 
 
