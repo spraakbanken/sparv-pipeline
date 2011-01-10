@@ -7,4 +7,6 @@
 Tränad av: Joakim Nivre
 Tränad på: Talbanken-05, med SUC-taggar
 Modell: Maltparser-modell
-Format: Maltparser-format 
+Format: Maltparser-format
+Hämtad från: http://maltparser.org/mco/swedish_parser/swemalt.html
+Version: July 15 2010
