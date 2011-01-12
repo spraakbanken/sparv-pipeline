@@ -163,7 +163,7 @@ def read_json(json, lemma_key='head', tagset='SUC', verbose=True):
     if verbose: util.log.info("OK, read")
     return lexicon
 
-def read_xml(xml, value_element='gf', tagset='SUC', verbose=True):
+def read_xml(xml='saldom.xml', value_element='gf', tagset='SUC', verbose=True):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml).
     Return a lexicon dictionary, {wordform: {value: set(possible tags)}}
      - value_element is the XML element for the value (currently: 'gf' for baseform, 'lem' for lemgram or 'saldo' for SALDO id)
