@@ -6,8 +6,6 @@ from glob import glob
 import util
 from util.mysql_wrapper import MySQL
 
-DBDIR = "db"
-
 def create_files(master, localdir, globaldir, glossadir):
     util.log.info("Creating Glossa files in: %s", glossadir)
     util.system.clear_directory(glossadir)
@@ -24,6 +22,8 @@ def create_files(master, localdir, globaldir, glossadir):
         destfile = os.path.join(glossadir, name)
         with open(destfile, "w") as F:
             subprocess.check_call(cat, stdout=F)
+    if not glossafiles:
+        util.log.warning("No files to create")
 
 
 def create_mysql(db_name, master, class_table, text_table, corpus_files):
@@ -36,9 +36,9 @@ def create_mysql(db_name, master, class_table, text_table, corpus_files):
     mysql.create_table(MASTERclass, **MYSQL_CLASS)
     mysql.create_table(MASTERtext,  **MYSQL_TEXT)
     for corpus in corpus_files:
-        ntokens = len(util.read_annotation(os.path.join(DBDIR, corpus, util.TOKEN))
-        mysql.add_row(MASTERclass, MYSQL_CLASS_ROW(corpus, freq=ntokens))
-        mysql.add_row(MASTERtext,  MYSQL_TEXT_ROW(corpus, wordcount=ntokens))
+        ntokens = len(util.read_annotation(corpus + "." + util.TOKEN))
+        mysql.add_row(MASTERclass, MYSQL_CLASS_ROW(os.path.basename(corpus), freq=ntokens))
+        mysql.add_row(MASTERtext,  MYSQL_TEXT_ROW(os.path.basename(corpus), wordcount=ntokens))
 
 
 def create_align(db_name, master, align_table, lang1, lang2, base_files):
@@ -49,8 +49,8 @@ def create_align(db_name, master, align_table, lang1, lang2, base_files):
     for base in base_files:
         links = {lang1: {}, lang2: {}}
         for lang in links:
-            for edge, nr in util.read_annotation_iteritems(DBDIR, base+"_"+lang, util.LINK+"."+util.N)
-            links[lang].setdefault(nr, []).append(edge)
+            for edge, nr in util.read_annotation_iteritems(base + "_" + lang + "." + util.LINK + "." + util.N):
+                links[lang].setdefault(nr, []).append(edge)
 
         for nr in set(links[lang1]) ^ set(links[lang2]):
             util.log.warning("Missing link: %s", nr)
