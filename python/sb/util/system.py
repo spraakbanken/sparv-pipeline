@@ -102,15 +102,18 @@ def find_binary(name, search_paths=(), binary_names=(), executable=True):
 
 
 def rsync(local, host, remote=None):
+    """ Transfer files and/or directories using rsync.
+    When syncing directories, extraneous files in destination dirs are deleted.
+    """
     if remote is None:
         remote = local
     if os.path.isdir(local):
         remote_dir = os.path.dirname(remote)
-        util.log.info("Copying directory: %s => %s", local, remote)
+        log.info("Copying directory: %s => %s", local, remote)
         args = ["--recursive", "--delete", "%s/" % local]
     else:
         remote_dir = os.path.dirname(remote)
-        util.log.info("Copying file: %s => %s", local, remote)
+        log.info("Copying file: %s => %s", local, remote)
         args = [local]
     subprocess.check_call(["ssh", host, "mkdir -p '%s'" % remote_dir])
     subprocess.check_call(["rsync"] + args + ["%s:%s" % (host, remote)])
