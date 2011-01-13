@@ -58,11 +58,16 @@ def constant(chunk, out, value=None):
     util.write_annotation(out, ((key, value) for key in util.read_annotation_iterkeys(chunk)))
     
 
+def affix(chunk, out, prefix="", suffix=""):
+    """Add prefix and/or suffix to annotation."""
+    util.write_annotation(out, ((key, prefix + val + suffix) for (key, val) in util.read_annotation_iteritems(chunk)))
+
 if __name__ == '__main__':
     util.run.main(text_spans=text_spans,
                   translate_tag=translate_tag,
                   chain=chain,
                   select=select,
                   constant=constant,
+                  affix=affix
                   )
 
