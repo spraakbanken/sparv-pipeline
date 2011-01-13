@@ -52,6 +52,7 @@ def renumber_by_shuffle(out, chunks, prefix=""):
 
 
 def number_by_parent(out, chunks, parent_order, parent_children, prefix=""):
+    """ Number chunks by (parent order, chunk order). """
     PARENT_CHILDREN = util.read_annotation(parent_children)
     CHILD_ORDER = dict((cid, (pnr, cnr))
                        for (pid, pnr) in util.read_annotation_iteritems(parent_order)
