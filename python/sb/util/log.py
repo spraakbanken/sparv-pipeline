@@ -74,6 +74,9 @@ def statistics():
         output(constants.COLORS["red"] + constants.COLORS["bold"] + "%d ERRORS were reported" + constants.COLORS["default"], totalerrors)
     if totalwarnings or totalerrors:
         save_to_logfile()
+        raise_error = "" #raw_input("Press enter to continue. Enter anything else to break: ")
+        if raise_error.strip() != "":
+            raise StandardError
     line("^")
     newline()
     global lastmessage

@@ -6,22 +6,29 @@ import log
 class MySQL(object):
     binaries = ('mysql', 'mysql5')
     
-    def __init__(self, database, username=None, password=None, encoding="ascii"):
+    def __init__(self, database, username=None, password=None, encoding="ascii", output=""):
         self.arguments = [database]
         if username:
             self.arguments += ['-u', username]
         if password:
             self.arguments += ['-p', password]
         self.encoding = encoding
+        self.output = output
 
     def execute(self, sql, *args):
-        out, err = system.call_binary(self.binaries[0], self.arguments, sql % args,
+        if self.output:
+            # Write SQL statement to file
+            with open(self.output, "a") as outfile:
+                print >>outfile, sql
+        else:
+            # Execute SQL statement
+            out, err = system.call_binary(self.binaries[0], self.arguments, sql % args,
                                       binary_names=self.binaries, encoding=self.encoding)
-        if out:
-            log.info("MySQL: %s", out)
-        if err:
-            log.error("MySQL: %s", err)
-        return out
+            if out:
+                log.info("MySQL: %s", out)
+            if err:
+                log.error("MySQL: %s", err)
+        #return out
 
     def create_table(self, table, columns, primary=None, keys=None, **kwargs):
         sqlcolumns = [u"  %s %s %s DEFAULT %s" %

@@ -26,13 +26,13 @@ def create_files(master, localdir, globaldir, glossadir):
         util.log.warning("No files to create")
 
 
-def create_mysql(db_name, master, class_table, text_table, corpus_files):
+def create_mysql(db_name, master, class_table, text_table, corpus_files, sqlfile):
     if isinstance(corpus_files, basestring):
         corpus_files = corpus_files.split()
     MASTERclass = MASTERtable(master, class_table)
     MASTERtext  = MASTERtable(master, text_table)
     util.log.info("Creating MySQL tables: %s, %s", MASTERclass, MASTERtext)
-    mysql = MySQL(db_name, encoding=util.UTF8)
+    mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile)
     mysql.create_table(MASTERclass, **MYSQL_CLASS)
     mysql.create_table(MASTERtext,  **MYSQL_TEXT)
     for corpus in corpus_files:
@@ -41,7 +41,7 @@ def create_mysql(db_name, master, class_table, text_table, corpus_files):
         mysql.add_row(MASTERtext,  MYSQL_TEXT_ROW(os.path.basename(corpus), wordcount=ntokens))
 
 
-def create_align(db_name, master, align_table, lang1, lang2, base_files):
+def create_align(db_name, master, align_table, lang1, lang2, base_files, sqlfile):
     if isinstance(base_files, basestring):
         base_files = base_files.split()
     util.log.info("Reading links")
@@ -64,10 +64,9 @@ def create_align(db_name, master, align_table, lang1, lang2, base_files):
 
     MASTERalign = MASTERtable(master, align_table)
     util.log.info("Creating MySQL table with %d rows: %s", len(rows), MASTERalign)
-    mysql = MySQL(db_name, encoding=util.UTF8)
+    mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile)
     mysql.create_table(MASTERalign, **MYSQL_ALIGN)
     mysql.add_row(MASTERalign, *rows)
-
 
 def MASTERtable(master, name):
     return master.upper() + name
