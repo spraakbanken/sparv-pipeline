@@ -9,7 +9,7 @@ import os
 import itertools
 import cPickle as pickle
 
-def lemmatize(word, msd, out, model, delimiter="|", affix="", precision=":%.3f", filter=None):
+def lemmatize(word, msd, out, model, delimiter="|", affix="|", precision=":%.3f", filter=None):
     """Use the Saldo lexicon model to lemmatize pos-tagged words.
       - word, msd are existing annotations for wordforms and part-of-speech
       - out is the resulting annotation file
@@ -45,7 +45,7 @@ def lemmatize(word, msd, out, model, delimiter="|", affix="", precision=":%.3f",
                          for (prec, lemma) in lemma_precisions]
         else:
             lemmainfo = [lemma for (prec, lemma) in lemma_precisions]
-        OUT[tokid] = affix + delimiter.join(lemmainfo) + affix  # TODO: Tomt resultat ska inte vara ||, utan bara | enligt CWB-manualen
+        OUT[tokid] = affix + delimiter.join(lemmainfo) + affix if lemmainfo else affix
     util.write_annotation(out, OUT)
 
 
