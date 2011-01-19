@@ -55,17 +55,17 @@ def export_to_vrt(out, order, annotations, columns=(), structs=(), encoding=CWB_
                 new_attr_values[elem] = ''.join(' %s="%s"' % (attr, cols[n])
                                                 for (attr, n) in attrs if cols.get(n))
                 if old_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
-                    print >>OUT, "</%s>" % elem
+                    print >>OUT, "</%s>" % elem.encode(encoding)
                     old_attr_values[elem] = None
             for elem, _attrs in reversed(structs):
                 if new_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
-                    print >>OUT, "<%s%s>" % (elem, new_attr_values[elem])
+                    print >>OUT, "<%s%s>" % (elem.encode(encoding), new_attr_values[elem].encode(encoding))
                     old_attr_values[elem] = new_attr_values[elem]
             line = "\t".join(cols.get(n, UNDEF) for n in column_nrs)
             print >>OUT, line.encode(encoding)
         for elem, _attrs in structs:
             if old_attr_values[elem]:
-                print >>OUT, "</%s>" % elem
+                print >>OUT, "</%s>" % elem.encode(encoding)
 
     util.log.info("Exported %d tokens, %d columns, %d structs: %s", len(tokens), len(column_nrs), len(structs), out)
 
@@ -76,6 +76,7 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
     Encode a number of VRT files, by calling cwb-encode.
     params, structs describe the attributes that are exported in the VRT files.
     """
+    assert master != "", "Master not specified"
     assert bool(vrtdir) != bool(vrtfiles), "Either VRTDIR or VRTFILES must be specified"
     if isinstance(vrtfiles, basestring): vrtfiles = vrtfiles.split()
     if isinstance(columns, basestring): columns = columns.split()
@@ -105,7 +106,18 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
     index_args = ["-V", "-r", registry, master.upper()]
     util.system.call_binary("cwb-makeall", index_args, verbose=True)
     util.log.info("Encoded and indexed %d columns, %d structs", len(columns), len(structs))
-
+    
+    util.log.info("Compressing corpus files...")
+    compress_args = ["-A", master.upper()]
+    util.system.call_binary("cwb-huffcode", compress_args)
+    util.system.call_binary("cwb-compress-rdx", compress_args)
+    util.log.info("Compression done. Removing uncompressed corpus files...")
+    to_delete =  glob(os.path.join(corpus_datadir, "*.corpus"))
+    to_delete += glob(os.path.join(corpus_datadir, "*.corpus.rev"))
+    to_delete += glob(os.path.join(corpus_datadir, "*.corpus.rdx"))
+    for del_file in to_delete:
+        os.remove(del_file)
+    util.log.info("Done removing files.")
 
 def cwb_align(master, other, link, aligndir=ALIGNDIR):
     """

@@ -36,7 +36,8 @@ def create_mysql(db_name, master, class_table, text_table, corpus_files, sqlfile
     mysql.create_table(MASTERclass, **MYSQL_CLASS)
     mysql.create_table(MASTERtext,  **MYSQL_TEXT)
     for corpus in corpus_files:
-        ntokens = len(util.read_annotation(corpus + "." + util.TOKEN))
+        ntokens = int(subprocess.check_output(["wc", "-l", corpus + "." + util.TOKEN]).split()[0])
+        #ntokens = len(util.read_annotation(corpus + "." + util.TOKEN))
         mysql.add_row(MASTERclass, MYSQL_CLASS_ROW(os.path.basename(corpus), freq=ntokens))
         mysql.add_row(MASTERtext,  MYSQL_TEXT_ROW(os.path.basename(corpus), wordcount=ntokens))
 
