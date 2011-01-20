@@ -29,6 +29,8 @@ def create_files(master, localdir, globaldir, glossadir):
 def create_mysql(db_name, master, class_table, text_table, corpus_files, sqlfile):
     if isinstance(corpus_files, basestring):
         corpus_files = corpus_files.split()
+    if os.path.exists(sqlfile):
+        os.remove(sqlfile)
     MASTERclass = MASTERtable(master, class_table)
     MASTERtext  = MASTERtable(master, text_table)
     util.log.info("Creating MySQL tables: %s, %s", MASTERclass, MASTERtext)
