@@ -44,7 +44,7 @@ def renumber_by_attribute(out, chunks, prefix="", start=START_DEFAULT):
 
 def renumber_by_shuffle(out, chunks, prefix="", start=START_DEFAULT):
     """ Renumber already numbered chunks, in new random order.
-        Retains the connection between parallelly numbered chunks. """
+        Retains the connection between parallelly numbered chunks by using the values as random seed. """
     def order(_chunknr, _edge, value):
         random.seed(value)
         return random.random(), natural_sorting(value)
