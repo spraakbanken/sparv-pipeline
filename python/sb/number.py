@@ -5,8 +5,9 @@ import random
 import util
 import re
 
+START_DEFAULT = 1
 
-def number_by_position(out, texts, chunks, prefix=""):
+def number_by_position(out, texts, chunks, prefix="", start=START_DEFAULT):
     """ Number chunks by their position. """
     if isinstance(chunks, basestring): chunks = chunks.split()
     if isinstance(texts, basestring): texts = texts.split()
@@ -21,37 +22,37 @@ def number_by_position(out, texts, chunks, prefix=""):
         value = anchors[chunknr][util.edgeStart(edge)] # Position in corpus
         return (chunknr, value)
 
-    read_chunks_and_write_new_ordering(out, chunks, order, prefix)
+    read_chunks_and_write_new_ordering(out, chunks, order, prefix, start)
 
 
-def number_by_random(out, chunks, prefix=""):
+def number_by_random(out, chunks, prefix="", start=START_DEFAULT):
     """ Number chunks randomly. """
     def order(chunknr, edge, _value):
         random.seed(edge)
         return (chunknr, random.random())
 
-    read_chunks_and_write_new_ordering(out, chunks, order, prefix)
+    read_chunks_and_write_new_ordering(out, chunks, order, prefix, start)
 
 
-def renumber_by_attribute(out, chunks, prefix=""):
+def renumber_by_attribute(out, chunks, prefix="", start=START_DEFAULT):
     """ Renumber chunks, with the order determined by an attribute. """
     def order(_chunknr, _edge, value):
         return natural_sorting(value)
 
-    read_chunks_and_write_new_ordering(out, chunks, order, prefix)
+    read_chunks_and_write_new_ordering(out, chunks, order, prefix, start)
 
 
-def renumber_by_shuffle(out, chunks, prefix=""):
+def renumber_by_shuffle(out, chunks, prefix="", start=START_DEFAULT):
     """ Renumber already numbered chunks, in new random order.
         Retains the connection between parallelly numbered chunks. """
     def order(_chunknr, _edge, value):
         random.seed(value)
         return random.random(), natural_sorting(value)
 
-    read_chunks_and_write_new_ordering(out, chunks, order, prefix)
+    read_chunks_and_write_new_ordering(out, chunks, order, prefix, start)
 
 
-def number_by_parent(out, chunks, parent_order, parent_children, prefix=""):
+def number_by_parent(out, chunks, parent_order, parent_children, prefix="", start=START_DEFAULT):
     """ Number chunks by (parent order, chunk order). """
     PARENT_CHILDREN = util.read_annotation(parent_children)
     CHILD_ORDER = dict((cid, (pnr, cnr))
@@ -61,10 +62,10 @@ def number_by_parent(out, chunks, parent_order, parent_children, prefix=""):
     def order(chunknr, edge, _value):
         return (chunknr, CHILD_ORDER.get(edge))
 
-    read_chunks_and_write_new_ordering(out, chunks, order, prefix)
+    read_chunks_and_write_new_ordering(out, chunks, order, prefix, start)
 
 
-def read_chunks_and_write_new_ordering(out, chunks, order, prefix=""):
+def read_chunks_and_write_new_ordering(out, chunks, order, prefix="", start=START_DEFAULT):
     if isinstance(chunks, basestring):
         chunks = chunks.split()
 
@@ -74,9 +75,9 @@ def read_chunks_and_write_new_ordering(out, chunks, order, prefix=""):
             val = order(chunknr, edge, val)
             new_order[val].append(edge)
 
-    nr_digits = len(str(len(new_order)))
+    nr_digits = len(str(len(new_order) + start))
     util.write_annotation(out, ((edge, "%s%0*d" % (prefix, nr_digits, nr))
-                                for nr, key in enumerate(sorted(new_order))
+                                for nr, key in enumerate(sorted(new_order), start)
                                 for edge in new_order[key]))
 
 def natural_sorting(astr):
