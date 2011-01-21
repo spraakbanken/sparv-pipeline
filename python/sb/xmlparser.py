@@ -230,7 +230,7 @@ class XMLParser(HTMLParser):
             # We skip everything in the header for now, so no need to warn about a skipped comment here
             # util.log.warning(self.pos() + "[SKIPPING] Comment in TEI header")
             return
-        util.log.warning(self.pos() + "Comment: %d characters wide", len(comment))
+        util.log.info(self.pos() + "Comment: %d characters wide", len(comment))
         self.handle_starttag('comment', [('value', comment)])
         self.handle_endtag('comment')
 
