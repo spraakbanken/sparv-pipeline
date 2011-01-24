@@ -11,6 +11,7 @@ CORPUS_REGISTRY = os.environ.get('CORPUS_REGISTRY')
 def install_corpus(host, master, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY, target_datadir=None, target_registry=None):
     """
     Install CWB datafiles on server, by rsyncing datadir and registry.
+    If local and remote paths differ, target_datadir and target_registry must be specified.
     """
     if not master:
         util.log.error("Missing master. Corpus not installed.")
@@ -18,19 +19,24 @@ def install_corpus(host, master, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY, 
         target = os.path.join(target_datadir, master) if target_datadir else None
         util.system.rsync(os.path.join(datadir, master), host, target)
         
-        # Fix absolute paths in registry file
-        with open(os.path.join(registry, master), "r") as registry_in:
-            with open(os.path.join(registry, master + ".tmp"), "w") as registry_out:
-                for line in registry_in:
-                    if line.startswith("HOME"):
-                        line = re.sub(r"HOME .*(\/.+)", r"HOME " + target_datadir + r"\1", line)
-                    elif line.startswith("INFO"):
-                        line = re.sub(r"INFO .*(\/.+)\/\.info", r"INFO " + target_datadir + r"\1/.info", line)
-                    
-                    registry_out.write(line)
+        target_registry_file = os.path.join(target_registry, master) if target_registry else os.path.join(registry, master)
+        source_registry_file = os.path.join(registry, master + ".tmp") if target_registry else os.path.join(registry, master)
         
-        util.system.rsync(os.path.join(registry, master + ".tmp"), host, os.path.join(target_registry, master))
-        os.remove(os.path.join(registry, master + ".tmp"))
+        if target_registry:
+            # Fix absolute paths in registry file
+            with open(os.path.join(registry, master), "r") as registry_in:
+                with open(os.path.join(registry, master + ".tmp"), "w") as registry_out:
+                    for line in registry_in:
+                        if line.startswith("HOME"):
+                            line = re.sub(r"HOME .*(\/.+)", r"HOME " + target_datadir + r"\1", line)
+                        elif line.startswith("INFO"):
+                            line = re.sub(r"INFO .*(\/.+)\/\.info", r"INFO " + target_datadir + r"\1/.info", line)
+                        
+                        registry_out.write(line)
+        
+        util.system.rsync(source_registry_file, host, target_registry_file)
+        if target_registry:
+            os.remove(os.path.join(registry, master + ".tmp"))
 
 def install_directory(host, directory):
     """
