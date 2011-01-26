@@ -63,8 +63,12 @@ def affix(chunk, out, prefix="", suffix=""):
     util.write_annotation(out, ((key, prefix + val + suffix) for (key, val) in util.read_annotation_iteritems(chunk)))
 
 def replace(chunk, out, find, sub=""):
-    """Replace annotation."""
+    """Find and replace annotation. Find string must match whole annotation."""
     util.write_annotation(out, ((key, sub if val == find else val) for (key, val) in util.read_annotation_iteritems(chunk)))
+
+def find_replace(chunk, out, find, sub=""):
+    """Find and replace parts of or whole annotation."""
+    util.write_annotation(out, ((key, val.replace(find, sub)) for (key, val) in util.read_annotation_iteritems(chunk)))
 
 if __name__ == '__main__':
     util.run.main(text_spans=text_spans,
@@ -73,6 +77,7 @@ if __name__ == '__main__':
                   select=select,
                   constant=constant,
                   affix=affix,
-                  replace=replace
+                  replace=replace,
+                  find_replace=find_replace
                   )
 

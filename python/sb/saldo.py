@@ -177,12 +177,11 @@ def read_xml(xml='saldom.xml', value_element='gf', tagset='SUC', verbose=True):
     if verbose: util.log.info("Reading XML lexicon")
     lexicon = {}
     
-    context = cet.iterparse(xml, events=("start", "end"))
+    context = cet.iterparse(xml, events=("start", "end")) # "start" needed to save reference to root element
     context = iter(context)
     event, root = context.next()
-    i = 0
+
     for event, elem in context:
-        i += 1
         if event == "end":
             if elem.tag == 'LexicalEntry':
                 valuelist = elem.findall(value_element)
