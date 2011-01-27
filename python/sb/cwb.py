@@ -71,7 +71,7 @@ def export_to_vrt(out, order, annotations, columns=(), structs=(), encoding=CWB_
 
 
 def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
-               encoding=CWB_ENCODING, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY, skip_validation=True):
+               encoding=CWB_ENCODING, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY, skip_compress=False, skip_validation=False):
     """
     Encode a number of VRT files, by calling cwb-encode.
     params, structs describe the attributes that are exported in the VRT files.
@@ -107,20 +107,21 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
     util.system.call_binary("cwb-makeall", index_args, verbose=True)
     util.log.info("Encoded and indexed %d columns, %d structs", len(columns), len(structs))
     
-    util.log.info("Compressing corpus files...")
-    compress_args = ["-A", master.upper()]
-    if skip_validation:
-        compress_args.insert(0, "-T")
-        util.log.info("Skipping validation")
-    util.system.call_binary("cwb-huffcode", compress_args)
-    util.system.call_binary("cwb-compress-rdx", compress_args)
-    util.log.info("Compression done. Removing uncompressed corpus files...")
-    to_delete =  glob(os.path.join(corpus_datadir, "*.corpus"))
-    to_delete += glob(os.path.join(corpus_datadir, "*.corpus.rev"))
-    to_delete += glob(os.path.join(corpus_datadir, "*.corpus.rdx"))
-    for del_file in to_delete:
-        os.remove(del_file)
-    util.log.info("Done removing files.")
+    if skip_compress:
+        util.log.info("Compressing corpus files...")
+        compress_args = ["-A", master.upper()]
+        if skip_validation:
+            compress_args.insert(0, "-T")
+            util.log.info("Skipping validation")
+        util.system.call_binary("cwb-huffcode", compress_args)
+        util.system.call_binary("cwb-compress-rdx", compress_args)
+        util.log.info("Compression done. Removing uncompressed corpus files...")
+        to_delete =  glob(os.path.join(corpus_datadir, "*.corpus"))
+        to_delete += glob(os.path.join(corpus_datadir, "*.corpus.rev"))
+        to_delete += glob(os.path.join(corpus_datadir, "*.corpus.rdx"))
+        for del_file in to_delete:
+            os.remove(del_file)
+        util.log.info("Done removing files.")
 
 def cwb_align(master, other, link, aligndir=ALIGNDIR):
     """
