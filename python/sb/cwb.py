@@ -71,7 +71,7 @@ def export_to_vrt(out, order, annotations, columns=(), structs=(), encoding=CWB_
 
 
 def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
-               encoding=CWB_ENCODING, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY, skip_validation=False):
+               encoding=CWB_ENCODING, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY, skip_validation=True):
     """
     Encode a number of VRT files, by calling cwb-encode.
     params, structs describe the attributes that are exported in the VRT files.
