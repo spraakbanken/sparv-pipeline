@@ -37,8 +37,9 @@ def line(ch):
 
 def output(msg="", *args):
     """Prints a message (plus newline) on stderr."""
-    print >>sys.stderr, process_id_prefix + "|", msg % args
-    m = process_id_prefix + "| " + (msg % args)
+    msge = (msg % args).encode(constants.UTF8)
+    print >>sys.stderr, process_id_prefix + "|", msge
+    m = process_id_prefix + "| " + msge
     global lastmessage
     lastmessage.append(m)
 
@@ -91,7 +92,7 @@ def save_to_logfile():
         for l in lastmessage:
             for v in constants.COLORS.values():
                 l = l.replace(v, "")
-            o.write(l.encode(constants.UTF8) + "\n")
+            o.write(l + "\n")
         o.write(process_id_prefix + "^" * 80)
         o.write("\n\n\n")
 
