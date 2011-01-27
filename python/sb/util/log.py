@@ -37,7 +37,7 @@ def line(ch):
 
 def output(msg="", *args):
     """Prints a message (plus newline) on stderr."""
-    print >>sys.stderr, process_id_prefix + "|", msg.encode(constants.UTF8) % args
+    print >>sys.stderr, process_id_prefix + "|", msg % args
     m = process_id_prefix + "| " + (msg % args)
     global lastmessage
     lastmessage.append(m)
