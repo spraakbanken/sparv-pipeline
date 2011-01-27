@@ -34,7 +34,7 @@ def maltparse(maltjar, model, out, word, pos, msd, sentence, encoding=util.UTF8)
         form = WORD[tok]
         lemma = UNDEF
         pos = cpos = POS[tok]
-        feats = re.sub(r"[ ,.]", "|", MSD[tok])
+        feats = re.sub(r"[ ,.]", "|", MSD[tok]).replace("+", "/")
         return TAG_SEP.join((str(nr), form, lemma, cpos, pos, feats))
 
     stdin = SENT_SEP.join(TOK_SEP.join(conll_token(n+1, tok) for n, tok in enumerate(sent))

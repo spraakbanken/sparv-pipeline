@@ -25,7 +25,8 @@ def mkIdent(prefix, identifiers=()):
     while True:
         ident = prefix
         n = random.getrandbits(_ANCHORLEN * 4)
-        ident = prefix + hex(n)[2:-1].zfill(_ANCHORLEN)
+        ident = prefix + hex(n)[2:-1].zfill(_ANCHORLEN) # IMPORTANT: [2:-1] removes trailing 'L'. This is needed in Python 2.x.
+                                                        # If this code will be translated into 3.x, it must be changed into [2:]!
         if ident not in identifiers:
             return ident
 
