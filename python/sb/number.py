@@ -65,6 +65,15 @@ def number_by_parent(out, chunks, parent_order, parent_children, prefix="", star
     read_chunks_and_write_new_ordering(out, chunks, order, prefix, start)
 
 
+def number_relative(out, chunks, parent_children, prefix="", start=START_DEFAULT):
+    """ Number chunks by their relative position within a parent. """
+    PARENT_CHILDREN = util.read_annotation(parent_children)
+    
+    util.write_annotation(out, ((child, "%s%0*d" % (prefix, len(str(len(PARENT_CHILDREN[parent].split()) - 1 + start)), cnr))
+                                for parent in PARENT_CHILDREN
+                                    for cnr, child in enumerate(PARENT_CHILDREN[parent].split(), start)))
+
+
 def read_chunks_and_write_new_ordering(out, chunks, order, prefix="", start=START_DEFAULT):
     if isinstance(chunks, basestring):
         chunks = chunks.split()
@@ -75,13 +84,15 @@ def read_chunks_and_write_new_ordering(out, chunks, order, prefix="", start=STAR
             val = order(chunknr, edge, val)
             new_order[val].append(edge)
 
-    nr_digits = len(str(len(new_order) + start))
+    nr_digits = len(str(len(new_order) - 1 + start))
     util.write_annotation(out, ((edge, "%s%0*d" % (prefix, nr_digits, nr))
                                 for nr, key in enumerate(sorted(new_order), start)
                                 for edge in new_order[key]))
 
+
 def natural_sorting(astr):
     return tuple(int(s) if s.isdigit() else s for s in re.split(r'(\d+)', astr))
+
 
 ######################################################################
 
@@ -91,5 +102,6 @@ if __name__ == '__main__':
                   attribute=renumber_by_attribute,
                   shuffle=renumber_by_shuffle,
                   parent=number_by_parent,
+                  relative=number_relative,
                   )
 
