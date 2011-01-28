@@ -65,7 +65,7 @@ def number_by_parent(out, chunks, parent_order, parent_children, prefix="", star
     read_chunks_and_write_new_ordering(out, chunks, order, prefix, start)
 
 
-def number_relative(out, chunks, parent_children, prefix="", start=START_DEFAULT):
+def number_relative(out, parent_children, prefix="", start=START_DEFAULT):
     """ Number chunks by their relative position within a parent. """
     PARENT_CHILDREN = util.read_annotation(parent_children)
     
