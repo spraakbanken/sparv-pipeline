@@ -71,7 +71,7 @@ def export_to_vrt(out, order, annotations, columns=(), structs=(), encoding=CWB_
 
 
 def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
-               encoding=CWB_ENCODING, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY, skip_compress=False, skip_validation=False):
+               encoding=CWB_ENCODING, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY, skip_compression=False, skip_validation=False):
     """
     Encode a number of VRT files, by calling cwb-encode.
     params, structs describe the attributes that are exported in the VRT files.
@@ -107,7 +107,7 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
     util.system.call_binary("cwb-makeall", index_args, verbose=True)
     util.log.info("Encoded and indexed %d columns, %d structs", len(columns), len(structs))
     
-    if not skip_compress:
+    if not skip_compression:
         util.log.info("Compressing corpus files...")
         compress_args = ["-A", master.upper()]
         if skip_validation:
