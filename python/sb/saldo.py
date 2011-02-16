@@ -51,10 +51,12 @@ def lemmatize(word, msd, out, model, delimiter="|", affix="|", precision=":%.3f"
                 annotation_precisions = itertools.takewhile(ismax, annotation_precisions)
         
         if precision:
-            annotation_info = [lemma + precision % prec
-                         for (prec, lemma) in annotation_precisions]
+            annotation_info = [a + precision % prec
+                               for (prec, annotation) in annotation_precisions
+                                for a in annotation]
         else:
-            annotation_info = [lemma for (prec, lemma) in annotation_precisions]
+            annotation_info = [a for (prec, annotation) in annotation_precisions
+                               for a in annotation]
                 
         looking_for = [(annotation, words, REF[tokid]) for (annotation, _, wordslist) in ann_tags_words if wordslist for words in wordslist]
         
@@ -70,10 +72,10 @@ def lemmatize(word, msd, out, model, delimiter="|", affix="|", precision=":%.3f"
                         # Current word is the last word we're looking for
                         todel.append(i)
                         if x[2]:
-                            annotation_info.append(x[0].replace("|", ":" + x[2] + "|") + ":" + x[2])
-                        outstack[waiting]["annotation"].append(x[0])
+                            annotation_info.extend(a + ":" + x[2] for a in x[0])
+                        outstack[waiting]["annotation"].extend(x[0])
                     elif x[2]:
-                        looking_for.append( (x[0].replace("|", ":" + x[2] + "|") + ":" + x[2], x[1][:], "") )
+                        looking_for.append( ([a + ":" + x[2] for a in x[0]], x[1][:], "") )
                 else:
                     todel.append(i)
 
@@ -85,8 +87,6 @@ def lemmatize(word, msd, out, model, delimiter="|", affix="|", precision=":%.3f"
             if len(outstack[waiting]["looking_for"]) == 0:
                 OUT[waiting] = affix + delimiter.join(outstack[waiting]["annotation"]) + affix if outstack[waiting]["annotation"] else affix
                 del outstack[waiting]
-        
-        #annotation_info = [x.replace(" ", "_") for x in annotation_info]
         
         if len(looking_for) > 0:
             outstack.setdefault(tokid, {})["theword"] = theword
@@ -101,7 +101,7 @@ def lemmatize(word, msd, out, model, delimiter="|", affix="|", precision=":%.3f"
     util.write_annotation(out, OUT)
 
 
-# The minimun precision difference for two lemmas to be considered equal
+# The minimun precision difference for two annotations to be considered equal
 PRECISION_DIFF = 0.01
 
 
@@ -116,10 +116,10 @@ def get_precision(msd, msdtags):
             0.25)
 
 
-def normalize_precision(lemmas):
-    """Normalize the rankings in the lemma list so that the sum is 1."""
-    total_precision = sum(prec for (prec, _lemma) in lemmas)
-    return [(prec/total_precision, lemma) for (prec, lemma) in lemmas]
+def normalize_precision(annotations):
+    """Normalize the rankings in the annotation list so that the sum is 1."""
+    total_precision = sum(prec for (prec, _annotation) in annotations)
+    return [(prec/total_precision, annotation) for (prec, annotation) in annotations]
 
 
 ######################################################################
@@ -154,7 +154,7 @@ class SaldoLexicon(object):
     def save_to_picklefile(saldofile, lexicon, protocol=1, verbose=True):
         """Save a Saldo lexicon to a Pickled file.
         The input lexicon should be a dict:
-          - lexicon = {wordform: {annotation: (set(possible tags), set(tuples with following words))}}
+          - lexicon = {wordform: {(annotation): (set(possible tags), set(tuples with following words))}}
         """
         if verbose: util.log.info("Saving Saldo lexicon in Pickle format")
         
@@ -162,13 +162,11 @@ class SaldoLexicon(object):
         for word in lexicon:
             annotations = []
             for annotation, extra in lexicon[word].items():
-                taglist =  (PART_DELIM3).join(sorted(extra[0]))
-                wordlist = (PART_DELIM2).join([(PART_DELIM3).join(x) for x in sorted(extra[1])])
-                annotations.append( (PART_DELIM1).join([annotation, taglist, wordlist]) )
-            """
-            annotations = [PART_DELIM.join([lemma] + sorted(postags))
-                      for lemma, postags in lexicon[word].items()]
-            """
+                annotationlist = PART_DELIM3.join(annotation)
+                taglist =        PART_DELIM3.join(sorted(extra[0]))
+                wordlist =       PART_DELIM2.join([PART_DELIM3.join(x) for x in sorted(extra[1])])
+                annotations.append( PART_DELIM1.join([annotationlist, taglist, wordlist]) )
+            
             picklex[word] = sorted(annotations)
         
         with open(saldofile, "wb") as F:
@@ -203,10 +201,11 @@ def _split_triple(annotation_tag_words):
     except:
         print annotation_tag_words
         assert False
+    annotationlist = [x for x in annotation.split(PART_DELIM3) if x]
     taglist = [x for x in tags.split(PART_DELIM3) if x]
     wordlist = [x.split(PART_DELIM3) for x in words.split(PART_DELIM2) if x]
     
-    return annotation, taglist, wordlist
+    return annotationlist, taglist, wordlist
 
 
 ######################################################################
@@ -214,7 +213,7 @@ def _split_triple(annotation_tag_words):
 
 def read_xml(xml='saldom.xml', annotation_element='gf', tagset='SUC', verbose=True):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml).
-    Return a lexicon dictionary, {wordform: {annotation: ( set(possible tags), set(tuples with following words) )}}
+    Return a lexicon dictionary, {wordform: {(annotation): ( set(possible tags), set(tuples with following words) )}}
      - annotation_element is the XML element for the annotation value (currently: 'gf' for baseform, 'lem' for lemgram or 'saldo' for SALDO id)
      - tagset is the tagset for the possible tags (currently: 'SUC', 'Parole', 'Saldo')
     """
@@ -231,10 +230,8 @@ def read_xml(xml='saldom.xml', annotation_element='gf', tagset='SUC', verbose=Tr
     for event, elem in context:
         if event == "end":
             if elem.tag == 'LexicalEntry':
-                annotationlist = elem.findall(annotation_element)
-                if annotationlist:
-                    annotation = "|".join(v.text for v in annotationlist)
-                else:
+                annotation = tuple(x.text for x in elem.findall(annotation_element))
+                if not annotation:
                     assert False, "Missing annotation"
                     annotation = "UNKNOWN"
                 pos = elem.findtext("pos")
@@ -269,7 +266,7 @@ def read_xml(xml='saldom.xml', annotation_element='gf', tagset='SUC', verbose=Tr
             if elem.tag in ['LexicalEntry', 'frame', 'resFrame']:
                 root.clear()
     
-    test_lemmas(lexicon)
+    test_annotations(lexicon)
     if verbose: util.log.info("OK, read")
     return lexicon
     
@@ -297,15 +294,15 @@ def save_to_cstlemmatizer(cstfile, lexicon, encoding="latin-1", verbose=True):
 def extract_tags(lexicon):
     """Extract the set of all tags that are used in a lexicon.
     The input lexicon should be a dict:
-      - lexicon = {wordform: {lemma: set(possible tags)}}
+      - lexicon = {wordform: {annotation: set(possible tags)}}
     """
     tags = set()
-    for lemmas in lexicon.values():
-        tags.update(*lemmas.values())
+    for annotations in lexicon.values():
+        tags.update(*annotations.values())
     return tags
 
 
-def test_lemmas(lexicon):
+def test_annotations(lexicon):
     for key in testwords:
         util.log.output("%s = %s", key, lexicon.get(key))
 
