@@ -1,25 +1,28 @@
 # -*- coding: utf-8 -*-
 
 """
-A very simple lemmatizer based on Saldo.
+Adds annotations from Saldo.
 """
 
 import util
 import itertools
 import cPickle as pickle
 
-def lemmatize(word, msd, out, model, delimiter="|", affix="|", precision=":%.3f", filter=None, order=None, reference=None):
-    """Use the Saldo lexicon model to lemmatize pos-tagged words.
+def annotate(word, msd, order, reference, out, model, delimiter="|", affix="|", precision=":%.3f", filter=None):
+    """Use the Saldo lexicon model to annotate pos-tagged words.
       - word, msd are existing annotations for wordforms and part-of-speech
+      - order is an existing annotation for the order of the words
+      - reference is an existing annotation for word references, to be used when
+        annotating multi-word units
       - out is the resulting annotation file
       - model is the Saldo model
       - delimiter is the delimiter character to put between ambiguous results
       - affix is an optional character to put before and after results
-      - precision is a format string for how to print the precision for each lemma
+      - precision is a format string for how to print the precision for each annotation
         (use empty string for no precision)
       - filter is an optional filter, currently there are the following values:
-        max: only use the lemmas that are most probable
-        first: only use one lemma; one of the most probable
+        max: only use the annotations that are most probable
+        first: only use one annotation; one of the most probable
     """
     lexicon = SaldoLexicon(model)
     WORD = util.read_annotation(word)
@@ -177,15 +180,15 @@ class SaldoLexicon(object):
     def save_to_textfile(saldofile, lexicon, verbose=True):
         """Save a Saldo lexicon to a space-separated text file.
         The input lexicon should be a dict:
-          - lexicon = {wordform: {lemma: set(possible tags)}}
+          - lexicon = {wordform: {annotation: set(possible tags)}}
         NOT UP TO DATE
         """
         if verbose: util.log.info("Saving Saldo lexicon in text format")
         with open(saldofile, "w") as F:
             for word in sorted(lexicon):
-                lemmas = [PART_DELIM.join([lemma] + sorted(postags))
-                          for lemma, postags in lexicon[word].items()]
-                print >>F, " ".join([word] + lemmas).encode(util.UTF8)
+                annotations = [PART_DELIM.join([annotation] + sorted(postags))
+                          for annotation, postags in lexicon[word].items()]
+                print >>F, " ".join([word] + annotations).encode(util.UTF8)
         if verbose: util.log.info("OK, saved")
 
 
@@ -323,4 +326,4 @@ def xml_to_pickle(xml, annotation_element, filename):
 ######################################################################
 
 if __name__ == '__main__':
-    util.run.main(lemmatize, xml_to_pickle=xml_to_pickle)
+    util.run.main(annotate, xml_to_pickle=xml_to_pickle)
