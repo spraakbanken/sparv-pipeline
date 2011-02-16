@@ -38,12 +38,16 @@ def annotate(word, msd, order, reference, out, model, delimiter="|", affix="|", 
     REF = util.read_annotation(reference)
     
     for tokid, theword in tok_word:
+        print
+        print "*****", theword
         msdtag = MSD[tokid]
         ann_tags_words = lexicon.lookup(theword)
         annotation_precisions = [(get_precision(msdtag, msdtags), annotation)
-                                    for (annotation, msdtags, _) in ann_tags_words]
+                                    for (annotation, msdtags, words) in ann_tags_words if not words]
         annotation_precisions = normalize_precision(annotation_precisions)
         annotation_precisions.sort(reverse=True)
+        
+        print "PREC", annotation_precisions
         
         if filter and annotation_precisions:
             if filter == "first":
@@ -63,10 +67,13 @@ def annotate(word, msd, order, reference, out, model, delimiter="|", affix="|", 
                 
         looking_for = [(annotation, words, REF[tokid]) for (annotation, _, wordslist) in ann_tags_words if wordslist for words in wordslist]
         
+        print "ANNO_info:", annotation_info
+        
         for waiting in outstack.keys():
             todel = []
             i = 0
-            
+            print "ANNO:", outstack[waiting]["annotation"]
+            print "LOOKING:", outstack[waiting]["looking_for"]
             for x in outstack[waiting]["looking_for"]:
                 if x[1][0] == theword:
                     del x[1][0]
@@ -87,8 +94,12 @@ def annotate(word, msd, order, reference, out, model, delimiter="|", affix="|", 
             for x in todel[::-1]:
                 del outstack[waiting]["looking_for"][x]
             
+            print "LOOKING2:", outstack[waiting]["looking_for"]
+            print "ANNO2:", outstack[waiting]["annotation"]
+            
             if len(outstack[waiting]["looking_for"]) == 0:
                 OUT[waiting] = affix + delimiter.join(outstack[waiting]["annotation"]) + affix if outstack[waiting]["annotation"] else affix
+                print "***1 saving", delimiter.join(outstack[waiting]["annotation"])
                 del outstack[waiting]
         
         if len(looking_for) > 0:
@@ -97,9 +108,11 @@ def annotate(word, msd, order, reference, out, model, delimiter="|", affix="|", 
             outstack[tokid]["looking_for"] = looking_for
         else:
             OUT[tokid] = affix + delimiter.join(annotation_info) + affix if annotation_info else affix
+            print "***2 saving", delimiter.join(annotation_info)
 
     for leftover in outstack:
         OUT[leftover] = affix + delimiter.join(outstack[leftover]["annotation"]) + affix if outstack[leftover]["annotation"] else affix
+        print "***3 saving", delimiter.join(outstack[leftover]["annotation"])
 
     util.write_annotation(out, OUT)
 
