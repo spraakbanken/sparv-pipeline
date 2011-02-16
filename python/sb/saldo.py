@@ -5,11 +5,10 @@ A very simple lemmatizer based on Saldo.
 """
 
 import util
-import os
 import itertools
 import cPickle as pickle
 
-def lemmatize(word, msd, out, model, delimiter="|", affix="|", precision=":%.3f", filter=None):
+def lemmatize(word, msd, out, model, delimiter="|", affix="|", precision=":%.3f", filter=None, order=None, reference=None):
     """Use the Saldo lexicon model to lemmatize pos-tagged words.
       - word, msd are existing annotations for wordforms and part-of-speech
       - out is the resulting annotation file
@@ -26,26 +25,79 @@ def lemmatize(word, msd, out, model, delimiter="|", affix="|", precision=":%.3f"
     WORD = util.read_annotation(word)
     MSD = util.read_annotation(msd)
     OUT = {}
-    for tokid, theword in WORD.iteritems():
+    outstack = {}
+    
+    tok_word = WORD.iteritems()
+    if order:
+        order_dict = util.read_annotation(order)
+        tok_word = sorted(tok_word, key=lambda x: order_dict.get(x[0]))
+    
+    REF = util.read_annotation(reference)
+    
+    for tokid, theword in tok_word:
         msdtag = MSD[tokid]
-        lemma_msdtags = lexicon.lookup(theword)
-        lemma_precisions = [(get_precision(lemma, msdtag, msdtags), lemma)
-                  for (lemma, msdtags) in lemma_msdtags]
-        lemma_precisions = normalize_precision(lemma_precisions)
-        lemma_precisions.sort(reverse=True)
-        if filter and lemma_precisions:
+        ann_tags_words = lexicon.lookup(theword)
+        annotation_precisions = [(get_precision(msdtag, msdtags), annotation)
+                                    for (annotation, msdtags, _) in ann_tags_words]
+        annotation_precisions = normalize_precision(annotation_precisions)
+        annotation_precisions.sort(reverse=True)
+        
+        if filter and annotation_precisions:
             if filter == "first":
-                lemma_precisions = lemma_precisions[:1]
+                annotation_precisions = annotation_precisions[:1]
             elif filter == "max":
-                maxprec = lemma_precisions[0][0]
+                maxprec = annotation_precisions[0][0]
                 ismax = lambda lemprec: lemprec[0] >= maxprec - PRECISION_DIFF
-                lemma_precisions = itertools.takewhile(ismax, lemma_precisions)
+                annotation_precisions = itertools.takewhile(ismax, annotation_precisions)
+        
         if precision:
-            lemmainfo = [lemma + precision % prec
-                         for (prec, lemma) in lemma_precisions]
+            annotation_info = [lemma + precision % prec
+                         for (prec, lemma) in annotation_precisions]
         else:
-            lemmainfo = [lemma for (prec, lemma) in lemma_precisions]
-        OUT[tokid] = affix + delimiter.join(lemmainfo) + affix if lemmainfo else affix
+            annotation_info = [lemma for (prec, lemma) in annotation_precisions]
+                
+        looking_for = [(annotation, words, REF[tokid]) for (annotation, _, wordslist) in ann_tags_words if wordslist for words in wordslist]
+        
+        for waiting in outstack.keys():
+            todel = []
+            i = 0
+            
+            for x in outstack[waiting]["looking_for"]:
+                if x[1][0] == theword:
+                    del x[1][0]
+                    
+                    if len(x[1]) == 0:
+                        # Current word is the last word we're looking for
+                        todel.append(i)
+                        if x[2]:
+                            annotation_info.append(x[0].replace("|", ":" + x[2] + "|") + ":" + x[2])
+                        outstack[waiting]["annotation"].append(x[0])
+                    elif x[2]:
+                        looking_for.append( (x[0].replace("|", ":" + x[2] + "|") + ":" + x[2], x[1][:], "") )
+                else:
+                    todel.append(i)
+
+                i += 1
+                
+            for x in todel[::-1]:
+                del outstack[waiting]["looking_for"][x]
+            
+            if len(outstack[waiting]["looking_for"]) == 0:
+                OUT[waiting] = affix + delimiter.join(outstack[waiting]["annotation"]) + affix if outstack[waiting]["annotation"] else affix
+                del outstack[waiting]
+        
+        #annotation_info = [x.replace(" ", "_") for x in annotation_info]
+        
+        if len(looking_for) > 0:
+            outstack.setdefault(tokid, {})["theword"] = theword
+            outstack[tokid]["annotation"] = annotation_info
+            outstack[tokid]["looking_for"] = looking_for
+        else:
+            OUT[tokid] = affix + delimiter.join(annotation_info) + affix if annotation_info else affix
+
+    for leftover in outstack:
+        OUT[leftover] = affix + delimiter.join(outstack[leftover]["annotation"]) + affix if outstack[leftover]["annotation"] else affix
+
     util.write_annotation(out, OUT)
 
 
@@ -53,10 +105,10 @@ def lemmatize(word, msd, out, model, delimiter="|", affix="|", precision=":%.3f"
 PRECISION_DIFF = 0.01
 
 
-def get_precision(lemma, msd, msdtags):
+def get_precision(msd, msdtags):
     """
-    A very simple way of calculating the precision of a Saldo lemma:
-    if the the word's msdtag is among the lemma's possible msdtags,
+    A very simple way of calculating the precision of a Saldo annotation:
+    if the the word's msdtag is among the annotation's possible msdtags,
     we return a high value (0.75), otherwise a low value (0.25).
     """
     return (0.5 if msd is None else
@@ -93,23 +145,32 @@ class SaldoLexicon(object):
 
     def lookup(self, word):
         """Lookup a word in the lexicon.
-        Returns a list of (lemma, list-of-pos-tags).
+        Returns a list of (annotation, list-of-pos-tags, list-of-tuples-with-words).
         """
-        lemma_tag_pairs = self.lexicon.get(word) or self.lexicon.get(word.lower()) or []
-        return map(_split_lemmatagpair, lemma_tag_pairs)
+        annotation_tag_pairs = self.lexicon.get(word) or self.lexicon.get(word.lower()) or []
+        return map(_split_triple, annotation_tag_pairs)
 
     @staticmethod
     def save_to_picklefile(saldofile, lexicon, protocol=1, verbose=True):
         """Save a Saldo lexicon to a Pickled file.
         The input lexicon should be a dict:
-          - lexicon = {wordform: {lemma: set(possible tags)}}
+          - lexicon = {wordform: {annotation: (set(possible tags), set(tuples with following words))}}
         """
         if verbose: util.log.info("Saving Saldo lexicon in Pickle format")
+        
         picklex = {}
         for word in lexicon:
-            lemmas = [POSTAG_DELIM.join([lemma] + sorted(postags))
+            annotations = []
+            for annotation, extra in lexicon[word].items():
+                taglist =  (PART_DELIM3).join(sorted(extra[0]))
+                wordlist = (PART_DELIM2).join([(PART_DELIM3).join(x) for x in sorted(extra[1])])
+                annotations.append( (PART_DELIM1).join([annotation, taglist, wordlist]) )
+            """
+            annotations = [PART_DELIM.join([lemma] + sorted(postags))
                       for lemma, postags in lexicon[word].items()]
-            picklex[word] = sorted(lemmas)
+            """
+            picklex[word] = sorted(annotations)
+        
         with open(saldofile, "wb") as F:
             pickle.dump(picklex, F, protocol=protocol)
         if verbose: util.log.info("OK, saved")
@@ -119,59 +180,45 @@ class SaldoLexicon(object):
         """Save a Saldo lexicon to a space-separated text file.
         The input lexicon should be a dict:
           - lexicon = {wordform: {lemma: set(possible tags)}}
+        NOT UP TO DATE
         """
         if verbose: util.log.info("Saving Saldo lexicon in text format")
         with open(saldofile, "w") as F:
             for word in sorted(lexicon):
-                lemmas = [POSTAG_DELIM.join([lemma] + sorted(postags))
+                lemmas = [PART_DELIM.join([lemma] + sorted(postags))
                           for lemma, postags in lexicon[word].items()]
                 print >>F, " ".join([word] + lemmas).encode(util.UTF8)
         if verbose: util.log.info("OK, saved")
 
 
-# This is a delimiter that hopefully is never found in a lemma or in a POS tag:
-POSTAG_DELIM = "^"
+# This delimiters that hopefully are never found in an annotation or in a POS tag:
+PART_DELIM = "^"
+PART_DELIM1 = "^1"
+PART_DELIM2 = "^2"
+PART_DELIM3 = "^3"
 
-def _split_lemmatagpair(lemma_tags):
-    lemma_tags = lemma_tags.split(POSTAG_DELIM)
-    lemma = lemma_tags.pop(0)
-    return lemma, lemma_tags
+def _split_triple(annotation_tag_words):
+    try:
+        annotation, tags, words = annotation_tag_words.split(PART_DELIM1)
+    except:
+        print annotation_tag_words
+        assert False
+    taglist = [x for x in tags.split(PART_DELIM3) if x]
+    wordlist = [x.split(PART_DELIM3) for x in words.split(PART_DELIM2) if x]
+    
+    return annotation, taglist, wordlist
 
 
 ######################################################################
 # converting between different file formats
 
-def read_json(json, lemma_key='head', tagset='SUC', verbose=True):
-    """Read the json version of SALDO. Deprecated, use read_xml instead!
-    Return a lexicon dictionary, {wordform: {lemma: set(possible tags)}}
-     - lemma_key is the json key for the lemma (currently: 'head' for baseform or 'id' for lemgram)
-     - tagset is the tagset for the possible tags (currently: 'SUC', 'Parole', 'Saldo')
-    """
-    import cjson
-    tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower())
-    if verbose: util.log.info("Reading JSON lexicon")
-    lexicon = {}
-    with open(json, "r") as F:
-        for line in F:
-            item = cjson.decode(line.decode(util.UTF8))
-            word, lemma, pos, param, inhs = item['word'], item[lemma_key], item['pos'], item['param'], item['inhs']
-            saldotag = " ".join([pos] + inhs + [param])
-            tags = tagmap.get(saldotag)
-            if tags:
-                lexicon.setdefault(word, {}).setdefault(lemma, set()).update(tags)
-    test_lemmas(lexicon)
-    if verbose: util.log.info("OK, read")
-    return lexicon
-
-def read_xml(xml='saldom.xml', value_element='gf', tagset='SUC', verbose=True):
+def read_xml(xml='saldom.xml', annotation_element='gf', tagset='SUC', verbose=True):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml).
-    Return a lexicon dictionary, {wordform: {value: set(possible tags)}}
-     - value_element is the XML element for the value (currently: 'gf' for baseform, 'lem' for lemgram or 'saldo' for SALDO id)
+    Return a lexicon dictionary, {wordform: {annotation: ( set(possible tags), set(tuples with following words) )}}
+     - annotation_element is the XML element for the annotation value (currently: 'gf' for baseform, 'lem' for lemgram or 'saldo' for SALDO id)
      - tagset is the tagset for the possible tags (currently: 'SUC', 'Parole', 'Saldo')
-     
-    Does not handle multi word entries yet, but we don't keep them anyway.
     """
-    value_element = value_element.replace("head", "gf").replace("id", "lem")
+    assert annotation_element in ("gf", "lem", "saldo"), "Invalid annotation element"
     import xml.etree.cElementTree as cet
     tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower())
     if verbose: util.log.info("Reading XML lexicon")
@@ -184,25 +231,40 @@ def read_xml(xml='saldom.xml', value_element='gf', tagset='SUC', verbose=True):
     for event, elem in context:
         if event == "end":
             if elem.tag == 'LexicalEntry':
-                valuelist = elem.findall(value_element)
-                if valuelist:
-                    value = "|".join(v.text for v in valuelist)
+                annotationlist = elem.findall(annotation_element)
+                if annotationlist:
+                    annotation = "|".join(v.text for v in annotationlist)
                 else:
-                    assert False, "Missing value"
-                    value = "UNKNOWN"
+                    assert False, "Missing annotation"
+                    annotation = "UNKNOWN"
                 pos = elem.findtext("pos")
                 inhs = elem.findtext("inhs")
                 if inhs == "-":
                     inhs = ""
                 inhs = inhs.split()
                 table = elem.find("table")
+                multiwords = []
+                
                 for form in list(table):
                     word = form.findtext("wf")
                     param = form.findtext("param")
-                    saldotag = " ".join([pos] + inhs + [param])
-                    tags = tagmap.get(saldotag)
-                    if tags:
-                        lexicon.setdefault(word, {}).setdefault(value, set()).update(tags)
+                    
+                    if param[-1].isdigit() and param[-1] != "1":
+                        # Handle multi-word expressions
+                        multiwords.append(word)
+                        multipart, multitotal = param.split(":")[-1].split("-")
+                        if multipart == multitotal:
+                            lexicon.setdefault(multiwords[0], {}).setdefault(annotation, (set(), set()))[1].add(tuple(multiwords[1:]))
+                            multiwords = []
+                    else:
+                        # Single word expressions
+                        if param[-1] == "1":
+                            param = param.rsplit(" ", 1)[0]
+                        saldotag = " ".join([pos] + inhs + [param])
+                        tags = tagmap.get(saldotag)
+                        if tags:
+                            lexicon.setdefault(word, {}).setdefault(annotation, (set(), set()))[0].update(tags)
+
             # Done parsing section. Clear tree to save memory
             if elem.tag in ['LexicalEntry', 'frame', 'resFrame']:
                 root.clear()
@@ -255,16 +317,13 @@ testwords = [u"äggtoddyarna",
              u"in"]
 
 
-def xml_to_pickle(xml, value_element, filename):
+def xml_to_pickle(xml, annotation_element, filename):
     """Read an XML dictionary and save as a pickle file."""
     
-    xml_lexicon = read_xml(xml, value_element)
+    xml_lexicon = read_xml(xml, annotation_element)
     SaldoLexicon.save_to_picklefile(filename, xml_lexicon)
 
 ######################################################################
 
 if __name__ == '__main__':
     util.run.main(lemmatize, xml_to_pickle=xml_to_pickle)
-
-
-

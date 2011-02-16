@@ -1295,8 +1295,8 @@ def _make_saldo_to_suc():
     tagmap = {}
     for saldotag in saldo_tags:
         params = saldotag.split()
-        if saldotag.endswith((' c',' ci',' cm')) or not params or params[0].endswith(('m','h')):
-            # We skips multiword units, compound/end syllables
+        if saldotag.endswith((' c', ' ci', ' cm')) or not params or params[0].endswith(('m', 'h')):
+            # We skip multiword units, compound/end syllables
             continue
         paramstr = " ".join(_translate_saldo_parameters.get(prm, prm.upper()) for prm in params)
         # print saldotag, ":", paramstr, "->",
