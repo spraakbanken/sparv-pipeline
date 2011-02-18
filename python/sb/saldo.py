@@ -8,13 +8,15 @@ import util
 import itertools
 import cPickle as pickle
 
-def annotate(word, msd, sentence, reference, out, model, delimiter="|", affix="|", precision=":%.3f", filter=None):
+def annotate(word, msd, sentence, reference, out, annotations, model, delimiter="|", affix="|", precision=":%.3f", filter=None):
     """Use the Saldo lexicon model to annotate pos-tagged words.
       - word, msd are existing annotations for wordforms and part-of-speech
       - sentence is an existing annotation for sentences and their children (words)
       - reference is an existing annotation for word references, to be used when
         annotating multi-word units
-      - out is the resulting annotation file
+      - out is a string containing a whitespace separated list of the resulting annotation files
+      - annotations is a string containing a whitespace separate list of annotations to be written.
+        Number of annotations and their order must correspond to the list in the 'out' argument.
       - model is the Saldo model
       - delimiter is the delimiter character to put between ambiguous results
       - affix is an optional character to put before and after results
@@ -24,6 +26,12 @@ def annotate(word, msd, sentence, reference, out, model, delimiter="|", affix="|
         max: only use the annotations that are most probable
         first: only use one annotation; one of the most probable
     """
+    MAX_BETWEEN = 3 # The maximum number of words that may be inserted between words in specific multi-word units.
+    
+    annotations = annotations.split()
+    out = out.split()
+    assert len(out) == len(annotations), "Number of target files and annotations needs to be the same"
+    
     lexicon = SaldoLexicon(model)
     WORD = util.read_annotation(word)
     MSD = util.read_annotation(msd)
@@ -33,11 +41,6 @@ def annotate(word, msd, sentence, reference, out, model, delimiter="|", affix="|
     
     sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
     
-    #tok_word = WORD.iteritems()
-    #order_dict = util.read_annotation(order)
-    #tok_word = sorted(tok_word, key=lambda x: order_dict.get(x[0]))
-    #for tokid, theword in tok_word:
-    
     for sent in sentences:
         for tokid in sent:
             theword = WORD[tokid]
@@ -45,7 +48,7 @@ def annotate(word, msd, sentence, reference, out, model, delimiter="|", affix="|
             msdtag = MSD[tokid]
             ann_tags_words = lexicon.lookup(theword)
             annotation_precisions = [(get_precision(msdtag, msdtags), annotation)
-                                        for (annotation, msdtags, words) in ann_tags_words if not words]
+                                        for (annotation, msdtags, wordslist) in ann_tags_words if not wordslist]
             annotation_precisions = normalize_precision(annotation_precisions)
             annotation_precisions.sort(reverse=True)
                     
@@ -57,13 +60,15 @@ def annotate(word, msd, sentence, reference, out, model, delimiter="|", affix="|
                     ismax = lambda lemprec: lemprec[0] >= maxprec - PRECISION_DIFF
                     annotation_precisions = itertools.takewhile(ismax, annotation_precisions)
             
+            annotation_info = {}
             if precision:
-                annotation_info = [a + precision % prec
-                                   for (prec, annotation) in annotation_precisions
-                                    for a in annotation]
+                for (prec, annotation) in annotation_precisions:
+                    for key in annotation:
+                        annotation_info.setdefault(key, []).extend([a + precision % prec for a in annotation[key]])
             else:
-                annotation_info = [a for (prec, annotation) in annotation_precisions
-                                   for a in annotation]
+                for (prec, annotation) in annotation_precisions:
+                    for key in annotation:
+                        annotation_info.setdefault(key, []).extend(annotation[key])
                     
             looking_for = [(annotation, words, REF[tokid]) for (annotation, _, wordslist) in ann_tags_words if wordslist for words in wordslist]
             
@@ -73,18 +78,33 @@ def annotate(word, msd, sentence, reference, out, model, delimiter="|", affix="|
         
                 for x in outstack[waiting]["looking_for"]:
                     seeking_word = x[1][0]
-                    if seeking_word == theword or seeking_word.lower() == theword.lower() or seeking_word == "*":
-                        del x[1][0]
+
+                    if seeking_word.lower() == theword.lower() or seeking_word.startswith("*"):
                         
-                        if not seeking_word == "*":
+                        if seeking_word.startswith("*"):
+                            if x[1][1].lower() == theword.lower():
+                                seeking_word = x[1][1]
+                                del x[1][0]
+                            elif len(seeking_word) >= MAX_BETWEEN:
+                                del x[1][0]
+                            else:
+                                x[1][0] += "*"
+                        
+                        if not seeking_word.startswith("*"):
+                            del x[1][0]
                             if len(x[1]) == 0:
-                                # Current word is the last word we're looking for
+                                # Current word was the last word we were looking for
                                 todel.append(i)
                                 if x[2]:
-                                    annotation_info.extend(a + ":" + x[2] for a in x[0])
-                                outstack[waiting]["annotation"].extend(x[0])
+                                    for key in x[0]:
+                                        annotation_info.setdefault(key, []).extend([a + ":" + x[2] for a in x[0][key]])
+                                for key in x[0]:
+                                    outstack[waiting]["annotation"].setdefault(key, []).extend(x[0][key])
                             elif x[2]:
-                                looking_for.append( ([a + ":" + x[2] for a in x[0]], x[1][:], "") )
+                                temp = {}
+                                for key in x[0]:
+                                    temp.setdefault(key, []).extend([a + ":" + x[2] for a in x[0][key]])
+                                looking_for.append( (temp, x[1][:], "") )
                     else:
                         todel.append(i)
         
@@ -94,7 +114,7 @@ def annotate(word, msd, sentence, reference, out, model, delimiter="|", affix="|
                     del outstack[waiting]["looking_for"][x]
                 
                 if len(outstack[waiting]["looking_for"]) == 0:
-                    OUT[waiting] = affix + delimiter.join(outstack[waiting]["annotation"]) + affix if outstack[waiting]["annotation"] else affix
+                    OUT[waiting] = _join_annotation(outstack[waiting]["annotation"], delimiter, affix)
                     del outstack[waiting]
             
             if len(looking_for) > 0:
@@ -102,15 +122,19 @@ def annotate(word, msd, sentence, reference, out, model, delimiter="|", affix="|
                 outstack[tokid]["annotation"] = annotation_info
                 outstack[tokid]["looking_for"] = looking_for
             else:
-                OUT[tokid] = affix + delimiter.join(annotation_info) + affix if annotation_info else affix
+                OUT[tokid] = _join_annotation(annotation_info, delimiter, affix)
 
         # Finish everything on the outstack, since we don't want to look for matches outside the current sentence.
         for leftover in outstack.keys():
-            OUT[leftover] = affix + delimiter.join(outstack[leftover]["annotation"]) + affix if outstack[leftover]["annotation"] else affix
+            OUT[leftover] = _join_annotation(outstack[leftover]["annotation"], delimiter, affix)
             del outstack[leftover]
 
-    util.write_annotation(out, OUT)
+    for out_file, annotation in zip(out, annotations):
+        util.write_annotation(out_file, [(tok, OUT[tok].get(annotation, affix)) for tok in OUT])
 
+
+def _join_annotation(annotation, delimiter, affix):
+    return dict([(a, affix + delimiter.join(annotation[a]) + affix) for a in annotation])
 
 # The minimun precision difference for two annotations to be considered equal
 PRECISION_DIFF = 0.01
@@ -165,7 +189,7 @@ class SaldoLexicon(object):
     def save_to_picklefile(saldofile, lexicon, protocol=1, verbose=True):
         """Save a Saldo lexicon to a Pickled file.
         The input lexicon should be a dict:
-          - lexicon = {wordform: {(annotation): (set(possible tags), set(tuples with following words))}}
+          - lexicon = {wordform: {{annotation-type: annotation}: (set(possible tags), set(tuples with following words))}}
         """
         if verbose: util.log.info("Saving Saldo lexicon in Pickle format")
         
@@ -173,7 +197,8 @@ class SaldoLexicon(object):
         for word in lexicon:
             annotations = []
             for annotation, extra in lexicon[word].items():
-                annotationlist = PART_DELIM3.join(annotation)
+                #annotationlist = PART_DELIM3.join(annotation)
+                annotationlist = PART_DELIM2.join( k + PART_DELIM3 + PART_DELIM3.join(annotation[k]) for k in annotation)
                 taglist =        PART_DELIM3.join(sorted(extra[0]))
                 wordlist =       PART_DELIM2.join([PART_DELIM3.join(x) for x in sorted(extra[1])])
                 annotations.append( PART_DELIM1.join([annotationlist, taglist, wordlist]) )
@@ -208,23 +233,37 @@ PART_DELIM3 = "^3"
 
 def _split_triple(annotation_tag_words):
     annotation, tags, words = annotation_tag_words.split(PART_DELIM1)
-    annotationlist = [x for x in annotation.split(PART_DELIM3) if x]
+    #annotationlist = [x for x in annotation.split(PART_DELIM3) if x]
+    annotationdict = {}
+    for a in annotation.split(PART_DELIM2):
+        key, values = a.split(PART_DELIM3, 1)
+        annotationdict[key] = values.split(PART_DELIM3)
+
     taglist = [x for x in tags.split(PART_DELIM3) if x]
     wordlist = [x.split(PART_DELIM3) for x in words.split(PART_DELIM2) if x]
     
-    return annotationlist, taglist, wordlist
+    return annotationdict, taglist, wordlist
 
 
 ######################################################################
 # converting between different file formats
 
-def read_xml(xml='saldom.xml', annotation_element='gf', tagset='SUC', verbose=True):
+class hashabledict(dict):
+    def __key(self):
+        return tuple((k,self[k]) for k in sorted(self))
+    def __hash__(self):
+        return hash(self.__key())
+    def __eq__(self, other):
+        return self.__key() == other.__key()
+
+def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC', verbose=True):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml).
-    Return a lexicon dictionary, {wordform: {(annotation): ( set(possible tags), set(tuples with following words) )}}
+    Return a lexicon dictionary, {wordform: {{annotation-type: annotation}: ( set(possible tags), set(tuples with following words) )}}
      - annotation_element is the XML element for the annotation value (currently: 'gf' for baseform, 'lem' for lemgram or 'saldo' for SALDO id)
      - tagset is the tagset for the possible tags (currently: 'SUC', 'Parole', 'Saldo')
     """
-    assert annotation_element in ("gf", "lem", "saldo"), "Invalid annotation element"
+    annotation_elements = annotation_elements.split()
+    #assert annotation_element in ("gf", "lem", "saldo"), "Invalid annotation element"
     import xml.etree.cElementTree as cet
     import re
     tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower())
@@ -238,10 +277,11 @@ def read_xml(xml='saldom.xml', annotation_element='gf', tagset='SUC', verbose=Tr
     for event, elem in context:
         if event == "end":
             if elem.tag == 'LexicalEntry':
-                annotation = tuple(x.text for x in elem.findall(annotation_element))
-                if not annotation:
-                    assert False, "Missing annotation"
-                    annotation = "UNKNOWN"
+                annotations = hashabledict()
+                
+                for a in annotation_elements:
+                    annotations[a] = tuple(x.text for x in elem.findall(a))
+                        
                 pos = elem.findtext("pos")
                 inhs = elem.findtext("inhs")
                 if inhs == "-":
@@ -267,7 +307,8 @@ def read_xml(xml='saldom.xml', annotation_element='gf', tagset='SUC', verbose=Tr
                             multiwords.append("*")
                         
                         if multipart == multitotal:
-                            lexicon.setdefault(multiwords[0], {}).setdefault(annotation, (set(), set()))[1].add(tuple(multiwords[1:]))
+                            #lexicon.setdefault(multiwords[0], {}).setdefault(annotation, (set(), set()))[1].add(tuple(multiwords[1:]))
+                            lexicon.setdefault(multiwords[0], {}).setdefault(annotations, (set(), set()))[1].add(tuple(multiwords[1:]))
                             multiwords = []
                     else:
                         # Single word expressions
@@ -276,7 +317,7 @@ def read_xml(xml='saldom.xml', annotation_element='gf', tagset='SUC', verbose=Tr
                         saldotag = " ".join([pos] + inhs + [param])
                         tags = tagmap.get(saldotag)
                         if tags:
-                            lexicon.setdefault(word, {}).setdefault(annotation, (set(), set()))[0].update(tags)
+                            lexicon.setdefault(word, {}).setdefault(annotations, (set(), set()))[0].update(tags)
 
             # Done parsing section. Clear tree to save memory
             if elem.tag in ['LexicalEntry', 'frame', 'resFrame']:
@@ -330,10 +371,10 @@ testwords = [u"äggtoddyarna",
              u"in"]
 
 
-def xml_to_pickle(xml, annotation_element, filename):
+def xml_to_pickle(xml, filename, annotation_elements="gf lem saldo"):
     """Read an XML dictionary and save as a pickle file."""
     
-    xml_lexicon = read_xml(xml, annotation_element)
+    xml_lexicon = read_xml(xml, annotation_elements)
     SaldoLexicon.save_to_picklefile(filename, xml_lexicon)
 
 ######################################################################
