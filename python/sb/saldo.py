@@ -182,7 +182,10 @@ class SaldoLexicon(object):
         """Lookup a word in the lexicon.
         Returns a list of (annotation, list-of-pos-tags, list-of-tuples-with-words).
         """
-        annotation_tag_pairs = self.lexicon.get(word) or self.lexicon.get(word.lower()) or []
+        if word.lower() == word:
+            annotation_tag_pairs = self.lexicon.get(word, [])
+        else:
+            annotation_tag_pairs = self.lexicon.get(word, []) + self.lexicon.get(word.lower(), [])
         return map(_split_triple, annotation_tag_pairs)
 
     @staticmethod
