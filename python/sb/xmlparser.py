@@ -23,7 +23,7 @@ REGEXP_TOKEN = re.compile(r"([^\W_\d]+|\d+| +|\s|.)", re.UNICODE)
 # exclude these in the first group above, hence [^\W_\d];
 # idea taken from http://stackoverflow.com/questions/1673749
 
-def parse(source, prefix, text, elements, annotations, skip=(), overlap=(), header="teiheader", encoding=util.UTF8):
+def parse(source, text, elements, annotations, skip=(), overlap=(), header="teiheader", encoding=util.UTF8, prefix=""):
     """Parse one pseudo-xml source file, into the specified corpus."""
     if isinstance(elements, basestring): elements = elements.split()
     if isinstance(annotations, basestring): annotations = annotations.split()
