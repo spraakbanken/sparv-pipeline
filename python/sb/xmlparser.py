@@ -246,7 +246,7 @@ class XMLParser(HTMLParser):
 
     def handle_decl(self, decl):
         """SGML declarations <!...> are not allowed."""
-        util.log.error(self.pos() + "SGML declaration: <!%s>", decl)
+        util.log.warning(self.pos() + "SGML declaration: <!%s>", decl)
 
 
 ######################################################################

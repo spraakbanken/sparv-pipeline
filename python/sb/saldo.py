@@ -310,7 +310,6 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
                             multiwords.append("*")
                         
                         if multipart == multitotal:
-                            #lexicon.setdefault(multiwords[0], {}).setdefault(annotation, (set(), set()))[1].add(tuple(multiwords[1:]))
                             lexicon.setdefault(multiwords[0], {}).setdefault(annotations, (set(), set()))[1].add(tuple(multiwords[1:]))
                             multiwords = []
                     else:

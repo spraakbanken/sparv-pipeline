@@ -142,12 +142,38 @@ class LinebreakTokenizer(nltk.RegexpTokenizer):
     def __init__(self):
         nltk.RegexpTokenizer.__init__(self, r'\s*\n\s*', gaps=True)
 
+class PunctuationTokenizer(nltk.RegexpTokenizer):
+    """ A very simple sentence tokenizer, separating sentences on
+    every .!? no matter the context. Use only when PunktSentenceTokenizer
+    does not work, for example when there's no whitespace after punctuation. """
+    
+    def __init__(self):
+        nltk.RegexpTokenizer.__init__(self, r"[\.!\?]\s*", gaps=True)
+    
+    def span_tokenize(self, s):
+        result = []
+        spans = nltk.RegexpTokenizer.span_tokenize(self, s)
+        first = True
+        temp = [0, 0]
+        
+        for start, _ in spans:
+            if not first:
+                temp[1] = start
+                result.append(tuple(temp))
+            temp[0] = start
+            first = False
+            
+        temp[1] = len(s)
+        result.append(tuple(temp))
+        
+        return result
 
 SEGMENTERS = dict(whitespace = nltk.WhitespaceTokenizer,
                   linebreaks = LinebreakTokenizer,
                   blanklines = nltk.BlanklineTokenizer,
                   punkt_sentence = nltk.PunktSentenceTokenizer,
                   punkt_word = ModifiedPunktWordTokenizer,
+                  punctuation = PunctuationTokenizer
                   )
 
 if not do_segmentation.__doc__:
