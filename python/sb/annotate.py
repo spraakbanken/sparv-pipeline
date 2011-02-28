@@ -42,6 +42,11 @@ def chain(out, annotations, default=None):
     util.write_annotation(out, ((key, follow(key)) for key in annotations[0]))
 
 
+def key_as_value(out, keys):
+    """Create new annotation, with key=value."""
+    util.write_annotation(out, ((key, key) for key in util.read_annotation(keys)))
+
+
 def select(out, annotation, index, separator=None):
     """Select a specific index from the values of an annotation.
     The given annotation values are separated by 'separator',
@@ -78,6 +83,7 @@ if __name__ == '__main__':
                   constant=constant,
                   affix=affix,
                   replace=replace,
-                  find_replace=find_replace
+                  find_replace=find_replace,
+                  key_as_value=key_as_value
                   )
 
