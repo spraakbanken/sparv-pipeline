@@ -42,9 +42,9 @@ def chain(out, annotations, default=None):
     util.write_annotation(out, ((key, follow(key)) for key in annotations[0]))
 
 
-def key_as_value(out, keys):
-    """Create new annotation, with key=value."""
-    util.write_annotation(out, ((key, key) for key in util.read_annotation(keys)))
+def span_as_value(out, keys):
+    """Create new annotation, with edge span as value."""
+    util.write_annotation(out, ((key, util.edgeStart(key) + "-" + util.edgeEnd(key)) for key in util.read_annotation(keys)))
 
 
 def select(out, annotation, index, separator=None):
@@ -84,6 +84,6 @@ if __name__ == '__main__':
                   affix=affix,
                   replace=replace,
                   find_replace=find_replace,
-                  key_as_value=key_as_value
+                  span_as_value=key_as_value
                   )
 
