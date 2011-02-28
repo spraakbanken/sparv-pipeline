@@ -27,10 +27,12 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, encoding=util.
             token_dh  = DEPHEAD[token_id]
             token_dr  = DEPREL[token_id]
             
-            if token_lem == "|":
-                token_lem = WORD[token_id] + "_" + token_pos
-            else:
+            if not token_lem == "|":
+                # Remove multi word units
                 token_lem = "|" + "|".join(sorted(l for l in token_lem[1:-1].split("|") if not "_" in l)) + "|"
+            
+            if token_lem in ("|", "||"):
+                token_lem = WORD[token_id] + "_" + token_pos
             
             previous[token_id] = (token_lem, token_pos)
             

@@ -26,7 +26,7 @@ def annotate(word, msd, sentence, reference, out, annotations, model, delimiter=
         max: only use the annotations that are most probable
         first: only use one annotation; one of the most probable
     """
-    MAX_BETWEEN = 3 # The maximum number of words that may be inserted between words in specific multi-word units.
+    MAX_BETWEEN = 4 # The maximum number of words that may be inserted between words in specific multi-word units.
     
     annotations = annotations.split()
     out = out.split()
