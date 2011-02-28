@@ -84,6 +84,6 @@ if __name__ == '__main__':
                   affix=affix,
                   replace=replace,
                   find_replace=find_replace,
-                  span_as_value=key_as_value
+                  span_as_value=span_as_value
                   )
 
