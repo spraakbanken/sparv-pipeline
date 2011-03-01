@@ -4,19 +4,21 @@ import util
 
 # python -m sb.relations --out "" --pos annotations/test.token.pos --lemgram annotations/test.token.lemgram --dephead annotations/test.token.dephead --deprel annotations/test.token.deprel --sentence annotations/test.children.sentence.token --word annotations/test.token.word
 
-def relations(out, word, pos, lemgram, dephead, deprel, sentence, encoding=util.UTF8):
+def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentenceid, encoding=util.UTF8):
     """ """
 
-    sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
+    SENTID = util.read_annotation(sentenceid)
+    sentences = [(SENTID[key], sent.split()) for key, sent in util.read_annotation_iteritems(sentence)]
     WORD = util.read_annotation(word)
     POS = util.read_annotation(pos)
     LEM = util.read_annotation(lemgram)
     DEPHEAD = util.read_annotation(dephead)
     DEPREL = util.read_annotation(deprel)
     
+    
     triples = []
     
-    for sent in sentences:
+    for sentid, sent in sentences:
         
         incomplete = {}
         previous = {}
@@ -27,17 +29,19 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, encoding=util.
             token_dh  = DEPHEAD[token_id]
             token_dr  = DEPREL[token_id]
             
+            '''
             if not token_lem == "|":
                 # Remove multi word units
                 token_lem = "|" + "|".join(sorted(l for l in token_lem[1:-1].split("|") if not "_" in l)) + "|"
+            '''
             
             if token_lem in ("|", "||"):
-                token_lem = WORD[token_id] + "_" + token_pos
+                token_lem = WORD[token_id].lower() + "_" + token_pos
             
             previous[token_id] = (token_lem, token_pos)
             
             if not token_dh == "-":
-                triple = [None, token_dr, (token_lem, token_pos)]
+                triple = [None, token_dr, (token_lem, token_pos), sentid]
                 if token_dh in previous:
                     triple[0] = (previous[token_dh])
                     triples.append(tuple(triple))
@@ -52,7 +56,7 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, encoding=util.
     
     print "Incomplete:", len(incomplete)
     
-    OUT = [(str(i), "\t".join(("^".join(head), rel, "^".join(w)))) for (i, (head, rel, w)) in enumerate(triples)]
+    OUT = [(str(i), "\t".join(("^".join(head), rel, "^".join(w), sid))) for (i, (head, rel, w, sid)) in enumerate(triples)]
     util.write_annotation(out, OUT)
 
 
@@ -70,17 +74,20 @@ def frequency(source):
         REL = util.read_annotation(s)
 
         for _, triple in REL.iteritems():
-            head, rel, w = triple.split(u"\t")
+            head, rel, w, sid = triple.split(u"\t")
             #print "%50s %5s   %-50s" % (head, rel, w)
-            freq.setdefault(head, {}).setdefault(rel, {}).setdefault(w, 0)
-            freq[head][rel][w] += 1
+            freq.setdefault(head, {}).setdefault(rel, {}).setdefault(w, [0, []])
+            freq[head][rel][w][0] += 1
+            freq[head][rel][w][1].append(sid)
         
     phead = prel = None
     
     with open("relationer.txt", "w") as F:
         for head, rels in freq.iteritems():
             for rel, w in rels.iteritems():
-                for w, count in sorted(w.iteritems(), key=lambda x: -x[1]):
+                for w, count_and_sid in sorted(w.iteritems(), key=lambda x: -x[1][0]):
+                    count, sids = count_and_sid
+                    sids = ";".join(sids)
                     head_lem, head_pos = head.split(u"^")
                     w_lem, w_pos = w.split(u"^")
                     if count >= min_count and head_pos in pos_filter and w_pos in pos_filter and rel in rel_filter:
@@ -88,7 +95,7 @@ def frequency(source):
                         printrel  = u"." if head == phead and rel == prel else rel
                         phead = head
                         prel  = rel
-                        print >>F, ("%50s %5s   %-50s %5d" % (printhead, printrel, w_lem, count)).encode("UTF-8")
+                        print >>F, ("%50s %5s   %-50s %5d %s" % (printhead, printrel, w_lem, count, sids)).encode("UTF-8")
     
 ################################################################################    
 
