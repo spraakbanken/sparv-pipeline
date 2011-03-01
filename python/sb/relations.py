@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import util
-
-# python -m sb.relations --out "" --pos annotations/test.token.pos --lemgram annotations/test.token.lemgram --dephead annotations/test.token.dephead --deprel annotations/test.token.deprel --sentence annotations/test.children.sentence.token --word annotations/test.token.word
+import sqlite3 as sqlite
 
 def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentenceid, encoding=util.UTF8):
     """ """
@@ -14,7 +13,6 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentenceid, en
     LEM = util.read_annotation(lemgram)
     DEPHEAD = util.read_annotation(dephead)
     DEPREL = util.read_annotation(deprel)
-    
     
     triples = []
     
@@ -29,13 +27,7 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentenceid, en
             token_dh  = DEPHEAD[token_id]
             token_dr  = DEPREL[token_id]
             
-            '''
-            if not token_lem == "|":
-                # Remove multi word units
-                token_lem = "|" + "|".join(sorted(l for l in token_lem[1:-1].split("|") if not "_" in l)) + "|"
-            '''
-            
-            if token_lem in ("|", "||"):
+            if token_lem == "|":
                 token_lem = WORD[token_id].lower() + "_" + token_pos
             
             previous[token_id] = (token_lem, token_pos)
@@ -60,11 +52,11 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentenceid, en
     util.write_annotation(out, OUT)
 
 
-def frequency(source):
+def frequency(source, corpus, out):
     
     pos_filter = (u"VB", u"NN", u"JJ")
     rel_filter = (u"SS", u"OO", u"IO", u"AT", u"ET" u"DT", u"OA", u"RA", u"TA") # http://stp.ling.uu.se/~nivre/swedish_treebank/dep.html
-    min_count = 10
+    min_count = 2
     
     source = source.split()
     
@@ -82,6 +74,11 @@ def frequency(source):
         
     phead = prel = None
     
+    conn = sqlite.connect(out)
+    c = conn.cursor()
+    c.execute("DROP TABLE IF EXISTS relations")
+    c.execute("CREATE TABLE relations (w1 TEXT, rel TEXT, w2 TEXT, freq INTEGER, sources TEXT, corpus TEXT)")
+
     with open("relationer.txt", "w") as F:
         for head, rels in freq.iteritems():
             for rel, w in rels.iteritems():
@@ -96,6 +93,10 @@ def frequency(source):
                         phead = head
                         prel  = rel
                         print >>F, ("%50s %5s   %-50s %5d %s" % (printhead, printrel, w_lem, count, sids)).encode("UTF-8")
+                        c.execute("""INSERT INTO relations VALUES ("%s", "%s", "%s", "%d", "%s", "%s")""" % (head_lem, rel, w_lem, count, sids, corpus.upper()))
+    
+    conn.commit()
+    c.close()
     
 ################################################################################    
 
