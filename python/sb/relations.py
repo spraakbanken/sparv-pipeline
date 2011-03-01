@@ -77,7 +77,7 @@ def frequency(source, corpus, out):
     conn = sqlite.connect(out)
     c = conn.cursor()
     c.execute("DROP TABLE IF EXISTS relations")
-    c.execute("CREATE TABLE relations (w1 TEXT, rel TEXT, w2 TEXT, freq INTEGER, sources TEXT, corpus TEXT)")
+    c.execute("CREATE TABLE relations (head TEXT, rel TEXT, dep TEXT, freq INTEGER, sources TEXT, corpus TEXT)")
 
     with open("relationer.txt", "w") as F:
         for head, rels in freq.iteritems():
