@@ -3,8 +3,8 @@
 import util
 
 def fileid(out, files):
-    if isinstance(files, basestring):
-        files = files.split()
+    files = files.split()
+    files.sort()
     
     numfiles = len(files) * 2
     OUT = {}
