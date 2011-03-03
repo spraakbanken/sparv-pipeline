@@ -4,6 +4,7 @@ from collections import defaultdict
 import random
 import util
 import re
+from binascii import hexlify
 
 START_DEFAULT = 1
 
@@ -28,7 +29,7 @@ def number_by_position(out, texts, chunks, prefix="", start=START_DEFAULT):
 def number_by_random(out, chunks, prefix="", start=START_DEFAULT):
     """ Number chunks randomly. """
     def order(chunknr, edge, _value):
-        random.seed(edge)
+        random.seed(int(hexlify(edge), 16))
         return (chunknr, random.random())
 
     read_chunks_and_write_new_ordering(out, chunks, order, prefix, start)
@@ -46,7 +47,7 @@ def renumber_by_shuffle(out, chunks, prefix="", start=START_DEFAULT):
     """ Renumber already numbered chunks, in new random order.
         Retains the connection between parallelly numbered chunks by using the values as random seed. """
     def order(_chunknr, _edge, value):
-        random.seed(value)
+        random.seed(int(hexlify(value), 16))
         return random.random(), natural_sorting(value)
 
     read_chunks_and_write_new_ordering(out, chunks, order, prefix, start)

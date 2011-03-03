@@ -8,11 +8,13 @@ Common constants and constructors
 
 import random
 import math
+from binascii import hexlify
 
 def resetIdent(seed, maxidents=None):
     if maxidents:
         global _ANCHORLEN
         _ANCHORLEN = int(math.log(maxidents, 16) + 1.5)
+    seed = int(hexlify(seed), 16) # For random.seed to work consistently regardless of platform
     random.seed(seed)
 
 _ANCHORLEN = 10
