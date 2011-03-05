@@ -300,8 +300,10 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
                 for form in list(table):
                     word = form.findtext("wf")
                     param = form.findtext("param")
-                    
-                    if param[-1].isdigit() and param[-1] != "1":
+
+                    if param in ("frag", "c", "ci", "cm", "sms"):
+                        continue
+                    elif param[-1].isdigit() and param[-1] != "1":
                         # Handle multi-word expressions
                         multiwords.append(word)
                         multipart, multitotal = param.split(":")[-1].split("-")
@@ -316,6 +318,7 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
                         # Single word expressions
                         if param[-1] == "1":
                             param = param.rsplit(" ", 1)[0]
+                            if pos == "vbm": pos = "vb"
                         saldotag = " ".join([pos] + inhs + [param])
                         tags = tagmap.get(saldotag)
                         if tags:

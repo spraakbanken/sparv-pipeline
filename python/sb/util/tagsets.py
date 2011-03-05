@@ -1275,6 +1275,8 @@ _suc_tag_replacements = [
     (r"NNA .* (SIN|PLU) (IND|DEF) (NOM|GEN)",      r"NN (AN|.* \1 \2 \3)"),
     
     (r"PMA .* (NOM|GEN)",                          r"PM \1"),
+    (r"PM .* (NOM|GEN)",                           r"PM \1"),
+    (r"PM .* SMS",                                 r"PM .* SMS"),
     
     (r"PN .*POSS",                                 r"(PS|HS)"),
     (r"PN KOM GEN",                                r"PS"),
@@ -1295,7 +1297,7 @@ def _make_saldo_to_suc():
     tagmap = {}
     for saldotag in saldo_tags:
         params = saldotag.split()
-        if saldotag.endswith((' c', ' ci', ' cm')) or not params or params[0].endswith(('m', 'h')):
+        if saldotag.endswith((' c', ' ci', ' cm')) or not params or (len(params[0]) == 3 and params[0].endswith(('m', 'h'))):
             # We skip multiword units, compound/end syllables
             continue
         paramstr = " ".join(_translate_saldo_parameters.get(prm, prm.upper()) for prm in params)
@@ -1309,8 +1311,8 @@ def _make_saldo_to_suc():
         tagmap[saldotag] = set(suctag for suctag in suc_tags
                                if re.match(sucfilter, suctag))
         # print ", ".join(tagmap[saldotag])
-        if not tagmap[saldotag]:
-            print saldotag, ":", paramstr, "->", sucfilter
+        # if not tagmap[saldotag]:
+        #     print saldotag, ":", paramstr, "->", sucfilter
     return tagmap
 
 saldo_to_suc = _make_saldo_to_suc()
