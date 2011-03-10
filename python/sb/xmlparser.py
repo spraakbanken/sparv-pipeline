@@ -5,10 +5,7 @@ A parser for pseuo-XML documents.
 Pseudo-XML is almost like XML, but admits overlapping elements.
 """
 
-import os
 import re
-from collections import defaultdict
-
 import util
 from xmlanalyzer import problematic_entity, is_control_code, html_entities
 
