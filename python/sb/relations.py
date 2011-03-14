@@ -57,7 +57,7 @@ def frequency(source, corpus, db_name, sqlfile):
     
     pos_filter = (u"VB", u"NN", u"JJ")
     rel_filter = (u"SS", u"OO", u"IO", u"AT", u"ET" u"DT", u"OA", u"RA", u"TA") # http://stp.ling.uu.se/~nivre/swedish_treebank/dep.html
-    min_count = 2
+    min_count = 1
     
     source = source.split()
     
