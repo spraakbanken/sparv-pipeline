@@ -117,4 +117,4 @@ def _DICT(dct, filter_null=False):
                      if not (filter_null and v is None))
 
 def _ESCAPE(string):
-    return string.replace("'", "\'")
+    return string.replace("'", r"\'")
