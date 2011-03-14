@@ -106,7 +106,7 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
     util.system.call_binary("cwb-makeall", index_args, verbose=True)
     util.log.info("Encoded and indexed %d columns, %d structs", len(columns), len(structs))
     
-    if not skip_compression:
+    if not skip_compression.lower() in ("true", "yes"):
         util.log.info("Compressing corpus files...")
         compress_args = ["-A", master.upper()]
         if skip_validation:
