@@ -95,7 +95,7 @@ def frequency(source, corpus, db_name, sqlfile):
                            }
                     mysql.add_row(MYSQL_TABLE, row)
                     i += 1
-                    if i > 50000:
+                    if i > 25000:
                         i = 0
                         mysql.unlock()
                         no += 1
