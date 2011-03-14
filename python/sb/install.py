@@ -50,13 +50,18 @@ def install_directory(host, directory):
 def install_mysql(host, db_name, sqlfile):
     """
     Inserts tables and data from local SQL-file to remote MySQL database.
+    sqlfile may be a whitespace separated list of SQL-files.
     """
-    if not os.path.exists(sqlfile):
-        util.log.error("Missing SQL file:", sqlfile)
-    else:
-        util.log.info("Installing MySQL database: %s, source: %s", db_name, sqlfile)
-        subprocess.check_call('cat %s | ssh %s "mysql %s"' %
-                            (sqlfile, host, db_name), shell=True)
+    
+    sqlfiles = sqlfile.split()
+    
+    for sqlf in sqlfiles:
+        if not os.path.exists(sqlf):
+            util.log.error("Missing SQL file:", sqlf)
+        else:
+            util.log.info("Installing MySQL database: %s, source: %s", db_name, sqlf)
+            subprocess.check_call('cat %s | ssh %s "mysql %s"' %
+                                (sqlf, host, db_name), shell=True)
 
 def install_mysql_dump(host, db_name, tables):
     """

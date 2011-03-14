@@ -46,8 +46,6 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentenceid, en
                     triples.append(tuple(t))
                 del incomplete[token_id]
     
-    print "Incomplete:", len(incomplete)
-    
     OUT = [(str(i), "\t".join((REL_SEPARATOR.join(head), rel, REL_SEPARATOR.join(w), sid))) for (i, (head, rel, w, sid)) in enumerate(triples)]
     util.write_annotation(out, OUT)
 
@@ -73,11 +71,14 @@ def frequency(source, corpus, db_name, sqlfile):
             freq[head][rel][w][0] += 1
             freq[head][rel][w][1].append(sid)
     
-    mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile)
+    no = 1
+    sqlfile_no = sqlfile + "." + "%03d" % no
+    mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile_no)
     mysql.create_table(MYSQL_TABLE, drop=False, **MYSQL_RELATIONS)
     mysql.lock([MYSQL_TABLE])
     mysql.delete_rows(MYSQL_TABLE, {"corpus": corpus.upper()})
     
+    i = 0
     for head, rels in freq.iteritems():
         for rel, w in rels.iteritems():
             for w, count_and_sid in sorted(w.iteritems(), key=lambda x: -x[1][0]):
@@ -93,7 +94,16 @@ def frequency(source, corpus, db_name, sqlfile):
                            "corpus": corpus.upper()
                            }
                     mysql.add_row(MYSQL_TABLE, row)
+                    i += 1
+        if i > 500:
+            i = 0
+            mysql.unlock()
+            no += 1
+            sqlfile_no = sqlfile + "." + "%03d" % no
+            mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile_no)
+            mysql.lock([MYSQL_TABLE])
     mysql.unlock()
+    
 
 ################################################################################
 
