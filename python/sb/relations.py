@@ -48,7 +48,7 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentenceid, en
     
     print "Incomplete:", len(incomplete)
     
-    OUT = [(str(i), "\t".join(("^".join(head), rel, "^".join(w), sid))) for (i, (head, rel, w, sid)) in enumerate(triples)]
+    OUT = [(str(i), "\t".join((REL_SEPARATOR.join(head), rel, REL_SEPARATOR.join(w), sid))) for (i, (head, rel, w, sid)) in enumerate(triples)]
     util.write_annotation(out, OUT)
 
 
@@ -83,8 +83,8 @@ def frequency(source, corpus, db_name, sqlfile):
             for w, count_and_sid in sorted(w.iteritems(), key=lambda x: -x[1][0]):
                 count, sids = count_and_sid
                 sids = ";".join(sids)
-                head_lem, head_pos = head.split(u"^")
-                w_lem, w_pos = w.split(u"^")
+                head_lem, head_pos = head.split(REL_SEPARATOR)
+                w_lem, w_pos = w.split(REL_SEPARATOR)
                 if count >= min_count and head_pos in pos_filter and w_pos in pos_filter and rel in rel_filter:
                     row = {"head": head_lem,
                            "rel": rel,
@@ -96,6 +96,8 @@ def frequency(source, corpus, db_name, sqlfile):
     mysql.unlock()
 
 ################################################################################
+
+REL_SEPARATOR = " "
 
 MYSQL_TABLE = "relations"
 
