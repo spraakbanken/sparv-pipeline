@@ -2,9 +2,10 @@
 
 import util
 import sqlite3 as sqlite
+from util.mysql_wrapper import MySQL
 
 def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentenceid, encoding=util.UTF8):
-    """ """
+    """ Finds every dependency between words. """
 
     SENTID = util.read_annotation(sentenceid)
     sentences = [(SENTID[key], sent.split()) for key, sent in util.read_annotation_iteritems(sentence)]
@@ -52,7 +53,8 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentenceid, en
     util.write_annotation(out, OUT)
 
 
-def frequency(source, corpus, out):
+def frequency(source, corpus, db_name, sqlfile):
+    """ Calculates statistics of the dependencies and saves to an SQL file. """
     
     pos_filter = (u"VB", u"NN", u"JJ")
     rel_filter = (u"SS", u"OO", u"IO", u"AT", u"ET" u"DT", u"OA", u"RA", u"TA") # http://stp.ling.uu.se/~nivre/swedish_treebank/dep.html
@@ -72,32 +74,56 @@ def frequency(source, corpus, out):
             freq[head][rel][w][0] += 1
             freq[head][rel][w][1].append(sid)
         
-    phead = prel = None
+    #phead = prel = None
     
-    conn = sqlite.connect(out)
-    c = conn.cursor()
-    c.execute("DROP TABLE IF EXISTS relations")
-    c.execute("CREATE TABLE relations (head TEXT, rel TEXT, dep TEXT, freq INTEGER, sources TEXT, corpus TEXT)")
+    mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile)
+    mysql.create_table(MYSQL_TABLE, drop=False, **MYSQL_RELATIONS)
+    mysql.lock([MYSQL_TABLE])
+    
+    #conn = sqlite.connect(out)
+    #c = conn.cursor()
+    #c.execute("DROP TABLE IF EXISTS relations")
+    #c.execute("CREATE TABLE relations (head TEXT, rel TEXT, dep TEXT, freq INTEGER, sources TEXT, corpus TEXT)")
 
-    with open("relationer.txt", "w") as F:
-        for head, rels in freq.iteritems():
-            for rel, w in rels.iteritems():
-                for w, count_and_sid in sorted(w.iteritems(), key=lambda x: -x[1][0]):
-                    count, sids = count_and_sid
-                    sids = ";".join(sids)
-                    head_lem, head_pos = head.split(u"^")
-                    w_lem, w_pos = w.split(u"^")
-                    if count >= min_count and head_pos in pos_filter and w_pos in pos_filter and rel in rel_filter:
-                        printhead = u"." if head == phead else head_lem
-                        printrel  = u"." if head == phead and rel == prel else rel
-                        phead = head
-                        prel  = rel
-                        print >>F, ("%50s %5s   %-50s %5d %s" % (printhead, printrel, w_lem, count, sids)).encode("UTF-8")
-                        c.execute("""INSERT INTO relations VALUES ("%s", "%s", "%s", "%d", "%s", "%s")""" % (head_lem, rel, w_lem, count, sids, corpus.upper()))
-    
-    conn.commit()
-    c.close()
-    
+    #with open("relationer.txt", "w") as F:
+    for head, rels in freq.iteritems():
+        for rel, w in rels.iteritems():
+            for w, count_and_sid in sorted(w.iteritems(), key=lambda x: -x[1][0]):
+                count, sids = count_and_sid
+                sids = ";".join(sids)
+                head_lem, head_pos = head.split(u"^")
+                w_lem, w_pos = w.split(u"^")
+                if count >= min_count and head_pos in pos_filter and w_pos in pos_filter and rel in rel_filter:
+                    #printhead = u"." if head == phead else head_lem
+                    #printrel  = u"." if head == phead and rel == prel else rel
+                    #phead = head
+                    #prel  = rel
+                    #print >>F, ("%50s %5s   %-50s %5d %s" % (printhead, printrel, w_lem, count, sids)).encode("UTF-8")
+                    #c.execute("""INSERT INTO relations VALUES ("%s", "%s", "%s", "%d", "%s", "%s")""" % (head_lem, rel, w_lem, count, sids, corpus.upper()))
+                    row= {"head": head_lem,
+                          "rel": rel,
+                          "dep": w_lem,
+                          "freq": count,
+                          "corpus": corpus.upper()
+                          }
+                    mysql.add_row(MYSQL_TABLE, row)
+    mysql.unlock()
+    #conn.commit()
+    #c.close()
+
+################################################################################
+
+MYSQL_TABLE = "relations"
+
+MYSQL_RELATIONS = {'columns': [("head",   "varchar(1024)", "", "NOT NULL"),
+                               ("rel",    "char(2)", "", "NOT NULL"),
+                               ("dep",    "varchar(1024)", "", "NOT NULL"),
+                               ("freq",   int, None, ""),
+                               ("corpus", str, "", "NOT NULL")],
+               'keys': [],
+               'default charset': 'utf8',
+               }
+
 ################################################################################    
 
 if __name__ == '__main__':

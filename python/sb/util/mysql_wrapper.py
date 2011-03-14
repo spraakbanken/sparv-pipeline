@@ -2,6 +2,7 @@
 
 import system
 import log
+import constants
 
 class MySQL(object):
     binaries = ('mysql', 'mysql5')
@@ -19,7 +20,7 @@ class MySQL(object):
         if self.output:
             # Write SQL statement to file
             with open(self.output, "a") as outfile:
-                print >>outfile, sql
+                print >>outfile, sql.encode(constants.UTF8)
         else:
             # Execute SQL statement
             out, err = system.call_binary(self.binaries[0], self.arguments, sql % args,
@@ -30,7 +31,7 @@ class MySQL(object):
                 log.error("MySQL: %s", err)
         #return out
 
-    def create_table(self, table, columns, primary=None, keys=None, **kwargs):
+    def create_table(self, table, drop, columns, primary=None, keys=None, **kwargs):
         sqlcolumns = [u"  %s %s %s DEFAULT %s" %
                       (_ATOM(name), _TYPE(typ), extra or "", _VALUE(default))
                       for name, typ, default, extra in columns]
@@ -42,25 +43,37 @@ class MySQL(object):
             if isinstance(key, basestring):
                 key = key.split()
             sqlcolumns += [u"KEY %s (%s)" % (_ATOM(key[0]), _ATOMSEQ(key))]
-        sql = (u"DROP TABLE IF EXISTS %s;\n" % _ATOM(table) +
-               u"CREATE TABLE %s (\n " % _ATOM(table) +
-               u",\n ".join(sqlcolumns) +
-               u") ")
+        
+        if drop:
+            sql = (u"DROP TABLE IF EXISTS %s;\n" % _ATOM(table) +
+                   u"CREATE TABLE %s (\n " % _ATOM(table))
+        else:
+            sql = u"CREATE TABLE IF NOT EXISTS %s (\n " % _ATOM(table)
+        
+        sql += u",\n ".join(sqlcolumns) + u") "
+        
         for key, value in kwargs.items():
             sql += u" %s = %s " % (key, _ATOM(value))
         sql += u";"
         self.execute(sql)
 
+    def lock(self, tables):
+        t = ", ".join([_ATOM(table) + " WRITE" for table in tables])
+        self.execute(u"LOCK TABLES %s;" % t)
+
+    def unlock(self):
+        self.execute(u"UNLOCK TABLES;")
+    
     def add_row(self, table, *rows):
         assert all(isinstance(row, (dict, list, tuple)) for row in rows)
         table = _ATOM(table)
-        sql = [u"LOCK TABLE %s WRITE;" % table]
+        sql = [] #[u"LOCK TABLE %s WRITE;" % table]
         for row in rows:
             if isinstance(row, dict):
                 sql += [u"INSERT INTO %s SET %s;" % (table, _DICT(row, filter_null=True))]
             else:
                 sql += [u"INSERT INTO %s VALUE (%s);" % (table, _VALUESEQ(row))]
-        sql += [u"UNLOCK TABLE;"]
+        #sql += [u"UNLOCK TABLE;"]
         self.execute("\n".join(sql))
 
 

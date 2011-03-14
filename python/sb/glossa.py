@@ -33,15 +33,16 @@ def create_mysql(db_name, master, class_table, text_table, corpus_files, sqlfile
     MASTERtext  = MASTERtable(master, text_table)
     util.log.info("Creating MySQL tables: %s, %s", MASTERclass, MASTERtext)
     mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile)
-    mysql.create_table(MASTERclass, **MYSQL_CLASS)
-    mysql.create_table(MASTERtext,  **MYSQL_TEXT)
+    mysql.create_table(MASTERclass, drop=True, **MYSQL_CLASS)
+    mysql.create_table(MASTERtext, drop=True,  **MYSQL_TEXT)
+    mysql.lock(MASTERclass, MASTERtext)
     for corpus in corpus_files:
         ntokens = int(subprocess.Popen(["wc", "-l", corpus + "." + util.TOKEN], stdout=subprocess.PIPE).communicate()[0].split()[0]) # For Python <2.7
         #ntokens = int(subprocess.check_output(["wc", "-l", corpus + "." + util.TOKEN]).split()[0]) # Much faster than reading annotations, but not available in <2.7
         #ntokens = len(util.read_annotation(corpus + "." + util.TOKEN))
         mysql.add_row(MASTERclass, MYSQL_CLASS_ROW(os.path.basename(corpus), freq=ntokens))
         mysql.add_row(MASTERtext,  MYSQL_TEXT_ROW(os.path.basename(corpus), wordcount=ntokens))
-
+    mysql.unlock()
 
 def create_align(db_name, master, align_table, lang1, lang2, base_files, sqlfile):
     if isinstance(base_files, basestring):
@@ -67,8 +68,10 @@ def create_align(db_name, master, align_table, lang1, lang2, base_files, sqlfile
     MASTERalign = MASTERtable(master, align_table)
     util.log.info("Creating MySQL table with %d rows: %s", len(rows), MASTERalign)
     mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile)
-    mysql.create_table(MASTERalign, **MYSQL_ALIGN)
+    mysql.create_table(MASTERalign, drop=True, **MYSQL_ALIGN)
+    mysql.lock([MASTERalign])
     mysql.add_row(MASTERalign, *rows)
+    mysql.unlock()
 
 def MASTERtable(master, name):
     return master.upper() + name
