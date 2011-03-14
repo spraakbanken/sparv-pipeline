@@ -64,6 +64,10 @@ class MySQL(object):
     def unlock(self):
         self.execute(u"UNLOCK TABLES;")
     
+    def delete_rows(self, table, conditions):
+        conditions = " AND ".join( ["%s = %s" % (_ATOM(k), _VALUE(v)) for (k, v) in conditions.items()] )
+        self.execute(u"DELETE FROM %s WHERE %s;" % (_ATOM(table), conditions))
+    
     def add_row(self, table, *rows):
         assert all(isinstance(row, (dict, list, tuple)) for row in rows)
         table = _ATOM(table)

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import util
-import sqlite3 as sqlite
 from util.mysql_wrapper import MySQL
 
 def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentenceid, encoding=util.UTF8):
@@ -73,19 +72,12 @@ def frequency(source, corpus, db_name, sqlfile):
             freq.setdefault(head, {}).setdefault(rel, {}).setdefault(w, [0, []])
             freq[head][rel][w][0] += 1
             freq[head][rel][w][1].append(sid)
-        
-    #phead = prel = None
     
     mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile)
     mysql.create_table(MYSQL_TABLE, drop=False, **MYSQL_RELATIONS)
     mysql.lock([MYSQL_TABLE])
+    mysql.delete_rows(MYSQL_TABLE, {"corpus": corpus.upper()})
     
-    #conn = sqlite.connect(out)
-    #c = conn.cursor()
-    #c.execute("DROP TABLE IF EXISTS relations")
-    #c.execute("CREATE TABLE relations (head TEXT, rel TEXT, dep TEXT, freq INTEGER, sources TEXT, corpus TEXT)")
-
-    #with open("relationer.txt", "w") as F:
     for head, rels in freq.iteritems():
         for rel, w in rels.iteritems():
             for w, count_and_sid in sorted(w.iteritems(), key=lambda x: -x[1][0]):
@@ -94,22 +86,14 @@ def frequency(source, corpus, db_name, sqlfile):
                 head_lem, head_pos = head.split(u"^")
                 w_lem, w_pos = w.split(u"^")
                 if count >= min_count and head_pos in pos_filter and w_pos in pos_filter and rel in rel_filter:
-                    #printhead = u"." if head == phead else head_lem
-                    #printrel  = u"." if head == phead and rel == prel else rel
-                    #phead = head
-                    #prel  = rel
-                    #print >>F, ("%50s %5s   %-50s %5d %s" % (printhead, printrel, w_lem, count, sids)).encode("UTF-8")
-                    #c.execute("""INSERT INTO relations VALUES ("%s", "%s", "%s", "%d", "%s", "%s")""" % (head_lem, rel, w_lem, count, sids, corpus.upper()))
-                    row= {"head": head_lem,
-                          "rel": rel,
-                          "dep": w_lem,
-                          "freq": count,
-                          "corpus": corpus.upper()
-                          }
+                    row = {"head": head_lem,
+                           "rel": rel,
+                           "dep": w_lem,
+                           "freq": count,
+                           "corpus": corpus.upper()
+                           }
                     mysql.add_row(MYSQL_TABLE, row)
     mysql.unlock()
-    #conn.commit()
-    #c.close()
 
 ################################################################################
 
