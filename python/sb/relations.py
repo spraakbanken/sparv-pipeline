@@ -95,13 +95,13 @@ def frequency(source, corpus, db_name, sqlfile):
                            }
                     mysql.add_row(MYSQL_TABLE, row)
                     i += 1
-        if i > 500:
-            i = 0
-            mysql.unlock()
-            no += 1
-            sqlfile_no = sqlfile + "." + "%03d" % no
-            mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile_no)
-            mysql.lock([MYSQL_TABLE])
+                    if i > 50000:
+                        i = 0
+                        mysql.unlock()
+                        no += 1
+                        sqlfile_no = sqlfile + "." + "%03d" % no
+                        mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile_no)
+                        mysql.lock([MYSQL_TABLE])
     mysql.unlock()
     
 
