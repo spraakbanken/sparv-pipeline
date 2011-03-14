@@ -103,7 +103,7 @@ def _VALUE(val):
     if val is None:
         return "NULL"
     if isinstance(val, basestring):
-        return "'%s'" % (val,)
+        return "'%s'" % (_ESCAPE(val),)
     else:
         return "%s" % (val,)
 
@@ -116,3 +116,5 @@ def _DICT(dct, filter_null=False):
     return ", ".join("%s = %s" % (_ATOM(k), _VALUE(v)) for (k,v) in dct.items()
                      if not (filter_null and v is None))
 
+def _ESCAPE(string):
+    return string.replace("'", "\'")
