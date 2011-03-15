@@ -31,7 +31,7 @@ class MySQL(object):
                 log.error("MySQL: %s", err)
         #return out
 
-    def create_table(self, table, drop, columns, primary=None, keys=None, **kwargs):
+    def create_table(self, table, drop, columns, primary=None, indexes=None, **kwargs):
         sqlcolumns = [u"  %s %s %s DEFAULT %s" %
                       (_ATOM(name), _TYPE(typ), extra or "", _VALUE(default))
                       for name, typ, default, extra in columns]
@@ -39,10 +39,10 @@ class MySQL(object):
             if isinstance(primary, basestring):
                 primary = primary.split()
             sqlcolumns += [u"PRIMARY KEY (%s)" % _ATOMSEQ(primary)]
-        for key in keys:
-            if isinstance(key, basestring):
-                key = key.split()
-            sqlcolumns += [u"KEY %s (%s)" % (_ATOM(key[0]), _ATOMSEQ(key))]
+        for index in indexes:
+            if isinstance(index, basestring):
+                index = index.split()
+            sqlcolumns += [u"INDEX %s (%s)" % (_ATOM(index[0]), _ATOMSEQ(index))]
         
         if drop:
             sql = (u"DROP TABLE IF EXISTS %s;\n" % _ATOM(table) +
