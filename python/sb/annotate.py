@@ -71,6 +71,15 @@ def replace(chunk, out, find, sub=""):
     """Find and replace annotation. Find string must match whole annotation."""
     util.write_annotation(out, ((key, sub if val == find else val) for (key, val) in util.read_annotation_iteritems(chunk)))
 
+def replace_list(chunk, out, find, sub=""):
+    """Find and replace annotations. Find string must match whole annotation.
+    find and sub are whitespace separated lists of words to replace and their replacement."""
+    find = find.split()
+    sub = sub.split()
+    assert len(find) == len(sub), "find and len must have the same number of words."
+    translate = dict((f, s) for (f, s) in zip(find, sub))
+    util.write_annotation(out, ((key, translate.get(val, val)) for (key, val) in util.read_annotation_iteritems(chunk)))
+
 def find_replace(chunk, out, find, sub=""):
     """Find and replace parts of or whole annotation."""
     util.write_annotation(out, ((key, val.replace(find, sub)) for (key, val) in util.read_annotation_iteritems(chunk)))
@@ -83,6 +92,7 @@ if __name__ == '__main__':
                   constant=constant,
                   affix=affix,
                   replace=replace,
+                  replace_list=replace_list,
                   find_replace=find_replace,
                   span_as_value=span_as_value
                   )

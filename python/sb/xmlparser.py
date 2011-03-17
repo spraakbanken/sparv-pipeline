@@ -20,12 +20,14 @@ REGEXP_TOKEN = re.compile(r"([^\W_\d]+|\d+| +|\s|.)", re.UNICODE)
 # exclude these in the first group above, hence [^\W_\d];
 # idea taken from http://stackoverflow.com/questions/1673749
 
-def parse(source, text, elements, annotations, skip=(), overlap=(), header="teiheader", encoding=util.UTF8, prefix="", fileid="", fileids=""):
+def parse(source, text, elements, annotations, skip=(), overlap=(), header="teiheader", encoding=util.UTF8, prefix="", fileid="", fileids="", headers="", header_annotations=""):
     """Parse one pseudo-xml source file, into the specified corpus."""
     if isinstance(elements, basestring): elements = elements.split()
     if isinstance(annotations, basestring): annotations = annotations.split()
     if isinstance(skip, basestring): skip = skip.split()
     if isinstance(overlap, basestring): overlap = overlap.split()
+    if isinstance(headers, basestring): headers = headers.lower().split()
+    if isinstance(header_annotations, basestring): header_annotations = header_annotations.split()
     assert len(elements) == len(annotations), "elements and annotations must be the same length"
     
     if fileid and fileids:
@@ -40,6 +42,9 @@ def parse(source, text, elements, annotations, skip=(), overlap=(), header="teih
                             for elemgroup, annotation in zip(elements, annotations)
                             for elem in elemgroup.split("+"))
 
+    head_annotations = dict((elsplit(head), annotation)
+                            for head, annotation in zip(headers, header_annotations))
+
     skipped_elems = set(elsplit(elem) for elem in skip)
     assert skipped_elems.isdisjoint(elem_annotations), "skip and elements must be disjoint"
 
@@ -48,7 +53,7 @@ def parse(source, text, elements, annotations, skip=(), overlap=(), header="teih
 
     with open(source) as SRC:
         content = SRC.read().decode(encoding)
-    parser = XMLParser(elem_annotations, skipped_elems, can_overlap, header, prefix, text, len(content))
+    parser = XMLParser(elem_annotations, skipped_elems, can_overlap, header, prefix, text, len(content), head_annotations)
     parser.feed(content)
     parser.close()
 
@@ -58,13 +63,14 @@ def parse(source, text, elements, annotations, skip=(), overlap=(), header="teih
 from HTMLParser import HTMLParser
 
 class XMLParser(HTMLParser):
-    def __init__(self, elem_annotations, skipped_elems, can_overlap, header_elem, prefix, textfile, corpus_size):
+    def __init__(self, elem_annotations, skipped_elems, can_overlap, header_elem, prefix, textfile, corpus_size, head_annotations={}):
         HTMLParser.__init__(self)
         self.reset()
         self.tagstack = []
         self.header_elem = header_elem
         self.inside_header = False
         self.elem_annotations = elem_annotations
+        self.head_annotations = head_annotations
         self.skipped_elems = skipped_elems
         self.can_overlap = can_overlap
         self.prefix = prefix
@@ -75,6 +81,7 @@ class XMLParser(HTMLParser):
         self.anchor2pos = {}
         self.textbuffer = []
         self.dbs = dict((annot, {}) for annot in elem_annotations.values())
+        self.header_dbs = dict((header, []) for header in head_annotations.values())
         util.resetIdent(self.prefix, maxidents=corpus_size)
 
     def pos(self):
@@ -94,6 +101,10 @@ class XMLParser(HTMLParser):
         util.write_corpus_text(self.textfile, text, self.pos2anchor)
         for annot, db in self.dbs.iteritems():
             util.write_annotation(annot, db)
+        sortedpos = sorted(self.pos2anchor.items())
+        start_end = util.mkEdge("header", (sortedpos[0][1], sortedpos[-1][1]))
+        for header, db in self.header_dbs.iteritems():
+            util.write_annotation(header, [(start_end, val) for val in db])
         
         HTMLParser.close(self)
 
@@ -126,22 +137,24 @@ class XMLParser(HTMLParser):
         """
         if name == self.header_elem or self.inside_header:
             self.inside_header = True
-            return
+            #return
 
         elem_attrs = attrs + [("", "")]
-        for attr, value in elem_attrs:
-            elem = (name, attr)
-            if not (elem in self.elem_annotations or elem in self.skipped_elems or (attr != "" and (name, "*") in self.skipped_elems)):
-                self.skipped_elems.add(elem)
-                if attr:
-                    if (name, "") in self.elem_annotations:
-                        util.log.warning(self.pos() + "Skipping XML attribute <%s %s=%s>", name, attr, value)
-                    else:
-                        util.log.warning(self.pos() + "Skipping XML element <%s %s=%s>", name, attr, value)
-                elif not attrs:
-                    util.log.warning(self.pos() + "Skipping XML element <%s>", name)
+        if not self.inside_header:
+            # Check if we are skipping this element
+            for attr, value in elem_attrs:
+                elem = (name, attr)
+                if not (elem in self.elem_annotations or elem in self.skipped_elems or (attr != "" and (name, "*") in self.skipped_elems)):
+                    self.skipped_elems.add(elem)
+                    if attr:
+                        if (name, "") in self.elem_annotations:
+                            util.log.warning(self.pos() + "Skipping XML attribute <%s %s=%s>", name, attr, value)
+                        else:
+                            util.log.warning(self.pos() + "Skipping XML element <%s %s=%s>", name, attr, value)
+                    elif not attrs:
+                        util.log.warning(self.pos() + "Skipping XML element <%s>", name)
 
-        # we use a reversed stack (push from the left), to simplify
+        # We use a reversed stack (push from the left), to simplify
         # searching for elements below the top of the stack:
         self.tagstack.insert(0, (name, self.anchor(), elem_attrs))
 
@@ -154,9 +167,6 @@ class XMLParser(HTMLParser):
         to the corresponding annotation. Each xml attr also gets added to
         an annotation. The annotation group depends on the tag name.
         """
-        if self.inside_header:
-            self.inside_header = (name != self.header_elem)
-            return
         # Retrieve the open tag in the tagstack:
         try:
             ix = [t[0] for t in self.tagstack].index(name)
@@ -165,25 +175,32 @@ class XMLParser(HTMLParser):
             return
 
         name, start, attrs = self.tagstack.pop(ix)
-        end = self.anchor()
-        overlaps = [t[:2] for t in self.tagstack[:ix]
-                    if ( (name, t[0]) not in self.can_overlap and (name, "*") not in self.can_overlap and (t[0], "*") not in self.can_overlap )]
-        if overlaps:
-            overlapping_elems = ["<%s> [%s:]" % t for t in overlaps]
-            util.log.warning(self.pos() + "Tag <%s> [%s:%s], overlapping with %s",
-                             name, start, end, ", ".join(overlapping_elems)) 
-
-        edge = util.mkEdge(name, (start, end))
-        for attr, value in attrs:
-            # Zero-pad integers 234 to 0000234, so that sorting works:
-            # Problem: Might result in different number of digits in parallel corpora.
-            #try: value = "%0*d" % (self.max_nr_zeros, int(value))
-            #except ValueError: pass
-            try:
-                annotation = self.elem_annotations[name, attr]
-                self.dbs[annotation][edge] = value
-            except KeyError:
-                pass
+        
+        if self.inside_header:
+            self.inside_header = (name != self.header_elem)
+            name = ".".join(tag[0] for tag in reversed(self.tagstack)) + "." + name
+            for attr, value in attrs:
+                try:
+                    annotation = self.head_annotations[name, attr]
+                    self.header_dbs[annotation].append(value)
+                except KeyError:
+                    pass
+        else:
+            end = self.anchor()
+            overlaps = [t[:2] for t in self.tagstack[:ix]
+                        if ( (name, t[0]) not in self.can_overlap and (name, "*") not in self.can_overlap and (t[0], "*") not in self.can_overlap )]
+            if overlaps:
+                overlapping_elems = ["<%s> [%s:]" % t for t in overlaps]
+                util.log.warning(self.pos() + "Tag <%s> [%s:%s], overlapping with %s",
+                                 name, start, end, ", ".join(overlapping_elems)) 
+    
+            edge = util.mkEdge(name, (start, end))
+            for attr, value in attrs:
+                try:
+                    annotation = self.elem_annotations[name, attr]
+                    self.dbs[annotation][edge] = value
+                except KeyError:
+                    pass
 
     def handle_data(self, content):
         """Plain text data are tokenized and each 'token' is added to the text."""
