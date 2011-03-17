@@ -112,7 +112,7 @@ def frequency(source, corpus, db_name, sqlfile):
     sqlfile_no = sqlfile + "." + "%03d" % no
     mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile_no)
     mysql.create_table(MYSQL_TABLE, drop=False, **MYSQL_RELATIONS)
-    mysql.lock([MYSQL_TABLE])
+    mysql.lock(MYSQL_TABLE)
     mysql.delete_rows(MYSQL_TABLE, {"corpus": corpus.upper()})
     
     i = 0
@@ -136,7 +136,7 @@ def frequency(source, corpus, db_name, sqlfile):
                         no += 1
                         sqlfile_no = sqlfile + "." + "%03d" % no
                         mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile_no)
-                        mysql.lock([MYSQL_TABLE])
+                        mysql.lock(MYSQL_TABLE)
     mysql.unlock()
     
     util.log.info("Done creating SQL files")

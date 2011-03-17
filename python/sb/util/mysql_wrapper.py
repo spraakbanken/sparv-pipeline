@@ -57,7 +57,7 @@ class MySQL(object):
         sql += u";"
         self.execute(sql)
 
-    def lock(self, tables):
+    def lock(self, *tables):
         t = ", ".join([_ATOM(table) + " WRITE" for table in tables])
         self.execute(u"LOCK TABLES %s;" % t)
 

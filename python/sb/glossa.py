@@ -69,7 +69,7 @@ def create_align(db_name, master, align_table, lang1, lang2, base_files, sqlfile
     util.log.info("Creating MySQL table with %d rows: %s", len(rows), MASTERalign)
     mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile)
     mysql.create_table(MASTERalign, drop=True, **MYSQL_ALIGN)
-    mysql.lock([MASTERalign])
+    mysql.lock(MASTERalign)
     mysql.add_row(MASTERalign, *rows)
     mysql.unlock()
 
