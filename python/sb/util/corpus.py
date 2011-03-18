@@ -15,7 +15,12 @@ def annotation_exists(file):
     """Checks if an annotation file exists."""
     return os.path.exists(file)
 
-def write_annotation(file, annotation, encode=None):
+def clear_annotation(file):
+    """Removes an annotation file if it exists."""
+    if os.path.exists(file):
+        os.remove(file)
+
+def write_annotation(file, annotation, encode=None, append=False):
     """Writes an annotation to a file. The file is overwritten if it exists.
     The annotation can be a dictionary, or a sequence of (key,value) pairs.
     If specified, encode should be a function from values to unicode strings.
@@ -23,7 +28,8 @@ def write_annotation(file, annotation, encode=None):
     if isinstance(annotation, dict):
         annotation = annotation.iteritems()
     system.make_directory(os.path.dirname(file))
-    with open(file, "w") as DB:
+    mode = "a" if append else "w"
+    with open(file, mode) as DB:
         ctr = 0
         for key, value in annotation:
             if value is None: value = ""
