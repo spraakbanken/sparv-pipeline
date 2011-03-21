@@ -39,7 +39,7 @@ def export_to_vrt(out, order, annotations, columns=(), structs=(), encoding=CWB_
     vrt = defaultdict(dict)
     for n, annot in enumerate(annotations):
         for tok, value in util.read_annotation_iteritems(annot):
-            vrt[tok][n] = value.replace(" ", "_").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+            vrt[tok][n] = value.replace(" ", "_").replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 
     sortkey = util.read_annotation(order).get
     tokens = sorted(vrt, key=sortkey)
