@@ -34,10 +34,11 @@ def export_to_vrt(out, order, annotations, columns=(), structs=(), encoding=CWB_
     if isinstance(annotations, basestring): annotations = annotations.split()
     if isinstance(columns, basestring): columns = columns.split()
     if not columns: columns = annotations
+    structs_count = len(structs.split())
     structs = parse_structural_attributes(structs)
 
     vrt = defaultdict(dict)
-    for n, annot in enumerate(annotations):
+    for n, annot in enumerate(annotations[:max(len(columns), structs_count)]):
         for tok, value in util.read_annotation_iteritems(annot):
             vrt[tok][n] = value.replace(" ", "_").replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 
