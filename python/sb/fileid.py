@@ -2,7 +2,11 @@
 
 import util
 
-def fileid(out, files):
+def fileid(out, files=None, filelist=None):
+    assert files or filelist, "files or filelist must be specified"
+    
+    if filelist:
+        files = open(filelist, "r").read().strip()
     files = files.split()
     files.sort()
     

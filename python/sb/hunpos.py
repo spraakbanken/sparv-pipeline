@@ -10,7 +10,7 @@ TOK_SEP = "\n"
 TAG_SEP = "\t"
 TAG_COLUMN = 1
 
-def msdtag(model, out, word, sentence, tag_mapping=None, encoding=util.UTF8):
+def msdtag(model, out, word, sentence, tag_mapping=None, morphtable=None, encoding=util.UTF8):
     """POS/MSD tag using the Hunpos tagger.
     """
     if isinstance(tag_mapping, basestring):
@@ -22,7 +22,9 @@ def msdtag(model, out, word, sentence, tag_mapping=None, encoding=util.UTF8):
     WORD = util.read_annotation(word)
     stdin = SENT_SEP.join(TOK_SEP.join(WORD[tokid] for tokid in sent)
                           for sent in sentences)
-    stdout, _ = util.system.call_binary("hunpos-tag", [model], stdin, encoding=encoding, verbose=True)
+    args = [model]
+    if morphtable: args.extend(["-m", morphtable])
+    stdout, _ = util.system.call_binary("hunpos-tag", args, stdin, encoding=encoding, verbose=True)
 
     OUT = {}
     for sent, tagged_sent in zip(sentences, stdout.strip().split(SENT_SEP)):
