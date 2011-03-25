@@ -56,7 +56,6 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, encoding=util.
             for r in result:
                 triples.extend(_mutate_triple((r[0][0], r[1], [x[0] for x in r[2::2]])))
     
-    #OUT = [(str(i), "\t".join((REL_SEPARATOR.join(head), rel, REL_SEPARATOR.join(dep)))) for (i, (head, rel, dep)) in enumerate(triples)]
     OUT = [(str(i), "\t".join((head, rel, REL_SEPARATOR.join(dep)))) for (i, (head, rel, dep)) in enumerate(triples)]
     util.write_annotation(out, OUT)
 
@@ -102,7 +101,7 @@ def _traverse_relations(root, rels=[], r=None):
         
         result = []
         matchpattern = "^" + "$|^".join([";".join(x).replace("*", "[^;]+") for x in rels + baserels]) + "$"
-        #print matchpattern
+
         for d in depres:
             pattern = ";".join([x if isinstance(x, basestring) else x[1] for x in d])
             if re.match(matchpattern, pattern):
@@ -132,11 +131,11 @@ def _mutate_triple(triple):
             is_lemgrams[part] = True
         else:
             parts[part] = [val]
-
+    
     def _remove_doubles(a, b):
         if a in is_lemgrams and b in is_lemgrams:
             # Remove multi-words which are in both
-            doubles = [d for d in set(parts[a]).intersection(set(parts[b])) if "_" in d] # TODO: "_" kan ingå i t ex "förslag_1..n.1"!
+            doubles = [d for d in set(parts[a]).intersection(set(parts[b])) if re.search(r"\.\.\w\wm\.", d)]
         
             for double in doubles:
                 parts[a].remove(double)
@@ -146,7 +145,7 @@ def _mutate_triple(triple):
     _remove_doubles("extra", "dep")
     _remove_doubles("head", "extra")
     
-    extras = "|".join(e for e in parts["extra"] if "_!" not in e) if parts["extra"] else ""
+    extras = "|".join(e for e in parts["extra"]) if parts["extra"] else ""
     extras = extras or []
     
     for new_head in parts["head"]:
