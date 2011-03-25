@@ -3,6 +3,9 @@
 import util
 
 def fileid(out, files=None, filelist=None):
+    """Creates unique IDs for every file in a list, using the filenames as seed.
+    The resulting IDs are written to the file specified by 'out'."""
+    
     assert files or filelist, "files or filelist must be specified"
     
     if filelist:

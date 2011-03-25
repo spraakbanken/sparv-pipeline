@@ -160,6 +160,7 @@ def get_precision(msd, msdtags):
     """
     return (0.5 if msd is None else
             0.75 if msd in msdtags else
+            0.66 if "." in msd and [partial for partial in msdtags if partial.startswith(msd[:msd.find(".")])] else
             0.25)
 
 
