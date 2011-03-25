@@ -62,10 +62,10 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, encoding=util.
 
 
 def _traverse_relations(root, rels=[], r=None):
-    _rels = "(SS|OO|IO|AT|ET|DT|OA)" # http://stp.ling.uu.se/~nivre/swedish_treebank/dep.html
+    # http://stp.ling.uu.se/~nivre/swedish_treebank/dep.html
     _pos = "(VB|NN|JJ)"
     baserels = [
-                ["VB", _rels, _pos],
+                ["VB", "(SS|OO|IO|OA)", _pos],
                 ["VB", "(RA|TA)", "(AB|NN)"],
                 #["VB", "(RA|TA)", "PP", "(PA|HD)", "NN"],
                 ["NN", "(AT|ET)", _pos],
@@ -136,7 +136,7 @@ def _mutate_triple(triple):
     def _remove_doubles(a, b):
         if a in is_lemgrams and b in is_lemgrams:
             # Remove multi-words which are in both
-            doubles = [d for d in set(parts[a]).intersection(set(parts[b])) if "_" in d]
+            doubles = [d for d in set(parts[a]).intersection(set(parts[b])) if "_" in d] # TODO: "_" kan ingå i t ex "förslag_1..n.1"!
         
             for double in doubles:
                 parts[a].remove(double)
