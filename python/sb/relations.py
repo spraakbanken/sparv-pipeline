@@ -52,8 +52,9 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, encoding=util.
         assert not incomplete, "incomplete is not empty"
         result = _traverse_relations(root)
         
-        for r in result:
-            triples.extend(_mutate_triple((r[0][0], r[1], [x[0] for x in r[2::2]])))
+        if result:
+            for r in result:
+                triples.extend(_mutate_triple((r[0][0], r[1], [x[0] for x in r[2::2]])))
     
     #OUT = [(str(i), "\t".join((REL_SEPARATOR.join(head), rel, REL_SEPARATOR.join(dep)))) for (i, (head, rel, dep)) in enumerate(triples)]
     OUT = [(str(i), "\t".join((head, rel, REL_SEPARATOR.join(dep)))) for (i, (head, rel, dep)) in enumerate(triples)]
