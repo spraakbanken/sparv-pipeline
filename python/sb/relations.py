@@ -224,8 +224,7 @@ MYSQL_RELATIONS = {'columns': [("head",   "varchar(1024)", "", "NOT NULL"),
                                ("corpus", str, "", "NOT NULL")],
                'indexes': ["head",
                            "dep",
-                           "corpus",
-                           "rel"],
+                           "corpus"],
                'default charset': 'utf8',
                }
 

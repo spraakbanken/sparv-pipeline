@@ -20,7 +20,7 @@ REGEXP_TOKEN = re.compile(r"([^\W_\d]+|\d+| +|\s|.)", re.UNICODE)
 # exclude these in the first group above, hence [^\W_\d];
 # idea taken from http://stackoverflow.com/questions/1673749
 
-def parse(source, text, elements, annotations, skip=(), overlap=(), header="teiheader", encoding=util.UTF8, prefix="", fileid="", fileids="", headers="", header_annotations=""):
+def parse(source, text, elements, annotations, skip=(), overlap=(), header="teiheader", encoding=util.UTF8, prefix="", fileid="", fileids="", headers="", header_annotations="", skip_if_empty=""):
     """Parse one pseudo-xml source file, into the specified corpus."""
     if isinstance(elements, basestring): elements = elements.split()
     if isinstance(annotations, basestring): annotations = annotations.split()
@@ -28,6 +28,7 @@ def parse(source, text, elements, annotations, skip=(), overlap=(), header="teih
     if isinstance(overlap, basestring): overlap = overlap.split()
     if isinstance(headers, basestring): headers = headers.lower().split()
     if isinstance(header_annotations, basestring): header_annotations = header_annotations.split()
+    if isinstance(skip_if_empty, basestring): skip_if_empty = skip_if_empty.split()
     assert len(elements) == len(annotations), "elements and annotations must be the same length"
     
     if fileid and fileids:
@@ -53,7 +54,7 @@ def parse(source, text, elements, annotations, skip=(), overlap=(), header="teih
 
     with open(source) as SRC:
         content = SRC.read().decode(encoding)
-    parser = XMLParser(elem_annotations, skipped_elems, can_overlap, header, prefix, text, len(content), head_annotations)
+    parser = XMLParser(elem_annotations, skipped_elems, can_overlap, header, prefix, text, len(content), head_annotations, skip_if_empty)
     parser.feed(content)
     parser.close()
 
@@ -63,7 +64,7 @@ def parse(source, text, elements, annotations, skip=(), overlap=(), header="teih
 from HTMLParser import HTMLParser
 
 class XMLParser(HTMLParser):
-    def __init__(self, elem_annotations, skipped_elems, can_overlap, header_elem, prefix, textfile, corpus_size, head_annotations={}):
+    def __init__(self, elem_annotations, skipped_elems, can_overlap, header_elem, prefix, textfile, corpus_size, head_annotations={}, skip_if_empty=[]):
         HTMLParser.__init__(self)
         self.reset()
         self.tagstack = []
@@ -71,6 +72,7 @@ class XMLParser(HTMLParser):
         self.inside_header = False
         self.elem_annotations = elem_annotations
         self.head_annotations = head_annotations
+        self.skip_if_empty = skip_if_empty
         self.skipped_elems = skipped_elems
         self.can_overlap = can_overlap
         self.prefix = prefix
@@ -193,14 +195,15 @@ class XMLParser(HTMLParser):
                 overlapping_elems = ["<%s> [%s:]" % t for t in overlaps]
                 util.log.warning(self.pos() + "Tag <%s> [%s:%s], overlapping with %s",
                                  name, start, end, ", ".join(overlapping_elems)) 
-    
-            edge = util.mkEdge(name, (start, end))
-            for attr, value in attrs:
-                try:
-                    annotation = self.elem_annotations[name, attr]
-                    self.dbs[annotation][edge] = value
-                except KeyError:
-                    pass
+            
+            if not (start == end and name in self.skip_if_empty):
+                edge = util.mkEdge(name, (start, end))
+                for attr, value in attrs:
+                    try:
+                        annotation = self.elem_annotations[name, attr]
+                        self.dbs[annotation][edge] = value
+                    except KeyError:
+                        pass
 
     def handle_data(self, content):
         """Plain text data are tokenized and each 'token' is added to the text."""
