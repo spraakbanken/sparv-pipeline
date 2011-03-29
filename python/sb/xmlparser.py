@@ -237,7 +237,9 @@ class XMLParser(HTMLParser):
         """Entity refs &bullet; are lookep up in a database and
         added as single tokens.
         """
-        if problematic_entity(name) and name not in self.skip_entities:
+        if name in self.skip_entities:
+            return
+        if problematic_entity(name):
             util.log.error(self.pos() + "Unknown HTML entity: &%s;", name)
             return
         if self.inside_header:
