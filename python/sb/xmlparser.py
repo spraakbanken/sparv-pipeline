@@ -20,7 +20,7 @@ REGEXP_TOKEN = re.compile(r"([^\W_\d]+|\d+| +|\s|.)", re.UNICODE)
 # exclude these in the first group above, hence [^\W_\d];
 # idea taken from http://stackoverflow.com/questions/1673749
 
-def parse(source, text, elements, annotations, skip=(), overlap=(), header="teiheader", encoding=util.UTF8, prefix="", fileid="", fileids="", headers="", header_annotations="", skip_if_empty=""):
+def parse(source, text, elements, annotations, skip=(), overlap=(), header="teiheader", encoding=util.UTF8, prefix="", fileid="", fileids="", headers="", header_annotations="", skip_if_empty="", skip_entities=""):
     """Parse one pseudo-xml source file, into the specified corpus."""
     if isinstance(elements, basestring): elements = elements.split()
     if isinstance(annotations, basestring): annotations = annotations.split()
@@ -29,6 +29,7 @@ def parse(source, text, elements, annotations, skip=(), overlap=(), header="teih
     if isinstance(headers, basestring): headers = headers.lower().split()
     if isinstance(header_annotations, basestring): header_annotations = header_annotations.split()
     if isinstance(skip_if_empty, basestring): skip_if_empty = skip_if_empty.split()
+    if isinstance(skip_entities, basestring): skip_entities = skip_entities.split()
     assert len(elements) == len(annotations), "elements and annotations must be the same length"
     
     if fileid and fileids:
@@ -54,7 +55,7 @@ def parse(source, text, elements, annotations, skip=(), overlap=(), header="teih
 
     with open(source) as SRC:
         content = SRC.read().decode(encoding)
-    parser = XMLParser(elem_annotations, skipped_elems, can_overlap, header, prefix, text, len(content), head_annotations, skip_if_empty)
+    parser = XMLParser(elem_annotations, skipped_elems, can_overlap, header, prefix, text, len(content), head_annotations, skip_if_empty, skip_entities)
     parser.feed(content)
     parser.close()
 
@@ -64,7 +65,7 @@ def parse(source, text, elements, annotations, skip=(), overlap=(), header="teih
 from HTMLParser import HTMLParser
 
 class XMLParser(HTMLParser):
-    def __init__(self, elem_annotations, skipped_elems, can_overlap, header_elem, prefix, textfile, corpus_size, head_annotations={}, skip_if_empty=[]):
+    def __init__(self, elem_annotations, skipped_elems, can_overlap, header_elem, prefix, textfile, corpus_size, head_annotations={}, skip_if_empty=[], skip_entities=[]):
         HTMLParser.__init__(self)
         self.reset()
         self.tagstack = []
@@ -73,6 +74,7 @@ class XMLParser(HTMLParser):
         self.elem_annotations = elem_annotations
         self.head_annotations = head_annotations
         self.skip_if_empty = skip_if_empty
+        self.skip_entities = skip_entities
         self.skipped_elems = skipped_elems
         self.can_overlap = can_overlap
         self.prefix = prefix
@@ -235,7 +237,7 @@ class XMLParser(HTMLParser):
         """Entity refs &bullet; are lookep up in a database and
         added as single tokens.
         """
-        if problematic_entity(name):
+        if problematic_entity(name) and name not in self.skip_entities:
             util.log.error(self.pos() + "Unknown HTML entity: &%s;", name)
             return
         if self.inside_header:
