@@ -26,7 +26,7 @@ def parse(source, text, elements, annotations, skip=(), overlap=(), header="teih
     if isinstance(annotations, basestring): annotations = annotations.split()
     if isinstance(skip, basestring): skip = skip.split()
     if isinstance(overlap, basestring): overlap = overlap.split()
-    if isinstance(headers, basestring): headers = headers.lower().split()
+    if isinstance(headers, basestring): headers = headers.split()
     if isinstance(header_annotations, basestring): header_annotations = header_annotations.split()
     if isinstance(skip_if_empty, basestring): skip_if_empty = skip_if_empty.split()
     if isinstance(skip_entities, basestring): skip_entities = skip_entities.split()
@@ -73,6 +73,7 @@ class XMLParser(HTMLParser):
         self.inside_header = False
         self.elem_annotations = elem_annotations
         self.head_annotations = head_annotations
+        self.text_roots = set([header[0].split(".")[0] for header in head_annotations.keys()])
         self.skip_if_empty = skip_if_empty
         self.skip_entities = skip_entities
         self.skipped_elems = skipped_elems
@@ -85,7 +86,8 @@ class XMLParser(HTMLParser):
         self.anchor2pos = {}
         self.textbuffer = []
         self.dbs = dict((annot, {}) for annot in elem_annotations.values())
-        self.header_dbs = dict((header, []) for header in head_annotations.values())
+        self.header_temp = dict((header, None) for header in head_annotations.values())
+        self.header_dbs = dict((header, {}) for header in head_annotations.values())
         util.resetIdent(self.prefix, maxidents=corpus_size)
 
     def pos(self):
@@ -105,10 +107,8 @@ class XMLParser(HTMLParser):
         util.write_corpus_text(self.textfile, text, self.pos2anchor)
         for annot, db in self.dbs.iteritems():
             util.write_annotation(annot, db)
-        sortedpos = sorted(self.pos2anchor.items())
-        start_end = util.mkEdge("header", (sortedpos[0][1], sortedpos[-1][1]))
         for header, db in self.header_dbs.iteritems():
-            util.write_annotation(header, [(start_end, val) for val in db])
+            util.write_annotation(header, db)
         
         HTMLParser.close(self)
 
@@ -142,7 +142,7 @@ class XMLParser(HTMLParser):
         if name == self.header_elem or self.inside_header:
             self.inside_header = True
             #return
-
+        
         elem_attrs = attrs + [("", "")]
         if not self.inside_header:
             # Check if we are skipping this element
@@ -186,7 +186,7 @@ class XMLParser(HTMLParser):
             for attr, value in attrs:
                 try:
                     annotation = self.head_annotations[name, attr]
-                    self.header_dbs[annotation].append(value)
+                    self.header_temp[annotation] = value
                 except KeyError:
                     pass
         else:
@@ -206,6 +206,12 @@ class XMLParser(HTMLParser):
                         self.dbs[annotation][edge] = value
                     except KeyError:
                         pass
+            
+            if name in self.text_roots and not self.tagstack:
+                headedge = util.mkEdge("header", (start, end))
+                for headann, headval in self.header_temp.iteritems():
+                    self.header_dbs[headann][headedge] = headval
+                    self.header_temp[headann] = None
 
     def handle_data(self, content):
         """Plain text data are tokenized and each 'token' is added to the text."""
@@ -215,6 +221,9 @@ class XMLParser(HTMLParser):
         if self.position == 0 and isinstance(content, unicode):
             content = content.lstrip(u"\ufeff")
         if self.inside_header:
+            element_path = ".".join(tag[0] for tag in reversed(self.tagstack))
+            if (element_path, "TEXT") in self.head_annotations:
+                self.header_temp[self.head_annotations[(element_path, "TEXT")]] = content
             return
         for token in REGEXP_TOKEN.split(content):
             self.add_token(token)
@@ -271,7 +280,7 @@ class XMLParser(HTMLParser):
 
     def handle_decl(self, decl):
         """SGML declarations <!...> are not allowed."""
-        util.log.warning(self.pos() + "SGML declaration: <!%s>", decl)
+        util.log.info(self.pos() + "SGML declaration: <!%s>", decl)
 
 
 ######################################################################
