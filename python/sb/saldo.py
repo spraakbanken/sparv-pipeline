@@ -55,7 +55,7 @@ def annotate(word, msd, sentence, reference, out, annotations, model, delimiter=
                 msdtag = MSD[tokid]
                 ann_tags_words = lexicon.lookup(theword)
                 annotation_precisions = [(get_precision(msdtag, msdtags), annotation)
-                                            for (annotation, msdtags, wordslist) in ann_tags_words if not wordslist]
+                                            for (annotation, msdtags, wordslist, _) in ann_tags_words if not wordslist]
                 annotation_precisions = normalize_precision(annotation_precisions)
                 annotation_precisions.sort(reverse=True)
                         
@@ -77,7 +77,7 @@ def annotate(word, msd, sentence, reference, out, annotations, model, delimiter=
                         for key in annotation:
                             annotation_info.setdefault(key, []).extend(annotation[key])
                         
-                looking_for = [(annotation, words, REF[tokid]) for (annotation, _, wordslist) in ann_tags_words if wordslist for words in wordslist]
+                looking_for = [(annotation, words, REF[tokid], particle) for (annotation, _, wordslist, particle) in ann_tags_words if wordslist for words in wordslist]
                 
                 for waiting in outstack.keys():
                     todel = []
@@ -85,8 +85,8 @@ def annotate(word, msd, sentence, reference, out, annotations, model, delimiter=
             
                     for x in outstack[waiting]["looking_for"]:
                         seeking_word = x[1][0]
-    
-                        if seeking_word.lower() == theword.lower() or seeking_word.startswith("*"):
+                        #                                           |  Last word may not be PP if this is a particle-multi-word |
+                        if (seeking_word.lower() == theword.lower() and not (len(x[1]) == 1 and x[2] and msdtag.startswith("PP"))) or seeking_word.startswith("*"):
                             
                             if seeking_word.startswith("*"):
                                 if x[1][1].lower() == theword.lower():
@@ -193,7 +193,7 @@ class SaldoLexicon(object):
 
     def lookup(self, word):
         """Lookup a word in the lexicon.
-        Returns a list of (annotation, list-of-pos-tags, list-of-tuples-with-words).
+        Returns a list of (annotation-dictionary, list-of-pos-tags, list-of-lists-with-words).
         """
         if word.lower() == word:
             annotation_tag_pairs = self.lexicon.get(word, [])
@@ -205,7 +205,7 @@ class SaldoLexicon(object):
     def save_to_picklefile(saldofile, lexicon, protocol=1, verbose=True):
         """Save a Saldo lexicon to a Pickled file.
         The input lexicon should be a dict:
-          - lexicon = {wordform: {{annotation-type: annotation}: (set(possible tags), set(tuples with following words))}}
+          - lexicon = {wordform: {{annotation-type: annotation}: (set(possible tags), set(tuples with following words), is-particle-verb-boolean)}}
         """
         if verbose: util.log.info("Saving Saldo lexicon in Pickle format")
         
@@ -217,7 +217,8 @@ class SaldoLexicon(object):
                 annotationlist = PART_DELIM2.join( k + PART_DELIM3 + PART_DELIM3.join(annotation[k]) for k in annotation)
                 taglist =        PART_DELIM3.join(sorted(extra[0]))
                 wordlist =       PART_DELIM2.join([PART_DELIM3.join(x) for x in sorted(extra[1])])
-                annotations.append( PART_DELIM1.join([annotationlist, taglist, wordlist]) )
+                particle =       "1" if extra[2] else "0"
+                annotations.append( PART_DELIM1.join([annotationlist, taglist, wordlist, particle]) )
             
             picklex[word] = sorted(annotations)
         
@@ -248,7 +249,7 @@ PART_DELIM2 = "^2"
 PART_DELIM3 = "^3"
 
 def _split_triple(annotation_tag_words):
-    annotation, tags, words = annotation_tag_words.split(PART_DELIM1)
+    annotation, tags, words, particle = annotation_tag_words.split(PART_DELIM1)
     #annotationlist = [x for x in annotation.split(PART_DELIM3) if x]
     annotationdict = {}
     for a in annotation.split(PART_DELIM2):
@@ -258,7 +259,7 @@ def _split_triple(annotation_tag_words):
     taglist = [x for x in tags.split(PART_DELIM3) if x]
     wordlist = [x.split(PART_DELIM3) for x in words.split(PART_DELIM2) if x]
     
-    return annotationdict, taglist, wordlist
+    return annotationdict, taglist, wordlist, particle == "1"
 
 
 ######################################################################
@@ -304,8 +305,10 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
                     inhs = ""
                 inhs = inhs.split()
                 
-                x_find = re.search(r"_x(\d+)_", elem.findtext("p"))
+                p = elem.findtext("p")
+                x_find = re.search(r"_x(\d*)_", p)
                 x_insert = x_find.groups()[0] if x_find else None
+                if x_insert == "": x_insert = "1"
                 
                 table = elem.find("table")
                 multiwords = []
@@ -320,12 +323,13 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
                         # Handle multi-word expressions
                         multiwords.append(word)
                         multipart, multitotal = param.split(":")[-1].split("-")
+                        particle = bool(re.search(r"vbm_.+?p.*?\d+_", p)) # Multi-word with particle
                         
                         if x_insert and multipart == x_insert:
                             multiwords.append("*")
                         
                         if multipart == multitotal:
-                            lexicon.setdefault(multiwords[0], {}).setdefault(annotations, (set(), set()))[1].add(tuple(multiwords[1:]))
+                            lexicon.setdefault(multiwords[0], {}).setdefault(annotations, (set(), set(), particle))[1].add(tuple(multiwords[1:]))
                             multiwords = []
                     else:
                         # Single word expressions
@@ -335,7 +339,7 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
                         saldotag = " ".join([pos] + inhs + [param])
                         tags = tagmap.get(saldotag)
                         if tags:
-                            lexicon.setdefault(word, {}).setdefault(annotations, (set(), set()))[0].update(tags)
+                            lexicon.setdefault(word, {}).setdefault(annotations, (set(), set(), False))[0].update(tags)
 
             # Done parsing section. Clear tree to save memory
             if elem.tag in ['LexicalEntry', 'frame', 'resFrame']:

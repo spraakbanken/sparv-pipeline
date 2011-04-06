@@ -67,15 +67,39 @@ def do_segmentation(text, element, out, chunk, segmenter, existing_segments=None
 ######################################################################
 # Punkt word tokenizer
 
+class ModifiedLanguageVars(nltk.tokenize.punkt.PunktLanguageVars):
+    """Slight modification to handle unicode quotation marks and other
+    punctuation."""
+    # http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt.PunktLanguageVars-class.html
+    _re_word_start = ur'''[^\(\"\'”\`{\/\[:;&\#\*@\)}\]\-,]'''
+    _re_non_word_chars = ur'(?:[?!)\"”;\/}\]\*:@\'\({\[])'
+    re_boundary_realignment = re.compile(ur'[”"\')\]}]+?(?:\s+|(?=--)|$)',
+            re.MULTILINE)
+
+    def __init__(self):
+        pass
+
 class ModifiedPunktWordTokenizer(object):
-    def __init__(self, punkt_params):
-        assert isinstance(punkt_params, nltk.tokenize.punkt.PunktParameters), "Not a punkt model: %r" % punkt_params
-        segmenter = nltk.PunktSentenceTokenizer(punkt_params)
-        self.lang_vars = segmenter._lang_vars
+    def __init__(self):
+        self.lang_vars = ModifiedLanguageVars()
         self.is_post_sentence_token = self.lang_vars.re_boundary_realignment
         self.is_punctuated_token = re.compile(r"\w.*\.$", re.UNICODE)
-        self.is_quoted_token = re.compile(r"^\'.*[\w\.]", re.UNICODE)
-        self.abbreviations = segmenter._params.abbrev_types
+        self.abbreviations = set([
+                                  "a.a", "a.a", "a.d", "agr", "a.k.a", "alt", "ang", "anm", "art", "avd", "avl", "b.b", "betr",
+                                  "b.g", "b.h", "bif", "bl.a", "b.r.b", "b.t.w", "civ.ek", "civ.ing", "co", "dir", "div",
+                                  "d.m", "doc", "dr", "d.s", "d.s.o", "d.v", "d.v.s", "d.y", "dåv", "d.ä", "e.a.g", "e.d", "eftr", "eg",
+                                  "ekon", "e.kr", "dyl", "e.d", "em", "e.m", "enl", "e.o", "etc", "e.u", "ev", "ex", "exkl", "f",
+                                  "farm", "f.d", "ff", "fig", "f.kr", "f.m", "f.n", "forts", "fr", "fr.a", "fr.o.m", "f.v.b",
+                                  "f.v.t", "f.ö", "följ", "föreg", "förf", "gr", "g.s", "h.h.k.k.h.h", "h.k.h", "h.m", "ill",
+                                  "inkl", "i.o.m", "st.f", "jur", "kand", "kap", "kl", "l", "lb", "leg", "lic", "lisp", "m", "m.a.a",
+                                  "mag", "m.a.o", "m.a.p", "m.fl", "m.h.a", "m.h.t", "milj", "m.m", "m.m.d", "mom", "m.v.h",
+                                  "möjl", "n.b", "näml", "nästk", "o", "o.d", "odont", "o.dyl", "omkr", "o.m.s", "op", "ordf",
+                                  "o.s.a", "o.s.v", "pers", "p.gr", "p.g.a", "pol", "prel", "prof", "rc", "ref", "resp", "r.i.p",
+                                  "rst", "s", "s.a.s", "sek", "sekr", "sid", "sign", "sistl", "s.k", "sk", "skålp", "s.m", "s.m.s", "sp",
+                                  "spec", "s.st", "st", "stud", "särsk", "t", "tab", "tekn", "tel", "teol", "t.ex", "tf", "t.h",
+                                  "tim", "t.o.m", "tr", "trol", "t.v", "u.p.a", "urspr", "utg", "v", "w", "v.d", "å.k",
+                                  "ä.k.s", "äv", "ö.g", "ö.h", "ök", "övers"
+                                  ])
 
     def span_tokenize(self, text):
         begin = 0
@@ -102,19 +126,7 @@ class ModifiedPunktWordTokenizer(object):
                 words[pos] = endword
                 words.insert(pos+1, ".")
         
-        # a hack for splitting ' from beginning of words
-        # (which the default Punkt English tokenizer doesn't do)
-        # i.e., "'hej" => "'" "hej"
-        # we do it backwards since we are modifying the list in place
-        while pos >= 0:
-            word = words[pos]
-            if self.is_quoted_token.match(word):
-                words[pos] = word[1:]
-                words.insert(pos, "'")
-            pos -= 1
-                
         return words
-
 
 ######################################################################
 # Training a Punkt sentence tokenizer
@@ -167,6 +179,8 @@ class PunctuationTokenizer(nltk.RegexpTokenizer):
         result.append(tuple(temp))
         
         return result
+
+######################################################################
 
 SEGMENTERS = dict(whitespace = nltk.WhitespaceTokenizer,
                   linebreaks = LinebreakTokenizer,

@@ -34,7 +34,7 @@ def write_annotation(file, annotation, encode=None, append=False):
         for key, value in annotation:
             if value is None: value = ""
             if encode: value = encode(value)
-            value = value.replace("\\", r"\\").replace("\n", r"\n")
+            value = value.replace("\\", r"\\").replace("\n", r"\n").replace("\r", "")
             print >>DB, (key + ANNOTATION_DELIM + value).encode(UTF8)
             ctr += 1
     log.info("Wrote %d items: %s", ctr, file)
