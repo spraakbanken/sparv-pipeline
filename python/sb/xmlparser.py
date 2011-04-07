@@ -198,7 +198,7 @@ class XMLParser(HTMLParser):
                 util.log.warning(self.pos() + "Tag <%s> [%s:%s], overlapping with %s",
                                  name, start, end, ", ".join(overlapping_elems)) 
             
-            if not (start == end and name in self.skip_if_empty):
+            if not ((start == end or (start < end and self.textbuffer[-1].strip() == "")) and name in self.skip_if_empty):
                 edge = util.mkEdge(name, (start, end))
                 for attr, value in attrs:
                     try:
