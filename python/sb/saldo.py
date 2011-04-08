@@ -317,7 +317,7 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
                     word = form.findtext("wf")
                     param = form.findtext("param")
 
-                    if param in ("frag", "c", "ci", "cm", "sms"):
+                    if param in ("frag", "c", "ci", "cm"):
                         continue
                     elif param[-1].isdigit() and param[-1] != "1":
                         # Handle multi-word expressions

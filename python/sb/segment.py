@@ -71,7 +71,7 @@ class ModifiedLanguageVars(nltk.tokenize.punkt.PunktLanguageVars):
     """Slight modification to handle unicode quotation marks and other
     punctuation."""
     # http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt.PunktLanguageVars-class.html
-    _re_word_start = ur'''[^\(\"\'”\`\\{\/\[:;&\#\*@\)}\]\-,]'''
+    _re_word_start = ur'''[^\(\"\'–”\`\\{\/\[:;&\#\*@\)}\]\-,]'''
     _re_non_word_chars = ur'(?:[?!)\"”\\;\/}\]\*:@\'\({\[])'
     re_boundary_realignment = re.compile(ur'[”"\')\]}]+?(?:\s+|(?=--)|$)',
             re.MULTILINE)
@@ -91,12 +91,12 @@ class ModifiedPunktWordTokenizer(object):
                                   "ekon", "e.kr", "dyl", "e.d", "em", "e.m", "enl", "e.o", "etc", "e.u", "ev", "ex", "exkl", "f",
                                   "farm", "f.d", "ff", "fig", "f.kr", "f.m", "f.n", "forts", "fr", "fr.a", "fr.o.m", "f.v.b",
                                   "f.v.t", "f.ö", "följ", "föreg", "förf", "gr", "g.s", "h.h.k.k.h.h", "h.k.h", "h.m", "ill",
-                                  "inkl", "i.o.m", "st.f", "jur", "kand", "kap", "kl", "l", "lb", "leg", "lic", "lisp", "m", "m.a.a",
+                                  "inkl", "i.o.m", "st.f", "jur", "kand", "kap", "kl", "lb", "leg", "lic", "lisp", "m.a.a",
                                   "mag", "m.a.o", "m.a.p", "m.fl", "m.h.a", "m.h.t", "milj", "m.m", "m.m.d", "mom", "m.v.h",
                                   "möjl", "n.b", "näml", "nästk", "o", "o.d", "odont", "o.dyl", "omkr", "o.m.s", "op", "ordf",
                                   "o.s.a", "o.s.v", "pers", "p.gr", "p.g.a", "pol", "prel", "prof", "rc", "ref", "resp", "r.i.p",
-                                  "rst", "s", "s.a.s", "sek", "sekr", "sid", "sign", "sistl", "s.k", "sk", "skålp", "s.m", "s.m.s", "sp",
-                                  "spec", "s.st", "st", "stud", "särsk", "t", "tab", "tekn", "tel", "teol", "t.ex", "tf", "t.h",
+                                  "rst", "s.a.s", "sek", "sekr", "sid", "sign", "sistl", "s.k", "sk", "skålp", "s.m", "s.m.s", "sp",
+                                  "spec", "s.st", "st", "stud", "särsk", "tab", "tekn", "tel", "teol", "t.ex", "tf", "t.h",
                                   "tim", "t.o.m", "tr", "trol", "t.v", "u.p.a", "urspr", "utg", "v", "w", "v.d", "å.k",
                                   "ä.k.s", "äv", "ö.g", "ö.h", "ök", "övers"
                                   ])
