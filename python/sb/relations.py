@@ -154,7 +154,8 @@ def _mutate_triple(triple):
     #_remove_doubles("extra", "dep")
     #_remove_doubles("head", "extra")
     
-    if extra[1]:
+    # Remove multiword deps for words that are already in "extra"
+    if extra[1] and dep[0].startswith("|") and dep[0].endswith("|"):
         dep_multi = [dm for dm in dep[0].split("|") if ":" in dm]
         for dm in dep_multi:
             w, _, r = dm.partition(":")
