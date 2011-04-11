@@ -41,6 +41,7 @@ def export_to_vrt(out, order, annotations, columns=(), structs=(), encoding=CWB_
     for n, annot in enumerate(annotations[:max(len(columns), structs_count)]):
         for tok, value in util.read_annotation_iteritems(annot):
             if n > 0:
+                value = "|" if value == "|/|" else value
                 value = value.replace("/", "") # "/" is not allowed in anything but the word itself.
             vrt[tok][n] = value.replace(" ", "_").replace("\n", " ")
 
