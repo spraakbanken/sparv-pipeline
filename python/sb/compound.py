@@ -50,7 +50,7 @@ class SaldoLexicon(object):
     def get_suffixes(self, suffix, msd=None):
         return [ (suffix, s[0]) for s in self.lookup(suffix)
                 if (s[2] in ("nn", "vb", "av", "ab") or s[2][-1] == "h")
-                and set(s[1]).difference(set(["c", "ci", "cm"]))
+                and set(s[1]).difference(set(["c", "ci", "cm", "sms"]))
                 and (msd in s[3] or not msd) ]
 
 
