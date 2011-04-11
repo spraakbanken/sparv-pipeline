@@ -197,7 +197,8 @@ def frequency(source, corpus, db_name, sqlfile):
             freq.setdefault(head, {}).setdefault(rel, {}).setdefault(dep, [0, [], set([])])
             freq[head][rel][dep][0] += 1
             freq[head][rel][dep][1].append(sid + ":" + refh + ":" + refd)
-            freq[head][rel][dep][2].add(extra)
+            if extra:
+                freq[head][rel][dep][2].add(extra)
     
     util.log.info("Creating SQL files")
     
