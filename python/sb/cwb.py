@@ -40,7 +40,9 @@ def export_to_vrt(out, order, annotations, columns=(), structs=(), encoding=CWB_
     vrt = defaultdict(dict)
     for n, annot in enumerate(annotations[:max(len(columns), structs_count)]):
         for tok, value in util.read_annotation_iteritems(annot):
-            vrt[tok][n] = value.replace(" ", "_").replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", " ")
+            if n > 0:
+                value = value.replace("/", "") # "/" is not allowed in anything but the word itself.
+            vrt[tok][n] = value.replace(" ", "_").replace("\n", " ")
 
     sortkey = util.read_annotation(order).get
     tokens = sorted(vrt, key=sortkey)
