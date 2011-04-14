@@ -191,14 +191,9 @@ def frequency(source, corpus, db_name, sqlfile):
 
         for _, triple in REL.iteritems():
             head, rel, dep, extra, sid, refh, refd = triple.split(u"\t")
-            #print "%50s %5s   %-50s" % (head, rel, w)
-            #freq.setdefault(head, {}).setdefault(rel, {}).setdefault(w, 0)
-            #freq[head][rel][dep] += 1
-            freq.setdefault(head, {}).setdefault(rel, {}).setdefault(dep, [0, [], set([])])
-            freq[head][rel][dep][0] += 1
-            freq[head][rel][dep][1].append(sid + ":" + refh + ":" + refd)
-            if extra:
-                freq[head][rel][dep][2].add(extra)
+            freq.setdefault(head, {}).setdefault(rel, {}).setdefault(dep, {}).setdefault(extra, [0, []])
+            freq[head][rel][dep][extra][0] += 1
+            freq[head][rel][dep][extra][1].append(sid + ":" + refh + ":" + refd)
     
     util.log.info("Creating SQL files")
     
@@ -212,30 +207,30 @@ def frequency(source, corpus, db_name, sqlfile):
     i = 0
     for head, rels in freq.iteritems():
         for rel, deps in rels.iteritems():
-            for dep, dep2 in deps.iteritems():
-                count, sids, extras = dep2
-                sids = ";".join(sids)
-                extras = "/".join(sorted(extras))
-                
-                if count >= min_count:
-                    row = {"head": head,
-                           "rel": rel,
-                           "dep": dep,
-                           "depextra": extras,
-                           "freq": count,
-                           "corpus": corpus.upper(),
-                           "sentences": sids
-                           }
-                    mysql.add_row(MYSQL_TABLE, row)
-                    i += 1
-                    if i > 50000:
-                        # To not create too large SQL-files.
-                        i = 0
-                        mysql.unlock()
-                        no += 1
-                        sqlfile_no = sqlfile + "." + "%03d" % no
-                        mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile_no)
-                        mysql.lock(MYSQL_TABLE)
+            for dep, extras in deps.iteritems():
+                for extra, extra2 in extras.iteritems():
+                    count, sids = extra2
+                    sids = ";".join(sids)
+                    
+                    if count >= min_count:
+                        row = {"head": head,
+                               "rel": rel,
+                               "dep": dep,
+                               "depextra": extra,
+                               "freq": count,
+                               "corpus": corpus.upper(),
+                               "sentences": sids
+                               }
+                        mysql.add_row(MYSQL_TABLE, row)
+                        i += 1
+                        if i > 50000:
+                            # To not create too large SQL-files.
+                            i = 0
+                            mysql.unlock()
+                            no += 1
+                            sqlfile_no = sqlfile + "." + "%03d" % no
+                            mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile_no)
+                            mysql.lock(MYSQL_TABLE)
     mysql.unlock()
     
     util.log.info("Done creating SQL files")
