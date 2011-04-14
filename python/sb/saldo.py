@@ -139,9 +139,9 @@ def annotate(word, msd, sentence, reference, out, annotations, model, delimiter=
         for out_file, annotation in zip(out, annotations):
             util.write_annotation(out_file, [(tok, OUT[tok].get(annotation, affix)) for tok in OUT], append=True)
         
+        partition += 1000
         if partition >= len(sentences):
             break
-        partition += 1000
 
 
 def _join_annotation(annotation, delimiter, affix):

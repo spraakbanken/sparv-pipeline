@@ -247,7 +247,7 @@ POS_FILTER = (u"VB", u"NN", u"JJ")
 REL_FILTER = (u"SS", u"OO", u"IO", u"AT", u"ET", u"DT", u"OA", u"RA", u"TA")
 
 REL_SEPARATOR = " "
-MYSQL_TABLE = "relations2"
+MYSQL_TABLE = "relations"
 
 MYSQL_RELATIONS = {'columns': [("head",   "varchar(1024)", "", "NOT NULL"),
                                ("rel",    "char(2)", "", "NOT NULL"),
