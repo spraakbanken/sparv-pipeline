@@ -32,6 +32,7 @@ def parse(source, text, elements, annotations, skip=(), overlap=(), header="teih
     if isinstance(skip_entities, basestring): skip_entities = skip_entities.split()
     if isinstance(autoclose, basestring): autoclose = autoclose.split()
     assert len(elements) == len(annotations), "elements and annotations must be the same length"
+    if not header: header = "teiheader"
     
     if fileid and fileids:
         FILEIDS = util.read_annotation(fileids)

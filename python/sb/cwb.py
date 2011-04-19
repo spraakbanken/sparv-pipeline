@@ -43,7 +43,7 @@ def export_to_vrt(out, order, annotations, columns=(), structs=(), encoding=CWB_
             if n > 0:
                 value = "|" if value == "|/|" else value
                 value = value.replace("/", "") # "/" is not allowed in anything but the word itself.
-            vrt[tok][n] = value.replace(" ", "_").replace("\n", " ")
+            vrt[tok][n] = value.replace(" ", "_").replace("\n", " ") # maybe use non-breaking space instead? u'\xa0'
 
     sortkey = util.read_annotation(order).get
     tokens = sorted(vrt, key=sortkey)

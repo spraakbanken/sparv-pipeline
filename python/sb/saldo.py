@@ -43,12 +43,14 @@ def annotate(word, msd, sentence, reference, out, annotations, model, delimiter=
     
     sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
     partition = 0
+    partition_incr = 1000
+    sentences_total = len(sentences)
     
     while True:
         OUT = {}
         outstack = {}
     
-        for sent in sentences[partition:partition + 1000]:
+        for sent in sentences[partition:partition + partition_incr]:
             for tokid in sent:
                 theword = WORD[tokid]
         
@@ -139,9 +141,10 @@ def annotate(word, msd, sentence, reference, out, annotations, model, delimiter=
         for out_file, annotation in zip(out, annotations):
             util.write_annotation(out_file, [(tok, OUT[tok].get(annotation, affix)) for tok in OUT], append=True)
         
-        partition += 1000
+        partition += partition_incr
         if partition >= len(sentences):
             break
+        util.log.info("%.1f%% done", ((partition * 100.0) / sentences_total))
 
 
 def _join_annotation(annotation, delimiter, affix):
