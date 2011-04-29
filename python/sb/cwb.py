@@ -43,7 +43,7 @@ def export_to_vrt(out, order, annotations, columns=(), structs=(), encoding=CWB_
             if n > 0:
                 value = "|" if value == "|/|" else value
                 value = value.replace("/", "") # "/" is not allowed in anything but the word itself.
-            vrt[tok][n] = value.replace(" ", "_").replace("\n", " ") # maybe use non-breaking space instead? u'\xa0'
+            vrt[tok][n] = value.replace("\n", " ") # maybe use non-breaking space instead? u'\xa0'
 
     sortkey = util.read_annotation(order).get
     tokens = sorted(vrt, key=sortkey)
@@ -55,7 +55,7 @@ def export_to_vrt(out, order, annotations, columns=(), structs=(), encoding=CWB_
             cols = vrt[tok]
             new_attr_values = {}
             for elem, attrs in structs:
-                new_attr_values[elem] = ''.join(' %s="%s"' % (attr, cols[n])
+                new_attr_values[elem] = ''.join(' %s="%s"' % (attr, cols[n].replace('"', "&quot;"))
                                                 for (attr, n) in attrs if cols.get(n))
                 if old_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
                     print >>OUT, "</%s>" % elem.encode(encoding)
@@ -64,7 +64,7 @@ def export_to_vrt(out, order, annotations, columns=(), structs=(), encoding=CWB_
                 if new_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
                     print >>OUT, "<%s%s>" % (elem.encode(encoding), new_attr_values[elem].encode(encoding))
                     old_attr_values[elem] = new_attr_values[elem]
-            line = "\t".join(cols.get(n, UNDEF) for n in column_nrs)
+            line = "\t".join(cols.get(n, UNDEF).replace(" ", "_") for n in column_nrs)
             print >>OUT, line.encode(encoding)
         for elem, _attrs in structs:
             if old_attr_values[elem]:
