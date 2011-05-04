@@ -418,7 +418,7 @@ imacr   = 0x0012B,
 ebreve  = 0x0115,
 obreve  = 0x014F,
 ibreve  = 0x012D,
-umacron = 0x016B,
+umacr   = 0x016B,
 plus    = 0x0002B,
 rcub    = 0x0007D,
 female  = 0x02640,
@@ -431,6 +431,11 @@ sigmav  = 0x003C2,
 
 # HTML entities (from http://www.derose.net/steve/utilities/XMLUTILS/entityNameList)
 html_entities = {
+    
+    "ebreve": 0x0115,
+    "obreve": 0x014F,
+    "ibreve": 0x012D,
+    
     ############################### 0x00000 (ASCII/ISO 646) 
     "excl": 0x00021,
     "quot": 0x00022,
