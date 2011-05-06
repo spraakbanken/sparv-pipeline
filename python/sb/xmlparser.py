@@ -74,8 +74,9 @@ class XMLParser(HTMLParser):
         self.header_elem = header_elem
         self.inside_header = False
         self.elem_annotations = elem_annotations
+        self.text_roots = set([re.split(r"(?<!\\)\.", header[0])[0].replace(r"\.", ".") for header in head_annotations.keys()])
+        head_annotations = dict(((k[0].replace(r"\.", "."), k[1]), v) for k, v in head_annotations.iteritems())
         self.head_annotations = head_annotations
-        self.text_roots = set([header[0].split(".")[0] for header in head_annotations.keys()])
         self.skip_if_empty = skip_if_empty
         self.skip_entities = skip_entities
         self.skipped_elems = skipped_elems
@@ -229,7 +230,7 @@ class XMLParser(HTMLParser):
         if self.inside_header:
             element_path = ".".join(tag[0] for tag in reversed(self.tagstack))
             if (element_path, "TEXT") in self.head_annotations:
-                self.header_temp[self.head_annotations[(element_path, "TEXT")]] = content
+                self.header_temp[self.head_annotations[(element_path, "TEXT")]] = content.strip()
             return
         for token in REGEXP_TOKEN.split(content):
             self.add_token(token)
