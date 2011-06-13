@@ -2,7 +2,7 @@
 
 import util
 from util.mysql_wrapper import MySQL
-import re
+import re, math
 
 def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, ref, baseform, encoding=util.UTF8):
     """ Finds every dependency between words. """
@@ -178,13 +178,29 @@ def _mutate_triple(triple):
     return triples
 
 
+def mi_lex(rel, x_rel_y, x_rel, rel_y):
+    """ Calculates "Lexicographer's mutual information" """
+    return x_rel_y * math.log((rel * x_rel_y) / (x_rel * rel_y * 1.0), 2)
+
+
 def frequency(source, corpus, db_name, sqlfile):
-    """ Calculates statistics of the dependencies and saves to an SQL file. """
+    """Calculates statistics of the dependencies and saves to an SQL file.
+       - source is a space separated string with relations-files.
+       - corpus is the corpus name.
+       - db_name is the name of the database.
+       - sqlfile is the path and filename for the SQL file to be created.
+         Resulting file might be split into several parts if too big.
+    """
     
+    MAX_SQL_LINES = 50000
     min_count = 1
     source = source.split()
+    corpus = corpus.upper()
     
-    freq = {}
+    freq = {} # Frequency of (head, rel, dep, depextra)
+    rel_count = {} # Frequency of (rel)
+    head_rel_count = {} # Frequency of (head, rel)
+    rel_dep_count = {} # Frequency of (rel, dep)
     
     for s in source:
         REL = util.read_annotation(s)
@@ -192,9 +208,16 @@ def frequency(source, corpus, db_name, sqlfile):
         for _, triple in REL.iteritems():
             head, rel, dep, extra, sid, refh, refd = triple.split(u"\t")
             freq.setdefault(head, {}).setdefault(rel, {}).setdefault(dep, {}).setdefault(extra, [0, []])
-            freq[head][rel][dep][extra][0] += 1
-            freq[head][rel][dep][extra][1].append(sid + ":" + refh + ":" + refd)
-    
+            freq[head][rel][dep][extra][0] += 1 # Frequency
+            freq[head][rel][dep][extra][1].append(sid + ":" + refh + ":" + refd) # Sentence ID and "ref" for both head and dep
+            
+            rel_count.setdefault(rel, 0)
+            rel_count[rel] += 1
+            head_rel_count.setdefault((head, rel), 0)
+            head_rel_count[(head, rel)] += 1
+            rel_dep_count.setdefault((rel, dep, extra), 0)
+            rel_dep_count[(rel, dep, extra)] += 1
+
     util.log.info("Creating SQL files")
     
     no = 1
@@ -202,7 +225,7 @@ def frequency(source, corpus, db_name, sqlfile):
     mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile_no)
     mysql.create_table(MYSQL_TABLE, drop=False, **MYSQL_RELATIONS)
     mysql.lock(MYSQL_TABLE)
-    mysql.delete_rows(MYSQL_TABLE, {"corpus": corpus.upper()})
+    mysql.delete_rows(MYSQL_TABLE, {"corpus": corpus})
     
     i = 0
     for head, rels in freq.iteritems():
@@ -212,18 +235,21 @@ def frequency(source, corpus, db_name, sqlfile):
                     count, sids = extra2
                     sids = ";".join(sids)
                     
+                    mi = mi_lex(rel_count[rel], count, head_rel_count[(head, rel)], rel_dep_count[(rel, dep, extra)])
+                    
                     if count >= min_count:
                         row = {"head": head,
                                "rel": rel,
                                "dep": dep,
                                "depextra": extra,
                                "freq": count,
-                               "corpus": corpus.upper(),
+                               "lmi": mi,
+                               "corpus": corpus,
                                "sentences": sids
                                }
                         mysql.add_row(MYSQL_TABLE, row)
                         i += 1
-                        if i > 50000:
+                        if i > MAX_SQL_LINES:
                             # To not create too large SQL-files.
                             i = 0
                             mysql.unlock()
@@ -249,6 +275,7 @@ MYSQL_RELATIONS = {'columns': [("head",   "varchar(1024)", "", "NOT NULL"),
                                ("dep",    "varchar(1024)", "", "NOT NULL"),
                                ("depextra",    "varchar(1024)", "", ""),
                                ("freq",   int, None, ""),
+                               ("lmi",   float, None, ""),
                                ("corpus", str, "", "NOT NULL"),
                                ("sentences", "TEXT", "", "")],
                'indexes': ["head",

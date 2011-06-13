@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import re, os, codecs, tempfile
+import re, os, codecs #, tempfile
 import util
 
 SENT_SEP = "\n\n"
@@ -82,7 +82,6 @@ def read_conll_file(filename, encoding=util.UTF8):
             yield sentence
 
 def write_conll_file(sentences, filename, encoding=util.UTF8):
-    import re
     with codecs.open(filename, "w", encoding=encoding) as F:
         for sent in sentences:
             nr = 1

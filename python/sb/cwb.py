@@ -5,7 +5,7 @@ Tools for exporting, encoding and aligning corpora for Corpus Workbench.
 """
 
 import os
-from tempfile import TemporaryFile
+#from tempfile import TemporaryFile
 from glob import glob
 from collections import defaultdict
 

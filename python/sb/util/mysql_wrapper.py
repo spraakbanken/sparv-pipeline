@@ -87,6 +87,7 @@ def _TYPE(typ):
 _TYPE_CONVERSIONS = {str: "varchar(255)",
                      unicode: "varchar(255)",
                      int: "int(11)",
+                     float: "float",
                      'year': "year(4)",
                      }
 

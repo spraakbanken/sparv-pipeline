@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from StringIO import StringIO
-import dbm
-import util
+#from StringIO import StringIO
+#import dbm
+#import util
 import util.tagsets
 
 SENT_SEP = "\n\n"

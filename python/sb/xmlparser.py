@@ -7,7 +7,7 @@ Pseudo-XML is almost like XML, but admits overlapping elements.
 
 import re
 import util
-from xmlanalyzer import problematic_entity, is_control_code, html_entities
+from xmlanalyzer import problematic_entity, html_entities #, is_control_code
 
 # TODO: lägg till metadata-annoteringar, ungefär som i obsolete/tei_parser.py
 # ELLER: skapa ett annat skript: headerparser.py, som endast parsar och annoterar metadata

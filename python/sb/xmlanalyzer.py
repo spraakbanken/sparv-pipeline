@@ -6,7 +6,6 @@ Pseudo-XML is almost like XML, but admits overlapping elements.
 """
 
 import os
-import re
 from collections import defaultdict
 
 import util

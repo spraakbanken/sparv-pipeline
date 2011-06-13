@@ -7,6 +7,7 @@ Adds annotations from Saldo.
 import util
 import itertools
 import cPickle as pickle
+import re
 
 def annotate(word, msd, sentence, reference, out, annotations, model, delimiter="|", affix="|", precision=":%.3f", filter=None):
     """Use the Saldo lexicon model to annotate pos-tagged words.
@@ -26,126 +27,139 @@ def annotate(word, msd, sentence, reference, out, annotations, model, delimiter=
         max: only use the annotations that are most probable
         first: only use one annotation; one of the most probable
     """
-    MAX_BETWEEN = 4 # The maximum number of words that may be inserted between words in specific multi-word units.
+    MAX_GAPS = 1 # Maximum number of gaps in multi-word units.
     
     annotations = annotations.split()
     out = out.split()
-    assert len(out) == len(annotations), "Number of target files and annotations needs to be the same"
+    assert len(out) == len(annotations), "Number of target files and annotations must be the same"
     
     lexicon = SaldoLexicon(model)
     WORD = util.read_annotation(word)
     MSD = util.read_annotation(msd)
     REF = util.read_annotation(reference)
-    OUT = {}
-    outstack = {}
     for out_file in out:
         util.clear_annotation(out_file)
     
     sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
-    partition = 0
-    partition_incr = 1000
-    sentences_total = len(sentences)
-    
-    while True:
-        OUT = {}
-        outstack = {}
-    
-        for sent in sentences[partition:partition + partition_incr]:
-            for tokid in sent:
-                theword = WORD[tokid]
-        
-                msdtag = MSD[tokid]
-                ann_tags_words = lexicon.lookup(theword)
-                annotation_precisions = [(get_precision(msdtag, msdtags), annotation)
-                                            for (annotation, msdtags, wordslist, _) in ann_tags_words if not wordslist]
-                annotation_precisions = normalize_precision(annotation_precisions)
-                annotation_precisions.sort(reverse=True)
-                        
-                if filter and annotation_precisions:
-                    if filter == "first":
-                        annotation_precisions = annotation_precisions[:1]
-                    elif filter == "max":
-                        maxprec = annotation_precisions[0][0]
-                        ismax = lambda lemprec: lemprec[0] >= maxprec - PRECISION_DIFF
-                        annotation_precisions = itertools.takewhile(ismax, annotation_precisions)
-                
-                annotation_info = {}
-                if precision:
-                    for (prec, annotation) in annotation_precisions:
-                        for key in annotation:
-                            annotation_info.setdefault(key, []).extend([a + precision % prec for a in annotation[key]])
-                else:
-                    for (prec, annotation) in annotation_precisions:
-                        for key in annotation:
-                            annotation_info.setdefault(key, []).extend(annotation[key])
-                        
-                looking_for = [(annotation, words, REF[tokid], particle) for (annotation, _, wordslist, particle) in ann_tags_words if wordslist for words in wordslist]
-                
-                for waiting in outstack.keys():
-                    todel = []
-                    i = 0
-            
-                    for x in outstack[waiting]["looking_for"]:
-                        seeking_word = x[1][0]
-                        #                                           |  Last word may not be PP if this is a particle-multi-word |
-                        if (seeking_word.lower() == theword.lower() and not (len(x[1]) == 1 and x[2] and msdtag.startswith("PP"))) or seeking_word.startswith("*"):
-                            
-                            if seeking_word.startswith("*"):
-                                if x[1][1].lower() == theword.lower():
-                                    seeking_word = x[1][1]
-                                    del x[1][0]
-                                elif len(seeking_word) >= MAX_BETWEEN:
-                                    del x[1][0]
-                                else:
-                                    x[1][0] += "*"
-                            
-                            if not seeking_word.startswith("*"):
-                                del x[1][0]
-                                if len(x[1]) == 0:
-                                    # Current word was the last word we were looking for
-                                    todel.append(i)
-                                    if x[2]:
-                                        for key in x[0]:
-                                            annotation_info.setdefault(key, []).extend([a + ":" + x[2] for a in x[0][key]])
-                                    for key in x[0]:
-                                        outstack[waiting]["annotation"].setdefault(key, []).extend(x[0][key])
-                                elif x[2]:
-                                    temp = {}
-                                    for key in x[0]:
-                                        temp.setdefault(key, []).extend([a + ":" + x[2] for a in x[0][key]])
-                                    looking_for.append( (temp, x[1][:], "") )
-                        else:
-                            todel.append(i)
-            
-                        i += 1
-                        
-                    for x in todel[::-1]:
-                        del outstack[waiting]["looking_for"][x]
-                    
-                    if len(outstack[waiting]["looking_for"]) == 0:
-                        OUT[waiting] = _join_annotation(outstack[waiting]["annotation"], delimiter, affix)
-                        del outstack[waiting]
-                
-                if len(looking_for) > 0:
-                    outstack.setdefault(tokid, {})["theword"] = theword
-                    outstack[tokid]["annotation"] = annotation_info
-                    outstack[tokid]["looking_for"] = looking_for
-                else:
-                    OUT[tokid] = _join_annotation(annotation_info, delimiter, affix)
-    
-            # Finish everything on the outstack, since we don't want to look for matches outside the current sentence.
-            for leftover in outstack.keys():
-                OUT[leftover] = _join_annotation(outstack[leftover]["annotation"], delimiter, affix)
-                del outstack[leftover]
-        
-        for out_file, annotation in zip(out, annotations):
-            util.write_annotation(out_file, [(tok, OUT[tok].get(annotation, affix)) for tok in OUT], append=True)
-        
-        partition += partition_incr
-        if partition >= len(sentences):
-            break
-        util.log.info("%.1f%% done", ((partition * 100.0) / sentences_total))
+    OUT = {}
 
+    for sent in sentences:
+        incomplete_multis = []
+        complete_multis = []
+        sentence_tokens = {}
+        
+        for tokid in sent:
+            theword = WORD[tokid]
+            msdtag = MSD[tokid]
+            ref = REF[tokid]
+            
+            annotation_info = {}
+            sentence_tokens[ref] = {"tokid": tokid, "word": theword, "msd": msdtag, "annotations": annotation_info}
+            
+            ######################################################################
+            # First use MSD tags to find the most probable single word annotations
+            
+            ann_tags_words = lexicon.lookup(theword)
+            annotation_precisions = [(get_precision(msdtag, msdtags), annotation)
+                                        for (annotation, msdtags, wordslist, _) in ann_tags_words if not wordslist]
+            annotation_precisions = normalize_precision(annotation_precisions)
+            annotation_precisions.sort(reverse=True)
+                    
+            if filter and annotation_precisions:
+                if filter == "first":
+                    annotation_precisions = annotation_precisions[:1]
+                elif filter == "max":
+                    maxprec = annotation_precisions[0][0]
+                    ismax = lambda lemprec: lemprec[0] >= maxprec - PRECISION_DIFF
+                    annotation_precisions = itertools.takewhile(ismax, annotation_precisions)
+            
+            if precision:
+                for (prec, annotation) in annotation_precisions:
+                    for key in annotation:
+                        annotation_info.setdefault(key, []).extend([a + precision % prec for a in annotation[key]])
+            else:
+                for (prec, annotation) in annotation_precisions:
+                    for key in annotation:
+                        annotation_info.setdefault(key, []).extend(annotation[key])
+            
+            
+            #######################################################
+            # The rest is for multi-word expressions
+            
+            todelfromincomplete = []
+            
+            for i, x in enumerate(incomplete_multis):
+                seeking_word = x[1][0] # The next word we are looking for in this multi-word expression
+                
+                if seeking_word == "*":
+                    if x[1][1].lower() == theword.lower():
+                        seeking_word = x[1][1]
+                        del x[1][0]
+                
+                if x[4][1] > MAX_GAPS:
+                    todelfromincomplete.append(i)
+                #                                           |  Last word may not be PP if this is a particle-multi-word |
+                elif seeking_word.lower() == theword.lower() and not (len(x[1]) == 1 and x[3] and msdtag.startswith("PP")):
+                    x[4][0] = False
+                    del x[1][0]
+                    x[2].append(ref)
+                    
+                    # Is current word the last word we are looking for?
+                    if len(x[1]) == 0:
+                        todelfromincomplete.append(i)
+                        complete_multis.append((x[2], x[0]))
+                else:
+                    # Increment gap counter if previous word was not part of a gap
+                    if not x[4][0]:
+                        x[4][1] += 1
+                    x[4][0] = True # Marking that previous word was part of a gap
+                            
+            for x in todelfromincomplete[::-1]:
+                del incomplete_multis[x]
+            
+            # Is this word a possible start for multi-word units?
+            looking_for = [(annotation, words, [ref], is_particle, [False, 0]) for (annotation, _, wordslist, is_particle) in ann_tags_words if wordslist for words in wordslist]
+            if len(looking_for) > 0:
+                incomplete_multis.extend(looking_for)
+
+            # Loop to next token
+        
+        # Check that we don't have any unwanted overlaps
+        remove = set()
+        for ci, c in enumerate(complete_multis):
+            for d in complete_multis:
+                if re.search(r"\.(\w\wm)\.", c[1]["lem"][0]).groups()[0] == re.search(r"\.(\w\wm)\.", d[1]["lem"][0]).groups()[0]:
+                    # Both are of same POS
+                    if d[0][0] < c[0][0] and d[0][-1] > c[0][0] and d[0][-1] < c[0][-1]:
+                        # A case of x1 y1 x2 y2. Remove y.
+                        remove.add(ci)
+                    elif c[0][0] < d[0][0] and d[0][-1] == c[0][-1]:
+                        #A case of x1 y1 xy2. Remove x.
+                        remove.add(ci)
+        
+        for c in sorted(remove, reverse=True):
+            del complete_multis[c]
+        
+        for c in complete_multis:
+            first = True
+            first_ref = ""
+            for tok_ref in c[0]:
+                if first:
+                    first_ref = tok_ref
+                for ann, val in c[1].items():
+                    if not first:
+                        val = [x + ":" + first_ref for x in val]
+                    sentence_tokens[tok_ref]["annotations"].setdefault(ann, []).extend(val)
+                first = False
+        
+        for token in sentence_tokens.values():
+            OUT[token["tokid"]] = _join_annotation(token["annotations"], delimiter, affix)
+        
+        # Loop to next sentence
+    
+    for out_file, annotation in zip(out, annotations):
+        util.write_annotation(out_file, [(tok, OUT[tok].get(annotation, affix)) for tok in OUT], append=True)
+    
 
 def _join_annotation(annotation, delimiter, affix):
     seen = set()
