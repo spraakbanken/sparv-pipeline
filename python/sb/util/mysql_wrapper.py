@@ -64,6 +64,9 @@ class MySQL(object):
     def unlock(self):
         self.execute(u"UNLOCK TABLES;")
     
+    def set_names(self, encoding="utf8"):
+        self.execute(u"SET NAMES %s;" % encoding)
+    
     def delete_rows(self, table, conditions):
         conditions = " AND ".join( ["%s = %s" % (_ATOM(k), _VALUE(v)) for (k, v) in conditions.items()] )
         self.execute(u"DELETE FROM %s WHERE %s;" % (_ATOM(table), conditions))
