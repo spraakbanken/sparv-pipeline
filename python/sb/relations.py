@@ -179,7 +179,12 @@ def _mutate_triple(triple):
 
 
 def mi_lex(rel, x_rel_y, x_rel, rel_y):
-    """ Calculates "Lexicographer's mutual information" """
+    """ Calculates "Lexicographer's mutual information".
+     - rel is the frequency of (rel)
+     - x_rel_y is the frequency of (head, rel, dep)
+     - x_rel is the frequency of (head, rel)
+     - rel_y is the frequency of (rel, dep)
+    """
     return x_rel_y * math.log((rel * x_rel_y) / (x_rel * rel_y * 1.0), 2)
 
 
@@ -192,8 +197,16 @@ def frequency(source, corpus, db_name, sqlfile):
          Resulting file might be split into several parts if too big.
     """
     
+    # Relations that will be grouped together
+    rel_grouping = {
+        "OO": "OBJ",
+        "IO": "OBJ",
+        "RA": "ADV",
+        "TA": "ADV",
+        "OA": "ADV"
+    }
+    
     MAX_SQL_LINES = 50000
-    min_count = 1
     source = source.split()
     corpus = corpus.upper()
     
@@ -207,6 +220,7 @@ def frequency(source, corpus, db_name, sqlfile):
 
         for _, triple in REL.iteritems():
             head, rel, dep, extra, sid, refh, refd = triple.split(u"\t")
+            rel = rel_grouping.get(rel, rel)
             freq.setdefault(head, {}).setdefault(rel, {}).setdefault(dep, {}).setdefault(extra, [0, []])
             freq[head][rel][dep][extra][0] += 1 # Frequency
             freq[head][rel][dep][extra][1].append(sid + ":" + refh + ":" + refd) # Sentence ID and "ref" for both head and dep
@@ -224,7 +238,8 @@ def frequency(source, corpus, db_name, sqlfile):
     sqlfile_no = sqlfile + "." + "%03d" % no
     mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile_no)
     mysql.create_table(MYSQL_TABLE, drop=False, **MYSQL_RELATIONS)
-    mysql.lock(MYSQL_TABLE)
+    #mysql.lock(MYSQL_TABLE)
+    mysql.set_names()
     mysql.delete_rows(MYSQL_TABLE, {"corpus": corpus})
     
     i = 0
@@ -235,47 +250,53 @@ def frequency(source, corpus, db_name, sqlfile):
                     count, sids = extra2
                     sids = ";".join(sids)
                     
-                    mi = mi_lex(rel_count[rel], count, head_rel_count[(head, rel)], rel_dep_count[(rel, dep, extra)])
+                    #mi = mi_lex(rel_count[rel], count, head_rel_count[(head, rel)], rel_dep_count[(rel, dep, extra)])
                     
-                    if count >= min_count:
-                        row = {"head": head,
-                               "rel": rel,
-                               "dep": dep,
-                               "depextra": extra,
-                               "freq": count,
-                               "lmi": mi,
-                               "corpus": corpus,
-                               "sentences": sids
-                               }
-                        mysql.add_row(MYSQL_TABLE, row)
-                        i += 1
-                        if i > MAX_SQL_LINES:
-                            # To not create too large SQL-files.
-                            i = 0
-                            mysql.unlock()
-                            no += 1
-                            sqlfile_no = sqlfile + "." + "%03d" % no
-                            mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile_no)
-                            mysql.lock(MYSQL_TABLE)
-    mysql.unlock()
+                    row = {"head": head,
+                           "rel": rel,
+                           "dep": dep,
+                           "depextra": extra,
+                           "freq": count,
+                           "freq_rel": rel_count[rel],
+                           "freq_head_rel": head_rel_count[(head, rel)],
+                           "freq_rel_dep": rel_dep_count[(rel, dep, extra)],
+                           #"lmi": mi,
+                           "corpus": corpus,
+                           "sentences": sids
+                           }
+                    mysql.add_row(MYSQL_TABLE, row)
+                    i += 1
+                    if i > MAX_SQL_LINES:
+                        # To not create too large SQL-files.
+                        i = 0
+                        #mysql.unlock()
+                        util.log.info("%s saved", sqlfile_no)
+                        no += 1
+                        sqlfile_no = sqlfile + "." + "%03d" % no
+                        mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile_no)
+                        mysql.set_names()
+                        #mysql.lock(MYSQL_TABLE)
+    #mysql.unlock()
     
     util.log.info("Done creating SQL files")
     
 
 ################################################################################
 
-POS_FILTER = (u"VB", u"NN", u"JJ")
-REL_FILTER = (u"SS", u"OO", u"IO", u"AT", u"ET", u"DT", u"OA", u"RA", u"TA")
+#POS_FILTER = (u"VB", u"NN", u"JJ")
+#REL_FILTER = (u"SS", u"OO", u"IO", u"AT", u"ET", u"DT", u"OA", u"RA", u"TA")
 
 REL_SEPARATOR = " "
 MYSQL_TABLE = "relations"
 
 MYSQL_RELATIONS = {'columns': [("head",   "varchar(1024)", "", "NOT NULL"),
-                               ("rel",    "char(2)", "", "NOT NULL"),
+                               ("rel",    "char(3)", "", "NOT NULL"),
                                ("dep",    "varchar(1024)", "", "NOT NULL"),
                                ("depextra",    "varchar(1024)", "", ""),
                                ("freq",   int, None, ""),
-                               ("lmi",   float, None, ""),
+                               ("freq_rel", int, None, ""),
+                               ("freq_head_rel", int, None, ""),
+                               ("freq_rel_dep", int, None, ""),
                                ("corpus", str, "", "NOT NULL"),
                                ("sentences", "TEXT", "", "")],
                'indexes': ["head",
