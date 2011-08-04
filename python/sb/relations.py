@@ -243,6 +243,7 @@ def frequency(source, corpus, db_name, sqlfile):
     mysql.delete_rows(MYSQL_TABLE, {"corpus": corpus})
     
     i = 0
+    rows = []
     for head, rels in freq.iteritems():
         for rel, deps in rels.iteritems():
             for dep, extras in deps.iteritems():
@@ -260,23 +261,23 @@ def frequency(source, corpus, db_name, sqlfile):
                            "freq_rel": rel_count[rel],
                            "freq_head_rel": head_rel_count[(head, rel)],
                            "freq_rel_dep": rel_dep_count[(rel, dep, extra)],
-                           #"lmi": mi,
                            "corpus": corpus,
                            "sentences": sids
                            }
-                    mysql.add_row(MYSQL_TABLE, row)
+                    rows.append(row)
                     i += 1
                     if i > MAX_SQL_LINES:
+                        mysql.add_row(MYSQL_TABLE, *rows)
+                        rows = []
                         # To not create too large SQL-files.
                         i = 0
-                        #mysql.unlock()
                         util.log.info("%s saved", sqlfile_no)
                         no += 1
                         sqlfile_no = sqlfile + "." + "%03d" % no
                         mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile_no)
                         mysql.set_names()
-                        #mysql.lock(MYSQL_TABLE)
-    #mysql.unlock()
+    if rows:
+        mysql.add_row(MYSQL_TABLE, *rows)
     
     util.log.info("Done creating SQL files")
     

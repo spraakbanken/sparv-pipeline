@@ -74,13 +74,24 @@ class MySQL(object):
     def add_row(self, table, *rows):
         assert all(isinstance(row, (dict, list, tuple)) for row in rows)
         table = _ATOM(table)
-        sql = [] #[u"LOCK TABLE %s WRITE;" % table]
+        sql = []
+        values = []
+        i = 0
         for row in rows:
             if isinstance(row, dict):
-                sql += [u"INSERT INTO %s SET %s;" % (table, _DICT(row, filter_null=True))]
-            else:
-                sql += [u"INSERT INTO %s VALUE (%s);" % (table, _VALUESEQ(row))]
-        #sql += [u"UNLOCK TABLE;"]
+                i += 1
+                rowlist = sorted(row.items(), key=lambda x: x[0])
+                values += [u"(%s)" % (_VALUESEQ([x[1] for x in rowlist]))]
+                #sql += [u"INSERT INTO %s SET %s;" % (table, _DICT(row, filter_null=True))]
+            #else:
+            #    sql += [u"INSERT INTO %s VALUE (%s);" % (table, _VALUESEQ(row))]
+            if i > 2000:
+                i = 0
+                sql.append(u"INSERT INTO %s (%s) VALUES\n" % (table, ", ".join(sorted(rows[0].keys()))) + ",\n".join(values) + ";")
+                values = []
+        
+        if values:
+            sql.append(u"INSERT INTO %s (%s) VALUES\n" % (table, ", ".join(sorted(rows[0].keys()))) + ",\n".join(values))
         self.execute("\n".join(sql))
 
 
