@@ -197,6 +197,8 @@ def frequency(source, corpus, db_name, sqlfile):
          Resulting file might be split into several parts if too big.
     """
     
+    dbtable = MYSQL_TABLE + "_" + corpus
+    
     # Relations that will be grouped together
     rel_grouping = {
         "OO": "OBJ",
@@ -237,10 +239,9 @@ def frequency(source, corpus, db_name, sqlfile):
     no = 1
     sqlfile_no = sqlfile + "." + "%03d" % no
     mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile_no)
-    mysql.create_table(MYSQL_TABLE, drop=False, **MYSQL_RELATIONS)
-    #mysql.lock(MYSQL_TABLE)
+    mysql.create_table(dbtable, drop=True, **MYSQL_RELATIONS)
     mysql.set_names()
-    mysql.delete_rows(MYSQL_TABLE, {"corpus": corpus})
+    #mysql.delete_rows(MYSQL_TABLE, {"corpus": corpus})
     
     i = 0
     rows = []
@@ -261,13 +262,13 @@ def frequency(source, corpus, db_name, sqlfile):
                            "freq_rel": rel_count[rel],
                            "freq_head_rel": head_rel_count[(head, rel)],
                            "freq_rel_dep": rel_dep_count[(rel, dep, extra)],
-                           "corpus": corpus,
+                           #"corpus": corpus,
                            "sentences": sids
                            }
                     rows.append(row)
                     i += 1
                     if i > MAX_SQL_LINES:
-                        mysql.add_row(MYSQL_TABLE, *rows)
+                        mysql.add_row(dbtable, *rows)
                         rows = []
                         # To not create too large SQL-files.
                         i = 0
@@ -277,7 +278,7 @@ def frequency(source, corpus, db_name, sqlfile):
                         mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile_no)
                         mysql.set_names()
     if rows:
-        mysql.add_row(MYSQL_TABLE, *rows)
+        mysql.add_row(dbtable, *rows)
     
     util.log.info("Done creating SQL files")
     
@@ -298,11 +299,12 @@ MYSQL_RELATIONS = {'columns': [("head",   "varchar(1024)", "", "NOT NULL"),
                                ("freq_rel", int, None, ""),
                                ("freq_head_rel", int, None, ""),
                                ("freq_rel_dep", int, None, ""),
-                               ("corpus", str, "", "NOT NULL"),
+                               #("corpus", str, "", "NOT NULL"),
                                ("sentences", "TEXT", "", "")],
                'indexes': ["head",
                            "dep",
-                           "corpus"],
+                           #"corpus"
+                           ],
                'default charset': 'utf8',
                }
 
