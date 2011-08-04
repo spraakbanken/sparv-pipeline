@@ -85,7 +85,7 @@ class MySQL(object):
                 #sql += [u"INSERT INTO %s SET %s;" % (table, _DICT(row, filter_null=True))]
             #else:
             #    sql += [u"INSERT INTO %s VALUE (%s);" % (table, _VALUESEQ(row))]
-            if i > 2000:
+            if i > 5000:
                 i = 0
                 sql.append(u"INSERT INTO %s (%s) VALUES\n" % (table, ", ".join(sorted(rows[0].keys()))) + ",\n".join(values) + ";")
                 values = []
