@@ -210,7 +210,6 @@ def frequency(source, corpus, db_name, sqlfile):
     
     MAX_SQL_LINES = 50000
     source = source.split()
-    corpus = corpus.upper()
     
     freq = {} # Frequency of (head, rel, dep, depextra)
     rel_count = {} # Frequency of (rel)
