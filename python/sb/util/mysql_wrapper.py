@@ -91,7 +91,7 @@ class MySQL(object):
                 values = []
         
         if values:
-            sql.append(u"INSERT INTO %s (%s) VALUES\n" % (table, ", ".join(sorted(rows[0].keys()))) + ",\n".join(values))
+            sql.append(u"INSERT INTO %s (%s) VALUES\n" % (table, ", ".join(sorted(rows[0].keys()))) + ",\n".join(values) + ";")
         self.execute("\n".join(sql))
 
 
