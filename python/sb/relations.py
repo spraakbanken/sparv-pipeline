@@ -197,7 +197,7 @@ def frequency(source, corpus, db_name, sqlfile):
          Resulting file might be split into several parts if too big.
     """
     
-    dbtable = MYSQL_TABLE + "_" + corpus
+    dbtable = MYSQL_TABLE + "_" + corpus.upper()
     
     # Relations that will be grouped together
     rel_grouping = {
