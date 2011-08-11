@@ -249,7 +249,16 @@ def frequency(source, corpus, db_name, sqlfile):
             for dep, extras in deps.iteritems():
                 for extra, extra2 in extras.iteritems():
                     count, sids = extra2
-                    sids = ";".join(sids)
+                    sids_trunc = []
+                    sidlen = 0
+                    for sid in sids:
+                        if sidlen + len(sid) < 1000000:
+                            sidlen += len(sid) + 1
+                            sids_trunc.append(sid)
+                        else:
+                            print "Truncating examples:", head, rel, dep, extra
+                            break
+                    sids = ";".join(sids_trunc)
                     
                     #mi = mi_lex(rel_count[rel], count, head_rel_count[(head, rel)], rel_dep_count[(rel, dep, extra)])
                     
@@ -271,13 +280,14 @@ def frequency(source, corpus, db_name, sqlfile):
                         rows = []
                         # To not create too large SQL-files.
                         i = 0
-                        util.log.info("%s saved", sqlfile_no)
+                        util.log.info("%s written", sqlfile_no)
                         no += 1
                         sqlfile_no = sqlfile + "." + "%03d" % no
                         mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile_no)
                         mysql.set_names()
     if rows:
         mysql.add_row(dbtable, *rows)
+        util.log.info("%s written", sqlfile_no)
     
     util.log.info("Done creating SQL files")
     
