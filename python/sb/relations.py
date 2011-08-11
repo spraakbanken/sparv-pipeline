@@ -256,7 +256,7 @@ def frequency(source, corpus, db_name, sqlfile):
                             sidlen += len(sid) + 1
                             sids_trunc.append(sid)
                         else:
-                            print "Truncating examples:", head, rel, dep, extra
+                            util.log.warning("Truncating examples: %s %s %s %s", head, rel, dep, extra)
                             break
                     sids = ";".join(sids_trunc)
                     
