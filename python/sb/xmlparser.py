@@ -33,6 +33,7 @@ def parse(source, text, elements, annotations, skip=(), overlap=(), header="teih
     if isinstance(autoclose, basestring): autoclose = autoclose.split()
     assert len(elements) == len(annotations), "elements and annotations must be the same length"
     if not header: header = "teiheader"
+    header = header.split()
     
     if fileid and fileids:
         FILEIDS = util.read_annotation(fileids)
@@ -146,7 +147,9 @@ class XMLParser(HTMLParser):
         the name, attrs and anchor on a stack, which we read from
         when the matching closing tag comes along.
         """
-        if name == self.header_elem or self.inside_header:
+        path = ".".join(tag[0] for tag in reversed(self.tagstack))
+        path = path + "." + name if path else name
+        if path in self.header_elem or name in self.header_elem or self.inside_header:
             self.inside_header = True
             #return
         
@@ -188,7 +191,9 @@ class XMLParser(HTMLParser):
         name, start, attrs = self.tagstack.pop(ix)
         
         if self.inside_header:
-            self.inside_header = (name != self.header_elem)
+            path = ".".join(tag[0] for tag in reversed(self.tagstack))
+            path = path + "." + name if path else name
+            self.inside_header = (path not in self.header_elem and name not in self.header_elem)
             name = ".".join(tag[0] for tag in reversed(self.tagstack)) + "." + name
             for attr, value in attrs:
                 try:

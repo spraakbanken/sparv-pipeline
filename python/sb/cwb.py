@@ -22,15 +22,16 @@ CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 ######################################################################
 # Saving as Corpus Workbench data file
 
-def export_to_vrt(out, order, annotations, columns=(), structs=(), encoding=CWB_ENCODING):
+def export(format, out, order, annotations, columns=(), structs=(), encoding=CWB_ENCODING):
     """
-    Export 'annotations' to the VRT file 'out'.
+    Export 'annotations' to the VRT or XML file 'out'.
     The order of the annotation keys is decided by the annotation 'order'.
     The columns to be exported are taken from 'columns', default all 'annotations'.
     The structural attributes are specified by 'structs', default no structs.
     If an attribute in 'columns' or 'structs' is "-", that annotation is skipped.
     The structs are specified by "elem:attr", giving <elem attr=N> xml tags.
     """
+    assert format in ("vrt", "xml"), "Wrong format specified"
     if isinstance(annotations, basestring): annotations = annotations.split()
     if isinstance(columns, basestring): columns = columns.split()
     if not columns: columns = annotations
@@ -64,7 +65,12 @@ def export_to_vrt(out, order, annotations, columns=(), structs=(), encoding=CWB_
                 if new_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
                     print >>OUT, "<%s%s>" % (elem.encode(encoding), new_attr_values[elem].encode(encoding))
                     old_attr_values[elem] = new_attr_values[elem]
-            line = "\t".join(cols.get(n, UNDEF).replace(" ", "_").replace("/", "") if n > 0 else cols.get(n, UNDEF).replace(" ", "_") for n in column_nrs)
+            if format == "vrt":
+                line = "\t".join(cols.get(n, UNDEF).replace(" ", "_").replace("/", "") if n > 0 else cols.get(n, UNDEF).replace(" ", "_") for n in column_nrs)
+            elif format == "xml":
+                word = cols.get(0, UNDEF).replace(" ", "_").replace("<", "&lt;").replace(">", "&gt;").replace("&", "&amp;")
+                attributes = " ".join('%s="%s"' % (columns[n], cols.get(n, UNDEF).replace(" ", "_").replace("/", "").replace('"', '&quot;')) for n in column_nrs[1:])
+                line = "<w %s>%s</w>" % (attributes, word)
             print >>OUT, line.encode(encoding)
         for elem, _attrs in structs:
             if old_attr_values[elem]:
@@ -188,7 +194,7 @@ def parse_structural_attributes(structural_atts):
 
 
 if __name__ == '__main__':
-    util.run.main(export=export_to_vrt,
+    util.run.main(export=export,
                   encode=cwb_encode,
                   align=cwb_align)
 
