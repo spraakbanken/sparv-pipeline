@@ -68,7 +68,7 @@ def export(format, out, order, annotations, columns=(), structs=(), encoding=CWB
             if format == "vrt":
                 line = "\t".join(cols.get(n, UNDEF).replace(" ", "_").replace("/", "") if n > 0 else cols.get(n, UNDEF).replace(" ", "_") for n in column_nrs)
             elif format == "xml":
-                word = cols.get(0, UNDEF).replace(" ", "_").replace("<", "&lt;").replace(">", "&gt;").replace("&", "&amp;")
+                word = cols.get(0, UNDEF).replace(" ", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                 attributes = " ".join('%s="%s"' % (columns[n], cols.get(n, UNDEF).replace(" ", "_").replace("/", "").replace('"', '&quot;')) for n in column_nrs[1:])
                 line = "<w %s>%s</w>" % (attributes, word)
             print >>OUT, line.encode(encoding)
