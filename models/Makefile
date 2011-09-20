@@ -19,6 +19,7 @@ info:
 saldom.xml:
 	@echo "Exporting saldom.xml from Subversion..."
 	@svn export https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/saldom/saldom.xml
+	@head saldom.xml | grep -o 'saldom.xml [0-9]*' | grep -o '[0-9]*' > saldo.rev
 	@echo "Done."
 
 saldo.pickle: saldom.xml
