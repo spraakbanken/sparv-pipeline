@@ -3,15 +3,23 @@
 import util
 import codecs
 import os
-
+import time
 
 def edit_info(infofile, key, value="", valuefile=""):
+    """Save information to the file specified by 'infofile'.
+    'key' and 'value' specify the key and value. Alternatively 'valuefile'
+    can be used as input for the value. The value file must contain only one
+    row of text."""
+    
     content = []
     existing = False
     
     if valuefile:
         with codecs.open(valuefile, mode="r", encoding="UTF-8") as V:
-            value = V.read()
+            value = V.read().strip()
+    
+    if value == "%DATE%":
+        value = time.strftime("%Y-%m-%d")
 
     if os.path.exists(infofile):
         with codecs.open(infofile, mode="r", encoding="UTF-8") as F:
@@ -20,11 +28,11 @@ def edit_info(infofile, key, value="", valuefile=""):
         for i in range(len(content)):
             if content[i].split(": ")[0] == key:
                 existing = True
-                content[i] = "%s: %s" % (key, value)
+                content[i] = "%s: %s\n" % (key, value)
                 break
 
     if not existing:
-        content.append("%s: %s" % (key, value))
+        content.append("%s: %s\n" % (key, value))
 
     with codecs.open(infofile, mode="w", encoding="UTF-8") as O:
         O.writelines(content)
