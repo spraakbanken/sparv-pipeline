@@ -19,14 +19,20 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
     BF = util.read_annotation(baseform)
     
     # http://stp.ling.uu.se/~nivre/swedish_treebank/dep.html
+    # Tuples with relations (head, dep, rel) to be found (with indexes) and an optional tuple specifying which info should be stored and how
     rels = [
             ({1: "VB", 2: "SS", 3: "NN"}, {1: "VB", 4: "VG", 5: "VB"}, (5, 2, 3, "")), # "han har sprungit"
             ({1: "VB", 2: "(SS|OO|IO|OA)", 3: "(VB|NN|JJ)"},),
             ({1: "VB", 2: "(RA|TA)", 3: "(AB|NN)"},),
             ({1: "VB", 2: "(RA|TA)", 3: "PP"}, {3: "PP", 4: "(PA|HD)", 5: "NN"}, (1, 2, 5, "%(3)s")),    # "ges vid behov"
             ({1: "NN", 2: "(AT|ET)", 3: "JJ"},), # "stor hund"
-            ({1: "NN", 2: "ET", 3: "VB"}, {3: "VB", 4: "SS", 5: "HP"}, (1, 2, 3, "%(5)s"))     # "brödet som bakats"
+            ({1: "NN", 2: "ET", 3: "VB"}, {3: "VB", 4: "SS", 5: "HP"}, (1, 2, 3, "%(5)s")),     # "brödet som bakats"
+            ({1: "PP", 2: "PA", 3: "NN"},) # "på bordet"
             ]
+
+    null_rels = [
+                 ("VB", ["OO"]), # Verb som saknar objekt
+                 ]
     
     triples = []
     
@@ -54,6 +60,7 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
                 # This token is looking for a head (token is not root)
                 dep_triple = (token_dr, this)
                 if token_dh in tokens:
+                    # Found head. Link them together both ways
                     this["head"] = (token_dr, tokens[token_dh])
                     tokens[token_dh]["dep"].append(dep_triple)
                 else:
@@ -85,6 +92,7 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
         
         # Look for relations
         for v in tokens.itervalues():
+            found_rels = []
             for d in v["dep"]:
                 for rel in rels:
                     r = rel[0]
@@ -118,8 +126,15 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
                                           (pp[3] % lookup_bf, pp[3] % lookup_ref),
                                           sentid, lookup[str(pp[0])]["ref"], lookup[str(pp[2])]["ref"])
                         if triple:
+                            found_rels.append(triple[1])
                             triples.extend(_mutate_triple(triple))
                             break
+            for nrel in null_rels:
+                if nrel[0] == v["pos"]:
+                    missing_rels = [x for x in nrel[1] if x not in found_rels]
+                    for mrel in missing_rels:
+                        triple = ((v["lemgram"], v["ref"]), mrel, ("", v["ref"]), ("", None), sentid, v["ref"], v["ref"])
+                        triples.extend(_mutate_triple(triple))
 
     OUT = [(str(i), "\t".join((head, rel, dep, extra, sentid, refhead, refdep))) for (i, (head, rel, dep, extra, sentid, refhead, refdep)) in enumerate(triples)]
     util.write_annotation(out, OUT)
@@ -244,7 +259,10 @@ def frequency(source, corpus, db_name, sqlfile):
     
     i = 0
     rows = []
+    progress = 0
+    progress_total = len(freq)
     for head, rels in freq.iteritems():
+        progress += 1
         for rel, deps in rels.iteritems():
             for dep, extras in deps.iteritems():
                 for extra, extra2 in extras.iteritems():
@@ -270,7 +288,6 @@ def frequency(source, corpus, db_name, sqlfile):
                            "freq_rel": rel_count[rel],
                            "freq_head_rel": head_rel_count[(head, rel)],
                            "freq_rel_dep": rel_dep_count[(rel, dep, extra)],
-                           #"corpus": corpus,
                            "sentences": sids
                            }
                     rows.append(row)
@@ -280,14 +297,14 @@ def frequency(source, corpus, db_name, sqlfile):
                         rows = []
                         # To not create too large SQL-files.
                         i = 0
-                        util.log.info("%s written", sqlfile_no)
+                        util.log.info("%s written (%.1f%%)", sqlfile_no, (100 * progress / float(progress_total)))
                         no += 1
                         sqlfile_no = sqlfile + "." + "%03d" % no
                         mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile_no)
                         mysql.set_names()
     if rows:
         mysql.add_row(dbtable, *rows)
-        util.log.info("%s written", sqlfile_no)
+        util.log.info("%s written (100.0%%)", sqlfile_no)
     
     util.log.info("Done creating SQL files")
     
