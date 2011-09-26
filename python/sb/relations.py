@@ -8,7 +8,7 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
     """ Finds every dependency between words. """
 
     SENTID = util.read_annotation(sentence_id)
-    sentences = [(SENTID[key], sent.split()) for key, sent in util.read_annotation_iteritems(sentence)]
+    sentences = [(SENTID[key], sent.split()) for key, sent in util.read_annotation_iteritems(sentence) if key]
     #sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
     WORD = util.read_annotation(word)
     POS = util.read_annotation(pos)
