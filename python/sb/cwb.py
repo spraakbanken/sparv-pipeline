@@ -66,10 +66,11 @@ def export(format, out, order, annotations, columns=(), structs=(), encoding=CWB
                     print >>OUT, "<%s%s>" % (elem.encode(encoding), new_attr_values[elem].encode(encoding))
                     old_attr_values[elem] = new_attr_values[elem]
             if format == "vrt":
+                # Whitespace and / needs to be replaced for CQP parsing to work
                 line = "\t".join(cols.get(n, UNDEF).replace(" ", "_").replace("/", "") if n > 0 else cols.get(n, UNDEF).replace(" ", "_") for n in column_nrs)
             elif format == "xml":
-                word = cols.get(0, UNDEF).replace(" ", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                attributes = " ".join('%s="%s"' % (columns[n], cols.get(n, UNDEF).replace(" ", "_").replace("/", "").replace('"', '&quot;')) for n in column_nrs[1:])
+                word = cols.get(0, UNDEF).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                attributes = " ".join('%s="%s"' % (columns[n], cols.get(n, UNDEF).replace("&", "&amp;").replace('"', '&quot;')) for n in column_nrs[1:])
                 line = "<w %s>%s</w>" % (attributes, word)
             print >>OUT, line.encode(encoding)
         for elem, _attrs in structs:
