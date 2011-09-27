@@ -38,6 +38,12 @@ def install_corpus(host, master, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY, 
         if target_registry:
             os.remove(os.path.join(registry, master + ".tmp"))
 
+def install_file(host, local_file, remote_file):
+    """
+    Rsyncs a file to a target host.
+    """
+    util.system.rsync(local_file, host, remote_file)
+
 def install_directory(host, directory):
     """
     Rsyncs every file from local directory to target host. Target path is extracted from
@@ -76,4 +82,5 @@ def install_mysql_dump(host, db_name, tables):
 if __name__ == '__main__':
     util.run.main(corpus=install_corpus,
                   dir=install_directory,
+                  file=install_file,
                   mysql=install_mysql)
