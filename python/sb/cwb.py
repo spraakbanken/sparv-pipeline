@@ -80,6 +80,22 @@ def export(format, out, order, annotations, columns=(), structs=(), encoding=CWB
     util.log.info("Exported %d tokens, %d columns, %d structs: %s", len(tokens), len(column_nrs), len(structs), out)
 
 
+def combine_xml(master, xmlfiles, out):
+    assert master != "", "Master not specified"
+    assert out != "", "Outfile not specified"
+    if isinstance(xmlfiles, basestring): xmlfiles = xmlfiles.split()
+    xmlfiles.sort()
+    
+    with open(out, "w") as OUT:
+        print >>OUT, '<corpus id="%s">' % master.replace("&", "&amp;").replace('"', '&quot;')
+        for infile in xmlfiles:
+            util.log.info("Read: %s", infile)
+            with open(infile, "r") as IN:
+                print >>OUT, IN.read(),
+        print >>OUT, "</corpus>"
+        util.log.info("Exported: %s" % out)
+
+
 def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
                encoding=CWB_ENCODING, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY, skip_compression="false", skip_validation=False):
     """
@@ -132,6 +148,7 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
         for del_file in to_delete:
             os.remove(del_file)
         util.log.info("Done removing files.")
+
 
 def cwb_align(master, other, link, aligndir=ALIGNDIR):
     """
@@ -197,5 +214,6 @@ def parse_structural_attributes(structural_atts):
 if __name__ == '__main__':
     util.run.main(export=export,
                   encode=cwb_encode,
-                  align=cwb_align)
+                  align=cwb_align,
+                  combine_xml=combine_xml)
 

@@ -73,7 +73,7 @@ class ModifiedLanguageVars(nltk.tokenize.punkt.PunktLanguageVars):
     # http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt.PunktLanguageVars-class.html
     # http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt-pysrc.html#PunktLanguageVars
     _re_word_start = ur'''[^\(\"\'–”»\`\\{\/\[:;&\#\*@\)}\]\-,]'''
-    _re_non_word_chars = ur'(?:[?!)\"”»\\;\/}\]\*:\'\({\[])' #@
+    _re_non_word_chars = ur'(?:[?!)\"”»–\\;\/}\]\*:\'\({\[])' #@
     re_boundary_realignment = re.compile(ur'[”"\')\]}]+?(?:\s+|(?=--)|$)',
             re.MULTILINE)
 
@@ -135,6 +135,8 @@ class ModifiedPunktWordTokenizer(object):
 PICKLE_PROTOCOL = 2
 
 def train_punkt_segmenter(textfiles, modelfile, encoding=util.UTF8):
+    if isinstance(textfiles, basestring): textfiles = textfiles.split()
+    
     util.log.info("Reading files")
     text = u""
     for filename in textfiles:
@@ -197,4 +199,5 @@ do_segmentation.__doc__ += "The following segmenters are available: %s" % ", ".j
 
 
 if __name__ == '__main__':
-    util.run.main(do_segmentation)
+    util.run.main(do_segmentation,
+                  train_punkt_segmenter=train_punkt_segmenter)
