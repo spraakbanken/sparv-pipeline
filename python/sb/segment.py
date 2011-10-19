@@ -73,7 +73,7 @@ class ModifiedLanguageVars(nltk.tokenize.punkt.PunktLanguageVars):
     # http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt.PunktLanguageVars-class.html
     # http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt-pysrc.html#PunktLanguageVars
     _re_word_start = ur'''[^\(\"\'–—“”»\`\\{\/\[:;&\#\*@\)}\]\-,…]'''
-    _re_non_word_chars = ur'(?:[?!)\"“”»–—\\;\/}\]\*:\'\({\[]…)' #@
+    _re_non_word_chars = ur'(?:[?!)\"“”»–—\\;\/}\]\*:\'\({\[…])' #@
     re_boundary_realignment = re.compile(ur'[“”"\')\]}]+?(?:\s+|(?=--)|$)',
             re.MULTILINE)
 
