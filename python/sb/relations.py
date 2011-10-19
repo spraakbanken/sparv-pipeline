@@ -16,13 +16,13 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
     DEPHEAD = util.read_annotation(dephead)
     DEPREL = util.read_annotation(deprel)
     REF = util.read_annotation(ref)
-    BF = util.read_annotation(baseform)
+    BF = util.read_annotation(baseform) # Used for "depextra"
     
     # http://stp.ling.uu.se/~nivre/swedish_treebank/dep.html
     # Tuples with relations (head, dep, rel) to be found (with indexes) and an optional tuple specifying which info should be stored and how
     rels = [
             ({1: "VB", 2: "SS", 3: "NN"}, {1: "VB", 4: "VG", 5: "VB"}, (5, 2, 3, "")), # "han har sprungit"
-            ({1: "VB", 2: "(SS|OO|IO|OA)", 3: "(VB|NN|JJ)"},),
+            ({1: "VB", 2: "(SS|OO|IO|OA)", 3: "(NN|PN)"},),
             ({1: "VB", 2: "(RA|TA)", 3: "(AB|NN)"},),
             ({1: "VB", 2: "(RA|TA)", 3: "PP"}, {3: "PP", 4: "(PA|HD)", 5: "NN"}, (1, 2, 5, "%(3)s")),    # "ges vid behov"
             ({1: "NN", 2: "(AT|ET)", 3: "JJ"},), # "stor hund"
@@ -92,7 +92,6 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
         
         # Look for relations
         for v in tokens.itervalues():
-            found_rels = []
             for d in v["dep"]:
                 for rel in rels:
                     r = rel[0]
@@ -126,12 +125,12 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
                                           (pp[3] % lookup_bf, pp[3] % lookup_ref),
                                           sentid, lookup[str(pp[0])]["ref"], lookup[str(pp[2])]["ref"])
                         if triple:
-                            found_rels.append(triple[1])
                             triples.extend(_mutate_triple(triple))
                             break
+            token_rels = [d[0] for d in v["dep"]]
             for nrel in null_rels:
                 if nrel[0] == v["pos"]:
-                    missing_rels = [x for x in nrel[1] if x not in found_rels]
+                    missing_rels = [x for x in nrel[1] if x not in token_rels]
                     for mrel in missing_rels:
                         triple = ((v["lemgram"], v["ref"]), mrel, ("", v["ref"]), ("", None), sentid, v["ref"], v["ref"])
                         triples.extend(_mutate_triple(triple))
