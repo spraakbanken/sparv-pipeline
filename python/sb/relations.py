@@ -22,7 +22,7 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
     # Tuples with relations (head, dep, rel) to be found (with indexes) and an optional tuple specifying which info should be stored and how
     rels = [
             ({1: "VB", 2: "SS", 3: "NN"}, {1: "VB", 4: "VG", 5: "VB"}, (5, 2, 3, "")), # "han har sprungit"
-            ({1: "VB", 2: "(SS|OO|IO|OA)", 3: "(NN|PN)"},),
+            ({1: "VB", 2: "(SS|OO|IO|OA)", 3: "NN"},),
             ({1: "VB", 2: "(RA|TA)", 3: "(AB|NN)"},),
             ({1: "VB", 2: "(RA|TA)", 3: "PP"}, {3: "PP", 4: "(PA|HD)", 5: "NN"}, (1, 2, 5, "%(3)s")),    # "ges vid behov"
             ({1: "NN", 2: "(AT|ET)", 3: "JJ"},), # "stor hund"
