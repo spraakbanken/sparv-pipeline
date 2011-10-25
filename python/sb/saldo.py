@@ -9,7 +9,7 @@ import itertools
 import cPickle as pickle
 import re
 
-def annotate(word, msd, sentence, reference, out, annotations, model, delimiter="|", affix="|", precision=":%.3f", filter=None):
+def annotate(word, msd, sentence, reference, out, annotations, model, delimiter="|", affix="|", precision=":%.3f", filter=None, multiword=True):
     """Use the Saldo lexicon model to annotate pos-tagged words.
       - word, msd are existing annotations for wordforms and part-of-speech
       - sentence is an existing annotation for sentences and their children (words)
@@ -32,6 +32,8 @@ def annotate(word, msd, sentence, reference, out, annotations, model, delimiter=
     annotations = annotations.split()
     out = out.split()
     assert len(out) == len(annotations), "Number of target files and annotations must be the same"
+
+    multiword = False if multiword.lower() == "false" else True
     
     lexicon = SaldoLexicon(model)
     WORD = util.read_annotation(word)
@@ -117,10 +119,11 @@ def annotate(word, msd, sentence, reference, out, annotations, model, delimiter=
             for x in todelfromincomplete[::-1]:
                 del incomplete_multis[x]
             
-            # Is this word a possible start for multi-word units?
-            looking_for = [(annotation, words, [ref], is_particle, [False, 0]) for (annotation, _, wordslist, is_particle) in ann_tags_words if wordslist for words in wordslist]
-            if len(looking_for) > 0:
-                incomplete_multis.extend(looking_for)
+            if multiword:
+                # Is this word a possible start for multi-word units?
+                looking_for = [(annotation, words, [ref], is_particle, [False, 0]) for (annotation, _, wordslist, is_particle) in ann_tags_words if wordslist for words in wordslist]
+                if len(looking_for) > 0:
+                    incomplete_multis.extend(looking_for)
 
             # Loop to next token
         
