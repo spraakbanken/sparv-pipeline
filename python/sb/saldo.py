@@ -26,6 +26,7 @@ def annotate(word, msd, sentence, reference, out, annotations, model, delimiter=
       - filter is an optional filter, currently there are the following values:
         max: only use the annotations that are most probable
         first: only use one annotation; one of the most probable
+      - multiword can be set to False to disable multi word annotations
     """
     MAX_GAPS = 1 # Maximum number of gaps in multi-word units.
     
@@ -33,7 +34,7 @@ def annotate(word, msd, sentence, reference, out, annotations, model, delimiter=
     out = out.split()
     assert len(out) == len(annotations), "Number of target files and annotations must be the same"
 
-    multiword = False if isinstance(multiword, basestring) and multiword.lower() == "false" else True
+    multiword = False if False or (isinstance(multiword, basestring) and multiword.lower() == "false") else True
     
     lexicon = SaldoLexicon(model)
     WORD = util.read_annotation(word)

@@ -51,6 +51,7 @@ def export(format, out, order, annotations, columns=(), structs=(), encoding=CWB
     column_nrs = [n for (n, col) in enumerate(columns) if col and col != "-"]
 
     with open(out, "w") as OUT:
+        if format == "xml": print >>OUT, "<corpus>"
         old_attr_values = dict((elem, None) for (elem, _attrs) in structs)
         for tok in tokens:
             cols = vrt[tok]
@@ -76,6 +77,7 @@ def export(format, out, order, annotations, columns=(), structs=(), encoding=CWB
         for elem, _attrs in structs:
             if old_attr_values[elem]:
                 print >>OUT, "</%s>" % elem.encode(encoding)
+        if format == "xml": print >>OUT, "</corpus>"
 
     util.log.info("Exported %d tokens, %d columns, %d structs: %s", len(tokens), len(column_nrs), len(structs), out)
 
@@ -91,7 +93,8 @@ def combine_xml(master, xmlfiles, out):
         for infile in xmlfiles:
             util.log.info("Read: %s", infile)
             with open(infile, "r") as IN:
-                print >>OUT, IN.read(),
+                # Append everything but <corpus> and </corpus>
+                print >>OUT, IN.read()[9:-10],
         print >>OUT, "</corpus>"
         util.log.info("Exported: %s" % out)
 
