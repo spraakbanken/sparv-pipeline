@@ -37,7 +37,7 @@ def export(format, out, order, annotations, columns=(), structs=(), encoding=CWB
     if not columns: columns = annotations
     structs_count = len(structs.split())
     structs = parse_structural_attributes(structs)
-
+    
     vrt = defaultdict(dict)
     for n, annot in enumerate(annotations[:max(len(columns), structs_count)]):
         for tok, value in util.read_annotation_iteritems(annot):
@@ -64,7 +64,9 @@ def export(format, out, order, annotations, columns=(), structs=(), encoding=CWB
                     old_attr_values[elem] = None
             for elem, _attrs in reversed(structs):
                 if new_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
-                    print >>OUT, "<%s%s>" % (elem.encode(encoding), new_attr_values[elem].encode(encoding))
+                    val = new_attr_values[elem].encode(encoding)
+                    if val.startswith(" %s=" % UNDEF): val = ""
+                    print >>OUT, "<%s%s>" % (elem.encode(encoding), val)
                     old_attr_values[elem] = new_attr_values[elem]
             if format == "vrt":
                 # Whitespace and / needs to be replaced for CQP parsing to work
@@ -129,7 +131,9 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
         if col != "-":
             encode_args += ["-P", col]
     for struct, attrs in structs:
-        encode_args += ["-S", "%s:0+%s" % (struct, "+".join(attr for attr, _n in attrs))]
+        attrs2 = "+".join(attr for attr, _n in attrs if not attr == UNDEF)
+        if attrs2: attrs2 = "+" + attrs2
+        encode_args += ["-S", "%s:0%s" % (struct, attrs2)]
     util.system.call_binary("cwb-encode", encode_args, verbose=True)
 
     index_args = ["-V", "-r", registry, master.upper()]
@@ -203,14 +207,18 @@ def parse_structural_attributes(structural_atts):
     structs = {}
     order = []
     for n, struct in enumerate(structural_atts):
+        assert not struct or struct=="-" or "." not in struct, "Struct should contain ':' or be equal to '-': %s" % struct
+        
         if ":" in struct:
             elem, attr = struct.split(":")
+        else:
+            elem = struct
+            attr = UNDEF
+        if struct and not struct == "-":
             if elem not in structs:
                 structs[elem] = []
                 order.append(elem)
             structs[elem].append((attr, n))
-        else:
-            assert not struct or struct=="-", "Struct should contain ':' or be equal to '-': %s" % struct
     return [(elem, structs[elem]) for elem in order]
 
 

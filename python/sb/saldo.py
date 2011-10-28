@@ -9,7 +9,7 @@ import itertools
 import cPickle as pickle
 import re
 
-def annotate(word, msd, sentence, reference, out, annotations, model, delimiter="|", affix="|", precision=":%.3f", filter=None, multiword=True):
+def annotate(word, msd, sentence, reference, out, annotations, model, delimiter="|", affix="|", precision=":%.3f", filter=None, skip_multiword=False):
     """Use the Saldo lexicon model to annotate pos-tagged words.
       - word, msd are existing annotations for wordforms and part-of-speech
       - sentence is an existing annotation for sentences and their children (words)
@@ -26,7 +26,7 @@ def annotate(word, msd, sentence, reference, out, annotations, model, delimiter=
       - filter is an optional filter, currently there are the following values:
         max: only use the annotations that are most probable
         first: only use one annotation; one of the most probable
-      - multiword can be set to False to disable multi word annotations
+      - skip_multiword can be set to True to disable multi word annotations
     """
     MAX_GAPS = 1 # Maximum number of gaps in multi-word units.
     
@@ -34,7 +34,7 @@ def annotate(word, msd, sentence, reference, out, annotations, model, delimiter=
     out = out.split()
     assert len(out) == len(annotations), "Number of target files and annotations must be the same"
 
-    multiword = False if False or (isinstance(multiword, basestring) and multiword.lower() == "false") else True
+    skip_multiword = True if True or (isinstance(skip_multiword, basestring) and skip_multiword.lower() == "true") else False
     
     lexicon = SaldoLexicon(model)
     WORD = util.read_annotation(word)
@@ -120,7 +120,7 @@ def annotate(word, msd, sentence, reference, out, annotations, model, delimiter=
             for x in todelfromincomplete[::-1]:
                 del incomplete_multis[x]
             
-            if multiword:
+            if not skip_multiword:
                 # Is this word a possible start for multi-word units?
                 looking_for = [(annotation, words, [ref], is_particle, [False, 0]) for (annotation, _, wordslist, is_particle) in ann_tags_words if wordslist for words in wordslist]
                 if len(looking_for) > 0:
