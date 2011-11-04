@@ -13,6 +13,7 @@ CWB_ENCODING = "UTF-8"
 
 def make_index(corpus, out, db_name, attribute="lex"):
     
+    corpus = corpus.upper()
     index = count_lemgrams(corpus, attribute)
     
     mysql = MySQL(db_name, encoding=util.UTF8, output=out)
