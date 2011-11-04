@@ -5,7 +5,7 @@ import log
 import constants
 
 # Max size of SQL statement
-MAX_ALLOWED_PACKET = 1000000
+MAX_ALLOWED_PACKET = 750000
 
 class MySQL(object):
     binaries = ('mysql', 'mysql5')
@@ -79,27 +79,24 @@ class MySQL(object):
         table = _ATOM(table)
         sql = []
         values = []
-        i = 0
+        input_length = 0
         
         def insert(values):
             return u"INSERT INTO %s (%s) VALUES\n" % (table, ", ".join(sorted(rows[0].keys()))) + ",\n".join(values) + ";"
         
         for row in rows:
             if isinstance(row, dict):
-                i += 1
                 rowlist = sorted(row.items(), key=lambda x: x[0])
                 valueline = u"(%s)" % (_VALUESEQ([x[1] for x in rowlist]))
-                if sum(len(x) for x in values) + len(valueline) >= MAX_ALLOWED_PACKET:
+                input_length += len(valueline)
+                if input_length >= MAX_ALLOWED_PACKET:
                     sql.append(insert(values))
                     values = []
+                    input_length = 0
                 values += [valueline]
                 #sql += [u"INSERT INTO %s SET %s;" % (table, _DICT(row, filter_null=True))]
             #else:
             #    sql += [u"INSERT INTO %s VALUE (%s);" % (table, _VALUESEQ(row))]
-            #if i > 1000:
-            #    i = 0
-            #    sql.append(insert(values))
-            #    values = []
         
         if values:
             sql.append(insert(values))
