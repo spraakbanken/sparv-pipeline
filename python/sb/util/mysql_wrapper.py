@@ -5,7 +5,7 @@ import log
 import constants
 
 # Max size of SQL statement
-MAX_ALLOWED_PACKET = 750000
+MAX_ALLOWED_PACKET = 900000
 
 class MySQL(object):
     binaries = ('mysql', 'mysql5')
@@ -92,7 +92,7 @@ class MySQL(object):
                 if input_length >= MAX_ALLOWED_PACKET:
                     sql.append(insert(values))
                     values = []
-                    input_length = 0
+                    input_length = len(valueline)
                 values += [valueline]
                 #sql += [u"INSERT INTO %s SET %s;" % (table, _DICT(row, filter_null=True))]
             #else:
