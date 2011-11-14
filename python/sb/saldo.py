@@ -34,7 +34,7 @@ def annotate(word, msd, sentence, reference, out, annotations, model, delimiter=
     out = out.split()
     assert len(out) == len(annotations), "Number of target files and annotations must be the same"
 
-    skip_multiword = True if True or (isinstance(skip_multiword, basestring) and skip_multiword.lower() == "true") else False
+    skip_multiword = True if (isinstance(skip_multiword, bool) and skip_multiword == True) or (isinstance(skip_multiword, basestring) and skip_multiword.lower() == "true") else False
     
     lexicon = SaldoLexicon(model)
     WORD = util.read_annotation(word)
