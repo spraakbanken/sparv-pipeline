@@ -57,7 +57,7 @@ def export(format, out, order, annotations, columns=(), structs=(), encoding=CWB
             cols = vrt[tok]
             new_attr_values = {}
             for elem, attrs in structs:
-                new_attr_values[elem] = ''.join(' %s="%s"' % (attr, cols[n].replace('"', "&quot;"))
+                new_attr_values[elem] = ''.join(' %s="%s"' % (attr, cols[n].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
                                                 for (attr, n) in attrs if cols.get(n))
                 if old_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
                     print >>OUT, "</%s>" % elem.encode(encoding)

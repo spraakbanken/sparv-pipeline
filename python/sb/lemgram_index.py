@@ -11,10 +11,10 @@ CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
 CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 CWB_ENCODING = "UTF-8"
 
-def make_index(corpus, out, db_name, attribute="lex"):
+def make_index(corpus, out, db_name, attributes=["lex", "prefix", "suffix"]):
     
     corpus = corpus.upper()
-    index = count_lemgrams(corpus, attribute)
+    index = count_lemgrams(corpus, attributes)
     
     mysql = MySQL(db_name, encoding=util.UTF8, output=out)
     mysql.create_table(MYSQL_TABLE, drop=False, **MYSQL_INDEX)
@@ -24,7 +24,9 @@ def make_index(corpus, out, db_name, attribute="lex"):
     rows = []
     for lemgram, freq in index.items():
         row = {"lemgram": lemgram,
-               "freq": freq,
+               "freq": freq[0],
+               "freq_prefix": freq[1],
+               "freq_suffix": freq[2],
                "corpus": corpus
                }
         rows.append(row)
@@ -33,11 +35,11 @@ def make_index(corpus, out, db_name, attribute="lex"):
     mysql.add_row(MYSQL_TABLE, *rows)
 
 
-def count_lemgrams(corpus, attribute):
+def count_lemgrams(corpus, attributes):
     
     util.log.info("Reading corpus")
-    result = defaultdict(int)
-    process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-r", CORPUS_REGISTRY, corpus, attribute], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = {}
+    process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-r", CORPUS_REGISTRY, corpus] + attributes, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     reply, error = process.communicate()
     if error and "Error:" in error: # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
         print error
@@ -48,9 +50,11 @@ def count_lemgrams(corpus, attribute):
             continue
         temp = line.split("\t")
         freq = int(temp[0])
-        for value in temp[1].split("|"):
-            if value and not ":" in value:
-                result[value] += freq
+        for i in range(len(temp) - 1):
+            for value in temp[i+1].split("|"):
+                if value and not ":" in value:
+                    result.setdefault(value, [0, 0, 0])
+                    result[value][i] += freq
     
     return result
 
@@ -60,6 +64,8 @@ MYSQL_TABLE = "lemgram_index"
 
 MYSQL_INDEX = {'columns': [("lemgram", "varchar(64)", "", "NOT NULL"),
                            ("freq", int, None, ""),
+                           ("freq_prefix", int, None, ""),
+                           ("freq_suffix", int, None, ""),
                            ("corpus", "varchar(64)", "", "NOT NULL")],
                'indexes': ["lemgram",
                            "corpus"
