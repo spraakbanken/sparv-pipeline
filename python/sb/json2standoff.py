@@ -8,7 +8,7 @@ var = '<text title=\"Korp revert\">'
 def jsontostandoff(jsonfile):
     """Checks if an annotation file exists."""
     s = jsonfile.read()
-    
+ 
     decoded = json.loads(s)
     """print 'decoded: ', decoded"""
 
@@ -39,7 +39,7 @@ def jsontostandoff(jsonfile):
     """print >> sys.stdout, decoded;"""
     var = var + "</text>\n"
     print >> sys.stdout, var
-    f = open('C:/Users/Annika/Documents/CureKorpus/bota.xml', 'w')
+    f = open(sys.argv[2], 'w')
     f.write(var)
 
 
@@ -78,4 +78,4 @@ def printword(prefix):
     
     
 if __name__ == '__main__':
-    jsontostandoff(file("C:\\HEM\\ExempleKARP\\dbrwb\\annotation\\swefn\\import\\bota_short.json"))
+    jsontostandoff(file(sys.argv[1], 'r'))
