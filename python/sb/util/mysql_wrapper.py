@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import system
 import log
 import constants
@@ -10,7 +11,7 @@ MAX_ALLOWED_PACKET = 900000
 class MySQL(object):
     binaries = ('mysql', 'mysql5')
     
-    def __init__(self, database, username=None, password=None, encoding="ascii", output=""):
+    def __init__(self, database, username=None, password=None, encoding="ascii", output="", overwrite=True):
         self.arguments = [database]
         if username:
             self.arguments += ['-u', username]
@@ -18,6 +19,9 @@ class MySQL(object):
             self.arguments += ['-p', password]
         self.encoding = encoding
         self.output = output
+        if self.output and overwrite:
+            if os.path.exists(self.output):
+                os.remove(self.output)
 
     def execute(self, sql, *args):
         if self.output:
