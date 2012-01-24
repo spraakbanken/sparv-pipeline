@@ -149,12 +149,15 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
         # Compress token stream
         util.system.call_binary("cwb-huffcode", compress_args)
         util.log.info("Removing uncompressed token stream...")
-        os.remove(glob(os.path.join(corpus_datadir, "*.corpus")))
+        for f in glob(os.path.join(corpus_datadir, "*.corpus")):
+            os.remove(f)
         # Compress index files
         util.system.call_binary("cwb-compress-rdx", compress_args)
         util.log.info("Removing uncompressed index files...")
-        os.remove(glob(os.path.join(corpus_datadir, "*.corpus.rev")))
-        os.remove(glob(os.path.join(corpus_datadir, "*.corpus.rdx")))
+        for f in glob(os.path.join(corpus_datadir, "*.corpus.rev")):
+            os.remove(f)
+        for f in glob(os.path.join(corpus_datadir, "*.corpus.rdx")):
+            os.remove(f)
         util.log.info("Compression done.")
 
 
