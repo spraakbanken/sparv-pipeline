@@ -146,15 +146,16 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
         if skip_validation:
             compress_args.insert(0, "-T")
             util.log.info("Skipping validation")
+        # Compress token stream
         util.system.call_binary("cwb-huffcode", compress_args)
+        util.log.info("Removing uncompressed token stream...")
+        os.remove(os.path.join(corpus_datadir, "*.corpus"))
+        # Compress index files
         util.system.call_binary("cwb-compress-rdx", compress_args)
-        util.log.info("Compression done. Removing uncompressed corpus files...")
-        to_delete =  glob(os.path.join(corpus_datadir, "*.corpus"))
-        to_delete += glob(os.path.join(corpus_datadir, "*.corpus.rev"))
-        to_delete += glob(os.path.join(corpus_datadir, "*.corpus.rdx"))
-        for del_file in to_delete:
-            os.remove(del_file)
-        util.log.info("Done removing files.")
+        util.log.info("Removing uncompressed index files...")
+        os.remove(glob(os.path.join(corpus_datadir, "*.corpus.rev")))
+        os.remove(glob(os.path.join(corpus_datadir, "*.corpus.rdx")))
+        util.log.info("Compression done.")
 
 
 def cwb_align(master, other, link, aligndir=ALIGNDIR):
