@@ -2,6 +2,7 @@
 
 import json
 import sys
+import codecs
 
 var = '<text title=\"Korp revert\">'
         
@@ -37,9 +38,10 @@ def jsontostandoff(jsonfile):
             var = var + ' ' + word
 
     """print >> sys.stdout, decoded;"""
-    var = var + "</text>\n"
-    print >> sys.stdout, var
-    f = open(sys.argv[2], 'w')
+    var = var + unicode("</text>\n")
+    """print >> sys.stdout, var"""
+    
+    f = codecs.open(sys.argv[2], 'w', "utf-8")
     f.write(var)
 
 
@@ -78,4 +80,5 @@ def printword(prefix):
     
     
 if __name__ == '__main__':
-    jsontostandoff(file(sys.argv[1], 'r'))
+    jsonfile = codecs.open(sys.argv[1], "r", "utf-8" )
+    jsontostandoff(jsonfile)
