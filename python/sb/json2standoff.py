@@ -38,7 +38,7 @@ def jsontostandoff(jsonfile):
             var = var + ' ' + word
 
     """print >> sys.stdout, decoded;"""
-    var = var + unicode("</text>\n")
+    var = var + "</text>\n"
     """print >> sys.stdout, var"""
     
     f = codecs.open(sys.argv[2], 'w', "utf-8")
