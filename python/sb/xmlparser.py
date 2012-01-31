@@ -20,7 +20,7 @@ REGEXP_TOKEN = re.compile(r"([^\W_\d]+|\d+| +|\s|.)", re.UNICODE)
 # exclude these in the first group above, hence [^\W_\d];
 # idea taken from http://stackoverflow.com/questions/1673749
 
-def parse(source, text, elements, annotations, skip=(), overlap=(), header="teiheader", encoding=util.UTF8, prefix="", fileid="", fileids="", headers="", header_annotations="", skip_if_empty="", skip_entities="", autoclose=""):
+def parse(source, text, elements=[], annotations=[], skip=(), overlap=(), header="teiheader", encoding=util.UTF8, prefix="", fileid="", fileids="", headers="", header_annotations="", skip_if_empty="", skip_entities="", autoclose=""):
     """Parse one pseudo-xml source file, into the specified corpus."""
     if isinstance(elements, basestring): elements = elements.split()
     if isinstance(annotations, basestring): annotations = annotations.split()
@@ -32,6 +32,7 @@ def parse(source, text, elements, annotations, skip=(), overlap=(), header="teih
     if isinstance(skip_entities, basestring): skip_entities = skip_entities.split()
     if isinstance(autoclose, basestring): autoclose = autoclose.split()
     assert len(elements) == len(annotations), "elements and annotations must be the same length"
+    assert prefix or (fileid and fileids), "either prefix or both fileid and fileids must be set"
     if not header: header = "teiheader"
     header = header.split()
     
