@@ -4,9 +4,11 @@ import json
 import sys
 import codecs
 
-var = '<text title=\"Korp revert\">'
+global textstring
         
 def jsontostandoff(jsonfile):
+    textstring = '<text title=\"Korp-revert\">'
+    
     """Checks if an annotation file exists."""
     s = jsonfile.read()
  
@@ -14,8 +16,6 @@ def jsontostandoff(jsonfile):
     """print 'decoded: ', decoded"""
 
     runLoop = 0
-    
-    global var
     
     kwic = decoded.pop('kwic')
     """print >> sys.stdout, len(kwic)"""
@@ -27,24 +27,23 @@ def jsontostandoff(jsonfile):
         
         j = 0
         tokensList = item.pop('tokens')
-        var = var + '\n '
+        textstring = textstring + '\n '
         while j < len(tokensList):
             token = tokensList[j]
             j = j + 1
             """print >> sys.stdout, token"""
 
             word = token.pop('word')
+            pos = token.pop('pos')
             """print >> sys.stdout, word"""
-            var = var + ' ' + word
+            textstring = textstring + ' ' + '<w pos=\"' + pos + '\">' + word + '</w>'
 
     """print >> sys.stdout, decoded;"""
-    var = var + "</text>\n"
-    """print >> sys.stdout, var"""
+    textstring = textstring + "</text>"
+    """print >> sys.stdout, textstring"""
     
     f = codecs.open(sys.argv[2], 'w', "utf-8")
-    f.write(var)
-
-
+    f.write(textstring)
         
 def printtoken(entry):
         """print 'kwic:', entry"""
@@ -58,7 +57,7 @@ def printtoken(entry):
         
         runLoop = True
         
-        global var
+        global textstring
         
         while runLoop:
             if 'word' not in tokenlist:
@@ -68,10 +67,10 @@ def printtoken(entry):
                 
                 word = tokenlist.next()
                 print >> sys.stdout, 'TRUE', word
-                var + ', ' + word
-                print >> sys.stdout, var
+                textstring + ', ' + word
+                print >> sys.stdout, textstring
 
-        return var
+        return textstring
     
     
 def printword(prefix):
