@@ -36,7 +36,10 @@ def jsontostandoff(jsonfile):
             word = token.pop('word')
             pos = token.pop('pos')
             """print >> sys.stdout, word"""
-            textstring = textstring + ' ' + '<w pos=\"' + pos + '\">' + word + '</w>'
+            if pos not in ['MAD', 'MID']:
+                textstring = textstring + ' '
+            
+            textstring = textstring + '<w pos=\"' + pos + '\">' + word + '</w>'
 
     """print >> sys.stdout, decoded;"""
     textstring = textstring + "</text>"
