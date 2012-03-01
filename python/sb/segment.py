@@ -72,8 +72,12 @@ class ModifiedLanguageVars(nltk.tokenize.punkt.PunktLanguageVars):
     punctuation."""
     # http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt.PunktLanguageVars-class.html
     # http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt-pysrc.html#PunktLanguageVars
+    
+    # Excludes some characters from starting word tokens
     _re_word_start = ur'''[^\(\"\'‘’–—“”»\`\\{\/\[:;&\#\*@\)}\]\-,…]'''
+    # Characters that cannot appear within words
     _re_non_word_chars = ur'(?:[?!)\"“”»–—\\;\/}\]\*:\'‘’\({\[…%])' #@
+    # Used to realign punctuation that should be included in a sentence although it follows the period (or ?, !).
     re_boundary_realignment = re.compile(ur'[“”"\')\]}]+?(?:\s+|(?=--)|$)',
             re.MULTILINE)
 

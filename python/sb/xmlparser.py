@@ -256,7 +256,7 @@ class XMLParser(HTMLParser):
         self.add_token(unichr(code))
 
     def handle_entityref(self, name):
-        """Entity refs &bullet; are lookep up in a database and
+        """Entity refs &bullet; are looked up in a database and
         added as single tokens.
         """
         if name in self.skip_entities:
