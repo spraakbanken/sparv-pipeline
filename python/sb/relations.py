@@ -48,11 +48,12 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
             token_dr  = DEPREL[token_id]
             token_ref = REF[token_id]
             token_bf  = BF[token_id]
-            
+            token_word = WORD[token_id].lower() + "_" + token_pos
+
             if token_lem == "|":
-                token_lem = WORD[token_id].lower() + "_" + token_pos
+                token_lem = token_word
             
-            this = {"pos": token_pos, "lemgram": token_lem, "head": None, "dep": [], "ref": token_ref, "bf": token_bf}
+            this = {"pos": token_pos, "lemgram": token_lem, "word": token_word, "head": None, "dep": [], "ref": token_ref, "bf": token_bf}
             
             tokens[token_id] = this
             
@@ -98,7 +99,7 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
                     if _match(";".join([x[1] for x in sorted(r.items())]), ";".join([v["pos"], d[0], d[1]["pos"]])):
                         triple = None
                         if len(rel) == 1:
-                            triple = ((v["lemgram"], v["ref"]), d[0], (d[1]["lemgram"], d[1]["ref"]), ("", None), sentid, v["ref"], d[1]["ref"])
+                            triple = ((v["lemgram"], v["word"], v["ref"]), d[0], (d[1]["lemgram"], d[1]["word"], d[1]["ref"]), ("", None), sentid, v["ref"], d[1]["ref"])
                         else:
                             lookup = dict( zip( map(str, sorted(r.keys())), (v, d[0], d[1]) ) )
                             i = set(rel[0].keys()).intersection(set(rel[1].keys())).pop()
@@ -119,9 +120,9 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
                                 lookup_bf = dict((key, val["bf"]) for key, val in lookup.iteritems() if isinstance(val, dict))
                                 lookup_ref = dict((key, val["ref"]) for key, val in lookup.iteritems() if isinstance(val, dict))
                                 triple = (
-                                          (lookup[str(pp[0])]["lemgram"], lookup[str(pp[0])]["ref"]),
+                                          (lookup[str(pp[0])]["lemgram"], lookup[str(pp[0])]["word"], lookup[str(pp[0])]["ref"]),
                                           lookup[str(pp[1])],
-                                          (lookup[str(pp[2])]["lemgram"], lookup[str(pp[2])]["ref"]),
+                                          (lookup[str(pp[2])]["lemgram"], lookup[str(pp[2])]["word"], lookup[str(pp[2])]["ref"]),
                                           (pp[3] % lookup_bf, pp[3] % lookup_ref),
                                           sentid, lookup[str(pp[0])]["ref"], lookup[str(pp[2])]["ref"])
                         if triple:
@@ -132,10 +133,12 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
                 if nrel[0] == v["pos"]:
                     missing_rels = [x for x in nrel[1] if x not in token_rels]
                     for mrel in missing_rels:
-                        triple = ((v["lemgram"], v["ref"]), mrel, ("", v["ref"]), ("", None), sentid, v["ref"], v["ref"])
+                        triple = ((v["lemgram"], v["word"], v["ref"]), mrel, ("", "", v["ref"]), ("", None), sentid, v["ref"], v["ref"])
                         triples.extend(_mutate_triple(triple))
 
-    OUT = [(str(i), "\t".join((head, rel, dep, extra, sentid, refhead, refdep))) for (i, (head, rel, dep, extra, sentid, refhead, refdep)) in enumerate(triples)]
+    triples = set(triples)
+
+    OUT = [(str(i), "\t".join((head, rel, dep, extra, sentid, refhead, refdep, wf))) for (i, (head, rel, dep, extra, sentid, refhead, refdep, wf)) in enumerate(triples)]
     util.write_annotation(out, OUT)
 
 
@@ -144,7 +147,7 @@ def _mutate_triple(triple):
     Also remove multi-words which are in both head and dep, and remove the :nn part from words. """
     
     head, rel, dep, extra, sentid, refhead, refdep = triple
-    
+
     triples = []
     is_lemgrams = {}
     parts = {"head": head, "dep": dep}
@@ -173,7 +176,7 @@ def _mutate_triple(triple):
         dep_multi = [dm for dm in dep[0].split("|") if ":" in dm]
         for dm in dep_multi:
             w, _, r = dm.partition(":")
-            if int(extra[1]) >= int(r) and int(extra[1]) <= int(dep[1]):
+            if int(extra[1]) >= int(r) and int(extra[1]) <= int(dep[2]):
                 try:
                     parts["dep"].remove(w)
                 except:
@@ -187,7 +190,12 @@ def _mutate_triple(triple):
     
     for new_head in parts["head"]:
         for new_dep in parts["dep"]:
-            triples.append( (new_head, rel, new_dep, extra, sentid, refhead, refdep) )
+            triples.append( (new_head, rel, new_dep, extra, sentid, refhead, refdep, "") )
+            # For words not in SALDO, wf has the same value, so no need to add them
+            #if not head[1] == new_head:
+            triples.append( (head[1], rel, new_dep, extra, sentid, refhead, refdep, "1") )
+            #if not dep[1] == new_dep:
+            triples.append( (new_head, rel, dep[1], extra, sentid, refhead, refdep, "2") )
 
     return triples
 
@@ -234,18 +242,22 @@ def frequency(source, corpus, db_name, sqlfile):
         REL = util.read_annotation(s)
 
         for _, triple in REL.iteritems():
-            head, rel, dep, extra, sid, refh, refd = triple.split(u"\t")
+            head, rel, dep, extra, sid, refh, refd, wf = triple.split(u"\t")
             rel = rel_grouping.get(rel, rel)
-            freq.setdefault(head, {}).setdefault(rel, {}).setdefault(dep, {}).setdefault(extra, [0, []])
+            freq.setdefault(head, {}).setdefault(rel, {}).setdefault(dep, {}).setdefault(extra, [0, set(), 0])
             freq[head][rel][dep][extra][0] += 1 # Frequency
-            freq[head][rel][dep][extra][1].append(sid + ":" + refh + ":" + refd) # Sentence ID and "ref" for both head and dep
+            freq[head][rel][dep][extra][1].add(sid + ":" + refh + ":" + refd) # Sentence ID and "ref" for both head and dep
+            freq[head][rel][dep][extra][2] += int(wf) if wf else 0
             
-            rel_count.setdefault(rel, 0)
-            rel_count[rel] += 1
-            head_rel_count.setdefault((head, rel), 0)
-            head_rel_count[(head, rel)] += 1
-            rel_dep_count.setdefault((rel, dep, extra), 0)
-            rel_dep_count[(rel, dep, extra)] += 1
+            if not wf:
+                rel_count.setdefault(rel, 0)
+                rel_count[rel] += 1
+            if not wf or wf == "1":
+                head_rel_count.setdefault((head, rel), 0)
+                head_rel_count[(head, rel)] += 1
+            if not wf or wf == "2":
+                rel_dep_count.setdefault((rel, dep, extra), 0)
+                rel_dep_count[(rel, dep, extra)] += 1
 
     util.log.info("Creating SQL files")
     
@@ -265,7 +277,7 @@ def frequency(source, corpus, db_name, sqlfile):
         for rel, deps in rels.iteritems():
             for dep, extras in deps.iteritems():
                 for extra, extra2 in extras.iteritems():
-                    count, sids = extra2
+                    count, sids, wf = extra2
                     sids_trunc = []
                     sidlen = 0
                     for sid in sids:
@@ -287,6 +299,7 @@ def frequency(source, corpus, db_name, sqlfile):
                            "freq_rel": rel_count[rel],
                            "freq_head_rel": head_rel_count[(head, rel)],
                            "freq_rel_dep": rel_dep_count[(rel, dep, extra)],
+                           "wf": wf,
                            "sentences": sids
                            }
                     rows.append(row)
@@ -324,6 +337,7 @@ MYSQL_RELATIONS = {'columns': [("head",   "varchar(1024)", "", "NOT NULL"),
                                ("freq_rel", int, None, ""),
                                ("freq_head_rel", int, None, ""),
                                ("freq_rel_dep", int, None, ""),
+                               ("wf", "TINYINT", None, ""),
                                #("corpus", str, "", "NOT NULL"),
                                ("sentences", "TEXT", "", "")],
                'indexes': ["head",
