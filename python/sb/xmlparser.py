@@ -92,7 +92,7 @@ class XMLParser(HTMLParser):
         self.anchor2pos = {}
         self.textbuffer = []
         self.dbs = dict((annot, {}) for annot in elem_annotations.values())
-        self.header_temp = dict((header, None) for header in head_annotations.values())
+        self.header_temp = dict((header, "") for header in head_annotations.values())
         self.header_dbs = dict((header, {}) for header in head_annotations.values())
         util.resetIdent(self.prefix, maxidents=corpus_size)
 
@@ -236,7 +236,7 @@ class XMLParser(HTMLParser):
         if self.inside_header:
             element_path = ".".join(tag[0] for tag in reversed(self.tagstack))
             if (element_path, "TEXT") in self.head_annotations:
-                self.header_temp[self.head_annotations[(element_path, "TEXT")]] = content.strip()
+                self.header_temp[self.head_annotations[(element_path, "TEXT")]] += content.strip()
             return
         for token in REGEXP_TOKEN.split(content):
             self.add_token(token)
@@ -247,12 +247,16 @@ class XMLParser(HTMLParser):
         if problematic_entity(entity):
             util.log.error(self.pos() + "Control character reference: &%s;", entity)
             return
-        if self.inside_header:
-            return
         if name.startswith('x'):
             code = int(name[1:], 16)
         else:
             code = int(name)
+        
+        if self.inside_header:
+            element_path = ".".join(tag[0] for tag in reversed(self.tagstack))
+            if (element_path, "TEXT") in self.head_annotations:
+                self.header_temp[self.head_annotations[(element_path, "TEXT")]] += unichr(code)
+            return
         self.add_token(unichr(code))
 
     def handle_entityref(self, name):
@@ -264,9 +268,14 @@ class XMLParser(HTMLParser):
         if problematic_entity(name):
             util.log.error(self.pos() + "Unknown HTML entity: &%s;", name)
             return
-        if self.inside_header:
-            return
         code = html_entities[name]
+        
+        if self.inside_header:
+            element_path = ".".join(tag[0] for tag in reversed(self.tagstack))
+            if (element_path, "TEXT") in self.head_annotations:
+                self.header_temp[self.head_annotations[(element_path, "TEXT")]] += unichr(code)
+            return
+        
         self.add_token(unichr(code))
 
     def handle_comment(self, comment):
