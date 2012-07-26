@@ -69,8 +69,8 @@ def export(format, out, order, annotations, columns=(), structs=(), encoding=CWB
                     print >>OUT, "<%s%s>" % (elem.encode(encoding), val)
                     old_attr_values[elem] = new_attr_values[elem]
             if format == "vrt":
-                # Whitespace and / needs to be replaced for CQP parsing to work
-                line = "\t".join(cols.get(n, UNDEF).replace(" ", "_").replace("/", "") if n > 0 else cols.get(n, UNDEF).replace(" ", "_") for n in column_nrs)
+                # Whitespace and / needs to be replaced for CQP parsing to work. / is only allowed in the word itself.
+                line = "\t".join(cols.get(n, UNDEF).replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") if n > 0 else cols.get(n, UNDEF).replace(" ", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") for n in column_nrs)
             elif format == "xml":
                 word = cols.get(0, UNDEF).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                 attributes = " ".join('%s="%s"' % (columns[n], cols.get(n, UNDEF).replace("&", "&amp;").replace('"', '&quot;')) for n in column_nrs[1:])
@@ -121,6 +121,7 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
                    "-d", corpus_datadir,
                    "-R", corpus_registry,
                    "-c", encoding,
+                   "-x"
                    ]
     if vrtdir:
         encode_args += ["-F", vrtdir]
