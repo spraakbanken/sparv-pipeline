@@ -224,7 +224,7 @@ class XMLParser(HTMLParser):
                 headedge = util.mkEdge("header", (start, end))
                 for headann, headval in self.header_temp.iteritems():
                     self.header_dbs[headann][headedge] = headval
-                    self.header_temp[headann] = None
+                    self.header_temp[headann] = ""
 
     def handle_data(self, content):
         """Plain text data are tokenized and each 'token' is added to the text."""
