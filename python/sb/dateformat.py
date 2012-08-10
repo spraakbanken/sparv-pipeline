@@ -15,7 +15,7 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
     - into, annotation containing to-dates (optional)
     - outto, annotation with to-dates to be written (optional)
     - informat, the format of the infrom and into dates. Several formats can be specified separated by |. They will be tried in order.
-    - outformat, the desired format of the outfrom and outto dates
+    - outformat, the desired format of the outfrom and outto dates. Several formats can be specified separated by |. They will be tied to their respective in-format.
     
     http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior
     """
@@ -44,6 +44,9 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
         into = infrom
        
     informat = informat.split("|")
+    outformat = outformat.split("|")
+    
+    assert len(outformat) == 1 or (len(outformat) == len(informat)), "The number of out-formats must be equal to one or the number of in-formats."
     
     ifrom = util.read_annotation_iteritems(infrom)
     ofrom = {}
@@ -54,10 +57,9 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
             tries += 1
             try:
                 fromdate = datetime.datetime.strptime(val.encode(encoding), inf)
-                ofrom[key] = strftime(fromdate, outformat)
+                ofrom[key] = strftime(fromdate, outformat[0] if len(outformat) == 1 else outformat[tries - 1])
                 break
-            except ValueError as e:
-                print e
+            except ValueError:
                 if tries == len(informat):
                     raise
                 continue
@@ -90,7 +92,7 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                         add = relativedelta(seconds=1)
                     
                     todate = todate + add - relativedelta(seconds=1)
-                    oto[key] = strftime(todate, outformat)
+                    oto[key] = strftime(todate, outformat[0] if len(outformat) == 1 else outformat[tries - 1])
                     break
                 except ValueError:
                     if tries == len(informat):

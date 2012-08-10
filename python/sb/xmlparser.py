@@ -172,6 +172,10 @@ class XMLParser(HTMLParser):
         # We use a reversed stack (push from the left), to simplify
         # searching for elements below the top of the stack:
         self.tagstack.insert(0, (name, self.anchor(), elem_attrs))
+        # Should we automatically close this tag?
+        if name in self.autoclose:
+            self.handle_endtag(name)
+            self.anchor()
 
     def handle_endtag(self, name):
         """When there is a closing tag, we look for the matching open tag
