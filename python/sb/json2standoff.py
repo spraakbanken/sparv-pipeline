@@ -7,7 +7,7 @@ import codecs
 global textstring
         
 def jsontostandoff(jsonfile):
-    textstring = '<text title=\"Korp-revert\">'
+    textstring = '<text title=\"Korp-revert\" korpurl=\"' + sys.argv[3] + '\">'
     
     """Checks if an annotation file exists."""
     s = jsonfile.read()
@@ -22,32 +22,41 @@ def jsontostandoff(jsonfile):
     
     while runLoop < len(kwic):
         item = kwic[runLoop]
-        runLoop = runLoop + 1
+        
         """print >> sys.stdout, item"""
         
         j = 0
         tokensList = item.pop('tokens')
-        textstring = textstring + '\n '
+       
+        if runLoop != 0:
+                textstring = textstring + '</s>'
+        
+        textstring = textstring + '<s>'
+        
         while j < len(tokensList):
-            token = tokensList[j]
-            j = j + 1
+            token = tokensList[j]                
+          
             """print >> sys.stdout, token"""
 
             word = token.pop('word')
             pos = token.pop('pos')
             """print >> sys.stdout, word"""
-            if pos not in ['MAD', 'MID']:
+            if pos not in ['MAD', 'MID'] and j != 0:
                 textstring = textstring + ' '
             
             textstring = textstring + '<w pos=\"' + pos + '\">' + word + '</w>'
+            
+            j = j + 1
+            
+        runLoop = runLoop + 1
 
     """print >> sys.stdout, decoded;"""
-    textstring = textstring + "</text>"
+    textstring = textstring + "</s></text>"
     """print >> sys.stdout, textstring"""
     
     f = codecs.open(sys.argv[2], 'w', "utf-8")
     f.write(textstring)
-        
+       
 def printtoken(entry):
         """print 'kwic:', entry"""
         kwicpop = entry.pop()
