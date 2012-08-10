@@ -52,6 +52,9 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
     ofrom = {}
     
     for key, val in ifrom:
+        if not val:
+            ofrom[key] = None
+            continue
         tries = 0
         for inf in informat:
             tries += 1
@@ -72,6 +75,9 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
         oto = {}
     
         for key, val in ito:
+            if not val:
+                oto[key] = None
+                continue
             tries = 0
             for inf in informat:
                 tries += 1
