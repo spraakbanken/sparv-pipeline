@@ -7,7 +7,7 @@ import datetime, re
 from dateutil.relativedelta import relativedelta
 import util
 
-def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outformat="%Y%m%d%H%M%S", encoding="UTF-8"):
+def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outformat="%Y%m%d%H%M%S", splitter=None, encoding="UTF-8"):
     """Takes dates and input formats. Converts to specified format.
     
     - infrom, annotation containing from-dates
@@ -16,6 +16,7 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
     - outto, annotation with to-dates to be written (optional)
     - informat, the format of the infrom and into dates. Several formats can be specified separated by |. They will be tried in order.
     - outformat, the desired format of the outfrom and outto dates. Several formats can be specified separated by |. They will be tied to their respective in-format.
+    - splitter, a character or more separating two dates in 'infrom', treating them as from-date and to-date
     
     http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior
     """
@@ -55,12 +56,26 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
         if not val:
             ofrom[key] = None
             continue
+        
         tries = 0
         for inf in informat:
+            if splitter and splitter in inf:
+                values = re.findall("%[YybBmdHMS]", inf)
+                if len(set(values)) < len(values):
+                    vals = val.split(splitter)
+                    inf = inf.split(splitter)
+            else:
+                vals = [val]
+                inf = [inf]
+                
             tries += 1
             try:
-                fromdate = datetime.datetime.strptime(val.encode(encoding), inf)
-                ofrom[key] = strftime(fromdate, outformat[0] if len(outformat) == 1 else outformat[tries - 1])
+                fromdates = [datetime.datetime.strptime(v.encode(encoding), inf[i]) for i, v in enumerate(vals)]
+                if len(fromdates) == 1 or outto:
+                    ofrom[key] = strftime(fromdates[0], outformat[0] if len(outformat) == 1 else outformat[tries - 1])
+                else:
+                    outstrings = [strftime(fromdate, outformat[0] if len(outformat) == 1 else outformat[tries - 1]) for fromdate in fromdates]
+                    ofrom[key] = outstrings[0] + splitter + outstrings[1]
                 break
             except ValueError:
                 if tries == len(informat):
@@ -78,12 +93,22 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
             if not val:
                 oto[key] = None
                 continue
+            
             tries = 0
             for inf in informat:
+                if splitter and splitter in inf:
+                    values = re.findall("%[YybBmdHMS]", inf)
+                    if len(set(values)) < len(values):
+                        vals = val.split(splitter)
+                        inf = inf.split(splitter)
+                else:
+                    vals = [val]
+                    inf = [inf]
+                
                 tries += 1
                 try:
                     smallest_unit = get_smallest_unit(inf)
-                    todate = datetime.datetime.strptime(val.encode(encoding), inf)
+                    todates = [datetime.datetime.strptime(v.encode(encoding), inf[i]) for i, v in enumerate(vals)]
                     if smallest_unit == 1:
                         add = relativedelta(years=1)
                     elif smallest_unit == 2:
@@ -97,8 +122,8 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                     elif smallest_unit == 6:
                         add = relativedelta(seconds=1)
                     
-                    todate = todate + add - relativedelta(seconds=1)
-                    oto[key] = strftime(todate, outformat[0] if len(outformat) == 1 else outformat[tries - 1])
+                    todates = [todate + add - relativedelta(seconds=1) for todate in todates]
+                    oto[key] = strftime(todates[-1], outformat[0] if len(outformat) == 1 else outformat[tries - 1])
                     break
                 except ValueError:
                     if tries == len(informat):
