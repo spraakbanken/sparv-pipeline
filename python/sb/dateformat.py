@@ -79,6 +79,7 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                 break
             except ValueError:
                 if tries == len(informat):
+                    util.log.error("Could not parse: %s", str(vals))
                     raise
                 continue
 
@@ -127,6 +128,7 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                     break
                 except ValueError:
                     if tries == len(informat):
+                        util.log.error("Could not parse: %s", str(vals))
                         raise
                     continue
         
