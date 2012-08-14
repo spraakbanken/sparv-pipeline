@@ -107,7 +107,7 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                 
                 tries += 1
                 try:
-                    smallest_unit = get_smallest_unit(inf)
+                    smallest_unit = get_smallest_unit(inf[0])
                     todates = [datetime.datetime.strptime(v.encode(encoding), inf[i]) for i, v in enumerate(vals)]
                     if smallest_unit == 1:
                         add = relativedelta(years=1)
