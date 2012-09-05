@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import util
+from collections import defaultdict
 from util.mysql_wrapper import MySQL
 import re, math
 
@@ -210,16 +211,18 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
     return x_rel_y * math.log((rel * x_rel_y) / (x_rel * rel_y * 1.0), 2)
 
 
-def frequency(source, corpus, db_name, sqlfile):
-    """Calculates statistics of the dependencies and saves to an SQL file.
+def frequency(source, corpus, db_name, table_file, combined=True):
+    """Calculates statistics of the dependencies and saves to SQL files.
        - source is a space separated string with relations-files.
        - corpus is the corpus name.
        - db_name is the name of the database.
-       - sqlfile is the path and filename for the SQL file to be created.
-         Resulting file might be split into several parts if too big.
+       - table_file is the filename for the SQL file which will contain the table creation SQL.
+       - combined set to true leads to all the SQL commands being saved to one single file. This might not work for too large amounts of data.
     """
     
-    dbtable = MYSQL_TABLE + "_" + corpus.upper()
+    combined = False if combined == "" or (isinstance(combined, str) and combined.lower() == "false") else True
+    
+    db_table = MYSQL_TABLE + "_" + corpus.upper()
     
     # Relations that will be grouped together
     rel_grouping = {
@@ -230,123 +233,212 @@ def frequency(source, corpus, db_name, sqlfile):
         "OA": "ADV"
     }
     
-    MAX_SQL_LINES = 50000
-    source = source.split()
+    MAX_SENTENCES = 5000
     
-    freq = {} # Frequency of (head, rel, dep, depextra)
-    rel_count = {} # Frequency of (rel)
-    head_rel_count = {} # Frequency of (head, rel)
-    rel_dep_count = {} # Frequency of (rel, dep)
+    index = 0
+    freq_index = {}
+    sentence_count = defaultdict(int)
+    first_file = True
     
-    for s in source:
+    for s in source.split():
+        if first_file or not combined:
+            freq = {} # Frequency of (head, rel, dep, depextra)
+            rel_count = defaultdict(int) # Frequency of (rel)
+            head_rel_count = defaultdict(int) # Frequency of (head, rel)
+            dep_rel_count = defaultdict(int) # Frequency of (rel, dep)
+        
         REL = util.read_annotation(s)
+        basename = s.rsplit(".", 1)[0]
 
         for _, triple in REL.iteritems():
             head, rel, dep, extra, sid, refh, refd, wf = triple.split(u"\t")
             rel = rel_grouping.get(rel, rel)
-            freq.setdefault(head, {}).setdefault(rel, {}).setdefault(dep, {}).setdefault(extra, [0, set(), 0])
-            freq[head][rel][dep][extra][0] += 1 # Frequency
-            freq[head][rel][dep][extra][1].add(sid + ":" + refh + ":" + refd) # Sentence ID and "ref" for both head and dep
-            freq[head][rel][dep][extra][2] += int(wf) if wf else 0
+            
+            if (head, rel, dep, extra) in freq_index:
+                this_index = freq_index[(head, rel, dep, extra)]
+            else:
+                this_index = index
+                freq_index[(head, rel, dep, extra)] = this_index
+                index += 1
+            
+            freq.setdefault(head, {}).setdefault(rel, {}).setdefault(dep, {}).setdefault(extra, [this_index, 0, set(), 0])
+            freq[head][rel][dep][extra][1] += 1 # Frequency
+            
+            if sentence_count[this_index] < MAX_SENTENCES:
+                freq[head][rel][dep][extra][2].add((sid, refh, refd)) # Sentence ID and "ref" for both head and dep
+                sentence_count[this_index] += 1
+            freq[head][rel][dep][extra][3] += int(wf) if wf else 0
             
             if not wf:
-                rel_count.setdefault(rel, 0)
                 rel_count[rel] += 1
             if not wf or wf == "1":
-                head_rel_count.setdefault((head, rel), 0)
                 head_rel_count[(head, rel)] += 1
             if not wf or wf == "2":
-                rel_dep_count.setdefault((rel, dep, extra), 0)
-                rel_dep_count[(rel, dep, extra)] += 1
+                dep_rel_count[(dep, extra, rel)] += 1
 
-    util.log.info("Creating SQL files")
+        if not combined:
+            write_sql(freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, combined, first=first_file)
+        else:
+            write_sql({}, {}, {}, {}, table_file, basename + ".sql", db_name, db_table, combined, first=first_file)
+            
+        first_file = False
     
-    no = 1
-    sqlfile_no = sqlfile + "." + "%03d" % no
-    mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile_no)
-    mysql.create_table(dbtable, drop=True, **MYSQL_RELATIONS)
-    mysql.set_names()
-    #mysql.delete_rows(MYSQL_TABLE, {"corpus": corpus})
-    
-    i = 0
-    rows = []
-    progress = 0
-    progress_total = len(freq)
-    for head, rels in freq.iteritems():
-        progress += 1
-        for rel, deps in rels.iteritems():
-            for dep, extras in deps.iteritems():
-                for extra, extra2 in extras.iteritems():
-                    count, sids, wf = extra2
-                    sids_trunc = []
-                    sidlen = 0
-                    for sid in sids:
-                        if sidlen + len(sid) < 1000000:
-                            sidlen += len(sid) + 1
-                            sids_trunc.append(sid)
-                        else:
-                            util.log.warning("Truncating examples: %s %s %s %s", head, rel, dep, extra)
-                            break
-                    sids = ";".join(sids_trunc)
-                    
-                    #mi = mi_lex(rel_count[rel], count, head_rel_count[(head, rel)], rel_dep_count[(rel, dep, extra)])
-                    
-                    row = {"head": head,
-                           "rel": rel,
-                           "dep": dep,
-                           "depextra": extra,
-                           "freq": count,
-                           "freq_rel": rel_count[rel],
-                           "freq_head_rel": head_rel_count[(head, rel)],
-                           "freq_rel_dep": rel_dep_count[(rel, dep, extra)],
-                           "wf": wf,
-                           "sentences": sids
-                           }
-                    rows.append(row)
-                    i += 1
-                    if i > MAX_SQL_LINES:
-                        mysql.add_row(dbtable, *rows)
-                        rows = []
-                        # To not create too large SQL-files.
-                        i = 0
-                        util.log.info("%s written (%.1f%%)", sqlfile_no, (100 * progress / float(progress_total)))
-                        no += 1
-                        sqlfile_no = sqlfile + "." + "%03d" % no
-                        mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile_no)
-                        mysql.set_names()
-    if rows:
-        mysql.add_row(dbtable, *rows)
-        util.log.info("%s written (100.0%%)", sqlfile_no)
+    if combined:
+        write_sql(freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, combined, first=first_file)
     
     util.log.info("Done creating SQL files")
     
 
+def write_sql(freq, rel_count, head_rel_count, dep_rel_count, table_file, sqlfile, db_name, db_table, combined=False, first=False):
+    
+    update_freq_wf = "ON DUPLICATE KEY UPDATE freq = freq + VALUES(freq), wf = wf + VALUES(wf)" if not combined else ""
+    update_freq = "ON DUPLICATE KEY UPDATE freq = freq + VALUES(freq)" if not combined else ""
+    
+    if first:
+        if combined:
+            del MYSQL_RELATIONS["constraints"]
+            del MYSQL_REL["constraints"]
+            del MYSQL_HEAD_REL["constraints"]
+            del MYSQL_DEP_REL["constraints"]
+        mysql = MySQL(db_name, encoding=util.UTF8, output=table_file)
+        mysql.create_table(db_table, drop=True, **MYSQL_RELATIONS)
+        mysql.create_table(db_table + "_rel", drop=True, **MYSQL_REL)
+        mysql.create_table(db_table + "_head_rel", drop=True, **MYSQL_HEAD_REL)
+        mysql.create_table(db_table + "_dep_rel", drop=True, **MYSQL_DEP_REL)
+        mysql.create_table(db_table + "_sentences", drop=True, **MYSQL_SENTENCES)
+    
+    mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile)
+    if freq:
+        mysql.set_names()
+    
+    sentence_rows = []
+    rows = []
+    for head, rels in freq.iteritems():
+        for rel, deps in rels.iteritems():
+            for dep, extras in deps.iteritems():
+                for extra, extra2 in extras.iteritems():
+                    index, count, sids, wf = extra2
+                    for sid in sids:
+                        srow = {
+                               "id": index,
+                               "sentence": sid[0],
+                               "start": sid[1],
+                               "end": sid[2]
+                               }
+                        sentence_rows.append(srow)
+                    
+                    row = {
+                           "id": index,
+                           "head": head,
+                           "rel": rel,
+                           "dep": dep,
+                           "depextra": extra,
+                           "freq": count,
+                           "wf": wf
+                           }
+                    rows.append(row)
+
+    mysql.add_row(db_table, rows, update_freq_wf)
+    
+    rows = []
+    for rel, freq in rel_count.iteritems():
+        row = {
+               "rel": rel,
+               "freq": freq}
+        rows.append(row)
+    
+    mysql.add_row(db_table + "_rel", rows, update_freq)
+
+    rows = []
+    for head_rel, freq in head_rel_count.iteritems():
+        head, rel = head_rel
+        row = {
+               "head": head,
+               "rel": rel,
+               "freq": freq}
+        rows.append(row)
+    
+    mysql.add_row(db_table + "_head_rel", rows, update_freq)
+
+    rows = []
+    for dep_extra_rel, freq in dep_rel_count.iteritems():
+        dep, extra, rel = dep_extra_rel
+        row = {
+               "dep": dep,
+               "depextra": extra,
+               "rel": rel,
+               "freq": freq}
+        rows.append(row)
+    
+    mysql.add_row(db_table + "_dep_rel", rows, update_freq)
+    
+
+    
+    mysql.add_row(db_table + "_sentences", sentence_rows)
+    
+    util.log.info("%s written", sqlfile)
+    
 ################################################################################
 
-#POS_FILTER = (u"VB", u"NN", u"JJ")
-#REL_FILTER = (u"SS", u"OO", u"IO", u"AT", u"ET", u"DT", u"OA", u"RA", u"TA")
-
-REL_SEPARATOR = " "
 MYSQL_TABLE = "relations"
 
-MYSQL_RELATIONS = {'columns': [("head",   "varchar(1024)", "", "NOT NULL"),
+MYSQL_RELATIONS = {'columns': [
+                               ("id",     int, None, ""),
+                               ("head",   "varchar(100)", "", "NOT NULL"),
                                ("rel",    "char(3)", "", "NOT NULL"),
-                               ("dep",    "varchar(1024)", "", "NOT NULL"),
-                               ("depextra",    "varchar(1024)", "", ""),
+                               ("dep",    "varchar(100)", "", "NOT NULL"),
+                               ("depextra",    "varchar(32)", "", ""),
                                ("freq",   int, None, ""),
-                               ("freq_rel", int, None, ""),
-                               ("freq_head_rel", int, None, ""),
-                               ("freq_rel_dep", int, None, ""),
-                               ("wf", "TINYINT", None, ""),
-                               #("corpus", str, "", "NOT NULL"),
-                               ("sentences", "TEXT", "", "")],
+                               ("wf", "TINYINT", None, "")],
                'indexes': ["head",
-                           "dep",
-                           #"corpus"
+                           "dep"
                            ],
+               'constraints': [("UNIQUE INDEX", "relation", ("head", "rel", "dep", "depextra"))],
                'default charset': 'utf8',
+               #'collate': 'utf8_bin'
                }
 
+MYSQL_REL = {'columns': [
+                          ("rel",    "char(3)", "", "NOT NULL"),
+                          ("freq", int, None, "")],
+               'indexes': ["rel"],
+               'constraints': [("UNIQUE INDEX", "relation", ("rel",))],
+               'default charset': 'utf8',
+               'collate': 'utf8_bin'
+               }
+
+MYSQL_HEAD_REL = {'columns': [
+                              ("head",   "varchar(100)", "", "NOT NULL"),
+                              ("rel",    "char(3)", "", "NOT NULL"),
+                              ("freq", int, None, "")],
+                  'indexes': ["head",
+                              "rel"],
+                  'constraints': [("UNIQUE INDEX", "relation", ("head", "rel"))],
+                  'default charset': 'utf8',
+                  'collate': 'utf8_bin'
+                   }
+
+MYSQL_DEP_REL = {'columns': [
+                              ("dep",   "varchar(100)", "", "NOT NULL"),
+                              ("depextra",    "varchar(32)", "", ""),
+                              ("rel",    "char(3)", "", "NOT NULL"),
+                              ("freq", int, None, "")],
+                 'indexes': ["dep",
+                           "rel"],
+                 'constraints': [("UNIQUE INDEX", "relation", ("dep", "depextra", "rel"))],
+                 'default charset': 'utf8',
+                 'collate': 'utf8_bin'
+                 }
+
+MYSQL_SENTENCES = {'columns': [
+                               ("id", int, None, ""),
+                               ("sentence",   "varchar(64)", "", "NOT NULL"),
+                               ("start",    int, None, ""),
+                               ("end", int, None, "")],
+               'indexes': ["id"],
+               'default charset': 'utf8',
+               'collate': 'utf8_bin'
+               }
 ################################################################################    
 
 if __name__ == '__main__':

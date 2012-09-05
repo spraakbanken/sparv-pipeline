@@ -19,11 +19,16 @@ class MySQL(object):
             self.arguments += ['-p', password]
         self.encoding = encoding
         self.output = output
+        self.first_output = True
         if self.output and overwrite:
             if os.path.exists(self.output):
                 os.remove(self.output)
 
     def execute(self, sql, *args):
+        if self.first_output:
+            if sql.strip():
+                sql = "SET @@session.long_query_time = 1000;" + sql
+            self.first_output = False
         if self.output:
             # Write SQL statement to file
             with open(self.output, "a") as outfile:
@@ -38,7 +43,7 @@ class MySQL(object):
                 log.error("MySQL: %s", err)
         #return out
 
-    def create_table(self, table, drop, columns, primary=None, indexes=None, **kwargs):
+    def create_table(self, table, drop, columns, primary=None, indexes=None, constraints=None, **kwargs):
         sqlcolumns = [u"  %s %s %s DEFAULT %s" %
                       (_ATOM(name), _TYPE(typ), extra or "", _VALUE(default))
                       for name, typ, default, extra in columns]
@@ -50,7 +55,9 @@ class MySQL(object):
             if isinstance(index, basestring):
                 index = index.split()
             sqlcolumns += [u"INDEX %s (%s)" % (_ATOM(index[0]), _ATOMSEQ(index))]
-        
+        if constraints:
+            for constraint in constraints:
+                sqlcolumns += [u"CONSTRAINT %s %s (%s)" % (constraint[0], _ATOM(constraint[1]), _ATOMSEQ(constraint[2]))]
         if drop:
             sql = (u"DROP TABLE IF EXISTS %s;\n" % _ATOM(table) +
                    u"CREATE TABLE %s (\n " % _ATOM(table))
@@ -78,32 +85,30 @@ class MySQL(object):
         conditions = " AND ".join( ["%s = %s" % (_ATOM(k), _VALUE(v)) for (k, v) in conditions.items()] )
         self.execute(u"DELETE FROM %s WHERE %s;" % (_ATOM(table), conditions))
     
-    def add_row(self, table, *rows):
-        assert all(isinstance(row, (dict, list, tuple)) for row in rows)
+    def add_row(self, table, rows, extra=""):
+        if isinstance(rows, dict): rows = [rows]
         table = _ATOM(table)
         sql = []
         values = []
         input_length = 0
         
-        def insert(values):
-            return u"INSERT INTO %s (%s) VALUES\n" % (table, ", ".join(sorted(rows[0].keys()))) + ",\n".join(values) + ";"
+        def insert(values, extra=""):
+            if extra: extra = "\n" + extra
+            return u"INSERT INTO %s (%s) VALUES\n" % (table, ", ".join(sorted(rows[0].keys()))) + ",\n".join(values) + "%s;" % extra
         
         for row in rows:
             if isinstance(row, dict):
                 rowlist = sorted(row.items(), key=lambda x: x[0])
                 valueline = u"(%s)" % (_VALUESEQ([x[1] for x in rowlist]))
                 input_length += len(valueline)
-                if input_length >= MAX_ALLOWED_PACKET:
-                    sql.append(insert(values))
+                if input_length > MAX_ALLOWED_PACKET:
+                    sql.append(insert(values, extra))
                     values = []
                     input_length = len(valueline)
                 values += [valueline]
-                #sql += [u"INSERT INTO %s SET %s;" % (table, _DICT(row, filter_null=True))]
-            #else:
-            #    sql += [u"INSERT INTO %s VALUE (%s);" % (table, _VALUESEQ(row))]
         
         if values:
-            sql.append(insert(values))
+            sql.append(insert(values, extra))
         self.execute("\n".join(sql))
 
 

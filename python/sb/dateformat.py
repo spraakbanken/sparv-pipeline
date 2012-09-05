@@ -7,7 +7,7 @@ import datetime, re
 from dateutil.relativedelta import relativedelta
 import util
 
-def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outformat="%Y%m%d%H%M%S", splitter=None, encoding="UTF-8"):
+def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outformat="%Y%m%d%H%M%S", splitter=None, regex=None, encoding="UTF-8"):
     """Takes dates and input formats. Converts to specified format.
     
     - infrom, annotation containing from-dates
@@ -17,6 +17,7 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
     - informat, the format of the infrom and into dates. Several formats can be specified separated by |. They will be tried in order.
     - outformat, the desired format of the outfrom and outto dates. Several formats can be specified separated by |. They will be tied to their respective in-format.
     - splitter, a character or more separating two dates in 'infrom', treating them as from-date and to-date
+    - regex, a regular expression with a catching group whose content will be used in the parsing instead of the whole string
     
     http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior
     """
@@ -67,7 +68,19 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
             else:
                 vals = [val]
                 inf = [inf]
-                
+            
+            if regex:
+                temp = []
+                for v in vals:
+                    matches = re.search(regex, v)
+                    if matches:
+                        temp.append([x for x in matches.groups() if x][0])
+                if not temp:
+                    # If the regex doesn't match, treat as no date
+                    ofrom[key] = None
+                    continue
+                vals = temp
+                    
             tries += 1
             try:
                 fromdates = [datetime.datetime.strptime(v.encode(encoding), inf[i]) for i, v in enumerate(vals)]
@@ -105,6 +118,18 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                 else:
                     vals = [val]
                     inf = [inf]
+                
+                if regex:
+                    temp = []
+                    for v in vals:
+                        matches = re.search(regex, v)
+                        if matches:
+                            temp.append([x for x in matches.groups() if x][0])
+                    if not temp:
+                        # If the regex doesn't match, treat as no date
+                        oto[key] = None
+                        continue
+                    vals = temp
                 
                 tries += 1
                 try:

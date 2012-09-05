@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import os, subprocess
-from collections import defaultdict
 import util
 from util.mysql_wrapper import MySQL
 
-# The absolute path to the cwb-scan-corpus binary
+# Path to the cwb-scan-corpus binary
 CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
-
 CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
-CWB_ENCODING = "UTF-8"
 
 def make_index(corpus, out, db_name, attributes=["lex", "prefix", "suffix"]):
     
@@ -32,7 +29,7 @@ def make_index(corpus, out, db_name, attributes=["lex", "prefix", "suffix"]):
         rows.append(row)
 
     util.log.info("Creating SQL")
-    mysql.add_row(MYSQL_TABLE, *rows)
+    mysql.add_row(MYSQL_TABLE, rows)
 
 
 def count_lemgrams(corpus, attributes):
