@@ -28,6 +28,7 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
             ({1: "VB", 2: "(RA|TA)", 3: "PP"}, {3: "PP", 4: "(PA|HD)", 5: "NN"}, (1, 2, 5, "%(3)s")),    # "ges vid behov"
             ({1: "NN", 2: "(AT|ET)", 3: "JJ"},), # "stor hund"
             ({1: "NN", 2: "ET", 3: "VB"}, {3: "VB", 4: "SS", 5: "HP"}, (1, 2, 3, "%(5)s")),     # "brödet som bakats"
+            ({1: "NN", 2: "ET", 3: "PP"}, {3: "PP", 4: "PA", 5: "(PM|NN)"}, (1, 2, 5, "%(3)s")),     # "barnen i skolan", "hundarna i Sverige"
             ({1: "PP", 2: "PA", 3: "NN"},) # "på bordet"
             ]
 
