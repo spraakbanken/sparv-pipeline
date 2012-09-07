@@ -27,7 +27,7 @@ class MySQL(object):
     def execute(self, sql, *args):
         if self.first_output:
             if sql.strip():
-                sql = "SET @@session.long_query_time = 1000;" + sql
+                sql = "SET @@session.long_query_time = 1000;\n" + sql
             self.first_output = False
         if self.output:
             # Write SQL statement to file
@@ -74,10 +74,16 @@ class MySQL(object):
     def disable_keys(self, *tables):
         for table in tables:
             self.execute("ALTER TABLE %s DISABLE KEYS;" % _ATOM(table))
+        self.execute("SET FOREIGN_KEY_CHECKS = 0;")
+        self.execute("SET UNIQUE_CHECKS = 0;")
+        self.execute("SET AUTOCOMMIT = 0;")
     
     def enable_keys(self, *tables):
         for table in tables:
             self.execute("ALTER TABLE %s ENABLE KEYS;" % _ATOM(table))
+        self.execute("SET UNIQUE_CHECKS = 1;")
+        self.execute("SET FOREIGN_KEY_CHECKS = 1;")
+        self.execute("COMMIT;")
 
     def lock(self, *tables):
         t = ", ".join([_ATOM(table) + " WRITE" for table in tables])
