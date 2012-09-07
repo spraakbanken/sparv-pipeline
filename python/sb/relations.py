@@ -212,7 +212,7 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
     return x_rel_y * math.log((rel * x_rel_y) / (x_rel * rel_y * 1.0), 2)
 
 
-def frequency(source, corpus, db_name, table_file, combined=True):
+def frequency(source, corpus, db_name, table_file, table_file2, combined=True):
     """Calculates statistics of the dependencies and saves to SQL files.
        - source is a space separated string with relations-files.
        - corpus is the corpus name.
@@ -287,6 +287,9 @@ def frequency(source, corpus, db_name, table_file, combined=True):
     if combined:
         write_sql(freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, combined, first=first_file)
     
+    mysql = MySQL(db_name, encoding=util.UTF8, output=table_file2)
+    mysql.enable_keys(db_table, db_table + "_rel", db_table + "_head_rel", db_table + "_dep_rel", db_table + "_sentences")
+    
     util.log.info("Done creating SQL files")
     
 
@@ -307,6 +310,7 @@ def write_sql(freq, rel_count, head_rel_count, dep_rel_count, table_file, sqlfil
         mysql.create_table(db_table + "_head_rel", drop=True, **MYSQL_HEAD_REL)
         mysql.create_table(db_table + "_dep_rel", drop=True, **MYSQL_DEP_REL)
         mysql.create_table(db_table + "_sentences", drop=True, **MYSQL_SENTENCES)
+        mysql.disable_keys(db_table, db_table + "_rel", db_table + "_head_rel", db_table + "_dep_rel", db_table + "_sentences")
     
     mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile)
     if freq:
