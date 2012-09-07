@@ -71,6 +71,14 @@ class MySQL(object):
         sql += u";"
         self.execute(sql)
 
+    def disable_keys(self, *tables):
+        for table in tables:
+            self.execute("ALTER TABLE %s DISABLE KEYS;" % _ATOM(table))
+    
+    def enable_keys(self, *tables):
+        for table in tables:
+            self.execute("ALTER TABLE %s ENABLE KEYS;" % _ATOM(table))
+
     def lock(self, *tables):
         t = ", ".join([_ATOM(table) + " WRITE" for table in tables])
         self.execute(u"LOCK TABLES %s;" % t)
