@@ -37,6 +37,7 @@ def line(ch):
 
 def output(msg="", *args):
     """Prints a message (plus newline) on stderr."""
+    args = tuple(arg.decode(constants.UTF8) if isinstance(arg, str) else arg for arg in args)
     msge = (msg % args).encode(constants.UTF8)
     print >>sys.stderr, process_id_prefix + "|", msge
     m = process_id_prefix + "| " + msge
