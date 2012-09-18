@@ -240,8 +240,11 @@ def frequency(source, corpus, db_name, table_file, table_file2, combined=True):
     freq_index = {}
     sentence_count = defaultdict(int)
     first_file = True
+    file_count = 0
+    source_files = source.split()
     
-    for s in source.split():
+    for s in source_files:
+        file_count += 1
         if first_file or not combined:
             freq = {} # Frequency of (head, rel, dep, depextra)
             rel_count = defaultdict(int) # Frequency of (rel)
@@ -279,7 +282,7 @@ def frequency(source, corpus, db_name, table_file, table_file2, combined=True):
 
         if not combined:
             write_sql(freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, combined, first=first_file)
-        else:
+        elif not file_count == len(source_files):
             write_sql({}, {}, {}, {}, table_file, basename + ".sql", db_name, db_table, combined, first=first_file)
             
         first_file = False

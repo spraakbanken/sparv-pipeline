@@ -240,7 +240,7 @@ class XMLParser(HTMLParser):
         if self.inside_header:
             element_path = ".".join(tag[0] for tag in reversed(self.tagstack))
             if (element_path, "TEXT") in self.head_annotations:
-                self.header_temp[self.head_annotations[(element_path, "TEXT")]] += content.strip()
+                self.header_temp[self.head_annotations[(element_path, "TEXT")]] += re.sub(r"\s{2,}", " ", content)
             return
         for token in REGEXP_TOKEN.split(content):
             self.add_token(token)
