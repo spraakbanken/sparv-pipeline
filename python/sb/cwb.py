@@ -191,11 +191,15 @@ def cwb_align(master, other, link, aligndir=ALIGNDIR):
     # add alignment parameter to registry
     # cwb-regedit is not installed by default, so we skip it and modify the regfile directly instead:
     regfile = os.path.join(os.environ["CORPUS_REGISTRY"], master)
-    with open(regfile, "a") as F:
-        print >>F
-        print >>F, "# Added by cwb.py"
-        print >>F, "ALIGNED", other
-    util.log.info("Added alignment to registry: %s", regfile)
+    with open(regfile, "r") as F:
+        skip_align = ("ALIGNED %s" % other) in F.read()
+
+    if not skip_align:
+        with open(regfile, "a") as F:
+            print >>F
+            print >>F, "# Added by cwb.py"
+            print >>F, "ALIGNED", other
+        util.log.info("Added alignment to registry: %s", regfile)
     # args = [master, ":add", ":a", other]
     # result, _ = util.system.call_binary("cwb-regedit", args, verbose=True)
     # util.log.info("%s", result.strip())
