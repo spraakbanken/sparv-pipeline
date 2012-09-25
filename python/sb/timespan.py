@@ -15,8 +15,11 @@ def timespan(corpus, db_name, out):
     process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-r", CORPUS_REGISTRY, corpus, "text_datefrom", "text_dateto"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     reply, error = process.communicate()
     if error and "Error:" in error: # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
-        print error
-        raise Exception
+        if "Error: can't open attribute" in error and ".text_datefrom" in error:
+            util.log.info("No date information present in corpus.")
+        else:
+            print error
+            raise Exception
     for line in reply.splitlines():
         line = line.decode("UTF-8")
         if not line:
