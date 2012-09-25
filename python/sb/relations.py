@@ -282,10 +282,10 @@ def frequency(source, corpus, db_name, table_file, table_file2, combined=True):
 
         if not combined:
             write_sql(freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, combined, first=first_file)
+            first_file = False
         elif not file_count == len(source_files):
             write_sql({}, {}, {}, {}, table_file, basename + ".sql", db_name, db_table, combined, first=first_file)
-            
-        first_file = False
+            first_file = False
     
     if combined:
         write_sql(freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, combined, first=first_file)
