@@ -73,7 +73,7 @@ def export(format, out, order, annotations, columns=(), structs=(), encoding=CWB
                 line = "\t".join(cols.get(n, UNDEF).replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") if n > 0 else cols.get(n, UNDEF).replace(" ", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") for n in column_nrs)
             elif format == "xml":
                 word = cols.get(0, UNDEF).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                attributes = " ".join('%s="%s"' % (columns[n], cols.get(n, UNDEF).replace("&", "&amp;").replace('"', '&quot;')) for n in column_nrs[1:])
+                attributes = " ".join('%s="%s"' % (columns[n], cols.get(n, UNDEF).replace("&", "&amp;").replace('"', '&quot;').replace("<", "&lt;").replace(">", "&gt;")) for n in column_nrs[1:])
                 line = "<w %s>%s</w>" % (attributes, word)
             print >>OUT, line.encode(encoding)
         for elem, _attrs in structs:
