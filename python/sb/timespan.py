@@ -6,6 +6,7 @@ from util.mysql_wrapper import MySQL
 
 # Path to the cwb-scan-corpus binary
 CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
+CQP_EXECUTABLE = "cqp"
 CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 def timespan(corpus, db_name, out):
@@ -17,6 +18,17 @@ def timespan(corpus, db_name, out):
     if error and "Error:" in error: # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
         if "Error: can't open attribute" in error and ".text_datefrom" in error:
             util.log.info("No date information present in corpus.")
+            # No date information in corpus. Calculate total token count instead.
+            process = subprocess.Popen([CQP_EXECUTABLE, "-c", "-r", CORPUS_REGISTRY], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            reply, error = process.communicate("set PrettyPrint off;%s;info;" % corpus)
+            
+            if error:
+                print error
+                raise Exception
+
+            for line in reply.splitlines():
+                if line.startswith("Size: "):
+                    reply = "%s\t\t" % line[6:].strip()
         else:
             print error
             raise Exception
