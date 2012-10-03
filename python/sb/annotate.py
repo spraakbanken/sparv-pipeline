@@ -84,8 +84,10 @@ def find_replace(chunk, out, find, sub=""):
     """Find and replace parts of or whole annotation."""
     util.write_annotation(out, ((key, val.replace(find, sub)) for (key, val) in util.read_annotation_iteritems(chunk)))
 
-def concat(out, left, right, separator="", merge_twins=False, encoding=util.UTF8):
-    """Concatenate values from two annotations, with an optional separator."""
+def concat(out, left, right, separator="", merge_twins="", encoding=util.UTF8):
+    """Concatenate values from two annotations, with an optional separator.
+    If merge_twins is set to True, no concatenation will be done on identical values."""
+    merge_twins = merge_twins.lower() == "true"
     b = util.read_annotation(right)
     util.write_annotation(out, ((key_a, u"%s%s%s" % (val_a, separator.decode(encoding), b[key_a]) if not (merge_twins and val_a == b[key_a]) else val_a) for (key_a, val_a) in util.read_annotation_iteritems(left)))
     
