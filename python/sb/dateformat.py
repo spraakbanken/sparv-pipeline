@@ -42,6 +42,30 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
         
         return smallest_unit
     
+    def get_date_length(informat):
+        parts = informat.split("%")
+        length = len(parts[0]) # First value is either blank or not part of date
+        
+        lengths = {"Y": 4,
+                   "y": 2,
+                   "m": 2,
+                   "b": None,
+                   "B": None,
+                   "d": 2,
+                   "H": None,
+                   "I": None,
+                   "M": 2,
+                   "S": 2}
+
+        for part in parts[1:]:
+            add = lengths.get(part[0], None)
+            if add:
+                length += add + len(part[1:])
+            else:
+                return None
+        
+        return length
+    
     if not into:
         into = infrom
        
@@ -83,6 +107,14 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                     
             tries += 1
             try:
+                fromdates = []
+                for i, v in enumerate(vals):
+                    if "%0m" in inf[i] or "%0d" in inf[i]:
+                        inf[i] = inf[i].replace("%0m", "%m").replace("%0d", "%d")
+                        datelen = get_date_length(inf[i])
+                        if datelen and not datelen == len(v.encode(encoding)):
+                            raise ValueError
+                    fromdates.append(datetime.datetime.strptime(v.encode(encoding), inf[i]))
                 fromdates = [datetime.datetime.strptime(v.encode(encoding), inf[i]) for i, v in enumerate(vals)]
                 if len(fromdates) == 1 or outto:
                     ofrom[key] = strftime(fromdates[0], outformat[0] if len(outformat) == 1 else outformat[tries - 1])
@@ -133,8 +165,15 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                 
                 tries += 1
                 try:
+                    todates = []
+                    for i, v in enumerate(vals):
+                        if "%0m" in inf[i] or "%0d" in inf[i]:
+                            inf[i] = inf[i].replace("%0m", "%m").replace("%0d", "%d")
+                            datelen = get_date_length(inf[i])
+                            if datelen and not datelen == len(v.encode(encoding)):
+                                raise ValueError
+                        todates.append(datetime.datetime.strptime(v.encode(encoding), inf[i]))
                     smallest_unit = get_smallest_unit(inf[0])
-                    todates = [datetime.datetime.strptime(v.encode(encoding), inf[i]) for i, v in enumerate(vals)]
                     if smallest_unit == 1:
                         add = relativedelta(years=1)
                     elif smallest_unit == 2:
