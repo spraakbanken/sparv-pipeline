@@ -10,6 +10,8 @@ CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 def make_index(corpus, out, db_name, attributes=["lex", "prefix", "suffix"]):
     
+    attribute_fields = {"lex": "freq", "prefix": "freq_prefix", "suffix": "freq_suffix"}
+    
     corpus = corpus.upper()
     index = count_lemgrams(corpus, attributes)
     
@@ -21,11 +23,16 @@ def make_index(corpus, out, db_name, attributes=["lex", "prefix", "suffix"]):
     rows = []
     for lemgram, freq in index.items():
         row = {"lemgram": lemgram,
-               "freq": freq[0],
-               "freq_prefix": freq[1],
-               "freq_suffix": freq[2],
                "corpus": corpus
                }
+        
+        for i, attr in enumerate(attributes):
+            row[attribute_fields[attr]] = freq[i]
+        
+        for attr in attribute_fields:
+            if not attr in attributes:
+                row[attribute_fields[attr]] = 0
+            
         rows.append(row)
 
     util.log.info("Creating SQL")
@@ -50,7 +57,7 @@ def count_lemgrams(corpus, attributes):
         for i in range(len(temp) - 1):
             for value in temp[i+1].split("|"):
                 if value and not ":" in value:
-                    result.setdefault(value, [0, 0, 0])
+                    result.setdefault(value, [0] * len(attributes))
                     result[value][i] += freq
     
     return result
@@ -60,9 +67,9 @@ def count_lemgrams(corpus, attributes):
 MYSQL_TABLE = "lemgram_index"
 
 MYSQL_INDEX = {'columns': [("lemgram", "varchar(64)", "", "NOT NULL"),
-                           ("freq", int, None, ""),
-                           ("freq_prefix", int, None, ""),
-                           ("freq_suffix", int, None, ""),
+                           ("freq", int, None, "NOT NULL"),
+                           ("freq_prefix", int, None, "NOT NULL"),
+                           ("freq_suffix", int, None, "NOT NULL"),
                            ("corpus", "varchar(64)", "", "NOT NULL")],
                'indexes': ["lemgram",
                            "corpus"
