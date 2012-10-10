@@ -10,6 +10,8 @@ CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 def make_index(corpus, out, db_name, attributes=["lex", "prefix", "suffix"]):
     
+    if isinstance(attributes, basestring): attributes = attributes.split()
+
     attribute_fields = {"lex": "freq", "prefix": "freq_prefix", "suffix": "freq_suffix"}
     
     corpus = corpus.upper()
