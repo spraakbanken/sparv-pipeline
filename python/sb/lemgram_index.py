@@ -69,9 +69,9 @@ def count_lemgrams(corpus, attributes):
 MYSQL_TABLE = "lemgram_index"
 
 MYSQL_INDEX = {'columns': [("lemgram", "varchar(64)", "", "NOT NULL"),
-                           ("freq", int, None, "NOT NULL"),
-                           ("freq_prefix", int, None, "NOT NULL"),
-                           ("freq_suffix", int, None, "NOT NULL"),
+                           ("freq", int, 0, "NOT NULL"),
+                           ("freq_prefix", int, 0, "NOT NULL"),
+                           ("freq_suffix", int, 0, "NOT NULL"),
                            ("corpus", "varchar(64)", "", "NOT NULL")],
                'indexes': ["lemgram",
                            "corpus"
