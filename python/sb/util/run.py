@@ -13,7 +13,7 @@ def main(*default_functions, **functions):
     """
     def exit_usage():
         print_usage_and_exit(*default_functions, **functions)
-    
+
     if default_functions:
         if len(default_functions) > 1:
             exit("\nsb.util.run.main: Only one default function, please.\n")
@@ -94,4 +94,3 @@ def print_usage_and_exit(*default_functions, **functions):
         if isinstance(fun.__doc__, basestring) and fun.__doc__.strip():
             usage += "--> " + fun.__doc__.strip() + "\n\n"
     exit(usage)
-

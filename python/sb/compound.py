@@ -3,28 +3,7 @@
 import cPickle as pickle
 import util
 
-def annotate(out_prefix, out_suffix, word, msd, model, delimiter="|", affix="|"):
-    """Divides compound words into prefix and suffix.
-      - out_prefix is the resulting annotation file for prefixes
-      - out_suffix is the resulting annotation file for suffixes
-      - word and msd are existing annotations for wordforms and MSDs
-      - model is the Saldo compound model
-    """
-    lexicon = SaldoLexicon(model)
-    WORD = util.read_annotation(word)
-    MSD = util.read_annotation(msd)
-    
-    OUT_p = {}
-    OUT_s = {}
-    
-    for tokid in WORD:
-        compounds = compound(lexicon, WORD[tokid], MSD[tokid])
-        OUT_p[tokid] = affix + delimiter.join(set(c[0][1] for c in compounds)) + affix if compounds else affix
-        OUT_s[tokid] = affix + delimiter.join(set(c[1][1] for c in compounds)) + affix if compounds else affix
-    
-    util.write_annotation(out_prefix, OUT_p)
-    util.write_annotation(out_suffix, OUT_s)
-    
+from sb.util.membrane import membrane
 
 class SaldoLexicon(object):
     """A lexicon for Saldo compound lookups.
@@ -46,12 +25,38 @@ class SaldoLexicon(object):
 
     def get_prefixes(self, prefix):
         return [ (prefix, p[0]) for p in self.lookup(prefix) if set(p[1]).intersection(set(["c", "ci"])) ]
-    
+
     def get_suffixes(self, suffix, msd=None):
         return [ (suffix, s[0]) for s in self.lookup(suffix)
                 if (s[2] in ("nn", "vb", "av", "ab") or s[2][-1] == "h")
                 and set(s[1]).difference(set(["c", "ci", "cm", "sms"]))
                 and (msd in s[3] or not msd) ]
+
+@membrane(SaldoLexicon, 'membrane_address')
+def annotate(out_prefix, out_suffix, word, msd, model, membrane_address=None, delimiter="|", affix="|"):
+    """Divides compound words into prefix and suffix.
+    - out_prefix is the resulting annotation file for prefixes
+    - out_suffix is the resulting annotation file for suffixes
+    - word and msd are existing annotations for wordforms and MSDs
+    - model is the Saldo compound model
+    """
+
+    lexicon = annotate.load(model)
+
+    WORD = util.read_annotation(word)
+    MSD = util.read_annotation(msd)
+
+    OUT_p = {}
+    OUT_s = {}
+
+    for tokid in WORD:
+        compounds = compound(lexicon, WORD[tokid], MSD[tokid])
+        OUT_p[tokid] = affix + delimiter.join(set(c[0][1] for c in compounds)) + affix if compounds else affix
+        OUT_s[tokid] = affix + delimiter.join(set(c[1][1] for c in compounds)) + affix if compounds else affix
+
+        util.write_annotation(out_prefix, OUT_p)
+        util.write_annotation(out_suffix, OUT_s)
+
 
 
 def prefixes_suffixes(w):
@@ -96,7 +101,7 @@ def read_xml(xml='saldom.xml', tagset="SUC"):
     tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower())
     util.log.info("Reading XML lexicon")
     lexicon = {}
-    
+
     context = cet.iterparse(xml, events=("start", "end")) # "start" needed to save reference to root element
     context = iter(context)
     event, root = context.next()
@@ -104,28 +109,28 @@ def read_xml(xml='saldom.xml', tagset="SUC"):
     for event, elem in context:
         if event == "end":
             if elem.tag == 'LexicalEntry':
-                        
+
                 pos = elem.findtext("pos")
                 lem = elem.findtext("lem")
                 table = elem.find("table")
                 inhs = elem.findtext("inhs")
                 if inhs == "-": inhs = ""
                 inhs = inhs.split()
-                
+
                 for form in list(table):
                     word = form.findtext("wf")
                     param = form.findtext("param")
-                    
+
                     if not param[-1].isdigit() and not param == "frag" and (param in ("c", "ci") or (pos in ("nn", "vb", "av", "ab") or pos[-1] == "h")):
-                        
+
                         saldotag = " ".join([pos] + inhs + [param])
                         tags = tagmap.get(saldotag)
-                        
+
                         lexicon.setdefault(word, {}).setdefault(lem, {"msd": set()})["msd"].add(param)
                         lexicon[word][lem]["pos"] = pos
                         if tags:
                             lexicon[word][lem].setdefault("tags", set()).update(tags)
-            
+
             # Done parsing section. Clear tree to save memory
             if elem.tag in ['LexicalEntry', 'frame', 'resFrame']:
                 root.clear()
@@ -144,18 +149,18 @@ def save_to_picklefile(saldofile, lexicon, protocol=1, verbose=True):
       - lexicon = {wordform: {lemgram: {"msd": set(), "pos": str}}}
     """
     if verbose: util.log.info("Saving Saldo lexicon in Pickle format")
-    
+
     picklex = {}
     for word in lexicon:
         lemgrams = []
-        
+
         for lemgram, annotation in lexicon[word].items():
             msds = PART_DELIM2.join(annotation["msd"])
             tags = PART_DELIM2.join(annotation.get("tags", []))
             lemgrams.append( PART_DELIM1.join([lemgram, msds, annotation["pos"], tags] ) )
-        
+
         picklex[word] = sorted(lemgrams)
-    
+
     with open(saldofile, "wb") as F:
         pickle.dump(picklex, F, protocol=protocol)
     if verbose: util.log.info("OK, saved")
@@ -170,7 +175,7 @@ def _split_triple(annotation_tag_words):
 
 def xml_to_pickle(xml, filename):
     """Read an XML dictionary and save as a pickle file."""
-    
+
     xml_lexicon = read_xml(xml)
     save_to_picklefile(filename, xml_lexicon)
 
