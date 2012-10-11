@@ -40,12 +40,12 @@ def membrane(loader, address_arg_name):
 
     def expensive_square(i):
         sleep(1)
-        return int(i) * int(i)
+        return i ** 2
 
     @membrane(loader=expensive_square, address_arg_name='address')
-    def calculate(k, address = None):
-        k_squared = calculate.load(k)
-        return "%s" % k_squared
+    def square(i, address = None):
+        i_squared = square.load(k)
+        return i_squared
     """
 
     class MembraneDecorator(object):
@@ -100,7 +100,8 @@ def membrane(loader, address_arg_name):
     def add_extra_methods(orig_fun):
         """
         Stores __load_argument, __set_extendable, and load in the
-        function object. Uses decorator.FunctionMaker.
+        function object. Uses decorator.FunctionMaker to give
+        the returned function the same signature as the original.
         """
         obj = MembraneDecorator(orig_fun)
         res = decorator.FunctionMaker.create(
@@ -116,26 +117,20 @@ def membrane(loader, address_arg_name):
 def serve_membranes(hostname='localhost', port=8051, **configs):
     """
     Starts a server that serves many membranes. Their corresponding
-    configurations each have a dictionary entry in configs. Example:
+    configurations each have a dictionary entry in configs.
+
+    Example:
     serve_membranes(saldo = dict(membrane = sb.saldo.annotate,
                                  preload=['saldo.pickle'],
                                  extendable=False),
                     compound = dict(membrane = sb.compound.annotate,
                                     preload=['saldo.compound.pickle'],
                                     extendable=False))
+
+    For each membrane, the arguments in preload will be loaded.
+    If extendable is set, then the server will compute new values,
+    otherwise it returns None.
     """
-
-    # Preload all arguments, and set extendable settings
-    for i in configs:
-        mem = configs[i]
-        util.log.info("%s: setting extendable to %s", i, mem['extendable'])
-        mem['membrane'].__set_extendable(mem['extendable'])
-
-        for arg in mem['preload']:
-            util.log.info("%s: loading argument on %s", i, arg)
-            mem['membrane'].__load_argument(arg)
-
-    util.log.info("Preloading completed, starting server...")
 
     # The serve callback
     def serve(environ, start_response):
@@ -150,13 +145,13 @@ def serve_membranes(hostname='localhost', port=8051, **configs):
         # Corresponding function to this path, or the "first" element in config
         mem = configs.get(path_info,configs.itervalues().next())
 
-        # Get arguments
+        # Get params: arguments and cwd.
         request_body = environ['wsgi.input'].read(request_body_size)
         params = pickle.loads(request_body)
         args = params['args']
         kwargs = params['kwargs']
 
-        # Client's pwd is stored in the arguments too. Change to it
+        # Client's pwd is stored in the params. Change to it
         client_pwd = params['client_pwd']
         os.chdir(client_pwd)
 
@@ -171,15 +166,31 @@ def serve_membranes(hostname='localhost', port=8051, **configs):
         start_response(status, response_headers)
         return [response_body]
 
-    # Start the server and serve forever
-    make_server(hostname, int(port), serve).serve_forever()
+    # Start the server
+    httpd = make_server(hostname, int(port), serve)
+
+    # Preload all arguments, and set extendable settings
+    for i in configs:
+        mem = configs[i]
+        util.log.info("%s: setting extendable to %s", i, mem['extendable'])
+        mem['membrane'].__set_extendable(mem['extendable'])
+
+        for arg in mem['preload']:
+            util.log.info("%s: loading argument on %s", i, arg)
+            mem['membrane'].__load_argument(arg)
+
+    util.log.info("Preloading completed, starting server...")
+
+    # Serve forever!
+    httpd.serve_forever()
 
 def serve_membrane(membrane, preload,
                    hostname='localhost', port=8051, extendable=False):
     """
-    Starts a server that serves only one membrane
+    Starts a server that serves only one membrane function,
+    preloading all values in the list preload. If extendable is set,
+    then the server will compute new values, otherwise it returns None.
     """
-
     serve_membranes(hostname, port, default=dict(membrane=membrane,
                                                  preload=preload,
                                                  extendable=extendable))
