@@ -13,7 +13,7 @@ import cPickle as pickle
 
 from functools import partial
 
-import util
+import sb.util as util
 
 import os
 import inspect
