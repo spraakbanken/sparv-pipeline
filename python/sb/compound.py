@@ -3,7 +3,32 @@
 import cPickle as pickle
 import util
 
-from sb.util.membrane import membrane
+def annotate(out_prefix, out_suffix, word, msd, model, delimiter="|", affix="|", lexicon=None):
+    """Divides compound words into prefix and suffix.
+    - out_prefix is the resulting annotation file for prefixes
+    - out_suffix is the resulting annotation file for suffixes
+    - word and msd are existing annotations for wordforms and MSDs
+    - model is the Saldo compound model
+    - lexicon: this argument cannot be set from the command line,
+      but is used in the catapult. this argument must be last
+    """
+
+    if not lexicon:
+        lexicon = SaldoLexicon(model)
+
+    WORD = util.read_annotation(word)
+    MSD = util.read_annotation(msd)
+
+    OUT_p = {}
+    OUT_s = {}
+
+    for tokid in WORD:
+        compounds = compound(lexicon, WORD[tokid], MSD[tokid])
+        OUT_p[tokid] = affix + delimiter.join(set(c[0][1] for c in compounds)) + affix if compounds else affix
+        OUT_s[tokid] = affix + delimiter.join(set(c[1][1] for c in compounds)) + affix if compounds else affix
+
+        util.write_annotation(out_prefix, OUT_p)
+        util.write_annotation(out_suffix, OUT_s)
 
 class SaldoLexicon(object):
     """A lexicon for Saldo compound lookups.
@@ -31,31 +56,6 @@ class SaldoLexicon(object):
                 if (s[2] in ("nn", "vb", "av", "ab") or s[2][-1] == "h")
                 and set(s[1]).difference(set(["c", "ci", "cm", "sms"]))
                 and (msd in s[3] or not msd) ]
-
-@membrane(SaldoLexicon, 'membrane_address')
-def annotate(out_prefix, out_suffix, word, msd, model, membrane_address=None, delimiter="|", affix="|"):
-    """Divides compound words into prefix and suffix.
-    - out_prefix is the resulting annotation file for prefixes
-    - out_suffix is the resulting annotation file for suffixes
-    - word and msd are existing annotations for wordforms and MSDs
-    - model is the Saldo compound model
-    """
-
-    lexicon = annotate.load(model)
-
-    WORD = util.read_annotation(word)
-    MSD = util.read_annotation(msd)
-
-    OUT_p = {}
-    OUT_s = {}
-
-    for tokid in WORD:
-        compounds = compound(lexicon, WORD[tokid], MSD[tokid])
-        OUT_p[tokid] = affix + delimiter.join(set(c[0][1] for c in compounds)) + affix if compounds else affix
-        OUT_s[tokid] = affix + delimiter.join(set(c[1][1] for c in compounds)) + affix if compounds else affix
-
-        util.write_annotation(out_prefix, OUT_p)
-        util.write_annotation(out_suffix, OUT_s)
 
 
 

@@ -3,30 +3,56 @@ catapult: runs python scripts in already running processes to
 eliminate the python interpreter startup time.
 
 Run scripts in the catapult with the c program catalaunch.
+
+The lexicon for sb.saldo.annotate and sb.saldo.compound can be
+pre-loaded and shared between processes. See the variable annotators
+in handle and start.
 """
 
 from multiprocessing import Process, Queue, cpu_count
+from decorator import decorator
 
+import os
+import re
+import runpy
 import socket
 import sys
-import runpy
-import os
 import traceback
-import sys
-
 import util
 
-# Important to preload all modules otherwise processes will need to do
-# it upon request, introducing new delays.
+"""
+Important to preload all modules otherwise processes will need to do
+it upon request, introducing new delays.
+
+These imports uses the __all__ variables in the __init__ files.
+"""
 from sb.util import *
 from sb import *
 
-import re
-
-# Splits at every space that is not preceded by a backslash
+"""
+Splits at every space that is not preceded by a backslash.
+"""
 splitter = re.compile('(?<!\\\\) ')
 
-def handle(client_sock, verbose):
+def set_last_argument(value):
+    """
+    Decorates a function f, setting its last argument to the given value.
+
+    Used for setting the saldo lexicons to sb.saldo.annotate and
+    sb.saldo.compound.
+
+    The decorator module is used to give the same signature and
+    docstring to the function, which is exploited in sb.util.run.
+    """
+    @decorator
+    def inner(f, *args, **kwargs):
+        args = list(args)
+        args.pop()
+        args.append(value)
+        f(*args, **kwargs)
+    return inner
+
+def handle(client_sock, verbose, annotators):
     """
     Handle a client: parse the arguments, change to the relevant
     directory, then run the script. Stdout and stderr are directed
@@ -119,7 +145,14 @@ def handle(client_sock, verbose):
             sys.argv.extend(args[1:])
             os.chdir(pwd)
             if module_flag:
-                runpy.run_module(args[0], run_name='__main__')
+                for k in annotators:
+                    if args[0] == ('sb.' + k) and k in annotators:
+                        if verbose:
+                            util.log.info('Using loaded lexicon %s', k)
+                        util.run.main(annotators[k])
+                        break
+                else:
+                    runpy.run_module(args[0], run_name='__main__')
             else:
                 runpy.run_path(args[0], run_name='__main__')
         except (ImportError, IOError):
@@ -133,7 +166,7 @@ def handle(client_sock, verbose):
             for i in xrange(2):
                 traceback.print_exception(*sys.exc_info())
                 i or cleanup()
-            util.log.error("Error: %s\n" % sys.exc_info()[1])
+            util.log.error("Error: %s\n", sys.exc_info()[1])
         else:
             cleanup()
 
@@ -144,24 +177,25 @@ def handle(client_sock, verbose):
         chunk_send('Cannot handle %s\n' % data)
         client_sock.close()
 
-def worker(i, server_socket, verbose):
+
+def worker(i, server_socket, verbose, annotators):
     """
     Workers listen to the socket server, and handles incoming requests
     """
 
-    while 1:
+    while True:
         client_sock, addr = server_socket.accept()
         if verbose:
             util.log.info('%s: Handling a connection to %s', i, client_sock)
         try:
-            handle(client_sock, verbose)
+            handle(client_sock, verbose, annotators)
             client_sock.close()
         except:
-            util.log.error('%s: Error in handling code:',
-                           i, sys.exc_info()[1])
+            util.log.error('%s: Error in handling code: %s', i, sys.exc_info()[1])
             traceback.print_exception(*sys.exc_info())
 
-def start(socket_path, processes=1, verbose='false'):
+def start(socket_path, processes=1, verbose='false',
+          saldo_model=None, compound_model=None):
     """
     Starts a catapult on a socket file, using a number of processes.
 
@@ -170,6 +204,9 @@ def start(socket_path, processes=1, verbose='false'):
     computation is done by the catapult processes, however.
     Regardless of what verbose is, client errors should be reported
     both in the catapult and to the client.
+
+    The saldo model and compound model can be pre-loaded and shared in
+    memory between processes.
 
     Start processes using catalaunch.
     """
@@ -193,15 +230,27 @@ def start(socket_path, processes=1, verbose='false'):
     server_socket.bind(socket_path)
     server_socket.listen(processes)
 
+    # The dictionary of functions with saved lexica, indexed by module name strings
+    annotators = {}
+
+    if saldo_model:
+        annotators['saldo'] = set_last_argument(saldo.SaldoLexicon(saldo_model))(saldo.annotate)
+
+    if compound_model:
+        annotators['compound'] = set_last_argument(compound.SaldoLexicon(compound_model))(compound.annotate)
+
+    if verbose:
+        util.log.info('Loaded annotators: %s', annotators.keys())
+
     # Start processes-1 workers
-    workers = [ Process(target=worker, args=[i+1, server_socket, verbose])
+    workers = [ Process(target=worker, args=[i+1, server_socket, verbose, annotators])
                 for i in xrange(processes-1) ]
 
     for p in workers:
         p.start()
 
     # Additionally, let this thread be worker 0
-    worker(0,server_socket,verbose)
+    worker(0, server_socket, verbose, annotators)
 
 if __name__ == '__main__':
     util.run.main(start)

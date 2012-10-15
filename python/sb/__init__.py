@@ -19,5 +19,5 @@ __all__ = [
     'segment',
     'timespan',
     'xmlanalyzer',
-    'xmlparser',
+    'xmlparser'
     ]

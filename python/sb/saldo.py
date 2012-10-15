@@ -9,86 +9,11 @@ import itertools
 import cPickle as pickle
 import re
 
-from sb.util.membrane import membrane
-
 ######################################################################
-# Different kinds of lexica
+# Annotate.
 
-class SaldoLexicon(object):
-    """A lexicon for Saldo lookups.
-    It is initialized from a Pickled file, or a space-separated text file.
-    """
-    def __init__(self, saldofile, verbose=True):
-        if verbose: util.log.info("Reading Saldo lexicon: %s", saldofile)
-        if saldofile.endswith('.pickle'):
-            with open(saldofile, "rb") as F:
-                self.lexicon = pickle.load(F)
-        else:
-            lexicon = self.lexicon = {}
-            with open(saldofile, "rb") as F:
-                for line in F:
-                    row = line.decode(util.UTF8).split()
-                    word = row.pop(0)
-                    lexicon[word] = row
-        if verbose: util.log.info("OK, read %d words", len(self.lexicon))
-
-    def lookup(self, word):
-        """Lookup a word in the lexicon.
-        Returns a list of (annotation-dictionary, list-of-pos-tags, list-of-lists-with-words).
-        """
-        if word.lower() == word:
-            annotation_tag_pairs = self.lexicon.get(word, [])
-        else:
-            annotation_tag_pairs = self.lexicon.get(word, []) + self.lexicon.get(word.lower(), [])
-        return map(_split_triple, annotation_tag_pairs)
-
-    @staticmethod
-    def save_to_picklefile(saldofile, lexicon, protocol=1, verbose=True):
-        """Save a Saldo lexicon to a Pickled file.
-        The input lexicon should be a dict:
-          - lexicon = {wordform: {{annotation-type: annotation}: (set(possible tags), set(tuples with following words), is-particle-verb-boolean)}}
-        """
-        if verbose: util.log.info("Saving Saldo lexicon in Pickle format")
-
-        picklex = {}
-        for word in lexicon:
-            annotations = []
-            for annotation, extra in lexicon[word].items():
-                #annotationlist = PART_DELIM3.join(annotation)
-                annotationlist = PART_DELIM2.join( k + PART_DELIM3 + PART_DELIM3.join(annotation[k]) for k in annotation)
-                taglist =        PART_DELIM3.join(sorted(extra[0]))
-                wordlist =       PART_DELIM2.join([PART_DELIM3.join(x) for x in sorted(extra[1])])
-                particle =       "1" if extra[2] else "0"
-                annotations.append( PART_DELIM1.join([annotationlist, taglist, wordlist, particle]) )
-
-            picklex[word] = sorted(annotations)
-
-        with open(saldofile, "wb") as F:
-            pickle.dump(picklex, F, protocol=protocol)
-        if verbose: util.log.info("OK, saved")
-
-    @staticmethod
-    def save_to_textfile(saldofile, lexicon, verbose=True):
-        """Save a Saldo lexicon to a space-separated text file.
-        The input lexicon should be a dict:
-          - lexicon = {wordform: {annotation: set(possible tags)}}
-        NOT UP TO DATE
-        """
-        if verbose: util.log.info("Saving Saldo lexicon in text format")
-        with open(saldofile, "w") as F:
-            for word in sorted(lexicon):
-                annotations = [PART_DELIM.join([annotation] + sorted(postags))
-                          for annotation, postags in lexicon[word].items()]
-                print >>F, " ".join([word] + annotations).encode(util.UTF8)
-        if verbose: util.log.info("OK, saved")
-
-
-######################################################################
-# Annotate. Can be memserved.
-
-@membrane(SaldoLexicon, 'membrane_address')
-def annotate(word, msd, sentence, reference, out, annotations, model, membrane_address=None,
-             delimiter="|", affix="|", precision=":%.3f", filter=None, skip_multiword=False):
+def annotate(word, msd, sentence, reference, out, annotations, model,
+             delimiter="|", affix="|", precision=":%.3f", filter=None, skip_multiword=False, lexicon=None):
     """Use the Saldo lexicon model to annotate pos-tagged words.
       - word, msd are existing annotations for wordforms and part-of-speech
       - sentence is an existing annotation for sentences and their children (words)
@@ -107,9 +32,12 @@ def annotate(word, msd, sentence, reference, out, annotations, model, membrane_a
         max: only use the annotations that are most probable
         first: only use one annotation; one of the most probable
       - skip_multiword can be set to True to disable multi word annotations
+      - lexicon: this argument cannot be set from the command line,
+        but is used in the catapult. this argument must be last
     """
 
-    lexicon = annotate.load(model)
+    if not lexicon:
+        lexicon = SaldoLexicon(model)
 
     MAX_GAPS = 1 # Maximum number of gaps in multi-word units.
 
@@ -245,6 +173,78 @@ def annotate(word, msd, sentence, reference, out, annotations, model, membrane_a
 
     for out_file, annotation in zip(out, annotations):
         util.write_annotation(out_file, [(tok, OUT[tok].get(annotation, affix)) for tok in OUT], append=True)
+
+######################################################################
+# Different kinds of lexica
+
+class SaldoLexicon(object):
+    """A lexicon for Saldo lookups.
+    It is initialized from a Pickled file, or a space-separated text file.
+    """
+    def __init__(self, saldofile, verbose=True):
+        if verbose: util.log.info("Reading Saldo lexicon: %s", saldofile)
+        if saldofile.endswith('.pickle'):
+            with open(saldofile, "rb") as F:
+                self.lexicon = pickle.load(F)
+        else:
+            lexicon = self.lexicon = {}
+            with open(saldofile, "rb") as F:
+                for line in F:
+                    row = line.decode(util.UTF8).split()
+                    word = row.pop(0)
+                    lexicon[word] = row
+        if verbose: util.log.info("OK, read %d words", len(self.lexicon))
+
+    def lookup(self, word):
+        """Lookup a word in the lexicon.
+        Returns a list of (annotation-dictionary, list-of-pos-tags, list-of-lists-with-words).
+        """
+        if word.lower() == word:
+            annotation_tag_pairs = self.lexicon.get(word, [])
+        else:
+            annotation_tag_pairs = self.lexicon.get(word, []) + self.lexicon.get(word.lower(), [])
+        return map(_split_triple, annotation_tag_pairs)
+
+    @staticmethod
+    def save_to_picklefile(saldofile, lexicon, protocol=1, verbose=True):
+        """Save a Saldo lexicon to a Pickled file.
+        The input lexicon should be a dict:
+          - lexicon = {wordform: {{annotation-type: annotation}: (set(possible tags), set(tuples with following words), is-particle-verb-boolean)}}
+        """
+        if verbose: util.log.info("Saving Saldo lexicon in Pickle format")
+
+        picklex = {}
+        for word in lexicon:
+            annotations = []
+            for annotation, extra in lexicon[word].items():
+                #annotationlist = PART_DELIM3.join(annotation)
+                annotationlist = PART_DELIM2.join( k + PART_DELIM3 + PART_DELIM3.join(annotation[k]) for k in annotation)
+                taglist =        PART_DELIM3.join(sorted(extra[0]))
+                wordlist =       PART_DELIM2.join([PART_DELIM3.join(x) for x in sorted(extra[1])])
+                particle =       "1" if extra[2] else "0"
+                annotations.append( PART_DELIM1.join([annotationlist, taglist, wordlist, particle]) )
+
+            picklex[word] = sorted(annotations)
+
+        with open(saldofile, "wb") as F:
+            pickle.dump(picklex, F, protocol=protocol)
+        if verbose: util.log.info("OK, saved")
+
+    @staticmethod
+    def save_to_textfile(saldofile, lexicon, verbose=True):
+        """Save a Saldo lexicon to a space-separated text file.
+        The input lexicon should be a dict:
+          - lexicon = {wordform: {annotation: set(possible tags)}}
+        NOT UP TO DATE
+        """
+        if verbose: util.log.info("Saving Saldo lexicon in text format")
+        with open(saldofile, "w") as F:
+            for word in sorted(lexicon):
+                annotations = [PART_DELIM.join([annotation] + sorted(postags))
+                          for annotation, postags in lexicon[word].items()]
+                print >>F, " ".join([word] + annotations).encode(util.UTF8)
+        if verbose: util.log.info("OK, saved")
+
 
 def _join_annotation(annotation, delimiter, affix):
     seen = set()
