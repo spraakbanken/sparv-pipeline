@@ -27,8 +27,8 @@ def annotate(out_prefix, out_suffix, word, msd, model, delimiter="|", affix="|",
         OUT_p[tokid] = affix + delimiter.join(set(c[0][1] for c in compounds)) + affix if compounds else affix
         OUT_s[tokid] = affix + delimiter.join(set(c[1][1] for c in compounds)) + affix if compounds else affix
 
-        util.write_annotation(out_prefix, OUT_p)
-        util.write_annotation(out_suffix, OUT_s)
+    util.write_annotation(out_prefix, OUT_p)
+    util.write_annotation(out_suffix, OUT_s)
 
 class SaldoLexicon(object):
     """A lexicon for Saldo compound lookups.
