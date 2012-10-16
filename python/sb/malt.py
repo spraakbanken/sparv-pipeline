@@ -3,6 +3,15 @@
 import re, os, codecs #, tempfile
 import util
 
+"""
+Running malt processes are only kept if the input is small: otherwise
+flush() on stdin blocks, and readline() on stdout is too slow to be
+practical on long texts. We cannot use read() because it reads to EOF.
+
+The value of this constant is a bit arbitrary, and could probably be longer.
+"""
+RESTART_THRESHOLD_LENGTH = 64000
+
 SENT_SEP = "\n\n"
 TOK_SEP = "\n"
 TAG_SEP = "\t"
@@ -10,23 +19,18 @@ HEAD_COLUMN = 6
 DEPREL_COLUMN = 7
 UNDEF = "_"
 
-def maltparse(maltjar, model, out, word, pos, msd, sentence, encoding=util.UTF8, channels=None):
+def maltparse(maltjar, model, out, word, pos, msd, sentence, encoding=util.UTF8, process_dict=None):
     """
-    Starts the maltparser.
+    Runs the malt parser, in an already started process defined in
+    process_dict, or starts a new process (default)
 
-    The argument `channels` should never be set from the command line.
-    If it is set, it is assumed that there is already a maltparser
-    running. This can be enabled when using catapult, channels is then
-    a tuple (stdin, stdout) for a running process. If this is the
-    case, these will not be closed.
+    The process_dict argument should never be set from the command line.
     """
-    util.log.info("channels: %s", channels)
-    stdin_fd, stdout_fd = channels or maltstart(maltjar, model, encoding)
-    util.log.info("stdin: %s, stdout: %s", stdin_fd, stdout_fd)
+    if process_dict is None:
+        process = maltstart(maltjar, model, encoding)
+    else:
+        process = process_dict['process']
 
-    """
-    Prepare stdin
-    """
     sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
 
     WORD = util.read_annotation(word)
@@ -40,52 +44,57 @@ def maltparse(maltjar, model, out, word, pos, msd, sentence, encoding=util.UTF8,
         return TAG_SEP.join((str(nr), form, lemma, cpos, pos, feats))
 
     stdin = SENT_SEP.join(TOK_SEP.join(conll_token(n+1, tok) for n, tok in enumerate(sent))
-                          for sent in sentences) + "\n\n"
+                          for sent in sentences)
+
     if encoding:
         stdin = stdin.encode(encoding)
-    util.log.info("malt stdin:\n%s", stdin)
 
-    """
-    Send stdin
-    """
+    keep_process = len(stdin) < RESTART_THRESHOLD_LENGTH and process is not None
+    util.log.info("Stdin length: %s, keep process: %s", len(stdin), keep_process)
 
-    stdin_fd.write(stdin)
-    if channels:
+    if process_dict is not None:
+        process_dict['restart'] = not keep_process
+
+    if keep_process:
+        # Chatting with malt: send a SENT_SEP and read correct number of lines
+        stdin_fd, stdout_fd = process.stdin, process.stdout
+        stdin_fd.write(stdin + SENT_SEP)
         stdin_fd.flush()
-    else:
-        stdin_fd.close()
 
-    """
-    Read and process output
-    """
-    util.log.info("waiting for malt stdout")
+        malt_sentences = []
+        for sent in sentences:
+            malt_sent = []
+            for tok in sent:
+                line = stdout_fd.readline()
+                if encoding:
+                    line = line.decode(encoding)
+                malt_sent.append(line)
+            line = stdout_fd.readline()
+            assert line == '\n'
+            malt_sentences.append(malt_sent)
+    else:
+        # Otherwise use communicate which buffers properly
+        stdout, _ = process.communicate(stdin)
+        if encoding:
+            stdout = stdout.decode(encoding)
+        malt_sentences = (malt_sent.split(TOK_SEP)
+                          for malt_sent in stdout.split(SENT_SEP))
 
     OUT = {}
-
-    for sent in sentences:
-        for tok in sent:
-            malt_tok = stdout_fd.readline()
-            util.log.info("token: %s", malt_tok)
-            if encoding:
-                malt_tok = malt_tok.decode(encoding)
+    for (sent, malt_sent) in zip(sentences, malt_sentences):
+        for (tok, malt_tok) in zip(sent, malt_sent):
             cols = [(None if col == UNDEF else col) for col in malt_tok.split(TAG_SEP)]
             deprel = cols[DEPREL_COLUMN]
             head = int(cols[HEAD_COLUMN])
             headid = sent[head - 1] if head else "-"
             OUT[tok] = (deprel, headid)
 
-        malt_tok = stdout_fd.readline()
-        assert malt_tok == '\n'
-
-    channels or stdout_fd.close()
-
     util.write_annotation(out, OUT, encode=" ".join)
 
-def maltstart(maltjar, model, encoding=util.UTF8):
+def maltstart(maltjar, model, encoding):
     """
-    Starts a malt process to communicate with, returning stdin and stdout
+    Starts a malt process and returns it.
     """
-
     java_opts = ["-Xmx1024m"]
     malt_args = ["-ic", encoding, "-oc", encoding, "-m", "parse"]
     if model.startswith("http://"):
@@ -101,7 +110,8 @@ def maltstart(maltjar, model, encoding=util.UTF8):
         util.log.info("Using local MALT model: %s (in directory %s)", model, modeldir or ".")
 
     return util.system.call_java(maltjar, malt_args, options=java_opts,
-                                 stdin=None, encoding=encoding, verbose=True, mk_fds=True)
+                                 stdin="", encoding=encoding, verbose=True,
+                                 return_command=True)
 
 ################################################################################
 

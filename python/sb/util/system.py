@@ -26,34 +26,36 @@ def clear_directory(dir):
     make_directory(dir)
 
 def call_java(jar, arguments, options=[], stdin="", search_paths=(),
-              encoding=None, verbose=False, mk_fds=False):
+              encoding=None, verbose=False, return_command=False):
     """Call java with a jar file, command line arguments and stdin.
     Returns a pair (stdout, stderr).
     If the verbose flag is True, pipes all stderr output to stderr,
     and an empty string is returned as the stderr component.
+
+    *** for maltparser: ***
+    If return_command is set, then the process is returned.
     """
     assert isinstance(arguments, (list, tuple))
     assert isinstance(options, (list, tuple))
     jarfile = find_binary(jar, search_paths, executable=False)
     java_args = list(options) + ["-jar", jarfile] + list(arguments)
-    return call_binary("java", java_args, stdin, search_paths, (), encoding, verbose, mk_fds)
+    return call_binary("java", java_args, stdin, search_paths, (), encoding, verbose, return_command)
 
 
 def call_binary(name, arguments, stdin="", search_paths=(),
-                binary_names=(), encoding=None, verbose=False, mk_fds=False):
+                binary_names=(), encoding=None, verbose=False, return_command=False):
     """
     Call a binary with arguments and stdin, return a pair (stdout, stderr).
     If the verbose flag is True, pipes all stderr output to stderr,
     and an empty string is returned as the stderr component.
 
-    *** new for maltparser: ***
-    If mk_fds is set, then new fds for stdin and stdout is returned instead.
-    The stdin argument is ignored.
+    *** for maltparser: ***
+    If return_command is set, then the process is returned.
     """
     import unicode_convert
     from subprocess import Popen, PIPE
     assert isinstance(arguments, (list, tuple))
-    assert mk_fds or isinstance(stdin, (basestring, list, tuple))
+    assert isinstance(stdin, (basestring, list, tuple))
 
     binary = find_binary(name, search_paths, binary_names)
     command = [binary] + list(arguments)
@@ -62,9 +64,12 @@ def call_binary(name, arguments, stdin="", search_paths=(),
     if isinstance(stdin, unicode):
         stdin = unicode_convert.encode(stdin, encoding)
     log.info("CALL: %s", " ".join(command))
-    command = Popen(command, shell=False, stdin=PIPE, stdout=PIPE, stderr=(None if verbose else PIPE))
-    if mk_fds:
-        return command.stdin, command.stdout
+    command = Popen(command, shell=False,
+                    stdin=PIPE, stdout=PIPE,
+                    stderr=(None if verbose else PIPE),
+                    close_fds=False)
+    if return_command:
+        return command
     else:
         stdout, stderr = command.communicate(stdin)
         if command.returncode:

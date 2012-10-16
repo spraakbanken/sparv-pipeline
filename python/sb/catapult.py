@@ -39,7 +39,7 @@ def set_last_argument(value):
     Decorates a function f, setting its last argument to the given value.
 
     Used for setting the saldo lexicons to sb.saldo.annotate and
-    sb.saldo.compound.
+    sb.saldo.compound, and the process "dictionary" to sb.malt.maltparse.
 
     The decorator module is used to give the same signature and
     docstring to the function, which is exploited in sb.util.run.
@@ -113,8 +113,6 @@ def handle(client_sock, verbose, annotators):
 
     # Receive data
     data = client_sock.recv(8192)
-    if verbose:
-        util.log.info('Received %s', data)
 
     # Split arguments on spaces, and replace '\ ' to ' ' and \\ to \
     args = [ arg.replace('\\ ',' ').replace('\\\\','\\')
@@ -130,11 +128,12 @@ def handle(client_sock, verbose, annotators):
     if len(args) > 1:
 
         # First argument is the pwd of the caller
+        old_pwd = os.getcwd()
         pwd = args.pop(0)
 
         if verbose:
-            util.log.info('Running %s %s, in directory %s',
-                          args[0], ' '.join(args[1:]), pwd)
+             util.log.info('Running %s %s, in directory %s',
+                           args[0], ' '.join(args[1:]), pwd)
 
         # Set stdout and stderr, which returns the cleaup function
         cleanup = set_stdout_stderr()
@@ -145,12 +144,9 @@ def handle(client_sock, verbose, annotators):
             sys.argv.extend(args[1:])
             os.chdir(pwd)
             if module_flag:
-                for k in annotators:
-                    if args[0] == ('sb.' + k) and k in annotators:
-                        if verbose:
-                            util.log.info('Using loaded lexicon %s', k)
-                        util.run.main(annotators[k])
-                        break
+                annotator = annotators.get(args[0],None)
+                if annotator:
+                    util.run.main(annotator)
                 else:
                     runpy.run_module(args[0], run_name='__main__')
             else:
@@ -170,15 +166,20 @@ def handle(client_sock, verbose, annotators):
         else:
             cleanup()
 
+        os.chdir(old_pwd)
+
+        # Run the cleanup function if there is one (only used with malt)
+        annotators.get((args[0], 'cleanup'), lambda: None)()
+
         if verbose:
-            util.log.info('Completed %s %s', args[0], ' '.join(args[1:]))
+             util.log.info('Completed %s', args[0])
 
     else:
         chunk_send('Cannot handle %s\n' % data)
         client_sock.close()
 
 
-def worker(i, server_socket, verbose, annotators, malt_args=None):
+def worker(server_socket, verbose, annotators, malt_args=None):
     """
     Workers listen to the socket server, and handles incoming requests
 
@@ -187,29 +188,44 @@ def worker(i, server_socket, verbose, annotators, malt_args=None):
     """
 
     if malt_args:
-        if verbose:
-            util.log.info('%s: Starting a malt process (%s)', i, malt)
-        malt_channels = malt.maltstart(**malt_args)
-        annotators['malt'] = set_last_argument(malt_channels)(malt.maltparse)
-        stdin_fd, stdout_fd = malt_channels
-        if verbose:
-            util.log.info("%s: Sending empty sentence to malt", i)
-        stdin_fd.write("1\t.\t_\tMAD\tMAD\tMAD\n\n\n")
-        stdin_fd.flush()
-        stdout_fd.readline()
-        stdout_fd.readline()
-        if verbose:
-            util.log.info("%s: Running...", i)
+
+        process_dict = dict(process=None, restart=True)
+
+        def start_malt():
+            if process_dict['process'] is None or process_dict['restart']:
+                malt_process = malt.maltstart(**malt_args)
+                if verbose:
+                    util.log.info('(Re)started malt process: %s', malt_process)
+                process_dict['process'] = malt_process
+                annotators['sb.malt'] = set_last_argument(process_dict)(malt.maltparse)
+
+                """
+                Send a simple sentence to malt, this greatly enhances performance
+                for subsequent requests.
+                """
+                stdin_fd, stdout_fd = malt_process.stdin, malt_process.stdout
+                if verbose:
+                    util.log.info("Sending empty sentence to malt")
+                stdin_fd.write("1\t.\t_\tMAD\tMAD\tMAD\n\n\n")
+                stdin_fd.flush()
+                stdout_fd.readline()
+                stdout_fd.readline()
+            elif verbose:
+                util.log.info("Not restarting malt this time")
+
+        start_malt()
+        annotators['sb.malt', 'cleanup'] = start_malt
+
+    if verbose:
+        util.log.info("Worker running!")
 
     while True:
         client_sock, addr = server_socket.accept()
-        if verbose:
-            util.log.info('%s: Handling a connection to %s', i, client_sock)
         try:
             handle(client_sock, verbose, annotators)
             client_sock.close()
         except:
-            util.log.error('%s: Error in handling code: %s', i, sys.exc_info()[1])
+            util.log.error('Error in handling code: %s', sys.exc_info()[1])
             traceback.print_exception(*sys.exc_info())
 
 def start(socket_path, processes=1, verbose='false',
@@ -254,10 +270,10 @@ def start(socket_path, processes=1, verbose='false',
     annotators = {}
 
     if saldo_model:
-        annotators['saldo'] = set_last_argument(saldo.SaldoLexicon(saldo_model))(saldo.annotate)
+        annotators['sb.saldo'] = set_last_argument(saldo.SaldoLexicon(saldo_model))(saldo.annotate)
 
     if compound_model:
-        annotators['compound'] = set_last_argument(compound.SaldoLexicon(compound_model))(compound.annotate)
+        annotators['sb.compound'] = set_last_argument(compound.SaldoLexicon(compound_model))(compound.annotate)
 
     if verbose:
         util.log.info('Loaded annotators: %s', annotators.keys())
@@ -268,14 +284,14 @@ def start(socket_path, processes=1, verbose='false',
         malt_args = None
 
     # Start processes-1 workers
-    workers = [ Process(target=worker, args=[i+1, server_socket, verbose, annotators, malt_args])
+    workers = [ Process(target=worker, args=[server_socket, verbose, annotators, malt_args])
                 for i in xrange(processes-1) ]
 
     for p in workers:
         p.start()
 
     # Additionally, let this thread be worker 0
-    worker(0, server_socket, verbose, annotators, malt_args)
+    worker(server_socket, verbose, annotators, malt_args)
 
 if __name__ == '__main__':
     util.run.main(start)
