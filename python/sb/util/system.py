@@ -25,9 +25,8 @@ def clear_directory(dir):
     shutil.rmtree(dir, ignore_errors=True)
     make_directory(dir)
 
-
 def call_java(jar, arguments, options=[], stdin="", search_paths=(),
-              encoding=None, verbose=False):
+              encoding=None, verbose=False, mk_fds=False):
     """Call java with a jar file, command line arguments and stdin.
     Returns a pair (stdout, stderr).
     If the verbose flag is True, pipes all stderr output to stderr,
@@ -37,20 +36,24 @@ def call_java(jar, arguments, options=[], stdin="", search_paths=(),
     assert isinstance(options, (list, tuple))
     jarfile = find_binary(jar, search_paths, executable=False)
     java_args = list(options) + ["-jar", jarfile] + list(arguments)
-    return call_binary("java", java_args, stdin, search_paths, (), encoding, verbose)
+    return call_binary("java", java_args, stdin, search_paths, (), encoding, verbose, mk_fds)
 
 
 def call_binary(name, arguments, stdin="", search_paths=(),
-                binary_names=(), encoding=None, verbose=False):
+                binary_names=(), encoding=None, verbose=False, mk_fds=False):
     """
     Call a binary with arguments and stdin, return a pair (stdout, stderr).
     If the verbose flag is True, pipes all stderr output to stderr,
     and an empty string is returned as the stderr component.
+
+    *** new for maltparser: ***
+    If mk_fds is set, then new fds for stdin and stdout is returned instead.
+    The stdin argument is ignored.
     """
     import unicode_convert
     from subprocess import Popen, PIPE
     assert isinstance(arguments, (list, tuple))
-    assert isinstance(stdin, (basestring, list, tuple))
+    assert mk_fds or isinstance(stdin, (basestring, list, tuple))
 
     binary = find_binary(name, search_paths, binary_names)
     command = [binary] + list(arguments)
@@ -60,18 +63,21 @@ def call_binary(name, arguments, stdin="", search_paths=(),
         stdin = unicode_convert.encode(stdin, encoding)
     log.info("CALL: %s", " ".join(command))
     command = Popen(command, shell=False, stdin=PIPE, stdout=PIPE, stderr=(None if verbose else PIPE))
-    stdout, stderr = command.communicate(stdin)
-    if command.returncode:
-        if stdout:
-            print stdout
-        if stderr:
-            print >>sys.stderr, stderr
-        raise OSError("%s returned error code %d" % (binary, command.returncode))
-    if encoding:
-        stdout = stdout.decode(encoding)
-        if stderr:
-            stderr = stderr.decode(encoding)
-    return stdout, stderr
+    if mk_fds:
+        return command.stdin, command.stdout
+    else:
+        stdout, stderr = command.communicate(stdin)
+        if command.returncode:
+            if stdout:
+                print stdout
+            if stderr:
+                print >>sys.stderr, stderr
+            raise OSError("%s returned error code %d" % (binary, command.returncode))
+        if encoding:
+            stdout = stdout.decode(encoding)
+            if stderr:
+                stderr = stderr.decode(encoding)
+        return stdout, stderr
 
 
 def find_binary(name, search_paths=(), binary_names=(), executable=True):
@@ -117,5 +123,3 @@ def rsync(local, host, remote=None):
         args = [local]
     subprocess.check_call(["ssh", host, "mkdir -p '%s'" % remote_dir])
     subprocess.check_call(["rsync"] + args + ["%s:%s" % (host, remote)])
-
-

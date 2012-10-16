@@ -178,10 +178,28 @@ def handle(client_sock, verbose, annotators):
         client_sock.close()
 
 
-def worker(i, server_socket, verbose, annotators):
+def worker(i, server_socket, verbose, annotators, malt_args=None):
     """
     Workers listen to the socket server, and handles incoming requests
+
+    Each process starts an own maltparser process, because they are
+    cheap and cannot serve multiple clients at the same time.
     """
+
+    if malt_args:
+        if verbose:
+            util.log.info('%s: Starting a malt process (%s)', i, malt)
+        malt_channels = malt.maltstart(**malt_args)
+        annotators['malt'] = set_last_argument(malt_channels)(malt.maltparse)
+        stdin_fd, stdout_fd = malt_channels
+        if verbose:
+            util.log.info("%s: Sending empty sentence to malt", i)
+        stdin_fd.write("1\t.\t_\tMAD\tMAD\tMAD\n\n\n")
+        stdin_fd.flush()
+        stdout_fd.readline()
+        stdout_fd.readline()
+        if verbose:
+            util.log.info("%s: Running...", i)
 
     while True:
         client_sock, addr = server_socket.accept()
@@ -195,7 +213,8 @@ def worker(i, server_socket, verbose, annotators):
             traceback.print_exception(*sys.exc_info())
 
 def start(socket_path, processes=1, verbose='false',
-          saldo_model=None, compound_model=None):
+          saldo_model=None, compound_model=None,
+          malt_jar=None, malt_model=None, malt_encoding=util.UTF8):
     """
     Starts a catapult on a socket file, using a number of processes.
 
@@ -210,6 +229,7 @@ def start(socket_path, processes=1, verbose='false',
 
     Start processes using catalaunch.
     """
+
 
     if os.path.exists(socket_path):
         util.log.info('socket %s already exists', socket_path)
@@ -242,15 +262,20 @@ def start(socket_path, processes=1, verbose='false',
     if verbose:
         util.log.info('Loaded annotators: %s', annotators.keys())
 
+    if malt_jar and malt_model:
+        malt_args = dict(maltjar=malt_jar, model=malt_model, encoding=malt_encoding)
+    else:
+        malt_args = None
+
     # Start processes-1 workers
-    workers = [ Process(target=worker, args=[i+1, server_socket, verbose, annotators])
+    workers = [ Process(target=worker, args=[i+1, server_socket, verbose, annotators, malt_args])
                 for i in xrange(processes-1) ]
 
     for p in workers:
         p.start()
 
     # Additionally, let this thread be worker 0
-    worker(0, server_socket, verbose, annotators)
+    worker(0, server_socket, verbose, annotators, malt_args)
 
 if __name__ == '__main__':
     util.run.main(start)
