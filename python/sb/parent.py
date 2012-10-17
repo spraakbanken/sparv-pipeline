@@ -5,7 +5,7 @@ Add annotations for parent links and/or children links.
 """
 
 from collections import defaultdict
-import util 
+import util
 
 def annotate_parents(text, out, parent, child, ignore_missing_parent=False):
     """Annotate parent links; parent, child are names for existing annotations.
@@ -13,17 +13,20 @@ def annotate_parents(text, out, parent, child, ignore_missing_parent=False):
     parent_chunks, child_spans = read_parents_and_children(text, parent, child)
     OUT = {}
     previous_parent_id = None
-    parent_span, parent_id = parent_chunks.next()
-    for child_span, child_id in child_spans:
-        while child_span.stop > parent_span.stop:
-            if parent_id: previous_parent_id = parent_id
-            parent_span, parent_id = parent_chunks.next()
-        if not parent_id or parent_span.start > child_span.start:
-            if not ignore_missing_parent:
-                util.log.warning("Child '%s' missing parent; closest parent is %s",
-                                 child_id, parent_id or previous_parent_id)
-            parent_id = ""
-        OUT[child_id] = parent_id
+    try:
+        parent_span, parent_id = parent_chunks.next()
+        for child_span, child_id in child_spans:
+            while child_span.stop > parent_span.stop:
+                if parent_id: previous_parent_id = parent_id
+                parent_span, parent_id = parent_chunks.next()
+            if not parent_id or parent_span.start > child_span.start:
+                if not ignore_missing_parent:
+                    util.log.warning("Child '%s' missing parent; closest parent is %s",
+                                     child_id, parent_id or previous_parent_id)
+                parent_id = ""
+            OUT[child_id] = parent_id
+    except StopIteration:
+        pass
     util.write_annotation(out, OUT)
 
 
@@ -33,17 +36,20 @@ def annotate_children(text, out, parent, child, ignore_missing_parent=False):
     parent_chunks, child_spans = read_parents_and_children(text, parent, child)
     OUT = defaultdict(list)
     previous_parent_id = None
-    parent_span, parent_id = parent_chunks.next()
-    for child_span, child_id in child_spans:
-        while child_span.stop > parent_span.stop:
-            if parent_id: previous_parent_id = parent_id
-            parent_span, parent_id = parent_chunks.next()
-        if not parent_id or parent_span.start > child_span.start:
-            if not ignore_missing_parent:
-                util.log.warning("Child '%s' missing parent; closest parent is %s",
-                                 child_id, parent_id or previous_parent_id)
-            parent_id = ""
-        OUT[parent_id].append(child_id)
+    try:
+        parent_span, parent_id = parent_chunks.next()
+        for child_span, child_id in child_spans:
+            while child_span.stop > parent_span.stop:
+                if parent_id: previous_parent_id = parent_id
+                parent_span, parent_id = parent_chunks.next()
+            if not parent_id or parent_span.start > child_span.start:
+                if not ignore_missing_parent:
+                    util.log.warning("Child '%s' missing parent; closest parent is %s",
+                                     child_id, parent_id or previous_parent_id)
+                parent_id = ""
+            OUT[parent_id].append(child_id)
+    except StopIteration:
+        pass
     util.write_annotation(out, OUT, encode=" ".join)
 
 
