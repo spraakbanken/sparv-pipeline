@@ -60,11 +60,11 @@ def membrane(loader, address_arg_name):
             self.address_ix = arg_names.index(address_arg_name)
             self.extendable = True
 
-        def load_argument(self,*arg):
+        def load_argument(self, *arg):
             util.log.info("Running %s(%s)", loader, arg)
             self.loaded[arg] = loader(*arg)
 
-        def get_loaded_argument(self,*arg):
+        def get_loaded_argument(self, *arg):
             if not arg in self.loaded:
                 if self.extendable:
                     self.load_argument(*arg)
@@ -72,7 +72,7 @@ def membrane(loader, address_arg_name):
                     return None
             return self.loaded[arg]
 
-        def set_extendable(self,flag):
+        def set_extendable(self, flag):
             """
             Extendable means that the dictionary can grow from the
             preloaded values.
@@ -143,7 +143,7 @@ def serve_membranes(hostname='localhost', port=8051, **configs):
         path_info = environ['PATH_INFO'].strip('/')
 
         # Corresponding function to this path, or the "first" element in config
-        mem = configs.get(path_info,configs.itervalues().next())
+        mem = configs.get(path_info, configs.itervalues().next())
 
         # Get params: arguments and cwd.
         request_body = environ['wsgi.input'].read(request_body_size)
@@ -156,7 +156,7 @@ def serve_membranes(hostname='localhost', port=8051, **configs):
         os.chdir(client_pwd)
 
         # Run function
-        response_body = pickle.dumps(mem['membrane'](*args,**kwargs))
+        response_body = pickle.dumps(mem['membrane'](*args, **kwargs))
 
         # Respond
         status = '200 OK'

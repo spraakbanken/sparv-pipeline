@@ -106,7 +106,7 @@ def handle(client_sock, verbose, annotators):
             sys.stderr = orig_stds[1]
             os.dup2(orig_fds[0], 1)
             os.dup2(orig_fds[1], 2)
-            map(os.close,null_fds)
+            map(os.close, null_fds)
             client_sock.close()
 
         return cleanup
@@ -116,7 +116,7 @@ def handle(client_sock, verbose, annotators):
 
     # Split arguments on spaces, and replace '\ ' to ' ' and \\ to \
     args = [ arg.replace('\\ ',' ').replace('\\\\','\\')
-             for arg in re.split(splitter,data) ]
+             for arg in re.split(splitter, data) ]
 
     # If the first argument is -m, the following argument is a module
     # name instead of a script name
@@ -144,7 +144,7 @@ def handle(client_sock, verbose, annotators):
             sys.argv.extend(args[1:])
             os.chdir(pwd)
             if module_flag:
-                annotator = annotators.get(args[0],None)
+                annotator = annotators.get(args[0], None)
                 if annotator:
                     util.run.main(annotator)
                 else:
