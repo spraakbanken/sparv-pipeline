@@ -134,6 +134,8 @@ def handle(client_sock, verbose, annotators):
         if verbose:
              util.log.info('Running %s %s, in directory %s',
                            args[0], ' '.join(args[1:]), pwd)
+#             util.log.info('with python path "%s" and sys path "%s"',
+#                           os.environ['PYTHONPATH'], sys.path)
 
         # Set stdout and stderr, which returns the cleaup function
         cleanup = set_stdout_stderr()
