@@ -1,0 +1,4 @@
+Based on diapivot.xml, under development.
+Translate from fsvm and dalin to saldo
+The format is
+  {lemgram : {'saldo':saldo-lemgram,'match':exact/broad}}
