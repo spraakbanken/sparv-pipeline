@@ -1,4 +1,5 @@
 import saldo 
+import lemgrampos
 import util
 import diapivot
 import codecs
@@ -57,10 +58,13 @@ def extract_pos(out,lemgrams, extralemgrams='',delimiter="|", affix="|"):
      - affix is an optional character to put before and after results
    """
 
+   def oktag(tag):
+     return tag is not None and tag.group(1) not in ['e','sxc','mxc']
+
 
    def mkpos(tokid,thelems):
        pos  = [re.search('\.\.(.*?)\.',lem) for lem in thelems]
-       return set([p.group(1) for p in pos if p is not None and p.group(1)!='e'])
+       return set(sum([lemgrampos.translatetag(p.group(1)) for p in pos if oktag(p)],[]))
 
    annotate_standard(out,lemgrams,mkpos,extralemgrams)
  
@@ -118,6 +122,18 @@ def merge(out, left, right, separator=""):
 
     
     util.write_annotation(out, OUT)
+
+def posset(out, pos, separator="|"):
+    """Concatenate values from two annotations, with an optional separator.
+       Removes superfluous separators"""
+    oldpos = util.read_annotation(pos)
+    OUT ={}
+
+   # dummy function to annotated thepos with separators
+    def makeset(tokid,thepos):
+      return [thepos]
+
+    annotate_standard(out,pos,makeset,split=False)
    
 def annotate_standard(out,input_annotation,f,extra_input='',delimiter="|", affix="|",split=True):
    """
@@ -127,6 +143,7 @@ def annotate_standard(out,input_annotation,f,extra_input='',delimiter="|", affix
    - extra_input is an extra input annotation
    - delimiter is the delimiter character to put between ambiguous results
    - affix is an optional character to put before and after results
+   - split defines if the input annatoation is a set, with elements separated by delimiter
      if so, return a list. Else, return one single element
    """
    def merge(d1,d2):
@@ -161,6 +178,7 @@ if __name__ == '__main__':
     util.run.main(annotate_variants=annotate_variants,
                   extract_pos=extract_pos,
                   merge=merge,
+                  posset=posset,
                   annotate_fallback=annotate_fallback,
                   annotate_diachron=annotate_diachron
                   )
