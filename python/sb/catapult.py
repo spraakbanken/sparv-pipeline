@@ -107,6 +107,7 @@ def handle(client_sock, verbose, annotators):
             os.dup2(orig_fds[0], 1)
             os.dup2(orig_fds[1], 2)
             map(os.close, null_fds)
+            map(os.close, orig_fds)
             client_sock.close()
 
         return cleanup
@@ -195,6 +196,11 @@ def worker(server_socket, verbose, annotators, malt_args=None):
 
         def start_malt():
             if process_dict['process'] is None or process_dict['restart']:
+
+                old_process = process_dict['process']
+                if old_process:
+                    old_process.kill()
+
                 malt_process = malt.maltstart(**malt_args)
                 if verbose:
                     util.log.info('(Re)started malt process: %s', malt_process)
