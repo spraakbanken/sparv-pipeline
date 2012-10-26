@@ -9,7 +9,7 @@ def make_hash(text):
     import hashlib
     return hashlib.sha1(text).hexdigest()
 
-def pipeline(pipeline_dir, text, fmt):
+def pipeline(pipeline_dir, processes, text, fmt):
     text_hash = make_hash(text)
     util.log.info('%s: "%s"', text_hash, text)
 
@@ -35,29 +35,24 @@ def pipeline(pipeline_dir, text, fmt):
     if os.path.isfile(text_file):
         util.log.info("File exists and is not rewritten: %s", text_hash)
     else:
-        f = open(text_file, 'w')
-        f.write('<text>' + text + '</text>')
-        f.close()
+        with open(text_file, 'w') as f:
+            f.write('<text>' + text + '</text>')
 
-    make_settings = ['-C', text_dir, 'dir_chmod=777']
+    make_settings = ['-C', text_dir, 'dir_chmod=777', '-j', str(processes)]
 
     if fmt == 'vrt':
         util.system.call_binary('/bin/make', ['vrt'] + make_settings, verbose=True)
 
         vrt_file = os.path.join(annotations_dir, 'text.vrt')
-        f = open(vrt_file, 'r')
-        vrt = f.read()
-        f.close()
+        with open(vrt_file, 'r') as f:
+            vrt = f.read()
 
         return vrt
     else:
         util.system.call_binary('/bin/make', ['export'] + make_settings, verbose=True)
 
         xml_file = os.path.join(export_dir, 'text.xml')
-        f = open(xml_file, 'r')
-        xml = f.read()
-        f.close()
+        with open(xml_file, 'r') as f:
+            xml = f.read()
 
         return xml
-
-

@@ -165,7 +165,7 @@ def handle(client_sock, verbose, annotators):
                 traceback.print_exception(*sys.exc_info())
                 i or cleanup()
             util.log.error("Error: %s\n", sys.exc_info()[1])
-        else:
+        finally:
             cleanup()
 
         os.chdir(old_pwd)
@@ -225,10 +225,11 @@ def worker(server_socket, verbose, annotators, malt_args=None):
         client_sock, addr = server_socket.accept()
         try:
             handle(client_sock, verbose, annotators)
-            client_sock.close()
         except:
             util.log.error('Error in handling code: %s', sys.exc_info()[1])
             traceback.print_exception(*sys.exc_info())
+        finally:
+            client_sock.close()
 
 def start(socket_path, processes=1, verbose='false',
           saldo_model=None, compound_model=None,
