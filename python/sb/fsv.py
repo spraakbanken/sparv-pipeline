@@ -36,7 +36,8 @@ def annotate_variants(word, out, spellmodel, model, delimiter="|", affix="|"):
 
     def findvariants(tokid,theword):
       variants = filter(lambda (x,d):x!=theword,variations.get(theword.lower(),[]))
-      return set(_concat([getsingleannotation(lexicon,v,'lemgram') for v,d in variants]))
+      #return set(_concat([getsingleannotation(lexicon,v,'lemgram') for v,d in variants]))
+      return set([v for v,d in variants])
 
     annotate_standard(out,word,findvariants,split=False)
        
@@ -193,7 +194,7 @@ def annotate_full(word, msd, sentence, reference, out, annotations, models, deli
       - skip_multiword can be set to True to disable multi word annotations
     """
     MAX_GAPS = 0 # Maximum number of gaps in multi-word units.
-                 # Set to 0 since most multi-word in the old lexicons are unseparable
+                 # Set to 0 since many (most?) multi-word in the old lexicons are unseparable (half öre etc)
     
     annotations = annotations.split()
     models = models.split()
@@ -219,15 +220,15 @@ def annotate_full(word, msd, sentence, reference, out, annotations, models, deli
         sentence_tokens   = {}
         
         for tokid in sent:
-            thewords = WORD[tokid].split('|') # not sure we need the splitting any more
+            thewords = [w for w in WORD[tokid].split('|') if w]
             msdtag = MSD[tokid]
             ref = REF[tokid]
             
             annotation_info = {}
             sentence_tokens[ref] = {"tokid": tokid, "word": thewords, "msd": msdtag, "annotations": annotation_info}
             
-            for theword in thewords:
-              
+            for theword in thewords:  
+
               # First use MSD tags to find the most probable single word annotations
               ann_tags_words = findsingleword(theword,lexicons,msdtag,annotation_info)
                             
@@ -285,8 +286,7 @@ def findmultiwordexpressions(incomplete_multis,complete_multis,theword,ref,MAX_G
         if x['numberofgaps'] > MAX_GAPS:
             todelfromincomplete.append(i)
 
-        #                                           |  Last word may not be PP if this is a particle-multi-word |
-        elif seeking_word.lower() == theword.lower(): # and not (len(x[1]) == 1 and x[3] and msdtag.startswith("PP")): (TODO msd not used)
+        elif seeking_word.lower() == theword.lower():
             x['lastwordwasgap'] = False
             del x['words'][0]
             x['ref'].append(ref)
@@ -322,6 +322,11 @@ def removeunwantedoverlaps(complete_multis):
       for d in complete_multis:
         if re.search(r"(.*)--.*", c[1]["lemgram"][0]).groups()[0] != re.search(r"(.*)--.*", d[1]["lemgram"][0]).groups()[0]:
           # Both are from the same lexicon
+          remove.add(ci)
+        elif len(set(c[0]))!=len(c[0]):
+          # Since we allow many words for one token (when using spelling variation)
+          # we must make sure that two words of a mwe are not made up by two variants of one token
+          # that is, that the same reference-id is not used twice in a mwe
           remove.add(ci)
         elif re.search(r"\.\.(\w+)\.", c[1]["lemgram"][0]).groups()[0] == re.search(r"\.\.(\w+)\.", d[1]["lemgram"][0]).groups()[0]:
             # Both are of same POS
