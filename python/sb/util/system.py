@@ -21,6 +21,16 @@ def make_directory(*path):
             pass
         else: raise
 
+def kill_process(process):
+    """Kills a process, and ignores the error if it is already dead"""
+    try:
+        process.kill()
+    except OSError as exc:
+        if exc.errno == errno.ESRCH: # No such process
+            pass
+        else:
+            raise
+
 def clear_directory(dir):
     shutil.rmtree(dir, ignore_errors=True)
     make_directory(dir)

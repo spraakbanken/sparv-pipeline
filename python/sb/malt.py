@@ -30,6 +30,11 @@ def maltparse(maltjar, model, out, word, pos, msd, sentence, encoding=util.UTF8,
         process = maltstart(maltjar, model, encoding)
     else:
         process = process_dict['process']
+        # If process seems dead, spawn a new
+        if process.stdin.closed or process.stdout.closed or process.poll():
+            util.system.kill_process(process)
+            process = maltstart(maltjar, model, encoding, send_empty_sentence=True)
+            process_dict['process'] = process
 
     sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
 
@@ -91,7 +96,7 @@ def maltparse(maltjar, model, out, word, pos, msd, sentence, encoding=util.UTF8,
 
     util.write_annotation(out, OUT, encode=" ".join)
 
-def maltstart(maltjar, model, encoding):
+def maltstart(maltjar, model, encoding, send_empty_sentence=False):
     """
     Starts a malt process and returns it.
     """
@@ -109,9 +114,23 @@ def maltstart(maltjar, model, encoding):
         malt_args += ["-c", model]
         util.log.info("Using local MALT model: %s (in directory %s)", model, modeldir or ".")
 
-    return util.system.call_java(maltjar, malt_args, options=java_opts,
-                                 stdin="", encoding=encoding, verbose=True,
-                                 return_command=True)
+    process = util.system.call_java(maltjar, malt_args, options=java_opts,
+                                    stdin="", encoding=encoding, verbose=True,
+                                    return_command=True)
+
+    if send_empty_sentence:
+        """
+        Send a simple sentence to malt, this greatly enhances performance
+        for subsequent requests.
+        """
+        stdin_fd, stdout_fd = process.stdin, process.stdout
+        util.log.info("Sending empty sentence to malt")
+        stdin_fd.write("1\t.\t_\tMAD\tMAD\tMAD\n\n\n")
+        stdin_fd.flush()
+        stdout_fd.readline()
+        stdout_fd.readline()
+
+    return process
 
 ################################################################################
 

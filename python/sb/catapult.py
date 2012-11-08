@@ -84,19 +84,19 @@ def handle(client_sock, verbose, annotators):
 
         # file descriptors are for output in non-python code,
         # stds are for python's own output
-        orig_fds = os.dup(1), os.dup(2)
+        #orig_fds = os.dup(1), os.dup(2)
         orig_stds = sys.stdout, sys.stderr
         if verbose:
-            os.dup2(client_sock.fileno(), 1)
-            os.dup2(client_sock.fileno(), 2)
+            #os.dup2(client_sock.fileno(), 1)
+            #os.dup2(client_sock.fileno(), 2)
             w = Writer()
             sys.stdout = w
             sys.stderr = w
-            null_fds = []
-        else:
-            null_fds = [ os.open(os.devnull, os.O_RDWR) for i in xrange(2) ]
-            os.dup2(null_fds[0], 1)
-            os.dup2(null_fds[1], 2)
+        #     null_fds = []
+        # else:
+        #     null_fds = [ os.open(os.devnull, os.O_RDWR) for i in xrange(2) ]
+        #     os.dup2(null_fds[0], 1)
+        #     os.dup2(null_fds[1], 2)
 
         def cleanup():
             """
@@ -104,10 +104,10 @@ def handle(client_sock, verbose, annotators):
             """
             sys.stdout = orig_stds[0]
             sys.stderr = orig_stds[1]
-            os.dup2(orig_fds[0], 1)
-            os.dup2(orig_fds[1], 2)
-            map(os.close, null_fds)
-            map(os.close, orig_fds)
+            # os.dup2(orig_fds[0], 1)
+            # os.dup2(orig_fds[1], 2)
+            # map(os.close, null_fds)
+            # map(os.close, orig_fds)
             client_sock.close()
 
         return cleanup
@@ -135,8 +135,6 @@ def handle(client_sock, verbose, annotators):
         if verbose:
              util.log.info('Running %s %s, in directory %s',
                            args[0], ' '.join(args[1:]), pwd)
-#             util.log.info('with python path "%s" and sys path "%s"',
-#                           os.environ['PYTHONPATH'], sys.path)
 
         # Set stdout and stderr, which returns the cleaup function
         cleanup = set_stdout_stderr()
@@ -198,8 +196,7 @@ def worker(server_socket, verbose, annotators, malt_args=None):
             if process_dict['process'] is None or process_dict['restart']:
 
                 old_process = process_dict['process']
-                if old_process:
-                    old_process.kill()
+                old_process and util.system.kill_process(old_process)
 
                 malt_process = malt.maltstart(**malt_args)
                 if verbose:
@@ -207,17 +204,6 @@ def worker(server_socket, verbose, annotators, malt_args=None):
                 process_dict['process'] = malt_process
                 annotators['sb.malt'] = set_last_argument(process_dict)(malt.maltparse)
 
-                """
-                Send a simple sentence to malt, this greatly enhances performance
-                for subsequent requests.
-                """
-                stdin_fd, stdout_fd = malt_process.stdin, malt_process.stdout
-                if verbose:
-                    util.log.info("Sending empty sentence to malt")
-                stdin_fd.write("1\t.\t_\tMAD\tMAD\tMAD\n\n\n")
-                stdin_fd.flush()
-                stdout_fd.readline()
-                stdout_fd.readline()
             elif verbose:
                 util.log.info("Not restarting malt this time")
 
@@ -288,7 +274,8 @@ def start(socket_path, processes=1, verbose='false',
         util.log.info('Loaded annotators: %s', annotators.keys())
 
     if malt_jar and malt_model:
-        malt_args = dict(maltjar=malt_jar, model=malt_model, encoding=malt_encoding)
+        malt_args = dict(maltjar=malt_jar, model=malt_model,
+                         encoding=malt_encoding, send_empty_sentence=True)
     else:
         malt_args = None
 
