@@ -69,8 +69,9 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
     if not into:
         into = infrom
        
-    informat = informat.split("|")
-    outformat = outformat.split("|")
+    informat = informat.decode("UTF-8").split("|")
+    outformat = outformat.decode("UTF-8").split("|")
+    if splitter: splitter = splitter.decode("UTF-8")
     
     assert len(outformat) == 1 or (len(outformat) == len(informat)), "The number of out-formats must be equal to one or the number of in-formats."
     
@@ -201,7 +202,7 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
 def strftime(dt, fmt):
     """Python datetime.strftime < 1900 workaround, taken from https://gist.github.com/2000837"""
 
-    TEMPYEAR = 9996
+    TEMPYEAR = 9996 # We need to use a leap year to support feb 29th
 
     if dt.year < 1900:
         # create a copy of this datetime, just in case, then set the year to
