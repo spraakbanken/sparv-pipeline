@@ -10,8 +10,7 @@ import util
 def annotate_parents(text, out, parent, child, ignore_missing_parent=False):
     """Annotate parent links; parent, child are names for existing annotations.
     """
-    
-    ignore_missing_parent = (ignore_missing_parent.lower() == "true")
+    if isinstance(ignore_missing_parent, basestring): ignore_missing_parent = (ignore_missing_parent.lower() == "true")
     parent_chunks, child_spans = read_parents_and_children(text, parent, child)
     OUT = {}
     previous_parent_id = None
