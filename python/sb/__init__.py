@@ -11,7 +11,6 @@ __all__ = [
     'install',
     'lemgram_index',
     'malt',
-    'memsaldo',
     'number',
     'parent',
     'relations',
