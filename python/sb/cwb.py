@@ -22,7 +22,18 @@ CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 ######################################################################
 # Saving as Corpus Workbench data file
 
-def export(format, out, order, annotations, columns=(), structs=(), encoding=CWB_ENCODING):
+def chain(annotations, default=None):
+    """Create a functional composition of a list of annotations.
+    E.g., token.sentence + sentence.id -> token.sentence-id
+    """
+    def follow(key):
+        for annot in annotations:
+            try: key = annot[key]
+            except KeyError: return default
+        return key
+    return dict((key, follow(key)) for key in annotations[0])
+
+def export(format, out, order, annotations_columns, annotations_structs, columns=(), structs=(), encoding=CWB_ENCODING):
     """
     Export 'annotations' to the VRT or XML file 'out'.
     The order of the annotation keys is decided by the annotation 'order'.
@@ -32,23 +43,42 @@ def export(format, out, order, annotations, columns=(), structs=(), encoding=CWB
     The structs are specified by "elem:attr", giving <elem attr=N> xml tags.
     """
     assert format in ("vrt", "xml"), "Wrong format specified"
-    if isinstance(annotations, basestring): annotations = annotations.split()
+    if isinstance(annotations_columns, basestring): annotations_columns = annotations_columns.split()
+    if isinstance(annotations_structs, basestring): annotations_structs = [x.split(":") for x in annotations_structs.split()]
     if isinstance(columns, basestring): columns = columns.split()
-    if not columns: columns = annotations
     structs_count = len(structs.split())
     structs = parse_structural_attributes(structs)
     
+    assert len(annotations_columns) == len(columns), "columns and annotations_columns must contain same number of values"
+    assert len(annotations_structs) == structs_count, "structs and annotations_structs must contain same number of values"
+    
+    # Create parent dictionaries
+    parents = {}
+    for annot, parent_annotation in annotations_structs:
+        if not parent_annotation in parents:
+            parents[parent_annotation] = util.read_annotation(parent_annotation)
+    
     vrt = defaultdict(dict)
-    for n, annot in enumerate(annotations[:max(len(columns), structs_count)]):
-        for tok, value in util.read_annotation_iteritems(annot):
+    
+    for n, annot in enumerate(annotations_structs):
+        token_annotations = chain([parents[annot[1]], util.read_annotation(annot[0])])
+        
+        for tok, value in token_annotations.iteritems():
             if n > 0:
                 value = "|" if value == "|/|" else value
-                #value = value.replace("/", "") # "/" is not allowed in anything but the word itself.
+            vrt[tok][n] = value.replace("\n", " ") if value else ""
+    
+    for n, annot in enumerate(annotations_columns):
+        n += structs_count
+        for tok, value in util.read_annotation_iteritems(annot):
+            if n > structs_count:
+                value = "|" if value == "|/|" else value
             vrt[tok][n] = value.replace("\n", " ")
+
 
     sortkey = util.read_annotation(order).get
     tokens = sorted(vrt, key=sortkey)
-    column_nrs = [n for (n, col) in enumerate(columns) if col and col != "-"]
+    column_nrs = [n+structs_count for (n, col) in enumerate(columns) if col and col != "-"]
 
     with open(out, "w") as OUT:
         if format == "xml": print >>OUT, "<corpus>"
@@ -70,10 +100,10 @@ def export(format, out, order, annotations, columns=(), structs=(), encoding=CWB
                     old_attr_values[elem] = new_attr_values[elem]
             if format == "vrt":
                 # Whitespace and / needs to be replaced for CQP parsing to work. / is only allowed in the word itself.
-                line = "\t".join(cols.get(n, UNDEF).replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") if n > 0 else cols.get(n, UNDEF).replace(" ", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") for n in column_nrs)
+                line = "\t".join(cols.get(n, UNDEF).replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") if n > structs_count else cols.get(n, UNDEF).replace(" ", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") for n in column_nrs)
             elif format == "xml":
-                word = cols.get(0, UNDEF).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                attributes = " ".join('%s="%s"' % (columns[n], cols.get(n, UNDEF).replace("&", "&amp;").replace('"', '&quot;').replace("<", "&lt;").replace(">", "&gt;")) for n in column_nrs[1:])
+                word = cols.get(structs_count, UNDEF).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                attributes = " ".join('%s="%s"' % (columns[n-structs_count], cols.get(n, UNDEF).replace("&", "&amp;").replace('"', '&quot;').replace("<", "&lt;").replace(">", "&gt;")) for n in column_nrs[1:])
                 line = "<w %s>%s</w>" % (attributes, word)
             print >>OUT, line.encode(encoding)
         for elem, _attrs in structs:
