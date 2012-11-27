@@ -54,7 +54,7 @@ def maltparse(maltjar, model, out, word, pos, msd, sentence, encoding=util.UTF8,
     if encoding:
         stdin = stdin.encode(encoding)
 
-    keep_process = len(stdin) < RESTART_THRESHOLD_LENGTH and process is not None
+    keep_process = len(stdin) < RESTART_THRESHOLD_LENGTH and process_dict is not None
     util.log.info("Stdin length: %s, keep process: %s", len(stdin), keep_process)
 
     if process_dict is not None:
