@@ -67,9 +67,11 @@ def affix(chunk, out, prefix="", suffix=""):
     """Add prefix and/or suffix to annotation."""
     util.write_annotation(out, ((key, prefix + val + suffix) for (key, val) in util.read_annotation_iteritems(chunk)))
 
+
 def replace(chunk, out, find, sub=""):
     """Find and replace annotation. Find string must match whole annotation."""
     util.write_annotation(out, ((key, sub if val == find else val) for (key, val) in util.read_annotation_iteritems(chunk)))
+
 
 def replace_list(chunk, out, find, sub=""):
     """Find and replace annotations. Find string must match whole annotation.
@@ -80,9 +82,11 @@ def replace_list(chunk, out, find, sub=""):
     translate = dict((f, s) for (f, s) in zip(find, sub))
     util.write_annotation(out, ((key, translate.get(val, val)) for (key, val) in util.read_annotation_iteritems(chunk)))
 
+
 def find_replace(chunk, out, find, sub=""):
     """Find and replace parts of or whole annotation."""
     util.write_annotation(out, ((key, val.replace(find, sub)) for (key, val) in util.read_annotation_iteritems(chunk)))
+
 
 def concat(out, left, right, separator="", merge_twins="", encoding=util.UTF8):
     """Concatenate values from two annotations, with an optional separator.
@@ -91,6 +95,12 @@ def concat(out, left, right, separator="", merge_twins="", encoding=util.UTF8):
     b = util.read_annotation(right)
     util.write_annotation(out, ((key_a, u"%s%s%s" % (val_a, separator.decode(encoding), b[key_a]) if not (merge_twins and val_a == b[key_a]) else val_a) for (key_a, val_a) in util.read_annotation_iteritems(left)))
     
+
+def merge(out, main, backoff, encoding=util.UTF8):
+    """Takes two annotations, and for keys without values in 'main', uses value from 'backoff'."""
+    backoff = util.read_annotation(backoff)
+    util.write_annotation(out, ((key, val) if val else (key, backoff[key]) for (key, val) in util.read_annotation_iteritems(main)))
+
 
 if __name__ == '__main__':
     util.run.main(text_spans=text_spans,
@@ -103,6 +113,7 @@ if __name__ == '__main__':
                   replace_list=replace_list,
                   find_replace=find_replace,
                   span_as_value=span_as_value,
-                  concat=concat
+                  concat=concat,
+                  merge=merge
                   )
 
