@@ -1,6 +1,14 @@
-
 ######################################################################
 # HunPos-modeller
+
+- hunpos.suc3.suc-tags.default-setting.utf8.model
+
+Tränad av: Martin Hammarstedt
+Tränad på: SUC3
+Taggar: SUC3
+Kodning: UTF8
+Hunpos-inställningar: default
+
 
 - hunpos.suc2.parole-tags.default-setting.utf8.model
 
@@ -9,6 +17,7 @@ Tränad på: SUC2
 Taggar: Parole
 Kodning: UTF8
 Hunpos-inställningar: default
+
 
 - hunpos.suc2+parole-bootstrap.granskaish-tags.e3t3-setting.model
 - hunpos.suc2+parole-bootstrap.granskaish-tags.e3t4-setting.model
