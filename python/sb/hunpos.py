@@ -13,9 +13,9 @@ TAG_COLUMN = 1
 def msdtag(model, out, word, sentence, tag_mapping=None, morphtable=None, encoding=util.UTF8):
     """POS/MSD tag using the Hunpos tagger.
     """
-    if isinstance(tag_mapping, basestring):
+    if isinstance(tag_mapping, basestring) and tag_mapping:
         tag_mapping = util.tagsets.__dict__[tag_mapping]
-    elif tag_mapping is None:
+    elif tag_mapping is None or tag_mapping == "":
         tag_mapping = {}
 
     sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
@@ -37,9 +37,6 @@ def msdtag(model, out, word, sentence, tag_mapping=None, morphtable=None, encodi
 
 # TODO: använd sockets
 # - spara socket-id i en fil i tmp/
-# - titta i ~/Projekt/TRIK/Trikky-old/simple-dialog/*py 
-# - titta i ~/Projekt/TRIK/Trikky-old/complex-dialog/*py 
 
 if __name__ == '__main__':
     util.run.main(msdtag)
-

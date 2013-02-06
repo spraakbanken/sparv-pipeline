@@ -248,6 +248,8 @@ class XMLParser(HTMLParser):
     def handle_charref(self, name):
         """Character references &#nnn; are translated to unicode."""
         entity = '#' + name
+        if name in self.skip_entities:
+            return
         if problematic_entity(entity):
             util.log.error(self.pos() + "Control character reference: &%s;", entity)
             return

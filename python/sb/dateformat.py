@@ -47,6 +47,7 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
         length = len(parts[0]) # First value is either blank or not part of date
         
         lengths = {"Y": 4,
+                   "3Y": 3,
                    "y": 2,
                    "m": 2,
                    "b": None,
@@ -110,13 +111,18 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
             try:
                 fromdates = []
                 for i, v in enumerate(vals):
+                    if "%3Y" in inf[i]:
+                        datelen = get_date_length(inf[i])
+                        if datelen and not datelen == len(v.encode(encoding)):
+                            raise ValueError
+                        inf[i] = inf[i].replace("%3Y", "%Y")
+                        v = "0" + v
                     if "%0m" in inf[i] or "%0d" in inf[i]:
                         inf[i] = inf[i].replace("%0m", "%m").replace("%0d", "%d")
                         datelen = get_date_length(inf[i])
                         if datelen and not datelen == len(v.encode(encoding)):
                             raise ValueError
                     fromdates.append(datetime.datetime.strptime(v.encode(encoding), inf[i]))
-                fromdates = [datetime.datetime.strptime(v.encode(encoding), inf[i]) for i, v in enumerate(vals)]
                 if len(fromdates) == 1 or outto:
                     ofrom[key] = strftime(fromdates[0], outformat[0] if len(outformat) == 1 else outformat[tries - 1])
                 else:
@@ -168,6 +174,12 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                 try:
                     todates = []
                     for i, v in enumerate(vals):
+                        if "%3Y" in inf[i]:
+                            datelen = get_date_length(inf[i])
+                            if datelen and not datelen == len(v.encode(encoding)):
+                                raise ValueError
+                            inf[i] = inf[i].replace("%3Y", "%Y")
+                            v = "0" + v
                         if "%0m" in inf[i] or "%0d" in inf[i]:
                             inf[i] = inf[i].replace("%0m", "%m").replace("%0d", "%d")
                             datelen = get_date_length(inf[i])
