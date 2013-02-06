@@ -7,7 +7,7 @@ import codecs
 import re
 import itertools
 
-def annotate_variants(word, out, spellmodel, model, delimiter="|", affix="|"):
+def annotate_variants(word, out, spellmodel,  delimiter="|", affix="|", model=None):
     """Use a lexicon model and a spelling model to annotate words with their spelling variants
       - word is existing annotations for wordforms
       - out is a string containing the resulting annotation file
@@ -31,7 +31,9 @@ def annotate_variants(word, out, spellmodel, model, delimiter="|", affix="|"):
           addword(d,wd,info)
       return d
  
-    lexicon = saldo.SaldoLexicon(model)
+    if model is None:
+      lexicon = saldo.SaldoLexicon(model)
+
     variations = parsevariant(spellmodel)
 
 
