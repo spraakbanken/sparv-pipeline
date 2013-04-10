@@ -62,19 +62,16 @@ def export(format, out, order, annotations_columns, annotations_structs, columns
     
     for n, annot in enumerate(annotations_structs):
         token_annotations = chain([parents[annot[1]], util.read_annotation(annot[0])])
-        
         for tok, value in token_annotations.iteritems():
-            if n > 0:
-                value = "|" if value == "|/|" else value
+            value = "|" if value == "|/|" else value
             vrt[tok][n] = value.replace("\n", " ") if value else ""
     
     for n, annot in enumerate(annotations_columns):
         n += structs_count
         for tok, value in util.read_annotation_iteritems(annot):
-            if n > structs_count:
+            if n > structs_count: # Any column except the first (the word)
                 value = "|" if value == "|/|" else value
             vrt[tok][n] = value.replace("\n", " ")
-
 
     sortkey = util.read_annotation(order).get
     tokens = sorted(vrt, key=sortkey)
@@ -132,13 +129,15 @@ def combine_xml(master, xmlfiles, out):
 
 
 def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
-               encoding=CWB_ENCODING, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY, skip_compression="false", skip_validation=False):
+               encoding=CWB_ENCODING, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY, skip_compression=False, skip_validation=False):
     """
     Encode a number of VRT files, by calling cwb-encode.
     params, structs describe the attributes that are exported in the VRT files.
     """
     assert master != "", "Master not specified"
     assert bool(vrtdir) != bool(vrtfiles), "Either VRTDIR or VRTFILES must be specified"
+    if isinstance(skip_validation, basestring): skip_validation = (skip_validation.lower() == "true")
+    if isinstance(skip_compression, basestring): skip_compression = (skip_compression.lower() == "true")
     if isinstance(vrtfiles, basestring): vrtfiles = vrtfiles.split()
     if isinstance(columns, basestring): columns = columns.split()
     structs = parse_structural_attributes(structs)
@@ -171,7 +170,7 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
     util.system.call_binary("cwb-makeall", index_args, verbose=True)
     util.log.info("Encoded and indexed %d columns, %d structs", len(columns), len(structs))
     
-    if not skip_compression.lower() in ("true", "yes"):
+    if not skip_compression:
         util.log.info("Compressing corpus files...")
         compress_args = ["-A", master.upper()]
         if skip_validation:
