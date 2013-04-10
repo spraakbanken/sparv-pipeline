@@ -1,5 +1,5 @@
 
-TARGETS = help info clean all saldom.xml saldo.pickle
+TARGETS = help info clean all saldom.xml saldo.pickle saldo.compound.pickle
 .PHONY: help info clean all
 
 help:
