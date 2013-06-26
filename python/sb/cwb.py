@@ -102,7 +102,7 @@ def export(format, out, order, annotations_columns, annotations_structs, columns
                 word = cols.get(structs_count, UNDEF).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                 attributes = " ".join('%s="%s"' % (columns[n-structs_count], cols.get(n, UNDEF).replace("&", "&amp;").replace('"', '&quot;').replace("<", "&lt;").replace(">", "&gt;")) for n in column_nrs[1:])
                 line = "<w %s>%s</w>" % (attributes, word)
-            print >>OUT, line.encode(encoding)
+            print >>OUT, remove_control_characters(line).encode(encoding)
         for elem, _attrs in structs:
             if old_attr_values[elem]:
                 print >>OUT, "</%s>" % elem.encode(encoding)
@@ -258,6 +258,10 @@ def parse_structural_attributes(structural_atts):
                 order.append(elem)
             structs[elem].append((attr, n))
     return [(elem, structs[elem]) for elem in order]
+
+
+def remove_control_characters(text):
+    return text.translate(dict((ord(c), None) for c in [chr(i) for i in range(9) + range(11, 13) + range(14, 32) + [127]]))
 
 
 if __name__ == '__main__':
