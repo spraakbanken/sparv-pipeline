@@ -41,7 +41,9 @@ def parse(source, text, elements=[], annotations=[], skip=(), overlap=(), header
         prefix = FILEIDS[fileid]
 
     def elsplit(elem):
+        elem = elem.replace("\:", ";")
         tag, _, attr = elem.partition(":")
+        tag = tag.replace(";", ":")
         return tag, attr
 
     elem_annotations = dict((elsplit(elem), annotation)
