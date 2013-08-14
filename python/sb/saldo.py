@@ -13,7 +13,7 @@ import re
 # Annotate.
 
 def annotate(word, msd, sentence, reference, out, annotations, model,
-             delimiter="|", affix="|", precision=":%.3f", filter=None, skip_multiword=False, lexicon=None):
+             delimiter="|", affix="|", precision=":%.3f", precision_filter=None, min_precision=0.0, skip_multiword=False, word_separator="", lexicon=None):
     """Use the Saldo lexicon model to annotate pos-tagged words.
       - word, msd are existing annotations for wordforms and part-of-speech
       - sentence is an existing annotation for sentences and their children (words)
@@ -23,15 +23,17 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
       - annotations is a string containing a whitespace separate list of annotations to be written.
         Number of annotations and their order must correspond to the list in the 'out' argument.
       - model is the Saldo model
-      - membrane_address could be specified if you have a server running with this model
+      - membrane_address could be specified if you have a server running with this model (???)
       - delimiter is the delimiter character to put between ambiguous results
       - affix is an optional character to put before and after results
       - precision is a format string for how to print the precision for each annotation
         (use empty string for no precision)
-      - filter is an optional filter, currently there are the following values:
+      - precision_filter is an optional filter, currently there are the following values:
         max: only use the annotations that are most probable
-        first: only use one annotation; one of the most probable
+        first: only use the most probable annotation (or one of the most probable if more than one)
+      - min_precision: only use annotations with a probability score higher than this
       - skip_multiword can be set to True to disable multi word annotations
+      - word_separator is an optional character used to split the values of "word" into several word variations.  
       - lexicon: this argument cannot be set from the command line,
         but is used in the catapult. this argument must be last
     """
@@ -45,7 +47,11 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
     out = out.split()
     assert len(out) == len(annotations), "Number of target files and annotations must be the same"
 
-    skip_multiword = (skip_multiword or (isinstance(skip_multiword, basestring) and skip_multiword.lower() == "true"))
+    if isinstance(skip_multiword, basestring): skip_multiword = (skip_multiword.lower() == "true")
+    if skip_multiword:
+        util.log.info("Skipping multi word annotations")
+    
+    min_precision = float(min_precision)
 
     WORD = util.read_annotation(word)
     MSD = util.read_annotation(msd)
@@ -67,14 +73,23 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
             ref = REF[tokid]
 
             annotation_info = {}
-            sentence_tokens[ref] = {"tokid": tokid, "word": theword, "msd": msdtag, "annotations": annotation_info}
+            sentence_tokens[ref] = {"tokid": tokid, "annotations": annotation_info}
 
             ######################################################################
             # First use MSD tags to find the most probable single word annotations
-
-            ann_tags_words = lexicon.lookup(theword)
+            
+            # Support for multiple values of word
+            if word_separator:
+                theword = (w for w in theword.split(word_separator) if w)
+            else:
+                theword = [theword]
+            
+            ann_tags_words = []
+            for w in theword:
+                ann_tags_words += lexicon.lookup(w)
             annotation_precisions = [(get_precision(msdtag, msdtags), annotation)
-                                        for (annotation, msdtags, wordslist, _) in ann_tags_words if not wordslist]
+                                        for (annotation, msdtags, wordslist, _, _) in ann_tags_words if not wordslist]
+            if min_precision > 0: annotation_precisions = filter(lambda x: x[0] >= min_precision, annotation_precisions)
             annotation_precisions = normalize_precision(annotation_precisions)
             annotation_precisions.sort(reverse=True)
 
@@ -102,18 +117,20 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
             todelfromincomplete = []
 
             for i, x in enumerate(incomplete_multis):
+                # x = (annotations, following_words, [ref], gap_allowed, is_particle, [part-of-gap-boolean, gap_count]
                 seeking_word = x[1][0] # The next word we are looking for in this multi-word expression
 
+                # Is a gap necessary in this position for this expression?
                 if seeking_word == "*":
-                    if x[1][1].lower() == theword.lower():
+                    if x[1][1].lower() in (w.lower() for w in theword):
                         seeking_word = x[1][1]
                         del x[1][0]
 
-                if x[4][1] > MAX_GAPS:
+                if x[5][1] > MAX_GAPS:
                     todelfromincomplete.append(i)
-                #                                           |  Last word may not be PP if this is a particle-multi-word |
-                elif seeking_word.lower() == theword.lower() and not (len(x[1]) == 1 and x[3] and msdtag.startswith("PP")):
-                    x[4][0] = False
+                #                                                         |  Last word may not be PP if this is a particle-multi-word |
+                elif seeking_word.lower() in (w.lower() for w in theword) and not (len(x[1]) == 1 and x[4] and msdtag.startswith("PP")):
+                    x[5][0] = False
                     del x[1][0]
                     x[2].append(ref)
 
@@ -122,17 +139,23 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
                         todelfromincomplete.append(i)
                         complete_multis.append((x[2], x[0]))
                 else:
-                    # Increment gap counter if previous word was not part of a gap
-                    if not x[4][0]:
-                        x[4][1] += 1
-                    x[4][0] = True # Marking that previous word was part of a gap
+                    # We've reached a gap
+                    # Are gaps allowed?
+                    if x[3]:
+                        # If previous word was NOT part of a gap, this is a new gap, so increment gap counter
+                        if not x[5][0]:
+                            x[5][1] += 1
+                        x[5][0] = True # Mark that this word was part of a gap
+                    else:
+                        # Gaps are not allowed for this multi-word expression
+                        todelfromincomplete.append(i)
 
             for x in todelfromincomplete[::-1]:
                 del incomplete_multis[x]
 
             if not skip_multiword:
-                # Is this word a possible start for multi-word units?
-                looking_for = [(annotation, words, [ref], is_particle, [False, 0]) for (annotation, _, wordslist, is_particle) in ann_tags_words if wordslist for words in wordslist]
+                # Is this word a possible beginning of a multi-word expression?
+                looking_for = [(annotation, words, [ref], gap_allowed, is_particle, [False, 0]) for (annotation, _, wordslist, gap_allowed, is_particle) in ann_tags_words if wordslist for words in wordslist]
                 if len(looking_for) > 0:
                     incomplete_multis.extend(looking_for)
 
@@ -174,6 +197,7 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
     for out_file, annotation in zip(out, annotations):
         util.write_annotation(out_file, [(tok, OUT[tok].get(annotation, affix)) for tok in OUT], append=True)
 
+
 ######################################################################
 # Different kinds of lexica
 
@@ -209,7 +233,7 @@ class SaldoLexicon(object):
     def save_to_picklefile(saldofile, lexicon, protocol=1, verbose=True):
         """Save a Saldo lexicon to a Pickled file.
         The input lexicon should be a dict:
-          - lexicon = {wordform: {{annotation-type: annotation}: (set(possible tags), set(tuples with following words), is-particle-verb-boolean)}}
+          - lexicon = {wordform: {{annotation-type: annotation}: (set(possible tags), set(tuples with following words), gap-allowed-boolean, is-particle-verb-boolean)}}
         """
         if verbose: util.log.info("Saving Saldo lexicon in Pickle format")
 
@@ -221,8 +245,9 @@ class SaldoLexicon(object):
                 annotationlist = PART_DELIM2.join( k + PART_DELIM3 + PART_DELIM3.join(annotation[k]) for k in annotation)
                 taglist =        PART_DELIM3.join(sorted(extra[0]))
                 wordlist =       PART_DELIM2.join([PART_DELIM3.join(x) for x in sorted(extra[1])])
-                particle =       "1" if extra[2] else "0"
-                annotations.append( PART_DELIM1.join([annotationlist, taglist, wordlist, particle]) )
+                gap_allowed =    "1" if extra[2] else "0"
+                particle =       "1" if extra[3] else "0"
+                annotations.append( PART_DELIM1.join([annotationlist, taglist, wordlist, gap_allowed, particle]) )
 
             picklex[word] = sorted(annotations)
 
@@ -260,17 +285,17 @@ def get_precision(msd, msdtags):
     if the the word's msdtag is among the annotation's possible msdtags,
     we return a high value (0.75), otherwise a low value (0.25).
     """
-    return (0.5 if msd is None else
+    a =  (0.5 if msd is None else
             0.75 if msd in msdtags else
             0.66 if "." in msd and [partial for partial in msdtags if partial.startswith(msd[:msd.find(".")])] else
             0.25)
+    return a
 
 
 def normalize_precision(annotations):
     """Normalize the rankings in the annotation list so that the sum is 1."""
     total_precision = sum(prec for (prec, _annotation) in annotations)
     return [(prec/total_precision, annotation) for (prec, annotation) in annotations]
-
 
 
 # This delimiters that hopefully are never found in an annotation or in a POS tag:
@@ -280,7 +305,7 @@ PART_DELIM2 = "^2"
 PART_DELIM3 = "^3"
 
 def _split_triple(annotation_tag_words):
-    annotation, tags, words, particle = annotation_tag_words.split(PART_DELIM1)
+    annotation, tags, words, gap_allowed, particle = annotation_tag_words.split(PART_DELIM1)
     #annotationlist = [x for x in annotation.split(PART_DELIM3) if x]
     annotationdict = {}
     for a in annotation.split(PART_DELIM2):
@@ -290,7 +315,7 @@ def _split_triple(annotation_tag_words):
     taglist = [x for x in tags.split(PART_DELIM3) if x]
     wordlist = [x.split(PART_DELIM3) for x in words.split(PART_DELIM2) if x]
 
-    return annotationdict, taglist, wordlist, particle == "1"
+    return annotationdict, taglist, wordlist, gap_allowed == "1", particle == "1"
 
 
 ######################################################################
@@ -313,7 +338,6 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
     annotation_elements = annotation_elements.split()
     #assert annotation_element in ("gf", "lem", "saldo"), "Invalid annotation element"
     import xml.etree.cElementTree as cet
-    import re
     tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower())
     if verbose: util.log.info("Reading XML lexicon")
     lexicon = {}
@@ -336,10 +360,14 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
                     inhs = ""
                 inhs = inhs.split()
 
+                # Check the paradigm for an "x", meaning a multi-word expression with a required gap
                 p = elem.findtext("p")
                 x_find = re.search(r"_x(\d*)_", p)
                 x_insert = x_find.groups()[0] if x_find else None
                 if x_insert == "": x_insert = "1"
+                
+                # Only vbm and certain paradigms allow gaps
+                gap_allowed = (pos == "vbm" or p in (u"abm_x1_var_än", u"knm_x_ju_ju", u"pnm_x1_inte_ett_dugg", u"pnm_x1_vad_än", u"ppm_x1_för_skull"))
 
                 table = elem.find("table")
                 multiwords = []
@@ -349,6 +377,7 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
                     param = form.findtext("param")
 
                     if param in ("frag", "c", "ci", "cm"):
+                        # We don't use these wordforms, so skip
                         continue
                     elif param[-1].isdigit() and param[-1] != "1":
                         # Handle multi-word expressions
@@ -356,11 +385,12 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
                         multipart, multitotal = param.split(":")[-1].split("-")
                         particle = bool(re.search(r"vbm_.+?p.*?\d+_", p)) # Multi-word with particle
 
+                        # Add a "*" where the gap should be
                         if x_insert and multipart == x_insert:
                             multiwords.append("*")
 
                         if multipart == multitotal:
-                            lexicon.setdefault(multiwords[0], {}).setdefault(annotations, (set(), set(), particle))[1].add(tuple(multiwords[1:]))
+                            lexicon.setdefault(multiwords[0], {}).setdefault(annotations, (set(), set(), gap_allowed, particle))[1].add(tuple(multiwords[1:]))
                             multiwords = []
                     else:
                         # Single word expressions
@@ -370,7 +400,7 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
                         saldotag = " ".join([pos] + inhs + [param])
                         tags = tagmap.get(saldotag)
                         if tags:
-                            lexicon.setdefault(word, {}).setdefault(annotations, (set(), set(), False))[0].update(tags)
+                            lexicon.setdefault(word, {}).setdefault(annotations, (set(), set(), False, False))[0].update(tags)
 
             # Done parsing section. Clear tree to save memory
             if elem.tag in ['LexicalEntry', 'frame', 'resFrame']:
@@ -421,7 +451,8 @@ testwords = [u"äggtoddyarna",
              u"katabatiska",
              u"väg-",
              u"formar",
-             u"in"]
+             u"in",
+             u"datorrelaterade"]
 
 
 def xml_to_pickle(xml, filename, annotation_elements="gf lem saldo"):
