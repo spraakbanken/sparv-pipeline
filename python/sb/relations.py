@@ -212,9 +212,10 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
     return x_rel_y * math.log((rel * x_rel_y) / (x_rel * rel_y * 1.0), 2)
 
 
-def frequency(source, corpus, db_name, table_file, table_file2, combined=True):
+def frequency(corpus, db_name, table_file, table_file2, source="", source_list="", combined=True):
     """Calculates statistics of the dependencies and saves to SQL files.
        - source is a space separated string with relations-files.
+       - source_list can be used instead of source, and should be a file containing the name of one relations-file per row.
        - corpus is the corpus name.
        - db_name is the name of the database.
        - table_file is the filename for the SQL file which will contain the table creation SQL.
@@ -241,7 +242,14 @@ def frequency(source, corpus, db_name, table_file, table_file2, combined=True):
     sentence_count = defaultdict(int)
     first_file = True
     file_count = 0
-    source_files = source.split()
+    
+    assert (source or source_list), "Missing source"
+    
+    if source:
+        source_files = source.split()
+    elif source_list:
+        with open(source_list) as insource:
+            source_files = [line.strip() for line in insource]
     
     for s in source_files:
         file_count += 1
