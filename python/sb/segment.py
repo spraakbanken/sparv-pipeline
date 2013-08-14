@@ -187,6 +187,131 @@ class PunctuationTokenizer(nltk.RegexpTokenizer):
         
         return result
 
+class BetterWordTokenizer():
+    """
+    A word tokenizer based on the PunktWordTokenizer code. Adds support for defining characters
+    which can not end tokens, and URL an e-mail recognition. Also handles unicode quotation marks and other
+    punctuation.
+    http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt.PunktSentenceTokenizer-class.html
+    """
+    
+    abbreviations = set([
+                          "a.a", "a.a", "a.d", "agr", "a.k.a", "alt", "ang", "anm", "art", "avd", "avl", "b.b", "betr",
+                          "b.g", "b.h", "bif", "bl.a", "b.r.b", "b.t.w", "civ.ek", "civ.ing", "co", "dir", "div",
+                          "d.m", "doc", "dr", "d.s", "d.s.o", "d.v", "d.v.s", "d.y", "dåv", "d.ä", "e.a.g", "e.d", "eftr", "eg",
+                          "ekon", "e.kr", "dyl", "e.d", "em", "e.m", "enl", "e.o", "etc", "e.u", "ev", "ex", "exkl", "f",
+                          "farm", "f.d", "ff", "fig", "f.kr", "f.m", "f.n", "forts", "fr", "fr.a", "fr.o.m", "f.v.b",
+                          "f.v.t", "f.ö", "följ", "föreg", "förf", "gr", "g.s", "h.h.k.k.h.h", "h.k.h", "h.m", "ill",
+                          "inkl", "i.o.m", "st.f", "jur", "kand", "kap", "kl", "lb", "leg", "lic", "lisp", "m.a.a",
+                          "mag", "m.a.o", "m.a.p", "m.fl", "m.h.a", "m.h.t", "milj", "m.m", "m.m.d", "mom", "m.v.h",
+                          "möjl", "n.b", "näml", "nästk", "o", "o.d", "odont", "o.dyl", "omkr", "o.m.s", "op", "ordf",
+                          "o.s.a", "o.s.v", "pers", "p.gr", "p.g.a", "pol", "prel", "prof", "rc", "ref", "resp", "r.i.p",
+                          "rst", "s.a.s", "sek", "sekr", "sid", "sign", "sistl", "s.k", "sk", "skålp", "s.m", "s.m.s", "sp",
+                          "spec", "s.st", "st", "stud", "särsk", "tab", "tekn", "tel", "teol", "t.ex", "tf", "t.h",
+                          "tim", "t.o.m", "tr", "trol", "t.v", "u.p.a", "urspr", "utg", "v", "w", "v.d", "å.k",
+                          "ä.k.s", "äv", "ö.g", "ö.h", "ök", "övers"
+                          ])
+    
+    """import cPickle as pickle
+    
+    with open("/home/martin/sb-arkiv/tools/annotate/models/wordforms.pickle") as wf:
+        wflist = pickle.load(wf)
+        wflist = [x.replace(u"-", ur"\-").replace(u".", ur"\.").replace(u"+", ur"\+") for x in wflist]
+        _re_wordforms = "(?:" + "|".join(wflist) + ")"
+        print "Done" """
+    
+    _re_url = r"(?:http|ftp|https):\/\/[\w\-_]+(?:\.[\w\-_]+)+(?:[\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?"
+    _re_email = r"(?:[a-zA-Z0-9_\-\.]+)@(?:(?:\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(?:(?:[a-zA-Z0-9\-]+\.)+))(?:[a-zA-Z]{2,4}|[0-9]{1,3})(?:\]?)(?!\w)"
+
+
+    # Excludes some characters from starting word tokens
+    _re_word_start = ur'''[^\(\"\'‘’–—“”»\`\\{\/\[:;&\#\*@\)}\]\-,…]'''
+    
+    # Characters that cannot appear within words
+    _re_non_word_chars = ur'(?:[?!)\"“”»–—\\;\/}\]\*:\'‘’\({\[…%])' #@
+    
+    # Excludes some characters from ending word tokens (more or less same as above except '-')
+    _re_word_end      = r"[\(\"\`{\[:;&\#\*@\)}\],]"
+       
+    # Hyphen and ellipsis are multi-character punctuation
+    _re_multi_char_punct = r"(?:\-{2,}|\.{2,}|(?:\.\s){2,}\.)"
+    
+    # Format of a regular expression to split punctuation from words, excluding period.
+    _word_tokenize_fmt = r'''(
+        %(URL)s
+        |
+        %(Email)s
+        |
+        %(MultiChar)s
+        |
+        (?:(?:(?<=^)|(?<=\s))\d+,\d+(?=\s|$))  # Numbers with ,
+        |
+        (?=%(WordStart)s)\S+?  # Accept word characters until end is found
+        (?= # Sequences marking a word's end
+            \s|                                 # White-space
+            $|                                  # End-of-string
+            %(NonWord)s|%(MultiChar)s|          # Punctuation
+            %(WordEnd)s(?=$|\s|%(NonWord)s|%(MultiChar)s)  # Misc characters if at end of word
+        )
+        |
+        \S
+    )'''
+    
+    # Used to realign punctuation that should be included in a sentence although it follows the period (or ?, !).
+    re_boundary_realignment = re.compile(ur'[“”"\')\]}]+?(?:\s+|(?=--)|$)', re.MULTILINE)
+
+    re_punctuated_token = re.compile(r"\w.*\.$", re.UNICODE)
+    
+    def __init__(self):
+        pass
+    
+    def _word_tokenizer_re(self): 
+        """Compiles and returns a regular expression for word tokenization""" 
+        try: 
+            return self._re_word_tokenizer 
+        except AttributeError: 
+            self._re_word_tokenizer = re.compile( 
+                self._word_tokenize_fmt % 
+                {
+                    'URL':       self._re_url,
+                    'Email':     self._re_email,
+                    'NonWord':   self._re_non_word_chars, 
+                    'MultiChar': self._re_multi_char_punct, 
+                    'WordStart': self._re_word_start,
+                    'WordEnd':   self._re_word_end
+                }, 
+                re.UNICODE | re.VERBOSE 
+            ) 
+            return self._re_word_tokenizer 
+    
+    def word_tokenize(self, s): 
+        """Tokenize a string to split of punctuation other than periods"""
+        words = self._word_tokenizer_re().findall(s)
+        if not words:
+            return words
+        pos = len(words) - 1
+        
+        # Split sentence-final . from the final word.
+        # i.e., "peter." "piper." ")" => "peter." "piper" "." ")"
+        # but not "t.ex." => "t.ex" "."
+        while pos >= 0 and self.re_boundary_realignment.match(words[pos]):
+            pos -= 1
+        endword = words[pos]
+        if self.re_punctuated_token.search(endword):
+            endword = endword[:-1]
+            if endword not in self.abbreviations:
+                words[pos] = endword
+                words.insert(pos+1, ".")
+        
+        return words
+    
+    def span_tokenize(self, s):
+        begin = 0
+        for w in self.word_tokenize(s):
+            begin = s.find(w, begin)
+            yield begin, begin + len(w)
+            begin += len(w)
+
 ######################################################################
 
 SEGMENTERS = dict(whitespace = nltk.WhitespaceTokenizer,
@@ -194,7 +319,8 @@ SEGMENTERS = dict(whitespace = nltk.WhitespaceTokenizer,
                   blanklines = nltk.BlanklineTokenizer,
                   punkt_sentence = nltk.PunktSentenceTokenizer,
                   punkt_word = ModifiedPunktWordTokenizer,
-                  punctuation = PunctuationTokenizer
+                  punctuation = PunctuationTokenizer,
+                  better_word = BetterWordTokenizer
                   )
 
 if not do_segmentation.__doc__:
