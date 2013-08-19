@@ -248,7 +248,8 @@ def annotate_full(word, msd, sentence, reference, out, annotations, models, deli
         
         for tokid in sent:
             thewords = [w for w in WORD[tokid].split('|') if w]
-            msdtag = MSD[tokid]
+            #msdtag = MSD[tokid]
+            msdtag = ''
             ref = REF[tokid]
             
             annotation_info = {}
@@ -285,13 +286,14 @@ def findsingleword(theword,lexicons,msdtag,annotation_info):
     ann_tags_words = []
 
     for lexicon in lexicons:
+      x = lexicon.lexicon.get(theword, [])
       result = lexicon.lookup(theword)
       if result:
         ann_tags_words += result
         break
     #ann_tags_words += (lexicon.lookup(theword) for lexicon in lexicons).next()
 
-    annotation_precisions = [annotation for (annotation, msdtags, wordslist, _) in ann_tags_words if not wordslist]
+    annotation_precisions = [annotation for (annotation, msdtags, wordslist,_ , _) in ann_tags_words if not wordslist]
     for annotation in annotation_precisions:
         for key in annotation:
             annotation_info.setdefault(key, []).extend(annotation[key])
@@ -335,14 +337,14 @@ def findmultiwordexpressions(incomplete_multis,complete_multis,theword,ref,MAX_G
     # Is this word a possible start for multi-word units?
     looking_for = [{'annotation': annotation,'words': words, 'ref': [ref]
                    , 'is_particle': is_particle, 'lastwordwasgap' : False, 'numberofgaps': 0}
-                  for (annotation, _, wordslist, is_particle) in ann_tags_words if wordslist for words in wordslist]
+                  for (annotation, _, wordslist, _, is_particle) in ann_tags_words if wordslist for words in wordslist]
     if len(looking_for) > 0:
         incomplete_multis.extend(looking_for)
 
 def getsingleannotation(lexicons,word,key):
   annotation = [] 
   for lexicon in lexicons:
-    res = [ann for (ann, msdtags, wordslist, _) in lexicon.lookup(word) if not wordslist]
+    res = [ann for (ann, msdtags, wordslist, _, _) in lexicon.lookup(word) if not wordslist]
     if res:
       annotation = res
       break
