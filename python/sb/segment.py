@@ -4,16 +4,18 @@ import re
 import util
 import nltk
 import cPickle as pickle
+import crf # for CRF++ models
 
-def do_segmentation(text, element, out, chunk, segmenter, existing_segments=None, model=None):
+def do_segmentation(text, element, out, chunk, segmenter, existing_segments=None, model=None, no_pickled_model=False):
     """Segment all "chunks" (e.g. sentences) into smaller "tokens" (e.g. words),
     and annotate them as "element" (e.g. w).
     Segmentation is done by the given "segmenter"; some segmenters take
     an extra argument which is a pickled "model" object.
     """
     if model:
-        with open(model, "rb") as M:
-            model = pickle.load(M)
+        if not no_pickled_model:
+          with open(model, "rb") as M:
+              model = pickle.load(M)
         segmenter_args = (model,)
     else:
         segmenter_args = ()
@@ -187,6 +189,7 @@ class PunctuationTokenizer(nltk.RegexpTokenizer):
         
         return result
 
+
 class BetterWordTokenizer():
     """
     A word tokenizer based on the PunktWordTokenizer code. Adds support for defining characters
@@ -312,6 +315,40 @@ class BetterWordTokenizer():
             yield begin, begin + len(w)
             begin += len(w)
 
+
+class CRFTokenizer():
+    """ Tokenization based on Conditional Random Fields
+        Implemented for Old Swedish, see crf.py for more details"""
+    
+    def __init__(self, model):
+      self.model = model
+    
+    def span_tokenize(self, s):
+        return crf.segment(s, self.model)
+
+class ParagraphSplitter():
+    
+    def span_tokenize(self, s):
+        spans = []
+        temp  =  [0,0]
+        first = True
+        for i in range(len(s)):
+          if not first:
+            new_para = re.search(u'^\.*§',s[i:])
+            if new_para:
+              spans.append((temp[0],i))
+              temp[0] = i
+              first = True
+          else:
+            first   = False
+          temp[1] = i
+
+        temp[1] = len(s)
+        spans.append(tuple(temp))
+
+        return spans
+  
+
 ######################################################################
 
 SEGMENTERS = dict(whitespace = nltk.WhitespaceTokenizer,
@@ -320,7 +357,10 @@ SEGMENTERS = dict(whitespace = nltk.WhitespaceTokenizer,
                   punkt_sentence = nltk.PunktSentenceTokenizer,
                   punkt_word = ModifiedPunktWordTokenizer,
                   punctuation = PunctuationTokenizer,
-                  better_word = BetterWordTokenizer
+                  better_word = BetterWordTokenizer,
+                  crf = CRFTokenizer,
+                  simple_word_punkt =  nltk.WordPunctTokenizer,
+                  fsv_paragraph = ParagraphSplitter
                   )
 
 if not do_segmentation.__doc__:

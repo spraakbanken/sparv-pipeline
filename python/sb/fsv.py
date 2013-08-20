@@ -199,7 +199,7 @@ def annotate_standard(out,input_annotation,annotator,extra_input='',delimiter="|
 
 
 
-def annotate_full(word, msd, sentence, reference, out, annotations, models, delimiter="|", affix="|", precision=":%.3f", filter=None, skip_multiword=False, lexicons=None):
+def annotate_full(word, msd, sentence, reference, out, annotations, models, delimiter="|", affix="|", precision=":%.3f", precision_filter=None, skip_multiword=False, lexicons=None):
     # TODO almost the same as normal saldo.annotate, but doesn't use msd or saldo-specific stuff
     """Use a lmf-lexicon model to annotate (pos-tagged) words.
       - word, msd are existing annotations for wordforms and part-of-speech
@@ -286,7 +286,6 @@ def findsingleword(theword,lexicons,msdtag,annotation_info):
     ann_tags_words = []
 
     for lexicon in lexicons:
-      x = lexicon.lexicon.get(theword, [])
       result = lexicon.lookup(theword)
       if result:
         ann_tags_words += result
@@ -387,6 +386,108 @@ def savemultiwords(complete_multis,sentence_tokens):
               sentence_tokens[tok_ref]["annotations"].setdefault(ann, []).extend(val)
           first = False
         
+def annotate_mwe(variants, word, reference, sentence, out, annotations, models, delimiter="|", affix="|", precision_filter=":%.3f", filter=None, lexicons=None):
+    """print multi words only
+    """
+    MAX_GAPS = 0 # Maximum number of gaps in multi-word units.
+                 # Set to 0 since many (most?) multi-word in the old lexicons are unseparable (half öre etc)
+    
+    annotations = annotations.split()
+    out = out.split()
+    assert len(out) == len(annotations), "Number of target files and annotations must be the same"
+
+    # we allow multiple lexicons, each word will get annotations from only one of the lexicons, starting the lookup in the first lexicon in the list 
+    if lexicons is None:
+      models = models.split()
+      lexicons = [saldo.SaldoLexicon(lex) for lex in models]
+    WORD = util.read_annotation(variants)
+    REALWORD = util.read_annotation(word)
+    REF = util.read_annotation(reference)
+
+    for out_file in out:
+        util.clear_annotation(out_file)
+    
+    sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
+    OUT = {}
+    output_info = {}
+
+    for sent in sentences:
+        incomplete_multis = [] # :: [{annotation, words, [ref], is_particle, lastwordWasGap, numberofgaps}]
+        complete_multis   = [] # :: ([ref], annotation, [text])
+        sentence_tokens   = {}
+        
+        for tokid in sent:
+            thewords = [w for w in WORD[tokid].split('|') if w]
+            ref  = REF[tokid]
+            word = REALWORD[tokid]
+            
+            annotation_info = {}
+            sentence_tokens[ref] = {"tokid": tokid, "word" : word, "variant": thewords, "annotations": annotation_info}
+            
+            endword = len(thewords)-1
+            for i,theword in enumerate(thewords):  
+
+              ann_tags_words = findsingleword(theword,lexicons,'',annotation_info) # emtpy msd tag
+              # For multi-word expressions
+              findvariantmultiwordexpressions(incomplete_multis,complete_multis,theword,word,ref,MAX_GAPS,ann_tags_words,i==endword)
+
+              # Loop to next token
+        
+        # Check that we don't have any unwanted overlaps
+        removeunwantedoverlaps(complete_multis)
+     
+        # Then save the rest of the multi word expressions in sentence_tokens
+        savemultiwords(complete_multis,sentence_tokens)
+
+
+        for token in sentence_tokens.values():
+            OUT[token["tokid"]] = saldo._join_annotation(token["annotations"], delimiter, affix)
+        
+        # Loop to next sentence
+
+    for out_file, annotation in zip(out, annotations):
+        print 'adding', [(tok, OUT[tok].get(annotation, affix)) for tok in OUT]
+        util.write_annotation(out_file, [(tok, OUT[tok].get(annotation, affix)) for tok in OUT], append=True)
+
+
+ 
+def findvariantmultiwordexpressions(incomplete_multis,complete_multis,theword,textword,ref,MAX_GAPS,ann_tags_words,increase):
+  # use normal findvariant instead, only textword is different, but not used anyway
+    todelfromincomplete = [] # list to keep track of which expressions that have been completed
+    
+    for i, x in enumerate(incomplete_multis):
+        seeking_word = x['words'][0] # The next word we are looking for in this multi-word expression
+        
+        if x['numberofgaps'] > MAX_GAPS:
+            todelfromincomplete.append(i)
+
+        elif seeking_word.lower() == theword.lower():
+            x['lastwordwasgap'] = False
+            del x['words'][0]
+            x['ref'].append(ref)
+            x['text'].append(textword)
+            
+            # Is current word the last word we are looking for?
+            if len(x['words']) == 0:
+                todelfromincomplete.append(i)
+                complete_multis.append((x['ref'], x['annotation'], x['text']))
+        elif increase and ref!=x['ref'][-1]:
+            # Increment gap counter if previous word was not part of a gap
+            if not x['lastwordwasgap']:       
+                x['numberofgaps'] += 1
+            x['lastwordwasgap'] = True # Marking that previous word was part of a gap
+                    
+    # Remove found word from incompletes-list
+    for x in todelfromincomplete[::-1]:
+        del incomplete_multis[x]
+    
+    # Is this word a possible start for multi-word units?
+    looking_for = [{'annotation': annotation,'words': words, 'ref': [ref], 'text' : [textword]
+                   , 'is_particle': is_particle, 'lastwordwasgap' : False, 'numberofgaps': 0}
+                  for (annotation, _, wordslist,_, is_particle) in ann_tags_words if wordslist for words in wordslist]
+    if len(looking_for) > 0:
+        incomplete_multis.extend(looking_for)
+
 
 def _concat(xs):
   return sum(xs,[])
@@ -400,6 +501,7 @@ if __name__ == '__main__':
                   posset=posset,
                   annotate_full=annotate_full,
                   annotate_fallback=annotate_fallback,
+                  annotate_mwe=annotate_mwe,
                   annotate_diachron=annotate_diachron
                   )
 
