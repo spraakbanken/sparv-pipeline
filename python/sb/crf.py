@@ -1,4 +1,3 @@
-#!/usr/bin/ruby
 import os, sys
 sys.path.append('/export/res/lb/korpus/tools/annotate/bin/crfpp/lib64/python2.7/site-packages')
 import CRFPP
