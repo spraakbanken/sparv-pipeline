@@ -4,7 +4,10 @@ import re
 import util
 import nltk
 import cPickle as pickle
-import crf # for CRF++ models
+try:
+    import crf # for CRF++ models
+except:
+    pass
 
 def do_segmentation(text, element, out, chunk, segmenter, existing_segments=None, model=None, no_pickled_model=False):
     """Segment all "chunks" (e.g. sentences) into smaller "tokens" (e.g. words),
