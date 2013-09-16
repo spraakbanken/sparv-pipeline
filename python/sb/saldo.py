@@ -93,10 +93,10 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
             annotation_precisions = normalize_precision(annotation_precisions)
             annotation_precisions.sort(reverse=True)
 
-            if filter and annotation_precisions:
-                if filter == "first":
+            if precision_filter and annotation_precisions:
+                if precision_filter == "first":
                     annotation_precisions = annotation_precisions[:1]
-                elif filter == "max":
+                elif precision_filter == "max":
                     maxprec = annotation_precisions[0][0]
                     ismax = lambda lemprec: lemprec[0] >= maxprec - PRECISION_DIFF
                     annotation_precisions = itertools.takewhile(ismax, annotation_precisions)
