@@ -17,8 +17,8 @@ def do_segmentation(text, element, out, chunk, segmenter, existing_segments=None
     """
     if model:
         if not no_pickled_model:
-          with open(model, "rb") as M:
-              model = pickle.load(M)
+            with open(model, "rb") as M:
+                model = pickle.load(M)
         segmenter_args = (model,)
     else:
         segmenter_args = ()
@@ -196,7 +196,7 @@ class PunctuationTokenizer(nltk.RegexpTokenizer):
 class BetterWordTokenizer():
     """
     A word tokenizer based on the PunktWordTokenizer code. Adds support for defining characters
-    which can not end tokens, and URL an e-mail recognition. Also handles unicode quotation marks and other
+    which can not end tokens, and URL, e-mail and smiley recognition. Also handles unicode quotation marks and other
     punctuation.
     http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt.PunktSentenceTokenizer-class.html
     """
@@ -218,23 +218,15 @@ class BetterWordTokenizer():
                           "ä.k.s", "äv", "ö.g", "ö.h", "ök", "övers"
                           ])
     
-    """import cPickle as pickle
-    
-    with open("/home/martin/sb-arkiv/tools/annotate/models/wordforms.pickle") as wf:
-        wflist = pickle.load(wf)
-        wflist = [x.replace(u"-", ur"\-").replace(u".", ur"\.").replace(u"+", ur"\+") for x in wflist]
-        _re_wordforms = "(?:" + "|".join(wflist) + ")"
-        print "Done" """
-    
     _re_url = r"(?:http|ftp|https):\/\/[\w\-_]+(?:\.[\w\-_]+)+(?:[\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?"
     _re_email = r"(?:[a-zA-Z0-9_\-\.]+)@(?:(?:\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(?:(?:[a-zA-Z0-9\-]+\.)+))(?:[a-zA-Z]{2,4}|[0-9]{1,3})(?:\]?)(?!\w)"
-
+    _re_smiley = r"(?:(?:>[:;=+])|[>:;=+])[,*]?[-~+o]?(?:\)+|\(+|\}+|\{+|\]+|\[+|\|+|\\+|/+|>+|<+|D+|[@#!OoPpXxZS$03])|>?[xX8][-~+o]?(?:\)+|\(+|\}+|\{+|\]+|\[+|\|+|\\+|/+|>+|<+|D+)"
 
     # Excludes some characters from starting word tokens
     _re_word_start = ur'''[^\(\"\'‘’–—“”»\`\\{\/\[:;&\#\*@\)}\]\-,…]'''
     
     # Characters that cannot appear within words
-    _re_non_word_chars = ur'(?:[?!)\"“”»–—\\;\/}\]\*:\'‘’\({\[…%])' #@
+    _re_non_word_chars = ur'(?:[?!)\"“”»–—\\;\/}\]\*\'‘’\({\[…%])' #@
     
     # Excludes some characters from ending word tokens (more or less same as above except '-')
     _re_word_end      = r"[\(\"\`{\[:;&\#\*@\)}\],]"
@@ -247,6 +239,8 @@ class BetterWordTokenizer():
         %(URL)s
         |
         %(Email)s
+        |
+        %(Smiley)s
         |
         %(MultiChar)s
         |
@@ -281,6 +275,7 @@ class BetterWordTokenizer():
                 {
                     'URL':       self._re_url,
                     'Email':     self._re_email,
+                    'Smiley':    self._re_smiley,
                     'NonWord':   self._re_non_word_chars, 
                     'MultiChar': self._re_multi_char_punct, 
                     'WordStart': self._re_word_start,
@@ -324,27 +319,28 @@ class CRFTokenizer():
         Implemented for Old Swedish, see crf.py for more details"""
     
     def __init__(self, model):
-      self.model = model
+        self.model = model
     
     def span_tokenize(self, s):
         return crf.segment(s, self.model)
 
-class ParagraphSplitter():
+class FSVParagraphSplitter():
+    """ A paragraph splitter for old Swedish. """
     
     def span_tokenize(self, s):
         spans = []
         temp  =  [0,0]
         first = True
         for i in range(len(s)):
-          if not first:
-            new_para = re.search(u'^\.*§',s[i:])
-            if new_para:
-              spans.append((temp[0],i))
-              temp[0] = i
-              first = True
-          else:
-            first   = False
-          temp[1] = i
+            if not first:
+                new_para = re.search(u'^\.*§',s[i:])
+                if new_para:
+                    spans.append((temp[0],i))
+                    temp[0] = i
+                    first = True
+            else:
+                first = False
+            temp[1] = i
 
         temp[1] = len(s)
         spans.append(tuple(temp))
@@ -363,7 +359,7 @@ SEGMENTERS = dict(whitespace = nltk.WhitespaceTokenizer,
                   better_word = BetterWordTokenizer,
                   crf = CRFTokenizer,
                   simple_word_punkt =  nltk.WordPunctTokenizer,
-                  fsv_paragraph = ParagraphSplitter
+                  fsv_paragraph = FSVParagraphSplitter
                   )
 
 if not do_segmentation.__doc__:
