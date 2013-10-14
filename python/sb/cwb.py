@@ -84,16 +84,15 @@ def export(format, out, order, annotations_columns, annotations_structs, columns
             cols = vrt[tok]
             new_attr_values = {}
             for elem, attrs in structs:
-                new_attr_values[elem] = ''.join(' %s="%s"' % (attr, cols[n].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
-                                                for (attr, n) in attrs if cols.get(n))
+                new_attr_values[elem] = [(attr, cols[n]) for (attr, n) in attrs if cols.get(n)]
                 if old_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
                     print >>OUT, "</%s>" % elem.encode(encoding)
                     old_attr_values[elem] = None
             for elem, _attrs in reversed(structs):
                 if new_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
-                    val = new_attr_values[elem].encode(encoding)
-                    if val.startswith(" %s=" % UNDEF): val = ""
-                    print >>OUT, "<%s%s>" % (elem.encode(encoding), val)
+                    attrstring = ''.join(' %s="%s"' % (attr, val.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
+                                  for (attr, val) in new_attr_values[elem] if not attr == UNDEF).encode(encoding)
+                    print >>OUT, "<%s%s>" % (elem.encode(encoding), attrstring)
                     old_attr_values[elem] = new_attr_values[elem]
             if format == "vrt":
                 # Whitespace and / needs to be replaced for CQP parsing to work. / is only allowed in the word itself.
