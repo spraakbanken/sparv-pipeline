@@ -50,7 +50,7 @@ def span_as_value(out, keys):
 def select(out, annotation, index, separator=None):
     """Select a specific index from the values of an annotation.
     The given annotation values are separated by 'separator',
-    default by whitespace, with at least index - 1 elements.
+    by default whitespace, with at least index + 1 elements.
     """
     if isinstance(index, basestring):
         index = int(index)
