@@ -1249,22 +1249,28 @@ _translate_saldo_parameters = {
     'pret'   : 'PRT',
     }
 
+# SALDO to SUC mapping
 _suc_tag_replacements = [
-    (r"(IE|IN|KN|PP|SN)",                          r"\1"),
-    (r"(AB|KN|PP|VB)A",                            r"\1 AN"),
-    (r"[MS]XC",                                    r"(NN|JJ|AB) .* SMS"),
-    
-    (r"AB INVAR",                                  r"(AB|PL|HA)"),
-    (r"AB (KOM|POS|SMS|SUV)",                      r"AB \1"),
-    
-    (r"AL PLU (DEF|IND)",                          r"DT UTR\+NEU PLU \1"),
-    (r"AL SIN (UTR|NEU) (DEF|IND)",                r"DT \1 SIN \2"),
-    
-    (r"AV INVAR",                                  r"(JJ POS|PC PRS) .* NOM"),
-    (r"AV POS .* (SIN|PLU) .*(NOM|GEN)",           r"(JJ POS|PC PRF) .* \1 .* \2"),
-    (r"AV (KOM|SUV) .*(NOM|GEN)",                  r"JJ \1 .* \2"),
-    (r"AV SMS",                                    r"JJ .* SMS"),
-    (r"AVA",                                       r"AB AN"),
+    (r"(IE|IN|KN|PP|SN)",             r"\1"),
+    (r"(AB|KN|PP|VB)A",               r"\1 AN"),
+    (r"[MS]XC",                       r"(NN|JJ|AB) .* SMS"),
+                                      
+    (r"AB INVAR",                     r"(AB|PL|HA)"),
+    (r"AB (KOM|POS|SMS|SUV)",         r"AB \1"),
+                                      
+    (r"AL PLU (DEF|IND)",             r"DT UTR+NEU PLU \1"),
+    (r"AL SIN (UTR|NEU) (DEF|IND)",   r"DT \1 SIN \2"),
+                                                                    
+    (r"AV INVAR",                                                    r"(JJ POS|PC PRS) .* NOM"),
+    (r"AV POS IND SIN NEU NOM",                                      r"(AB|AB POS|(JJ POS|PC PRF) NEU SIN IND NOM)"),  # snabbt
+    (r"AV POS (DEF|IND) (SIN|PLU) (MAS|NEU|UTR|UTR\+NEU) (NOM|GEN)", r"(JJ POS|PC PRF) \3 \2 (\1|IND+DEF) \4"), # ind/def doesn't exist in SALDO
+    (r"AV POS (DEF|IND) PLU (NOM|GEN)",                              r"(JJ POS|PC PRF) UTR+NEU PLU (\1|IND+DEF) \2"), # ind/def doesn't exist in SALDO
+    #(r"AV POS .* (SIN|PLU) .*(NOM|GEN)",                            r"(JJ POS|PC PRF) .* \1 .* \2"),
+    (r"AV KOM NOM",                                                  r"(JJ KOM .* NOM|AB KOM)"),
+    (r"AV SUV IND NOM",                                              r"(JJ SUV .* NOM|AB SUV)"),
+    (r"AV (KOM|SUV) .*(NOM|GEN)",                                    r"JJ \1 .* \2"),
+    (r"AV SMS",                                                      r"JJ .* SMS"),
+    (r"AVA",                                                         r"AB AN"),
     
     (r"NL (NOM|GEN)",                              r"(RG|RO) .*\1"),
     
@@ -1282,7 +1288,13 @@ _suc_tag_replacements = [
     (r"PN KOM GEN",                                r"PS"),
     (r"PN SUV (IND|DEF)",                          r"JJ SUV .* \1"),
     (r"PN (P1|P2|P3) (SIN|PLU)",                   r"PN .* \2 DEF"),
-    (r"PN .*(SIN|PLU)",                            r"PN .* \1"),
+    (r"PN POS .*(SIN|PLU)",                        r"PN .* \1"),
+    (r"PN PLU NOM",                                r"(PN .* PLU|DT UTR+NEU PLU .*|JJ POS UTR+NEU PLU .* NOM)"),
+    (r"PN PLU GEN",                                r"(PN .* PLU|DT UTR+NEU PLU .*|PS UTR+NEU SIN+PLU DEF)"),
+    (r"PN SIN UTR NOM",                            r"(PN (UTR|MAS) SIN|DT UTR SIN .*|JJ POS UTR SIN IND NOM)"),
+    (r"PN SIN UTR GEN",                            r"(PN (UTR|MAS) SIN|DT UTR SIN .*|PS UTR+NEU SIN+PLU DEF)"),
+    (r"PN SIN NEU NOM",                            r"(PN NEU SIN|DT NEU SIN .*|JJ POS NEU SIN IND NOM)"),
+    (r"PN SIN NEU GEN",                            r"(PN NEU SIN|DT NEU SIN .*|PS UTR+NEU SIN+PLU DEF)"),
     (r"PN (ACK|NOM|INVAR|KOM|SMS)",                r"(PN|HP|HS)"),
     
     (r"VB (INF|SUP) (AKT|SFO)",                    r"VB \1 \2"),
@@ -1306,7 +1318,11 @@ def _make_saldo_to_suc():
             m = re.match(pre, paramstr)
             if m:
                 break
-        sucfilter = m.expand(post).replace(" ", r"\.")
+        if m == None:
+            print pre
+            print paramstr
+            print
+        sucfilter = m.expand(post).replace(" ", r"\.").replace("+", r"\+")
         # print sucfilter, "=",
         tagmap[saldotag] = set(suctag for suctag in suc_tags
                                if re.match(sucfilter, suctag))
