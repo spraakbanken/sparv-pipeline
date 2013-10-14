@@ -215,7 +215,7 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
 def frequency(corpus, db_name, table_file, table_file2, source="", source_list="", combined=True):
     """Calculates statistics of the dependencies and saves to SQL files.
        - source is a space separated string with relations-files.
-       - source_list can be used instead of source, and should be a file containing the name of one relations-file per row.
+       - source_list can be used instead of source, and should be a file containing the name of relations files, one per row.
        - corpus is the corpus name.
        - db_name is the name of the database.
        - table_file is the filename for the SQL file which will contain the table creation SQL.
