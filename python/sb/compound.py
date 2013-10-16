@@ -30,6 +30,7 @@ def annotate(out_prefix, out_suffix, word, msd, model, delimiter="|", affix="|",
     util.write_annotation(out_prefix, OUT_p)
     util.write_annotation(out_suffix, OUT_s)
 
+
 class SaldoLexicon(object):
     """A lexicon for Saldo compound lookups.
     It is initialized from a Pickled file.
@@ -55,8 +56,8 @@ class SaldoLexicon(object):
         return [ (suffix, s[0]) for s in self.lookup(suffix)
                 if (s[2] in ("nn", "vb", "av", "ab") or s[2][-1] == "h")
                 and set(s[1]).difference(set(["c", "ci", "cm", "sms"]))
-                and (msd in s[3] or not msd) ]
-
+                and (msd in s[3] or not msd or [partial for partial in s[3] if partial.startswith(msd[:msd.find(".")])])
+                ]
 
 
 def prefixes_suffixes(w):
