@@ -1,5 +1,5 @@
 
-TARGETS = help info clean all saldom.xml saldo.pickle saldo.compound.pickle
+TARGETS = help info clean all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable
 .PHONY: help info clean all
 
 help:
@@ -8,7 +8,7 @@ help:
 clean:
 	rm -f saldom.xml
 
-all: saldo.pickle saldo.compound.pickle
+all: saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable
 
 info:
 	@echo "Subversion revision:"
@@ -27,4 +27,7 @@ saldo.pickle: saldom.xml
 
 saldo.compound.pickle: saldom.xml
 	python -m sb.compound --xml_to_pickle  --xml "saldom.xml"  --filename "$@"
+
+hunpos.saldo.suc-tags.morphtable: saldo.pickle hunpos.suc.morphtable
+	python -m sb.hunpos_morphtable --out "$@" --saldo_model "saldo.pickle" --suc "suc3.morphtable.words" --morphtable_base "hunpos.suc.morphtable"
 
