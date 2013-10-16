@@ -1,5 +1,5 @@
 ######################################################################
-# HunPos-modeller
+# Hunpos-modeller
 
 - hunpos.suc3.suc-tags.default-setting.utf8.model
 
@@ -30,3 +30,14 @@ Kodning: Latin1
 Hunpos-inställningar: -e3 -t3 / -e3 -t4 / -e4 -t4
 Mer info: http://stp.lingfil.uu.se/~evafo/resources/taggermodels/HunPosmodels.html
 
+
+######################################################################
+# Hunpos-morphtables
+
+- hunpos.saldo.suc-tags.morphtable
+
+Skapad av: Martin Hammarstedt
+Taggar: SUC3
+Kodning: UTF-8
+
+Skapad med sb.hunpos_morphtable.
