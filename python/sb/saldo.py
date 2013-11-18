@@ -35,7 +35,7 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
       - skip_multiword can be set to True to disable multi word annotations
       - word_separator is an optional character used to split the values of "word" into several word variations.  
       - lexicon: this argument cannot be set from the command line,
-        but is used in the catapult. this argument must be last
+        but is used in the catapult. This argument must be last.
     """
 
     if not lexicon:
@@ -283,7 +283,8 @@ def get_precision(msd, msdtags):
     """
     A very simple way of calculating the precision of a Saldo annotation:
     if the the word's msdtag is among the annotation's possible msdtags,
-    we return a high value (0.75), otherwise a low value (0.25).
+    we return a high value (0.75), a partial match returns 0.66, missing MSD returns 0.5,
+    and otherwise a low value (0.25).
     """
     a =  (0.5 if msd is None else
             0.75 if msd in msdtags else
