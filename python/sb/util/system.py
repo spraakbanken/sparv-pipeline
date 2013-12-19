@@ -19,7 +19,8 @@ def make_directory(*path):
     except OSError as exc:
         if exc.errno == errno.EEXIST:
             pass
-        else: raise
+        else:
+            raise
 
 def kill_process(process):
     """Kills a process, and ignores the error if it is already dead"""

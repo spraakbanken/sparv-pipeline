@@ -99,6 +99,13 @@ class MySQL(object):
         conditions = " AND ".join( ["%s = %s" % (_ATOM(k), _VALUE(v)) for (k, v) in conditions.items()] )
         self.execute(u"DELETE FROM %s WHERE %s;" % (_ATOM(table), conditions))
     
+    def drop_table(self, *tables):
+        self.execute(u"DROP TABLE IF EXISTS %s;" % _ATOMSEQ(tables))
+    
+    def rename_table(self, tables):
+        renames = [u"%s TO %s" % (_ATOM(old), _ATOM(new)) for old, new in tables.items()]
+        self.execute(u"RENAME TABLE %s;" % ", ".join(renames))
+    
     def add_row(self, table, rows, extra=""):
         if isinstance(rows, dict): rows = [rows]
         table = _ATOM(table)
