@@ -42,7 +42,7 @@ def make_morphtable(out, saldo_model, suc, morphtable_base=""):
             # Don't keep SALDO words already in SUC
             if word in tags:
                 del tags[word]
-            # If the word is not a name, and exists as lowercase in SALDO, remote it
+            # If the word is not a name, and exists as lowercase in SALDO, remove it
             elif not msd.startswith("PM") and not word.lower() == word and word.lower() in tags:
                 del tags[word.lower()]
     
