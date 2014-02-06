@@ -25,5 +25,28 @@ def fileid(out, files=None, filelist=None):
     util.write_annotation(out, OUT)
 
 
+def add(out, fileids, files=None, filelist=None):
+    """ Adds IDs for new files to an existing list of file IDs. """
+    
+    assert files or filelist, "files or filelist must be specified"
+    
+    if filelist:
+        with open(filelist, "r") as f:
+            files = f.read().strip()
+
+    files = files.split()
+    files.sort()
+
+    OUT = util.read_annotation(fileids)
+    numfiles = (len(files) + len(OUT)) * 2
+
+    for f in files:
+        if not f in OUT:
+            util.resetIdent(f, numfiles)
+            OUT[f] = util.mkIdent("", OUT.values())
+
+    util.write_annotation(out, OUT)
+
 if __name__ == '__main__':
-    util.run.main(fileid)
+    util.run.main(fileid,
+                  add=add)
