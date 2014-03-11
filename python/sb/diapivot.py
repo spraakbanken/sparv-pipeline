@@ -15,12 +15,12 @@ def annotate(out, lemgram, model,affix="|",delimiter="|"):
     OUT = {}
     
     for tokid in WORD:
-      saldo_ids = []
-      for lemgram in WORD[tokid].split(delimiter):
-        s_i = lexicon.get_exactMatch(lemgram)
-        if s_i:
-          saldo_ids += [s_i]
-      OUT[tokid] = affix + delimiter.join(set(saldo_ids)) + affix if saldo_ids else affix
+        saldo_ids = []
+        for lemgram in WORD[tokid].split(delimiter):
+            s_i = lexicon.get_exactMatch(lemgram)
+            if s_i:
+                saldo_ids += [s_i]
+        OUT[tokid] = affix + delimiter.join(set(saldo_ids)) + affix if saldo_ids else affix
     
     util.write_annotation(out, OUT)
     
@@ -46,7 +46,7 @@ class PivotLexicon(object):
     def get_exactMatch(self,word):
         s = self.lookup(word)
         if s and s[0]=="exactMatch":
-           return s[1]
+            return s[1]
 
 def _split_val(key_val):
     return key_val.rsplit(PART_DELIM1)[1]
@@ -71,14 +71,13 @@ def read_xml(xml='diapivot.xml'):
                 lemma = elem.find("Lemma")
                 dalin,saldo   = [],''
                 for form in lemma.findall("FormRepresentation"):
-  
-                  cat   = findval(form,"category")
-                  lem   = findval(form,"lemgram")
-                  if cat=="modern":
-                    saldo = lem
-                  else:
-                    match = findval(form,"match")
-                    dalin += [(lem,match)]
+                    cat   = findval(form,"category")
+                    lem   = findval(form,"lemgram")
+                    if cat=="modern":
+                        saldo = lem
+                    else:
+                        match = findval(form,"match")
+                        dalin += [(lem,match)]
 
                 [lexicon.update({d:{'saldo':saldo,'match':m}}) for (d,m) in dalin]
             
@@ -91,12 +90,12 @@ def read_xml(xml='diapivot.xml'):
     return lexicon
     
 def findval(elems,key):
-  for form in elems:
-    param,word = "",""
-    att = form.get("att","")
-    if att==key:
-      return form.get("val")
-  return ""
+    for form in elems:
+        param, word = "",""
+        att = form.get("att","")
+        if att == key:
+            return form.get("val")
+    return ""
   
 
 def test_annotations(lexicon):
