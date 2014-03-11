@@ -1,5 +1,5 @@
 # -*- coding: utf_8 -*-
-import saldo 
+import saldo
 import lemgrampos
 import util
 import diapivot
@@ -18,56 +18,56 @@ def annotate_variants(word, out, spellmodel,  delimiter="|", affix="|", model=No
     """
     # model -> {word : [(variant,dist)]}
     def parsevariant(modelfile):
-      d = {}
-      def addword(res,word,info):
-        for part in info.strip().split('^^'):
-          if part:
-            xs = part.split(',')
-            res.setdefault(word,[]).append((xs[0],float(xs[1])))
-    
-      with codecs.open(modelfile,encoding='utf8') as f:
-        for line in f:
-          wd,info    = line.split(':::')
-          addword(d,wd,info)
-      return d
- 
+        d = {}
+        def addword(res,word,info):
+            for part in info.strip().split('^^'):
+                if part:
+                    xs = part.split(',')
+                    res.setdefault(word,[]).append((xs[0],float(xs[1])))
+
+        with codecs.open(modelfile,encoding='utf8') as f:
+            for line in f:
+                wd,info    = line.split(':::')
+                addword(d,wd,info)
+        return d
+
     if model is None:
-      lexicon = saldo.SaldoLexicon(model)
+        lexicon = saldo.SaldoLexicon(model)
 
     variations = parsevariant(spellmodel)
 
 
     def findvariants(tokid,theword):
-      variants = filter(lambda (x,d):x!=theword,variations.get(theword.lower(),[]))
-      #return set(_concat([getsingleannotation(lexicon,v,'lemgram') for v,d in variants]))
-      return set([v for v,d in variants])
+        variants = filter(lambda (x,d):x!=theword,variations.get(theword.lower(),[]))
+        #return set(_concat([getsingleannotation(lexicon,v,'lemgram') for v,d in variants]))
+        return set([v for v,d in variants])
 
     annotate_standard(out,word,findvariants,split=False)
-       
-  
-     
+
+
+
 
 def extract_pos(out,lemgrams, extralemgrams='',delimiter="|", affix="|"):
-   """ Annotates each lemgram with pos-tags, extracted from this
-     - out is the resulting annotation file
-     - lemgram is the existing annotations for lemgram
-     - extralemgrams is an optional extra annotation from which more pos-tags can be extracted
-     - delimiter is the delimiter character to put between ambiguous results
-     - affix is an optional character to put before and after results
-   """
+    """ Annotates each lemgram with pos-tags, extracted from this
+      - out is the resulting annotation file
+      - lemgram is the existing annotations for lemgram
+      - extralemgrams is an optional extra annotation from which more pos-tags can be extracted
+      - delimiter is the delimiter character to put between ambiguous results
+      - affix is an optional character to put before and after results
+    """
 
-   def oktag(tag):
-     return tag is not None and tag.group(1) not in ['e','sxc','mxc']
+    def oktag(tag):
+        return tag is not None and tag.group(1) not in ['e','sxc','mxc']
 
 
-   def mkpos(tokid,thelems):
-       pos  = [re.search('\.\.(.*?)\.',lem) for lem in thelems]
-       return set(sum([lemgrampos.translatetag(p.group(1)) for p in pos if oktag(p)],[]))
+    def mkpos(tokid,thelems):
+        pos  = [re.search('\.\.(.*?)\.',lem) for lem in thelems]
+        return set(sum([lemgrampos.translatetag(p.group(1)) for p in pos if oktag(p)],[]))
 
-   annotate_standard(out,lemgrams,mkpos,extralemgrams)
- 
+    annotate_standard(out,lemgrams,mkpos,extralemgrams)
+
 def annotate_fallback(out,word,lemgram,models,key='lemgram',lexicons=None):
-    """ Annotates the words that does not already have a lemgram, according to model 
+    """ Annotates the words that does not already have a lemgram, according to model
         - out is the resulting annotation file
         - word is the words to be annotated
         - lemgram is the existing annotations for lemgram
@@ -76,40 +76,40 @@ def annotate_fallback(out,word,lemgram,models,key='lemgram',lexicons=None):
 
     # catalaunch stuff
     if lexicons is None:
-      models = models.split()
-      lexicons = [saldo.SaldoLexicon(lex) for lex in models]
+        models = models.split()
+        lexicons = [saldo.SaldoLexicon(lex) for lex in models]
 
     WORD = util.read_annotation(word)
     def annotate_empties(tokid,lemgrams):
-      fallbacks = []
-      if not lemgrams:
-        word = WORD[tokid]
-        fallbacks.extend(getsingleannotation(lexicons,word,key))
+        fallbacks = []
+        if not lemgrams:
+            word = WORD[tokid]
+            fallbacks.extend(getsingleannotation(lexicons,word,key))
 
-      return fallbacks
+        return fallbacks
 
     annotate_standard(out,lemgram,annotate_empties)
 
 
 def annotate_diachron(out,lemgram,model,extralemgrams='',delimiter="|", affix="|"):
-  """ Annotates each lemgram with its corresponding saldo_id, according to model (diapivot.pickle)
-   - out is the resulting annotation file
-   - lemgram is the existing annotations for lemgram
-   - model is the diapivot model
-   - delimiter is the delimiter character to put between ambiguous results
-   - affix is an optional character to put before and after results
-  """
+    """ Annotates each lemgram with its corresponding saldo_id, according to model (diapivot.pickle)
+     - out is the resulting annotation file
+     - lemgram is the existing annotations for lemgram
+     - model is the diapivot model
+     - delimiter is the delimiter character to put between ambiguous results
+     - affix is an optional character to put before and after results
+    """
 
-  lexicon = diapivot.PivotLexicon(model)
-  def diachronlink(tokid,thelems):
-     all_lemgrams = thelems
-     for lemgram in thelems: 
-       s_i = lexicon.get_exactMatch(lemgram)
-       if s_i:
-         all_lemgrams += [s_i]
-     return all_lemgrams
- 
-  annotate_standard(out,lemgram,diachronlink,extralemgrams)
+    lexicon = diapivot.PivotLexicon(model)
+    def diachronlink(tokid,thelems):
+        all_lemgrams = thelems
+        for lemgram in thelems:
+            s_i = lexicon.get_exactMatch(lemgram)
+            if s_i:
+                all_lemgrams += [s_i]
+        return all_lemgrams
+
+    annotate_standard(out,lemgram,diachronlink,extralemgrams)
 
 def mergemany(out, annotations, separator="|"):
     """Concatenate values from two or more annotations, with an optional separator.
@@ -121,13 +121,13 @@ def mergemany(out, annotations, separator="|"):
     if isinstance(annotations, basestring):
         annotations = annotations.split()
     for annotation in [util.read_annotation(a) for a in annotations]:
-      for key_a,val_a in annotation.items():
-        if val_a:
-          d.setdefault(key_a,[]).append(val_a)
+        for key_a,val_a in annotation.items():
+            if val_a:
+                d.setdefault(key_a,[]).append(val_a)
 
-    
+
     for key,lst in d.items():
-      OUT[key] = separator + separator.join(lst) + separator if lst else separator
+        OUT[key] = separator + separator.join(lst) + separator if lst else separator
 
     util.write_annotation(out, OUT)
 
@@ -139,10 +139,10 @@ def merge(out, left, right, separator=""):
     OUT ={}
 
     for key_a,val_a in util.read_annotation_iteritems(left):
-      val = filter(lambda x:x!=separator,[val_a, b[key_a]])
-      OUT[key_a] = separator.join(list(val)) if val else separator
+        val = filter(lambda x:x!=separator,[val_a, b[key_a]])
+        OUT[key_a] = separator.join(list(val)) if val else separator
 
-    
+
     util.write_annotation(out, OUT)
 
 def posset(out, pos, separator="|"):
@@ -151,51 +151,51 @@ def posset(out, pos, separator="|"):
     oldpos = util.read_annotation(pos)
     OUT ={}
 
-   # dummy function to annotated thepos with separators
+    # dummy function to annotated thepos with separators
     def makeset(tokid,thepos):
-      return [thepos]
+        return [thepos]
 
     annotate_standard(out,pos,makeset,split=False)
-   
+
 def annotate_standard(out,input_annotation,annotator,extra_input='',delimiter="|", affix="|",split=True):
-   """
-     Applies the 'annotator' function to the annotations in 'input_annotation' and writes the new output
-     to 'out'. The annotator function should have type :: token_id -> oldannotations -> newannotations
-     No support for multiword expressions
-   - out is the output file
-   - input_annotation is the given input annotation
-   - f is the function which is to be applied to the input annotation
-   - extra_input is an extra input annotation
-   - delimiter is the delimiter character to put between ambiguous results
-   - affix is an optional character to put before and after results
-   - split defines if the input annatoation is a set, with elements separated by delimiter
-     if so, return a list. Else, return one single element
-   """
-   def merge(d1,d2):
-     result = dict(d1)
-     for k,v in d2.iteritems():
-       if k in result:
-         result[k] = result[k]+delimiter+v
-       else:
-         result[k] = v
-     return result
- 
-   LEMS = util.read_annotation(input_annotation)
-   if extra_input:
-     LEMS = merge(LEMS,util.read_annotation(extra_input))
-     
-   util.clear_annotation(out)
-   OUT    = {}
+    """
+      Applies the 'annotator' function to the annotations in 'input_annotation' and writes the new output
+      to 'out'. The annotator function should have type :: token_id -> oldannotations -> newannotations
+      No support for multiword expressions
+    - out is the output file
+    - input_annotation is the given input annotation
+    - f is the function which is to be applied to the input annotation
+    - extra_input is an extra input annotation
+    - delimiter is the delimiter character to put between ambiguous results
+    - affix is an optional character to put before and after results
+    - split defines if the input annatoation is a set, with elements separated by delimiter
+      if so, return a list. Else, return one single element
+    """
+    def merge(d1,d2):
+        result = dict(d1)
+        for k,v in d2.iteritems():
+            if k in result:
+                result[k] = result[k]+delimiter+v
+            else:
+                result[k] = v
+        return result
 
-   for tokid in LEMS:
-       thelems = LEMS[tokid]
-       if split: 
-         thelems = [x for x in thelems.split(delimiter) if x!='']
-       
-       output_annotation = set(annotator(tokid,thelems))
-       OUT[tokid] = affix + delimiter.join(list(output_annotation)) + affix if output_annotation else affix
+    LEMS = util.read_annotation(input_annotation)
+    if extra_input:
+        LEMS = merge(LEMS,util.read_annotation(extra_input))
 
-   util.write_annotation(out, OUT)
+    util.clear_annotation(out)
+    OUT    = {}
+
+    for tokid in LEMS:
+        thelems = LEMS[tokid]
+        if split:
+            thelems = [x for x in thelems.split(delimiter) if x!='']
+
+        output_annotation = set(annotator(tokid,thelems))
+        OUT[tokid] = affix + delimiter.join(list(output_annotation)) + affix if output_annotation else affix
+
+    util.write_annotation(out, OUT)
 
 
 
@@ -221,23 +221,23 @@ def annotate_full(word, msd, sentence, reference, out, annotations, models, deli
     """
     MAX_GAPS = 0 # Maximum number of gaps in multi-word units.
                  # Set to 0 since many (most?) multi-word in the old lexicons are unseparable (half öre etc)
-    
+
     annotations = annotations.split()
     out = out.split()
     assert len(out) == len(annotations), "Number of target files and annotations must be the same"
 
     skip_multiword = (isinstance(skip_multiword, bool) and skip_multiword == True) or (isinstance(skip_multiword, basestring) and skip_multiword.lower() == "true")
-    
-    # we allow multiple lexicons, each word will get annotations from only one of the lexicons, starting the lookup in the first lexicon in the list 
+
+    # we allow multiple lexicons, each word will get annotations from only one of the lexicons, starting the lookup in the first lexicon in the list
     if lexicons is None:
-      models = models.split()
-      lexicons = [saldo.SaldoLexicon(lex) for lex in models]
+        models = models.split()
+        lexicons = [saldo.SaldoLexicon(lex) for lex in models]
     WORD = util.read_annotation(word)
     MSD = util.read_annotation(msd)
     REF = util.read_annotation(reference)
     for out_file in out:
         util.clear_annotation(out_file)
-    
+
     sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
     OUT = {}
 
@@ -245,51 +245,51 @@ def annotate_full(word, msd, sentence, reference, out, annotations, models, deli
         incomplete_multis = [] # :: [{annotation, words, [ref], is_particle, lastwordWasGap, numberofgaps}]
         complete_multis   = [] # :: ([ref], annotation)
         sentence_tokens   = {}
-        
+
         for tokid in sent:
             thewords = [w for w in WORD[tokid].split('|') if w]
             #msdtag = MSD[tokid]
             msdtag = ''
             ref = REF[tokid]
-            
+
             annotation_info = {}
             sentence_tokens[ref] = {"tokid": tokid, "word": thewords, "msd": msdtag, "annotations": annotation_info}
-            
-            for theword in thewords:  
 
-              # First use MSD tags to find the most probable single word annotations
-              ann_tags_words = findsingleword(theword,lexicons,msdtag,annotation_info)
-                            
-              # For multi-word expressions
-              if not skip_multiword:
-                findmultiwordexpressions(incomplete_multis,complete_multis,theword,ref,MAX_GAPS,ann_tags_words)
+            for theword in thewords:
 
-              # Loop to next token
-        
+                # First use MSD tags to find the most probable single word annotations
+                ann_tags_words = findsingleword(theword,lexicons,msdtag,annotation_info)
+
+                # For multi-word expressions
+                if not skip_multiword:
+                    findmultiwordexpressions(incomplete_multis,complete_multis,theword,ref,MAX_GAPS,ann_tags_words)
+
+                # Loop to next token
+
         # Check that we don't have any unwanted overlaps
         removeunwantedoverlaps(complete_multis)
-     
+
         # Then save the rest of the multi word expressions in sentence_tokens
         savemultiwords(complete_multis,sentence_tokens)
 
         for token in sentence_tokens.values():
             OUT[token["tokid"]] = saldo._join_annotation(token["annotations"], delimiter, affix)
-        
+
         # Loop to next sentence
 
     for out_file, annotation in zip(out, annotations):
         util.write_annotation(out_file, [(tok, OUT[tok].get(annotation, affix)) for tok in OUT], append=True)
 
 
-    
+
 def findsingleword(theword,lexicons,msdtag,annotation_info):
     ann_tags_words = []
 
     for lexicon in lexicons:
-      result = lexicon.lookup(theword)
-      if result:
-        ann_tags_words += result
-        break
+        result = lexicon.lookup(theword)
+        if result:
+            ann_tags_words += result
+            break
     #ann_tags_words += (lexicon.lookup(theword) for lexicon in lexicons).next()
 
     annotation_precisions = [annotation for (annotation, msdtags, wordslist,_ , _) in ann_tags_words if not wordslist]
@@ -297,20 +297,20 @@ def findsingleword(theword,lexicons,msdtag,annotation_info):
         for key in annotation:
             annotation_info.setdefault(key, []).extend(annotation[key])
     return ann_tags_words
-      
+
 
 def findmultiwordexpressions(incomplete_multis,complete_multis,theword,ref,MAX_GAPS,ann_tags_words):
     todelfromincomplete = [] # list to keep track of which expressions that have been completed
-    
+
     for i, x in enumerate(incomplete_multis):
         seeking_word = x['words'][0] # The next word we are looking for in this multi-word expression
-        
+
         # TODO '*' only in saldo
         if seeking_word == "*":
             if x['words'][1].lower() == theword.lower():
                 seeking_word = x['words'][1]
                 del x['words'][0]
-        
+
         if x['numberofgaps'] > MAX_GAPS:
             todelfromincomplete.append(i)
 
@@ -318,21 +318,21 @@ def findmultiwordexpressions(incomplete_multis,complete_multis,theword,ref,MAX_G
             x['lastwordwasgap'] = False
             del x['words'][0]
             x['ref'].append(ref)
-            
+
             # Is current word the last word we are looking for?
             if len(x['words']) == 0:
                 todelfromincomplete.append(i)
                 complete_multis.append((x['ref'], x['annotation']))
         else:
             # Increment gap counter if previous word was not part of a gap
-            if not x['lastwordwasgap']:       
+            if not x['lastwordwasgap']:
                 x['numberofgaps'] += 1
             x['lastwordwasgap'] = True # Marking that previous word was part of a gap
-                    
+
     # Remove found word from incompletes-list
     for x in todelfromincomplete[::-1]:
         del incomplete_multis[x]
-    
+
     # Is this word a possible start for multi-word units?
     looking_for = [{'annotation': annotation,'words': words, 'ref': [ref]
                    , 'is_particle': is_particle, 'lastwordwasgap' : False, 'numberofgaps': 0}
@@ -341,72 +341,72 @@ def findmultiwordexpressions(incomplete_multis,complete_multis,theword,ref,MAX_G
         incomplete_multis.extend(looking_for)
 
 def getsingleannotation(lexicons,word,key):
-  annotation = [] 
-  for lexicon in lexicons:
-    res = [ann for (ann, msdtags, wordslist, _, _) in lexicon.lookup(word) if not wordslist]
-    if res:
-      annotation = res
-      break
-  return _concat(x.get(key) for x in annotation)
+    annotation = []
+    for lexicon in lexicons:
+        res = [ann for (ann, msdtags, wordslist, _, _) in lexicon.lookup(word) if not wordslist]
+        if res:
+            annotation = res
+            break
+    return _concat(x.get(key) for x in annotation)
 
 def removeunwantedoverlaps(complete_multis):
-  remove = set()
-  for ci, c in enumerate(complete_multis):
-      for d in complete_multis:
-        if re.search(r"(.*)--.*", c[1]["lemgram"][0]).groups()[0] != re.search(r"(.*)--.*", d[1]["lemgram"][0]).groups()[0]:
-          # Both are from the same lexicon
-          remove.add(ci)
-        elif len(set(c[0]))!=len(c[0]):
-          # Since we allow many words for one token (when using spelling variation)
-          # we must make sure that two words of a mwe are not made up by two variants of one token
-          # that is, that the same reference-id is not used twice in a mwe
-          remove.add(ci)
-        elif re.search(r"\.\.(\w+)\.", c[1]["lemgram"][0]).groups()[0] == re.search(r"\.\.(\w+)\.", d[1]["lemgram"][0]).groups()[0]:
+    remove = set()
+    for ci, c in enumerate(complete_multis):
+        for d in complete_multis:
+            if re.search(r"(.*)--.*", c[1]["lemgram"][0]).groups()[0] != re.search(r"(.*)--.*", d[1]["lemgram"][0]).groups()[0]:
+                # Both are from the same lexicon
+                remove.add(ci)
+            elif len(set(c[0]))!=len(c[0]):
+                # Since we allow many words for one token (when using spelling variation)
+                # we must make sure that two words of a mwe are not made up by two variants of one token
+                # that is, that the same reference-id is not used twice in a mwe
+                remove.add(ci)
+            elif re.search(r"\.\.(\w+)\.", c[1]["lemgram"][0]).groups()[0] == re.search(r"\.\.(\w+)\.", d[1]["lemgram"][0]).groups()[0]:
             # Both are of same POS
-            if d[0][0] < c[0][0] and d[0][-1] > c[0][0] and d[0][-1] < c[0][-1]:
+                if d[0][0] < c[0][0] and d[0][-1] > c[0][0] and d[0][-1] < c[0][-1]:
                 # A case of x1 y1 x2 y2. Remove y.
-                remove.add(ci)
-            elif c[0][0] < d[0][0] and d[0][-1] == c[0][-1]:
-                #A case of x1 y1 xy2. Remove x.
-                remove.add(ci)
-  
-  for c in sorted(remove, reverse=True):
-      del complete_multis[c]
- 
+                    remove.add(ci)
+                elif c[0][0] < d[0][0] and d[0][-1] == c[0][-1]:
+                    #A case of x1 y1 xy2. Remove x.
+                    remove.add(ci)
+
+    for c in sorted(remove, reverse=True):
+        del complete_multis[c]
+
 def savemultiwords(complete_multis,sentence_tokens):
-  for c in complete_multis:
-      first = True
-      first_ref = ""
-      for tok_ref in c[0]:
-          if first:
-              first_ref = tok_ref
-          for ann, val in c[1].items():
-              if not first:
-                  val = [x + ":" + first_ref for x in val]
-              sentence_tokens[tok_ref]["annotations"].setdefault(ann, []).extend(val)
-          first = False
-        
+    for c in complete_multis:
+        first = True
+        first_ref = ""
+        for tok_ref in c[0]:
+            if first:
+                first_ref = tok_ref
+            for ann, val in c[1].items():
+                if not first:
+                    val = [x + ":" + first_ref for x in val]
+                sentence_tokens[tok_ref]["annotations"].setdefault(ann, []).extend(val)
+            first = False
+
 def annotate_mwe(variants, word, reference, sentence, out, annotations, models, delimiter="|", affix="|", precision_filter=":%.3f", filter=None, lexicons=None):
     """print multi words only
     """
     MAX_GAPS = 0 # Maximum number of gaps in multi-word units.
                  # Set to 0 since many (most?) multi-word in the old lexicons are unseparable (half öre etc)
-    
+
     annotations = annotations.split()
     out = out.split()
     assert len(out) == len(annotations), "Number of target files and annotations must be the same"
 
-    # we allow multiple lexicons, each word will get annotations from only one of the lexicons, starting the lookup in the first lexicon in the list 
+    # we allow multiple lexicons, each word will get annotations from only one of the lexicons, starting the lookup in the first lexicon in the list
     if lexicons is None:
-      models = models.split()
-      lexicons = [saldo.SaldoLexicon(lex) for lex in models]
+        models = models.split()
+        lexicons = [saldo.SaldoLexicon(lex) for lex in models]
     WORD = util.read_annotation(variants)
     REALWORD = util.read_annotation(word)
     REF = util.read_annotation(reference)
 
     for out_file in out:
         util.clear_annotation(out_file)
-    
+
     sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
     OUT = {}
     output_info = {}
@@ -415,34 +415,34 @@ def annotate_mwe(variants, word, reference, sentence, out, annotations, models, 
         incomplete_multis = [] # :: [{annotation, words, [ref], is_particle, lastwordWasGap, numberofgaps}]
         complete_multis   = [] # :: ([ref], annotation, [text])
         sentence_tokens   = {}
-        
+
         for tokid in sent:
             thewords = [w for w in WORD[tokid].split('|') if w]
             ref  = REF[tokid]
             word = REALWORD[tokid]
-            
+
             annotation_info = {}
             sentence_tokens[ref] = {"tokid": tokid, "word" : word, "variant": thewords, "annotations": annotation_info}
-            
+
             endword = len(thewords)-1
-            for i,theword in enumerate(thewords):  
+            for i,theword in enumerate(thewords):
 
-              ann_tags_words = findsingleword(theword,lexicons,'',annotation_info) # emtpy msd tag
-              # For multi-word expressions
-              findvariantmultiwordexpressions(incomplete_multis,complete_multis,theword,word,ref,MAX_GAPS,ann_tags_words,i==endword)
+                ann_tags_words = findsingleword(theword,lexicons,'',annotation_info) # emtpy msd tag
+                # For multi-word expressions
+                findvariantmultiwordexpressions(incomplete_multis,complete_multis,theword,word,ref,MAX_GAPS,ann_tags_words,i==endword)
 
-              # Loop to next token
-        
+                # Loop to next token
+
         # Check that we don't have any unwanted overlaps
         removeunwantedoverlaps(complete_multis)
-     
+
         # Then save the rest of the multi word expressions in sentence_tokens
         savemultiwords(complete_multis,sentence_tokens)
 
 
         for token in sentence_tokens.values():
             OUT[token["tokid"]] = saldo._join_annotation(token["annotations"], delimiter, affix)
-        
+
         # Loop to next sentence
 
     for out_file, annotation in zip(out, annotations):
@@ -450,14 +450,14 @@ def annotate_mwe(variants, word, reference, sentence, out, annotations, models, 
         util.write_annotation(out_file, [(tok, OUT[tok].get(annotation, affix)) for tok in OUT], append=True)
 
 
- 
+
 def findvariantmultiwordexpressions(incomplete_multis,complete_multis,theword,textword,ref,MAX_GAPS,ann_tags_words,increase):
-  # use normal findvariant instead, only textword is different, but not used anyway
+    # use normal findvariant instead, only textword is different, but not used anyway
     todelfromincomplete = [] # list to keep track of which expressions that have been completed
-    
+
     for i, x in enumerate(incomplete_multis):
         seeking_word = x['words'][0] # The next word we are looking for in this multi-word expression
-        
+
         if x['numberofgaps'] > MAX_GAPS:
             todelfromincomplete.append(i)
 
@@ -466,21 +466,21 @@ def findvariantmultiwordexpressions(incomplete_multis,complete_multis,theword,te
             del x['words'][0]
             x['ref'].append(ref)
             x['text'].append(textword)
-            
+
             # Is current word the last word we are looking for?
             if len(x['words']) == 0:
                 todelfromincomplete.append(i)
                 complete_multis.append((x['ref'], x['annotation'], x['text']))
         elif increase and ref!=x['ref'][-1]:
             # Increment gap counter if previous word was not part of a gap
-            if not x['lastwordwasgap']:       
+            if not x['lastwordwasgap']:
                 x['numberofgaps'] += 1
             x['lastwordwasgap'] = True # Marking that previous word was part of a gap
-                    
+
     # Remove found word from incompletes-list
     for x in todelfromincomplete[::-1]:
         del incomplete_multis[x]
-    
+
     # Is this word a possible start for multi-word units?
     looking_for = [{'annotation': annotation,'words': words, 'ref': [ref], 'text' : [textword]
                    , 'is_particle': is_particle, 'lastwordwasgap' : False, 'numberofgaps': 0}
@@ -490,7 +490,7 @@ def findvariantmultiwordexpressions(incomplete_multis,complete_multis,theword,te
 
 
 def _concat(xs):
-  return sum(xs,[])
+    return sum(xs,[])
 
 
 if __name__ == '__main__':
@@ -504,4 +504,3 @@ if __name__ == '__main__':
                   annotate_mwe=annotate_mwe,
                   annotate_diachron=annotate_diachron
                   )
-
