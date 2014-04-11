@@ -2,7 +2,8 @@
 import util
 import cPickle as pickle
 
-def annotate(out, lemgram, model,affix="|",delimiter="|"):
+
+def annotate(out, lemgram, model, affix="|", delimiter="|"):
     """ Annotates each lemgram with its corresponding saldo_id,
         according to model (crosslink.pickle)
       - out is the resulting annotation file
@@ -30,10 +31,12 @@ class PivotLexicon(object):
     It is initialized from a Pickled file.
     """
     def __init__(self, crossfile, verbose=True):
-        if verbose: util.log.info("Reading cross lexicon: %s", crossfile)
+        if verbose:
+            util.log.info("Reading cross lexicon: %s", crossfile)
         with open(crossfile, "rb") as F:
             self.lexicon = pickle.load(F)
-        if verbose: util.log.info("OK, read %d words", len(self.lexicon))
+        if verbose:
+            util.log.info("OK, read %d words", len(self.lexicon))
 
     def lookup(self, lem):
         """Lookup a word in the lexicon."""
@@ -43,24 +46,24 @@ class PivotLexicon(object):
             annotation_tag_pairs = self.lexicon.get(lem, []) + self.lexicon.get(lem.lower(), [])
         return map(_split_val, annotation_tag_pairs)
 
-    def get_exactMatch(self,word):
+    def get_exactMatch(self, word):
         s = self.lookup(word)
-        if s and s[0]=="exactMatch":
+        if s and s[0] == "exactMatch":
             return s[1]
+
 
 def _split_val(key_val):
     return key_val.rsplit(PART_DELIM1)[1]
 
 
-
 def read_xml(xml='diapivot.xml'):
-    """Read the XML version of crosslinked lexicon (crosslink.xml).
-    """
+    """Read the XML version of crosslinked lexicon (crosslink.xml)."""
+
     import xml.etree.cElementTree as cet
     util.log.info("Reading XML lexicon")
     lexicon = {}
     
-    context = cet.iterparse(xml, events=("start", "end")) # "start" needed to save reference to root element
+    context = cet.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
     context = iter(context)
     event, root = context.next()
 
@@ -69,17 +72,17 @@ def read_xml(xml='diapivot.xml'):
             if elem.tag == 'LexicalEntry':
  
                 lemma = elem.find("Lemma")
-                dalin,saldo   = [],''
+                dalin, saldo = [], ''
                 for form in lemma.findall("FormRepresentation"):
-                    cat   = findval(form,"category")
-                    lem   = findval(form,"lemgram")
-                    if cat=="modern":
+                    cat = findval(form, "category")
+                    lem = findval(form, "lemgram")
+                    if cat == "modern":
                         saldo = lem
                     else:
-                        match = findval(form,"match")
-                        dalin += [(lem,match)]
+                        match = findval(form, "match")
+                        dalin += [(lem, match)]
 
-                [lexicon.update({d:{'saldo':saldo,'match':m}}) for (d,m) in dalin]
+                [lexicon.update({d: {'saldo': saldo, 'match': m}}) for (d, m) in dalin]
             
             # Done parsing section. Clear tree to save memory
             if elem.tag in ['LexicalEntry', 'frame', 'resFrame']:
@@ -89,10 +92,11 @@ def read_xml(xml='diapivot.xml'):
     util.log.info("OK, read")
     return lexicon
     
-def findval(elems,key):
+
+def findval(elems, key):
     for form in elems:
-        param, word = "",""
-        att = form.get("att","")
+        param, word = "", ""
+        att = form.get("att", "")
         if att == key:
             return form.get("val")
     return ""
@@ -109,25 +113,28 @@ testwords = [u"tigerhjerta..nn.1",
 
 PART_DELIM1 = "^1"
 
+
 def save_to_picklefile(saldofile, lexicon, protocol=1, verbose=True):
     """Save a cross lexicon to a Pickled file.
     The input lexicon should be a dict:
       - lexicon = {lemgram: {saldo: str, match : str}}
     """
-    if verbose: util.log.info("Saving cross lexicon in Pickle format")
+    if verbose:
+        util.log.info("Saving cross lexicon in Pickle format")
     
     picklex = {}
     for lem in lexicon:
         lemgrams = []
         
         for saldo, match in lexicon[lem].items():
-            lemgrams.append( PART_DELIM1.join([saldo, match]))
+            lemgrams.append(PART_DELIM1.join([saldo, match]))
         
         picklex[lem] = sorted(lemgrams)
     
     with open(saldofile, "wb") as F:
         pickle.dump(picklex, F, protocol=protocol)
-    if verbose: util.log.info("OK, saved")
+    if verbose:
+        util.log.info("OK, saved")
 
 
 def xml_to_pickle(xml, filename):

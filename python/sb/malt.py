@@ -19,6 +19,7 @@ HEAD_COLUMN = 6
 DEPREL_COLUMN = 7
 UNDEF = "_"
 
+
 def maltparse(maltjar, model, out, word, pos, msd, sentence, encoding=util.UTF8, process_dict=None):
     """
     Runs the malt parser, in an already started process defined in
@@ -41,6 +42,7 @@ def maltparse(maltjar, model, out, word, pos, msd, sentence, encoding=util.UTF8,
     WORD = util.read_annotation(word)
     POS = util.read_annotation(pos)
     MSD = util.read_annotation(msd)
+
     def conll_token(nr, tok):
         form = WORD[tok]
         lemma = UNDEF
@@ -96,6 +98,7 @@ def maltparse(maltjar, model, out, word, pos, msd, sentence, encoding=util.UTF8,
 
     util.write_annotation(out, OUT, encode=" ".join)
 
+
 def maltstart(maltjar, model, encoding, send_empty_sentence=False):
     """
     Starts a malt process and returns it.
@@ -119,10 +122,8 @@ def maltstart(maltjar, model, encoding, send_empty_sentence=False):
                                     return_command=True)
 
     if send_empty_sentence:
-        """
-        Send a simple sentence to malt, this greatly enhances performance
-        for subsequent requests.
-        """
+        # Send a simple sentence to malt, this greatly enhances performance
+        # for subsequent requests.
         stdin_fd, stdout_fd = process.stdin, process.stdout
         util.log.info("Sending empty sentence to malt")
         stdin_fd.write("1\t.\t_\tMAD\tMAD\tMAD\n\n\n")
@@ -131,6 +132,7 @@ def maltstart(maltjar, model, encoding, send_empty_sentence=False):
         stdout_fd.readline()
 
     return process
+
 
 ################################################################################
 
@@ -158,6 +160,7 @@ def read_conll_file(filename, encoding=util.UTF8):
                 sentence = []
         if sentence:
             yield sentence
+
 
 def write_conll_file(sentences, filename, encoding=util.UTF8):
     with codecs.open(filename, "w", encoding=encoding) as F:

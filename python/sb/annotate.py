@@ -6,6 +6,7 @@ Small annotations that don't fit as standalone python files.
 
 import util
 
+
 def text_spans(text, chunk, out):
     """Add the text content for each edge as a new annotation."""
     corpus_text, anchor2pos, _pos2anchor = util.corpus.read_corpus_text(text)
@@ -23,7 +24,7 @@ def translate_tag(tag, out, mapping):
     """
     if isinstance(mapping, basestring):
         mapping = util.tagsets.__dict__[mapping]
-    util.write_annotation(out, ((n, mapping.get(t,t))
+    util.write_annotation(out, ((n, mapping.get(t, t))
                                 for (n, t) in util.read_annotation_iteritems(tag)))
 
 
@@ -34,6 +35,7 @@ def chain(out, annotations, default=None):
     if isinstance(annotations, basestring):
         annotations = annotations.split()
     annotations = [util.read_annotation(a) for a in annotations]
+
     def follow(key):
         for annot in annotations:
             try: key = annot[key]
@@ -116,4 +118,3 @@ if __name__ == '__main__':
                   concat=concat,
                   merge=merge
                   )
-

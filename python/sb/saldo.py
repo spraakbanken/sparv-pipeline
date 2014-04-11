@@ -12,6 +12,7 @@ import re
 ######################################################################
 # Annotate.
 
+
 def annotate(word, msd, sentence, reference, out, annotations, model,
              delimiter="|", affix="|", precision=":%.3f", precision_filter=None, min_precision=0.0, skip_multiword=False, word_separator="", lexicon=None):
     """Use the Saldo lexicon model to annotate pos-tagged words.
@@ -41,13 +42,14 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
     if not lexicon:
         lexicon = SaldoLexicon(model)
 
-    MAX_GAPS = 1 # Maximum number of gaps in multi-word units.
+    MAX_GAPS = 1  # Maximum number of gaps in multi-word units.
 
     annotations = annotations.split()
     out = out.split()
     assert len(out) == len(annotations), "Number of target files and annotations must be the same"
 
-    if isinstance(skip_multiword, basestring): skip_multiword = (skip_multiword.lower() == "true")
+    if isinstance(skip_multiword, basestring):
+        skip_multiword = (skip_multiword.lower() == "true")
     if skip_multiword:
         util.log.info("Skipping multi word annotations")
     
@@ -88,8 +90,9 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
             for w in theword:
                 ann_tags_words += lexicon.lookup(w)
             annotation_precisions = [(get_precision(msdtag, msdtags), annotation)
-                                        for (annotation, msdtags, wordslist, _, _) in ann_tags_words if not wordslist]
-            if min_precision > 0: annotation_precisions = filter(lambda x: x[0] >= min_precision, annotation_precisions)
+                                     for (annotation, msdtags, wordslist, _, _) in ann_tags_words if not wordslist]
+            if min_precision > 0:
+                annotation_precisions = filter(lambda x: x[0] >= min_precision, annotation_precisions)
             annotation_precisions = normalize_precision(annotation_precisions)
             annotation_precisions.sort(reverse=True)
 
@@ -110,7 +113,6 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
                     for key in annotation:
                         annotation_info.setdefault(key, []).extend(annotation[key])
 
-
             #######################################################
             # The rest is for multi-word expressions
 
@@ -118,7 +120,7 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
 
             for i, x in enumerate(incomplete_multis):
                 # x = (annotations, following_words, [ref], gap_allowed, is_particle, [part-of-gap-boolean, gap_count]
-                seeking_word = x[1][0] # The next word we are looking for in this multi-word expression
+                seeking_word = x[1][0]  # The next word we are looking for in this multi-word expression
 
                 # Is a gap necessary in this position for this expression?
                 if seeking_word == "*":
@@ -145,7 +147,7 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
                         # If previous word was NOT part of a gap, this is a new gap, so increment gap counter
                         if not x[5][0]:
                             x[5][1] += 1
-                        x[5][0] = True # Mark that this word was part of a gap
+                        x[5][0] = True  # Mark that this word was part of a gap
                     else:
                         # Gaps are not allowed for this multi-word expression
                         todelfromincomplete.append(i)
@@ -206,7 +208,8 @@ class SaldoLexicon(object):
     It is initialized from a Pickled file, or a space-separated text file.
     """
     def __init__(self, saldofile, verbose=True):
-        if verbose: util.log.info("Reading Saldo lexicon: %s", saldofile)
+        if verbose:
+            util.log.info("Reading Saldo lexicon: %s", saldofile)
         if saldofile.endswith('.pickle'):
             with open(saldofile, "rb") as F:
                 self.lexicon = pickle.load(F)
@@ -217,7 +220,8 @@ class SaldoLexicon(object):
                     row = line.decode(util.UTF8).split()
                     word = row.pop(0)
                     lexicon[word] = row
-        if verbose: util.log.info("OK, read %d words", len(self.lexicon))
+        if verbose:
+            util.log.info("OK, read %d words", len(self.lexicon))
 
     def lookup(self, word):
         """Lookup a word in the lexicon.
@@ -235,25 +239,27 @@ class SaldoLexicon(object):
         The input lexicon should be a dict:
           - lexicon = {wordform: {{annotation-type: annotation}: (set(possible tags), set(tuples with following words), gap-allowed-boolean, is-particle-verb-boolean)}}
         """
-        if verbose: util.log.info("Saving Saldo lexicon in Pickle format")
+        if verbose:
+            util.log.info("Saving Saldo lexicon in Pickle format")
 
         picklex = {}
         for word in lexicon:
             annotations = []
             for annotation, extra in lexicon[word].items():
                 #annotationlist = PART_DELIM3.join(annotation)
-                annotationlist = PART_DELIM2.join( k + PART_DELIM3 + PART_DELIM3.join(annotation[k]) for k in annotation)
+                annotationlist = PART_DELIM2.join(k + PART_DELIM3 + PART_DELIM3.join(annotation[k]) for k in annotation)
                 taglist =        PART_DELIM3.join(sorted(extra[0]))
                 wordlist =       PART_DELIM2.join([PART_DELIM3.join(x) for x in sorted(extra[1])])
                 gap_allowed =    "1" if extra[2] else "0"
                 particle =       "1" if extra[3] else "0"
-                annotations.append( PART_DELIM1.join([annotationlist, taglist, wordlist, gap_allowed, particle]) )
+                annotations.append(PART_DELIM1.join([annotationlist, taglist, wordlist, gap_allowed, particle]))
 
             picklex[word] = sorted(annotations)
 
         with open(saldofile, "wb") as F:
             pickle.dump(picklex, F, protocol=protocol)
-        if verbose: util.log.info("OK, saved")
+        if verbose:
+            util.log.info("OK, saved")
 
     @staticmethod
     def save_to_textfile(saldofile, lexicon, verbose=True):
@@ -262,13 +268,15 @@ class SaldoLexicon(object):
           - lexicon = {wordform: {annotation: set(possible tags)}}
         NOT UP TO DATE
         """
-        if verbose: util.log.info("Saving Saldo lexicon in text format")
+        if verbose:
+            util.log.info("Saving Saldo lexicon in text format")
         with open(saldofile, "w") as F:
             for word in sorted(lexicon):
                 annotations = [PART_DELIM.join([annotation] + sorted(postags))
-                          for annotation, postags in lexicon[word].items()]
+                               for annotation, postags in lexicon[word].items()]
                 print >>F, " ".join([word] + annotations).encode(util.UTF8)
-        if verbose: util.log.info("OK, saved")
+        if verbose:
+            util.log.info("OK, saved")
 
 
 def _join_annotation(annotation, delimiter, affix):
@@ -286,10 +294,10 @@ def get_precision(msd, msdtags):
     we return a high value (0.75), a partial match returns 0.66, missing MSD returns 0.5,
     and otherwise a low value (0.25).
     """
-    a =  (0.5 if msd is None else
-            0.75 if msd in msdtags else
-            0.66 if "." in msd and [partial for partial in msdtags if partial.startswith(msd[:msd.find(".")])] else
-            0.25)
+    a = (0.5 if msd is None else
+         0.75 if msd in msdtags else
+         0.66 if "." in msd and [partial for partial in msdtags if partial.startswith(msd[:msd.find(".")])] else
+         0.25)
     return a
 
 
@@ -304,6 +312,7 @@ PART_DELIM = "^"
 PART_DELIM1 = "^1"
 PART_DELIM2 = "^2"
 PART_DELIM3 = "^3"
+
 
 def _split_triple(annotation_tag_words):
     annotation, tags, words, gap_allowed, particle = annotation_tag_words.split(PART_DELIM1)
@@ -324,11 +333,14 @@ def _split_triple(annotation_tag_words):
 
 class hashabledict(dict):
     def __key(self):
-        return tuple((k,self[k]) for k in sorted(self))
+        return tuple((k, self[k]) for k in sorted(self))
+
     def __hash__(self):
         return hash(self.__key())
+
     def __eq__(self, other):
         return self.__key() == other.__key()
+
 
 def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC', verbose=True):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml).
@@ -340,10 +352,11 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
     #assert annotation_element in ("gf", "lem", "saldo"), "Invalid annotation element"
     import xml.etree.cElementTree as cet
     tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower())
-    if verbose: util.log.info("Reading XML lexicon")
+    if verbose:
+        util.log.info("Reading XML lexicon")
     lexicon = {}
 
-    context = cet.iterparse(xml, events=("start", "end")) # "start" needed to save reference to root element
+    context = cet.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
     context = iter(context)
     event, root = context.next()
 
@@ -365,7 +378,8 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
                 p = elem.findtext("p")
                 x_find = re.search(r"_x(\d*)_", p)
                 x_insert = x_find.groups()[0] if x_find else None
-                if x_insert == "": x_insert = "1"
+                if x_insert == "":
+                    x_insert = "1"
                 
                 # Only vbm and certain paradigms allow gaps
                 gap_allowed = (pos == "vbm" or p in (u"abm_x1_var_än", u"knm_x_ju_ju", u"pnm_x1_inte_ett_dugg", u"pnm_x1_vad_än", u"ppm_x1_för_skull"))
@@ -384,7 +398,7 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
                         # Handle multi-word expressions
                         multiwords.append(word)
                         multipart, multitotal = param.split(":")[-1].split("-")
-                        particle = bool(re.search(r"vbm_.+?p.*?\d+_", p)) # Multi-word with particle
+                        particle = bool(re.search(r"vbm_.+?p.*?\d+_", p))  # Multi-word with particle
 
                         # Add a "*" where the gap should be
                         if x_insert and multipart == x_insert:
@@ -397,7 +411,8 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
                         # Single word expressions
                         if param[-1] == "1":
                             param = param.rsplit(" ", 1)[0]
-                            if pos == "vbm": pos = "vb"
+                            if pos == "vbm":
+                                pos = "vb"
                         saldotag = " ".join([pos] + inhs + [param])
                         tags = tagmap.get(saldotag)
                         if tags:
@@ -408,7 +423,8 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
                 root.clear()
 
     test_annotations(lexicon)
-    if verbose: util.log.info("OK, read")
+    if verbose:
+        util.log.info("OK, read")
     return lexicon
 
 
@@ -417,7 +433,8 @@ def save_to_cstlemmatizer(cstfile, lexicon, encoding="latin-1", verbose=True):
     training the CST lemmatizer. The default encoding of the resulting
     file is ISO-8859-1 (Latin-1).
     """
-    if verbose: util.log.info("Saving CST lexicon")
+    if verbose:
+        util.log.info("Saving CST lexicon")
     with open(cstfile, "w") as F:
         for word in sorted(lexicon):
             for lemma in sorted(lexicon[word]):
@@ -426,7 +443,8 @@ def save_to_cstlemmatizer(cstfile, lexicon, encoding="latin-1", verbose=True):
                     # the argument -c to cstlemma, this order is -cBFT:
                     line = "%s\t%s\t%s" % (word, lemma, postag)
                     print >> F, line.encode(encoding)
-    if verbose: util.log.info("OK, saved")
+    if verbose:
+        util.log.info("OK, saved")
 
 
 ######################################################################

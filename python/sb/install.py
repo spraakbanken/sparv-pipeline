@@ -1,4 +1,4 @@
-
+# -*- coding: utf-8 -*-
 from glob import glob
 import os
 import subprocess
@@ -7,6 +7,7 @@ import re
 
 CWB_DATADIR = os.environ.get('CWB_DATADIR')
 CORPUS_REGISTRY = os.environ.get('CORPUS_REGISTRY')
+
 
 def install_corpus(host, master, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY, target_datadir=None, target_registry=None):
     """
@@ -38,11 +39,13 @@ def install_corpus(host, master, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY, 
         if target_registry:
             os.remove(os.path.join(registry, master + ".tmp"))
 
+
 def install_file(host, local_file, remote_file):
     """
     Rsyncs a file to a target host.
     """
     util.system.rsync(local_file, host, remote_file)
+
 
 def install_directory(host, directory):
     """
@@ -52,6 +55,7 @@ def install_directory(host, directory):
     for local in glob(os.path.join(directory, '*')):
         remote = os.path.basename(local).replace("#", "/")
         util.system.rsync(local, host, remote)
+
 
 def install_mysql(host, db_name, sqlfile):
     """
@@ -71,8 +75,8 @@ def install_mysql(host, db_name, sqlfile):
             util.log.info("Skipping empty file: %s (%d/%d)", sqlf, file_count, file_total)
         else:
             util.log.info("Installing MySQL database: %s, source: %s (%d/%d)", db_name, sqlf, file_count, file_total)
-            subprocess.check_call('cat %s | ssh %s "mysql %s"' %
-                                (sqlf, host, db_name), shell=True)
+            subprocess.check_call('cat %s | ssh %s "mysql %s"' % (sqlf, host, db_name), shell=True)
+
 
 def install_mysql_dump(host, db_name, tables):
     """
@@ -83,6 +87,7 @@ def install_mysql_dump(host, db_name, tables):
     util.log.info("Copying MySQL database: %s, tables: %s", db_name, ", ".join(tables))
     subprocess.check_call('mysqldump %s %s | ssh %s "mysql %s"' %
                           (db_name, " ".join(tables), host, db_name), shell=True)
+
 
 if __name__ == '__main__':
     util.run.main(corpus=install_corpus,

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import subprocess, os
+import subprocess
+import os
 import util
 from util.mysql_wrapper import MySQL
 
@@ -9,13 +10,14 @@ CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
 CQP_EXECUTABLE = "cqp"
 CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
+
 def timespan(corpus, db_name, out):
     
     corpus = corpus.upper()
     rows = []
     process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-r", CORPUS_REGISTRY, corpus, "text_datefrom", "text_dateto"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     reply, error = process.communicate()
-    if error and "Error:" in error: # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
+    if error and "Error:" in error:  # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
         if "Error: can't open attribute" in error and (".text_datefrom" in error or ".text_dateto" in error):
             util.log.info("No date information present in corpus.")
             # No date information in corpus. Calculate total token count instead.
@@ -40,11 +42,11 @@ def timespan(corpus, db_name, out):
         line[0] = int(line[0])
         
         row = {
-               "corpus": corpus,
-               "datefrom": line[1],
-               "dateto": line[2],
-               "tokens": int(line[0])
-               }
+            "corpus": corpus,
+            "datefrom": line[1],
+            "dateto": line[2],
+            "tokens": int(line[0])
+        }
         
         rows.append(row)
     
@@ -65,9 +67,9 @@ MYSQL_TIMESPAN = {'columns': [
                                ("datefrom",  "char(14)", "", "NOT NULL"),
                                ("dateto",    "char(14)", "", "NOT NULL"),
                                ("tokens",   int, None, "")],
-               'indexes': ["corpus"],
-               'default charset': 'utf8'
-               }
+                  'indexes': ["corpus"],
+                  'default charset': 'utf8'
+                  }
 
 
 if __name__ == '__main__':

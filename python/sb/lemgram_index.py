@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import os, subprocess
+import os
+import subprocess
 import util
 from util.mysql_wrapper import MySQL
 
@@ -8,9 +9,11 @@ from util.mysql_wrapper import MySQL
 CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
 CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
+
 def make_index(corpus, out, db_name, attributes=["lex", "prefix", "suffix"]):
     
-    if isinstance(attributes, basestring): attributes = attributes.split()
+    if isinstance(attributes, basestring):
+        attributes = attributes.split()
 
     attribute_fields = {"lex": "freq", "prefix": "freq_prefix", "suffix": "freq_suffix"}
     
@@ -47,7 +50,7 @@ def count_lemgrams(corpus, attributes):
     result = {}
     process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-r", CORPUS_REGISTRY, corpus] + attributes, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     reply, error = process.communicate()
-    if error and "Error:" in error: # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
+    if error and "Error:" in error:  # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
         print error
         raise Exception
     for line in reply.splitlines():

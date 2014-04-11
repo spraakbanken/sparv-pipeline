@@ -3,6 +3,7 @@
 import cPickle as pickle
 import util
 
+
 def annotate(out_prefix, out_suffix, word, msd, model, delimiter="|", affix="|", lexicon=None):
     """Divides compound words into prefix and suffix.
     - out_prefix is the resulting annotation file for prefixes
@@ -36,7 +37,8 @@ class SaldoLexicon(object):
     It is initialized from a Pickled file.
     """
     def __init__(self, saldofile, verbose=True):
-        if verbose: util.log.info("Reading Saldo lexicon: %s", saldofile)
+        if verbose:
+            util.log.info("Reading Saldo lexicon: %s", saldofile)
         with open(saldofile, "rb") as F:
             self.lexicon = pickle.load(F)
         if verbose: util.log.info("OK, read %d words", len(self.lexicon))
@@ -50,10 +52,10 @@ class SaldoLexicon(object):
         return map(_split_triple, annotation_tag_pairs)
 
     def get_prefixes(self, prefix):
-        return [ (prefix, p[0]) for p in self.lookup(prefix) if set(p[1]).intersection(set(["c", "ci"])) ]
+        return [(prefix, p[0]) for p in self.lookup(prefix) if set(p[1]).intersection(set(["c", "ci"]))]
 
     def get_suffixes(self, suffix, msd=None):
-        return [ (suffix, s[0]) for s in self.lookup(suffix)
+        return [(suffix, s[0]) for s in self.lookup(suffix)
                 if (s[2] in ("nn", "vb", "av", "ab") or s[2][-1] == "h")
                 and set(s[1]).difference(set(["c", "ci", "cm", "sms"]))
                 and (msd in s[3] or not msd or [partial for partial in s[3] if partial.startswith(msd[:msd.find(".")])])
@@ -103,7 +105,7 @@ def read_xml(xml='saldom.xml', tagset="SUC"):
     util.log.info("Reading XML lexicon")
     lexicon = {}
 
-    context = cet.iterparse(xml, events=("start", "end")) # "start" needed to save reference to root element
+    context = cet.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
     context = iter(context)
     event, root = context.next()
 
@@ -115,7 +117,8 @@ def read_xml(xml='saldom.xml', tagset="SUC"):
                 lem = elem.findtext("lem")
                 table = elem.find("table")
                 inhs = elem.findtext("inhs")
-                if inhs == "-": inhs = ""
+                if inhs == "-":
+                    inhs = ""
                 inhs = inhs.split()
 
                 for form in list(table):
@@ -144,12 +147,14 @@ PART_DELIM1 = "^1"
 PART_DELIM2 = "^2"
 PART_DELIM3 = "^3"
 
+
 def save_to_picklefile(saldofile, lexicon, protocol=1, verbose=True):
     """Save a Saldo lexicon to a Pickled file.
     The input lexicon should be a dict:
       - lexicon = {wordform: {lemgram: {"msd": set(), "pos": str}}}
     """
-    if verbose: util.log.info("Saving Saldo lexicon in Pickle format")
+    if verbose:
+        util.log.info("Saving Saldo lexicon in Pickle format")
 
     picklex = {}
     for word in lexicon:
@@ -158,13 +163,14 @@ def save_to_picklefile(saldofile, lexicon, protocol=1, verbose=True):
         for lemgram, annotation in lexicon[word].items():
             msds = PART_DELIM2.join(annotation["msd"])
             tags = PART_DELIM2.join(annotation.get("tags", []))
-            lemgrams.append( PART_DELIM1.join([lemgram, msds, annotation["pos"], tags] ) )
+            lemgrams.append(PART_DELIM1.join([lemgram, msds, annotation["pos"], tags]))
 
         picklex[word] = sorted(lemgrams)
 
     with open(saldofile, "wb") as F:
         pickle.dump(picklex, F, protocol=protocol)
-    if verbose: util.log.info("OK, saved")
+    if verbose:
+        util.log.info("OK, saved")
 
 
 def _split_triple(annotation_tag_words):

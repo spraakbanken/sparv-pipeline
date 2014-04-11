@@ -7,7 +7,7 @@ Pseudo-XML is almost like XML, but admits overlapping elements.
 
 import re
 import util
-from xmlanalyzer import problematic_entity, html_entities #, is_control_code
+from xmlanalyzer import problematic_entity, html_entities  # , is_control_code
 
 # TODO: lägg till metadata-annoteringar, ungefär som i obsolete/tei_parser.py
 # ELLER: skapa ett annat skript: headerparser.py, som endast parsar och annoterar metadata
@@ -20,20 +20,31 @@ REGEXP_TOKEN = re.compile(r"([^\W_\d]+|\d+| +|\s|.)", re.UNICODE)
 # exclude these in the first group above, hence [^\W_\d];
 # idea taken from http://stackoverflow.com/questions/1673749
 
+
 def parse(source, text, elements=[], annotations=[], skip=(), overlap=(), header="teiheader", encoding=util.UTF8, prefix="", fileid="", fileids="", headers="", header_annotations="", skip_if_empty="", skip_entities="", autoclose=""):
     """Parse one pseudo-xml source file, into the specified corpus."""
-    if isinstance(elements, basestring): elements = elements.split()
-    if isinstance(annotations, basestring): annotations = annotations.split()
-    if isinstance(skip, basestring): skip = skip.split()
-    if isinstance(overlap, basestring): overlap = overlap.split()
-    if isinstance(headers, basestring): headers = headers.split()
-    if isinstance(header_annotations, basestring): header_annotations = header_annotations.split()
-    if isinstance(skip_if_empty, basestring): skip_if_empty = skip_if_empty.split()
-    if isinstance(skip_entities, basestring): skip_entities = skip_entities.split()
-    if isinstance(autoclose, basestring): autoclose = autoclose.split()
+    if isinstance(elements, basestring):
+        elements = elements.split()
+    if isinstance(annotations, basestring):
+        annotations = annotations.split()
+    if isinstance(skip, basestring):
+        skip = skip.split()
+    if isinstance(overlap, basestring):
+        overlap = overlap.split()
+    if isinstance(headers, basestring):
+        headers = headers.split()
+    if isinstance(header_annotations, basestring):
+        header_annotations = header_annotations.split()
+    if isinstance(skip_if_empty, basestring):
+        skip_if_empty = skip_if_empty.split()
+    if isinstance(skip_entities, basestring):
+        skip_entities = skip_entities.split()
+    if isinstance(autoclose, basestring):
+        autoclose = autoclose.split()
     assert len(elements) == len(annotations), "elements and annotations must be the same length"
     assert prefix or (fileid and fileids), "either prefix or both fileid and fileids must be set"
-    if not header: header = "teiheader"
+    if not header:
+        header = "teiheader"
     header = header.split()
     
     if fileid and fileids:
@@ -70,6 +81,7 @@ def parse(source, text, elements=[], annotations=[], skip=(), overlap=(), header
 ######################################################################
 
 from HTMLParser import HTMLParser
+
 
 class XMLParser(HTMLParser):
     def __init__(self, elem_annotations, skipped_elems, can_overlap, header_elem, prefix, textfile, corpus_size, head_annotations={}, skip_if_empty=[], skip_entities=[], autoclose=[]):
@@ -212,7 +224,7 @@ class XMLParser(HTMLParser):
         else:
             end = self.anchor()
             overlaps = [t[:2] for t in self.tagstack[:ix]
-                        if ( (name, t[0]) not in self.can_overlap and (name, "*") not in self.can_overlap and (t[0], "*") not in self.can_overlap )]
+                        if ((name, t[0]) not in self.can_overlap and (name, "*") not in self.can_overlap and (t[0], "*") not in self.can_overlap)]
             if overlaps:
                 overlapping_elems = ["<%s> [%s:]" % t for t in overlaps]
                 util.log.warning(self.pos() + "Tag <%s> [%s:%s], overlapping with %s",
@@ -235,9 +247,12 @@ class XMLParser(HTMLParser):
 
     def handle_data(self, content):
         """Plain text data are tokenized and each 'token' is added to the text."""
-        if "&" in content: util.log.error(self.pos() + "XML special character: &")
-        if "<" in content: util.log.error(self.pos() + "XML special character: <")
-        if ">" in content: util.log.error(self.pos() + "XML special character: >")
+        if "&" in content:
+            util.log.error(self.pos() + "XML special character: &")
+        if "<" in content:
+            util.log.error(self.pos() + "XML special character: <")
+        if ">" in content:
+            util.log.error(self.pos() + "XML special character: >")
         if self.position == 0 and isinstance(content, unicode):
             content = content.lstrip(u"\ufeff")
         if self.inside_header:
@@ -304,7 +319,7 @@ class XMLParser(HTMLParser):
         except for the single <?XML...> on the first line.
         """
         if data.startswith(u'xml ') and data.endswith(u'?'):
-            if self.getpos() != (1,0):
+            if self.getpos() != (1, 0):
                 util.log.error(self.pos() + "XML declaration not first in file")
         else:
             util.log.error(self.pos() + "Unknown processing instruction: <?%s>", data)

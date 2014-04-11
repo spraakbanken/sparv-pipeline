@@ -3,15 +3,18 @@
 punctuation = frozenset([u',', u':', u'/', u'.', u'·', u'¶', u';', '°', '-', '—'])
 vowels = frozenset(u'aeiouvöäåy')
 
+
 def features((word, lookslikeanumber), tag):
-    return ( word.lower(), 
+    return (word.lower(),
              'CAP' if word[0].isupper() else 'NOCAP',
              word.lower()[-2:],
              'NUMLIKE' if lookslikeanumber else 'PNCLIKE' if word in punctuation else 'WRDLIKE',
-             tag )
+             tag)
+
 
 def thousands(w):
     return w.lstrip('Mm')
+
 
 def hundreds(w):
     if w.lower()[0:5] == u'dcccc':
@@ -27,6 +30,7 @@ def hundreds(w):
     else:
         return w
 
+
 def tens(w):
     if w.lower()[0:5] == u'lxxxx':
         return w[5:]
@@ -40,6 +44,7 @@ def tens(w):
         return w[1:]
     else:
         return w
+
 
 def ones(w):
     if w.lower()[0:5] == u'viiii':
@@ -55,11 +60,14 @@ def ones(w):
     else:
         return w
 
-def lookslikearomananumber(w):   
+
+def lookslikearomananumber(w):
     return not ones(tens(hundreds(thousands(w))))
+
 
 def lookslikeanarabicnumber(w):
     return any(c in '0123456789' for c in w)
+
 
 def lookslikeanumber(w):
     return lookslikearomananumber(w) or lookslikeanarabicnumber(w)
@@ -72,7 +80,6 @@ twonormdict = dict([(u'AA', u'A'), (u'Aa', u'A'), (u'aa', u'a'),
                     (u'OO', u'O'), (u'Oo', u'O'), (u'oo', u'o'),
                     (u'UU', u'V'), (u'Uu', u'V'), (u'uu', u'v'),
                     (u'WW', u'V'), (u'Ww', u'V'), (u'ww', u'v'),
-                    (u'UU', u'V'), (u'Uu', u'V'), (u'uu', u'v'),
                     (u'ÖÖ', u'Ö'), (u'Öö', u'Ö'), (u'öö', u'ö'),
                     (u'ÄÄ', u'Ä'), (u'Ää', u'Ä'), (u'ää', u'ä'), 
                     (u'ÅÅ', u'a'), (u'Åå', u'a'), (u'åå', u'a'),

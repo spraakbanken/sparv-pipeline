@@ -2,6 +2,7 @@
 
 import util
 
+
 def fileid(out, files=None, filelist=None):
     """Creates unique IDs for every file in a list, using the filenames as seed.
     The resulting IDs are written to the file specified by 'out'."""
@@ -46,6 +47,7 @@ def add(out, fileids, files=None, filelist=None):
             OUT[f] = util.mkIdent("", OUT.values())
 
     util.write_annotation(out, OUT)
+
 
 if __name__ == '__main__':
     util.run.main(fileid,

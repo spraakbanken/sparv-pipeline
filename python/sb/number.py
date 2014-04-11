@@ -8,10 +8,13 @@ from binascii import hexlify
 
 START_DEFAULT = 1
 
+
 def number_by_position(out, texts, chunks, prefix="", start=START_DEFAULT):
     """ Number chunks by their position. """
-    if isinstance(chunks, basestring): chunks = chunks.split()
-    if isinstance(texts, basestring): texts = texts.split()
+    if isinstance(chunks, basestring):
+        chunks = chunks.split()
+    if isinstance(texts, basestring):
+        texts = texts.split()
     assert len(chunks) == len(texts), "You must supply the same number of texts and chunks."
 
     anchors = []
@@ -20,7 +23,7 @@ def number_by_position(out, texts, chunks, prefix="", start=START_DEFAULT):
         anchors.append(anchor2pos)
 
     def order(chunknr, edge, _value):
-        value = anchors[chunknr][util.edgeStart(edge)] # Position in corpus
+        value = anchors[chunknr][util.edgeStart(edge)]  # Position in corpus
         return (chunknr, value)
 
     read_chunks_and_write_new_ordering(out, chunks, order, prefix, start)
@@ -58,7 +61,7 @@ def number_by_parent(out, chunks, parent_order, parent_children, prefix="", star
     PARENT_CHILDREN = util.read_annotation(parent_children)
     CHILD_ORDER = dict((cid, (pnr, cnr))
                        for (pid, pnr) in util.read_annotation_iteritems(parent_order)
-                       for (cnr, cid) in enumerate(PARENT_CHILDREN.get(pid,"").split()))
+                       for (cnr, cid) in enumerate(PARENT_CHILDREN.get(pid, "").split()))
 
     def order(chunknr, edge, _value):
         return (chunknr, CHILD_ORDER.get(edge))
@@ -105,4 +108,3 @@ if __name__ == '__main__':
                   parent=number_by_parent,
                   relative=number_relative,
                   )
-

@@ -3,6 +3,7 @@
 from collections import defaultdict
 import util
 
+
 def align(link_column, sent_column, files, out):
     if isinstance(files, basestring):
         files = files.split()

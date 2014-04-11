@@ -5,9 +5,10 @@ import util
 import nltk
 import cPickle as pickle
 try:
-    import crf # for CRF++ models
-except:
+    import crf  # for CRF++ models
+except ImportError:
     pass
+
 
 def do_segmentation(text, element, out, chunk, segmenter, existing_segments=None, model=None, no_pickled_model=False):
     """Segment all "chunks" (e.g. sentences) into smaller "tokens" (e.g. words),
@@ -36,7 +37,7 @@ def do_segmentation(text, element, out, chunk, segmenter, existing_segments=None
     CHUNK = util.read_annotation(chunk)
     positions = set(anchor2pos[anchor] for edge in CHUNK
                     for span in util.edgeSpans(edge) for anchor in span)
-    positions = sorted(set([0,len(corpus_text)]) | positions)
+    positions = sorted(set([0, len(corpus_text)]) | positions)
     chunk_spans = zip(positions, positions[1:])
 
     if existing_segments:
@@ -45,8 +46,10 @@ def do_segmentation(text, element, out, chunk, segmenter, existing_segments=None
                              for (start, end) in util.edgeSpans(edge))
         for n, (chunkstart, chunkend) in enumerate(chunk_spans[:]):
             for tokenstart, tokenend in token_spans:
-                if tokenend <= chunkstart: continue
-                if tokenstart >= chunkend: break
+                if tokenend <= chunkstart:
+                    continue
+                if tokenstart >= chunkend:
+                    break
                 if chunkstart != tokenstart:
                     chunk_spans.append((chunkstart, tokenstart))
                 chunkstart = tokenend
@@ -81,13 +84,13 @@ class ModifiedLanguageVars(nltk.tokenize.punkt.PunktLanguageVars):
     # Excludes some characters from starting word tokens
     _re_word_start = ur'''[^\(\"\'‘’–—“”»\`\\{\/\[:;&\#\*@\)}\]\-,…]'''
     # Characters that cannot appear within words
-    _re_non_word_chars = ur'(?:[?!)\"“”»–—\\;\/}\]\*:\'‘’\({\[…%])' #@
+    _re_non_word_chars = ur'(?:[?!)\"“”»–—\\;\/}\]\*:\'‘’\({\[…%])'
     # Used to realign punctuation that should be included in a sentence although it follows the period (or ?, !).
-    re_boundary_realignment = re.compile(ur'[“”"\')\]}]+?(?:\s+|(?=--)|$)',
-            re.MULTILINE)
+    re_boundary_realignment = re.compile(ur'[“”"\')\]}]+?(?:\s+|(?=--)|$)', re.MULTILINE)
 
     def __init__(self):
         pass
+
 
 class ModifiedPunktWordTokenizer(object):
     def __init__(self):
@@ -95,21 +98,21 @@ class ModifiedPunktWordTokenizer(object):
         self.is_post_sentence_token = self.lang_vars.re_boundary_realignment
         self.is_punctuated_token = re.compile(r"\w.*\.$", re.UNICODE)
         self.abbreviations = set([
-                                  "a.a", "a.a", "a.d", "agr", "a.k.a", "alt", "ang", "anm", "art", "avd", "avl", "b.b", "betr",
-                                  "b.g", "b.h", "bif", "bl.a", "b.r.b", "b.t.w", "civ.ek", "civ.ing", "co", "dir", "div",
-                                  "d.m", "doc", "dr", "d.s", "d.s.o", "d.v", "d.v.s", "d.y", "dåv", "d.ä", "e.a.g", "e.d", "eftr", "eg",
-                                  "ekon", "e.kr", "dyl", "e.d", "em", "e.m", "enl", "e.o", "etc", "e.u", "ev", "ex", "exkl", "f",
-                                  "farm", "f.d", "ff", "fig", "f.kr", "f.m", "f.n", "forts", "fr", "fr.a", "fr.o.m", "f.v.b",
-                                  "f.v.t", "f.ö", "följ", "föreg", "förf", "gr", "g.s", "h.h.k.k.h.h", "h.k.h", "h.m", "ill",
-                                  "inkl", "i.o.m", "st.f", "jur", "kand", "kap", "kl", "lb", "leg", "lic", "lisp", "m.a.a",
-                                  "mag", "m.a.o", "m.a.p", "m.fl", "m.h.a", "m.h.t", "milj", "m.m", "m.m.d", "mom", "m.v.h",
-                                  "möjl", "n.b", "näml", "nästk", "o", "o.d", "odont", "o.dyl", "omkr", "o.m.s", "op", "ordf",
-                                  "o.s.a", "o.s.v", "pers", "p.gr", "p.g.a", "pol", "prel", "prof", "rc", "ref", "resp", "r.i.p",
-                                  "rst", "s.a.s", "sek", "sekr", "sid", "sign", "sistl", "s.k", "sk", "skålp", "s.m", "s.m.s", "sp",
-                                  "spec", "s.st", "st", "stud", "särsk", "tab", "tekn", "tel", "teol", "t.ex", "tf", "t.h",
-                                  "tim", "t.o.m", "tr", "trol", "t.v", "u.p.a", "urspr", "utg", "v", "w", "v.d", "å.k",
-                                  "ä.k.s", "äv", "ö.g", "ö.h", "ök", "övers"
-                                  ])
+                                 "a.a", "a.a", "a.d", "agr", "a.k.a", "alt", "ang", "anm", "art", "avd", "avl", "b.b", "betr",
+                                 "b.g", "b.h", "bif", "bl.a", "b.r.b", "b.t.w", "civ.ek", "civ.ing", "co", "dir", "div",
+                                 "d.m", "doc", "dr", "d.s", "d.s.o", "d.v", "d.v.s", "d.y", "dåv", "d.ä", "e.a.g", "e.d", "eftr", "eg",
+                                 "ekon", "e.kr", "dyl", "e.d", "em", "e.m", "enl", "e.o", "etc", "e.u", "ev", "ex", "exkl", "f",
+                                 "farm", "f.d", "ff", "fig", "f.kr", "f.m", "f.n", "forts", "fr", "fr.a", "fr.o.m", "f.v.b",
+                                 "f.v.t", "f.ö", "följ", "föreg", "förf", "gr", "g.s", "h.h.k.k.h.h", "h.k.h", "h.m", "ill",
+                                 "inkl", "i.o.m", "st.f", "jur", "kand", "kap", "kl", "lb", "leg", "lic", "lisp", "m.a.a",
+                                 "mag", "m.a.o", "m.a.p", "m.fl", "m.h.a", "m.h.t", "milj", "m.m", "m.m.d", "mom", "m.v.h",
+                                 "möjl", "n.b", "näml", "nästk", "o", "o.d", "odont", "o.dyl", "omkr", "o.m.s", "op", "ordf",
+                                 "o.s.a", "o.s.v", "pers", "p.gr", "p.g.a", "pol", "prel", "prof", "rc", "ref", "resp", "r.i.p",
+                                 "rst", "s.a.s", "sek", "sekr", "sid", "sign", "sistl", "s.k", "sk", "skålp", "s.m", "s.m.s", "sp",
+                                 "spec", "s.st", "st", "stud", "särsk", "tab", "tekn", "tel", "teol", "t.ex", "tf", "t.h",
+                                 "tim", "t.o.m", "tr", "trol", "t.v", "u.p.a", "urspr", "utg", "v", "w", "v.d", "å.k",
+                                 "ä.k.s", "äv", "ö.g", "ö.h", "ök", "övers"
+                                 ])
 
     def span_tokenize(self, text):
         begin = 0
@@ -138,13 +141,16 @@ class ModifiedPunktWordTokenizer(object):
         
         return words
 
+
 ######################################################################
 # Training a Punkt sentence tokenizer
 
 PICKLE_PROTOCOL = 2
 
+
 def train_punkt_segmenter(textfiles, modelfile, encoding=util.UTF8):
-    if isinstance(textfiles, basestring): textfiles = textfiles.split()
+    if isinstance(textfiles, basestring):
+        textfiles = textfiles.split()
     
     util.log.info("Reading files")
     text = u""
@@ -165,6 +171,7 @@ def train_punkt_segmenter(textfiles, modelfile, encoding=util.UTF8):
 class LinebreakTokenizer(nltk.RegexpTokenizer):
     def __init__(self):
         nltk.RegexpTokenizer.__init__(self, r'\s*\n\s*', gaps=True)
+
 
 class PunctuationTokenizer(nltk.RegexpTokenizer):
     """ A very simple sentence tokenizer, separating sentences on
@@ -225,10 +232,10 @@ class BetterWordTokenizer():
     _re_word_start = ur'''[^\(\"\'‘’–—“”»\`\\{\/\[:;&\#\*@\)}\]\-,…]'''
     
     # Characters that cannot appear within words
-    _re_non_word_chars = ur'(?:[?!)\"“”»–—\\;\/}\]\*\'‘’\({\[…%])' #@
+    _re_non_word_chars = ur'(?:[?!)\"“”»–—\\;\/}\]\*\'‘’\({\[…%])'
     
     # Excludes some characters from ending word tokens (more or less same as above except '-')
-    _re_word_end      = r"[\(\"\`{\[:;&\#\*@\)}\],]"
+    _re_word_end = r"[\(\"\`{\[:;&\#\*@\)}\],]"
        
     # Hyphen and ellipsis are multi-character punctuation
     _re_multi_char_punct = r"(?:\-{2,}|\.{2,}|(?:\.\s){2,}\.)"
@@ -323,18 +330,22 @@ class CRFTokenizer():
     def span_tokenize(self, s):
         return crf.segment(s, self.model)
 
+
 class FSVParagraphSplitter():
     """ A paragraph splitter for old Swedish. """
+
+    def __init__(self):
+        pass
     
     def span_tokenize(self, s):
         spans = []
-        temp  =  [0,0]
+        temp = [0, 0]
         first = True
         for i in range(len(s)):
             if not first:
-                new_para = re.search(u'^\.*§',s[i:])
+                new_para = re.search(u'^\.*§', s[i:])
                 if new_para:
-                    spans.append((temp[0],i))
+                    spans.append((temp[0], i))
                     temp[0] = i
                     first = True
             else:
@@ -349,16 +360,16 @@ class FSVParagraphSplitter():
 
 ######################################################################
 
-SEGMENTERS = dict(whitespace = nltk.WhitespaceTokenizer,
-                  linebreaks = LinebreakTokenizer,
-                  blanklines = nltk.BlanklineTokenizer,
-                  punkt_sentence = nltk.PunktSentenceTokenizer,
-                  punkt_word = ModifiedPunktWordTokenizer,
-                  punctuation = PunctuationTokenizer,
-                  better_word = BetterWordTokenizer,
-                  crf = CRFTokenizer,
-                  simple_word_punkt =  nltk.WordPunctTokenizer,
-                  fsv_paragraph = FSVParagraphSplitter
+SEGMENTERS = dict(whitespace=nltk.WhitespaceTokenizer,
+                  linebreaks=LinebreakTokenizer,
+                  blanklines=nltk.BlanklineTokenizer,
+                  punkt_sentence=nltk.PunktSentenceTokenizer,
+                  punkt_word=ModifiedPunktWordTokenizer,
+                  punctuation=PunctuationTokenizer,
+                  better_word=BetterWordTokenizer,
+                  crf=CRFTokenizer,
+                  simple_word_punkt=nltk.WordPunctTokenizer,
+                  fsv_paragraph=FSVParagraphSplitter
                   )
 
 if not do_segmentation.__doc__:

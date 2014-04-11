@@ -10,6 +10,7 @@ TOK_SEP = "\n"
 TAG_SEP = "\t"
 TAG_COLUMN = 1
 
+
 def msdtag(model, out, word, sentence, tag_mapping=None, morphtable=None, encoding=util.UTF8):
     """POS/MSD tag using the Hunpos tagger.
     """

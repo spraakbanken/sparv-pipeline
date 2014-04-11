@@ -2,7 +2,9 @@
 """
 Creates training material from SUC2 for use with the HUNPOS-tagger.
 """
-import util.system, os.path
+import util.system
+import os.path
+
 
 def suc2hunpos(out, msd, sentences, word):
     WORD = util.read_annotation(word)
@@ -18,17 +20,19 @@ def suc2hunpos(out, msd, sentences, word):
     
     write_hunsource(out, OUT)
 
+
 def write_hunsource(file, annotation):
     util.system.make_directory(os.path.dirname(file))
     with open(file, "w") as DB:
         ctr = 0
         for key, value in annotation:
-            if value is None: value = ""
+            if value is None:
+                value = ""
             value = value.replace("\\", r"\\").replace("\n", r"\n")
             if key:
                 print >>DB, (key + "\t" + value).encode(util.UTF8)
             else:
-                print >>DB, ("").encode(util.UTF8)
+                print >>DB, "".encode(util.UTF8)
             ctr += 1
     util.log.info("Wrote %d items: %s", ctr, file)
 

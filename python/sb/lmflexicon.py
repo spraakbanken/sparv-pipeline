@@ -14,6 +14,7 @@ import util
 ######################################################################
 # converting between different file formats
 
+
 def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', verbose=True, skip_multiword=True):
     """Read the XML version of a morphological lexicon in lmf format (dalinm.xml).
     Return a lexicon dictionary, {wordform: {{annotation-type: annotation}: ( set(possible tags), set(tuples with following words) )}}
@@ -24,11 +25,11 @@ def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', verbos
     annotation_elements = annotation_elements.split()
     #assert annotation_element in ("writtenForm lemgram") "Invalid annotation element"
     import xml.etree.cElementTree as cet
-    import re
-    if verbose: util.log.info("Reading XML lexicon")
+    if verbose:
+        util.log.info("Reading XML lexicon")
     lexicon = {}
 
-    context = cet.iterparse(xml, events=("start", "end")) # "start" needed to save reference to root element
+    context = cet.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
     context = iter(context)
     event, root = context.next()
 
@@ -45,7 +46,7 @@ def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', verbos
 
                 # there may be several WordForms
                 for forms in elem.findall("WordForm"):
-                    word  = findval(forms, "writtenForm")
+                    word = findval(forms, "writtenForm")
                     param = findval(forms, "msd")
 
                     multiwords = []
@@ -56,8 +57,8 @@ def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', verbos
                             # Handle multi-word expressions
                             multiwords.append(word)
 
-                            particle = False # we don't use any particles or mwe:s with gaps
-                            mwe_gap  = False # but keep the fields so that the file format match the normal saldo-pickle format
+                            particle = False  # we don't use any particles or mwe:s with gaps
+                            mwe_gap = False  # but keep the fields so that the file format match the normal saldo-pickle format
 
                             # is it the last word in the multi word expression?
                             if i == len(wordparts) - 1:
@@ -65,7 +66,7 @@ def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', verbos
                                 multiwords = []
                         else:
                             # Single word expressions
-                            saldotag = " ".join([pos, param]) # this tag is rather useless, but at least gives some information
+                            saldotag = " ".join([pos, param])  # this tag is rather useless, but at least gives some information
                             tags = tuple([saldotag])
                             lexicon.setdefault(word, {}).setdefault(annotations, (set(), set(), mwe_gap, particle))[0].update(tags)
 
@@ -76,6 +77,7 @@ def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', verbos
         s.test_annotations(lexicon)
         util.log.info("OK, read")
     return lexicon
+
 
 def findval(elems, key):
     def iterfindval():
@@ -100,6 +102,7 @@ testwords = [u"äggtoddyarna",
              u"ackommodera",
              u"pittoresk",
              u"in"]
+
 
 def xml_to_pickle(xml, filename, annotation_elements="writtenForm lemgram", skip_multiword=True):
     """Read an XML dictionary and save as a pickle file."""

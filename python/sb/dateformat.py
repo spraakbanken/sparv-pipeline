@@ -3,9 +3,11 @@
 """
 Formats dates and times.
 """
-import datetime, re
+import datetime
+import re
 from dateutil.relativedelta import relativedelta
 import util
+
 
 def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outformat="%Y%m%d%H%M%S", splitter=None, regex=None, encoding="UTF-8"):
     """Takes dates and input formats. Converts to specified format.
@@ -28,23 +30,23 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
         if not "%y" in informat and not "%Y" in informat:
             pass
         elif not "%b" in informat and not "%B" in informat and not "%m" in informat:
-            smallest_unit = 1 # year
+            smallest_unit = 1  # year
         elif not "%d" in informat:
-            smallest_unit = 2 # month
+            smallest_unit = 2  # month
         elif not "%H" in informat and not "%I" in informat:
-            smallest_unit = 3 # day
+            smallest_unit = 3  # day
         elif not "%M" in informat:
-            smallest_unit = 4 # hour
+            smallest_unit = 4  # hour
         elif not "%S" in informat:
-            smallest_unit = 5 # minute
+            smallest_unit = 5  # minute
         else:
-            smallest_unit = 6 # second
+            smallest_unit = 6  # second
         
         return smallest_unit
     
     def get_date_length(informat):
         parts = informat.split("%")
-        length = len(parts[0]) # First value is either blank or not part of date
+        length = len(parts[0])  # First value is either blank or not part of date
         
         lengths = {"Y": 4,
                    "3Y": 3,
@@ -72,7 +74,8 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
        
     informat = informat.decode("UTF-8").split("|")
     outformat = outformat.decode("UTF-8").split("|")
-    if splitter: splitter = splitter.decode("UTF-8")
+    if splitter:
+        splitter = splitter.decode("UTF-8")
     
     assert len(outformat) == 1 or (len(outformat) == len(informat)), "The number of out-formats must be equal to one or the number of in-formats."
     
@@ -211,18 +214,19 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
         
         util.write_annotation(outto, oto)
 
+
 def strftime(dt, fmt):
     """Python datetime.strftime < 1900 workaround, taken from https://gist.github.com/2000837"""
 
-    TEMPYEAR = 9996 # We need to use a leap year to support feb 29th
+    TEMPYEAR = 9996  # We need to use a leap year to support feb 29th
 
     if dt.year < 1900:
         # create a copy of this datetime, just in case, then set the year to
         # something acceptable, then replace that year in the resulting string
         tmp_dt = datetime.datetime(TEMPYEAR, dt.month, dt.day,
-                                  dt.hour, dt.minute,
-                                  dt.second, dt.microsecond,
-                                  dt.tzinfo)
+                                   dt.hour, dt.minute,
+                                   dt.second, dt.microsecond,
+                                   dt.tzinfo)
         
         if re.search('(?<!%)((?:%%)*)(%y)', fmt):
             util.log.warning("Using %y time format with year prior to 1900 could produce unusual results!")
