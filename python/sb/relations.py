@@ -3,7 +3,9 @@
 import util
 from collections import defaultdict
 from util.mysql_wrapper import MySQL
-import re, math
+import re
+import math
+
 
 def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, ref, baseform, encoding=util.UTF8):
     """ Finds every dependency between words. """
@@ -17,29 +19,29 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
     DEPHEAD = util.read_annotation(dephead)
     DEPREL = util.read_annotation(deprel)
     REF = util.read_annotation(ref)
-    BF = util.read_annotation(baseform) # Used for "depextra"
+    BF = util.read_annotation(baseform)  # Used for "depextra"
     
     # http://stp.ling.uu.se/~nivre/swedish_treebank/dep.html
     # Tuples with relations (head, rel, dep) to be found (with indexes) and an optional tuple specifying which info should be stored and how
     rels = [
-            ({1: "VB", 2: "SS", 3: "NN"}, {1: "VB", 4: "VG", 5: "VB"}, (5, 2, 3, "")), # "han har sprungit"
-            ({1: "VB", 2: "(SS|OO|IO|OA)", 3: "NN"},),
-            ({1: "VB", 2: "(RA|TA)", 3: "(AB|NN)"},),
-            ({1: "VB", 2: "(RA|TA)", 3: "PP"}, {3: "PP", 4: "(PA|HD)", 5: "NN"}, (1, 2, 5, "%(3)s")),    # "ges vid behov"
-            ({1: "NN", 2: "(AT|ET)", 3: "JJ"},), # "stor hund"
-            ({1: "NN", 2: "ET", 3: "VB"}, {3: "VB", 4: "SS", 5: "HP"}, (1, 2, 3, "%(5)s")),     # "brödet som bakats"
-            ({1: "NN", 2: "ET", 3: "PP"}, {3: "PP", 4: "PA", 5: "(NN|PM)"}, (1, 2, 5, "%(3)s")),     # "barnen i skolan", "hundarna i Sverige"
-            ({1: "PP", 2: "PA", 3: "NN"},) # "på bordet"
-            ]
+        ({1: "VB", 2: "SS", 3: "NN"}, {1: "VB", 4: "VG", 5: "VB"}, (5, 2, 3, "")),  # "han har sprungit"
+        ({1: "VB", 2: "(SS|OO|IO|OA)", 3: "NN"},),
+        ({1: "VB", 2: "(RA|TA)", 3: "(AB|NN)"},),
+        ({1: "VB", 2: "(RA|TA)", 3: "PP"}, {3: "PP", 4: "(PA|HD)", 5: "NN"}, (1, 2, 5, "%(3)s")),  # "ges vid behov"
+        ({1: "NN", 2: "(AT|ET)", 3: "JJ"},),  # "stor hund"
+        ({1: "NN", 2: "ET", 3: "VB"}, {3: "VB", 4: "SS", 5: "HP"}, (1, 2, 3, "%(5)s")),     # "brödet som bakats"
+        ({1: "NN", 2: "ET", 3: "PP"}, {3: "PP", 4: "PA", 5: "(NN|PM)"}, (1, 2, 5, "%(3)s")),  # "barnen i skolan", "hundarna i Sverige"
+        ({1: "PP", 2: "PA", 3: "NN"},)  # "på bordet"
+    ]
 
     null_rels = [
-                 ("VB", ["OO"]), # Verb som saknar objekt
-                 ]
+        ("VB", ["OO"]),  # Verb som saknar objekt
+    ]
     
     triples = []
     
     for sentid, sent in sentences:
-        incomplete = {} # Tokens looking for heads, with head as key
+        incomplete = {}  # Tokens looking for heads, with head as key
         tokens = {}   # Tokens in same sentence, with token_id as key
         
         # Link the tokens together
@@ -122,11 +124,11 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
                                 lookup_bf = dict((key, val["bf"]) for key, val in lookup.iteritems() if isinstance(val, dict))
                                 lookup_ref = dict((key, val["ref"]) for key, val in lookup.iteritems() if isinstance(val, dict))
                                 triple = (
-                                          (lookup[str(pp[0])]["lemgram"], lookup[str(pp[0])]["word"], lookup[str(pp[0])]["pos"], lookup[str(pp[0])]["ref"]),
-                                          lookup[str(pp[1])],
-                                          (lookup[str(pp[2])]["lemgram"], lookup[str(pp[2])]["word"], lookup[str(pp[2])]["pos"], lookup[str(pp[2])]["ref"]),
-                                          (pp[3] % lookup_bf, pp[3] % lookup_ref),
-                                          sentid, lookup[str(pp[0])]["ref"], lookup[str(pp[2])]["ref"])
+                                    (lookup[str(pp[0])]["lemgram"], lookup[str(pp[0])]["word"], lookup[str(pp[0])]["pos"], lookup[str(pp[0])]["ref"]),
+                                    lookup[str(pp[1])],
+                                    (lookup[str(pp[2])]["lemgram"], lookup[str(pp[2])]["word"], lookup[str(pp[2])]["pos"], lookup[str(pp[2])]["ref"]),
+                                    (pp[3] % lookup_bf, pp[3] % lookup_ref),
+                                    sentid, lookup[str(pp[0])]["ref"], lookup[str(pp[2])]["ref"])
                         if triple:
                             triples.extend(_mutate_triple(triple))
                             break
@@ -193,11 +195,11 @@ def _mutate_triple(triple):
     for new_head in parts["head"]:
         for new_dep in parts["dep"]:
             # head: lemgram, dep: lemgram
-            triples.append( (new_head, head[2], rel, new_dep, dep[2], extra, sentid, refhead, refdep, 1, 1, 0, 0) )
+            triples.append((new_head, head[2], rel, new_dep, dep[2], extra, sentid, refhead, refdep, 1, 1, 0, 0))
             # head: wordform, dep: lemgram
-            triples.append( (head[1], head[2], rel, new_dep, dep[2], extra, sentid, refhead, refdep, 0, 1, 1, 0) )
+            triples.append((head[1], head[2], rel, new_dep, dep[2], extra, sentid, refhead, refdep, 0, 1, 1, 0))
             # head: lemgram, dep: wordform
-            triples.append( (new_head, head[2], rel, dep[1], dep[2], extra, sentid, refhead, refdep, 1, 0, 0, 1) )
+            triples.append((new_head, head[2], rel, dep[1], dep[2], extra, sentid, refhead, refdep, 1, 0, 0, 1))
 
     return triples
 
@@ -239,6 +241,7 @@ def frequency(corpus, db_name, table_file, table_file2, source="", source_list="
     
     index = 0
     string_index = -1
+    strings = {}  # ID -> string table
     freq_index = {}
     sentence_count = defaultdict(int)
     first_file = True
@@ -254,12 +257,12 @@ def frequency(corpus, db_name, table_file, table_file2, source="", source_list="
     
     for s in source_files:
         file_count += 1
+        sentences = {}
         if first_file or not combined:
-            strings = {} # ID -> string table
-            freq = {} # Frequency of (head, rel, dep)
-            rel_count = defaultdict(int) # Frequency of (rel)
-            head_rel_count = defaultdict(int) # Frequency of (head, rel)
-            dep_rel_count = defaultdict(int) # Frequency of (rel, dep)
+            freq = {}                           # Frequency of (head, rel, dep)
+            rel_count = defaultdict(int)        # Frequency of (rel)
+            head_rel_count = defaultdict(int)   # Frequency of (head, rel)
+            dep_rel_count = defaultdict(int)    # Frequency of (rel, dep)
         
         REL = util.read_annotation(s)
         basename = s.rsplit(".", 1)[0]
@@ -284,18 +287,19 @@ def frequency(corpus, db_name, table_file, table_file2, source="", source_list="
                 this_index = index
                 freq_index[(head, rel, dep)] = this_index
                 index += 1
-            #                                                                          freq      bf/wf
-            freq.setdefault(head, {}).setdefault(rel, {}).setdefault(dep, [this_index, 0, set(), [0, 0, 0, 0]])
-            freq[head][rel][dep][1] += 1 # Frequency
-            
+            #                                                                         freq    bf/wf
+            freq.setdefault(head, {}).setdefault(rel, {}).setdefault(dep, [this_index, 0, [0, 0, 0, 0]])
+            freq[head][rel][dep][1] += 1  # Frequency
+
             if sentence_count[this_index] < MAX_SENTENCES:
-                freq[head][rel][dep][2].add((sid, refh, refd)) # Sentence ID and "ref" for both head and dep
+                sentences.setdefault(this_index, set())
+                sentences[this_index].add((sid, refh, refd))  # Sentence ID and "ref" for both head and dep
                 sentence_count[this_index] += 1
 
-            freq[head][rel][dep][3][0] = freq[head][rel][dep][3][0] or bfhead
-            freq[head][rel][dep][3][1] = freq[head][rel][dep][3][1] or bfdep
-            freq[head][rel][dep][3][2] = freq[head][rel][dep][3][2] or wfhead
-            freq[head][rel][dep][3][3] = freq[head][rel][dep][3][3] or wfdep
+            freq[head][rel][dep][2][0] = freq[head][rel][dep][2][0] or bfhead
+            freq[head][rel][dep][2][1] = freq[head][rel][dep][2][1] or bfdep
+            freq[head][rel][dep][2][2] = freq[head][rel][dep][2][2] or wfhead
+            freq[head][rel][dep][2][3] = freq[head][rel][dep][2][3] or wfdep
             
             if bfhead and bfdep:
                 rel_count[rel] += 1
@@ -305,35 +309,38 @@ def frequency(corpus, db_name, table_file, table_file2, source="", source_list="
                 dep_rel_count[(dep, rel)] += 1
 
         if not combined:
-            write_sql(strings, freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, combined, first=first_file)
-            first_file = False
+            if not file_count == len(source_files):
+                # Only print string table in the last file
+                write_sql({}, sentences, freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, combined, first=first_file)
+            else:
+                write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, combined, first=first_file)
         elif not file_count == len(source_files):
-            write_sql({}, {}, {}, {}, {}, table_file, basename + ".sql", db_name, db_table, combined, first=first_file)
-            first_file = False
+            write_sql({}, sentences, {}, {}, {}, {}, table_file, basename + ".sql", db_name, db_table, combined, first=first_file)
+        
+        first_file = False
     
     if combined:
-        write_sql(strings, freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, combined, first=first_file)
+        write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, combined, first=first_file)
     
     mysql = MySQL(db_name, encoding=util.UTF8, output=table_file2)
     temp_db_table = "temp_" + db_table
     mysql.enable_keys(temp_db_table, temp_db_table + "_strings", temp_db_table + "_rel", temp_db_table + "_head_rel", temp_db_table + "_dep_rel", temp_db_table + "_sentences")
     mysql.drop_table(db_table, db_table + "_strings", db_table + "_rel", db_table + "_head_rel", db_table + "_dep_rel", db_table + "_sentences")
     mysql.rename_table({
-                        temp_db_table: db_table,
-                        temp_db_table + "_strings": db_table + "_strings",
-                        temp_db_table + "_rel": db_table + "_rel",
-                        temp_db_table + "_head_rel": db_table + "_head_rel",
-                        temp_db_table + "_dep_rel": db_table + "_dep_rel",
-                        temp_db_table + "_sentences": db_table + "_sentences"
-                        })
+        temp_db_table: db_table,
+        temp_db_table + "_strings": db_table + "_strings",
+        temp_db_table + "_rel": db_table + "_rel",
+        temp_db_table + "_head_rel": db_table + "_head_rel",
+        temp_db_table + "_dep_rel": db_table + "_dep_rel",
+        temp_db_table + "_sentences": db_table + "_sentences"
+    })
     
     util.log.info("Done creating SQL files")
     
 
-def write_sql(strings, freq, rel_count, head_rel_count, dep_rel_count, table_file, sqlfile, db_name, db_table, combined=False, first=False):
+def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, table_file, sqlfile, db_name, db_table, combined=False, first=False):
     
     db_table = "temp_" + db_table
-    update_freq_wf = "ON DUPLICATE KEY UPDATE freq = freq + VALUES(freq), wf = wf + VALUES(wf)" if not combined else ""
     update_freq = "ON DUPLICATE KEY UPDATE freq = freq + VALUES(freq)" if not combined else ""
     
     if first:
@@ -366,49 +373,41 @@ def write_sql(strings, freq, rel_count, head_rel_count, dep_rel_count, table_fil
             string, pos = string
             stringextra = None
         row = {
-               "id": index,
-               "string": string,
-               "stringextra": stringextra,
-               "pos": pos}
+            "id": index,
+            "string": string,
+            "stringextra": stringextra,
+            "pos": pos}
         rows.append(row)
     
-    mysql.add_row(db_table + "_strings", rows, update_freq)
+    mysql.add_row(db_table + "_strings", rows, "")
     
     sentence_rows = []
     rows = []
     for head, rels in freq.iteritems():
         for rel, deps in rels.iteritems():
             for dep, dep2 in deps.iteritems():
-                index, count, sids, bfwf = dep2
-                for sid in sids:
-                    srow = {
-                           "id": index,
-                           "sentence": sid[0],
-                           "start": int(sid[1]),
-                           "end": int(sid[2])
-                           }
-                    sentence_rows.append(srow)
-                
+                index, count, bfwf = dep2
+
                 row = {
-                       "id": index,
-                       "head": head,
-                       "rel": rel,
-                       "dep": dep,
-                       "freq": count,
-                       "bfhead": bfwf[0],
-                       "bfdep": bfwf[1],
-                       "wfhead": bfwf[2],
-                       "wfdep": bfwf[3]
-                       }
+                    "id": index,
+                    "head": head,
+                    "rel": rel,
+                    "dep": dep,
+                    "freq": count,
+                    "bfhead": bfwf[0],
+                    "bfdep": bfwf[1],
+                    "wfhead": bfwf[2],
+                    "wfdep": bfwf[3]
+                }
                 rows.append(row)
 
-    mysql.add_row(db_table, rows, update_freq_wf)
+    mysql.add_row(db_table, rows, update_freq)
     
     rows = []
     for rel, freq in rel_count.iteritems():
         row = {
-               "rel": rel,
-               "freq": freq}
+            "rel": rel,
+            "freq": freq}
         rows.append(row)
     
     mysql.add_row(db_table + "_rel", rows, update_freq)
@@ -417,9 +416,9 @@ def write_sql(strings, freq, rel_count, head_rel_count, dep_rel_count, table_fil
     for head_rel, freq in head_rel_count.iteritems():
         head, rel = head_rel
         row = {
-               "head": head,
-               "rel": rel,
-               "freq": freq}
+            "head": head,
+            "rel": rel,
+            "freq": freq}
         rows.append(row)
     
     mysql.add_row(db_table + "_head_rel", rows, update_freq)
@@ -428,15 +427,23 @@ def write_sql(strings, freq, rel_count, head_rel_count, dep_rel_count, table_fil
     for dep_rel, freq in dep_rel_count.iteritems():
         dep, rel = dep_rel
         row = {
-               "dep": dep,
-               "rel": rel,
-               "freq": freq}
+            "dep": dep,
+            "rel": rel,
+            "freq": freq}
         rows.append(row)
     
     mysql.add_row(db_table + "_dep_rel", rows, update_freq)
-    
 
-    
+    for index, sentenceset in sentences.iteritems():
+        for sentence in sentenceset:
+            srow = {
+                "id": index,
+                "sentence": sentence[0],
+                "start": int(sentence[1]),
+                "end": int(sentence[2])
+            }
+            sentence_rows.append(srow)
+
     mysql.add_row(db_table + "_sentences", sentence_rows)
     
     util.log.info("%s written", sqlfile)
@@ -517,10 +524,10 @@ MYSQL_SENTENCES = {'columns': [
                                ("sentence",   "varchar(64)", "", "NOT NULL"),
                                ("start",    int, None, ""),
                                ("end", int, None, "")],
-               'indexes': ["id"],
-               'default charset': 'utf8',
-               'collate': 'utf8_bin'
-               }
+                   'indexes': ["id"],
+                   'default charset': 'utf8',
+                   'collate': 'utf8_bin'
+                   }
 ################################################################################    
 
 if __name__ == '__main__':
