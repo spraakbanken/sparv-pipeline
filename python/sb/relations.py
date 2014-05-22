@@ -48,10 +48,10 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
         for token_id in sent:
             token_pos = POS[token_id]
             token_lem = LEM[token_id]
-            token_dh  = DEPHEAD[token_id]
-            token_dr  = DEPREL[token_id]
+            token_dh = DEPHEAD[token_id]
+            token_dr = DEPREL[token_id]
             token_ref = REF[token_id]
-            token_bf  = BF[token_id]
+            token_bf = BF[token_id]
             token_word = WORD[token_id].lower()
 
             if token_lem == "|":
@@ -214,7 +214,7 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
     return x_rel_y * math.log((rel * x_rel_y) / (x_rel * rel_y * 1.0), 2)
 
 
-def frequency(corpus, db_name, table_file, table_file2, source="", source_list="", combined=True):
+def frequency(corpus, db_name, table_file, table_file2, source="", source_list="", split=False):
     """Calculates statistics of the dependencies and saves to SQL files.
        - source is a space separated string with relations-files.
        - source_list can be used instead of source, and should be a file containing the name of relations files, one per row.
@@ -223,8 +223,9 @@ def frequency(corpus, db_name, table_file, table_file2, source="", source_list="
        - table_file is the filename for the SQL file which will contain the table creation SQL.
        - combined set to true leads to all the SQL commands being saved to one single file. This might not work for too large amounts of data.
     """
-    
-    combined = False if combined == "" or (isinstance(combined, str) and combined.lower() == "false") else True
+
+    if isinstance(split, basestring):
+        split = (split.lower() == "true")
     
     db_table = MYSQL_TABLE + "_" + corpus.upper()
     
@@ -244,7 +245,6 @@ def frequency(corpus, db_name, table_file, table_file2, source="", source_list="
     strings = {}  # ID -> string table
     freq_index = {}
     sentence_count = defaultdict(int)
-    first_file = True
     file_count = 0
     
     assert (source or source_list), "Missing source"
@@ -254,11 +254,14 @@ def frequency(corpus, db_name, table_file, table_file2, source="", source_list="
     elif source_list:
         with open(source_list) as insource:
             source_files = [line.strip() for line in insource]
-    
+
+    if len(source_files) == 1:
+        split = False
+
     for s in source_files:
         file_count += 1
         sentences = {}
-        if first_file or not combined:
+        if file_count == 1 or split:
             freq = {}                           # Frequency of (head, rel, dep)
             rel_count = defaultdict(int)        # Frequency of (rel)
             head_rel_count = defaultdict(int)   # Frequency of (head, rel)
@@ -308,19 +311,20 @@ def frequency(corpus, db_name, table_file, table_file2, source="", source_list="
             if (bfhead and bfdep) or wfdep:
                 dep_rel_count[(dep, rel)] += 1
 
-        if not combined:
-            if not file_count == len(source_files):
-                # Only print string table in the last file
-                write_sql({}, sentences, freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, combined, first=first_file)
+        # If not the last file
+        if not file_count == len(source_files):
+            if split:
+                # Don't print string table until the last file
+                write_sql({}, sentences, freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, split, first=(file_count == 1))
             else:
-                write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, combined, first=first_file)
-        elif not file_count == len(source_files):
-            write_sql({}, sentences, {}, {}, {}, {}, table_file, basename + ".sql", db_name, db_table, combined, first=first_file)
-        
-        first_file = False
-    
-    if combined:
-        write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, combined, first=first_file)
+                # Create empty dummy file
+                write_sql({}, sentences, {}, {}, {}, {}, table_file, basename + ".sql", db_name, db_table, split, first=(file_count == 1))
+
+    # Create the final file, including the string table
+    if split:
+        write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, split, first=(file_count == 1))
+    else:
+        write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, split, first=(file_count == 1))
     
     mysql = MySQL(db_name, encoding=util.UTF8, output=table_file2)
     temp_db_table = "temp_" + db_table
@@ -338,13 +342,13 @@ def frequency(corpus, db_name, table_file, table_file2, source="", source_list="
     util.log.info("Done creating SQL files")
     
 
-def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, table_file, sqlfile, db_name, db_table, combined=False, first=False):
+def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, table_file, sqlfile, db_name, db_table, split=False, first=False):
     
     db_table = "temp_" + db_table
-    update_freq = "ON DUPLICATE KEY UPDATE freq = freq + VALUES(freq)" if not combined else ""
+    update_freq = "ON DUPLICATE KEY UPDATE freq = freq + VALUES(freq)" if split else ""
     
     if first:
-        if combined:
+        if not split:
             del MYSQL_RELATIONS["constraints"]
             del MYSQL_REL["constraints"]
             del MYSQL_HEAD_REL["constraints"]
