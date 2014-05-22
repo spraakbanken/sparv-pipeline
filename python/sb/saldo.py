@@ -128,6 +128,7 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
                         seeking_word = x[1][1]
                         del x[1][0]
 
+                # If current gap is greater than MAX_GAPS, stop searching
                 if x[5][1] > MAX_GAPS:
                     todelfromincomplete.append(i)
                 #                                                         |  Last word may not be PP if this is a particle-multi-word |
@@ -139,7 +140,37 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
                     # Is current word the last word we are looking for?
                     if len(x[1]) == 0:
                         todelfromincomplete.append(i)
-                        complete_multis.append((x[2], x[0]))
+
+                        # Create a list of msdtags of words belonging to a completed multi-word expr.
+                        multi_reflist = x[2]
+                        msdtag_list = []
+                        for ref in multi_reflist:
+                            msdtag_list.append(MSD[sent[int(ref) - 1]])
+
+
+                        # By default do not add the current multi-word expr. to complete_multis
+                        add_current = False
+                        
+                        # For completed verb multis, check if at least one of the words is a verb:
+                        if "..vbm." in x[0]['lem'][0]:
+                            for tag in msdtag_list:
+                                if tag.startswith('VB'):
+                                    add_current = True
+                            if add_current:
+                                complete_multis.append((x[2], x[0]))
+
+                        # For completed noun multis, check if at least one of the words is a noun:
+                        elif "..nnm." in x[0]['lem'][0]:
+                            for tag in msdtag_list:
+                                if tag.startswith('NN') or tag.startswith('PM') or tag.startswith('UO'):
+                                    add_current = True
+                            if add_current:
+                                complete_multis.append((x[2], x[0]))
+
+                        else:
+                            complete_multis.append((x[2], x[0]))
+                        
+
                 else:
                     # We've reached a gap
                     # Are gaps allowed?
@@ -148,13 +179,21 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
                         if not x[5][0]:
                             x[5][1] += 1
                         x[5][0] = True  # Mark that this word was part of a gap
+
+                        # Avoid having another verb within a verb multi-word expression:
+                        # delete current incomplete multi-word expr. if it starts with a verb and if current word has POS tag VB
+                        if "..vbm." in x[0]['lem'][0] and msdtag.startswith("VB"):
+                            todelfromincomplete.append(i)
+
                     else:
                         # Gaps are not allowed for this multi-word expression
                         todelfromincomplete.append(i)
 
+            # Delete seeking words from incomplete_multis
             for x in todelfromincomplete[::-1]:
                 del incomplete_multis[x]
 
+            # Collect possible multiword expressions
             if not skip_multiword:
                 # Is this word a possible beginning of a multi-word expression?
                 looking_for = [(annotation, words, [ref], gap_allowed, is_particle, [False, 0]) for (annotation, _, wordslist, gap_allowed, is_particle) in ann_tags_words if wordslist for words in wordslist]
