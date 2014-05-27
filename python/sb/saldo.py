@@ -119,7 +119,7 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
             todelfromincomplete = []
 
             for i, x in enumerate(incomplete_multis):
-                # x = (annotations, following_words, [ref], gap_allowed, is_particle, [part-of-gap-boolean, gap_count]
+                # x = (annotations, following_words, [ref], gap_allowed, is_particle, [part-of-gap-boolean, gap_count])
                 seeking_word = x[1][0]  # The next word we are looking for in this multi-word expression
 
                 # Is a gap necessary in this position for this expression?
@@ -141,35 +141,27 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
                     if len(x[1]) == 0:
                         todelfromincomplete.append(i)
 
-                        # Create a list of msdtags of words belonging to a completed multi-word expr.
-                        multi_reflist = x[2]
+                        # Create a list of msdtags of words belonging to the completed multi-word expr.
                         msdtag_list = []
-                        for ref in multi_reflist:
+                        for ref in x[2]:
                             msdtag_list.append(MSD[sent[int(ref) - 1]])
 
-
-                        # By default do not add the current multi-word expr. to complete_multis
-                        add_current = False
-                        
-                        # For completed verb multis, check if at least one of the words is a verb:
+                        # For completed verb multis, check that at least one of the words is a verb:
                         if "..vbm." in x[0]['lem'][0]:
                             for tag in msdtag_list:
                                 if tag.startswith('VB'):
-                                    add_current = True
-                            if add_current:
-                                complete_multis.append((x[2], x[0]))
+                                    complete_multis.append((x[2], x[0]))
+                                    break
 
-                        # For completed noun multis, check if at least one of the words is a noun:
+                        # For completed noun multis, check that at least one of the words is a noun:
                         elif "..nnm." in x[0]['lem'][0]:
                             for tag in msdtag_list:
-                                if tag.startswith('NN') or tag.startswith('PM') or tag.startswith('UO'):
-                                    add_current = True
-                            if add_current:
-                                complete_multis.append((x[2], x[0]))
+                                if tag[:2] in ('NN', 'PM', 'UO'):
+                                    complete_multis.append((x[2], x[0]))
+                                    break
 
                         else:
                             complete_multis.append((x[2], x[0]))
-                        
 
                 else:
                     # We've reached a gap
@@ -370,7 +362,7 @@ def _split_triple(annotation_tag_words):
 ######################################################################
 # converting between different file formats
 
-class hashabledict(dict):
+class HashableDict(dict):
     def __key(self):
         return tuple((k, self[k]) for k in sorted(self))
 
@@ -402,7 +394,7 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
     for event, elem in context:
         if event == "end":
             if elem.tag == 'LexicalEntry':
-                annotations = hashabledict()
+                annotations = HashableDict()
 
                 for a in annotation_elements:
                     annotations[a] = tuple(x.text for x in elem.findall(a))
