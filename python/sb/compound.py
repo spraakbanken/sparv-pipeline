@@ -2,12 +2,13 @@
 
 import cPickle as pickle
 import util
+import itertools
 
 
-def annotate(out_prefix, out_suffix, word, msd, model, delimiter="|", affix="|", lexicon=None):
+def annotate(out_complemgrams, out_compwf, word, msd, model, delimiter="|", compdelim="+", affix="|", lexicon=None):
     """Divides compound words into prefix and suffix.
-    - out_prefix is the resulting annotation file for prefixes
-    - out_suffix is the resulting annotation file for suffixes
+    - out_complemgram is the resulting annotation file for compound lemgrams
+    - out_compwf is the resulting annotation file for compound wordforms
     - word and msd are existing annotations for wordforms and MSDs
     - model is the Saldo compound model
     - lexicon: this argument cannot be set from the command line,
@@ -20,16 +21,25 @@ def annotate(out_prefix, out_suffix, word, msd, model, delimiter="|", affix="|",
     WORD = util.read_annotation(word)
     MSD = util.read_annotation(msd)
 
-    OUT_p = {}
-    OUT_s = {}
+    OUT_complem = {}
+    OUT_compwf = {}
 
     for tokid in WORD:
         compounds = compound(lexicon, WORD[tokid], MSD[tokid])
-        OUT_p[tokid] = affix + delimiter.join(set(c[0][1] for c in compounds)) + affix if compounds else affix
-        OUT_s[tokid] = affix + delimiter.join(set(c[1][1] for c in compounds)) + affix if compounds else affix
+        # compounds = list of compound lists which contain compound tuples; e.g. glasskål:
+        # [[(('glas', 'glas..nn.1'), ('skål', 'skål..nn.1')), (('glas', 'glasa..vb.1'), ('skål', 'skål..nn.1'))], ...]
+        complem_list = []
+        compwf_list = []
+        for comp_list in compounds:
+            for comp in comp_list:
+                complem_list.append(compdelim.join(affix[1] for affix in comp))
+            compwf_list.append(compdelim.join(affix[0] for affix in comp_list[0]))
 
-    util.write_annotation(out_prefix, OUT_p)
-    util.write_annotation(out_suffix, OUT_s)
+        OUT_complem[tokid] = affix + delimiter.join(complem_list) + affix if compounds else affix
+        OUT_compwf[tokid] = affix + delimiter.join(compwf_list) + affix if compounds else affix
+
+    util.write_annotation(out_complemgrams, OUT_complem)
+    util.write_annotation(out_compwf, OUT_compwf)
 
 
 class SaldoLexicon(object):
@@ -62,9 +72,41 @@ class SaldoLexicon(object):
                 ]
 
 
-def prefixes_suffixes(w):
-    """ Split a word into every possible prefix-suffix pair. """
-    return [(w[:i], w[i:]) for i in xrange(1, len(w))]
+def split_word(saldo_lexicon, w):
+    """Split word w at every possible position."""
+    letters = [l for l in w]
+    invalid_spans = set()
+    # create list of possible splitpoint indices for w
+    nsplits = range(1, len(letters))
+    for n in nsplits:
+        for splitpoint in [i for i in itertools.combinations(nsplits, n)]:
+            # create list of affix spans
+            spans = zip((0,) + splitpoint, splitpoint + (None,))
+            # check if current compound contains no invalid affix
+            if set(spans).difference(invalid_spans) == set(spans):
+                comp = [''.join(letters[i:j]) for i, j in spans]
+                suffix = comp[len(comp)-1]
+                # if suffix has no valid analysis, add its span to invalid_spans
+                if not has_suffix_analysis(saldo_lexicon, suffix):
+                    invalid_spans.add(spans[len(comp)-1])
+                # if an affixes has no valid prefix analysis, add it to invalid_spans
+                else:
+                    for i, affix in enumerate(comp[:-1]):
+                        if saldo_lexicon.get_prefixes(affix) == []:
+                            invalid_spans.add(spans[i])
+                            comp = None
+                    if comp:
+                        yield comp
+
+
+def has_suffix_analysis(saldo_lexicon, suffix):
+    """Check if suffix has a valid analysis in saldo."""
+    # check if suffix contains at least 2 letters and is not an exeption
+    if len(suffix) > 1 and not exception(suffix):
+        # check if suffix has an analysis in saldo
+        if not saldo_lexicon.get_suffixes(suffix) == []: 
+            return True
+    return False
 
 
 def exception(w):
@@ -72,29 +114,49 @@ def exception(w):
     return w in [
         "il", u"ör", "en", "ens", "ar", "ars",
         "or", "ors", "ur", "urs", u"lös", "tik", "bar",
-        "lik", "het", "hets", "lig", "ligt", "te", "tet", "tets",
-        "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l",
-        "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x",
-        "y", "z", u"ä"]
+        "lik", "het", "hets", "lig", "ligt", "te", "tet", "tets"]
 
 
-def sandhi(prefix, suffix):
-    """ ("glas", "skål") --> ("glas", "skål"), ("glass", "skål") """
-    if prefix[-1] == suffix[0] and prefix[-1] in "bdfgjlmnprstv":
-        return [(prefix, suffix), (prefix + prefix[-1], suffix)]
-    else:
-        return [(prefix, suffix)]
+def sandhi(compound):
+    """ Expand prefix if its last letter == first letter of suffix.
+    ("glas", "skål") --> ("glas", "skål"), ("glass", "skål") """
+    combinations = []
+    for index in range(len(compound)-1):
+        current_prefix = compound[index]
+        current_suffix = compound[index+1]
+        # last prefix letter == first suffix letter; and prefix ends in one of "bdfgjlmnprstv"
+        if current_prefix[-1] == current_suffix[0] and current_prefix[-1] in "bdfgjlmnprstv":
+            combinations.append((current_prefix, current_prefix + current_prefix[-1]))
+        else:
+            combinations.append((current_prefix, current_prefix))
+    suffix = compound[len(compound)-1]
+    combinations.append((suffix, suffix))
+    # return a list of all possible affix combinations
+    return list(set(itertools.product(*(combinations))))
 
 
 def compound(saldo_lexicon, w, msd=None):
-    compounds = []
-    for (_prefix, _suffix) in prefixes_suffixes(w):
-        if not(exception(_suffix)):
-            for (prefix, suffix) in sandhi(_prefix, _suffix):
-                anap = saldo_lexicon.get_prefixes(prefix)
-                anas = saldo_lexicon.get_suffixes(suffix, msd)
-                compounds.extend([(p, s) for p in anap for s in anas])
-    return compounds
+    """Create a list of compound analyses for word w."""
+    in_compounds = [i for i in split_word(saldo_lexicon, w)]
+    out_compounds = []
+    for _comp in in_compounds:
+        # expand prefixes if possible
+        for comp in sandhi(_comp):
+            current_combinations = []
+            # get prefix analysis for every affix
+            for affix in comp[:len(comp)-1]:
+                anap = saldo_lexicon.get_prefixes(affix)
+                if len(anap) == 0:
+                    break
+                current_combinations.append(anap)
+            # get suffix analysis for suffix
+            anas = saldo_lexicon.get_suffixes(comp[len(comp)-1], msd)
+            # check if every affix in comp has an analysis
+            if len(current_combinations) < len(comp)-1 or len(anas) == 0:
+                break
+            current_combinations.append(anas)
+            out_compounds.append(list(itertools.product(*(current_combinations))))
+    return out_compounds
 
 
 def read_xml(xml='saldom.xml', tagset="SUC"):
