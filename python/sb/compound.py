@@ -51,7 +51,8 @@ class SaldoLexicon(object):
             util.log.info("Reading Saldo lexicon: %s", saldofile)
         with open(saldofile, "rb") as F:
             self.lexicon = pickle.load(F)
-        if verbose: util.log.info("OK, read %d words", len(self.lexicon))
+        if verbose:
+            util.log.info("OK, read %d words", len(self.lexicon))
 
     def lookup(self, word):
         """Lookup a word in the lexicon."""
@@ -73,40 +74,80 @@ class SaldoLexicon(object):
 
 
 def split_word(saldo_lexicon, w):
-    """Split word w at every possible position."""
-    letters = [l for l in w]
+    """Split word w into every possible combination of substrings."""
     invalid_spans = set()
-    # create list of possible splitpoint indices for w
-    nsplits = range(1, len(letters))
+    valid_spans = set()
+    # Create list of possible splitpoint indices for w
+    nsplits = range(1, len(w))
+
     for n in nsplits:
-        for splitpoint in [i for i in itertools.combinations(nsplits, n)]:
-            # create list of affix spans
-            spans = zip((0,) + splitpoint, splitpoint + (None,))
-            # check if current compound contains no invalid affix
-            if set(spans).difference(invalid_spans) == set(spans):
-                comp = [''.join(letters[i:j]) for i, j in spans]
-                suffix = comp[len(comp)-1]
-                # if suffix has no valid analysis, add its span to invalid_spans
-                if not has_suffix_analysis(saldo_lexicon, suffix):
-                    invalid_spans.add(spans[len(comp)-1])
-                # if an affixes has no valid prefix analysis, add it to invalid_spans
+        first = True
+        nn = len(nsplits)
+        indices = range(n)
+
+        # Similar to itertools.combinations, but customized for our needs
+        while True:
+            if first:
+                first = False
+            else:
+                for i in reversed(range(n)):
+                    if indices[i] != i + nn - n:
+                        break
                 else:
-                    for i, affix in enumerate(comp[:-1]):
-                        if saldo_lexicon.get_prefixes(affix) == []:
-                            invalid_spans.add(spans[i])
-                            comp = None
-                    if comp:
-                        yield comp
+                    break
+                indices[i] += 1
+                for j in range(i+1, n):
+                    indices[j] = indices[j-1] + 1
+
+            splitpoint = tuple(i+1 for i in indices)
+
+            # Create list of affix spans
+            spans = zip((0,) + splitpoint, splitpoint + (None,))
+
+            # Abort if current compound contains an affix known to be invalid
+            abort = False
+            for ii, s in enumerate(spans):
+                if s in invalid_spans:
+                    if not s[1] is None:
+                        # Skip any combination of spans following the invalid span
+                        for j in range(ii+1, n):
+                            indices[j] = j + nn - n
+                    abort = True
+                    break
+            if abort:
+                continue
+
+            comp = [w[i:j] for i, j in spans]
+
+            # Have we analyzed this suffix yet?
+            if not spans[-1] in valid_spans:
+                if not has_suffix_analysis(saldo_lexicon, comp[-1]):
+                    invalid_spans.add(spans[-1])
+                    continue
+                else:
+                    valid_spans.add(spans[-1])
+
+            for k, affix in enumerate(comp[:-1]):
+                # Have we analyzed this affix yet?
+                if not spans[k] in valid_spans:
+                    if not saldo_lexicon.get_prefixes(affix):
+                        invalid_spans.add(spans[k])
+                        comp = None
+                        # Skip any combination of spans following the invalid span
+                        for j in range(k+1, n):
+                            indices[j] = j + nn - n
+                        break
+                    else:
+                        valid_spans.add(spans[k])
+
+            if comp:
+                yield comp
 
 
 def has_suffix_analysis(saldo_lexicon, suffix):
     """Check if suffix has a valid analysis in saldo."""
-    # check if suffix contains at least 2 letters and is not an exeption
-    if len(suffix) > 1 and not exception(suffix):
-        # check if suffix has an analysis in saldo
-        if not saldo_lexicon.get_suffixes(suffix) == []: 
-            return True
-    return False
+    # check if suffix is not an exeption
+    return not exception(suffix) and saldo_lexicon.get_suffixes(suffix)
 
 
 def exception(w):
@@ -114,10 +155,13 @@ def exception(w):
     return w in [
         "il", u"ör", "en", "ens", "ar", "ars",
         "or", "ors", "ur", "urs", u"lös", "tik", "bar",
-        "lik", "het", "hets", "lig", "ligt", "te", "tet", "tets"]
+        "lik", "het", "hets", "lig", "ligt", "te", "tet", "tets",
+        "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l",
+        "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x",
+        "y", "z", u"ä"]
 
 
-def sandhi(compound):
+def three_consonant_rule(compound):
     """ Expand prefix if its last letter == first letter of suffix.
     ("glas", "skål") --> ("glas", "skål"), ("glass", "skål") """
     combinations = []
@@ -132,7 +176,7 @@ def sandhi(compound):
     suffix = compound[len(compound)-1]
     combinations.append((suffix, suffix))
     # return a list of all possible affix combinations
-    return list(set(itertools.product(*(combinations))))
+    return list(set(itertools.product(*combinations)))
 
 
 def compound(saldo_lexicon, w, msd=None):
@@ -141,7 +185,7 @@ def compound(saldo_lexicon, w, msd=None):
     out_compounds = []
     for _comp in in_compounds:
         # expand prefixes if possible
-        for comp in sandhi(_comp):
+        for comp in three_consonant_rule(_comp):
             current_combinations = []
             # get prefix analysis for every affix
             for affix in comp[:len(comp)-1]:
@@ -155,7 +199,7 @@ def compound(saldo_lexicon, w, msd=None):
             if len(current_combinations) < len(comp)-1 or len(anas) == 0:
                 break
             current_combinations.append(anas)
-            out_compounds.append(list(itertools.product(*(current_combinations))))
+            out_compounds.append(list(itertools.product(*current_combinations)))
     return out_compounds
 
 
