@@ -6,7 +6,7 @@ import itertools
 
 
 def annotate(out_complemgrams, out_compwf, word, msd, model, delimiter="|", compdelim="+", affix="|", lexicon=None):
-    """Divides compound words into prefix and suffix.
+    """Divides compound words into prefix(es) and suffix.
     - out_complemgram is the resulting annotation file for compound lemgrams
     - out_compwf is the resulting annotation file for compound wordforms
     - word and msd are existing annotations for wordforms and MSDs
@@ -16,30 +16,69 @@ def annotate(out_complemgrams, out_compwf, word, msd, model, delimiter="|", comp
     """
 
     if not lexicon:
-        lexicon = SaldoLexicon(model)
+        saldo_lexicon = SaldoLexicon(model)
 
     WORD = util.read_annotation(word)
     MSD = util.read_annotation(msd)
+
+    # create alternative lexicon (for words within the file)
+    altlexicon = InFileLexicon(WORD, MSD)
 
     OUT_complem = {}
     OUT_compwf = {}
 
     for tokid in WORD:
-        compounds = compound(lexicon, WORD[tokid], MSD[tokid])
-        # compounds = list of compound lists which contain compound tuples; e.g. glasskål:
+        compounds = compound(saldo_lexicon, altlexicon, WORD[tokid], MSD[tokid])
+        # compounds = list of saldo compound lists which contain compound tuples; e.g. glasskål:
         # [[(('glas', 'glas..nn.1'), ('skål', 'skål..nn.1')), (('glas', 'glasa..vb.1'), ('skål', 'skål..nn.1'))], ...]
         complem_list = []
         compwf_list = []
         for comp_list in compounds:
+            complems = True
             for comp in comp_list:
-                complem_list.append(compdelim.join(affix[1] for affix in comp))
+                for a in comp:
+                    if a[1] == 0:
+                        complems = False
+                        break
+                if complems:
+                    complem_list.append(compdelim.join(affix[1] for affix in comp))
+
             compwf_list.append(compdelim.join(affix[0] for affix in comp_list[0]))
 
-        OUT_complem[tokid] = affix + delimiter.join(complem_list) + affix if compounds else affix
+        OUT_complem[tokid] = affix + delimiter.join(complem_list) + affix if compounds and complem_list else affix
         OUT_compwf[tokid] = affix + delimiter.join(compwf_list) + affix if compounds else affix
+
 
     util.write_annotation(out_complemgrams, OUT_complem)
     util.write_annotation(out_compwf, OUT_compwf)
+
+
+class InFileLexicon(object):
+    """A dictionary of all words occuring in the input file.
+    keys = words, values =  MSD tags
+    """
+    def __init__(self, word, msd):
+        lex = {}
+        for tokid in word:
+            w = word[tokid].lower()
+            # skip words consisting of a single letter (saldo takes care of these)
+            if len(w) > 1:
+                lex[w] = lex.get(w, set())
+                lex[w].add((w, msd[tokid]))
+        self.lexicon = lex
+
+    def lookup(self, word):
+        """Lookup a word in the lexicon."""
+        return list(self.lexicon.get(word, []))
+
+    def get_prefixes(self, prefix):
+        return [(prefix, 0) for s in self.lookup(prefix.lower())]
+
+    def get_suffixes(self, suffix, msd=None):
+        return [(suffix, 0) for s in self.lookup(suffix.lower())
+                if (s[1][0:2] in ("NN", "VB", "AV", "AB"))
+                and (not msd or msd in s[1] or s[1].startswith(msd[:msd.find(".")]))
+                ]
 
 
 class SaldoLexicon(object):
@@ -73,7 +112,7 @@ class SaldoLexicon(object):
                 ]
 
 
-def split_word(saldo_lexicon, w):
+def split_word(saldo_lexicon, altlexicon, w):
     """Split word w into every possible combination of substrings."""
     invalid_spans = set()
     valid_spans = set()
@@ -121,7 +160,7 @@ def split_word(saldo_lexicon, w):
 
             # Have we analyzed this suffix yet?
             if not spans[-1] in valid_spans:
-                if not has_suffix_analysis(saldo_lexicon, comp[-1]):
+                if not has_suffix_analysis(saldo_lexicon, altlexicon, comp[-1]):
                     invalid_spans.add(spans[-1])
                     continue
                 else:
@@ -130,7 +169,7 @@ def split_word(saldo_lexicon, w):
             for k, affix in enumerate(comp[:-1]):
                 # Have we analyzed this affix yet?
                 if not spans[k] in valid_spans:
-                    if not saldo_lexicon.get_prefixes(affix):
+                    if not (saldo_lexicon.get_prefixes(affix) or altlexicon.get_prefixes(affix)):
                         invalid_spans.add(spans[k])
                         comp = None
                         # Skip any combination of spans following the invalid span
@@ -144,10 +183,10 @@ def split_word(saldo_lexicon, w):
                 yield comp
 
 
-def has_suffix_analysis(saldo_lexicon, suffix):
+def has_suffix_analysis(saldo_lexicon, altlexicon, suffix):
     """Check if suffix has a valid analysis in saldo."""
     # check if suffix is not an exeption
-    return not exception(suffix) and saldo_lexicon.get_suffixes(suffix)
+    return not exception(suffix) and (saldo_lexicon.get_suffixes(suffix) or altlexicon.get_suffixes(suffix))
 
 
 def exception(w):
@@ -179,9 +218,9 @@ def three_consonant_rule(compound):
     return list(set(itertools.product(*combinations)))
 
 
-def compound(saldo_lexicon, w, msd=None):
+def compound(saldo_lexicon, altlexicon, w, msd=None):
     """Create a list of compound analyses for word w."""
-    in_compounds = [i for i in split_word(saldo_lexicon, w)]
+    in_compounds = [i for i in split_word(saldo_lexicon, altlexicon, w)]
     out_compounds = []
     for _comp in in_compounds:
         # expand prefixes if possible
@@ -189,7 +228,7 @@ def compound(saldo_lexicon, w, msd=None):
             current_combinations = []
             # get prefix analysis for every affix
             for affix in comp[:len(comp)-1]:
-                anap = saldo_lexicon.get_prefixes(affix)
+                anap = saldo_lexicon.get_prefixes(affix) + altlexicon.get_prefixes(affix)
                 if len(anap) == 0:
                     break
                 current_combinations.append(anap)
