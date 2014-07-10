@@ -1,0 +1,16 @@
+
+######################################################################
+# NST sammansättningsmodell
+
+- nst.comp.pos.pickle
+
+Modell: sannolikheter av sammansatta ordklasser
+Tränad av: Anne Schumacher
+Tränad på: NST Lexikon, hämtad från:
+		https://svn.spraakdata.gu.se/sb-arkiv/lexikon/NST_svensk_leksikon/nst_utf8.txt
+Skapad med: sb.train_nst_comp_model
+Format: Python pickle
+Kodning: UTF8
+
+>>> import sb.train_nst_comp_model as train_nst
+>>> train_nst.make_model("nst_utf8.txt", "nst.comp.pos.pickle")
