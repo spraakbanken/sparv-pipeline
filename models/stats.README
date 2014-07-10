@@ -7,9 +7,6 @@
 Modell: sannolikheter av ordformer och deras ordklasser
 Tränad på: stats_all.txt, hämtad från:
 		https://svn.spraakdata.gu.se/sb-arkiv/pub/frekvens/stats_all.txt
-Skapad med: sb.train_stats_model
+Skapas med make stats.pickle
 Format: Python pickle
 Kodning: UTF8
-
->>> import sb.train_stats_model as train_stats
->>> train_stats.make_model("stats_all.txt", "stats.pickle")
