@@ -62,7 +62,7 @@ def select(out, annotation, index, separator=None):
 
 def constant(chunk, out, value=None, encoding=util.UTF8):
     """Create an annotation with a constant value for each key."""
-    util.write_annotation(out, ((key, value.decode(encoding)) for key in util.read_annotation_iterkeys(chunk)))
+    util.write_annotation(out, ((key, value.decode(encoding) if value else value) for key in util.read_annotation_iterkeys(chunk)))
     
 
 def affix(chunk, out, prefix="", suffix=""):
