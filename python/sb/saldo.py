@@ -325,11 +325,10 @@ def get_precision(msd, msdtags):
     we return a high value (0.75), a partial match returns 0.66, missing MSD returns 0.5,
     and otherwise a low value (0.25).
     """
-    a = (0.5 if msd is None else
-         0.75 if msd in msdtags else
-         0.66 if "." in msd and [partial for partial in msdtags if partial.startswith(msd[:msd.find(".")])] else
-         0.25)
-    return a
+    return (0.5 if msd is None else
+            0.75 if msd in msdtags else
+            0.66 if "." in msd and [partial for partial in msdtags if partial.startswith(msd[:msd.find(".")])] else
+            0.25)
 
 
 def normalize_precision(annotations):
