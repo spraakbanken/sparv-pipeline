@@ -15,7 +15,7 @@ def timespan(corpus, db_name, out):
     
     corpus = corpus.upper()
     rows = []
-    process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-r", CORPUS_REGISTRY, corpus, "text_datefrom", "text_dateto"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-r", CORPUS_REGISTRY, corpus, "text_datefrom", "text_timefrom", "text_dateto", "text_timeto"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     reply, error = process.communicate()
     if error and "Error:" in error:  # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
         if "Error: can't open attribute" in error and (".text_datefrom" in error or ".text_dateto" in error):
@@ -43,8 +43,8 @@ def timespan(corpus, db_name, out):
         
         row = {
             "corpus": corpus,
-            "datefrom": line[1],
-            "dateto": line[2],
+            "datefrom": line[1] + line[2],
+            "dateto": line[3] + line[4],
             "tokens": int(line[0])
         }
         
