@@ -8,7 +8,7 @@ from nltk import FreqDist, LidstoneProbDist
 
 def make_model(nst_infile, picklefile):
     """ Train a POS probability model on the NST lexicon and save it as a pickle file.
-    The model is a LidstoneProbabDist (NLTK) which has compounded POS tags (SUC set) as keys (e.g. "NN+NN")
+    The model is a LidstoneProbDist (NLTK) which has compounded POS tags (SUC set) as keys (e.g. "NN+NN")
     and smoothed probabilities as values."""
     # collect all compounds from nst data
     nst_full_compounds = set()
@@ -19,11 +19,6 @@ def make_model(nst_infile, picklefile):
             comp = fields[3].replace("!", "")
             pos = fields[4]
             if "+" in comp and not "_" in word and not (comp.startswith("+") or comp.startswith("-")):
-                # glue filler morpheme to its preceding morpheme
-                comp = re.sub(r'\+s\+', r's+', comp)
-                comp = re.sub(r'\+e\+', r'e+', comp)
-                comp = re.sub(r'\+a\+', r'a+', comp)
-                comp = re.sub(r'\+-\+', r'-+', comp)
                 nst_full_compounds.add((word, comp, pos))
 
     # build POS probability model
