@@ -30,7 +30,7 @@ def timespan(corpus, db_name, out):
 
             for line in reply.splitlines():
                 if line.startswith("Size: "):
-                    reply = "%s\t\t" % line[6:].strip()
+                    reply = "%s\t\t\t\t" % line[6:].strip()
         else:
             print error
             raise Exception
