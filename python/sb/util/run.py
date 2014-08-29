@@ -6,6 +6,7 @@ import os
 import log
 from getopt import getopt, GetoptError
 
+
 def main(*default_functions, **functions):
     """A wrapper to be able to call Python functions from the commandline.
     The arguments to the function is specified as options, as well as the
@@ -37,7 +38,8 @@ def main(*default_functions, **functions):
     except GetoptError:
         exit_usage()
     # We don't allow extra non-option arguments:
-    if args_should_be_empty: exit_usage()
+    if args_should_be_empty:
+        exit_usage()
 
     # Extract the option specifying the corpus:
     options = dict((opt.lstrip("-"), val) for (opt, val) in options)
@@ -45,7 +47,8 @@ def main(*default_functions, **functions):
     if fnames:
         fname = fnames.pop()
         del options[fname]
-        if fnames or fname not in functions: exit_usage()
+        if fnames or fname not in functions:
+            exit_usage()
         fun = functions[fname]
     elif default_functions:
         fun = default_functions[0]
@@ -75,7 +78,7 @@ def print_usage_and_exit(*default_functions, **functions):
     """
     for fun in default_functions:
         functions[None] = fun
-    module = "sb." + os.path.splitext(os.path.basename(sys.argv[0])) [0]
+    module = "sb." + os.path.splitext(os.path.basename(sys.argv[0]))[0]
     usage = "Usage:\n\n"
     for choice, fun in sorted(functions.items()):
         usage += "python -m %s" % module

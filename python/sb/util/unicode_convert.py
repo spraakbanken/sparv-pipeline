@@ -4,20 +4,26 @@
 Safe unicode conversions
 """
 
+
 def utf8(u):
     return unicode(u).encode("utf8")
+
 
 def latin1(u):
     return encode(u, "latin1")
 
+
 def latin9(u):
     return encode(u, "latin9")
+
 
 def cp1252(u):
     return encode(u, "cp1252")
 
+
 def ascii(u):
     return encode(u, "ascii")
+
 
 def latin1plus(u):
     """CP-1252 encoding, but where letters are replaced by Latin-1 letters:
@@ -28,6 +34,7 @@ def latin1plus(u):
     u = unicode(u).translate(replacements)
     return cp1252(u)
 
+
 def encode(u, encoding):
     if encoding == "latin1+":
         return latin1plus(u)
@@ -36,6 +43,7 @@ def encode(u, encoding):
         return u.encode(encoding)
     except UnicodeEncodeError:
         return "".join(_encode_unichar(c, encoding) for c in u)
+
 
 def _encode_unichar(c, encoding):
     try:
@@ -49,9 +57,11 @@ def _encode_unichar(c, encoding):
 
 import unicodedata as _U
 
+
 def remove_diacritics(u):
     nfkc = _U.normalize("NFKC", u)
     return u"".join(_remove_diacritics_unichar(c) for c in nfkc)
+
 
 def _remove_diacritics_unichar(c):
     try:
@@ -70,10 +80,10 @@ _DIACRITIC_REPLACEMENTS = {
     u"Ü": u"Ü",
     u"ß": u"ss",
     u"ƒ": u"f",
-    u"Æ": u"AE", # Ä ?
-    u"æ": u"ae", # ä ?
-    u"Œ": u"OE", # Ö ?
-    u"œ": u"oe", # ö ?
+    u"Æ": u"AE",  # Ä ?
+    u"æ": u"ae",  # ä ?
+    u"Œ": u"OE",  # Ö ?
+    u"œ": u"oe",  # ö ?
     u"Ø": u"Ö", 
     u"ø": u"ö",
     u"Ð": u"DH",
@@ -92,4 +102,4 @@ _DIACRITIC_REPLACEMENTS = {
     u"¾": u"3/4",
     u"¦": u"|",
     u"\u2044": u"/",
-    }
+}

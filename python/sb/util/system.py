@@ -5,12 +5,16 @@ System utilities for Språkbanken
 """
 
 import subprocess
-import sys, os, errno
+import sys
+import os
+import errno
 import shutil
 import log
 
+
 def dirname(file):
     return os.path.dirname(file)
+
 
 def make_directory(*path):
     dir = os.path.join(*path)
@@ -22,19 +26,22 @@ def make_directory(*path):
         else:
             raise
 
+
 def kill_process(process):
     """Kills a process, and ignores the error if it is already dead"""
     try:
         process.kill()
     except OSError as exc:
-        if exc.errno == errno.ESRCH: # No such process
+        if exc.errno == errno.ESRCH:  # No such process
             pass
         else:
             raise
 
+
 def clear_directory(dir):
     shutil.rmtree(dir, ignore_errors=True)
     make_directory(dir)
+
 
 def call_java(jar, arguments, options=[], stdin="", search_paths=(),
               encoding=None, verbose=False, return_command=False):
@@ -115,8 +122,7 @@ def find_binary(name, search_paths=(), binary_names=(), executable=True):
             path_to_bin = os.path.join(directory, binary)
             if os.path.isfile(path_to_bin):
                 if executable:
-                    assert os.access(path_to_bin, os.X_OK), \
-                           "Binary is not executable: %s" % path_to_bin
+                    assert os.access(path_to_bin, os.X_OK), "Binary is not executable: %s" % path_to_bin
                 return path_to_bin
 
     raise LookupError("Couldn't find binary: %s\nSearched in: %s\nFor binary names: %s" %

@@ -8,6 +8,7 @@ import constants
 # Max size of SQL statement
 MAX_ALLOWED_PACKET = 900000
 
+
 class MySQL(object):
     binaries = ('mysql', 'mysql5')
     
@@ -36,7 +37,7 @@ class MySQL(object):
         else:
             # Execute SQL statement
             out, err = system.call_binary(self.binaries[0], self.arguments, sql % args,
-                                      binary_names=self.binaries, encoding=self.encoding)
+                                          binary_names=self.binaries, encoding=self.encoding)
             if out:
                 log.info("MySQL: %s", out)
             if err:
@@ -96,7 +97,7 @@ class MySQL(object):
         self.execute(u"SET NAMES %s;" % encoding)
     
     def delete_rows(self, table, conditions):
-        conditions = " AND ".join( ["%s = %s" % (_ATOM(k), _VALUE(v)) for (k, v) in conditions.items()] )
+        conditions = " AND ".join(["%s = %s" % (_ATOM(k), _VALUE(v)) for (k, v) in conditions.items()])
         self.execute(u"DELETE FROM %s WHERE %s;" % (_ATOM(table), conditions))
     
     def drop_table(self, *tables):
@@ -107,14 +108,16 @@ class MySQL(object):
         self.execute(u"RENAME TABLE %s;" % ", ".join(renames))
     
     def add_row(self, table, rows, extra=""):
-        if isinstance(rows, dict): rows = [rows]
+        if isinstance(rows, dict):
+            rows = [rows]
         table = _ATOM(table)
         sql = []
         values = []
         input_length = 0
         
         def insert(values, extra=""):
-            if extra: extra = "\n" + extra
+            if extra:
+                extra = "\n" + extra
             return u"INSERT INTO %s (%s) VALUES\n" % (table, ", ".join(sorted(rows[0].keys()))) + ",\n".join(values) + "%s;" % extra
         
         for row in rows:
@@ -143,13 +146,16 @@ _TYPE_CONVERSIONS = {str: "varchar(255)",
                      'year': "year(4)",
                      }
 
+
 def _ATOM(atom):
     assert isinstance(atom, basestring)
     return "`%s`" % (atom,)
 
+
 def _ATOMSEQ(atoms):
     assert isinstance(atoms, (list, tuple))
     return ", ".join(map(_ATOM, atoms))
+
 
 def _VALUE(val):
     assert (val is None) or isinstance(val, (basestring, int, float))
@@ -160,14 +166,17 @@ def _VALUE(val):
     else:
         return "%s" % (val,)
 
+
 def _VALUESEQ(vals):
     assert isinstance(vals, (list, tuple))
     return ", ".join(map(_VALUE, vals))
 
+
 def _DICT(dct, filter_null=False):
     assert isinstance(dct, dict)
-    return ", ".join("%s = %s" % (_ATOM(k), _VALUE(v)) for (k,v) in dct.items()
+    return ", ".join("%s = %s" % (_ATOM(k), _VALUE(v)) for (k, v) in dct.items()
                      if not (filter_null and v is None))
+
 
 def _ESCAPE(string):
     return string.replace("\\", "\\\\").replace("'", r"\'")

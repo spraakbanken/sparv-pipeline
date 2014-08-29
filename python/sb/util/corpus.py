@@ -11,14 +11,17 @@ from constants import *
 
 ANNOTATION_DELIM = " "
 
+
 def annotation_exists(file):
     """Checks if an annotation file exists."""
     return os.path.exists(file)
+
 
 def clear_annotation(file):
     """Removes an annotation file if it exists."""
     if os.path.exists(file):
         os.remove(file)
+
 
 def write_annotation(file, annotation, encode=None, append=False):
     """Writes an annotation to a file. The file is overwritten if it exists.
@@ -32,12 +35,15 @@ def write_annotation(file, annotation, encode=None, append=False):
     with open(file, mode) as DB:
         ctr = 0
         for key, value in annotation:
-            if value is None: value = ""
-            if encode: value = encode(value)
+            if value is None:
+                value = ""
+            if encode:
+                value = encode(value)
             value = value.replace("\\", r"\\").replace("\n", r"\n").replace("\r", "")
             print >>DB, (key + ANNOTATION_DELIM + value).encode(UTF8)
             ctr += 1
     log.info("Wrote %d items: %s", ctr, file)
+
 
 def read_annotation(file, decode=None):
     """Reads an annotation file into a dictionary.
@@ -45,10 +51,12 @@ def read_annotation(file, decode=None):
     """
     return dict(read_annotation_iteritems(file, decode))
 
+
 def read_annotation_iterkeys(file):
     """An iterator that yields each key in an annotation file."""
     for key, _value in read_annotation_iteritems(file):
         yield key
+
 
 def read_annotation_iteritems(file, decode=None):
     """An iterator that yields each (key,value) pair in an annotation file.
@@ -58,16 +66,20 @@ def read_annotation_iteritems(file, decode=None):
     with open(file, "r") as DB:
         for line in DB:
             key, _, value = line.rstrip("\n\r").decode(UTF8).partition(ANNOTATION_DELIM)
+            #value = re.sub(r"((?<!\\)(?:\\\\)*)\\n", "\1\n", value) # Replace literal "\n" with linebreak (only needed if we accept "\n" as a token
             value = value.replace(r"\n", "\n").replace(r"\\", "\\")
-            if decode: value = decode(value)
+            if decode:
+                value = decode(value)
             yield key, value
             ctr += 1
     log.info("Read %d items: %s", ctr, file)
+
 
 ######################################################################
 # Corpus text
 
 ANCHOR_DELIM = "#"
+
 
 def read_corpus_text(corpusfile):
     """Reads the anchored text of a corpus.
@@ -83,7 +95,7 @@ def read_corpus_text(corpusfile):
     anchor2pos = {}
     pos2anchor = {}
     end = -1
-    while True: # The only way to exit this loop is when ANCHOR_DELIM is not found anymore
+    while True:  # The only way to exit this loop is when ANCHOR_DELIM is not found anymore
         start = text.find(ANCHOR_DELIM, end+1)
         if start < 0:
             textbuffer.append(text[end+1:len(text)])
@@ -103,6 +115,7 @@ def read_corpus_text(corpusfile):
     text = "".join(textbuffer)
     log.info("Read %d chars, %d anchors: %s", len(text), len(anchor2pos), corpusfile)
     return text, anchor2pos, pos2anchor
+
 
 def write_corpus_text(corpusfile, text, pos2anchor):
     """Writes anchored text to the designated file of a corpus.

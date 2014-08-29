@@ -46,6 +46,7 @@ saldo_to_saldo: 1-many identity mapping of Saldo tags
 
 TAGSEP = "."
 
+
 def split_tag(tag, sep=TAGSEP):
     """Split a tag 'X.Y.Z' into a tuple ('X', 'Y.Z')
     """
@@ -54,6 +55,7 @@ def split_tag(tag, sep=TAGSEP):
         return pos_msd[0], ""
     else:
         return pos_msd
+
 
 def join_tag(tag, sep=TAGSEP):
     """Join a complex tag into a string. The tag can be
@@ -1229,25 +1231,25 @@ assert parole_tags == set(granska_to_parole.values())
 # saldo_to_suc and saldo_to_parole
 
 _translate_saldo_parameters = {
-    'u'      : 'UTR',
-    'n'      : 'NEU',
-    'masc'   : 'MAS',
+    'u':       'UTR',
+    'n':       'NEU',
+    'masc':    'MAS',
     'no_masc': 'UTR+NEU',
-    'komp'   : 'KOM',
-    'super'  : 'SUV',    
-    'pl'     : 'PLU',
-    'sg'     : 'SIN',
-    'indef'  : 'IND',
-    'pres_part' : 'PCPRS',
-    'pret_part' : 'PCPRT',
-    'imper'  : 'IMP',
-    'aktiv'  : 'AKT',
-    's-form' : 'SFO',
-    'ind'    : 'INDIKATIV',
-    'konj'   : 'KON',
-    'pres'   : 'PRS',
-    'pret'   : 'PRT',
-    }
+    'komp':    'KOM',
+    'super':   'SUV',
+    'pl':      'PLU',
+    'sg':      'SIN',
+    'indef':   'IND',
+    'pres_part': 'PCPRS',
+    'pret_part': 'PCPRT',
+    'imper':   'IMP',
+    'aktiv':   'AKT',
+    's-form':  'SFO',
+    'ind':     'INDIKATIV',
+    'konj':    'KON',
+    'pres':    'PRS',
+    'pret':    'PRT',
+}
 
 # SALDO to SUC mapping
 _suc_tag_replacements = [
@@ -1263,8 +1265,8 @@ _suc_tag_replacements = [
                                                                     
     (r"AV INVAR",                                                    r"(JJ POS|PC PRS) .* NOM"),
     (r"AV POS IND SIN NEU NOM",                                      r"(AB|AB POS|(JJ POS|PC PRF) NEU SIN IND NOM)"),  # snabbt
-    (r"AV POS (DEF|IND) (SIN|PLU) (MAS|NEU|UTR|UTR\+NEU) (NOM|GEN)", r"(JJ POS|PC PRF) \3 \2 (\1|IND+DEF) \4"), # ind/def doesn't exist in SALDO
-    (r"AV POS (DEF|IND) PLU (NOM|GEN)",                              r"(JJ POS|PC PRF) UTR+NEU PLU (\1|IND+DEF) \2"), # ind/def doesn't exist in SALDO
+    (r"AV POS (DEF|IND) (SIN|PLU) (MAS|NEU|UTR|UTR\+NEU) (NOM|GEN)", r"(JJ POS|PC PRF) \3 \2 (\1|IND+DEF) \4"),  # ind/def doesn't exist in SALDO
+    (r"AV POS (DEF|IND) PLU (NOM|GEN)",                              r"(JJ POS|PC PRF) UTR+NEU PLU (\1|IND+DEF) \2"),  # ind/def doesn't exist in SALDO
     #(r"AV POS .* (SIN|PLU) .*(NOM|GEN)",                            r"(JJ POS|PC PRF) .* \1 .* \2"),
     (r"AV KOM NOM",                                                  r"(JJ KOM .* NOM|AB KOM)"),
     (r"AV SUV IND NOM",                                              r"(JJ SUV .* NOM|AB SUV)"),
@@ -1274,35 +1276,36 @@ _suc_tag_replacements = [
     
     (r"NL (NOM|GEN)",                              r"(RG|RO) .*\1"),
     
-    (r"NN (V|P) (SIN|PLU) (IND|DEF) (NOM|GEN)",    r"NN (UTR|NEU|-) (\2|-) (\3|-) (\4|-)"),
-    (r"NN (UTR|NEU) (SIN|PLU) (IND|DEF) (NOM|GEN)",r"NN (\1|-) (\2|-) (\3|-) (\4|-)"),
-    (r"NN .* SMS",                                 r"NN .* SMS"),
-    (r"NNA .* SMS",                                r"(NN|PM) .* SMS"),
-    (r"NNA .* (SIN|PLU) (IND|DEF) (NOM|GEN)",      r"NN (AN|.* \1 \2 \3)"),
+    (r"NN (V|P) (SIN|PLU) (IND|DEF) (NOM|GEN)",     r"NN (UTR|NEU|-) (\2|-) (\3|-) (\4|-)"),
+    (r"NN (UTR|NEU) (SIN|PLU) (IND|DEF) (NOM|GEN)", r"NN (\1|-) (\2|-) (\3|-) (\4|-)"),
+    (r"NN .* SMS",                                  r"NN .* SMS"),
+    (r"NNA .* SMS",                                 r"(NN|PM) .* SMS"),
+    (r"NNA .* (SIN|PLU) (IND|DEF) (NOM|GEN)",       r"NN (AN|.* \1 \2 \3)"),
     
-    (r"PMA .* (NOM|GEN)",                          r"PM \1"),
-    (r"PM .* (NOM|GEN)",                           r"PM \1"),
-    (r"PM .* SMS",                                 r"PM .* SMS"),
+    (r"PMA .* (NOM|GEN)",                           r"PM \1"),
+    (r"PM .* (NOM|GEN)",                            r"PM \1"),
+    (r"PM .* SMS",                                  r"PM .* SMS"),
     
-    (r"PN .*POSS",                                 r"(PS|HS)"),
-    (r"PN KOM GEN",                                r"PS"),
-    (r"PN SUV (IND|DEF)",                          r"JJ SUV .* \1"),
-    (r"PN (P1|P2|P3) (SIN|PLU)",                   r"PN .* \2 DEF"),
-    (r"PN POS .*(SIN|PLU)",                        r"PN .* \1"),
-    (r"PN PLU NOM",                                r"(PN .* PLU|DT UTR+NEU PLU .*|JJ POS UTR+NEU PLU .* NOM)"),
-    (r"PN PLU GEN",                                r"(PN .* PLU|DT UTR+NEU PLU .*|PS UTR+NEU SIN+PLU DEF)"),
-    (r"PN SIN UTR NOM",                            r"(PN (UTR|MAS) SIN|DT UTR SIN .*|JJ POS UTR SIN IND NOM)"),
-    (r"PN SIN UTR GEN",                            r"(PN (UTR|MAS) SIN|DT UTR SIN .*|PS UTR+NEU SIN+PLU DEF)"),
-    (r"PN SIN NEU NOM",                            r"(PN NEU SIN|DT NEU SIN .*|JJ POS NEU SIN IND NOM)"),
-    (r"PN SIN NEU GEN",                            r"(PN NEU SIN|DT NEU SIN .*|PS UTR+NEU SIN+PLU DEF)"),
-    (r"PN (ACK|NOM|INVAR|KOM|SMS)",                r"(PN|HP|HS)"),
+    (r"PN .*POSS",                                  r"(PS|HS)"),
+    (r"PN KOM GEN",                                 r"PS"),
+    (r"PN SUV (IND|DEF)",                           r"JJ SUV .* \1"),
+    (r"PN (P1|P2|P3) (SIN|PLU)",                    r"PN .* \2 DEF"),
+    (r"PN POS .*(SIN|PLU)",                         r"PN .* \1"),
+    (r"PN PLU NOM",                                 r"(PN .* PLU|DT UTR+NEU PLU .*|JJ POS UTR+NEU PLU .* NOM)"),
+    (r"PN PLU GEN",                                 r"(PN .* PLU|DT UTR+NEU PLU .*|PS UTR+NEU SIN+PLU DEF)"),
+    (r"PN SIN UTR NOM",                             r"(PN (UTR|MAS) SIN|DT UTR SIN .*|JJ POS UTR SIN IND NOM)"),
+    (r"PN SIN UTR GEN",                             r"(PN (UTR|MAS) SIN|DT UTR SIN .*|PS UTR+NEU SIN+PLU DEF)"),
+    (r"PN SIN NEU NOM",                             r"(PN NEU SIN|DT NEU SIN .*|JJ POS NEU SIN IND NOM)"),
+    (r"PN SIN NEU GEN",                             r"(PN NEU SIN|DT NEU SIN .*|PS UTR+NEU SIN+PLU DEF)"),
+    (r"PN (ACK|NOM|INVAR|KOM|SMS)",                 r"(PN|HP|HS)"),
     
-    (r"VB (INF|SUP) (AKT|SFO)",                    r"VB \1 \2"),
-    (r"VB (PRS|PRT) .* (AKT|SFO)",                 r"VB .*\1 \2"),
-    (r"VB PCPRS (NOM|GEN)",                        r"PC PRS .* \1"),
-    (r"VB PCPRT .* (PLU|SIN) .*(NOM|GEN)",         r"PC PRF .* \1 .* \2"),
-    (r"VB (IMP|SMS)",                              r"VB \1"),
-    ]
+    (r"VB (INF|SUP) (AKT|SFO)",                     r"VB \1 \2"),
+    (r"VB (PRS|PRT) .* (AKT|SFO)",                  r"VB .*\1 \2"),
+    (r"VB PCPRS (NOM|GEN)",                         r"PC PRS .* \1"),
+    (r"VB PCPRT .* (PLU|SIN) .*(NOM|GEN)",          r"PC PRF .* \1 .* \2"),
+    (r"VB (IMP|SMS)",                               r"VB \1"),
+]
+
 
 def _make_saldo_to_suc():
     import re
@@ -1318,7 +1321,7 @@ def _make_saldo_to_suc():
             m = re.match(pre, paramstr)
             if m:
                 break
-        if m == None:
+        if m is None:
             print pre
             print paramstr
             print
@@ -1337,7 +1340,7 @@ saldo_to_parole = dict((saldotag, set(suc_to_parole[suctag] for suctag in suctag
                        for saldotag, suctags in saldo_to_suc.items())
 
 saldo_to_granska = dict((saldotag, set().union(*(suc_to_granska[suctag] for suctag in suctags)))
-                       for saldotag, suctags in saldo_to_suc.items())
+                        for saldotag, suctags in saldo_to_suc.items())
 
 saldo_to_saldo = dict((saldotag, set([saldotag])) for saldotag in saldo_tags)
 
