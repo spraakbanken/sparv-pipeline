@@ -5,7 +5,7 @@ import util
 
 
 def align_texts(word1, word2, linktok1, linktok2, link1, link2, linkref2, out_wordlink, out_sentences, outindex1, outindex2, delimiter="|", affix="|"):
-    """Makes a word alignment between the current text (1) and a reference text (2). The texts need to be sentence aligned.
+    """Make a word alignment between the current text (1) and a reference text (2). The texts need to be sentence aligned.
     word1 and word2 are existing annotations for the wordforms in the two texts
     linktok1 and linktok2 contain information about which words there are in each link
     link1 and link2 are existing annotations for the sentence link IDs in the two texts
@@ -90,15 +90,16 @@ def word_align(sentencefile, indexfile1, indexfile2):
     
 #     inspection = open(inspect, 'wb')
 #     for link in util.read_annotation(link1).values():
-#         if REVERSED_LINK1[link] in LINKTOK1 and REVERSED_LINK2[link] in LINKTOK2:
-#             sent1 = LINKTOK1[REVERSED_LINK1[link]].split()
-#             sent2 = LINKTOK2[REVERSED_LINK2[link]].split()
-#             for w1tokid in sent1:
-#                 linkids = [int(l)-1 for l in OUT_WORDLINK[w1tokid].split(delimiter) if l]
-#                 w2 = " | ".join(WORD2[sent2[linkid]] for linkid in linkids).encode("utf-8")
-#                 w1 = WORD1[w1tokid].encode("utf-8")
-#                 inspection.write("\n" + w1 + " "*(16-len(w1.decode("utf-8"))) + " " + w2)
-#             inspection.write("\n")
+#         if link in REVERSED_LINK2:
+#             if REVERSED_LINK1[link] in LINKTOK1 and REVERSED_LINK2[link] in LINKTOK2:
+#                 sent1 = LINKTOK1[REVERSED_LINK1[link]].split()
+#                 sent2 = LINKTOK2[REVERSED_LINK2[link]].split()
+#                 for w1tokid in sent1:
+#                     linkids = [int(l)-1 for l in OUT_WORDLINK[w1tokid].split(delimiter) if l]
+#                     w2 = " | ".join(WORD2[sent2[linkid]] for linkid in linkids).encode("utf-8")
+#                     w1 = WORD1[w1tokid].encode("utf-8")
+#                     inspection.write("\n" + w1 + " "*(16-len(w1.decode("utf-8"))) + " " + w2)
+#                 inspection.write("\n")
 
 ######################################################################
 
