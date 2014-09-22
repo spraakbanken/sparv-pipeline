@@ -38,7 +38,6 @@ def tt_proc(model, out_pos, out_lem, word, sentence, tag_mapping=None, encoding=
     for sent, tagged_sent in zip(sentences, stdout.strip().split(SENT_SEP)):
         for token_id, tagged_token in zip(sent, tagged_sent.strip().split(TOK_SEP)):
             lem = tagged_token.strip().split(TAG_SEP)[LEM_COLUMN]
-            lem = tag_mapping.get(tag, tag)
             OUT[token_id] = lem
     util.write_annotation(out_lem, OUT)
 
