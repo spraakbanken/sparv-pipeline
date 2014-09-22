@@ -39,11 +39,11 @@ def align_texts(sentence1, sentence2, link1, link2, sent_parents1, sent_parents2
             for s1, s2 in gachalign(linkedsents1, linkedsents2, mean="gacha"):
                 linkcounter += 1
                 if s1:
-                    newlink1 = 'link:' + s1[0].split('-')[0][2:] + '-' + s1[-1].split('-')[-1]
+                    newlink1 = util.mkEdge('link', [util.edgeStart(s1[0]), util.edgeEnd(s1[-1])])
                     OUT_SENTLINK1[newlink1] = str(linkcounter)
 
                 if s2:
-                    newlink2 = 'link:' + s2[0].split('-')[0][2:] + '-' + s2[-1].split('-')[-1]
+                    newlink2 = util.mkEdge('link', [util.edgeStart(s2[0]), util.edgeEnd(s2[-1])])
                     OUT_SENTLINK2[newlink2] = str(linkcounter)
 
     util.write_annotation(out_sentlink1, OUT_SENTLINK1)
