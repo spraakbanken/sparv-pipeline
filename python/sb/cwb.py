@@ -135,6 +135,8 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
     """
     assert master != "", "Master not specified"
     assert bool(vrtdir) != bool(vrtfiles), "Either VRTDIR or VRTFILES must be specified"
+    assert datadir, "CWB_DATADIR not specified"
+    assert registry, "CORPUS_REGISTRY not specified"
     if isinstance(skip_validation, basestring): skip_validation = (skip_validation.lower() == "true")
     if isinstance(skip_compression, basestring): skip_compression = (skip_compression.lower() == "true")
     if isinstance(vrtfiles, basestring): vrtfiles = vrtfiles.split()

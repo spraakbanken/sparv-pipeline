@@ -43,7 +43,7 @@ def timespan(corpus, db_name, out):
         
         row = {
             "corpus": corpus,
-            "datefrom": (line[1] + line[2]).zfill(14), # Pad years < 1000 with zero
+            "datefrom": (line[1] + line[2]).zfill(14),  # Pad years < 1000 with zero
             "dateto": (line[3] + line[4]).zfill(14),
             "tokens": int(line[0])
         }

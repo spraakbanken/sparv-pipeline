@@ -58,9 +58,11 @@ def parse(source, text, elements=[], annotations=[], skip=(), overlap=(), header
         attr = attr.replace(";", ":")
         return tag, attr
 
-    elem_annotations = dict((elsplit(elem), annotation)
+    elem_order = [(elsplit(elem), annotation)
                             for elemgroup, annotation in zip(elements, annotations)
-                            for elem in elemgroup.split("+"))
+                            for elem in elemgroup.split("+")]
+
+    elem_annotations = dict(elem_order)
 
     head_annotations = dict((elsplit(head), annotation)
                             for head, annotation in zip(headers, header_annotations))
@@ -73,7 +75,7 @@ def parse(source, text, elements=[], annotations=[], skip=(), overlap=(), header
 
     with open(source) as SRC:
         content = SRC.read().decode(encoding)
-    parser = XMLParser(elem_annotations, skipped_elems, can_overlap, header, prefix, text, len(content), head_annotations, skip_if_empty, skip_entities, autoclose)
+    parser = XMLParser(elem_annotations, skipped_elems, can_overlap, header, prefix, text, len(content), head_annotations, skip_if_empty, skip_entities, autoclose, elem_order)
     parser.feed(content)
     parser.close()
 
@@ -84,13 +86,14 @@ from HTMLParser import HTMLParser
 
 
 class XMLParser(HTMLParser):
-    def __init__(self, elem_annotations, skipped_elems, can_overlap, header_elem, prefix, textfile, corpus_size, head_annotations={}, skip_if_empty=[], skip_entities=[], autoclose=[]):
+    def __init__(self, elem_annotations, skipped_elems, can_overlap, header_elem, prefix, textfile, corpus_size, head_annotations={}, skip_if_empty=[], skip_entities=[], autoclose=[], elem_order=[]):
         HTMLParser.__init__(self)
         self.reset()
         self.tagstack = []
         self.header_elem = header_elem
         self.inside_header = False
         self.elem_annotations = elem_annotations
+        self.elem_order = elem_order
         self.text_roots = set([re.split(r"(?<!\\)\.", header[0])[0].replace(r"\.", ".") for header in head_annotations.keys()])
         head_annotations = dict(((k[0].replace(r"\.", "."), k[1]), v) for k, v in head_annotations.iteritems())
         self.head_annotations = head_annotations
@@ -129,8 +132,13 @@ class XMLParser(HTMLParser):
 
         text = u"".join(self.textbuffer)
         util.write_corpus_text(self.textfile, text, self.pos2anchor)
-        for annot, db in self.dbs.iteritems():
-            util.write_annotation(annot, db)
+        if self.elem_order:
+            for elem in self.elem_order:
+                annot, db = elem[1], self.dbs[elem[1]]
+                util.write_annotation(annot, db)
+        else:
+            for annot, db in self.dbs.iteritems():
+                util.write_annotation(annot, db)
         for header, db in self.header_dbs.iteritems():
             util.write_annotation(header, db)
         
