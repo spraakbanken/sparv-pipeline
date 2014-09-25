@@ -25,7 +25,7 @@ def align_texts(sentence1, sentence2, link1, link2, sent_parents1, sent_parents2
 
     linkcounter = 0
 
-    # Loop through existing links and split them into smaller units (if possible)
+    # Loop through existing links and split them into smaller units if possible (only if both links have text)
     for linkkey1, linkid in util.read_annotation_iteritems(link1):
         linkkey2 = REVERSED_LINK2[linkid]
         if linkkey1 in SENTPARENTS1 and linkkey2 in SENTPARENTS2:
@@ -45,6 +45,14 @@ def align_texts(sentence1, sentence2, link1, link2, sent_parents1, sent_parents2
                 if s2:
                     newlink2 = util.mkEdge('link', [util.edgeStart(s2[0]), util.edgeEnd(s2[-1])])
                     OUT_SENTLINK2[newlink2] = str(linkcounter)
+
+        # annotation if a link has text in one language but is empty in the other one
+        elif linkkey1 in SENTPARENTS1 or linkkey2 in SENTPARENTS2:
+            linkcounter += 1
+            newlink1 = util.mkEdge('link', [util.edgeStart(linkkey1), util.edgeEnd(linkkey1)])
+            OUT_SENTLINK1[newlink1] = str(linkcounter)
+            newlink2 = util.mkEdge('link', [util.edgeStart(linkkey2), util.edgeEnd(linkkey2)])
+            OUT_SENTLINK2[newlink2] = str(linkcounter)
 
     util.write_annotation(out_sentlink1, OUT_SENTLINK1)
     util.write_annotation(out_sentlink2, OUT_SENTLINK2)
