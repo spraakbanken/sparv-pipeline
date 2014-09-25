@@ -48,7 +48,6 @@ def annotate(out_complemgrams, out_compwf, word, msd, model, delimiter="|", comp
         OUT_complem[tokid] = affix + delimiter.join(complem_list) + affix if compounds and complem_list else affix
         OUT_compwf[tokid] = affix + delimiter.join(compwf_list) + affix if compounds else affix
 
-
     util.write_annotation(out_complemgrams, OUT_complem)
     util.write_annotation(out_compwf, OUT_compwf)
 

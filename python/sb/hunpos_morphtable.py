@@ -5,9 +5,12 @@ import saldo
 import codecs
 from collections import defaultdict
 
-def make_morphtable(out, saldo_model, suc, morphtable_base=""):
+
+def make_morphtable(out, saldo_model, suc, morphtable_base="", add_capitalized=True, add_lowercase=False):
     """ Creates a morphtable file for use with Hunpos, containing wordforms
     from SALDO's morphology (with accompanying tags) which are missing in SUC3.
+    Since the morphtable is case sensitive, both the original form and a capitalized form
+    is saved.
     - out specifies the resulting morphtable file to be written
     - saldo_model is the path to a pickled SALDO model
     - suc is a tab separated file with wordforms from SUC, containing: frequency, wordform, tag
@@ -28,12 +31,17 @@ def make_morphtable(out, saldo_model, suc, morphtable_base=""):
                 for msd in w[1]:
                     if not "-" in msd:
                         tags[word].add(msd)
-                        # Add a capitalized form of the word
-                        capitalized = word[0].upper() + word[1:]
-                        if not word == capitalized:
-                            tags[capitalized].add(msd)
-            
-    
+                        if add_capitalized:
+                            # Add a capitalized form of the word
+                            capitalized = word[0].upper() + word[1:]
+                            if not word == capitalized:
+                                tags[capitalized].add(msd)
+                        if add_lowercase:
+                            # Add a lower case form of the word
+                            lower = word.lower()
+                            if not word == lower:
+                                tags[lower].add(msd)
+
     # Read SUC words
     with codecs.open(suc, encoding="UTF-8") as suctags:
         for line in suctags:

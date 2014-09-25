@@ -8,6 +8,7 @@ TAG_SEP = "\t"
 TAG_COLUMN = 1
 LEM_COLUMN = 2
 
+
 def tt_proc(model, out_pos, out_lem, word, sentence, tag_mapping=None, encoding=util.UTF8):
     """POS/MSD tag using the TreeTagger.
     """
@@ -24,7 +25,7 @@ def tt_proc(model, out_pos, out_lem, word, sentence, tag_mapping=None, encoding=
 
     stdout, _ = util.system.call_binary("tree-tagger", args, stdin, encoding=encoding, verbose=True)
 
-	# Write pos annotations.
+    # Write pos annotations.
     OUT = {}
     for sent, tagged_sent in zip(sentences, stdout.strip().split(SENT_SEP)):
         for token_id, tagged_token in zip(sent, tagged_sent.strip().split(TOK_SEP)):

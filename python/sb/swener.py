@@ -9,7 +9,7 @@ TAG_SEP = ":"
 AFFIX = "|"
 
 
-def tag_NER(out_NER, word, sentence, encoding=util.UTF8):
+def tag_ner(out_ner, word, sentence, encoding=util.UTF8):
     """Tag NERs using HFST-SweNER.
     """
 
@@ -37,9 +37,8 @@ def tag_NER(out_NER, word, sentence, encoding=util.UTF8):
             if tail:
                 i += len(tail.strip().split(TOK_SEP))
 
-
-    util.write_annotation(out_NER, out_dict)
+    util.write_annotation(out_ner, out_dict)
 
 
 if __name__ == '__main__':
-    util.run.main(tag_NER)
+    util.run.main(tag_ner)
