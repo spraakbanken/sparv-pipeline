@@ -40,11 +40,11 @@ def timespan(corpus, db_name, out):
             continue
         line = line.split("\t")
         line[0] = int(line[0])
-        
+
         row = {
             "corpus": corpus,
-            "datefrom": (line[1] + line[2]).zfill(14),  # Pad years < 1000 with zero
-            "dateto": (line[3] + line[4]).zfill(14),
+            "datefrom": (line[1] + line[2]).zfill(14) if (line[1] + line[2]) else "",  # Pad years < 1000 with zero
+            "dateto": (line[3] + line[4]).zfill(14) if (line[3] + line[4]) else "",
             "tokens": int(line[0])
         }
         
