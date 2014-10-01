@@ -5,7 +5,7 @@ import util
 import itertools
 
 
-def annotate(out_complemgrams, out_compwf, word, msd, model, delimiter="|", compdelim="+", affix="|", lexicon=None):
+def annotate(out_complemgram, out_compwf, word, msd, model, delimiter="|", compdelim="+", affix="|", lexicon=None):
     """Divides compound words into prefix(es) and suffix.
     - out_complemgram is the resulting annotation file for compound lemgrams
     - out_compwf is the resulting annotation file for compound wordforms
@@ -48,7 +48,7 @@ def annotate(out_complemgrams, out_compwf, word, msd, model, delimiter="|", comp
         OUT_complem[tokid] = affix + delimiter.join(complem_list) + affix if compounds and complem_list else affix
         OUT_compwf[tokid] = affix + delimiter.join(compwf_list) + affix if compounds else affix
 
-    util.write_annotation(out_complemgrams, OUT_complem)
+    util.write_annotation(out_complemgram, OUT_complem)
     util.write_annotation(out_compwf, OUT_compwf)
 
 
