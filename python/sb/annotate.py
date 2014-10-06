@@ -96,7 +96,16 @@ def concat(out, left, right, separator="", merge_twins="", encoding=util.UTF8):
     merge_twins = merge_twins.lower() == "true"
     b = util.read_annotation(right)
     util.write_annotation(out, ((key_a, u"%s%s%s" % (val_a, separator.decode(encoding), b[key_a]) if not (merge_twins and val_a == b[key_a]) else val_a) for (key_a, val_a) in util.read_annotation_iteritems(left)))
+
+
+def concat2(out, annotations, separator="", encoding=util.UTF8):
+    """Concatenates two or more annotations, with an optional separator."""
+    if isinstance(annotations, basestring):
+        annotations = annotations.split()
     
+    annotations = [util.read_annotation(a) for a in annotations]
+    util.write_annotation(out, [(k, separator.decode(encoding).join([a[k] for a in annotations])) for k in annotations[0]])
+
 
 def merge(out, main, backoff, encoding=util.UTF8):
     """Takes two annotations, and for keys without values in 'main', uses value from 'backoff'."""
@@ -116,5 +125,6 @@ if __name__ == '__main__':
                   find_replace=find_replace,
                   span_as_value=span_as_value,
                   concat=concat,
+                  concat2=concat2,
                   merge=merge
                   )
