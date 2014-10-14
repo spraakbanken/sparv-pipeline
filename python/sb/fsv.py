@@ -65,7 +65,7 @@ def extract_pos(out, lemgrams, extralemgrams='', delimiter="|", affix="|"):
     annotate_standard(out, lemgrams, mkpos, extralemgrams)
 
 
-def annotate_fallback(out, word, lemgram, models, key='lemgram', lexicons=None):
+def annotate_fallback(out, word, msd, lemgram, models, key='lemgram', lexicons=None):
     """ Annotates the words that does not already have a lemgram, according to model
         - out is the resulting annotation file
         - word is the words to be annotated
@@ -79,12 +79,14 @@ def annotate_fallback(out, word, lemgram, models, key='lemgram', lexicons=None):
         lexicons = [saldo.SaldoLexicon(lex) for lex in models]
 
     WORD = util.read_annotation(word)
+    MSD = util.read_annotation(msd)
 
     def annotate_empties(tokid, lemgrams):
         fallbacks = []
         if not lemgrams:
             word = WORD[tokid]
-            fallbacks.extend(getsingleannotation(lexicons, word, key))
+            msdtag = MSD[tokid]
+            fallbacks.extend(getsingleannotation(lexicons, word, key,msdtag))
 
         return fallbacks
 
@@ -341,14 +343,28 @@ def findmultiwordexpressions(incomplete_multis, complete_multis, theword, ref, M
         incomplete_multis.extend(looking_for)
 
 
-def getsingleannotation(lexicons, word, key):
+def getsingleannotation(lexicons, word, key,msdtag):
     annotation = []
+    # TODO This function is a hack, replace by proper msd translation!
+    def match_msd(tag,tags):
+        print tag,'in',tags,'?'
+        return tag in tags #(re.sub('av','jj',m.split()[0]).upper() for m in tags)
+        
     for lexicon in lexicons:
-        res = [ann for (ann, msdtags, wordslist, _, _) in lexicon.lookup(word) if not wordslist]
+        #for (ann,msdtags,wordlist,_,_,) in lexicon.lookup(word):
+        #   print 'word',word
+        #   print 'msd',msdtag
+        #   print 'msdtags',msdtags
+        #   print msdtag in (re.sub('av','jj',m.split()[0]).upper() for m in msdtags)
+        res = [(saldo.get_precision(msdtag, msdtags),ann) for (ann, msdtags, wordslist, _, _) in lexicon.lookup(word) if not wordslist]
+        #print word.encode('utf8'),msdtag
+        #print lexicon.lookup(word)
+        #print res
+        res = [a for x,a in sorted(res,reverse=True) if x>=0.5] # TODO use saldo.py for this!!!
         if res:
             annotation = res
             break
-    return _concat(x.get(key) for x in annotation)
+    return _concat(a.get(key) for a in annotation)
 
 
 def removeunwantedoverlaps(complete_multis):
