@@ -34,7 +34,7 @@ def chain(annotations, default=None):
         return key
     return dict((key, follow(key)) for key in annotations[0])
 
-def export(format, out, order, annotations_columns, annotations_structs, filename, fileids, valid_xml=True, columns=(), structs=(), encoding=CWB_ENCODING):
+def export(format, out, order, annotations_columns, annotations_structs, fileid=None, fileids=None, valid_xml=True, columns=(), structs=(), encoding=CWB_ENCODING):
     """
     Export 'annotations' to the VRT or XML file 'out'.
     The order of the annotation keys is decided by the annotation 'order'.
@@ -85,12 +85,16 @@ def export(format, out, order, annotations_columns, annotations_structs, filenam
     if format == "vrt":
         write_vrt(out, structs, structs_count, columns, column_nrs, tokens, vrt, encoding)
     elif format == "xml":
-        write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, filename, fileids, valid_xml, encoding)
+        write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fileid, fileids, valid_xml, encoding)
 
 
-def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt,  filename, fileids, valid_xml, encoding):
+def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fileid, fileids, valid_xml, encoding):
     """ The XML part of the 'export' function: write annotations to a valid xml file, unless valid_xml == False."""
-    fileid = util.read_annotation(fileids)[filename].encode(encoding)
+
+    assert fileid, "fileid not specified"
+    assert fileids, "fileids not specified"
+
+    fileid = util.read_annotation(fileids)[fileid].encode(encoding)
     overlap = False
     open_tag_stack = []
     pending_tag_stack = []
