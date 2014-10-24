@@ -29,10 +29,13 @@ def chain(annotations, default=None):
     """
     def follow(key):
         for annot in annotations:
-            try: key = annot[key]
-            except KeyError: return default
+            try:
+                key = annot[key]
+            except KeyError:
+                return default
         return key
     return dict((key, follow(key)) for key in annotations[0])
+
 
 def export(format, out, order, annotations_columns, annotations_structs, fileid=None, fileids=None, valid_xml=True, columns=(), structs=(), encoding=CWB_ENCODING):
     """
@@ -74,7 +77,7 @@ def export(format, out, order, annotations_columns, annotations_structs, fileid=
     for n, annot in enumerate(annotations_columns):
         n += structs_count
         for tok, value in util.read_annotation_iteritems(annot):
-            if n > structs_count: # Any column except the first (the word)
+            if n > structs_count:  # Any column except the first (the word)
                 value = "|" if value == "|/|" else value
             vrt[tok][n] = value.replace("\n", " ")
 
@@ -132,7 +135,7 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
                     if not elemids.get(pending_elem):
                         elemid += 1
                         elemids[pending_elem] = elemid
-                    line = '<%s _id="%s-%s"%s>' %(pending_elem.encode(encoding), fileid, elemids[pending_elem], attrstring)
+                    line = '<%s _id="%s-%s"%s>' % (pending_elem.encode(encoding), fileid, elemids[pending_elem], attrstring)
                     str_buffer.append(line)
                     open_tag_stack.append(pending_tag_stack[-1])
                     pending_tag_stack.pop()
@@ -149,7 +152,7 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
         for elem, _attrs in reversed(structs):
             if new_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
                 attrstring = ''.join(' %s="%s"' % (attr, val.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
-                              for (attr, val) in new_attr_values[elem] if not attr == UNDEF).encode(encoding)
+                                     for (attr, val) in new_attr_values[elem] if not attr == UNDEF).encode(encoding)
                 line = "<%s%s>" % (elem.encode(encoding), attrstring)
                 str_buffer.append(line)
                 old_attr_values[elem] = new_attr_values[elem]
@@ -220,7 +223,7 @@ def write_vrt(out, structs, structs_count, columns, column_nrs, tokens, vrt, enc
             for elem, _attrs in reversed(structs):
                 if new_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
                     attrstring = ''.join(' %s="%s"' % (attr, val.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
-                                  for (attr, val) in new_attr_values[elem] if not attr == UNDEF).encode(encoding)
+                                         for (attr, val) in new_attr_values[elem] if not attr == UNDEF).encode(encoding)
                     print >>OUT, "<%s%s>" % (elem.encode(encoding), attrstring)
                     old_attr_values[elem] = new_attr_values[elem]
             
@@ -371,7 +374,7 @@ def parse_structural_attributes(structural_atts):
     structs = {}
     order = []
     for n, struct in enumerate(structural_atts):
-        assert not struct or struct=="-" or "." not in struct, "Struct should contain ':' or be equal to '-': %s" % struct
+        assert not struct or struct == "-" or "." not in struct, "Struct should contain ':' or be equal to '-': %s" % struct
         
         if ":" in struct:
             elem, attr = struct.split(":")
