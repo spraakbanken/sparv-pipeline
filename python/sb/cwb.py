@@ -169,10 +169,12 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
             invalid_str_buffer.append(remove_control_characters(line).encode(encoding))
 
     # close remaining open tags
-    for elem, _attrs in structs:
-        if old_attr_values[elem]:
-            str_buffer.append("</%s>" % elem.encode(encoding))
-            if not valid_xml:
+    if open_tag_stack:
+        for elem in reversed(open_tag_stack):
+            str_buffer.append("</%s>" % elem[0].encode(encoding))
+    if not valid_xml:
+        for elem, _attrs in structs:
+            if old_attr_values[elem]:
                 invalid_str_buffer.append("</%s>" % elem.encode(encoding))
 
     str_buffer.append("</corpus>")
