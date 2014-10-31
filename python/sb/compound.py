@@ -3,20 +3,34 @@
 import cPickle as pickle
 import util
 import itertools
+from math import log
 
 
-def annotate(out_complemgram, out_compwf, word, msd, model, delimiter="|", compdelim="+", affix="|", lexicon=None):
+def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp, saldo_comp_model, nst_model, stats_model, delimiter="|", compdelim="+", affix="|", lexicon=None):
     """Divides compound words into prefix(es) and suffix.
     - out_complemgram is the resulting annotation file for compound lemgrams
     - out_compwf is the resulting annotation file for compound wordforms
+    - out_baseform is the resulting annotation file for baseforms (including baseforms for compounds)
     - word and msd are existing annotations for wordforms and MSDs
-    - model is the Saldo compound model
+    - baseform_tmp is the existing temporary annotation file for baseforms (not including compounds)
+    - saldo_comp_model is the Saldo compound model
+    - nst_model is the NST part of speech compound model
+    - stats_model is the statistics model
     - lexicon: this argument cannot be set from the command line,
       but is used in the catapult. this argument must be last
     """
 
+    ## load models ##
     if not lexicon:
-        saldo_lexicon = SaldoLexicon(model)
+        saldo_comp_lexicon = SaldoCompLexicon(saldo_comp_model)
+
+    with open(nst_model, "r") as f:
+        nst_model = pickle.load(f)
+
+    util.log.info("Reading statistics model: %s", stats_model)
+    with open(stats_model, "r") as s:
+        stats_model = pickle.load(s)
+    util.log.info("Done")
 
     WORD = util.read_annotation(word)
     MSD = util.read_annotation(msd)
@@ -24,63 +38,34 @@ def annotate(out_complemgram, out_compwf, word, msd, model, delimiter="|", compd
     # create alternative lexicon (for words within the file)
     altlexicon = InFileLexicon(WORD, MSD)
 
+    ## do annotation ##
     OUT_complem = {}
     OUT_compwf = {}
+    OUT_baseform = {}
+    IN_baseform = util.read_annotation(baseform_tmp)
 
     for tokid in WORD:
-        compounds = compound(saldo_lexicon, altlexicon, WORD[tokid], MSD[tokid])
-        # compounds = list of saldo compound lists which contain compound tuples; e.g. glasskål:
-        # [[(('glas', 'glas..nn.1'), ('skål', 'skål..nn.1')), (('glas', 'glasa..vb.1'), ('skål', 'skål..nn.1'))], ...]
-        complem_list = []
-        compwf_list = []
-        for comp_list in compounds:
-            complems = True
-            for comp in comp_list:
-                for a in comp:
-                    if a[1] == 0:
-                        complems = False
-                        break
-                if complems:
-                    complem_list.append(compdelim.join(affix[1] for affix in comp))
+        compounds = compound(saldo_comp_lexicon, altlexicon, WORD[tokid], MSD[tokid])
 
-            compwf_list.append(compdelim.join(affix[0] for affix in comp_list[0]))
+        if compounds:
+            compounds = rank_compounds(compounds, nst_model, stats_model)
 
-        OUT_complem[tokid] = affix + delimiter.join(complem_list) + affix if compounds and complem_list else affix
-        OUT_compwf[tokid] = affix + delimiter.join(compwf_list) + affix if compounds else affix
+        # create complem and compwf annotations
+        make_complem_and_compwf(OUT_complem, OUT_compwf, tokid, compounds, compdelim, delimiter, affix)
+        
+        # create new baseform annotation if necessary
+        if IN_baseform[tokid] != affix:
+            OUT_baseform[tokid] = IN_baseform[tokid]
+        else:
+            make_new_baseforms(OUT_baseform, tokid, MSD[tokid], compounds, stats_model, altlexicon, delimiter, affix)
 
-    util.write_annotation(out_complemgram, OUT_complem)
+
+    util.write_annotation(out_complemgrams, OUT_complem)
     util.write_annotation(out_compwf, OUT_compwf)
+    util.write_annotation(out_baseform, OUT_baseform)
 
 
-class InFileLexicon(object):
-    """A dictionary of all words occuring in the input file.
-    keys = words, values =  MSD tags
-    """
-    def __init__(self, word, msd):
-        lex = {}
-        for tokid in word:
-            w = word[tokid].lower()
-            # skip words consisting of a single letter (saldo takes care of these)
-            if len(w) > 1:
-                lex[w] = lex.get(w, set())
-                lex[w].add((w, msd[tokid]))
-        self.lexicon = lex
-
-    def lookup(self, word):
-        """Lookup a word in the lexicon."""
-        return list(self.lexicon.get(word, []))
-
-    def get_prefixes(self, prefix):
-        return [(prefix, 0) for s in self.lookup(prefix.lower())]
-
-    def get_suffixes(self, suffix, msd=None):
-        return [(suffix, 0) for s in self.lookup(suffix.lower())
-                if (s[1][0:2] in ("NN", "VB", "AV", "AB"))
-                and (not msd or msd in s[1] or s[1].startswith(msd[:msd.find(".")]))
-                ]
-
-
-class SaldoLexicon(object):
+class SaldoCompLexicon(object):
     """A lexicon for Saldo compound lookups.
     It is initialized from a Pickled file.
     """
@@ -101,13 +86,42 @@ class SaldoLexicon(object):
         return map(_split_triple, annotation_tag_pairs)
 
     def get_prefixes(self, prefix):
-        return [(prefix, p[0]) for p in self.lookup(prefix) if set(p[1]).intersection(set(["c", "ci"]))]
+        return [(prefix, p[0], tuple(p[3])) for p in self.lookup(prefix) if set(p[1]).intersection(set(["c", "ci", "cm"]))]
 
     def get_suffixes(self, suffix, msd=None):
-        return [(suffix, s[0]) for s in self.lookup(suffix)
+        return [(suffix, s[0], tuple(s[3])) for s in self.lookup(suffix)
                 if (s[2] in ("nn", "vb", "av", "ab") or s[2][-1] == "h")
                 and set(s[1]).difference(set(["c", "ci", "cm", "sms"]))
                 and (msd in s[3] or not msd or [partial for partial in s[3] if partial.startswith(msd[:msd.find(".")])])
+                ]
+
+
+class InFileLexicon(object):
+    """A dictionary of all words occuring in the input file.
+    keys = words, values =  MSD tags
+    """
+    def __init__(self, word, msd):
+        lex = {}
+        for tokid in word:
+            w = word[tokid].lower()
+            # skip words consisting of a single letter (saldo should take care of these)
+            if len(w) > 1:
+                lex[w] = lex.get(w, set())
+                pos = msd[tokid][:msd[tokid].find(".")] if msd[tokid][:msd[tokid].find(".")] != -1 else msd[tokid]
+                lex[w].add((w, pos))
+        self.lexicon = lex
+
+    def lookup(self, word):
+        """Lookup a word in the lexicon."""
+        return list(self.lexicon.get(word, []))
+
+    def get_prefixes(self, prefix):
+        return [(prefix, '0', (s[1],)) for s in self.lookup(prefix.lower())]
+
+    def get_suffixes(self, suffix, msd=None):
+        return [(suffix, '0', (s[1],)) for s in self.lookup(suffix.lower())
+                if (s[1][0:2] in ("NN", "VB", "AV", "AB"))
+                and (not msd or msd in s[1] or s[1].startswith(msd[:msd.find(".")]))
                 ]
 
 
@@ -155,37 +169,33 @@ def split_word(saldo_lexicon, altlexicon, w):
             if abort:
                 continue
 
-            comp = [w[i:j] for i, j in spans]
-
-            # Have we analyzed this suffix yet?
-            if not spans[-1] in valid_spans:
-                if not has_suffix_analysis(saldo_lexicon, altlexicon, comp[-1]):
-                    invalid_spans.add(spans[-1])
-                    continue
-                else:
-                    valid_spans.add(spans[-1])
-
-            for k, affix in enumerate(comp[:-1]):
-                # Have we analyzed this affix yet?
-                if not spans[k] in valid_spans:
-                    if not (saldo_lexicon.get_prefixes(affix) or altlexicon.get_prefixes(affix)):
-                        invalid_spans.add(spans[k])
-                        comp = None
-                        # Skip any combination of spans following the invalid span
-                        for j in range(k+1, n):
-                            indices[j] = j + nn - n
-                        break
+            # expand prefixes if possible
+            comps = three_consonant_rule([w[i:j] for i, j in spans])
+            for comp in comps:
+                # Have we analyzed this suffix yet?
+                if not spans[-1] in valid_spans:
+                    # Is there a possible suffix analysis?
+                    if exception(comp[-1]) or not (saldo_lexicon.get_suffixes(comp[-1]) or altlexicon.get_suffixes(comp[-1])):
+                        invalid_spans.add(spans[-1])
+                        continue
                     else:
-                        valid_spans.add(spans[k])
+                        valid_spans.add(spans[-1])
 
-            if comp:
-                yield comp
+                for k, affix in enumerate(comp[:-1]):
+                    # Have we analyzed this affix yet?
+                    if not spans[k] in valid_spans:
+                        if not (saldo_lexicon.get_prefixes(affix) or altlexicon.get_prefixes(affix)):
+                            invalid_spans.add(spans[k])
+                            comp = None
+                            # Skip any combination of spans following the invalid span
+                            for j in range(k+1, n):
+                                indices[j] = j + nn - n
+                            break
+                        else:
+                            valid_spans.add(spans[k])
 
-
-def has_suffix_analysis(saldo_lexicon, altlexicon, suffix):
-    """Check if suffix has a valid analysis in saldo."""
-    # check if suffix is not an exeption
-    return not exception(suffix) and (saldo_lexicon.get_suffixes(suffix) or altlexicon.get_suffixes(suffix))
+                if comp:
+                    yield comp
 
 
 def exception(w):
@@ -203,42 +213,118 @@ def three_consonant_rule(compound):
     """ Expand prefix if its last letter == first letter of suffix.
     ("glas", "skål") --> ("glas", "skål"), ("glass", "skål") """
     combinations = []
+    suffix = compound[len(compound)-1]
     for index in range(len(compound)-1):
         current_prefix = compound[index]
         current_suffix = compound[index+1]
         # last prefix letter == first suffix letter; and prefix ends in one of "bdfgjlmnprstv"
-        if current_prefix[-1] == current_suffix[0] and current_prefix[-1] in "bdfgjlmnprstv":
+        if current_prefix[-1] in "bdfgjlmnprstv" and current_prefix[-1] == current_suffix[0]:
             combinations.append((current_prefix, current_prefix + current_prefix[-1]))
         else:
             combinations.append((current_prefix, current_prefix))
-    suffix = compound[len(compound)-1]
     combinations.append((suffix, suffix))
-    # return a list of all possible affix combinations
-    return list(set(itertools.product(*combinations)))
+    return [list(i) for i in list(set(itertools.product(*combinations)))]
+
+
+def rank_compounds(compounds, nst_model, stats_model):
+    """Return a list of compounds, ordered according to their ranks.
+    Ranking is being done according to the amount of affixes (the fewer the higher)
+    and the compound probability which is calculated as follows:
+    p((w1,tag1)..(wn,tag1)) = p(w1,tag1) ... * p(wn,tagn) * p(tag1, ...tagn)
+    t.ex. p(clown+bil) = p(clown, NN) * p(bil, NN) * p(NN,NN) 
+    """
+    ranklist = []
+    for clist in compounds:
+        affixes = [affix[0] for affix in clist[0]]
+        for c in clist:
+            tags = list(itertools.product(*[affix[2] for affix in c]))
+            # calculate log probability score
+            word_probs = max(sum([log(stats_model.prob(i)) for i in zip(affixes, t)]) for t in tags)
+            tag_prob = max(log(nst_model.prob('+'.join(t))) for t in tags)
+            score = word_probs + tag_prob
+            ranklist.append((score, c))
+    ranklist = sorted(ranklist, key=lambda x: x[0], reverse=True)
+    # sort according to length
+    ranklist = sorted(ranklist, key=lambda x: len(x[1]))
+    ranklist = [c for _r, c in ranklist]
+    return ranklist
 
 
 def compound(saldo_lexicon, altlexicon, w, msd=None):
     """Create a list of compound analyses for word w."""
     in_compounds = [i for i in split_word(saldo_lexicon, altlexicon, w)]
     out_compounds = []
-    for _comp in in_compounds:
-        # expand prefixes if possible
-        for comp in three_consonant_rule(_comp):
-            current_combinations = []
-            # get prefix analysis for every affix
-            for affix in comp[:len(comp)-1]:
-                anap = saldo_lexicon.get_prefixes(affix) + altlexicon.get_prefixes(affix)
-                if len(anap) == 0:
-                    break
-                current_combinations.append(anap)
-            # get suffix analysis for suffix
-            anas = saldo_lexicon.get_suffixes(comp[len(comp)-1], msd)
-            # check if every affix in comp has an analysis
-            if len(current_combinations) < len(comp)-1 or len(anas) == 0:
+    for comp in in_compounds:
+        current_combinations = []
+        # get prefix analysis for every affix
+        for affix in comp[:len(comp)-1]:
+            anap = saldo_lexicon.get_prefixes(affix)
+            if not anap:
+                anap = altlexicon.get_prefixes(affix)
+            if len(anap) == 0:
                 break
+            current_combinations.append(anap)
+        # get suffix analysis for suffix
+        anas = saldo_lexicon.get_suffixes(comp[len(comp)-1], msd)
+        if not anas:
+            anas = altlexicon.get_suffixes(comp[len(comp)-1], msd)
+        # check if every affix in comp has an analysis
+        if len(current_combinations) == len(comp)-1 and len(anas) > 0:
             current_combinations.append(anas)
-            out_compounds.append(list(itertools.product(*current_combinations)))
+            out_compounds.append(list(set(itertools.product(*current_combinations))))
     return out_compounds
+
+
+def make_complem_and_compwf(OUT_complem, OUT_compwf, tokid, compounds, compdelim, delimiter, affix):
+    """Add a list of compound lemgrams to the dictionary OUT_complem[tokid]
+    and a list of compound wordforms to OUT_compwf."""
+    complem_list = []
+    compwf_list = []
+    complems = True
+    for comp in compounds:
+        for a in comp:
+            if a[1] == '0':
+                complems = False
+                break
+        if complems:
+            complem_list.append(compdelim.join(affix[1] for affix in comp))
+
+        # if first letter has upper case, check if one of the affixes may be a name:
+        first_letter = comp[0][0][0]
+        if first_letter == first_letter.upper():
+            if sum(1 for a in comp if "pm" in a[1][a[1].find('.'):]) + sum(1 for a in comp if "PM" in a[2]) == 0:
+                first_letter = first_letter.lower()
+        prefix = first_letter + comp[0][0][1:]
+        wf = prefix + compdelim + compdelim.join(affix[0] for affix in comp[1:])
+        if wf not in compwf_list:
+            compwf_list.append(wf)
+
+    # update dictionaries
+    OUT_complem[tokid] = affix + delimiter.join(complem_list) + affix if compounds and complem_list else affix
+    OUT_compwf[tokid] = affix + delimiter.join(compwf_list) + affix if compounds else affix
+
+
+def make_new_baseforms(OUT_baseform, tokid, msd_tag, compounds, stats_model, altlexicon, delimiter, affix):
+    """Add a list of baseforms to the dictionary OUT_baseform[tokid]."""
+    baseform_list = []
+    msd_tag = msd_tag[:msd_tag.find('.')]
+    for comp in compounds:
+        base_suffix = comp[-1][1][:comp[-1][1].find('.')]
+        prefix = comp[0][0]
+        # if first letter has upper case, check if one of the affixes is a name:
+        if prefix[0] == prefix[0].upper():
+            if sum([1 for a in comp if "pm" in a[1][a[1].find('.'):]]) == 0:
+                prefix = prefix[0].lower() + prefix[1:]
+        baseform = prefix + ''.join(affix[0] for affix in comp[1:-1]) + base_suffix
+
+        # check if this baseform with the MSD tag occurs in stats_model
+        if baseform not in baseform_list:
+            if stats_model.freqdist()[(baseform, msd_tag)] > 0 or altlexicon.lookup(baseform.lower()) != []:
+                baseform_list.append(baseform)
+
+    # update dictionary
+    OUT_baseform[tokid] = affix + delimiter.join(baseform_list) \
+        + affix if (compounds and baseform_list) else affix
 
 
 def read_xml(xml='saldom.xml', tagset="SUC"):
@@ -269,7 +355,7 @@ def read_xml(xml='saldom.xml', tagset="SUC"):
                     word = form.findtext("wf")
                     param = form.findtext("param")
 
-                    if not param[-1].isdigit() and not param == "frag" and (param in ("c", "ci") or (pos in ("nn", "vb", "av", "ab") or pos[-1] == "h")):
+                    if not param[-1].isdigit() and not param == "frag": #and (param in ("c", "ci") or (pos in ("nn", "vb", "av", "ab") or pos[-1] == "h")):
 
                         saldotag = " ".join([pos] + inhs + [param])
                         tags = tagmap.get(saldotag)
@@ -321,12 +407,12 @@ def _split_triple(annotation_tag_words):
     lemgram, msds, pos, tags = annotation_tag_words.split(PART_DELIM1)
     msds = msds.split(PART_DELIM2)
     tags = tags.split(PART_DELIM2)
+    tags = list(set([t[:t.find(".")] if t.find(".") != -1 else t for t in tags]))
     return lemgram, msds, pos, tags
 
 
 def xml_to_pickle(xml, filename):
     """Read an XML dictionary and save as a pickle file."""
-
     xml_lexicon = read_xml(xml)
     save_to_picklefile(filename, xml_lexicon)
 
