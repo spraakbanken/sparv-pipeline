@@ -9,7 +9,7 @@ TAG_COLUMN = 1
 LEM_COLUMN = 2
 
 
-def tt_proc(model, out_pos, out_lem, word, sentence, tag_mapping=None, encoding=util.UTF8):
+def tt_proc(model, tt_binary, out_pos, out_lem, word, sentence, tag_mapping=None, encoding=util.UTF8):
     """POS/MSD tag using the TreeTagger.
     """
     if isinstance(tag_mapping, basestring) and tag_mapping:
@@ -23,7 +23,7 @@ def tt_proc(model, out_pos, out_lem, word, sentence, tag_mapping=None, encoding=
                           for sent in sentences)
     args = ["-token", "-lemma", "-cap-heuristics", "-no-unknown", "-eos-tag", "<eos>", model]
 
-    stdout, _ = util.system.call_binary("tree-tagger", args, stdin, encoding=encoding, verbose=True)
+    stdout, _ = util.system.call_binary(tt_binary, args, stdin, encoding=encoding, verbose=True)
 
     # Write pos annotations.
     OUT = {}
