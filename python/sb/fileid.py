@@ -3,7 +3,7 @@
 import util
 
 
-def fileid(out, files=None, filelist=None):
+def fileid(out, files=None, filelist=None, prefix=""):
     """Creates unique IDs for every file in a list, using the filenames as seed.
     The resulting IDs are written to the file specified by 'out'."""
 
@@ -21,12 +21,12 @@ def fileid(out, files=None, filelist=None):
 
     for f in files:
         util.resetIdent(f, numfiles)
-        OUT[f] = util.mkIdent("", OUT.values())
+        OUT[f] = prefix + util.mkIdent("", OUT.values())
 
     util.write_annotation(out, OUT)
 
 
-def add(out, fileids, files=None, filelist=None):
+def add(out, fileids, files=None, filelist=None, prefix=""):
     """ Adds IDs for new files to an existing list of file IDs. """
     
     assert files or filelist, "files or filelist must be specified"
@@ -44,7 +44,7 @@ def add(out, fileids, files=None, filelist=None):
     for f in files:
         if not f in OUT:
             util.resetIdent(f, numfiles)
-            OUT[f] = util.mkIdent("", OUT.values())
+            OUT[f] = prefix + util.mkIdent("", OUT.values())
 
     util.write_annotation(out, OUT)
 
