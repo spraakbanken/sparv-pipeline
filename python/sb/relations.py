@@ -470,16 +470,17 @@ MYSQL_RELATIONS = {'columns': [
                                ("bfdep",  "BOOL", None, ""),
                                ("wfhead", "BOOL", None, ""),
                                ("wfdep",  "BOOL", None, "")],
-               'indexes': ["head",
-                           "dep",
-                           "bfhead",
-                           "bfdep",
-                           "wfhead",
-                           "wfdep"],
-               'constraints': [("UNIQUE INDEX", "relation", ("head", "rel", "dep"))],
-               'default charset': 'utf8',
-               #'collate': 'utf8_bin'
-               }
+                   'indexes': ["head",
+                               "rel",
+                               "dep",
+                               "bfhead",
+                               "bfdep",
+                               "wfhead",
+                               "wfdep"],
+                   'constraints': [("UNIQUE INDEX", "relation", ("head", "rel", "dep"))],
+                   'default charset': 'utf8',
+                   #'collate': 'utf8_bin'
+                   }
 
 MYSQL_STRINGS = {'columns': [
                              ("id",          int, None, ""),
@@ -495,11 +496,11 @@ MYSQL_STRINGS = {'columns': [
 MYSQL_REL = {'columns': [
                           ("rel",    rel_enum, None, ""),
                           ("freq", int, None, "")],
-               'indexes': ["rel"],
-               'constraints': [("UNIQUE INDEX", "relation", ("rel",))],
-               'default charset': 'utf8',
-               'collate': 'utf8_bin'
-               }
+             'indexes': ["rel"],
+             'constraints': [("UNIQUE INDEX", "relation", ("rel",))],
+             'default charset': 'utf8',
+             'collate': 'utf8_bin'
+             }
 
 MYSQL_HEAD_REL = {'columns': [
                               ("head",   int, 0, "NOT NULL"),
@@ -517,7 +518,7 @@ MYSQL_DEP_REL = {'columns': [
                               ("rel",    rel_enum, None, ""),
                               ("freq", int, None, "")],
                  'indexes': ["dep",
-                           "rel"],
+                             "rel"],
                  'constraints': [("UNIQUE INDEX", "relation", ("dep", "rel"))],
                  'default charset': 'utf8',
                  'collate': 'utf8_bin'
