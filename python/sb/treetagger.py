@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import util.tagsets
 import util
 
 SENT_SEP = "\n<eos>\n"
@@ -10,13 +9,14 @@ TAG_COLUMN = 1
 LEM_COLUMN = 2
 
 
-def tt_proc(model, tt_binary, out_pos, out_msd, out_lem, word, sentence, lang, tag_mapping=None, encoding=util.UTF8):
-    """POS/MSD tag using the TreeTagger.
+def tt_proc(model, tt_binary, out_pos, out_msd, out_lem, word, sentence, lang, encoding=util.UTF8):
+    """POS/MSD tag and lemmatize using the TreeTagger.
+    - model is the binary TreeTagger model file
+    - tt_binary provides the path to the TreeTagger executable
+    - out_pos, out_msd and out_lem are the resulting annotation files
+    - word and sentence are existing annotation files
+    - lang is the two-letter language code of the language to be analyzed
     """
-    if isinstance(tag_mapping, basestring) and tag_mapping:
-        tag_mapping = util.tagsets.__dict__[tag_mapping]
-    elif tag_mapping is None or tag_mapping == "":
-        tag_mapping = {}
 
     sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
     WORD = util.read_annotation(word)
@@ -26,15 +26,14 @@ def tt_proc(model, tt_binary, out_pos, out_msd, out_lem, word, sentence, lang, t
 
     stdout, _ = util.system.call_binary(tt_binary, args, stdin, encoding=encoding, verbose=True)
 
-    # Write pos annotations.
+    # Write pos and msd annotations.
     OUT_POS = {}
     OUT_MSD = {}
     for sent, tagged_sent in zip(sentences, stdout.strip().split(SENT_SEP)):
         for token_id, tagged_token in zip(sent, tagged_sent.strip().split(TOK_SEP)):
             tag = tagged_token.strip().split(TAG_SEP)[TAG_COLUMN]
-            tag = tag_mapping.get(tag, tag)
             OUT_MSD[token_id] = tag.encode(encoding)
-            OUT_POS[token_id] = util.map_msd_pos.map_msd_pos(tag.encode(encoding), lang)
+            OUT_POS[token_id] = util.msd_to_pos.convert(tag.encode(encoding), lang)
     util.write_annotation(out_msd, OUT_MSD)
     util.write_annotation(out_pos, OUT_POS)
 

@@ -2,7 +2,7 @@
 
 # maps MSD tags to simple POS tags
 
-def map_msd_pos(msd, lang):
+def convert(msd, lang):
     lang_convert = eval(lang + "_convert")
     return lang_convert(msd)
 

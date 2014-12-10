@@ -1,7 +1,7 @@
 
 from constants import *
 from corpus import *
-import map_msd_pos
+import msd_to_pos
 import log
 import system
 import run
@@ -11,6 +11,6 @@ __all__ = [
     'log',
     'run',
     'system',
-    'map_msd_pos',
+    'msd_to_pos',
     'tagsets',
     ]
