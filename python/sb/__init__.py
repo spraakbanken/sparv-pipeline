@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 __all__ = [
-    'align',
     'annotate',
     'compound',
+    'compound_simple',
     'cwb',
     'dateformat',
     'fileid',
