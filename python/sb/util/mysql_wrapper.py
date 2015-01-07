@@ -55,7 +55,7 @@ class MySQL(object):
         for index in indexes:
             if isinstance(index, basestring):
                 index = index.split()
-            sqlcolumns += [u"INDEX %s (%s)" % (_ATOM(index[0]), _ATOMSEQ(index))]
+            sqlcolumns += [u"INDEX %s (%s)" % (_ATOM("-".join(index)), _ATOMSEQ(index))]
         if constraints:
             for constraint in constraints:
                 sqlcolumns += [u"CONSTRAINT %s %s (%s)" % (constraint[0], _ATOM(constraint[1]), _ATOMSEQ(constraint[2]))]
