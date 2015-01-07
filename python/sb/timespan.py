@@ -66,8 +66,9 @@ MYSQL_TIMESPAN = {'columns': [
                                ("corpus",   "varchar(64)", "", "NOT NULL"),
                                ("datefrom",  "char(14)", "", "NOT NULL"),
                                ("dateto",    "char(14)", "", "NOT NULL"),
-                               ("tokens",   int, None, "")],
-                  'indexes': ["corpus"],
+                               ("tokens",   int, 0, "NOT NULL")],
+                  'primary': "corpus datefrom dateto tokens",
+                  'indexes': [],
                   'default charset': 'utf8'
                   }
 

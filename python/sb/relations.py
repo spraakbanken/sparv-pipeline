@@ -461,42 +461,40 @@ rel_enum = "ENUM(%s)" % ", ".join("'%s'" % r for r in RELNAMES)
 MYSQL_TABLE = "relations"
 
 MYSQL_RELATIONS = {'columns': [
-                               ("id",     int, None, ""),
+                               ("id",     int, None, "NOT NULL"),
                                ("head",   int, 0, "NOT NULL"),
-                               ("rel",    rel_enum, None, ""),
+                               ("rel",    rel_enum, RELNAMES[0], "NOT NULL"),
                                ("dep",    int, 0, "NOT NULL"),
-                               ("freq",   int, 0, ""),
+                               ("freq",   int, 0, "NOT NULL"),
                                ("bfhead", "BOOL", None, ""),
                                ("bfdep",  "BOOL", None, ""),
                                ("wfhead", "BOOL", None, ""),
                                ("wfdep",  "BOOL", None, "")],
-                   'indexes': ["head",
-                               "rel",
-                               "dep",
-                               "bfhead",
-                               "bfdep",
-                               "wfhead",
-                               "wfdep"],
+                   'primary': "head wfhead dep rel freq id",
+                   'indexes': ["dep wfdep head rel freq id",
+                               "head dep bfhead bfdep rel freq id",
+                               "dep head bfhead bfdep rel freq id"],
                    'constraints': [("UNIQUE INDEX", "relation", ("head", "rel", "dep"))],
                    'default charset': 'utf8',
                    #'collate': 'utf8_bin'
                    }
 
 MYSQL_STRINGS = {'columns': [
-                             ("id",          int, None, ""),
+                             ("id",          int, 0, "NOT NULL"),
                              ("string",      "varchar(100)", "", "NOT NULL"),
-                             ("stringextra", "varchar(32)", "", ""),
+                             ("stringextra", "varchar(32)", "", "NOT NULL"),
                              ("pos",         "varchar(5)", "", "NOT NULL")],
-                 'indexes': ["id",
-                             "string"],
+                 'primary': "string id pos stringextra",
+                 'indexes': ["id string pos stringextra"],
                  'default charset': 'utf8',
                  'collate': 'utf8_bin'
                  }
 
 MYSQL_REL = {'columns': [
-                          ("rel",    rel_enum, None, ""),
-                          ("freq", int, None, "")],
-             'indexes': ["rel"],
+                          ("rel",    rel_enum, RELNAMES[0], "NOT NULL"),
+                          ("freq", int, 0, "NOT NULL")],
+             'primary': "rel freq",
+             'indexes': [],
              'constraints': [("UNIQUE INDEX", "relation", ("rel",))],
              'default charset': 'utf8',
              'collate': 'utf8_bin'
@@ -504,10 +502,10 @@ MYSQL_REL = {'columns': [
 
 MYSQL_HEAD_REL = {'columns': [
                               ("head",   int, 0, "NOT NULL"),
-                              ("rel",    rel_enum, None, ""),
-                              ("freq", int, None, "")],
-                  'indexes': ["head",
-                              "rel"],
+                              ("rel",    rel_enum, RELNAMES[0], "NOT NULL"),
+                              ("freq", int, 0, "NOT NULL")],
+                  'primary': "head rel freq",
+                  'indexes': [],
                   'constraints': [("UNIQUE INDEX", "relation", ("head", "rel"))],
                   'default charset': 'utf8',
                   'collate': 'utf8_bin'
@@ -515,10 +513,10 @@ MYSQL_HEAD_REL = {'columns': [
 
 MYSQL_DEP_REL = {'columns': [
                               ("dep",   int, 0, "NOT NULL"),
-                              ("rel",    rel_enum, None, ""),
-                              ("freq", int, None, "")],
-                 'indexes': ["dep",
-                             "rel"],
+                              ("rel",    rel_enum, RELNAMES[0], "NOT NULL"),
+                              ("freq", int, 0, "NOT NULL")],
+                 'primary': "dep rel freq",
+                 'indexes': [],
                  'constraints': [("UNIQUE INDEX", "relation", ("dep", "rel"))],
                  'default charset': 'utf8',
                  'collate': 'utf8_bin'
@@ -529,7 +527,8 @@ MYSQL_SENTENCES = {'columns': [
                                ("sentence",   "varchar(64)", "", "NOT NULL"),
                                ("start",    int, None, ""),
                                ("end", int, None, "")],
-                   'indexes': ["id"],
+                   'primary': "id",
+                   'indexes': [],
                    'default charset': 'utf8',
                    'collate': 'utf8_bin'
                    }

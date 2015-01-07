@@ -76,9 +76,7 @@ MYSQL_INDEX = {'columns': [("lemgram", "varchar(64)", "", "NOT NULL"),
                            ("freq_prefix", int, 0, "NOT NULL"),
                            ("freq_suffix", int, 0, "NOT NULL"),
                            ("corpus", "varchar(64)", "", "NOT NULL")],
-               'indexes': ["lemgram",
-                           "corpus"
-                           ],
+               'indexes': ["lemgram corpus freq freq_prefix freq_suffix"],  # Can't make this primary due to collation
                'default charset': 'utf8',
                }
 
