@@ -461,7 +461,7 @@ rel_enum = "ENUM(%s)" % ", ".join("'%s'" % r for r in RELNAMES)
 MYSQL_TABLE = "relations"
 
 MYSQL_RELATIONS = {'columns': [
-                               ("id",     int, None, "NOT NULL"),
+                               ("id",     int, 0, "NOT NULL"),
                                ("head",   int, 0, "NOT NULL"),
                                ("rel",    rel_enum, RELNAMES[0], "NOT NULL"),
                                ("dep",    int, 0, "NOT NULL"),
