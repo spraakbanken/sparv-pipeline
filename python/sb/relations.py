@@ -527,8 +527,7 @@ MYSQL_SENTENCES = {'columns': [
                                ("sentence",   "varchar(64)", "", "NOT NULL"),
                                ("start",    int, None, ""),
                                ("end", int, None, "")],
-                   'primary': "id",
-                   'indexes': [],
+                   'indexes': ["id"],
                    'default charset': 'utf8',
                    'collate': 'utf8_bin'
                    }
