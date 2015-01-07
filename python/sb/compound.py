@@ -6,7 +6,7 @@ import itertools
 from math import log
 
 
-def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp, saldo_comp_model, nst_model, stats_model, delimiter="|", compdelim="+", affix="|", lexicon=None):
+def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp, saldo_comp_model, nst_model, stats_model, delimiter="|", compdelim="+", affix="|", lexicon=None, stats_lexicon=None):
     """Divides compound words into prefix(es) and suffix.
     - out_complemgram is the resulting annotation file for compound lemgrams
     - out_compwf is the resulting annotation file for compound wordforms
@@ -15,9 +15,9 @@ def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp
     - baseform_tmp is the existing temporary annotation file for baseforms (not including compounds)
     - saldo_comp_model is the Saldo compound model
     - nst_model is the NST part of speech compound model
-    - stats_model is the statistics model
-    - lexicon: this argument cannot be set from the command line,
-      but is used in the catapult. this argument must be last
+    - stats_model is the statistics model (pickled file)
+    - lexicon, stats_lexicon: these argument cannot be set from the command line,
+      but are used in the catapult. These arguments must be last.
     """
 
     ## load models ##
@@ -27,10 +27,8 @@ def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp
     with open(nst_model, "r") as f:
         nst_model = pickle.load(f)
 
-    util.log.info("Reading statistics model: %s", stats_model)
-    with open(stats_model, "r") as s:
-        stats_model = pickle.load(s)
-    util.log.info("Done")
+    if not stats_lexicon:
+        stats_lexicon = StatsLexicon(stats_model)
 
     WORD = util.read_annotation(word)
     MSD = util.read_annotation(msd)
@@ -48,7 +46,7 @@ def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp
         compounds = compound(saldo_comp_lexicon, altlexicon, WORD[tokid], MSD[tokid])
 
         if compounds:
-            compounds = rank_compounds(compounds, nst_model, stats_model)
+            compounds = rank_compounds(compounds, nst_model, stats_lexicon)
 
         # create complem and compwf annotations
         make_complem_and_compwf(OUT_complem, OUT_compwf, tokid, compounds, compdelim, delimiter, affix)
@@ -57,12 +55,31 @@ def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp
         if IN_baseform[tokid] != affix:
             OUT_baseform[tokid] = IN_baseform[tokid]
         else:
-            make_new_baseforms(OUT_baseform, tokid, MSD[tokid], compounds, stats_model, altlexicon, delimiter, affix)
+            make_new_baseforms(OUT_baseform, tokid, MSD[tokid], compounds, stats_lexicon, altlexicon, delimiter, affix)
 
 
     util.write_annotation(out_complemgrams, OUT_complem)
     util.write_annotation(out_compwf, OUT_compwf)
     util.write_annotation(out_baseform, OUT_baseform)
+
+
+class StatsLexicon(object):
+    """A lexicon for probabilities of word forms and their POS tags.
+    It is initialized from a pickled file.
+    """
+    def __init__(self, stats_model, verbose=True):
+        if verbose:
+            util.log.info("Reading statistics model: %s", stats_model)
+        with open(stats_model, "r") as s:
+            self.lexicon = pickle.load(s)
+        if verbose:
+            util.log.info("Done")
+
+    def lookup_prob(self, word):
+        return self.lexicon.prob(word)
+
+    def lookup_word_tag_freq(self, word, tag):
+        return self.lexicon.freqdist()[(word, tag)]
 
 
 class SaldoCompLexicon(object):
@@ -226,7 +243,7 @@ def three_consonant_rule(compound):
     return [list(i) for i in list(set(itertools.product(*combinations)))]
 
 
-def rank_compounds(compounds, nst_model, stats_model):
+def rank_compounds(compounds, nst_model, stats_lexicon):
     """Return a list of compounds, ordered according to their ranks.
     Ranking is being done according to the amount of affixes (the fewer the higher)
     and the compound probability which is calculated as follows:
@@ -239,7 +256,7 @@ def rank_compounds(compounds, nst_model, stats_model):
         for c in clist:
             tags = list(itertools.product(*[affix[2] for affix in c]))
             # calculate log probability score
-            word_probs = max(sum([log(stats_model.prob(i)) for i in zip(affixes, t)]) for t in tags)
+            word_probs = max(sum([log(stats_lexicon.lookup_prob(i)) for i in zip(affixes, t)]) for t in tags)
             tag_prob = max(log(nst_model.prob('+'.join(t))) for t in tags)
             score = word_probs + tag_prob
             ranklist.append((score, c))
@@ -304,7 +321,7 @@ def make_complem_and_compwf(OUT_complem, OUT_compwf, tokid, compounds, compdelim
     OUT_compwf[tokid] = affix + delimiter.join(compwf_list) + affix if compounds else affix
 
 
-def make_new_baseforms(OUT_baseform, tokid, msd_tag, compounds, stats_model, altlexicon, delimiter, affix):
+def make_new_baseforms(OUT_baseform, tokid, msd_tag, compounds, stats_lexicon, altlexicon, delimiter, affix):
     """Add a list of baseforms to the dictionary OUT_baseform[tokid]."""
     baseform_list = []
     msd_tag = msd_tag[:msd_tag.find('.')]
@@ -317,9 +334,9 @@ def make_new_baseforms(OUT_baseform, tokid, msd_tag, compounds, stats_model, alt
                 prefix = prefix[0].lower() + prefix[1:]
         baseform = prefix + ''.join(affix[0] for affix in comp[1:-1]) + base_suffix
 
-        # check if this baseform with the MSD tag occurs in stats_model
+        # check if this baseform with the MSD tag occurs in stats_lexicon
         if baseform not in baseform_list:
-            if stats_model.freqdist()[(baseform, msd_tag)] > 0 or altlexicon.lookup(baseform.lower()) != []:
+            if stats_lexicon.lookup_word_tag_freq(baseform, msd_tag) > 0 or altlexicon.lookup(baseform.lower()) != []:
                 baseform_list.append(baseform)
 
     # update dictionary
