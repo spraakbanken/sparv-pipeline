@@ -13,15 +13,15 @@ def make_model(stats_infile, picklefile, smoothingparam=0.001):
         for line in f:
             fields = line[:-1].split('\t')
             word = fields[0]
-            # # skip word forms that only occur once
-            # if fields[4] == '1':
-            #     break
+            # skip word forms that only occur once
+            if fields[4] == '2':
+                break
             # get rid of all urls
             if word.startswith("http://"):
                 continue
-            # words that only occur once may only contain letters and hyphens
-            if fields[4] == '1' and any(not (c.isalpha() or c == "-") for c in word):
-                continue
+            # # words that only occur once may only contain letters and hyphens
+            # if fields[4] == '1' and any(not (c.isalpha() or c == "-") for c in word):
+            #     continue
             # if len(word) > 100:
             #     continue
             simple_msd = fields[1][:fields[1].find('.')] if '.' in fields[1] else fields[1]
