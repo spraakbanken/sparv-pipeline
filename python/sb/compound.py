@@ -103,7 +103,8 @@ class SaldoCompLexicon(object):
         return map(_split_triple, annotation_tag_pairs)
 
     def get_prefixes(self, prefix):
-        return [(prefix, p[0], tuple(p[3])) for p in self.lookup(prefix) if set(p[1]).intersection(set(["c", "ci", "cm"]))]
+        return [(prefix, p[0], tuple(p[3])) for p in self.lookup(prefix) if 
+            set(p[1]).intersection(set(["c", "ci", "cm"])) and p[2] != "ppa"]
 
     def get_suffixes(self, suffix, msd=None):
         return [(suffix, s[0], tuple(s[3])) for s in self.lookup(suffix)
