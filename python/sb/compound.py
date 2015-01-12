@@ -108,7 +108,7 @@ class SaldoCompLexicon(object):
 
     def get_suffixes(self, suffix, msd=None):
         return [(suffix, s[0], tuple(s[3])) for s in self.lookup(suffix)
-                if (s[2] in ("nn", "vb", "av", "ab") or s[2][-1] == "h")
+                if (s[2] in ("nn", "vb", "av") or s[2][-1] == "h")
                 and set(s[1]).difference(set(["c", "ci", "cm", "sms"]))
                 and (msd in s[3] or not msd or [partial for partial in s[3] if partial.startswith(msd[:msd.find(".")])])
                 ]
