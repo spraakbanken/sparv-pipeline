@@ -138,7 +138,7 @@ class InFileLexicon(object):
 
     def get_suffixes(self, suffix, msd=None):
         return [(suffix, '0', (s[1],)) for s in self.lookup(suffix.lower())
-                if (s[1][0:2] in ("NN", "VB", "AV", "AB"))
+                if (s[1][0:2] in ("NN", "VB", "AV"))
                 and (not msd or msd in s[1] or s[1].startswith(msd[:msd.find(".")]))
                 ]
 
@@ -248,8 +248,8 @@ def rank_compounds(compounds, nst_model, stats_lexicon):
     """Return a list of compounds, ordered according to their ranks.
     Ranking is being done according to the amount of affixes (the fewer the higher)
     and the compound probability which is calculated as follows:
-    p((w1,tag1)..(wn,tag1)) = p(w1,tag1) ... * p(wn,tagn) * p(tag1, ...tagn)
-    t.ex. p(clown+bil) = p(clown, NN) * p(bil, NN) * p(NN,NN) 
+    p((w1, tag1)..(wn, tag1)) = log(p(w1, tag1)) ... + log(p(wn, tagn)) + log(p(tag1, ...tagn))
+    e.g. p(clown+bil) = log(p(clown, NN)) + log(p(bil, NN)) + log(p(NN,NN)) 
     """
     ranklist = []
     for clist in compounds:
