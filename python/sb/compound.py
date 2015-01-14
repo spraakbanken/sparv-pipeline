@@ -213,7 +213,7 @@ def split_word(saldo_lexicon, altlexicon, w):
                 for k, infix in enumerate(comp[1:-1], start=1):
                     # Have we analyzed this infix yet?
                     if not spans[k] in valid_spans:
-                        if not (saldo_lexicon.get_infixes(infix) or altlexicon.get_prefixes(infix)):
+                        if exception(infix) or not (saldo_lexicon.get_infixes(infix) or altlexicon.get_prefixes(infix)):
                             invalid_spans.add(spans[k])
                             comp = None
                             # Skip any combination of spans following the invalid span
