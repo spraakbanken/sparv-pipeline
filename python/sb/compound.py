@@ -104,7 +104,11 @@ class SaldoCompLexicon(object):
 
     def get_prefixes(self, prefix):
         return [(prefix, p[0], tuple(p[3])) for p in self.lookup(prefix) if 
-            set(p[1]).intersection(set(["c", "ci", "cm"])) and p[2] != "ppa"]
+            set(p[1]).intersection(set(["c", "ci"])) and p[2] != "ppa"]
+
+    def get_infixes(self, infix):
+        return [(infix, i[0], tuple(i[3])) for i in self.lookup(infix) if
+            set(i[1]).intersection(set(["c", "cm"])) and i[2] != "ppa"]
 
     def get_suffixes(self, suffix, msd=None):
         return [(suffix, s[0], tuple(s[3])) for s in self.lookup(suffix)
@@ -198,11 +202,18 @@ def split_word(saldo_lexicon, altlexicon, w):
                         continue
                     else:
                         valid_spans.add(spans[-1])
+                
+                # Have we analyzed this prefix yet?
+                if not spans[0] in valid_spans:
+                    if not (saldo_lexicon.get_prefixes(comp[0]) or altlexicon.get_prefixes(comp[0])):
+                        invalid_spans.add(spans[0])
+                    else:
+                        valid_spans.add(spans[0])
 
-                for k, affix in enumerate(comp[:-1]):
-                    # Have we analyzed this affix yet?
+                for k, infix in enumerate(comp[1:-1], start=1):
+                    # Have we analyzed this infix yet?
                     if not spans[k] in valid_spans:
-                        if not (saldo_lexicon.get_prefixes(affix) or altlexicon.get_prefixes(affix)):
+                        if not (saldo_lexicon.get_infixes(infix) or altlexicon.get_prefixes(infix)):
                             invalid_spans.add(spans[k])
                             comp = None
                             # Skip any combination of spans following the invalid span
@@ -218,7 +229,7 @@ def split_word(saldo_lexicon, altlexicon, w):
 
 def exception(w):
     """ Filter out unwanted suffixes. """
-    return w in [
+    return w.lower() in [
         "il", u"ör", "en", "ens", "ar", "ars",
         "or", "ors", "ur", "urs", u"lös", "tik", "bar",
         "lik", "het", "hets", "lig", "ligt", "te", "tet", "tets",
@@ -236,7 +247,7 @@ def three_consonant_rule(compound):
         current_prefix = compound[index]
         current_suffix = compound[index+1]
         # last prefix letter == first suffix letter; and prefix ends in one of "bdfgjlmnprstv"
-        if current_prefix[-1] in "bdfgjlmnprstv" and current_prefix[-1] == current_suffix[0]:
+        if current_prefix[-1].lower() in "bdfgjlmnprstv" and current_prefix[-1] == current_suffix[0]:
             combinations.append((current_prefix, current_prefix + current_prefix[-1]))
         else:
             combinations.append((current_prefix, current_prefix))
@@ -274,18 +285,28 @@ def compound(saldo_lexicon, altlexicon, w, msd=None):
     out_compounds = []
     for comp in in_compounds:
         current_combinations = []
-        # get prefix analysis for every affix
-        for affix in comp[:len(comp)-1]:
-            anap = saldo_lexicon.get_prefixes(affix)
-            if not anap:
-                anap = altlexicon.get_prefixes(affix)
-            if len(anap) == 0:
-                break
+        
+        # get prefix analysis
+        anap = saldo_lexicon.get_prefixes(comp[0])
+        if not anap:
+            anap = altlexicon.get_prefixes(comp[0])
+        if anap:
             current_combinations.append(anap)
-        # get suffix analysis for suffix
+
+        # get infix analyses
+        for infix in comp[1:len(comp)-1]:
+            anai = saldo_lexicon.get_infixes(infix)
+            if not anai:
+                anai = altlexicon.get_prefixes(infix)
+            if len(anai) == 0:
+                break
+            current_combinations.append(anai)
+
+        # get suffix analysis
         anas = saldo_lexicon.get_suffixes(comp[len(comp)-1], msd)
         if not anas:
             anas = altlexicon.get_suffixes(comp[len(comp)-1], msd)
+        
         # check if every affix in comp has an analysis
         if len(current_combinations) == len(comp)-1 and len(anas) > 0:
             current_combinations.append(anas)
@@ -298,8 +319,8 @@ def make_complem_and_compwf(OUT_complem, OUT_compwf, tokid, compounds, compdelim
     and a list of compound wordforms to OUT_compwf."""
     complem_list = []
     compwf_list = []
-    complems = True
     for comp in compounds:
+        complems = True
         for a in comp:
             if a[1] == '0':
                 complems = False
@@ -308,12 +329,14 @@ def make_complem_and_compwf(OUT_complem, OUT_compwf, tokid, compounds, compdelim
             complem_list.append(compdelim.join(affix[1] for affix in comp))
 
         # if first letter has upper case, check if one of the affixes may be a name:
-        first_letter = comp[0][0][0]
-        if first_letter == first_letter.upper():
-            if sum(1 for a in comp if "pm" in a[1][a[1].find('.'):]) + sum(1 for a in comp if "PM" in a[2]) == 0:
-                first_letter = first_letter.lower()
-        prefix = first_letter + comp[0][0][1:]
-        wf = prefix + compdelim + compdelim.join(affix[0] for affix in comp[1:])
+        if comp[0][0][0] == comp[0][0][0].upper():
+            if not any([True for a in comp if "pm" in a[1][a[1].find('.'):]] + [True for a in comp if "PM" in a[2]]):
+                wf = compdelim.join(affix[0].lower() for affix in comp)
+            else:
+                wf = compdelim.join(affix[0] for affix in comp)
+        else:
+            wf = compdelim.join(affix[0] for affix in comp)
+
         if wf not in compwf_list:
             compwf_list.append(wf)
 
@@ -331,9 +354,12 @@ def make_new_baseforms(OUT_baseform, tokid, msd_tag, compounds, stats_lexicon, a
         prefix = comp[0][0]
         # if first letter has upper case, check if one of the affixes is a name:
         if prefix[0] == prefix[0].upper():
-            if sum([1 for a in comp if "pm" in a[1][a[1].find('.'):]]) == 0:
-                prefix = prefix[0].lower() + prefix[1:]
-        baseform = prefix + ''.join(affix[0] for affix in comp[1:-1]) + base_suffix
+            if not any(True for a in comp if "pm" in a[1][a[1].find('.'):]):
+                baseform = ''.join(affix[0].lower() for affix in comp[:-1]) + base_suffix
+            else:
+                baseform = ''.join(affix[0] for affix in comp[:-1]) + base_suffix
+        else:
+            baseform = ''.join(affix[0] for affix in comp[:-1]) + base_suffix
 
         # check if this baseform with the MSD tag occurs in stats_lexicon
         if baseform not in baseform_list:
