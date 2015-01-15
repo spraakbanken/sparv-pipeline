@@ -43,6 +43,7 @@ def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp
     IN_baseform = util.read_annotation(baseform_tmp)
 
     for tokid in WORD:
+        print "\n", WORD[tokid].encode("utf-8")
         compounds = compound(saldo_comp_lexicon, altlexicon, WORD[tokid], MSD[tokid])
 
         if compounds:
@@ -104,11 +105,11 @@ class SaldoCompLexicon(object):
 
     def get_prefixes(self, prefix):
         return [(prefix, p[0], tuple(p[3])) for p in self.lookup(prefix) if 
-            set(p[1]).intersection(set(["c", "ci"])) and p[2] != "ppa"]
+            set(p[1]).intersection(set(["c", "ci"]))]
 
     def get_infixes(self, infix):
         return [(infix, i[0], tuple(i[3])) for i in self.lookup(infix) if
-            set(i[1]).intersection(set(["c", "cm"])) and i[2] != "ppa"]
+            set(i[1]).intersection(set(["c", "cm"]))]
 
     def get_suffixes(self, suffix, msd=None):
         return [(suffix, s[0], tuple(s[3])) for s in self.lookup(suffix)
@@ -275,6 +276,8 @@ def rank_compounds(compounds, nst_model, stats_lexicon):
     ranklist = sorted(ranklist, key=lambda x: x[0], reverse=True)
     # sort according to length
     ranklist = sorted(ranklist, key=lambda x: len(x[1]))
+    for r, c in ranklist:
+        print r, c
     ranklist = [c for _r, c in ranklist]
     return ranklist
 
