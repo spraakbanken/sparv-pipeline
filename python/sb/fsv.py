@@ -345,10 +345,9 @@ def findmultiwordexpressions(incomplete_multis, complete_multis, theword, ref, M
 
 def getsingleannotation(lexicons, word, key,msdtag):
     annotation = []
-    # TODO This function is a hack, replace by proper msd translation!
-    def match_msd(tag,tags):
-        print tag,'in',tags,'?'
-        return tag in tags #(re.sub('av','jj',m.split()[0]).upper() for m in tags)
+    # TODO the translation of tags is not fully working yet.
+    # the precision must be set to 0.25 in order for the 
+    # lemgrams to be kept.
         
     for lexicon in lexicons:
         #for (ann,msdtags,wordlist,_,_,) in lexicon.lookup(word):
@@ -359,8 +358,7 @@ def getsingleannotation(lexicons, word, key,msdtag):
         res = [(saldo.get_precision(msdtag, msdtags),ann) for (ann, msdtags, wordslist, _, _) in lexicon.lookup(word) if not wordslist]
         #print word.encode('utf8'),msdtag
         #print lexicon.lookup(word)
-        #print res
-        res = [a for x,a in sorted(res,reverse=True) if x>=0.5] # TODO use saldo.py for this!!!
+        res = [a for x,a in sorted(res,reverse=True) if x>=0.25] # TODO use saldo.py for this!!!
         if res:
             annotation = res
             break
