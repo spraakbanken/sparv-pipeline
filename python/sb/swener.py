@@ -40,7 +40,7 @@ def tag_ne(out_ne_ex, out_ne_type, out_ne_subtype, word, sentence, encoding=util
             if child.text:
                 i += len(child.text.strip().split(TOK_SEP))
                 
-                # extract NE tags and save them in díctionaries
+                # extract NE tags and save them in dictionaries
                 if child.tag != "sroot":
                     end_id = util.edgeEnd(sent[i-1])
                     edge = util.mkEdge('ne', [start_id, end_id])
@@ -50,7 +50,7 @@ def tag_ne(out_ne_ex, out_ne_type, out_ne_subtype, word, sentence, encoding=util
                     # out_ex_dict[edge] = TAG_SEP.join([tag, child.get("TYPE"), child.get("SBT")])
 
             # if current child has text in the tail, increase token counter
-            if child.tail:
+            if child.tail and child.tail.strip():
                 i += len(child.tail.strip().split(TOK_SEP))
 
     # write annotations
