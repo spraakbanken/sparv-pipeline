@@ -7,29 +7,52 @@ SENT_SEP = "\n"
 TOK_SEP = " "
 TAG_SEP = ":"
 
-def tag_ne(out_ne_ex, out_ne_type, out_ne_subtype, word, sentence, encoding=util.UTF8):
-    """Tag named entities using HFST-SweNER.
+def tag_ne(out_ne_ex, out_ne_type, out_ne_subtype, word, sentence, encoding=util.UTF8, process_dict=None):
+    """
+    Tag named entities using HFST-SweNER.
+    SweNER is either run in an already started process defined in
+    process_dict, or a new process is started(default)
     - out_ne_ex, out_ne_type and out_ne_subtype are resulting annotation files for the named entities
     - word and sentence are existing annotation files for wordforms and sentences
+    - process_dict should never be set from the command line
     """
+
+
+    if process_dict is None:
+        process = swenerstart("", encoding, verbose=True)
+    else:
+        process = process_dict['process']
+        # If process seems dead, spawn a new one
+        if process.stdin.closed or process.stdout.closed or process.poll():
+            util.system.kill_process(process)
+            process = swenerstart("", encoding, verbose=True)
+            process_dict['process'] = process
 
     # collect all text
     sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
     word_file = util.read_annotation(word)
     stdin = SENT_SEP.join(TOK_SEP.join(word_file[tokid] for tokid in sent)
                           for sent in sentences)
+    
+    # perform NE recognition on entire input
+    stdout, _ = process.communicate(stdin.encode(encoding))
+    # stdout, _ = util.system.call_binary("runNer-pm", [], stdin.encode(encoding), encoding=encoding, verbose=True)
+    # stdout = stdout.encode(encoding)
 
-    # perform NE recognition on every sentence
-    stdout, _ = swenerstart(stdin, encoding=encoding, verbose=True)
+    parse_swener_output(sentences, stdout, out_ne_ex, out_ne_type, out_ne_subtype)
+
+
+def parse_swener_output(sentences, output, out_ne_ex, out_ne_type, out_ne_subtype):
+    """Parse the SweNER output and write annotation files."""
 
     out_ex_dict = {}
     out_type_dict = {}
     out_subtype_dict = {}
     
     # loop through the NE-tagged sentences and parse each one with ElemenTree
-    for sent, tagged_sent in zip(sentences, stdout.strip().split(SENT_SEP)):
+    for sent, tagged_sent in zip(sentences, output.strip().split(SENT_SEP)):
         xml_sent = "<sroot>" + tagged_sent + "</sroot>"
-        root = etree.fromstring(xml_sent.encode(encoding))
+        root = etree.fromstring(xml_sent)
         
         # init token counter; needed to get start_id and end_id
         i = 0  
@@ -61,7 +84,8 @@ def tag_ne(out_ne_ex, out_ne_type, out_ne_subtype, word, sentence, encoding=util
 
 
 def swenerstart(stdin, encoding, verbose):
-    return util.system.call_binary("runNer-pm", [], stdin, encoding=encoding, verbose=verbose)
+    """Start a SweNER process and return it."""
+    return util.system.call_binary("runNer-pm", [], stdin, encoding=encoding, verbose=verbose, return_command=True)
 
 
 if __name__ == '__main__':
