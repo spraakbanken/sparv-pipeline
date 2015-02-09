@@ -3,6 +3,7 @@
 import util
 import xml.etree.cElementTree as etree
 
+RESTART_THRESHOLD_LENGTH = 64000
 SENT_SEP = "\n"
 TOK_SEP = " "
 TAG_SEP = ":"
@@ -33,11 +34,28 @@ def tag_ne(out_ne_ex, out_ne_type, out_ne_subtype, word, sentence, encoding=util
     word_file = util.read_annotation(word)
     stdin = SENT_SEP.join(TOK_SEP.join(word_file[tokid] for tokid in sent)
                           for sent in sentences)
+
+
+    keep_process = len(stdin) < RESTART_THRESHOLD_LENGTH and process_dict is not None
+    util.log.info("Stdin length: %s, keep process: %s", len(stdin), keep_process)
+
+    if process_dict is not None:
+        process_dict['restart'] = not keep_process
+
+    if keep_process:
+        # Chatting with malt: send a SENT_SEP and read correct number of lines
+        stdin_fd, stdout_fd = process.stdin, process.stdout
+        stdin_fd.write(stdin + SENT_SEP)
+        stdin_fd.flush()
+
+    else:
+        # Otherwise use communicate which buffers properly
+        stdout, _ = process.communicate(stdin.encode(encoding))
     
     # perform NE recognition on entire input
-    stdout, _ = process.communicate(stdin.encode(encoding))
-    # stdout, _ = util.system.call_binary("runNer-pm", [], stdin.encode(encoding), encoding=encoding, verbose=True)
-    # stdout = stdout.encode(encoding)
+    # stdout, _ = process.communicate(stdin.encode(encoding))
+    # # stdout, _ = util.system.call_binary("runNer-pm", [], stdin.encode(encoding), encoding=encoding, verbose=True)
+    # # stdout = stdout.encode(encoding)
 
     parse_swener_output(sentences, stdout, out_ne_ex, out_ne_type, out_ne_subtype)
 
