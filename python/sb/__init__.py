@@ -18,6 +18,7 @@ __all__ = [
     'relations',
     'saldo',
     'segment',
+    'swener',
     'timespan',
     'xmlanalyzer',
     'xmlparser'

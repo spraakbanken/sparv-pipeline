@@ -20,7 +20,8 @@ def tag_ne(out_ne_ex, out_ne_type, out_ne_subtype, word, sentence, encoding=util
                           for sent in sentences)
 
     # perform NE recognition on every sentence
-    stdout, _ = util.system.call_binary("runNer-pm", [], stdin, encoding=encoding, verbose=True)
+    stdout, _ = swenerstart(stdin, encoding=encoding, verbose=True)
+
     out_ex_dict = {}
     out_type_dict = {}
     out_subtype_dict = {}
@@ -57,6 +58,10 @@ def tag_ne(out_ne_ex, out_ne_type, out_ne_subtype, word, sentence, encoding=util
     util.write_annotation(out_ne_ex, out_ex_dict)
     util.write_annotation(out_ne_type, out_type_dict)
     util.write_annotation(out_ne_subtype, out_subtype_dict)
+
+
+def swenerstart(stdin, encoding, verbose):
+    return util.system.call_binary("runNer-pm", [], stdin, encoding=encoding, verbose=verbose)
 
 
 if __name__ == '__main__':
