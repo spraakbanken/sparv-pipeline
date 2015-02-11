@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
-#from StringIO import StringIO
-#import dbm
-#import util
+import codecs
+import re
 import util.tagsets
 
 SENT_SEP = "\n\n"
@@ -11,7 +10,7 @@ TAG_SEP = "\t"
 TAG_COLUMN = 1
 
 
-def msdtag(model, out, word, sentence, tag_mapping=None, morphtable=None, encoding=util.UTF8):
+def msdtag(model, out, word, sentence, tag_mapping=None, morphtable=None, patterns=None, encoding=util.UTF8):
     """POS/MSD tag using the Hunpos tagger.
     """
     if isinstance(tag_mapping, basestring) and tag_mapping:
@@ -19,9 +18,25 @@ def msdtag(model, out, word, sentence, tag_mapping=None, morphtable=None, encodi
     elif tag_mapping is None or tag_mapping == "":
         tag_mapping = {}
 
+    pattern_list = []
+
+    if patterns:
+        with codecs.open(patterns, mode="r", encoding="utf-8") as pat:
+            for line in pat:
+                if line.strip() and not line.startswith("#"):
+                    name, pattern, tags = line.strip().split("\t", 2)
+                    pattern_list.append((name, re.compile("^%s$" % pattern), tags))
+
+    def replace_word(w):
+        """ Replace word with alias if word matches a regex pattern. """
+        for p in pattern_list:
+            if re.match(p[1], w):
+                return "[[%s]]" % p[0]
+        return w
+
     sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
     WORD = util.read_annotation(word)
-    stdin = SENT_SEP.join(TOK_SEP.join(WORD[tokid] for tokid in sent)
+    stdin = SENT_SEP.join(TOK_SEP.join(replace_word(WORD[tokid]) for tokid in sent)
                           for sent in sentences)
     args = [model]
     if morphtable: args.extend(["-m", morphtable])
