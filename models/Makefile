@@ -28,8 +28,8 @@ saldo.pickle: saldom.xml
 saldo.compound.pickle: saldom.xml
 	python -m sb.compound --xml_to_pickle  --xml "saldom.xml"  --filename "$@"
 
-hunpos.saldo.suc-tags.morphtable: saldo.pickle hunpos.suc.morphtable
-	python -m sb.hunpos_morphtable --out "$@" --saldo_model "saldo.pickle" --suc "suc3.morphtable.words" --morphtable_base "hunpos.suc.morphtable"
+hunpos.saldo.suc-tags.morphtable: saldo.pickle hunpos.suc.morphtable hunpos.suc-tags.patterns
+	python -m sb.hunpos_morphtable --out "$@" --saldo_model "saldo.pickle" --suc "suc3.morphtable.words" --morphtable_base "hunpos.suc.morphtable" --morphtable_patterns "hunpos.suc.patterns"
 
 stats_all.txt:
 	@echo "Exporting stats_all.txt from Subversion..."
