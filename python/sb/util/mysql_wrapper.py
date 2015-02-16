@@ -64,11 +64,11 @@ class MySQL(object):
                    u"CREATE TABLE %s (\n " % _ATOM(table))
         else:
             sql = u"CREATE TABLE IF NOT EXISTS %s (\n " % _ATOM(table)
-        
+
         sql += u",\n ".join(sqlcolumns) + u") "
-        
+
         for key, value in kwargs.items():
-            sql += u" %s = %s " % (key, _ATOM(value))
+            sql += u" %s = %s " % (key, value)
         sql += u";"
         self.execute(sql)
 

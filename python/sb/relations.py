@@ -476,6 +476,7 @@ MYSQL_RELATIONS = {'columns': [
                                "dep head bfhead bfdep rel freq id"],
                    'constraints': [("UNIQUE INDEX", "relation", ("head", "rel", "dep"))],
                    'default charset': 'utf8',
+                   'row_format': 'compressed'
                    #'collate': 'utf8_bin'
                    }
 
@@ -487,7 +488,8 @@ MYSQL_STRINGS = {'columns': [
                  'primary': "string id pos stringextra",
                  'indexes': ["id string pos stringextra"],
                  'default charset': 'utf8',
-                 'collate': 'utf8_bin'
+                 'collate': 'utf8_bin',
+                 'row_format': 'compressed'
                  }
 
 MYSQL_REL = {'columns': [
@@ -497,7 +499,8 @@ MYSQL_REL = {'columns': [
              'indexes': [],
              'constraints': [("UNIQUE INDEX", "relation", ("rel",))],
              'default charset': 'utf8',
-             'collate': 'utf8_bin'
+             'collate': 'utf8_bin',
+             'row_format': 'compressed'
              }
 
 MYSQL_HEAD_REL = {'columns': [
@@ -508,7 +511,8 @@ MYSQL_HEAD_REL = {'columns': [
                   'indexes': [],
                   'constraints': [("UNIQUE INDEX", "relation", ("head", "rel"))],
                   'default charset': 'utf8',
-                  'collate': 'utf8_bin'
+                  'collate': 'utf8_bin',
+                  'row_format': 'compressed'
                    }
 
 MYSQL_DEP_REL = {'columns': [
@@ -519,7 +523,8 @@ MYSQL_DEP_REL = {'columns': [
                  'indexes': [],
                  'constraints': [("UNIQUE INDEX", "relation", ("dep", "rel"))],
                  'default charset': 'utf8',
-                 'collate': 'utf8_bin'
+                 'collate': 'utf8_bin',
+                 'row_format': 'compressed'
                  }
 
 MYSQL_SENTENCES = {'columns': [
@@ -529,7 +534,8 @@ MYSQL_SENTENCES = {'columns': [
                                ("end", int, None, "")],
                    'indexes': ["id"],
                    'default charset': 'utf8',
-                   'collate': 'utf8_bin'
+                   'collate': 'utf8_bin',
+                   'row_format': 'compressed'
                    }
 ################################################################################    
 
