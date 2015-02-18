@@ -6,11 +6,12 @@ import itertools
 from math import log
 
 
-def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp, saldo_comp_model, nst_model, stats_model, delimiter="|", compdelim="+", affix="|", lexicon=None, stats_lexicon=None):
+def annotate(out_complemgrams, out_compwf, out_baseform, out_lemprob, word, msd, baseform_tmp, saldo_comp_model, nst_model, stats_model, delimiter="|", compdelim="+", affix="|", lexicon=None, stats_lexicon=None):
     """Divides compound words into prefix(es) and suffix.
     - out_complemgram is the resulting annotation file for compound lemgrams
     - out_compwf is the resulting annotation file for compound wordforms
     - out_baseform is the resulting annotation file for baseforms (including baseforms for compounds)
+    - out_lemprob is the resulting annotation file for compound lemgram probabilities (rounded to 3 digits)
     - word and msd are existing annotations for wordforms and MSDs
     - baseform_tmp is the existing temporary annotation file for baseforms (not including compounds)
     - saldo_comp_model is the Saldo compound model
@@ -40,17 +41,18 @@ def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp
     OUT_complem = {}
     OUT_compwf = {}
     OUT_baseform = {}
+    OUT_lemprob = {}
     IN_baseform = util.read_annotation(baseform_tmp)
 
     for tokid in WORD:
-        print "\n", WORD[tokid].encode("utf-8")
+        # print "\n", WORD[tokid].encode("utf-8")
         compounds = compound(saldo_comp_lexicon, altlexicon, WORD[tokid], MSD[tokid])
 
         if compounds:
             compounds = rank_compounds(compounds, nst_model, stats_lexicon)
 
         # create complem and compwf annotations
-        make_complem_and_compwf(OUT_complem, OUT_compwf, tokid, compounds, compdelim, delimiter, affix)
+        make_complem_and_compwf(OUT_complem, OUT_compwf, OUT_lemprob, tokid, compounds, compdelim, delimiter, affix)
         
         # create new baseform annotation if necessary
         if IN_baseform[tokid] != affix:
@@ -62,6 +64,7 @@ def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp
     util.write_annotation(out_complemgrams, OUT_complem)
     util.write_annotation(out_compwf, OUT_compwf)
     util.write_annotation(out_baseform, OUT_baseform)
+    util.write_annotation(out_lemprob, OUT_lemprob)
 
 
 class StatsLexicon(object):
@@ -256,6 +259,23 @@ def three_consonant_rule(compound):
     return [list(i) for i in list(set(itertools.product(*combinations)))]
 
 
+def scores_to_probs(scores):
+    """Convert compound scores to probabilities.
+    p(x) = (x^-1) / bigsum((x_i)^-1)
+    """
+    bigsum = 0
+    tmp_scores = []
+    probs = []
+    for i in scores:
+        tmp_scores.append(i**-1.0)
+        bigsum += (i**-1.0)
+
+    for i in tmp_scores:
+        probs.append(i/bigsum)
+
+    return probs
+
+
 def rank_compounds(compounds, nst_model, stats_lexicon):
     """Return a list of compounds, ordered according to their ranks.
     Ranking is being done according to the amount of affixes (the fewer the higher)
@@ -276,9 +296,10 @@ def rank_compounds(compounds, nst_model, stats_lexicon):
     ranklist = sorted(ranklist, key=lambda x: x[0], reverse=True)
     # sort according to length
     ranklist = sorted(ranklist, key=lambda x: len(x[1]))
-    for r, c in ranklist:
-        print r, c
-    ranklist = [c for _r, c in ranklist]
+    scorelist = scores_to_probs([r for r, c in ranklist])
+    # for s, (r, c) in zip(scorelist, ranklist):
+    #     print "%.3f, %s" %(s, c)
+    ranklist = [(s, c) for s, (_r, c) in zip(scorelist, ranklist)]
     return ranklist
 
 
@@ -317,12 +338,13 @@ def compound(saldo_lexicon, altlexicon, w, msd=None):
     return out_compounds
 
 
-def make_complem_and_compwf(OUT_complem, OUT_compwf, tokid, compounds, compdelim, delimiter, affix):
+def make_complem_and_compwf(OUT_complem, OUT_compwf, OUT_lemprob, tokid, compounds, compdelim, delimiter, affix):
     """Add a list of compound lemgrams to the dictionary OUT_complem[tokid]
     and a list of compound wordforms to OUT_compwf."""
     complem_list = []
     compwf_list = []
     for comp in compounds:
+        comp = comp[1]
         complems = True
         for a in comp:
             if a[1] == '0':
@@ -346,6 +368,7 @@ def make_complem_and_compwf(OUT_complem, OUT_compwf, tokid, compounds, compdelim
     # update dictionaries
     OUT_complem[tokid] = affix + delimiter.join(complem_list) + affix if compounds and complem_list else affix
     OUT_compwf[tokid] = affix + delimiter.join(compwf_list) + affix if compounds else affix
+    OUT_lemprob[tokid] = affix + delimiter.join("{0:.3f}".format(c[0]) for c in compounds) + affix if compounds else affix
 
 
 def make_new_baseforms(OUT_baseform, tokid, msd_tag, compounds, stats_lexicon, altlexicon, delimiter, affix):
@@ -353,6 +376,7 @@ def make_new_baseforms(OUT_baseform, tokid, msd_tag, compounds, stats_lexicon, a
     baseform_list = []
     msd_tag = msd_tag[:msd_tag.find('.')]
     for comp in compounds:
+        comp = comp[1]
         base_suffix = comp[-1][1][:comp[-1][1].find('.')]
         prefix = comp[0][0]
         # if first letter has upper case, check if one of the affixes is a name:
