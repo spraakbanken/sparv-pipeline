@@ -69,6 +69,10 @@ def parse_swener_output(sentences, output, out_ne_ex, out_ne_type, out_ne_subtyp
     
     # loop through the NE-tagged sentences and parse each one with ElemenTree
     for sent, tagged_sent in zip(sentences, output.strip().split(SENT_SEP)):
+        tagged_sent = tagged_sent.replace("&", "&amp;")
+        tagged_sent = tagged_sent.replace(">", "&gt;")
+        tagged_sent = tagged_sent.replace("<", "&lt;")
+        tagged_sent = tagged_sent.replace("%", "&#37;")
         xml_sent = "<sroot>" + tagged_sent + "</sroot>"
         root = etree.fromstring(xml_sent)
         
