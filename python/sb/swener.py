@@ -34,6 +34,11 @@ def tag_ne(out_ne_ex, out_ne_type, out_ne_subtype, word, sentence, encoding=util
     stdin = SENT_SEP.join(TOK_SEP.join(word_file[tokid] for tokid in sent)
                           for sent in sentences)
 
+    stdin = stdin.replace("&", "&amp;")
+    stdin = stdin.replace(">", "&gt;")
+    stdin = stdin.replace("<", "&lt;")
+    stdin = stdin.replace("%", "&#37;")
+
 
     # keep_process = len(stdin) < RESTART_THRESHOLD_LENGTH and process_dict is not None
     # util.log.info("Stdin length: %s, keep process: %s", len(stdin), keep_process)
@@ -69,10 +74,6 @@ def parse_swener_output(sentences, output, out_ne_ex, out_ne_type, out_ne_subtyp
     
     # loop through the NE-tagged sentences and parse each one with ElemenTree
     for sent, tagged_sent in zip(sentences, output.strip().split(SENT_SEP)):
-        tagged_sent = tagged_sent.replace("&", "&amp;")
-        tagged_sent = tagged_sent.replace(">", "&gt;")
-        tagged_sent = tagged_sent.replace("<", "&lt;")
-        tagged_sent = tagged_sent.replace("%", "&#37;")
         xml_sent = "<sroot>" + tagged_sent + "</sroot>"
         root = etree.fromstring(xml_sent)
         
