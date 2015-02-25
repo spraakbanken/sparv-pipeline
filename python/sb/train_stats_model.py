@@ -25,7 +25,7 @@ def make_model(stats_infile, picklefile, smoothingparam=0.001):
             # if len(word) > 100:
             #     continue
             simple_msd = fields[1][:fields[1].find('.')] if '.' in fields[1] else fields[1]
-            fdist.inc((word, simple_msd), int(fields[4]))
+            fdist[(word, simple_msd)] += int(fields[4])
 
     pd = LidstoneProbDist(fdist, smoothingparam, fdist.B())
 
