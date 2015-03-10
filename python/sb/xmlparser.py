@@ -122,7 +122,7 @@ class XMLParser(HTMLParser):
         it saves the corpus text and the annotations to files.
         """
         while self.tagstack:
-            t, _, a = self.tagstack[0]
+            t, a, _ = self.tagstack[0]
             if not t in self.autoclose:
                 util.log.error(self.pos() + "(at EOF) Autoclosing tag </%s>, starting at %s", t, a)
             else:
