@@ -337,7 +337,7 @@ def normalize_precision(annotations):
     return [(prec/total_precision, annotation) for (prec, annotation) in annotations]
 
 
-# This delimiters that hopefully are never found in an annotation or in a POS tag:
+# Delimiters that hopefully are never found in an annotation or in a POS tag:
 PART_DELIM = "^"
 PART_DELIM1 = "^1"
 PART_DELIM2 = "^2"
