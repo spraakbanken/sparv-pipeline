@@ -309,7 +309,6 @@ def rank_compounds(compounds, nst_model, stats_lexicon):
 def compound(saldo_lexicon, altlexicon, w, msd=None):
     """Create a list of compound analyses for word w."""
     in_compounds = [i for i in split_word(saldo_lexicon, altlexicon, w, msd)]
-    print in_compounds
     out_compounds = []
     for comp in in_compounds:
         current_combinations = []
