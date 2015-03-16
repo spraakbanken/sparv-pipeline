@@ -1,10 +1,11 @@
+# -*- coding: utf-8 -*-
 import codecs
 import cPickle as pickle
 from nltk import FreqDist, LidstoneProbDist
 import util
 
 
-def make_model(stats_infile, picklefile, smoothingparam=0.001):
+def make_model(stats_infile, picklefile, smoothingparam=0.001, min_freq=2):
     """Train a probability model on a korp statistics file and save it as a pickle file.
     The model is a LidstoneProbabDist (NLTK) which has tuples (wordform, MSD-tag) as keys
     and smoothed probabilities as values."""
@@ -14,7 +15,7 @@ def make_model(stats_infile, picklefile, smoothingparam=0.001):
             fields = line[:-1].split('\t')
             word = fields[0]
             # skip word forms that only occur once
-            if fields[4] == '2':
+            if fields[4] == str(min_freq):
                 break
             # get rid of all urls
             if word.startswith("http://"):
@@ -34,4 +35,4 @@ def make_model(stats_infile, picklefile, smoothingparam=0.001):
         pickle.dump(pd, p)
 
 if __name__ == '__main__':
-     util.run.main(make_model)
+    util.run.main(make_model)
