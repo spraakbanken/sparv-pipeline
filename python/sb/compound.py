@@ -308,7 +308,7 @@ def rank_compounds(compounds, nst_model, stats_lexicon):
 
 def compound(saldo_lexicon, altlexicon, w, msd=None):
     """Create a list of compound analyses for word w."""
-    in_compounds = [i for i in split_word(saldo_lexicon, altlexicon, w, msd)]
+    in_compounds = list(split_word(saldo_lexicon, altlexicon, w, msd))
     out_compounds = []
     for comp in in_compounds:
         current_combinations = []
@@ -317,6 +317,9 @@ def compound(saldo_lexicon, altlexicon, w, msd=None):
         anap = saldo_lexicon.get_prefixes(comp[0])
         if not anap:
             anap = altlexicon.get_prefixes(comp[0])
+        # Needs to be checked because of the three consonant rule
+        if not anap:
+            continue
         current_combinations.append(anap)
 
         # Get infix analyses
@@ -324,12 +327,16 @@ def compound(saldo_lexicon, altlexicon, w, msd=None):
             anai = saldo_lexicon.get_infixes(infix)
             if not anai:
                 anai = altlexicon.get_prefixes(infix)
+            if not anai:
+                continue
             current_combinations.append(anai)
 
         # Get suffix analysis
         anas = saldo_lexicon.get_suffixes(comp[len(comp)-1], msd)
         if not anas:
             anas = altlexicon.get_suffixes(comp[len(comp)-1], msd)
+        if not anas:
+            continue
         current_combinations.append(anas)
 
         out_compounds.append(list(set(itertools.product(*current_combinations))))
