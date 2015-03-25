@@ -88,6 +88,7 @@ from HTMLParser import HTMLParser
 class XMLParser(HTMLParser):
     def __init__(self, elem_annotations, skipped_elems, can_overlap, header_elem, prefix, textfile, corpus_size, head_annotations={}, skip_if_empty=[], skip_entities=[], autoclose=[], elem_order=[]):
         HTMLParser.__init__(self)
+        self.errors = False
         self.reset()
         self.tagstack = []
         self.header_elem = header_elem
@@ -125,22 +126,25 @@ class XMLParser(HTMLParser):
             t, a, _ = self.tagstack[0]
             if not t in self.autoclose:
                 util.log.error(self.pos() + "(at EOF) Autoclosing tag </%s>, starting at %s", t, a)
+                self.errors = True
             else:
                 util.log.info(self.pos() + "(at EOF) Autoclosing tag </%s>, starting at %s", t, a)
             self.handle_endtag(t)
         self.anchor()
 
-        text = u"".join(self.textbuffer)
-        util.write_corpus_text(self.textfile, text, self.pos2anchor)
-        if self.elem_order:
-            for elem in self.elem_order:
-                annot, db = elem[1], self.dbs[elem[1]]
-                util.write_annotation(annot, db)
-        else:
-            for annot, db in self.dbs.iteritems():
-                util.write_annotation(annot, db)
-        for header, db in self.header_dbs.iteritems():
-            util.write_annotation(header, db)
+        # Only save results if no errors occured
+        if not self.errors:
+            text = u"".join(self.textbuffer)
+            util.write_corpus_text(self.textfile, text, self.pos2anchor)
+            if self.elem_order:
+                for elem in self.elem_order:
+                    annot, db = elem[1], self.dbs[elem[1]]
+                    util.write_annotation(annot, db)
+            else:
+                for annot, db in self.dbs.iteritems():
+                    util.write_annotation(annot, db)
+            for header, db in self.header_dbs.iteritems():
+                util.write_annotation(header, db)
         
         HTMLParser.close(self)
 
@@ -214,6 +218,7 @@ class XMLParser(HTMLParser):
             ix = [t[0] for t in self.tagstack].index(name)
         except ValueError:
             util.log.error(self.pos() + "Closing element </%s>, but it is not open", name)
+            self.errors = True
             return
 
         name, start, attrs = self.tagstack.pop(ix)
@@ -257,10 +262,13 @@ class XMLParser(HTMLParser):
         """Plain text data are tokenized and each 'token' is added to the text."""
         if "&" in content:
             util.log.error(self.pos() + "XML special character: &")
+            self.errors = True
         if "<" in content:
             util.log.error(self.pos() + "XML special character: <")
+            self.errors = True
         if ">" in content:
             util.log.error(self.pos() + "XML special character: >")
+            self.errors = True
         if self.position == 0 and isinstance(content, unicode):
             content = content.lstrip(u"\ufeff")
         if self.inside_header:
@@ -278,6 +286,7 @@ class XMLParser(HTMLParser):
             return
         if problematic_entity(entity):
             util.log.error(self.pos() + "Control character reference: &%s;", entity)
+            self.errors = True
             return
         if name.startswith('x'):
             code = int(name[1:], 16)
@@ -299,6 +308,7 @@ class XMLParser(HTMLParser):
             return
         if problematic_entity(name):
             util.log.error(self.pos() + "Unknown HTML entity: &%s;", name)
+            self.errors = True
             return
         code = html_entities[name]
         
@@ -314,6 +324,7 @@ class XMLParser(HTMLParser):
         """XML comments are added as annotations themselves."""
         if "--" in comment or comment.endswith('-'):
             util.log.error(self.pos() + "Comment contains '--' or ends with '-'")
+            self.errors = True
         if self.inside_header:
             # We skip everything in the header for now, so no need to warn about a skipped comment here
             # util.log.warning(self.pos() + "[SKIPPING] Comment in TEI header")
@@ -329,8 +340,10 @@ class XMLParser(HTMLParser):
         if data.startswith(u'xml ') and data.endswith(u'?'):
             if self.getpos() != (1, 0):
                 util.log.error(self.pos() + "XML declaration not first in file")
+                self.errors = True
         else:
             util.log.error(self.pos() + "Unknown processing instruction: <?%s>", data)
+            self.errors = True
 
     def handle_decl(self, decl):
         """SGML declarations <!...> are not allowed."""
