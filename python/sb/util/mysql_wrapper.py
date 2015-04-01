@@ -75,13 +75,17 @@ class MySQL(object):
     def disable_keys(self, *tables):
         for table in tables:
             self.execute("ALTER TABLE %s DISABLE KEYS;" % _ATOM(table))
-        self.execute("SET FOREIGN_KEY_CHECKS = 0;")
-        self.execute("SET UNIQUE_CHECKS = 0;")
-        self.execute("SET AUTOCOMMIT = 0;")
     
     def enable_keys(self, *tables):
         for table in tables:
             self.execute("ALTER TABLE %s ENABLE KEYS;" % _ATOM(table))
+
+    def disable_checks(self):
+        self.execute("SET FOREIGN_KEY_CHECKS = 0;")
+        self.execute("SET UNIQUE_CHECKS = 0;")
+        self.execute("SET AUTOCOMMIT = 0;")
+
+    def enable_checks(self):
         self.execute("SET UNIQUE_CHECKS = 1;")
         self.execute("SET FOREIGN_KEY_CHECKS = 1;")
         self.execute("COMMIT;")
