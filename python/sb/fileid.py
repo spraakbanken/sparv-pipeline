@@ -27,7 +27,7 @@ def fileid(out, files=None, filelist=None, prefix=""):
 
 
 def add(out, fileids, files=None, filelist=None, prefix=""):
-    """ Adds IDs for new files to an existing list of file IDs. """
+    """ Adds IDs for new files to an existing list of file IDs, and removes missing ones. """
     
     assert files or filelist, "files or filelist must be specified"
     
@@ -41,10 +41,22 @@ def add(out, fileids, files=None, filelist=None, prefix=""):
     OUT = util.read_annotation(fileids)
     numfiles = (len(files) + len(OUT)) * 2
 
+    # Add new files
     for f in files:
         if not f in OUT:
             util.resetIdent(f, numfiles)
             OUT[f] = prefix + util.mkIdent("", OUT.values())
+            util.log.info("File %s added.", f)
+
+    # Remove deleted files
+    todelete = []
+    for f in OUT:
+        if not f in files:
+            todelete.append(f)
+            util.log.info("File %s removed.", f)
+
+    for f in todelete:
+        del OUT[f]
 
     util.write_annotation(out, OUT)
 
