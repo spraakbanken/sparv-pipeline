@@ -8,7 +8,7 @@ import math
 
 
 def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, ref, baseform, encoding=util.UTF8):
-    """ Finds every dependency between words. """
+    """ Find certain dependencies between words. """
 
     SENTID = util.read_annotation(sentence_id)
     sentences = [(SENTID[key], sent.split()) for key, sent in util.read_annotation_iteritems(sentence) if key]
@@ -180,7 +180,7 @@ def _mutate_triple(triple):
         dep_multi = [dm for dm in dep[0].split("|") if ":" in dm]
         for dm in dep_multi:
             w, _, r = dm.partition(":")
-            if int(extra[1]) >= int(r) and int(extra[1]) <= int(dep[3]):
+            if int(r) <= int(extra[1]) <= int(dep[3]):
                 try:
                     parts["dep"].remove(w)
                 except:
@@ -221,14 +221,14 @@ def frequency(corpus, db_name, table_file, table_file2, source="", source_list="
        - corpus is the corpus name.
        - db_name is the name of the database.
        - table_file is the filename for the SQL file which will contain the table creation SQL.
-       - combined set to true leads to all the SQL commands being saved to one single file. This might not work for too large amounts of data.
+       - split set to true leads to all the SQL commands being split into one output file per input file.
     """
 
     if isinstance(split, basestring):
         split = (split.lower() == "true")
-    
+
     db_table = MYSQL_TABLE + "_" + corpus.upper()
-    
+
     # Relations that will be grouped together
     rel_grouping = {
         "OO": "OBJ",
@@ -237,18 +237,18 @@ def frequency(corpus, db_name, table_file, table_file2, source="", source_list="
         "TA": "ADV",
         "OA": "ADV"
     }
-    
+
     MAX_SENTENCES = 5000
-    
+
     index = 0
     string_index = -1
     strings = {}  # ID -> string table
     freq_index = {}
     sentence_count = defaultdict(int)
     file_count = 0
-    
+
     assert (source or source_list), "Missing source"
-    
+
     if source:
         source_files = source.split()
     elif source_list:
@@ -266,24 +266,24 @@ def frequency(corpus, db_name, table_file, table_file2, source="", source_list="
             rel_count = defaultdict(int)        # Frequency of (rel)
             head_rel_count = defaultdict(int)   # Frequency of (head, rel)
             dep_rel_count = defaultdict(int)    # Frequency of (rel, dep)
-        
+
         REL = util.read_annotation(s)
         basename = s.rsplit(".", 1)[0]
 
         for _, triple in REL.iteritems():
             head, headpos, rel, dep, deppos, extra, sid, refh, refd, bfhead, bfdep, wfhead, wfdep = triple.split(u"\t")
             bfhead, bfdep, wfhead, wfdep = int(bfhead), int(bfdep), int(wfhead), int(wfdep)
-            
+
             if not (head, headpos) in strings:
                 string_index += 1
             head = strings.setdefault((head, headpos), string_index)
-            
+
             if not (dep, deppos, extra) in strings:
                 string_index += 1
             dep = strings.setdefault((dep, deppos, extra), string_index)
-            
+
             rel = rel_grouping.get(rel, rel)
-            
+
             if (head, rel, dep) in freq_index:
                 this_index = freq_index[(head, rel, dep)]
             else:
@@ -303,7 +303,7 @@ def frequency(corpus, db_name, table_file, table_file2, source="", source_list="
             freq[head][rel][dep][2][1] = freq[head][rel][dep][2][1] or bfdep
             freq[head][rel][dep][2][2] = freq[head][rel][dep][2][2] or wfhead
             freq[head][rel][dep][2][3] = freq[head][rel][dep][2][3] or wfdep
-            
+
             if bfhead and bfdep:
                 rel_count[rel] += 1
             if (bfhead and bfdep) or wfhead:
@@ -317,15 +317,12 @@ def frequency(corpus, db_name, table_file, table_file2, source="", source_list="
                 # Don't print string table until the last file
                 write_sql({}, sentences, freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, split, first=(file_count == 1))
             else:
-                # Create empty dummy file
+                # Only save sentences data, save the rest for the last file
                 write_sql({}, sentences, {}, {}, {}, {}, table_file, basename + ".sql", db_name, db_table, split, first=(file_count == 1))
 
     # Create the final file, including the string table
-    if split:
-        write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, split, first=(file_count == 1))
-    else:
-        write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, split, first=(file_count == 1))
-    
+    write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, split, first=(file_count == 1))
+
     mysql = MySQL(db_name, encoding=util.UTF8, output=table_file2)
     temp_db_table = "temp_" + db_table
     mysql.enable_keys(temp_db_table, temp_db_table + "_strings", temp_db_table + "_rel", temp_db_table + "_head_rel", temp_db_table + "_dep_rel", temp_db_table + "_sentences")
@@ -338,7 +335,7 @@ def frequency(corpus, db_name, table_file, table_file2, source="", source_list="
         temp_db_table + "_dep_rel": db_table + "_dep_rel",
         temp_db_table + "_sentences": db_table + "_sentences"
     })
-    
+
     util.log.info("Done creating SQL files")
     
 
@@ -365,6 +362,8 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
     mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile)
     if freq:
         mysql.set_names()
+
+    mysql.disable_checks()
 
     rows = []
     
@@ -449,6 +448,8 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
             sentence_rows.append(srow)
 
     mysql.add_row(db_table + "_sentences", sentence_rows)
+
+    mysql.enable_checks()
     
     util.log.info("%s written", sqlfile)
     
