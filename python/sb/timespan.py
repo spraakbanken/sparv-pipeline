@@ -50,12 +50,12 @@ def timespan(corpus, db_name, out):
         
         rows.append(row)
     
+    util.log.info("Creating SQL")
     mysql = MySQL(db_name, encoding=util.UTF8, output=out)
     mysql.create_table(MYSQL_TABLE, drop=False, **MYSQL_TIMESPAN)
     mysql.delete_rows(MYSQL_TABLE, {"corpus": corpus})
     mysql.set_names()
-    
-    util.log.info("Creating SQL")
+
     mysql.add_row(MYSQL_TABLE, rows)
 
 ################################################################################
