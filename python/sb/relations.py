@@ -214,14 +214,15 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
     return x_rel_y * math.log((rel * x_rel_y) / (x_rel * rel_y * 1.0), 2)
 
 
-def frequency(corpus, db_name, table_file, table_file2, source="", source_list="", split=False):
+def frequency(corpus, db_name, out, source="", source_list="", split=False):
     """Calculates statistics of the dependencies and saves to SQL files.
-       - source is a space separated string with relations-files.
-       - source_list can be used instead of source, and should be a file containing the name of relations files, one per row.
        - corpus is the corpus name.
        - db_name is the name of the database.
-       - table_file is the filename for the SQL file which will contain the table creation SQL.
-       - split set to true leads to all the SQL commands being split into one output file per input file.
+       - out is the filename for the SQL file which will contain the resulting SQL statements.
+       - source is a space separated string with relations files.
+       - source_list can be used instead of source, and should be a file containing the name of relations files, one per row.
+       - split set to true leads to SQL commands being split into several parts, requiring less memory during creation,
+         but installing the data will take much longer.
     """
 
     if isinstance(split, basestring):
@@ -315,56 +316,40 @@ def frequency(corpus, db_name, table_file, table_file2, source="", source_list="
         if not file_count == len(source_files):
             if split:
                 # Don't print string table until the last file
-                write_sql({}, sentences, freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, split, first=(file_count == 1))
+                write_sql({}, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_name, db_table, split, first=(file_count == 1))
             else:
                 # Only save sentences data, save the rest for the last file
-                write_sql({}, sentences, {}, {}, {}, {}, table_file, basename + ".sql", db_name, db_table, split, first=(file_count == 1))
+                write_sql({}, sentences, {}, {}, {}, {}, out, db_name, db_table, split, first=(file_count == 1))
 
     # Create the final file, including the string table
-    write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, table_file, basename + ".sql", db_name, db_table, split, first=(file_count == 1))
-
-    mysql = MySQL(db_name, encoding=util.UTF8, output=table_file2)
-    temp_db_table = "temp_" + db_table
-    mysql.enable_keys(temp_db_table, temp_db_table + "_strings", temp_db_table + "_rel", temp_db_table + "_head_rel", temp_db_table + "_dep_rel", temp_db_table + "_sentences")
-    mysql.drop_table(db_table, db_table + "_strings", db_table + "_rel", db_table + "_head_rel", db_table + "_dep_rel", db_table + "_sentences")
-    mysql.rename_table({
-        temp_db_table: db_table,
-        temp_db_table + "_strings": db_table + "_strings",
-        temp_db_table + "_rel": db_table + "_rel",
-        temp_db_table + "_head_rel": db_table + "_head_rel",
-        temp_db_table + "_dep_rel": db_table + "_dep_rel",
-        temp_db_table + "_sentences": db_table + "_sentences"
-    })
+    write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_name, db_table, split, first=(file_count == 1), last=True)
 
     util.log.info("Done creating SQL files")
     
 
-def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, table_file, sqlfile, db_name, db_table, split=False, first=False):
+def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, sql_file, db_name, db_table, split=False, first=False, last=False):
     
-    db_table = "temp_" + db_table
+    temp_db_table = "temp_" + db_table
     update_freq = "ON DUPLICATE KEY UPDATE freq = freq + VALUES(freq)" if split else ""
-    
+
+    mysql = MySQL(db_name, encoding=util.UTF8, output=sql_file, append=True)
+
     if first:
         if not split:
             del MYSQL_RELATIONS["constraints"]
             del MYSQL_REL["constraints"]
             del MYSQL_HEAD_REL["constraints"]
             del MYSQL_DEP_REL["constraints"]
-        mysql = MySQL(db_name, encoding=util.UTF8, output=table_file)
-        mysql.create_table(db_table, drop=True, **MYSQL_RELATIONS)
-        mysql.create_table(db_table + "_strings", drop=True, **MYSQL_STRINGS)
-        mysql.create_table(db_table + "_rel", drop=True, **MYSQL_REL)
-        mysql.create_table(db_table + "_head_rel", drop=True, **MYSQL_HEAD_REL)
-        mysql.create_table(db_table + "_dep_rel", drop=True, **MYSQL_DEP_REL)
-        mysql.create_table(db_table + "_sentences", drop=True, **MYSQL_SENTENCES)
-        mysql.disable_keys(db_table, db_table + "_strings", db_table + "_rel", db_table + "_head_rel", db_table + "_dep_rel", db_table + "_sentences")
-    
-    mysql = MySQL(db_name, encoding=util.UTF8, output=sqlfile)
-    if freq:
+        mysql.create_table(temp_db_table, drop=True, **MYSQL_RELATIONS)
+        mysql.create_table(temp_db_table + "_strings", drop=True, **MYSQL_STRINGS)
+        mysql.create_table(temp_db_table + "_rel", drop=True, **MYSQL_REL)
+        mysql.create_table(temp_db_table + "_head_rel", drop=True, **MYSQL_HEAD_REL)
+        mysql.create_table(temp_db_table + "_dep_rel", drop=True, **MYSQL_DEP_REL)
+        mysql.create_table(temp_db_table + "_sentences", drop=True, **MYSQL_SENTENCES)
+        mysql.disable_keys(temp_db_table, temp_db_table + "_strings", temp_db_table + "_rel", temp_db_table + "_head_rel", temp_db_table + "_dep_rel", temp_db_table + "_sentences")
+        mysql.disable_checks()
         mysql.set_names()
-
-    mysql.disable_checks()
-
+    
     rows = []
     
     for string, index in strings.iteritems():
@@ -382,7 +367,7 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
             "pos": pos}
         rows.append(row)
     
-    mysql.add_row(db_table + "_strings", rows, "")
+    mysql.add_row(temp_db_table + "_strings", rows, "")
     
     sentence_rows = []
     rows = []
@@ -404,7 +389,7 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
                 }
                 rows.append(row)
 
-    mysql.add_row(db_table, rows, update_freq)
+    mysql.add_row(temp_db_table, rows, update_freq)
     
     rows = []
     for rel, freq in rel_count.iteritems():
@@ -413,7 +398,7 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
             "freq": freq}
         rows.append(row)
     
-    mysql.add_row(db_table + "_rel", rows, update_freq)
+    mysql.add_row(temp_db_table + "_rel", rows, update_freq)
 
     rows = []
     for head_rel, freq in head_rel_count.iteritems():
@@ -424,7 +409,7 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
             "freq": freq}
         rows.append(row)
     
-    mysql.add_row(db_table + "_head_rel", rows, update_freq)
+    mysql.add_row(temp_db_table + "_head_rel", rows, update_freq)
 
     rows = []
     for dep_rel, freq in dep_rel_count.iteritems():
@@ -435,7 +420,7 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
             "freq": freq}
         rows.append(row)
     
-    mysql.add_row(db_table + "_dep_rel", rows, update_freq)
+    mysql.add_row(temp_db_table + "_dep_rel", rows, update_freq)
 
     for index, sentenceset in sentences.iteritems():
         for sentence in sentenceset:
@@ -447,11 +432,23 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
             }
             sentence_rows.append(srow)
 
-    mysql.add_row(db_table + "_sentences", sentence_rows)
+    mysql.add_row(temp_db_table + "_sentences", sentence_rows)
 
-    mysql.enable_checks()
-    
-    util.log.info("%s written", sqlfile)
+    if last:
+        mysql.enable_keys(temp_db_table, temp_db_table + "_strings", temp_db_table + "_rel", temp_db_table + "_head_rel", temp_db_table + "_dep_rel", temp_db_table + "_sentences")
+        mysql.drop_table(db_table, db_table + "_strings", db_table + "_rel", db_table + "_head_rel", db_table + "_dep_rel", db_table + "_sentences")
+        mysql.rename_table({
+            temp_db_table: db_table,
+            temp_db_table + "_strings": db_table + "_strings",
+            temp_db_table + "_rel": db_table + "_rel",
+            temp_db_table + "_head_rel": db_table + "_head_rel",
+            temp_db_table + "_dep_rel": db_table + "_dep_rel",
+            temp_db_table + "_sentences": db_table + "_sentences"
+        })
+
+        mysql.enable_checks()
+
+    util.log.info("%s written", sql_file)
     
 ################################################################################
 
