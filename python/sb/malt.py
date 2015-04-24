@@ -103,7 +103,7 @@ def maltparse(maltjar, model, out, word, pos, msd, sentence, encoding=util.UTF8,
 
 def maltstart(maltjar, model, encoding, send_empty_sentence=False):
     """
-    Starts a malt process and returns it.
+    Start a malt process and return it.
     """
     java_opts = ["-Xmx1024m"]
     malt_args = ["-ic", encoding, "-oc", encoding, "-m", "parse"]
