@@ -110,7 +110,7 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
         cols = vrt[tok]
         new_attr_values = {}
     
-        # close tags/ fix overlaps
+        # close tags/fix overlaps
         for elem, attrs in structs:
             new_attr_values[elem] = [(attr, cols[n]) for (attr, n) in attrs if cols.get(n)]
             if old_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
