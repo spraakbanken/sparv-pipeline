@@ -1,5 +1,5 @@
 
-TARGETS = help info clean all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable stats_all.txt stats.pickle dalinm.xml dalin.pickle swedbergm.xml swedberg.pickle
+TARGETS = help info clean all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable bettertokenizer.sv.saldo-tokens stats_all.txt stats.pickle dalinm.xml dalin.pickle swedbergm.xml swedberg.pickle
 .PHONY: help info clean all
 
 help:
@@ -8,7 +8,7 @@ help:
 clean:
 	rm -f saldom.xml
 
-all: saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable stats.pickle
+all: saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable stats.pickle bettertokenizer.sv.saldo-tokens
 
 info:
 	@echo "Subversion revision:"
@@ -30,6 +30,9 @@ saldo.compound.pickle: saldom.xml
 
 hunpos.saldo.suc-tags.morphtable: saldo.pickle hunpos.suc.morphtable hunpos.suc-tags.patterns
 	python -m sb.hunpos_morphtable --out "$@" --saldo_model "saldo.pickle" --suc "suc3.morphtable.words" --morphtable_base "hunpos.suc.morphtable" --morphtable_patterns "hunpos.suc.patterns"
+
+bettertokenizer.sv.saldo-tokens:
+	python segment.py --build_token_wordlist --out "$@" --saldo_model "saldo.pickle" --segmenter better_word --model "bettertokenizer.sv" --no_pickled_model=True
 
 stats_all.txt:
 	@echo "Exporting stats_all.txt from Subversion..."

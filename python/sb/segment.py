@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 
+import os.path
 import re
 import util
 import nltk
 import cPickle as pickle
+import saldo
+import codecs
 try:
     import crf  # for CRF++ models
 except ImportError:
@@ -72,6 +75,39 @@ def do_segmentation(text, element, out, chunk, segmenter, existing_segments=None
     util.write_annotation(out, OUT)
 
 
+def build_token_wordlist(saldo_model, out, segmenter, model=None, no_pickled_model=False):
+    """Build a list of words from a SALDO model, to help BetterTokenizer."""
+
+    if model:
+        if not no_pickled_model:
+            with open(model, "rb") as M:
+                model = pickle.load(M)
+        segmenter_args = (model, True)
+    else:
+        segmenter_args = ()
+    assert segmenter in SEGMENTERS, "Available segmenters: %s" % ", ".join(sorted(SEGMENTERS))
+    segmenter = SEGMENTERS[segmenter]
+    segmenter = segmenter(*segmenter_args)
+    assert hasattr(segmenter, "span_tokenize"), "Segmenter needs a 'span_tokenize' method: %r" % segmenter
+
+    wordforms = set()
+
+    # Skip strings already handled by the tokenizer.
+    # Also skip words ending in comma (used by some multi word expressions in SALDO).
+    with open(saldo_model, "rb") as F:
+        lexicon = pickle.load(F)
+        for w in lexicon:
+            w2 = map(saldo._split_triple, lexicon[w])
+            mwu_extras = [contw for w3 in w2 for cont in w3[2] for contw in cont if not contw in lexicon]
+            for wf in mwu_extras + [w]:
+                spans = list(segmenter.span_tokenize(wf))
+                if len(spans) > 1 and not wf.endswith(","):
+                    wordforms.add(wf)
+
+    with codecs.open(out, mode="w", encoding="utf-8") as outfile:
+        outfile.write("\n".join(sorted(wordforms)))
+
+
 ######################################################################
 # Punkt word tokenizer
 
@@ -98,11 +134,11 @@ class ModifiedPunktWordTokenizer(object):
         self.is_post_sentence_token = self.lang_vars.re_boundary_realignment
         self.is_punctuated_token = re.compile(r"\w.*\.$", re.UNICODE)
         self.abbreviations = set([
-                                 "a.a", "a.a", "a.d", "agr", "a.k.a", "alt", "ang", "anm", "art", "avd", "avl", "b.b", "betr",
+                                 "a.a", "a.d", "agr", "a.k.a", "alt", "ang", "anm", "art", "avd", "avl", "b.b", "betr",
                                  "b.g", "b.h", "bif", "bl.a", "b.r.b", "b.t.w", "civ.ek", "civ.ing", "co", "dir", "div",
                                  "d.m", "doc", "dr", "d.s", "d.s.o", "d.v", "d.v.s", "d.y", "dåv", "d.ä", "e.a.g", "e.d", "eftr", "eg",
                                  "ekon", "e.kr", "dyl", "e.d", "em", "e.m", "enl", "e.o", "etc", "e.u", "ev", "ex", "exkl", "f",
-                                 "farm", "f.d", "ff", "fig", "f.kr", "f.m", "f.n", "forts", "fr", "fr.a", "fr.o.m", "f.v.b",
+                                 "farm", "f.d", "ff", "fig", "f.k", "f.kr", "f.m", "f.n", "forts", "fr", "fr.a", "fr.o.m", "f.v.b",
                                  "f.v.t", "f.ö", "följ", "föreg", "förf", "gr", "g.s", "h.h.k.k.h.h", "h.k.h", "h.m", "ill",
                                  "inkl", "i.o.m", "st.f", "jur", "kand", "kap", "kl", "lb", "leg", "lic", "lisp", "m.a.a",
                                  "mag", "m.a.o", "m.a.p", "m.fl", "m.h.a", "m.h.t", "milj", "m.m", "m.m.d", "mom", "m.v.h",
@@ -202,62 +238,26 @@ class PunctuationTokenizer(nltk.RegexpTokenizer):
 
 class BetterWordTokenizer():
     """
-    A word tokenizer based on the PunktWordTokenizer code. Adds support for defining characters
-    which can not end tokens, and URL, e-mail and smiley recognition. Also handles unicode quotation marks and other
-    punctuation.
+    A word tokenizer based on the PunktWordTokenizer code, heavily modified to add support for
+    custom regular expressions, wordlists, and external configuration files.
     http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt.PunktSentenceTokenizer-class.html
     """
     
-    abbreviations = set([
-                          "a.a", "a.a", "a.d", "agr", "a.k.a", "alt", "ang", "anm", "art", "avd", "avl", "b.b", "betr",
-                          "b.g", "b.h", "bif", "bl.a", "b.r.b", "b.t.w", "civ.ek", "civ.ing", "co", "dir", "div",
-                          "d.m", "doc", "dr", "d.s", "d.s.o", "d.v", "d.v.s", "d.y", "dåv", "d.ä", "e.a.g", "e.d", "eftr", "eg",
-                          "ekon", "e.kr", "dyl", "e.d", "em", "e.m", "enl", "e.o", "etc", "e.u", "ev", "ex", "exkl", "f",
-                          "farm", "f.d", "ff", "fig", "f.kr", "f.m", "f.n", "forts", "fr", "fr.a", "fr.o.m", "f.v.b",
-                          "f.v.t", "f.ö", "följ", "föreg", "förf", "gr", "g.s", "h.h.k.k.h.h", "h.k.h", "h.m", "ill",
-                          "inkl", "i.o.m", "st.f", "jur", "kand", "kap", "kl", "lb", "leg", "lic", "lisp", "m.a.a",
-                          "mag", "m.a.o", "m.a.p", "m.fl", "m.h.a", "m.h.t", "milj", "m.m", "m.m.d", "mom", "m.v.h",
-                          "möjl", "n.b", "näml", "nästk", "o", "o.d", "odont", "o.dyl", "omkr", "o.m.s", "op", "ordf",
-                          "o.s.a", "o.s.v", "pers", "p.gr", "p.g.a", "pol", "prel", "prof", "rc", "ref", "resp", "r.i.p",
-                          "rst", "s.a.s", "sek", "sekr", "sid", "sign", "sistl", "s.k", "sk", "skålp", "s.m", "s.m.s", "sp",
-                          "spec", "s.st", "st", "stud", "särsk", "tab", "tekn", "tel", "teol", "t.ex", "tf", "t.h",
-                          "tim", "t.o.m", "tr", "trol", "t.v", "u.p.a", "urspr", "utg", "v", "w", "v.d", "å.k",
-                          "ä.k.s", "äv", "ö.g", "ö.h", "ök", "övers"
-                          ])
-    
-    _re_url = r"(?:http|ftp|https):\/\/[\w\-_]+(?:\.[\w\-_]+)+(?:[\w\-\.,@?^=%&amp;:/~\+#]*[\w\-\@?^=%&amp;/~\+#])?"
-    _re_email = r"(?:[a-zA-Z0-9_\-\.]+)@(?:(?:\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(?:(?:[a-zA-Z0-9\-]+\.)+))(?:[a-zA-Z]{2,4}|[0-9]{1,3})(?:\]?)(?!\w)"
-    _re_smiley = r"(?:(?:(?<=\s)|(?<=\A))(?:(?:(?:>[:;=+])|[>:;=+])[,*]?[-~+o]?(?:\)+|\(+|\}+|\{+|\]+|\[+|\|+|\\+|/+|>+|<+|D+|[@#!OoPpXxZS$03])|>?[xX8][-~+o]?(?:\)+|\(+|\}+|\{+|\]+|\[+|\|+|\\+|/+|>+|<+|D+))(?=\s|\Z))"
-    # Excludes some characters from starting word tokens
-    _re_word_start = ur'''[^\(\"\'‘’–—“”»\`\\{\/\[:;&\#\*@\)}\]\-,…]'''
-    
-    # Characters that cannot appear within words
-    _re_non_word_chars = ur'(?:[?!)\"“”»–—\\;\/}\]\*\'‘’\({\[…%])'
-    
-    # Excludes some characters from ending word tokens (more or less same as above except '-')
-    _re_word_end = r"[\(\"\`{\[:;&\#\*@\)}\],]"
-       
-    # Hyphen and ellipsis are multi-character punctuation
-    _re_multi_char_punct = r"(?:\-{2,}|\.{2,}|(?:\.\s){2,}\.)"
-    
-    # Format of a regular expression to split punctuation from words, excluding period.
+    # Format for the complete regular expression to be used for tokenization
     _word_tokenize_fmt = r'''(
-        %(URL)s
+        %(misc)s
         |
-        %(Email)s
+        %(multi)s
         |
-        %(Smiley)s
+        (?:(?:(?<=^)|(?<=\s))%(number)s(?=\s|$))  # Numbers with decimal mark
         |
-        %(MultiChar)s
-        |
-        (?:(?:(?<=^)|(?<=\s))\d+,\d+(?=\s|$))  # Numbers with ,
-        |
-        (?=%(WordStart)s)\S+?  # Accept word characters until end is found
+        (?=[^%(start)s])
+        (?:t\sex|%(tokens)s%(abbrevs)s(?<=\s)(?:[^\.\s]+\.){2,}|\S+?)  # Accept word characters until end is found
         (?= # Sequences marking a word's end
             \s|                                 # White-space
             $|                                  # End-of-string
-            %(NonWord)s|%(MultiChar)s|          # Punctuation
-            %(WordEnd)s(?=$|\s|%(NonWord)s|%(MultiChar)s)  # Misc characters if at end of word
+            (?:[%(within)s])|%(multi)s|         # Punctuation
+            [%(end)s](?=$|\s|(?:[%(within)s])|%(multi)s)  # Misc characters if at end of word
         )
         |
         \S
@@ -268,36 +268,77 @@ class BetterWordTokenizer():
 
     re_punctuated_token = re.compile(r"\w.*\.$", re.UNICODE)
     
-    def __init__(self):
-        pass
-    
-    def _word_tokenizer_re(self): 
-        """Compiles and returns a regular expression for word tokenization""" 
-        try: 
+    def __init__(self, configuration_file, skip_tokenlist=False):
+        # Parse configuration file
+        self.case_sensitive = False
+        self.patterns = {"misc": [], "tokens": []}
+        self.abbreviations = set()
+        in_abbr = False
+        with codecs.open(configuration_file, encoding="UTF-8") as conf:
+            for line in conf:
+                if line.startswith("#") or not line.strip():
+                    continue
+                if not in_abbr:
+                    if not in_abbr and line.strip() == "abbreviations:":
+                        in_abbr = True
+                        continue
+                    else:
+                        try:
+                            key, val = line.strip().split(None, 1)
+                        except ValueError as e:
+                            print "Error parsing configuration file:", line
+                            raise e
+                        key = key[:-1]
+
+                        if key == "token_list":
+                            if skip_tokenlist:
+                                continue
+                            if not val.startswith("/"):
+                                val = os.path.join(os.path.dirname(configuration_file), val)
+                            with codecs.open(val, encoding="UTF-8") as saldotokens:
+                                self.patterns["tokens"] = [re.escape(t.strip()) for t in saldotokens.readlines()]
+                        elif key == "case_sensitive":
+                            self.case_sensitive = (val.lower() == "true")
+                        elif key.startswith("misc_"):
+                            self.patterns["misc"].append(val)
+                        elif key in ("start", "within", "end"):
+                            self.patterns[key] = re.escape(val)
+                        elif key in ("multi", "number"):
+                            self.patterns[key] = val
+                        else:
+                            raise ValueError("Unknown option: %s" % key)
+                else:
+                    self.abbreviations.add(line.strip())
+
+    def _word_tokenizer_re(self):
+        """Compiles and returns a regular expression for word tokenization"""
+        try:
             return self._re_word_tokenizer 
-        except AttributeError: 
+        except AttributeError:
+            modifiers = (re.UNICODE | re.VERBOSE) if self.case_sensitive else (re.UNICODE | re.VERBOSE | re.IGNORECASE)
             self._re_word_tokenizer = re.compile( 
                 self._word_tokenize_fmt % 
                 {
-                    'URL':       self._re_url,
-                    'Email':     self._re_email,
-                    'Smiley':    self._re_smiley,
-                    'NonWord':   self._re_non_word_chars, 
-                    'MultiChar': self._re_multi_char_punct, 
-                    'WordStart': self._re_word_start,
-                    'WordEnd':   self._re_word_end
+                    'tokens':   ("(?:" + "|".join(self.patterns["tokens"]) + ")|") if self.patterns["tokens"] else "",
+                    'abbrevs':  ("(?:" + "|".join(a + "." for a in self.abbreviations) + ")|") if self.abbreviations else "",
+                    'misc':     "|".join(self.patterns["misc"]),
+                    'number':   self.patterns["number"],
+                    'within':   self.patterns["within"],
+                    'multi':    self.patterns["multi"],
+                    'start':    self.patterns["start"],
+                    'end':      self.patterns["end"]
                 }, 
-                re.UNICODE | re.VERBOSE 
+                modifiers
             ) 
             return self._re_word_tokenizer 
     
     def word_tokenize(self, s): 
-        """Tokenize a string to split of punctuation other than periods"""
+        """Tokenize a string to split off punctuation other than periods"""
         words = self._word_tokenizer_re().findall(s)
         if not words:
             return words
         pos = len(words) - 1
-        
+
         # Split sentence-final . from the final word.
         # i.e., "peter." "piper." ")" => "peter." "piper" "." ")"
         # but not "t.ex." => "t.ex" "."
@@ -379,4 +420,5 @@ do_segmentation.__doc__ += "The following segmenters are available: %s" % ", ".j
 
 if __name__ == '__main__':
     util.run.main(do_segmentation,
-                  train_punkt_segmenter=train_punkt_segmenter)
+                  train_punkt_segmenter=train_punkt_segmenter,
+                  build_token_wordlist=build_token_wordlist)
