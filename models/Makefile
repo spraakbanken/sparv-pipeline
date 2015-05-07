@@ -1,5 +1,5 @@
 
-TARGETS = help info clean all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable stats_all.txt stats.pickle
+TARGETS = help info clean all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable stats_all.txt stats.pickle dalinm.xml dalin.pickle swedbergm.xml swedberg.pickle
 .PHONY: help info clean all
 
 help:
@@ -38,3 +38,19 @@ stats_all.txt:
 
 stats.pickle: stats_all.txt
 	python -m sb.train_stats_model --stats_infile "stats_all.txt" --picklefile "$@"
+
+dalinm.xml:
+	@echo "Exporting dalinm.xml from Subversion..."
+	@svn export https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/dalinm/dalinm.xml --force
+	@echo "Done."
+
+dalin.pickle: dalinm.xml
+	python -m sb.lmflexicon --xml_to_pickle --xml "dalinm.xml" --filename "dalin.pickle"
+
+swedbergm.xml:
+	@echo "Exporting swedbergm.xml from Subversion..."
+	@svn export https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/swedbergm/swedbergm.xml --force
+	@echo "Done."
+
+swedberg.pickle: swedbergm.xml
+	python -m sb.lmflexicon --xml_to_pickle --xml "swedbergm.xml" --filename "swedberg.pickle"
