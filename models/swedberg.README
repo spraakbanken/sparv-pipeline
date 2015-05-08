@@ -11,8 +11,3 @@ Skapas med make swedberg.pickle
 Format: Python pickle
 Kodning: UTF8
 
-
-Old comments:
-Based on swedbergm.xml, under development.
-Does not have msd-tags,particles or multi word expressions.
-Can be used with saldo.py
