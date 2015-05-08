@@ -17,7 +17,7 @@ import re
 ######################################################################
 # converting between different file formats
 
-def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset='SUC',verbose=True, skip_multiword=True, translate_tags=True):
+def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset='SUC',verbose=True, skip_multiword=False, translate_tags=True):
     """Read the XML version of a morphological lexicon in lmf format (dalinm.xml).
        Return a lexicon dictionary, {wordform: {{annotation-type: annotation}: ( set(possible tags), set(tuples with following words) )}}
         - annotation_element is the XML element for the annotation value, 'writtenForm' for baseform, 'lemgram' for lemgram
@@ -161,7 +161,7 @@ testwords = [u"äggtoddyarna",
              u"in"]
 
 
-def xml_to_pickle(xml, filename, annotation_elements="writtenForm lemgram", skip_multiword=True):
+def xml_to_pickle(xml, filename, annotation_elements="writtenForm lemgram", skip_multiword=False):
     """Read an XML dictionary and save as a pickle file."""
 
     xml_lexicon = read_xml(xml, annotation_elements, skip_multiword=skip_multiword)
