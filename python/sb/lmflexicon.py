@@ -10,14 +10,15 @@ lmflexicon.xml_to_pickle("swedberg.xml", "swedberg.pickle", skip_multiword=False
 lmlexicon place in subversion: https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/dalinm
 """
 
-import sb.saldo as saldo
+import saldo
 import util
 import re
 
 ######################################################################
 # converting between different file formats
 
-def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset='SUC',verbose=True, skip_multiword=False, translate_tags=True):
+
+def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset='SUC', verbose=True, skip_multiword=False, translate_tags=True):
     """Read the XML version of a morphological lexicon in lmf format (dalinm.xml).
        Return a lexicon dictionary, {wordform: {{annotation-type: annotation}: ( set(possible tags), set(tuples with following words) )}}
         - annotation_element is the XML element for the annotation value, 'writtenForm' for baseform, 'lemgram' for lemgram
@@ -32,7 +33,7 @@ def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset
     lexicon = {}
     tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower())
 
-    context = cet.iterparse(xml, events=("start", "end")) # "start" needed to save reference to root element
+    context = cet.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
     context = iter(context)
     event, root = context.next()
 
@@ -64,9 +65,9 @@ def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset
                             # Handle multi-word expressions
                             multiwords.append(word)
 
-                            particle = False # we don't use any particles or mwe:s with gaps
-                                             # since that information is not formally expressed in the historical lexicons
-                            mwe_gap = False  # but keep the fields so that the file format match the normal saldo-pickle format
+                            particle = False  # we don't use any particles or mwe:s with gaps
+                                              # since that information is not formally expressed in the historical lexicons
+                            mwe_gap = False   # but keep the fields so that the file format match the normal saldo-pickle format
 
                             # is it the last word in the multi word expression?
                             if i == len(wordparts) - 1:
@@ -74,8 +75,8 @@ def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset
                                 multiwords = []
                         else:
                             # Single word expressions
-                            particle = False # we don't use any particles or mwe:s with gaps
-                            mwe_gap = False  # but keep the fields so that the file format match the normal saldo-pickle format
+                            particle = False  # we don't use any particles or mwe:s with gaps
+                            mwe_gap = False   # but keep the fields so that the file format match the normal saldo-pickle format
                             
                             if translate_tags:
                                 tags = convert_default(pos, inhs, param, tagmap)
@@ -94,6 +95,7 @@ def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset
         util.log.info("OK, read")
     return lexicon
 
+
 def convert_default(pos, inh, param, tagmap):
     saldotag = ' '.join(([pos]+inh+[param]))
     tags = tagmap.get(saldotag)
@@ -111,6 +113,7 @@ def convert_default(pos, inh, param, tagmap):
         if t.split()[0] == pos:
             tags.extend(tagmap.get(t))
     return tags
+
 
 def try_translate(params):
     """ Some basic translations """
@@ -134,6 +137,7 @@ def try_translate(params):
             sucfilter = m.expand(post).replace(" ", r"\.").replace("+", r"\+")
             return set(suctag for suctag in util.tagsets.suc_tags if re.match(sucfilter, suctag))
     return []
+
 
 def findval(elems, key):
     """ help function for looking up values in the lmf """
