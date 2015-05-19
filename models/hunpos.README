@@ -39,5 +39,11 @@ Mer info: http://stp.lingfil.uu.se/~evafo/resources/taggermodels/HunPosmodels.ht
 Skapad av: Martin Hammarstedt
 Taggar: SUC3
 Kodning: UTF-8
+Skapad med: sb.hunpos_morphtable
 
-Skapad med sb.hunpos_morphtable.
+
+- hunpos.dalinm-swedberg.saldo.suc-tags.morphtable
+
+Skapad av: Malin Ålberg
+Taggar: SUC3
+Skapad med: sb.hunpos_morphtable_hist
