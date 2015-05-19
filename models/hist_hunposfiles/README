@@ -1,6 +1,7 @@
 
 "dalinm.hunpos" and "swedberg-gender.hunpo"s contain words 
-and MSD-tags from swedberg and dalinm.
+and MSD-tags from the lmf-lexica swedberg.xml and dalinm.xml.
+There is currently no script for creating them.
 
 These files are used to create the hunpos morphtable file
 "hunpos.dalinm-swedberg.saldo.suc-tags.morphtable"
