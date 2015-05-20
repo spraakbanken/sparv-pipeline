@@ -133,22 +133,20 @@ class ModifiedPunktWordTokenizer(object):
         self.lang_vars = ModifiedLanguageVars()
         self.is_post_sentence_token = self.lang_vars.re_boundary_realignment
         self.is_punctuated_token = re.compile(r"\w.*\.$", re.UNICODE)
-        self.abbreviations = set([
-                                 "a.a", "a.d", "agr", "a.k.a", "alt", "ang", "anm", "art", "avd", "avl", "b.b", "betr",
-                                 "b.g", "b.h", "bif", "bl.a", "b.r.b", "b.t.w", "civ.ek", "civ.ing", "co", "dir", "div",
-                                 "d.m", "doc", "dr", "d.s", "d.s.o", "d.v", "d.v.s", "d.y", "dåv", "d.ä", "e.a.g", "e.d", "eftr", "eg",
-                                 "ekon", "e.kr", "dyl", "e.d", "em", "e.m", "enl", "e.o", "etc", "e.u", "ev", "ex", "exkl", "f",
-                                 "farm", "f.d", "ff", "fig", "f.k", "f.kr", "f.m", "f.n", "forts", "fr", "fr.a", "fr.o.m", "f.v.b",
-                                 "f.v.t", "f.ö", "följ", "föreg", "förf", "gr", "g.s", "h.h.k.k.h.h", "h.k.h", "h.m", "ill",
-                                 "inkl", "i.o.m", "st.f", "jur", "kand", "kap", "kl", "lb", "leg", "lic", "lisp", "m.a.a",
-                                 "mag", "m.a.o", "m.a.p", "m.fl", "m.h.a", "m.h.t", "milj", "m.m", "m.m.d", "mom", "m.v.h",
-                                 "möjl", "n.b", "näml", "nästk", "o", "o.d", "odont", "o.dyl", "omkr", "o.m.s", "op", "ordf",
-                                 "o.s.a", "o.s.v", "pers", "p.gr", "p.g.a", "pol", "prel", "prof", "rc", "ref", "resp", "r.i.p",
-                                 "rst", "s.a.s", "sek", "sekr", "sid", "sign", "sistl", "s.k", "sk", "skålp", "s.m", "s.m.s", "sp",
-                                 "spec", "s.st", "st", "stud", "särsk", "tab", "tekn", "tel", "teol", "t.ex", "tf", "t.h",
-                                 "tim", "t.o.m", "tr", "trol", "t.v", "u.p.a", "urspr", "utg", "v", "w", "v.d", "å.k",
-                                 "ä.k.s", "äv", "ö.g", "ö.h", "ök", "övers"
-                                 ])
+        self.abbreviations = {"a.a", "a.d", "agr", "a.k.a", "alt", "ang", "anm", "art", "avd", "avl", "b.b", "betr",
+                              "b.g", "b.h", "bif", "bl.a", "b.r.b", "b.t.w", "civ.ek", "civ.ing", "co", "dir", "div",
+                              "d.m", "doc", "dr", "d.s", "d.s.o", "d.v", "d.v.s", "d.y", "dåv", "d.ä", "e.a.g", "e.d", "eftr", "eg",
+                              "ekon", "e.kr", "dyl", "e.d", "em", "e.m", "enl", "e.o", "etc", "e.u", "ev", "ex", "exkl", "f",
+                              "farm", "f.d", "ff", "fig", "f.k", "f.kr", "f.m", "f.n", "forts", "fr", "fr.a", "fr.o.m", "f.v.b",
+                              "f.v.t", "f.ö", "följ", "föreg", "förf", "gr", "g.s", "h.h.k.k.h.h", "h.k.h", "h.m", "ill",
+                              "inkl", "i.o.m", "st.f", "jur", "kand", "kap", "kl", "lb", "leg", "lic", "lisp", "m.a.a",
+                              "mag", "m.a.o", "m.a.p", "m.fl", "m.h.a", "m.h.t", "milj", "m.m", "m.m.d", "mom", "m.v.h",
+                              "möjl", "n.b", "näml", "nästk", "o", "o.d", "odont", "o.dyl", "omkr", "o.m.s", "op", "ordf",
+                              "o.s.a", "o.s.v", "pers", "p.gr", "p.g.a", "pol", "prel", "prof", "rc", "ref", "resp", "r.i.p",
+                              "rst", "s.a.s", "sek", "sekr", "sid", "sign", "sistl", "s.k", "sk", "skålp", "s.m", "s.m.s", "sp",
+                              "spec", "s.st", "st", "stud", "särsk", "tab", "tekn", "tel", "teol", "t.ex", "tf", "t.h",
+                              "tim", "t.o.m", "tr", "trol", "t.v", "u.p.a", "urspr", "utg", "v", "w", "v.d", "å.k",
+                              "ä.k.s", "äv", "ö.g", "ö.h", "ök", "övers"}
 
     def span_tokenize(self, text):
         begin = 0
@@ -320,7 +318,7 @@ class BetterWordTokenizer():
                 self._word_tokenize_fmt % 
                 {
                     'tokens':   ("(?:" + "|".join(self.patterns["tokens"]) + ")|") if self.patterns["tokens"] else "",
-                    'abbrevs':  ("(?:" + "|".join(a + "." for a in self.abbreviations) + ")|") if self.abbreviations else "",
+                    'abbrevs':  ("(?:" + "|".join(re.escape(a + ".") for a in self.abbreviations) + ")|") if self.abbreviations else "",
                     'misc':     "|".join(self.patterns["misc"]),
                     'number':   self.patterns["number"],
                     'within':   self.patterns["within"],
