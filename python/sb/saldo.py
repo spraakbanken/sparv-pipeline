@@ -14,7 +14,8 @@ import re
 
 
 def annotate(word, msd, sentence, reference, out, annotations, model,
-             delimiter="|", affix="|", precision=":%.3f", precision_filter=None, min_precision=0.0, skip_multiword=False, word_separator="", lexicon=None):
+             delimiter="|", affix="|", precision=":%.3f", precision_filter=None, min_precision=0.0,
+             skip_multiword=False, word_separator="", lexicon=None, skip_pos_check=False):
     """Use the Saldo lexicon model to annotate pos-tagged words.
       - word, msd are existing annotations for wordforms and part-of-speech
       - sentence is an existing annotation for sentences and their children (words)
@@ -36,6 +37,8 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
       - word_separator is an optional character used to split the values of "word" into several word variations.  
       - lexicon: this argument cannot be set from the command line,
         but is used in the catapult. This argument must be last.
+      - skip_pos_check: set to true to skip almost all part-of-speech checking (verb multi-word expressions
+        still won't be allowed to span over other verbs)
     """
 
     if not lexicon:
@@ -51,6 +54,9 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
         skip_multiword = (skip_multiword.lower() == "true")
     if skip_multiword:
         util.log.info("Skipping multi word annotations")
+
+    if isinstance(skip_pos_check, basestring):
+        skip_pos_check = (skip_pos_check.lower() == "true")
     
     min_precision = float(min_precision)
 
@@ -83,19 +89,19 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
                 thewords = [theword]
 
             # First use MSD tags to find the most probable single word annotations
-            ann_tags_words = findsingleword(thewords, lexicon, msdtag, precision, min_precision, precision_filter, annotation_info)
+            ann_tags_words = find_single_word(thewords, lexicon, msdtag, precision, min_precision, precision_filter, annotation_info)
 
             # Find multi-word expressions
             if not skip_multiword:
-                findmultiwordexpressions(incomplete_multis, complete_multis, thewords, ref, msdtag, MAX_GAPS, ann_tags_words, MSD, sent)
+                find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref, msdtag, MAX_GAPS, ann_tags_words, MSD, sent, skip_pos_check)
 
             # Loop to next token
 
         # Check that we don't have any unwanted overlaps
-        removeunwantedoverlaps(complete_multis)
+        remove_unwanted_overlaps(complete_multis)
 
         # Then save the rest of the multi word expressions in sentence_tokens
-        savemultiwords(complete_multis, sentence_tokens)
+        save_multiwords(complete_multis, sentence_tokens)
 
         for token in sentence_tokens.values():
             OUT[token["tokid"]] = _join_annotation(token["annotations"], delimiter, affix)
@@ -106,17 +112,14 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
         util.write_annotation(out_file, [(tok, OUT[tok].get(annotation, affix)) for tok in OUT], append=True)
 
 
-def findsingleword(thewords, lexicon, msdtag, precision, min_precision, precision_filter, annotation_info):
+def find_single_word(thewords, lexicon, msdtag, precision, min_precision, precision_filter, annotation_info):
     ann_tags_words = []
 
     for w in thewords:
         ann_tags_words += lexicon.lookup(w)
 
-    # if lexicon.lookup(theword):
-    #     ann_tags_words += lexicon.lookup(theword)
-
     annotation_precisions = [(get_precision(msdtag, msdtags), annotation)
-                            for (annotation, msdtags, wordslist, _, _) in ann_tags_words if not wordslist]
+                             for (annotation, msdtags, wordslist, _, _) in ann_tags_words if not wordslist]
 
     if min_precision > 0:
         annotation_precisions = filter(lambda x: x[0] >= min_precision, annotation_precisions)
@@ -143,7 +146,7 @@ def findsingleword(thewords, lexicon, msdtag, precision, min_precision, precisio
     return ann_tags_words
 
 
-def findmultiwordexpressions(incomplete_multis, complete_multis, thewords, ref, msdtag, MAX_GAPS, ann_tags_words, MSD, sent):
+def find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref, msdtag, max_gaps, ann_tags_words, MSD, sent, skip_pos_check):
     todelfromincomplete = []  # list to keep track of which expressions that have been completed
 
     for i, x in enumerate(incomplete_multis):
@@ -157,10 +160,10 @@ def findmultiwordexpressions(incomplete_multis, complete_multis, thewords, ref, 
                 del x[1][0]
 
         # If current gap is greater than MAX_GAPS, stop searching
-        if x[5][1] > MAX_GAPS:
+        if x[5][1] > max_gaps:
             todelfromincomplete.append(i)
-        #                                                         |  Last word may not be PP if this is a particle-multi-word |
-        elif seeking_word.lower() in (w.lower() for w in thewords) and not (len(x[1]) == 1 and x[4] and msdtag.startswith("PP")):
+        #                                                         |  Last word may not be PP if this is a particle-multi-word                      |
+        elif seeking_word.lower() in (w.lower() for w in thewords) and (skip_pos_check or not (len(x[1]) == 1 and x[4] and msdtag.startswith("PP"))):
             x[5][0] = False     # last word was not a gap
             del x[1][0]
             x[2].append(ref)
@@ -170,19 +173,17 @@ def findmultiwordexpressions(incomplete_multis, complete_multis, thewords, ref, 
                 todelfromincomplete.append(i)
 
                 # Create a list of msdtags of words belonging to the completed multi-word expr.
-                msdtag_list = []
-                for ref in x[2]:
-                    msdtag_list.append(MSD[sent[int(ref) - 1]])
+                msdtag_list = [MSD[sent[int(ref) - 1]] for ref in x[2]]
 
                 # For completed verb multis, check that at least one of the words is a verb:
-                if "..vbm." in x[0]['lem'][0]:
+                if not skip_pos_check and "..vbm." in x[0]['lem'][0]:
                     for tag in msdtag_list:
                         if tag.startswith('VB'):
                             complete_multis.append((x[2], x[0]))
                             break
 
                 # For completed noun multis, check that at least one of the words is a noun:
-                elif "..nnm." in x[0]['lem'][0]:
+                elif not skip_pos_check and "..nnm." in x[0]['lem'][0]:
                     for tag in msdtag_list:
                         if tag[:2] in ('NN', 'PM', 'UO'):
                             complete_multis.append((x[2], x[0]))
@@ -209,7 +210,6 @@ def findmultiwordexpressions(incomplete_multis, complete_multis, thewords, ref, 
                 # Gaps are not allowed for this multi-word expression
                 todelfromincomplete.append(i)
 
-
     # Delete seeking words from incomplete_multis
     for x in todelfromincomplete[::-1]:
         del incomplete_multis[x]
@@ -217,29 +217,29 @@ def findmultiwordexpressions(incomplete_multis, complete_multis, thewords, ref, 
     # Collect possible multiword expressions:
     # Is this word a possible beginning of a multi-word expression?
     looking_for = [(annotation, words, [ref], gap_allowed, is_particle, [False, 0]) 
-                    for (annotation, _, wordslist, gap_allowed, is_particle) in ann_tags_words if wordslist for words in wordslist]
+                   for (annotation, _, wordslist, gap_allowed, is_particle) in ann_tags_words if wordslist for words in wordslist]
     if len(looking_for) > 0:
         incomplete_multis.extend(looking_for)
 
 
-def removeunwantedoverlaps(complete_multis):
+def remove_unwanted_overlaps(complete_multis):
     remove = set()
     for ci, c in enumerate(complete_multis):
         for d in complete_multis:
             if re.search(r"\.(\w\wm)\.", c[1]["lem"][0]).groups()[0] == re.search(r"\.(\w\wm)\.", d[1]["lem"][0]).groups()[0]:
                 # Both are of same POS
-                if d[0][0] < c[0][0] and d[0][-1] > c[0][0] and d[0][-1] < c[0][-1]:
+                if d[0][0] < c[0][0] < d[0][-1] < c[0][-1]:
                     # A case of x1 y1 x2 y2. Remove y.
                     remove.add(ci)
                 elif c[0][0] < d[0][0] and d[0][-1] == c[0][-1]:
-                    #A case of x1 y1 xy2. Remove x.
+                    # A case of x1 y1 xy2. Remove x.
                     remove.add(ci)
 
     for c in sorted(remove, reverse=True):
         del complete_multis[c]
 
 
-def savemultiwords(complete_multis, sentence_tokens):
+def save_multiwords(complete_multis, sentence_tokens):
     for c in complete_multis:
         first = True
         first_ref = ""
