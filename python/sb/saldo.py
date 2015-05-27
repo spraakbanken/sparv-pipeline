@@ -15,7 +15,7 @@ import re
 
 def annotate(word, msd, sentence, reference, out, annotations, model,
              delimiter="|", affix="|", precision=":%.3f", precision_filter=None, min_precision=0.0,
-             skip_multiword=False, word_separator="", lexicon=None, skip_pos_check=False):
+             skip_multiword=False, word_separator="", lexicon=None):
     """Use the Saldo lexicon model to annotate pos-tagged words.
       - word, msd are existing annotations for wordforms and part-of-speech
       - sentence is an existing annotation for sentences and their children (words)
@@ -37,8 +37,6 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
       - word_separator is an optional character used to split the values of "word" into several word variations.  
       - lexicon: this argument cannot be set from the command line,
         but is used in the catapult. This argument must be last.
-      - skip_pos_check: set to true to skip almost all part-of-speech checking (verb multi-word expressions
-        still won't be allowed to span over other verbs)
     """
 
     if not lexicon:
@@ -55,10 +53,10 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
     if skip_multiword:
         util.log.info("Skipping multi word annotations")
 
-    if isinstance(skip_pos_check, basestring):
-        skip_pos_check = (skip_pos_check.lower() == "true")
-    
     min_precision = float(min_precision)
+
+    # If min_precision is 0, skip almost all part-of-speech checking (verb multi-word expressions still won't be allowed to span over other verbs)
+    skip_pos_check = (min_precision == 0.0)
 
     WORD = util.read_annotation(word)
     MSD = util.read_annotation(msd)
