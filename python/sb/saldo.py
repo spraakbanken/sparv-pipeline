@@ -222,19 +222,19 @@ def find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref
 
 def remove_unwanted_overlaps(complete_multis):
     remove = set()
-    for ci, c in enumerate(complete_multis):
-        for d in complete_multis:
-            if re.search(r"\.(\w\wm)\.", c[1]["lem"][0]).groups()[0] == re.search(r"\.(\w\wm)\.", d[1]["lem"][0]).groups()[0]:
-                # Both are of same POS
-                if d[0][0] < c[0][0] < d[0][-1] < c[0][-1]:
-                    # A case of x1 y1 x2 y2. Remove y.
-                    remove.add(ci)
-                elif c[0][0] < d[0][0] and d[0][-1] == c[0][-1]:
-                    # A case of x1 y1 xy2. Remove x.
-                    remove.add(ci)
+    for ai, a in enumerate(complete_multis):
+        for b in complete_multis:
+            # Check if both are of same POS
+            if not a == b and re.search(r"\.(\w\wm)\.", a[1]["lem"][0]).groups()[0] == re.search(r"\.(\w\wm)\.", b[1]["lem"][0]).groups()[0]:
+                if b[0][0] < a[0][0] < b[0][-1] < a[0][-1]:
+                    # A case of b1 a1 b2 a2. Remove a.
+                    remove.add(ai)
+                elif a[0][0] < b[0][0] and a[0][-1] == b[0][-1] and not all((x in a[0]) for x in b[0]):
+                    # A case of a1 b1 ab2. Remove a.
+                    remove.add(ai)
 
-    for c in sorted(remove, reverse=True):
-        del complete_multis[c]
+    for a in sorted(remove, reverse=True):
+        del complete_multis[a]
 
 
 def save_multiwords(complete_multis, sentence_tokens):
