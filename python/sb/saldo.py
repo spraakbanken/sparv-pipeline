@@ -32,6 +32,7 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
       - precision_filter is an optional filter, currently there are the following values:
         max: only use the annotations that are most probable
         first: only use the most probable annotation (or one of the most probable if more than one)
+        none: use all annotations
       - min_precision: only use annotations with a probability score higher than this
       - skip_multiword can be set to True to disable multi word annotations
       - word_separator is an optional character used to split the values of "word" into several word variations.  
@@ -214,7 +215,7 @@ def find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref
 
     # Collect possible multiword expressions:
     # Is this word a possible beginning of a multi-word expression?
-    looking_for = [(annotation, words, [ref], gap_allowed, is_particle, [False, 0]) 
+    looking_for = [(annotation, words, [ref], gap_allowed, is_particle, [False, 0])
                    for (annotation, _, wordslist, gap_allowed, is_particle) in ann_tags_words if wordslist for words in wordslist]
     if len(looking_for) > 0:
         incomplete_multis.extend(looking_for)
