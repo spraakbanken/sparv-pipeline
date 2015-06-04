@@ -444,7 +444,7 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
                     if param in ("frag", "c", "ci", "cm"):
                         # We don't use these wordforms, so skip
                         continue
-                    elif param[-1].isdigit() and param[-1] != "1":
+                    elif param[-1].isdigit() and param[-2:] != "-1":
                         # Handle multi-word expressions
                         multiwords.append(word)
                         multipart, multitotal = param.split(":")[-1].split("-")
@@ -459,7 +459,7 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
                             multiwords = []
                     else:
                         # Single word expressions
-                        if param[-1] == "1":
+                        if param[-2:] == "-1":
                             param = param.rsplit(" ", 1)[0]
                             if pos == "vbm":
                                 pos = "vb"
