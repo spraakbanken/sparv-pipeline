@@ -323,7 +323,7 @@ def compound(saldo_lexicon, altlexicon, w, msd=None):
         current_combinations.append(anap)
 
         # Get infix analyses
-        for infix in comp[1:len(comp)-1]:
+        for infix in comp[1:-1]:
             anai = saldo_lexicon.get_infixes(infix)
             if not anai:
                 anai = altlexicon.get_prefixes(infix)
@@ -332,14 +332,16 @@ def compound(saldo_lexicon, altlexicon, w, msd=None):
             current_combinations.append(anai)
 
         # Get suffix analysis
-        anas = saldo_lexicon.get_suffixes(comp[len(comp)-1], msd)
+        anas = saldo_lexicon.get_suffixes(comp[-1], msd)
         if not anas:
-            anas = altlexicon.get_suffixes(comp[len(comp)-1], msd)
+            anas = altlexicon.get_suffixes(comp[-1], msd)
         if not anas:
             continue
         current_combinations.append(anas)
 
-        out_compounds.append(list(set(itertools.product(*current_combinations))))
+        # Check if all parts got an analysis
+        if len(current_combinations) == len(comp):
+            out_compounds.append(list(set(itertools.product(*current_combinations))))
 
     return out_compounds
 
