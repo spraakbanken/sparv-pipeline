@@ -3,6 +3,7 @@
 import cPickle as pickle
 import util
 
+
 def annotate(out_prefix, out_suffix, word, msd, model, delimiter="|", affix="|", lexicon=None):
     """Divides compound words into prefix and suffix.
     - out_prefix is the resulting annotation file for prefixes
@@ -36,10 +37,12 @@ class SaldoLexicon(object):
     It is initialized from a Pickled file.
     """
     def __init__(self, saldofile, verbose=True):
-        if verbose: util.log.info("Reading Saldo lexicon: %s", saldofile)
+        if verbose:
+            util.log.info("Reading Saldo lexicon: %s", saldofile)
         with open(saldofile, "rb") as F:
             self.lexicon = pickle.load(F)
-        if verbose: util.log.info("OK, read %d words", len(self.lexicon))
+        if verbose:
+            util.log.info("OK, read %d words", len(self.lexicon))
 
     def lookup(self, word):
         """Lookup a word in the lexicon."""
@@ -99,11 +102,11 @@ def read_xml(xml='saldom.xml', tagset="SUC"):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml).
     """
     import xml.etree.cElementTree as cet
-    tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower())
+    tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower() + "_compound")
     util.log.info("Reading XML lexicon")
     lexicon = {}
 
-    context = cet.iterparse(xml, events=("start", "end")) # "start" needed to save reference to root element
+    context = cet.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
     context = iter(context)
     event, root = context.next()
 
@@ -115,7 +118,8 @@ def read_xml(xml='saldom.xml', tagset="SUC"):
                 lem = elem.findtext("lem")
                 table = elem.find("table")
                 inhs = elem.findtext("inhs")
-                if inhs == "-": inhs = ""
+                if inhs == "-":
+                    inhs = ""
                 inhs = inhs.split()
 
                 for form in list(table):

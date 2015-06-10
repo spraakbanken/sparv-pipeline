@@ -410,7 +410,7 @@ def read_xml(xml='saldom.xml', tagset="SUC"):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml).
     """
     import xml.etree.cElementTree as cet
-    tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower())
+    tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower() + "_compound")
     util.log.info("Reading XML lexicon")
     lexicon = {}
 

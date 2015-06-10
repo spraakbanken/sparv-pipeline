@@ -211,7 +211,7 @@ suc_descriptions = {
     'RO.UTR+NEU.SIN+PLU.IND+DEF.SMS': u'ordningstal utrum/neutrum singularis/pluralis obestämd/bestämd sammansättningsform',
     'SN': u'subjunktion',
     'UO': u'utländskt ord',
-    'VB.AN': u'verb  förkortning',
+    'VB.AN': u'verb förkortning',
     'VB.IMP.AKT': u'verb imperativ aktiv',
     'VB.IMP.SFO': u'verb imperativ s-form',
     'VB.INF.AKT': u'verb infinitiv aktiv',
@@ -1257,28 +1257,28 @@ _suc_tag_replacements = [
     (r"(AB|KN|PP|VB)A",               r"\1 AN"),
     (r"[MS]XC",                       r"(NN|JJ|AB) .* SMS"),
                                       
-    (r"AB INVAR",                     r"(AB|PL|HA)"),
-    (r"AB (KOM|POS|SMS|SUV)",         r"AB \1"),
-                                      
+    (r"ABH? INVAR",                     r"(AB|PL|HA)"),
+    (r"ABH? (KOM|POS|SMS|SUV)",         r"AB \1"),
+
     (r"AL PLU (DEF|IND)",             r"DT UTR+NEU PLU \1"),
     (r"AL SIN (UTR|NEU) (DEF|IND)",   r"DT \1 SIN \2"),
-                                                                    
+
     (r"AV INVAR",                                                    r"(JJ POS|PC PRS) .* NOM"),
-    (r"AV POS IND SIN NEU NOM",                                      r"(AB|AB POS|(JJ POS|PC PRF) NEU SIN IND NOM)"),  # snabbt
-    (r"AV POS (DEF|IND) (SIN|PLU) (MAS|NEU|UTR|UTR\+NEU) (NOM|GEN)", r"(JJ POS|PC PRF) \3 \2 (\1|IND+DEF) \4"),  # ind/def doesn't exist in SALDO
-    (r"AV POS (DEF|IND) PLU (NOM|GEN)",                              r"(JJ POS|PC PRF) UTR+NEU PLU (\1|IND+DEF) \2"),  # ind/def doesn't exist in SALDO
+    (r"AVH? POS IND SIN NEU NOM",                                      r"(AB|AB POS|(JJ POS|PC PRF) NEU SIN IND NOM)"),  # snabbt
+    (r"AVH? POS (DEF|IND) (SIN|PLU) (MAS|NEU|UTR|UTR\+NEU) (NOM|GEN)", r"(JJ POS|PC PRF) \3 \2 (\1|IND+DEF) \4"),  # ind/def doesn't exist in SALDO
+    (r"AVH? POS (DEF|IND) PLU (NOM|GEN)",                              r"(JJ POS|PC PRF) UTR+NEU PLU (\1|IND+DEF) \2"),  # ind/def doesn't exist in SALDO
     #(r"AV POS .* (SIN|PLU) .*(NOM|GEN)",                            r"(JJ POS|PC PRF) .* \1 .* \2"),
-    (r"AV KOM NOM",                                                  r"(JJ KOM .* NOM|AB KOM)"),
-    (r"AV SUV IND NOM",                                              r"(JJ SUV .* NOM|AB SUV)"),
-    (r"AV (KOM|SUV) .*(NOM|GEN)",                                    r"JJ \1 .* \2"),
-    (r"AV SMS",                                                      r"JJ .* SMS"),
+    (r"AVH? KOM NOM",                                                  r"(JJ KOM .* NOM|AB KOM)"),
+    (r"AVH? SUV IND NOM",                                              r"(JJ SUV .* NOM|AB SUV)"),
+    (r"AVH? (KOM|SUV) .*(NOM|GEN)",                                    r"JJ \1 .* \2"),
+    (r"AVH? SMS",                                                      r"JJ .* SMS"),
     (r"AVA",                                                         r"AB AN"),
     
     (r"NL (NOM|GEN)",                              r"(RG|RO) .*\1"),
     
     (r"NN (V|P) (SIN|PLU) (IND|DEF) (NOM|GEN)",     r"NN (UTR|NEU|-) (\2|-) (\3|-) (\4|-)"),
-    (r"NN (UTR|NEU) (SIN|PLU) (IND|DEF) (NOM|GEN)", r"NN (\1|-) (\2|-) (\3|-) (\4|-)"),
-    (r"NN .* SMS",                                  r"NN .* SMS"),
+    (r"NNH? (UTR|NEU) (SIN|PLU) (IND|DEF) (NOM|GEN)", r"NN (\1|-) (\2|-) (\3|-) (\4|-)"),
+    (r"NNH? .* SMS",                                  r"NN .* SMS"),
     (r"NNA .* SMS",                                 r"(NN|PM) .* SMS"),
     (r"NNA .* (SIN|PLU) (IND|DEF) (NOM|GEN)",       r"NN (AN|.* \1 \2 \3)"),
     
@@ -1304,17 +1304,34 @@ _suc_tag_replacements = [
     (r"VB PCPRS (NOM|GEN)",                         r"PC PRS .* \1"),
     (r"VB PCPRT .* (PLU|SIN) .*(NOM|GEN)",          r"PC PRF .* \1 .* \2"),
     (r"VB (IMP|SMS)",                               r"VB \1"),
+
+    # Compounds
+    (r"ABH? C",                           r"AB"),
+    (r"AVH? C",                           r"JJ"),
+    (r"VB C",                           r"VB"),
+    (r"NNA? (UTR|NEU) (CI|CM)",       r"NN (\1|-) - - -"),
+    (r"NNA? (V|P) (CI|CM)",       r"NN (UTR|NEU|-) - - -"),
+    (r"NNH? (UTR|NEU) (CI|CM)",       r"NN (\1|-) - - -"),
+
+    (r"PM .* (CI|CM)",         r"PM"),
+    (r"PN C",         r"PN"),
+    (r"NL C",         r"(RG|RO)"),
 ]
 
 
-def _make_saldo_to_suc():
+def _make_saldo_to_suc(compound=False):
     import re
     tagmap = {}
     for saldotag in saldo_tags:
         params = saldotag.split()
-        if saldotag.endswith((' c', ' ci', ' cm')) or not params or (len(params[0]) == 3 and params[0].endswith(('m', 'h'))):
-            # We skip multiword units, compound/end syllables
-            continue
+        if not compound:
+            if saldotag.endswith((' c', ' ci', ' cm')) or not params or (len(params[0]) == 3 and params[0].endswith(('m', 'h'))):
+                # Skip multiword units and compound/end syllables
+                continue
+        else:
+            if not params or (len(params[0]) == 3 and params[0].endswith('m')):
+                # Skip multiword units
+                continue
         paramstr = " ".join(_translate_saldo_parameters.get(prm, prm.upper()) for prm in params)
         # print saldotag, ":", paramstr, "->",
         for (pre, post) in _suc_tag_replacements:
@@ -1322,7 +1339,6 @@ def _make_saldo_to_suc():
             if m:
                 break
         if m is None:
-            print pre
             print paramstr
             print
         sucfilter = m.expand(post).replace(" ", r"\.").replace("+", r"\+")
@@ -1335,6 +1351,7 @@ def _make_saldo_to_suc():
     return tagmap
 
 saldo_to_suc = _make_saldo_to_suc()
+saldo_to_suc_compound = _make_saldo_to_suc(compound=True)  # For use with the compound module
 
 saldo_to_parole = dict((saldotag, set(suc_to_parole[suctag] for suctag in suctags))
                        for saldotag, suctags in saldo_to_suc.items())

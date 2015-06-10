@@ -47,16 +47,18 @@ def export(format, out, order, annotations_columns, annotations_structs, fileid=
     The structs are specified by "elem:attr", giving <elem attr=N> xml tags.
     """
     assert format in ("vrt", "xml"), "Wrong format specified"
-    if isinstance(annotations_columns, basestring): annotations_columns = annotations_columns.split()
-    if isinstance(annotations_structs, basestring): annotations_structs = [x.split(":") for x in annotations_structs.split()]
-    if isinstance(columns, basestring): columns = columns.split()
+    if isinstance(annotations_columns, basestring):
+        annotations_columns = annotations_columns.split()
+    if isinstance(annotations_structs, basestring):
+        annotations_structs = [x.split(":") for x in annotations_structs.split()]
+    if isinstance(columns, basestring):
+        columns = columns.split()
     structs_count = len(structs.split())
     structs = parse_structural_attributes(structs)
     
     assert len(annotations_columns) == len(columns), "columns and annotations_columns must contain same number of values"
     assert len(annotations_structs) == structs_count, "structs and annotations_structs must contain same number of values"
     
-    # Convert True/False string to boolean
     if isinstance(valid_xml, basestring):
         valid_xml = (valid_xml.lower() == "true")
 
@@ -110,45 +112,43 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
         cols = vrt[tok]
         new_attr_values = {}
     
-        # close tags/fix overlaps
+        # Close tags/fix overlaps
         for elem, attrs in structs:
             new_attr_values[elem] = [(attr, cols[n]) for (attr, n) in attrs if cols.get(n)]
             if old_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
                 if not valid_xml:
                     invalid_str_buffer.append("</%s>" % elem.encode(encoding))
                 
-                # check for overlap
+                # Check for overlap
                 while elem != open_tag_stack[-1][0]:
                     overlap = True
-                    # close top stack element, remember to re-open later
+                    # Close top stack element, remember to re-open later
                     str_buffer.append("</%s>" % open_tag_stack[-1][0].encode(encoding))
-                    pending_tag_stack.append(open_tag_stack[-1])
-                    open_tag_stack.pop()
-                    
-                # fix pending tags
+                    pending_tag_stack.append(open_tag_stack.pop())
+
+                # Fix pending tags
                 while pending_tag_stack:
                     if elem == open_tag_stack[-1][0]:
                         str_buffer.append("</%s>" % elem.encode(encoding))
                         open_tag_stack.pop()
-                    # re-open pending tag
+                    # Re-open pending tag
                     pending_elem, attrstring = pending_tag_stack[-1]
                     if not elemids.get(pending_elem):
                         elemid += 1
                         elemids[pending_elem] = elemid
                     line = '<%s _id="%s-%s"%s>' % (pending_elem.encode(encoding), fileid, elemids[pending_elem], attrstring)
                     str_buffer.append(line)
-                    open_tag_stack.append(pending_tag_stack[-1])
-                    pending_tag_stack.pop()
+                    open_tag_stack.append(pending_tag_stack.pop())
                     old_attr_values[elem] = None
 
-                # close last open tag from overlap
+                # Close last open tag from overlap
                 if elem == open_tag_stack[-1][0] and not pending_tag_stack:
                     str_buffer.append("</%s>" % elem.encode(encoding))
                     open_tag_stack.pop()
                     old_attr_values[elem] = None
                     elemids = {}
 
-        # open tags
+        # Open tags
         for elem, _attrs in reversed(structs):
             if new_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
                 attrstring = ''.join(' %s="%s"' % (attr, val.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
@@ -160,7 +160,7 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
                 if not valid_xml:
                     invalid_str_buffer.append("<%s%s>" % (elem.encode(encoding), attrstring))
 
-        # add word annotations
+        # Add word annotations
         word = cols.get(structs_count, UNDEF).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
         attributes = " ".join('%s="%s"' % (columns[n-structs_count], cols.get(n, UNDEF).replace("&", "&amp;").replace('"', '&quot;').replace("<", "&lt;").replace(">", "&gt;")) for n in column_nrs[1:])
         line = "<w %s>%s</w>" % (attributes, word)
@@ -168,7 +168,7 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
         if not valid_xml:
             invalid_str_buffer.append(remove_control_characters(line).encode(encoding))
 
-    # close remaining open tags
+    # Close remaining open tags
     if open_tag_stack:
         for elem in reversed(open_tag_stack):
             str_buffer.append("</%s>" % elem[0].encode(encoding))
@@ -180,28 +180,28 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
     str_buffer.append("</corpus>")
     invalid_str_buffer.append("</corpus>")
 
-    # convert str_buffer list to string
+    # Convert str_buffer list to string
     str_buffer = "\n".join(str_buffer)
     invalid_str_buffer = "\n".join(invalid_str_buffer)
 
     if not valid_xml:
-        # write string buffer to invalid xml file
+        # Write string buffer to invalid xml file
         with open(out, "w") as OUT:
             print >>OUT, invalid_str_buffer
     elif not overlap:
-        # write string buffer
+        # Write string buffer
         with open(out, "w") as OUT:
             print >>OUT, str_buffer
     else:
-        # go through xml structure and add missing _id attributes
+        # Go through xml structure and add missing _id attributes
         xmltree = etree.ElementTree(etree.fromstring(str_buffer))
         for child in xmltree.getroot().iter():
-            # if child has and id, get previous element with same tag
+            # If child has and id, get previous element with same tag
             if child.tag != "w" and child.attrib.get("_id"):
                 elemlist = list(xmltree.getroot().iter(child.tag))
                 if child != elemlist[0]:
                     prev_elem = elemlist[elemlist.index(child) - 1]
-                    # if previous element has no id, add id of child
+                    # If previous element has no id, add id of child
                     if not prev_elem.attrib.get("_id"): 
                         prev_elem.set('_id', child.attrib.get("_id"))
         xmltree.write(out, encoding=encoding, xml_declaration=False, method="xml")
@@ -267,10 +267,14 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
     assert bool(vrtdir) != bool(vrtfiles), "Either VRTDIR or VRTFILES must be specified"
     assert datadir, "CWB_DATADIR not specified"
     assert registry, "CORPUS_REGISTRY not specified"
-    if isinstance(skip_validation, basestring): skip_validation = (skip_validation.lower() == "true")
-    if isinstance(skip_compression, basestring): skip_compression = (skip_compression.lower() == "true")
-    if isinstance(vrtfiles, basestring): vrtfiles = vrtfiles.split()
-    if isinstance(columns, basestring): columns = columns.split()
+    if isinstance(skip_validation, basestring):
+        skip_validation = (skip_validation.lower() == "true")
+    if isinstance(skip_compression, basestring):
+        skip_compression = (skip_compression.lower() == "true")
+    if isinstance(vrtfiles, basestring):
+        vrtfiles = vrtfiles.split()
+    if isinstance(columns, basestring):
+        columns = columns.split()
     structs = parse_structural_attributes(structs)
 
     corpus_registry = os.path.join(registry, master)
@@ -293,7 +297,8 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
             encode_args += ["-P", col]
     for struct, attrs in structs:
         attrs2 = "+".join(attr for attr, _n in attrs if not attr == UNDEF)
-        if attrs2: attrs2 = "+" + attrs2
+        if attrs2:
+            attrs2 = "+" + attrs2
         encode_args += ["-S", "%s:0%s" % (struct, attrs2)]
     util.system.call_binary("cwb-encode", encode_args, verbose=True)
 
@@ -337,7 +342,7 @@ def cwb_align(master, other, link, aligndir=ALIGNDIR):
         raise ValueError("You have to specify exactly one alignment link.")
     link_attr = link_name + "_" + link_attr
 
-    # align linked chunks
+    # Align linked chunks
     args = ["-v", "-o", alignfile, "-V", link_attr, master, other, link_name]
     result, _ = util.system.call_binary("cwb-align", args, verbose=True)
     with open(alignfile + ".result", "w") as F:
@@ -348,7 +353,7 @@ def cwb_align(master, other, link, aligndir=ALIGNDIR):
         util.log.warning("No alignment regions created")
     util.log.info("Alignment file/result: %s/.result", alignfile)
 
-    # add alignment parameter to registry
+    # Add alignment parameter to registry
     # cwb-regedit is not installed by default, so we skip it and modify the regfile directly instead:
     regfile = os.path.join(os.environ["CORPUS_REGISTRY"], master)
     with open(regfile, "r") as F:
@@ -364,7 +369,7 @@ def cwb_align(master, other, link, aligndir=ALIGNDIR):
     # result, _ = util.system.call_binary("cwb-regedit", args, verbose=True)
     # util.log.info("%s", result.strip())
 
-    # encode the alignments into CWB
+    # Encode the alignments into CWB
     args = ["-v", "-D", alignfile]
     result, _ = util.system.call_binary("cwb-align-encode", args, verbose=True)
     util.log.info("%s", result.strip())
