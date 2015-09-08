@@ -250,7 +250,7 @@ class BetterWordTokenizer():
         (?:(?:(?<=^)|(?<=\s))%(number)s(?=\s|$))  # Numbers with decimal mark
         |
         (?=[^%(start)s])
-        (?:t\sex|%(tokens)s%(abbrevs)s(?<=\s)(?:[^\.\s]+\.){2,}|\S+?)  # Accept word characters until end is found
+        (?:%(tokens)s%(abbrevs)s(?<=\s)(?:[^\.\s]+\.){2,}|\S+?)  # Accept word characters until end is found
         (?= # Sequences marking a word's end
             \s|                                 # White-space
             $|                                  # End-of-string
@@ -327,7 +327,7 @@ class BetterWordTokenizer():
                     'end':      self.patterns["end"]
                 }, 
                 modifiers
-            ) 
+            )
             return self._re_word_tokenizer 
     
     def word_tokenize(self, s): 
