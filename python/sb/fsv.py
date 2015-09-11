@@ -211,6 +211,7 @@ def annotate_full(word, sentence, reference, out, annotations, models,  msd="", 
         annotating multi-word units
       - out is a string containing a whitespace separated list of the resulting annotation files
       - annotations is a string containing a whitespace separate list of annotations to be written.
+        Currently: lemgram or writtenForm (= baseform)
         Number of annotations and their order must correspond to the list in the 'out' argument.
       - model is the Saldo model
       - delimiter is the delimiter character to put between ambiguous results
