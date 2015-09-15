@@ -7,7 +7,7 @@ __all__ = [
     'cwb',
     'dateformat',
     'fileid',
-    'fsv',
+    'hist',
     'hunpos',
     'info',
     'install',
