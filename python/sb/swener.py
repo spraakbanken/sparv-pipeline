@@ -28,7 +28,7 @@ def tag_ne(out_ne_ex, out_ne_type, out_ne_subtype, word, sentence, encoding=util
             process = swenerstart("", encoding, verbose=True)
             process_dict['process'] = process
 
-    # collect all text
+    # Collect all text
     sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
     word_file = util.read_annotation(word)
     stdin = SENT_SEP.join(TOK_SEP.join(word_file[tokid] for tokid in sent)
@@ -72,22 +72,22 @@ def parse_swener_output(sentences, output, out_ne_ex, out_ne_type, out_ne_subtyp
     out_type_dict = {}
     out_subtype_dict = {}
     
-    # loop through the NE-tagged sentences and parse each one with ElemenTree
+    # Loop through the NE-tagged sentences and parse each one with ElemenTree
     for sent, tagged_sent in zip(sentences, output.strip().split(SENT_SEP)):
         xml_sent = "<sroot>" + tagged_sent + "</sroot>"
         root = etree.fromstring(xml_sent)
         
-        # init token counter; needed to get start_id and end_id
+        # Init token counter; needed to get start_id and end_id
         i = 0  
         
         for child in root.iter():
             start_id = util.edgeStart(sent[i])
 
-            # if current child has text, increase token counter
+            # If current child has text, increase token counter
             if child.text:
                 i += len(child.text.strip().split(TOK_SEP))
                 
-                # extract NE tags and save them in dictionaries
+                # Extract NE tags and save them in dictionaries
                 if child.tag != "sroot":
                     end_id = util.edgeEnd(sent[i-1])
                     edge = util.mkEdge('ne', [start_id, end_id])
@@ -95,12 +95,16 @@ def parse_swener_output(sentences, output, out_ne_ex, out_ne_type, out_ne_subtyp
                     out_type_dict[edge] = child.get("TYPE")
                     out_subtype_dict[edge] = child.get("SBT")
                     # out_ex_dict[edge] = TAG_SEP.join([tag, child.get("TYPE"), child.get("SBT")])
+                    
+                    # If this child has a tail and it doesn't start with a space, the tagger has split a token in two
+                    if child.tail and child.tail.strip() and not child.tail[:1] == " ":
+                        i -= 1
 
-            # if current child has text in the tail, increase token counter
+            # If current child has text in the tail, increase token counter
             if child.tail and child.tail.strip():
                 i += len(child.tail.strip().split(TOK_SEP))
 
-    # write annotations
+    # Write annotations
     util.write_annotation(out_ne_ex, out_ex_dict)
     util.write_annotation(out_ne_type, out_type_dict)
     util.write_annotation(out_ne_subtype, out_subtype_dict)
