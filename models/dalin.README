@@ -5,7 +5,7 @@
 
 Modell: Dalin-lexikon, innehåller lemgram, written form, 
 	SUC-msd-taggar, multiword-expression-information
-Baserad på: swedbergm.xml, hämtad från:
+Baserad på: dalinm.xml, hämtad från:
 		https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/dalinm/dalinm.xml
 Skapas med make dalin.pickle
 Format: Python pickle
