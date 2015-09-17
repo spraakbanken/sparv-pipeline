@@ -8,23 +8,25 @@ import util
 import itertools
 import cPickle as pickle
 import re
+import os
 
 ######################################################################
 # Annotate.
 
 
-def annotate(word, msd, sentence, reference, out, annotations, model,
+def annotate(word, sentence, reference, out, annotations, models, msd="",
              delimiter="|", affix="|", precision=":%.3f", precision_filter=None, min_precision=0.0,
-             skip_multiword=False, word_separator="", lexicon=None):
-    """Use the Saldo lexicon model to annotate pos-tagged words.
+             skip_multiword=False, word_separator="", lexicons=None):
+    """Use the Saldo lexicon model (and optionally other older lexicons) to annotate pos-tagged words.
       - word, msd are existing annotations for wordforms and part-of-speech
       - sentence is an existing annotation for sentences and their children (words)
       - reference is an existing annotation for word references, to be used when
         annotating multi-word units
       - out is a string containing a whitespace separated list of the resulting annotation files
       - annotations is a string containing a whitespace separate list of annotations to be written.
+        Currently: gf (= baseform), lem (=lemgram), saldo
         Number of annotations and their order must correspond to the list in the 'out' argument.
-      - model is the Saldo model
+      - models is a list of pickled lexica, typically the Saldo model (saldo.pickle) and optional old lexicons
       - delimiter is the delimiter character to put between ambiguous results
       - affix is an optional character to put before and after results
       - precision is a format string for how to print the precision for each annotation
@@ -35,15 +37,18 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
         none: use all annotations
       - min_precision: only use annotations with a probability score higher than this
       - skip_multiword can be set to True to disable multi word annotations
-      - word_separator is an optional character used to split the values of "word" into several word variations.  
-      - lexicon: this argument cannot be set from the command line,
+      - word_separator is an optional character used to split the values of "word" into several word variations.
+      - lexicons: this argument cannot be set from the command line,
         but is used in the catapult. This argument must be last.
     """
 
-    if not lexicon:
-        lexicon = SaldoLexicon(model)
+    # Allow use of multiple lexicons
+    if not lexicons:
+        models = [(os.path.basename(m).rstrip(".pickle"), m) for m in models.split()]
+        lexicons = [(name, SaldoLexicon(lex)) for name, lex in models]
 
     MAX_GAPS = 1  # Maximum number of gaps in multi-word units.
+                  # Set to 0 for hist-mode? since many (most?) multi-word in the old lexicons are unseparable (half öre etc)
 
     annotations = annotations.split()
     out = out.split()
@@ -60,8 +65,9 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
     skip_pos_check = (min_precision == 0.0)
 
     WORD = util.read_annotation(word)
-    MSD = util.read_annotation(msd)
     REF = util.read_annotation(reference)
+    if msd:
+        MSD = util.read_annotation(msd)
     for out_file in out:
         util.clear_annotation(out_file)
 
@@ -70,13 +76,16 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
 
     for sent in sentences:
         incomplete_multis = []  # [{annotation, words, [ref], is_particle, lastwordWasGap, numberofgaps}]
-        complete_multis = []    #  ([ref], annotation)
+        complete_multis = []    # ([ref], annotation)
         sentence_tokens = {}
 
         for tokid in sent:
             theword = WORD[tokid]
-            msdtag = MSD[tokid]
             ref = REF[tokid]
+            if msd:
+                msdtag = MSD[tokid]
+            else:
+                msdtag = ''
 
             annotation_info = {}
             sentence_tokens[ref] = {"tokid": tokid, "annotations": annotation_info}
@@ -88,7 +97,7 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
                 thewords = [theword]
 
             # First use MSD tags to find the most probable single word annotations
-            ann_tags_words = find_single_word(thewords, lexicon, msdtag, precision, min_precision, precision_filter, annotation_info)
+            ann_tags_words = find_single_word(thewords, lexicons, msdtag, precision, min_precision, precision_filter, annotation_info)
 
             # Find multi-word expressions
             if not skip_multiword:
@@ -111,14 +120,24 @@ def annotate(word, msd, sentence, reference, out, annotations, model,
         util.write_annotation(out_file, [(tok, OUT[tok].get(annotation, affix)) for tok in OUT], append=True)
 
 
-def find_single_word(thewords, lexicon, msdtag, precision, min_precision, precision_filter, annotation_info):
+def find_single_word(thewords, lexicons, msdtag, precision, min_precision, precision_filter, annotation_info):
     ann_tags_words = []
 
     for w in thewords:
-        ann_tags_words += lexicon.lookup(w)
+        for name, lexicon in lexicons:
+            if name == "saldo":
+                prefix = ""
+            else:
+                prefix = name + "m--"
+            annotation = []
+            for a in lexicon.lookup(w):
+                annotation.append(a + (prefix,))
+            ann_tags_words += annotation
+            # Set break if each word only gets annotations from first lexicon that has entry for word
+            # break
 
-    annotation_precisions = [(get_precision(msdtag, msdtags), annotation)
-                             for (annotation, msdtags, wordslist, _, _) in ann_tags_words if not wordslist]
+    annotation_precisions = [(get_precision(msdtag, msdtags), annotation, prefix)
+                             for (annotation, msdtags, wordslist, _, _, prefix) in ann_tags_words if not wordslist]
 
     if min_precision > 0:
         annotation_precisions = filter(lambda x: x[0] >= min_precision, annotation_precisions)
@@ -134,13 +153,25 @@ def find_single_word(thewords, lexicon, msdtag, precision, min_precision, precis
             annotation_precisions = itertools.takewhile(ismax, annotation_precisions)
 
     if precision:
-        for (prec, annotation) in annotation_precisions:
+        for (prec, annotation, prefix) in annotation_precisions:
             for key in annotation:
-                annotation_info.setdefault(key, []).extend([a + precision % prec for a in annotation[key]])
+                annotation_entry = []
+                for item in annotation[key]:
+                    if not item.startswith(prefix):
+                        annotation_entry.append(prefix + item)
+                    else:
+                        annotation_entry.append(item)
+                annotation_info.setdefault(key, []).extend([a + precision % prec for a in annotation_entry])
     else:
-        for (prec, annotation) in annotation_precisions:
+        for (prec, annotation, prefix) in annotation_precisions:
             for key in annotation:
-                annotation_info.setdefault(key, []).extend(annotation[key])
+                annotation_entry = []
+                for item in annotation[key]:
+                    if not item.startswith(prefix):
+                        annotation_entry.append(prefix + item)
+                    else:
+                        annotation_entry.append(item)
+                annotation_info.setdefault(key, []).extend(annotation_entry)
 
     return ann_tags_words
 
@@ -216,7 +247,7 @@ def find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref
     # Collect possible multiword expressions:
     # Is this word a possible beginning of a multi-word expression?
     looking_for = [(annotation, words, [ref], gap_allowed, is_particle, [False, 0])
-                   for (annotation, _, wordslist, gap_allowed, is_particle) in ann_tags_words if wordslist for words in wordslist]
+                   for (annotation, _, wordslist, gap_allowed, is_particle, _) in ann_tags_words if wordslist for words in wordslist]
     if len(looking_for) > 0:
         incomplete_multis.extend(looking_for)
 
@@ -354,8 +385,8 @@ def get_precision(msd, msdtags):
 
 def normalize_precision(annotations):
     """Normalize the rankings in the annotation list so that the sum is 1."""
-    total_precision = sum(prec for (prec, _annotation) in annotations)
-    return [(prec/total_precision, annotation) for (prec, annotation) in annotations]
+    total_precision = sum(prec for (prec, _annotation, prefix) in annotations)
+    return [(prec/total_precision, annotation, prefix) for (prec, annotation, prefix) in annotations]
 
 
 # Delimiters that hopefully are never found in an annotation or in a POS tag:

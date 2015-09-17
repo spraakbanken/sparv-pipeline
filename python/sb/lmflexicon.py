@@ -22,6 +22,7 @@ def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset
     """Read the XML version of a morphological lexicon in lmf format (dalinm.xml).
        Return a lexicon dictionary, {wordform: {{annotation-type: annotation}: ( set(possible tags), set(tuples with following words) )}}
         - annotation_element is the XML element for the annotation value, 'writtenForm' for baseform, 'lemgram' for lemgram
+            writtenForm is translated to 'gf' and lemgram to 'lem' (for compatability with Saldo)
         - skip_multiword is a flag telling whether to make special entries for multiword expressions. Set this to False only if
           the tool used for text annotation cannot handle this at all
     """
@@ -44,7 +45,11 @@ def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset
 
                 lem = elem.find("Lemma").find("FormRepresentation")
                 for a in annotation_elements:
-                    annotations[a] = tuple([findval(lem, a)])
+                    if a == "writtenForm":
+                        key = "gf"
+                    elif a == "lemgram":
+                        key = "lem"
+                    annotations[key] = tuple([findval(lem, a)])
 
                 pos = findval(lem, "partOfSpeech")
                 inhs = findval(lem, "inherent")
@@ -77,7 +82,7 @@ def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset
                             # Single word expressions
                             particle = False  # we don't use any particles or mwe:s with gaps
                             mwe_gap = False   # but keep the fields so that the file format match the normal saldo-pickle format
-                            
+
                             if translate_tags:
                                 tags = convert_default(pos, inhs, param, tagmap)
                                 if tags:

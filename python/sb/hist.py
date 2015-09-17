@@ -6,6 +6,7 @@ import diapivot
 import codecs
 import re
 import itertools
+import os
 
 
 def annotate_variants(word, out, spellmodel, delimiter="|", affix="|", model=None):
@@ -202,7 +203,9 @@ def annotate_standard(out, input_annotation, annotator, extra_input='', delimite
     util.write_annotation(out, OUT)
 
 
-def annotate_full(word, sentence, reference, out, annotations, models,  msd="", delimiter="|", affix="|", precision=":%.3f", precision_filter=None, min_precision=0.0, skip_multiword=False, lexicons=None):
+def annotate_full(word, sentence, reference, out, annotations, models,  msd="",
+                  delimiter="|", affix="|", precision=":%.3f", precision_filter=None, min_precision=0.0,
+                  skip_multiword=False, lexicons=None):
     # TODO almost the same as normal saldo.annotate, but doesn't use msd or saldo-specific stuff
     """Use a lmf-lexicon model to annotate (pos-tagged) words.
       - word, msd are existing annotations for wordforms and part-of-speech
@@ -211,7 +214,7 @@ def annotate_full(word, sentence, reference, out, annotations, models,  msd="", 
         annotating multi-word units
       - out is a string containing a whitespace separated list of the resulting annotation files
       - annotations is a string containing a whitespace separate list of annotations to be written.
-        Currently: lemgram or writtenForm (= baseform)
+        Currently: gf (= baseform), lem (=lemgram)
         Number of annotations and their order must correspond to the list in the 'out' argument.
       - model is the Saldo model
       - delimiter is the delimiter character to put between ambiguous results
@@ -223,7 +226,15 @@ def annotate_full(word, sentence, reference, out, annotations, models,  msd="", 
         first: only use the most probable annotation (or one of the most probable if more than one)
       - min_precision: only use annotations with a probability score higher than this
       - skip_multiword can be set to True to disable multi word annotations
+      - lexicon: this argument cannot be set from the command line,
+        but is used in the catapult. This argument must be last.
     """
+
+    # allow use of multiple lexicons
+    if not lexicons:
+        models = [(os.path.basename(m).rstrip(".pickle"), m) for m in models.split()]
+        lexicons = [(name, saldo.SaldoLexicon(lex)) for name, lex in models]
+
     MAX_GAPS = 0  # Maximum number of gaps in multi-word units.
                   # Set to 0 since many (most?) multi-word in the old lexicons are unseparable (half öre etc)
 
@@ -235,13 +246,9 @@ def annotate_full(word, sentence, reference, out, annotations, models,  msd="", 
         skip_multiword = (skip_multiword.lower() == "true")
     if skip_multiword:
         util.log.info("Skipping multi word annotations")
-    
+
     min_precision = float(min_precision)
 
-    # we allow multiple lexicons, each word will get annotations from only one of the lexicons, starting the lookup in the first lexicon in the list
-    if lexicons is None:
-        models = models.split()
-        lexicons = [saldo.SaldoLexicon(lex) for lex in models]
     WORD = util.read_annotation(word)
     REF = util.read_annotation(reference)
     if msd:
@@ -259,11 +266,11 @@ def annotate_full(word, sentence, reference, out, annotations, models,  msd="", 
 
         for tokid in sent:
             thewords = [w for w in WORD[tokid].split('|') if w]
+            ref = REF[tokid]
             if msd:
                 msdtag = MSD[tokid]
             else:
                 msdtag = ''
-            ref = REF[tokid]
 
             annotation_info = {}
             sentence_tokens[ref] = {"tokid": tokid, "word": thewords, "msd": msdtag, "annotations": annotation_info}
@@ -273,7 +280,7 @@ def annotate_full(word, sentence, reference, out, annotations, models,  msd="", 
                 # First use MSD tags to find the most probable single word annotations
                 ann_tags_words = findsingleword(theword, lexicons, msdtag, precision, min_precision, precision_filter, annotation_info)
 
-                # For multi-word expressions
+                # Find multi-word expressions
                 if not skip_multiword:
                     findmultiwordexpressions(incomplete_multis, complete_multis, theword, ref, MAX_GAPS, ann_tags_words)
 
@@ -297,14 +304,20 @@ def annotate_full(word, sentence, reference, out, annotations, models,  msd="", 
 def findsingleword(theword, lexicons, msdtag, precision, min_precision, precision_filter, annotation_info):
     ann_tags_words = []
 
-    for lexicon in lexicons:
-        if lexicon.lookup(theword):
-            ann_tags_words += lexicon.lookup(theword)
-            break
-    #ann_tags_words += (lexicon.lookup(theword) for lexicon in lexicons).next()
+    for name, lexicon in lexicons:
+        if name == "saldo":
+            prefix = ""
+        else:
+            prefix = name + "m--"
+        annotation = []
+        for a in lexicon.lookup(theword):
+            annotation.append(a + (prefix,))
+        ann_tags_words += annotation
+        # set break if each word only gets annotations from first lexicon that has entry for word
+        # break
 
-    annotation_precisions = [(get_precision(msdtag, msdtags), annotation)
-                            for (annotation, msdtags, wordslist, _, _) in ann_tags_words if not wordslist]
+    annotation_precisions = [(get_precision(msdtag, msdtags), annotation, prefix)
+                             for (annotation, msdtags, wordslist, _, _, prefix) in ann_tags_words if not wordslist]
 
     if min_precision > 0:
         annotation_precisions = filter(lambda x: x[0] >= min_precision, annotation_precisions)
@@ -320,13 +333,25 @@ def findsingleword(theword, lexicons, msdtag, precision, min_precision, precisio
             annotation_precisions = itertools.takewhile(ismax, annotation_precisions)
 
     if precision:
-        for (prec, annotation) in annotation_precisions:
+        for (prec, annotation, prefix) in annotation_precisions:
             for key in annotation:
-                annotation_info.setdefault(key, []).extend([a + precision % prec for a in annotation[key]])
+                annotation_entry = []
+                for item in annotation[key]:
+                    if not item.startswith(prefix):
+                        annotation_entry.append(prefix + item)
+                    else:
+                        annotation_entry.append(item)
+                annotation_info.setdefault(key, []).extend([a + precision % prec for a in annotation_entry])
     else:
-        for (prec, annotation) in annotation_precisions:
+        for (prec, annotation, prefix) in annotation_precisions:
             for key in annotation:
-                annotation_info.setdefault(key, []).extend(annotation[key])
+                annotation_entry = []
+                for item in annotation[key]:
+                    if not item.startswith(prefix):
+                        annotation_entry.append(prefix + item)
+                    else:
+                        annotation_entry.append(item)
+                annotation_info.setdefault(key, []).extend(annotation_entry)
 
     return ann_tags_words
 
@@ -368,7 +393,7 @@ def findmultiwordexpressions(incomplete_multis, complete_multis, theword, ref, M
     # Is this word a possible start for multi-word units?
     looking_for = [{'annotation': annotation, 'words': words, 'ref': [ref],
                     'is_particle': is_particle, 'lastwordwasgap': False, 'numberofgaps': 0}
-                   for (annotation, _, wordslist, _, is_particle) in ann_tags_words if wordslist for words in wordslist]
+                   for (annotation, _, wordslist, _, is_particle, _) in ann_tags_words if wordslist for words in wordslist]
     if len(looking_for) > 0:
         incomplete_multis.extend(looking_for)
 
@@ -551,8 +576,8 @@ PRECISION_DIFF = 0.01
 
 def normalize_precision(annotations):
     """Normalize the rankings in the annotation list so that the sum is 1."""
-    total_precision = sum(prec for (prec, _annotation) in annotations)
-    return [(prec/total_precision, annotation) for (prec, annotation) in annotations]
+    total_precision = sum(prec for (prec, _annotation, prefix) in annotations)
+    return [(prec/total_precision, annotation, prefix) for (prec, annotation, prefix) in annotations]
 
 
 def _concat(xs):
