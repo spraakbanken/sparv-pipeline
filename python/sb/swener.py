@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import util
+import re
 import xml.etree.cElementTree as etree
 
 RESTART_THRESHOLD_LENGTH = 64000
@@ -75,6 +76,11 @@ def parse_swener_output(sentences, output, out_ne_ex, out_ne_type, out_ne_subtyp
     # Loop through the NE-tagged sentences and parse each one with ElemenTree
     for sent, tagged_sent in zip(sentences, output.strip().split(SENT_SEP)):
         xml_sent = "<sroot>" + tagged_sent + "</sroot>"
+        
+        # Filter out tags on the format <EnamexXxxXxx> since they seem to always overlap with <ENAMEX> elements,
+        # making the XML invalid.
+        xml_sent = re.sub(r'</?Enamex[^>\s]+>', '', xml_sent)
+
         root = etree.fromstring(xml_sent)
         
         # Init token counter; needed to get start_id and end_id
@@ -99,6 +105,7 @@ def parse_swener_output(sentences, output, out_ne_ex, out_ne_type, out_ne_subtyp
                     # If this child has a tail and it doesn't start with a space, the tagger has split a token in two
                     if child.tail and child.tail.strip() and not child.tail[:1] == " ":
                         i -= 1
+                        util.log.warning("Split token returned by name tagger.")
 
             # If current child has text in the tail, increase token counter
             if child.tail and child.tail.strip():
