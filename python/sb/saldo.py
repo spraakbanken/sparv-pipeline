@@ -43,9 +43,15 @@ def annotate(word, sentence, reference, out, annotations, models, msd="",
     """
 
     # Allow use of multiple lexicons
+    models = [(os.path.basename(m).rstrip(".pickle"), m) for m in models.split()]
     if not lexicons:
-        models = [(os.path.basename(m).rstrip(".pickle"), m) for m in models.split()]
-        lexicons = [(name, SaldoLexicon(lex)) for name, lex in models]
+        lexicon_list = [(name, SaldoLexicon(lex)) for name, lex in models]
+    # Use pre-loaded lexicons (from catapult)
+    else:
+        lexicon_list = []
+        for name, _lex in models:
+            assert lexicons.get(name, None) is not None, "Lexicon %s not found!" % name
+            lexicon_list.append((name, lexicons[name]))
 
     MAX_GAPS = 1  # Maximum number of gaps in multi-word units.
                   # Set to 0 for hist-mode? since many (most?) multi-word in the old lexicons are unseparable (half öre etc)
@@ -97,7 +103,7 @@ def annotate(word, sentence, reference, out, annotations, models, msd="",
                 thewords = [theword]
 
             # First use MSD tags to find the most probable single word annotations
-            ann_tags_words = find_single_word(thewords, lexicons, msdtag, precision, min_precision, precision_filter, annotation_info)
+            ann_tags_words = find_single_word(thewords, lexicon_list, msdtag, precision, min_precision, precision_filter, annotation_info)
 
             # Find multi-word expressions
             if not skip_multiword:
@@ -120,11 +126,11 @@ def annotate(word, sentence, reference, out, annotations, models, msd="",
         util.write_annotation(out_file, [(tok, OUT[tok].get(annotation, affix)) for tok in OUT], append=True)
 
 
-def find_single_word(thewords, lexicons, msdtag, precision, min_precision, precision_filter, annotation_info):
+def find_single_word(thewords, lexicon_list, msdtag, precision, min_precision, precision_filter, annotation_info):
     ann_tags_words = []
 
     for w in thewords:
-        for name, lexicon in lexicons:
+        for name, lexicon in lexicon_list:
             if name == "saldo":
                 prefix = ""
             else:
@@ -257,7 +263,7 @@ def remove_unwanted_overlaps(complete_multis):
     for ai, a in enumerate(complete_multis):
         for b in complete_multis:
             # Check if both are of same POS
-            if not a == b and re.search(r"\.(\w\wm)\.", a[1]["lem"][0]).groups()[0] == re.search(r"\.(\w\wm)\.", b[1]["lem"][0]).groups()[0]:
+            if not a == b and re.search(r"\.(\w\w)m?\.", a[1]["lem"][0]).groups()[0] == re.search(r"\.(\w\w)m?\.", b[1]["lem"][0]).groups()[0]:
                 if b[0][0] < a[0][0] < b[0][-1] < a[0][-1]:
                     # A case of b1 a1 b2 a2. Remove a.
                     remove.add(ai)
@@ -462,7 +468,7 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
                 x_insert = x_find.groups()[0] if x_find else None
                 if x_insert == "":
                     x_insert = "1"
-                
+
                 # Only vbm and certain paradigms allow gaps
                 gap_allowed = (pos == "vbm" or p in (u"abm_x1_var_än", u"knm_x_ju_ju", u"pnm_x1_inte_ett_dugg", u"pnm_x1_vad_än", u"ppm_x1_för_skull"))
 
