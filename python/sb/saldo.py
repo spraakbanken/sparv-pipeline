@@ -131,7 +131,7 @@ def find_single_word(thewords, lexicon_list, msdtag, precision, min_precision, p
 
     for w in thewords:
         for name, lexicon in lexicon_list:
-            if name == "saldo":
+            if name == "saldo" or len(lexicon_list) == 1:
                 prefix = ""
             else:
                 prefix = name + "m--"
