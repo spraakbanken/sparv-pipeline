@@ -60,6 +60,7 @@ def align_texts(sentence1, sentence2, link1, link2, sent_parents1, sent_parents2
 ##############################################################################
 # The remaining code is adapted from the python module "gachalign",
 # available at https://code.google.com/p/gachalign/
+# code license: GNU GPL v3
 
 BEAD_COSTS = {(1, 1): 0, (2, 1): 230, (1, 2): 230, (0, 1): 450, 
               (1, 0): 450, (2, 2): 440}
