@@ -263,7 +263,7 @@ def remove_unwanted_overlaps(complete_multis):
     for ai, a in enumerate(complete_multis):
         for b in complete_multis:
             # Check if both are of same POS
-            if not a == b and re.search(r"\.(\w\w)m?\.", a[1]["lem"][0]).groups()[0] == re.search(r"\.(\w\w)m?\.", b[1]["lem"][0]).groups()[0]:
+            if not a == b and re.search(r"\.(\w\w?)m?\.", a[1]["lem"][0]).groups()[0] == re.search(r"\.(\w\w?)m?\.", b[1]["lem"][0]).groups()[0]:
                 if b[0][0] < a[0][0] < b[0][-1] < a[0][-1]:
                     # A case of b1 a1 b2 a2. Remove a.
                     remove.add(ai)
