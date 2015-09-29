@@ -12,66 +12,92 @@ CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 
 def timespan(corpus, db_name, out):
-    
-    corpus = corpus.upper()
-    rows = []
-    process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-r", CORPUS_REGISTRY, corpus, "text_datefrom", "text_timefrom", "text_dateto", "text_timeto"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    reply, error = process.communicate()
-    if error and "Error:" in error:  # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
-        if "Error: can't open attribute" in error and (".text_datefrom" in error or ".text_dateto" in error):
-            util.log.info("No date information present in corpus.")
-            # No date information in corpus. Calculate total token count instead.
-            process = subprocess.Popen([CQP_EXECUTABLE, "-c", "-r", CORPUS_REGISTRY], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            reply, error = process.communicate("set PrettyPrint off;%s;info;" % corpus)
-            
-            if error:
+
+    def calculate(usetime=True):
+        rows = []
+
+        dateattribs = ["text_datefrom", "text_timefrom", "text_dateto", "text_timeto"] if usetime else ["text_datefrom", "text_dateto"]
+
+        process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-r", CORPUS_REGISTRY, corpus] + dateattribs, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        reply, error = process.communicate()
+        if error and "Error:" in error:  # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
+            if "Error: can't open attribute" in error and (".text_datefrom" in error or ".text_dateto" in error):
+                util.log.info("No date information present in corpus.")
+                # No date information in corpus. Calculate total token count instead.
+                process = subprocess.Popen([CQP_EXECUTABLE, "-c", "-r", CORPUS_REGISTRY], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                reply, error = process.communicate("set PrettyPrint off;%s;info;" % corpus)
+
+                if error:
+                    print error
+                    raise Exception
+
+                for line in reply.splitlines():
+                    if line.startswith("Size: "):
+                        reply = "%s\t\t\t\t" % line[6:].strip()
+            else:
                 print error
                 raise Exception
+        for line in reply.splitlines():
+            line = line.decode("UTF-8")
+            if not line:
+                continue
+            line = line.split("\t")
+            line[0] = int(line[0])
 
-            for line in reply.splitlines():
-                if line.startswith("Size: "):
-                    reply = "%s\t\t\t\t" % line[6:].strip()
-        else:
-            print error
-            raise Exception
-    for line in reply.splitlines():
-        line = line.decode("UTF-8")
-        if not line:
-            continue
-        line = line.split("\t")
-        line[0] = int(line[0])
+            dfrom = line[1] + line[2] if usetime else line[1]
+            dto = line[3] + line[4] if usetime else line[2]
 
-        row = {
-            "corpus": corpus,
-            "datefrom": (line[1] + line[2]).zfill(14) if (line[1] + line[2]) else "",  # Pad years < 1000 with zero
-            "dateto": (line[3] + line[4]).zfill(14) if (line[3] + line[4]) else "",
-            "tokens": int(line[0])
-        }
-        
-        rows.append(row)
-    
+            row = {
+                "corpus": corpus,
+                "datefrom": (dfrom).zfill(14) if dfrom and usetime else dfrom,  # Pad years < 1000 with zero
+                "dateto": dto.zfill(14) if dto and usetime else dto,
+                "tokens": int(line[0])
+            }
+
+            rows.append(row)
+
+        return rows
+
+    corpus = corpus.upper()
+
+    rows_datetime = calculate(True)
+    rows_date = calculate(False)
+
     util.log.info("Creating SQL")
     mysql = MySQL(db_name, encoding=util.UTF8, output=out)
     mysql.create_table(MYSQL_TABLE, drop=False, **MYSQL_TIMESPAN)
+    mysql.create_table(MYSQL_TABLE_DATE, drop=False, **MYSQL_TIMESPAN_DATE)
     mysql.delete_rows(MYSQL_TABLE, {"corpus": corpus})
+    mysql.delete_rows(MYSQL_TABLE_DATE, {"corpus": corpus})
     mysql.set_names()
 
-    mysql.add_row(MYSQL_TABLE, rows)
+    mysql.add_row(MYSQL_TABLE, rows_datetime)
+    mysql.add_row(MYSQL_TABLE_DATE, rows_date)
 
 ################################################################################
 
-MYSQL_TABLE = "timespans"
+MYSQL_TABLE = "timedata"
+MYSQL_TABLE_DATE = "timedata_date"
 
 MYSQL_TIMESPAN = {'columns': [
                                ("corpus",   "varchar(64)", "", "NOT NULL"),
-                               ("datefrom",  "char(14)", "", "NOT NULL"),
-                               ("dateto",    "char(14)", "", "NOT NULL"),
+                               ("datefrom",  "datetime", "0000-00-00 00:00:00", "NOT NULL"),
+                               ("dateto",  "datetime", "0000-00-00 00:00:00", "NOT NULL"),
                                ("tokens",   int, 0, "NOT NULL")],
-                  'primary': "corpus datefrom dateto tokens",
+                  'primary': "corpus datefrom dateto",
                   'indexes': [],
                   'default charset': 'utf8'
                   }
 
+MYSQL_TIMESPAN_DATE = {'columns': [
+                               ("corpus",   "varchar(64)", "", "NOT NULL"),
+                               ("datefrom",  "date", "0000-00-00", "NOT NULL"),
+                               ("dateto",  "date", "0000-00-00", "NOT NULL"),
+                               ("tokens",   int, 0, "NOT NULL")],
+                       'primary': "corpus datefrom dateto",
+                       'indexes': [],
+                       'default charset': 'utf8'
+                       }
 
 if __name__ == '__main__':
     util.run.main(timespan)
