@@ -16,15 +16,15 @@ import os
 
 def annotate(word, sentence, reference, out, annotations, models, msd="",
              delimiter="|", affix="|", precision=":%.3f", precision_filter=None, min_precision=0.0,
-             skip_multiword=False, word_separator="", lexicons=None):
+             skip_multiword=False, allow_multiword_overlap=False, word_separator="", lexicons=None):
     """Use the Saldo lexicon model (and optionally other older lexicons) to annotate pos-tagged words.
       - word, msd are existing annotations for wordforms and part-of-speech
       - sentence is an existing annotation for sentences and their children (words)
       - reference is an existing annotation for word references, to be used when
         annotating multi-word units
       - out is a string containing a whitespace separated list of the resulting annotation files
-      - annotations is a string containing a whitespace separate list of annotations to be written.
-        Currently: gf (= baseform), lem (=lemgram), saldo
+      - annotations is a string containing a whitespace separated list of annotations to be written.
+        Currently: gf (=baseform), lem (=lemgram), saldo
         Number of annotations and their order must correspond to the list in the 'out' argument.
       - models is a list of pickled lexica, typically the Saldo model (saldo.pickle) and optional old lexicons
       - delimiter is the delimiter character to put between ambiguous results
@@ -37,6 +37,8 @@ def annotate(word, sentence, reference, out, annotations, models, msd="",
         none: use all annotations
       - min_precision: only use annotations with a probability score higher than this
       - skip_multiword can be set to True to disable multi word annotations
+      - allow_multiword_overlap: by default we do some cleanup among overlapping multi word annotations.
+        By setting this to True, all overlaps will be allowed.
       - word_separator is an optional character used to split the values of "word" into several word variations.
       - lexicons: this argument cannot be set from the command line,
         but is used in the catapult. This argument must be last.
@@ -65,6 +67,9 @@ def annotate(word, sentence, reference, out, annotations, models, msd="",
     if skip_multiword:
         util.log.info("Skipping multi word annotations")
 
+    if isinstance(allow_multiword_overlap, basestring):
+        allow_multiword_overlap = (allow_multiword_overlap.lower() == "true")
+
     min_precision = float(min_precision)
 
     # If min_precision is 0, skip almost all part-of-speech checking (verb multi-word expressions still won't be allowed to span over other verbs)
@@ -88,10 +93,7 @@ def annotate(word, sentence, reference, out, annotations, models, msd="",
         for tokid in sent:
             theword = WORD[tokid]
             ref = REF[tokid]
-            if msd:
-                msdtag = MSD[tokid]
-            else:
-                msdtag = ''
+            msdtag = MSD[tokid] if msd else ""
 
             annotation_info = {}
             sentence_tokens[ref] = {"tokid": tokid, "annotations": annotation_info}
@@ -111,8 +113,9 @@ def annotate(word, sentence, reference, out, annotations, models, msd="",
 
             # Loop to next token
 
-        # Check that we don't have any unwanted overlaps
-        remove_unwanted_overlaps(complete_multis)
+        if not allow_multiword_overlap:
+            # Check that we don't have any unwanted overlaps
+            remove_unwanted_overlaps(complete_multis)
 
         # Then save the rest of the multi word expressions in sentence_tokens
         save_multiwords(complete_multis, sentence_tokens)
