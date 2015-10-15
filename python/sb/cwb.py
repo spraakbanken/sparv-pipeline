@@ -240,10 +240,17 @@ def write_vrt(out, structs, structs_count, columns, column_nrs, tokens, vrt, enc
     util.log.info("Exported %d tokens, %d columns, %d structs: %s", len(tokens), len(column_nrs), len(structs), out)
 
 
-def combine_xml(master, xmlfiles, out):
+def combine_xml(master, out, xmlfiles="", xmlfiles_list=""):
     assert master != "", "Master not specified"
     assert out != "", "Outfile not specified"
-    if isinstance(xmlfiles, basestring): xmlfiles = xmlfiles.split()
+    assert (xmlfiles or xmlfiles_list), "Missing source"
+
+    if xmlfiles:
+        if isinstance(xmlfiles, basestring): xmlfiles = xmlfiles.split()
+    elif xmlfiles_list:
+        with open(xmlfiles_list) as insource:
+            xmlfiles = [line.strip() for line in insource]
+    
     xmlfiles.sort()
     
     with open(out, "w") as OUT:
