@@ -17,11 +17,13 @@ def annotate(out_complemgrams, out_compwf, out_baseform, out_lemprob, word, msd,
     - saldo_comp_model is the Saldo compound model
     - nst_model is the NST part of speech compound model
     - stats_model is the statistics model (pickled file)
-    - saldo_comp_lexicon, stats_lexicon: these argument cannot be set from the command line,
+    - saldo_comp_lexicon, stats_lexicon: these arguments cannot be set from the command line,
       but are used in the catapult. These arguments must be last.
     """
 
-    ## load models ##
+    ##################
+    # load models
+    ##################
     if not saldo_comp_lexicon:
         saldo_comp_lexicon = SaldoCompLexicon(saldo_comp_model)
 
@@ -37,7 +39,9 @@ def annotate(out_complemgrams, out_compwf, out_baseform, out_lemprob, word, msd,
     # create alternative lexicon (for words within the file)
     altlexicon = InFileLexicon(WORD, MSD)
 
-    ## do annotation ##
+    ##################
+    # do annotation
+    ##################
     OUT_complem = {}
     OUT_compwf = {}
     OUT_baseform = {}
@@ -53,7 +57,7 @@ def annotate(out_complemgrams, out_compwf, out_baseform, out_lemprob, word, msd,
 
         # create complem and compwf annotations
         make_complem_and_compwf(OUT_complem, OUT_compwf, OUT_lemprob, tokid, compounds, compdelim, delimiter, affix)
-        
+
         # create new baseform annotation if necessary
         if IN_baseform[tokid] != affix:
             OUT_baseform[tokid] = IN_baseform[tokid]
@@ -106,7 +110,7 @@ class SaldoCompLexicon(object):
         return map(_split_triple, annotation_tag_pairs)
 
     def get_prefixes(self, prefix):
-        return [(prefix, p[0], tuple(p[3])) for p in self.lookup(prefix) if 
+        return [(prefix, p[0], tuple(p[3])) for p in self.lookup(prefix) if
                 set(p[1]).intersection({"c", "ci"})]
 
     def get_infixes(self, infix):
@@ -173,10 +177,10 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
                 else:
                     break
                 indices[i] += 1
-                for j in range(i+1, n):
-                    indices[j] = indices[j-1] + 1
+                for j in range(i + 1, n):
+                    indices[j] = indices[j - 1] + 1
 
-            splitpoint = tuple(i+1 for i in indices)
+            splitpoint = tuple(i + 1 for i in indices)
 
             # Create list of affix spans
             spans = zip((0,) + splitpoint, splitpoint + (None,))
@@ -184,12 +188,12 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
             # Abort if current compound contains an affix known to be invalid
             abort = False
             for ii, s in enumerate(spans):
-                if not s in valid_spans and s not in invalid_spans:
+                if s not in valid_spans and s not in invalid_spans:
                     break
                 if s in invalid_spans:
                     if not s[1] is None:
                         # Skip any combination of spans following the invalid span
-                        for j in range(ii+1, n):
+                        for j in range(ii + 1, n):
                             indices[j] = j + nn - n
                     abort = True
                     break
@@ -224,7 +228,7 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
                             invalid_spans.add(spans[k])
                             abort = True
                             # Skip any combination of spans following the invalid span
-                            for j in range(k+1, n):
+                            for j in range(k + 1, n):
                                 indices[j] = j + nn - n
                             break
                         else:
@@ -249,10 +253,10 @@ def three_consonant_rule(compound):
     """ Expand prefix if its last letter == first letter of suffix.
     ("glas", "skål") --> ("glas", "skål"), ("glass", "skål") """
     combinations = []
-    suffix = compound[len(compound)-1]
-    for index in range(len(compound)-1):
+    suffix = compound[len(compound) - 1]
+    for index in range(len(compound) - 1):
         current_prefix = compound[index]
-        current_suffix = compound[index+1]
+        current_suffix = compound[index + 1]
         # last prefix letter == first suffix letter; and prefix ends in one of "bdfgjlmnprstv"
         if current_prefix[-1].lower() in "bdfgjlmnprstv" and current_prefix[-1] == current_suffix[0]:
             combinations.append((current_prefix, current_prefix + current_prefix[-1]))
@@ -270,11 +274,11 @@ def scores_to_probs(scores):
     tmp_scores = []
     probs = []
     for i in scores:
-        tmp_scores.append(i**-1.0)
-        bigsum += (i**-1.0)
+        tmp_scores.append(i ** -1.0)
+        bigsum += (i ** -1.0)
 
     for i in tmp_scores:
-        probs.append(i/bigsum)
+        probs.append(i / bigsum)
 
     return probs
 
@@ -284,7 +288,7 @@ def rank_compounds(compounds, nst_model, stats_lexicon):
     Ranking is being done according to the amount of affixes (the fewer the higher)
     and the compound probability which is calculated as follows:
     p((w1, tag1)..(wn, tag1)) = log(p(w1, tag1)) ... + log(p(wn, tagn)) + log(p(tag1, ...tagn))
-    e.g. p(clown+bil) = log(p(clown, NN)) + log(p(bil, NN)) + log(p(NN,NN)) 
+    e.g. p(clown+bil) = log(p(clown, NN)) + log(p(bil, NN)) + log(p(NN,NN))
     """
     ranklist = []
     for clist in compounds:
@@ -312,7 +316,7 @@ def compound(saldo_lexicon, altlexicon, w, msd=None):
     out_compounds = []
     for comp in in_compounds:
         current_combinations = []
-        
+
         # Get prefix analysis
         anap = saldo_lexicon.get_prefixes(comp[0])
         if not anap:
