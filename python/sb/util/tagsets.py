@@ -315,7 +315,6 @@ avm sms
 avm super def masc nom
 avm super def no_masc nom
 avm super indef nom
-ie invar
 in invar
 inm invar
 kn invar
@@ -1253,7 +1252,8 @@ _translate_saldo_parameters = {
 
 # SALDO to SUC mapping
 _suc_tag_replacements = [
-    (r"(IE|IN|KN|PP|SN)",             r"\1"),
+    (r"(IN|KN|PP)",                   r"\1"),
+    (r"SN",                           r"(SN|IE)"),  # ie doesn't exist in SALDO anymore
     (r"(AB|KN|PP|VB)A",               r"\1 AN"),
     (r"[MS]XC",                       r"(NN|JJ|AB) .* SMS"),
                                       
