@@ -5,7 +5,7 @@
 
 - punkt-nltk-svenska.pickle
 
-Tränad på: Storsuc av NLTK Punkt (sb.annotate.punkt.train_punkt_model)
+Tränad på: Storsuc av NLTK Punkt (sb.segment.train_punkt_segmenter)
 Modell: parameters-modell för NLTK Punkt
 Format: Python-picklad
 
