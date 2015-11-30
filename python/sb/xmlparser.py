@@ -338,7 +338,7 @@ class XMLParser(HTMLParser):
         except for the single <?XML...> on the first line.
         """
         if data.startswith(u'xml ') and data.endswith(u'?'):
-            if self.getpos() != (1, 1):
+            if not (self.getpos()[0] == 1 and self.getpos()[1] <= 1):
                 util.log.error(self.pos() + "XML declaration not first in file")
                 self.errors = True
         else:
