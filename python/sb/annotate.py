@@ -5,6 +5,7 @@ Small annotations that don't fit as standalone python files.
 """
 
 import util
+import re
 
 
 def text_spans(text, chunk, out):
@@ -89,6 +90,10 @@ def find_replace(chunk, out, find, sub=""):
     """Find and replace parts of or whole annotation."""
     util.write_annotation(out, ((key, val.replace(find, sub)) for (key, val) in util.read_annotation_iteritems(chunk)))
 
+def find_replace_regex(chunk, out, find, sub=""):
+    """Find and replace parts of or whole annotation."""
+    util.write_annotation(out, ((key, re.sub(find, sub, val)) for (key, val) in util.read_annotation_iteritems(chunk)))
+
 
 def concat(out, left, right, separator="", merge_twins="", encoding=util.UTF8):
     """Concatenate values from two annotations, with an optional separator.
@@ -123,6 +128,7 @@ if __name__ == '__main__':
                   replace=replace,
                   replace_list=replace_list,
                   find_replace=find_replace,
+                  find_replace_regex=find_replace_regex,
                   span_as_value=span_as_value,
                   concat=concat,
                   concat2=concat2,
