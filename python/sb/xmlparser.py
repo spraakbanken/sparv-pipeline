@@ -109,6 +109,7 @@ class XMLParser(HTMLParser):
         self.max_nr_zeros = len(str(corpus_size))
         self.pos2anchor = {}
         self.anchor2pos = {}
+        self.anchor2line = {}
         self.textbuffer = []
         self.dbs = dict((annot, {}) for annot in elem_annotations.values())
         self.header_temp = dict((header, "") for header in head_annotations.values())
@@ -159,6 +160,7 @@ class XMLParser(HTMLParser):
         except KeyError:
             anchor = self.pos2anchor[position] = util.mkIdent(self.prefix, identifiers=self.anchor2pos)
             self.anchor2pos[anchor] = position
+            self.anchor2line[anchor] = "(%d:%d)" % self.getpos()
         return anchor
     
     def add_token(self, token):
@@ -239,9 +241,9 @@ class XMLParser(HTMLParser):
             overlaps = [t[:2] for t in self.tagstack[:ix]
                         if ((name, t[0]) not in self.can_overlap and (name, "*") not in self.can_overlap and (t[0], "*") not in self.can_overlap)]
             if overlaps:
-                overlapping_elems = ["<%s> [%s:]" % t for t in overlaps]
+                overlapping_elems = ["<%s> [%s:]" % (t[0], self.anchor2line[t[1]]) for t in overlaps]
                 util.log.warning(self.pos() + "Tag <%s> [%s:%s], overlapping with %s",
-                                 name, start, end, ", ".join(overlapping_elems)) 
+                                 name, self.anchor2line[start], self.anchor2line[end], ", ".join(overlapping_elems))
             
             if not ((start == end or (start < end and self.textbuffer[-1].strip() == "")) and name in self.skip_if_empty):
                 edge = util.mkEdge(name, (start, end))
