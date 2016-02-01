@@ -13,7 +13,7 @@ import xml.etree.cElementTree as etree
 import util
 
 ALIGNDIR = "annotations/align"
-UNDEF = "__UNDEF__"
+UNDEF = u"__UNDEF__"
 
 CWB_ENCODING = os.environ.get("CWB_ENCODING", "utf8")
 CWB_DATADIR = os.environ.get("CWB_DATADIR")
@@ -118,7 +118,7 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
             if old_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
                 if not valid_xml:
                     invalid_str_buffer.append("</%s>" % elem.encode(encoding))
-                
+
                 # Check for overlap
                 while elem != open_tag_stack[-1][0]:
                     overlap = True
