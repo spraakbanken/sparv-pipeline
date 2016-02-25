@@ -64,7 +64,7 @@ def select(out, annotation, index, separator=None):
 def constant(chunk, out, value=None, encoding=util.UTF8):
     """Create an annotation with a constant value for each key."""
     util.write_annotation(out, ((key, value.decode(encoding) if value else value) for key in util.read_annotation_iterkeys(chunk)))
-    
+
 
 def affix(chunk, out, prefix="", suffix=""):
     """Add prefix and/or suffix to annotation."""
@@ -90,6 +90,7 @@ def find_replace(chunk, out, find, sub=""):
     """Find and replace parts of or whole annotation."""
     util.write_annotation(out, ((key, val.replace(find, sub)) for (key, val) in util.read_annotation_iteritems(chunk)))
 
+
 def find_replace_regex(chunk, out, find, sub=""):
     """Find and replace parts of or whole annotation."""
     util.write_annotation(out, ((key, re.sub(find, sub, val)) for (key, val) in util.read_annotation_iteritems(chunk)))
@@ -107,7 +108,7 @@ def concat2(out, annotations, separator="", encoding=util.UTF8):
     """Concatenates two or more annotations, with an optional separator."""
     if isinstance(annotations, basestring):
         annotations = annotations.split()
-    
+
     annotations = [util.read_annotation(a) for a in annotations]
     util.write_annotation(out, [(k, separator.decode(encoding).join([a[k] for a in annotations])) for k in annotations[0]])
 
@@ -116,6 +117,12 @@ def merge(out, main, backoff, encoding=util.UTF8):
     """Takes two annotations, and for keys without values in 'main', uses value from 'backoff'."""
     backoff = util.read_annotation(backoff)
     util.write_annotation(out, ((key, val) if val else (key, backoff[key]) for (key, val) in util.read_annotation_iteritems(main)))
+
+
+def override(out, main, repl, encoding=util.UTF8):
+    """Takes two annotations, and for keys that have values in 'repl', uses value from 'repl'."""
+    repl = util.read_annotation(repl)
+    util.write_annotation(out, ((key, repl[key]) if repl.get(key) else (key, val) for (key, val) in util.read_annotation_iteritems(main)))
 
 
 if __name__ == '__main__':
@@ -132,5 +139,6 @@ if __name__ == '__main__':
                   span_as_value=span_as_value,
                   concat=concat,
                   concat2=concat2,
-                  merge=merge
+                  merge=merge,
+                  override=override
                   )
