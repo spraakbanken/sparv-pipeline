@@ -71,10 +71,13 @@ def export(format, out, order, annotations_columns, annotations_structs, fileid=
     vrt = defaultdict(dict)
     
     for n, annot in enumerate(annotations_structs):
-        token_annotations = chain([parents[annot[1]], util.read_annotation(annot[0])])
+        # Enumerate structural attributes, to handle attributes without values
+        enumerated_struct = dict((item[0], [i, item[1]]) for i, item in enumerate(util.read_annotation(annot[0]).items()))
+        token_annotations = chain([parents[annot[1]], enumerated_struct])
         for tok, value in token_annotations.iteritems():
-            value = "|" if value == "|/|" else value
-            vrt[tok][n] = value.replace("\n", " ") if value else ""
+            value[1] = "|" if value[1] == "|/|" else value[1]
+            value[1] = value[1].replace("\n", " ") if value[1] else ""
+            vrt[tok][n] = value
     
     for n, annot in enumerate(annotations_columns):
         n += structs_count
@@ -88,7 +91,7 @@ def export(format, out, order, annotations_columns, annotations_structs, fileid=
     column_nrs = [n+structs_count for (n, col) in enumerate(columns) if col and col != "-"]
 
     if format == "vrt":
-        write_vrt(out, structs, structs_count, columns, column_nrs, tokens, vrt, encoding)
+        write_vrt(out, structs, structs_count, column_nrs, tokens, vrt, encoding)
     elif format == "xml":
         write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fileid, fileids, valid_xml, encoding)
 
@@ -151,7 +154,7 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
         # Open tags
         for elem, _attrs in reversed(structs):
             if new_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
-                attrstring = ''.join(' %s="%s"' % (attr, val.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
+                attrstring = ''.join(' %s="%s"' % (attr, val[1].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
                                      for (attr, val) in new_attr_values[elem] if not attr == UNDEF).encode(encoding)
                 line = "<%s%s>" % (elem.encode(encoding), attrstring)
                 str_buffer.append(line)
@@ -209,7 +212,7 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
     util.log.info("Exported %d tokens, %d columns, %d structs: %s", len(tokens), len(column_nrs), len(structs), out)
 
 
-def write_vrt(out, structs, structs_count, columns, column_nrs, tokens, vrt, encoding):
+def write_vrt(out, structs, structs_count, column_nrs, tokens, vrt, encoding):
     """ The VRT part of the 'export' function: write annotations to vrt file 'out'.""" 
     with open(out, "w") as OUT:
         old_attr_values = dict((elem, None) for (elem, _attrs) in structs)
@@ -224,7 +227,7 @@ def write_vrt(out, structs, structs_count, columns, column_nrs, tokens, vrt, enc
 
             for elem, _attrs in reversed(structs):
                 if new_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
-                    attrstring = ''.join(' %s="%s"' % (attr, val.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
+                    attrstring = ''.join(' %s="%s"' % (attr, val[1].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
                                          for (attr, val) in new_attr_values[elem] if not attr == UNDEF).encode(encoding)
                     print >>OUT, "<%s%s>" % (elem.encode(encoding), attrstring)
                     old_attr_values[elem] = new_attr_values[elem]
