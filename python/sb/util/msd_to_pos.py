@@ -2,18 +2,23 @@
 
 # maps MSD tags to simple POS tags
 
+
 def convert(msd, lang):
     lang_convert = eval(lang + "_convert")
     return lang_convert(msd)
 
+
 def es_convert(msd):
     return common_fl_dict[msd[0]]
+
 
 def it_convert(msd):
     return common_fl_dict[msd[0]]
 
+
 def pt_convert(msd):
     return common_fl_dict[msd[0]]
+
 
 def fr_convert(msd):
     return common_fl_dict[msd[0]]
@@ -31,6 +36,7 @@ common_fl_dict = {
     "F": "punctuation",
     "Z": "numeral"
 }
+
 
 def ru_convert(msd):
     return ru_dict[msd[0]]
@@ -53,6 +59,7 @@ ru_dict = {
     "Q": "participle",
     "F": "punctuation"
 }
+
 
 def sk_convert(msd):
     if len(msd) == 1 and not msd.isalpha():
@@ -85,6 +92,7 @@ sk_dict = {
     ":r": "proper name",
     ":q": "incorrect spelling"
     }
+
 
 def nl_convert(msd):
     if len(msd) == 2 and msd.startswith("$."):
@@ -175,9 +183,12 @@ de_dict = {
     "$(": "punctuation"
 }
 
+
 def en_convert(msd):
     if msd.startswith("F"):
         return "punctuation"
+    if msd.startswith("Z"):
+        return "numeral"
     return en_dict[msd]
 
 en_dict = {
@@ -216,9 +227,9 @@ en_dict = {
     "WP": "pronoun",
     "WP$": "pronoun",
     "WRB": "adverb",
-    "I":"interjection",
-    "Z":"numeral"
-}
+    "I": "interjection"
+    }
+
 
 def pl_convert(msd):
     if ":" in msd:
