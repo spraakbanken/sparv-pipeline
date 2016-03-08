@@ -78,6 +78,13 @@ _EDGE_SEP = ":"
 _SPAN_SEP = "-"
 
 
+# Convert possible string to boolean
+
+def strtobool(value):
+    if isinstance(value, basestring):
+        value = (value.lower() == "true")
+    return value
+
 # Encodings:
 
 UTF8 = 'UTF-8'
