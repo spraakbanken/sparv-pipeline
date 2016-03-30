@@ -75,6 +75,8 @@ def export(format, out, order, annotations_columns, annotations_structs, fileid=
         enumerated_struct = dict((item[0], [i, item[1]]) for i, item in enumerate(util.read_annotation(annot[0]).items()))
         token_annotations = chain([parents[annot[1]], enumerated_struct])
         for tok, value in token_annotations.iteritems():
+            if not value:
+                value = ["", ""]
             value[1] = "|" if value[1] == "|/|" else value[1]
             value[1] = value[1].replace("\n", " ") if value[1] else ""
             vrt[tok][n] = value
@@ -153,7 +155,7 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
 
         # Open tags
         for elem, _attrs in reversed(structs):
-            if new_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
+            if any(x[1][0] for x in new_attr_values[elem]) and new_attr_values[elem] != old_attr_values[elem]:
                 attrstring = ''.join(' %s="%s"' % (attr, val[1].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
                                      for (attr, val) in new_attr_values[elem] if not attr == UNDEF).encode(encoding)
                 line = "<%s%s>" % (elem.encode(encoding), attrstring)
@@ -226,7 +228,7 @@ def write_vrt(out, structs, structs_count, column_nrs, tokens, vrt, encoding):
                     old_attr_values[elem] = None
 
             for elem, _attrs in reversed(structs):
-                if new_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
+                if any(x[1][0] for x in new_attr_values[elem]) and new_attr_values[elem] != old_attr_values[elem]:
                     attrstring = ''.join(' %s="%s"' % (attr, val[1].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
                                          for (attr, val) in new_attr_values[elem] if not attr == UNDEF).encode(encoding)
                     print >>OUT, "<%s%s>" % (elem.encode(encoding), attrstring)
