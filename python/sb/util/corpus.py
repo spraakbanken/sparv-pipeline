@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os.path
-
 import log
 import system
 from constants import *
@@ -39,7 +38,8 @@ def write_annotation(file, annotation, encode=None, append=False):
                 value = ""
             if encode:
                 value = encode(value)
-            value = value.replace("\\", r"\\").replace("\n", r"\n").replace("\r", "")
+            # value = value.replace("\\", r"\\").replace("\n", r"\n").replace("\r", "")  # Use if we allow linebreaks in tokens
+            value = value.replace("\n", "").replace("\r", "")  # Don't allow linebreaks in tokens
             print >>DB, (key + ANNOTATION_DELIM + value).encode(UTF8)
             ctr += 1
     log.info("Wrote %d items: %s", ctr, file)
@@ -66,8 +66,7 @@ def read_annotation_iteritems(file, decode=None):
     with open(file, "r") as DB:
         for line in DB:
             key, _, value = line.rstrip("\n\r").decode(UTF8).partition(ANNOTATION_DELIM)
-            #value = re.sub(r"((?<!\\)(?:\\\\)*)\\n", "\1\n", value) # Replace literal "\n" with linebreak (only needed if we accept "\n" as a token
-            value = value.replace(r"\n", "\n").replace(r"\\", "\\")
+            # value = re.sub(r"((?<!\\)(?:\\\\)*)\\n", "\1\n", value).replace(r"\\", "\\")  # Replace literal "\n" with linebreak (only needed if we allow "\n" in tokens)
             if decode:
                 value = decode(value)
             yield key, value
