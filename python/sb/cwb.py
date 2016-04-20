@@ -72,7 +72,7 @@ def export(format, out, order, annotations_columns, annotations_structs, fileid=
     
     for n, annot in enumerate(annotations_structs):
         # Enumerate structural attributes, to handle attributes without values
-        enumerated_struct = dict((item[0], [i, item[1]]) for i, item in enumerate(util.read_annotation(annot[0]).items()))
+        enumerated_struct = dict((item[0], [i, item[1]]) for i, item in enumerate(util.read_annotation(annot[0]).items(), 1))
         token_annotations = chain([parents[annot[1]], enumerated_struct])
         for tok, value in token_annotations.iteritems():
             if not value:
