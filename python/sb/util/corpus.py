@@ -12,18 +12,18 @@ ANNOTATION_DELIM = " "
 
 
 def annotation_exists(file):
-    """Checks if an annotation file exists."""
+    """Check if an annotation file exists."""
     return os.path.exists(file)
 
 
 def clear_annotation(file):
-    """Removes an annotation file if it exists."""
+    """Remove an annotation file if it exists."""
     if os.path.exists(file):
         os.remove(file)
 
 
 def write_annotation(file, annotation, encode=None, append=False):
-    """Writes an annotation to a file. The file is overwritten if it exists.
+    """Write an annotation to a file. The file is overwritten if it exists.
     The annotation can be a dictionary, or a sequence of (key,value) pairs.
     If specified, encode should be a function from values to unicode strings.
     """
@@ -46,7 +46,7 @@ def write_annotation(file, annotation, encode=None, append=False):
 
 
 def read_annotation(file, decode=None):
-    """Reads an annotation file into a dictionary.
+    """Read an annotation file into a dictionary.
     If specified, decode should be a function from unicode strings to values.
     """
     return dict(read_annotation_iteritems(file, decode))
@@ -81,8 +81,8 @@ ANCHOR_DELIM = "#"
 
 
 def read_corpus_text(corpusfile):
-    """Reads the anchored text of a corpus.
-    Returns a tuple (text, anchor2pos, pos2anchor), where:
+    """Read the anchored text of a corpus.
+    Return a tuple (text, anchor2pos, pos2anchor), where:
      - text is a unicode string,
      - anchor2pos is a dict from anchors to positions,
      - pos2anchor is a dict from positions to anchors.
@@ -117,7 +117,7 @@ def read_corpus_text(corpusfile):
 
 
 def write_corpus_text(corpusfile, text, pos2anchor):
-    """Writes anchored text to the designated file of a corpus.
+    """Write anchored text to the designated file of a corpus.
     text is a unicode string, and pos2anchor is a dict from text
     positions to anchors.
     """
