@@ -18,13 +18,14 @@ def dirname(file):
 
 def make_directory(*path):
     dir = os.path.join(*path)
-    try:
-        os.makedirs(dir)
-    except OSError as exc:
-        if exc.errno == errno.EEXIST:
-            pass
-        else:
-            raise
+    if dir:
+        try:
+            os.makedirs(dir)
+        except OSError as exc:
+            if exc.errno == errno.EEXIST:
+                pass
+            else:
+                raise
 
 
 def kill_process(process):
