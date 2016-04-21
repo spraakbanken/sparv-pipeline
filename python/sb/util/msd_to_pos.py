@@ -3,9 +3,29 @@
 # maps MSD tags to simple POS tags
 
 
+CONVERTERS = {
+    "es": "es_convert",
+    "en": "en_convert",
+    "it": "it_convert",
+    "pt": "pt_convert",
+    "fr": "fr_convert",
+    "ru": "ru_convert",
+    "sk": "sk_convert",
+    "nl": "nl_convert",
+    "de": "de_convert",
+    "pl": "pl_convert",
+    "la": "la_convert",
+    "et": "et_convert",
+    "fi": "fi_convert",
+}
+
+
 def convert(msd, lang):
-    lang_convert = eval(lang + "_convert")
-    return lang_convert(msd)
+    if lang in CONVERTERS:
+        lang_convert = eval(CONVERTERS[lang])
+        return lang_convert(msd)
+    else:
+        return msd
 
 
 def es_convert(msd):
@@ -188,8 +208,8 @@ def en_convert(msd):
     if msd.startswith("F"):
         return "punctuation"
     if msd.startswith("Z"):
-        return "numeral"
-    return en_dict[msd]
+        return "number"
+    return en_dict.get(msd, msd)
 
 en_dict = {
     "CC": "coordinating conjunction",
@@ -207,6 +227,7 @@ en_dict = {
     "NNS": "noun",
     "NNP": "proper name",
     "NNPS": "proper name",
+    "NP": "proper name",
     "PDT": "predeterminer",
     "POS": "possessive ending",
     "PRP": "pronoun",
