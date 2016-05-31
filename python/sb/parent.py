@@ -9,10 +9,8 @@ import util
 
 
 def annotate_parents(text, out, parent, child, ignore_missing_parent=False):
-    """Annotate parent links; parent, child are names for existing annotations.
-    """
-    if isinstance(ignore_missing_parent, basestring):
-        ignore_missing_parent = (ignore_missing_parent.lower() == "true")
+    """Annotate parent links; parent, child are names for existing annotations."""
+    ignore_missing_parent = util.strtobool(ignore_missing_parent)
     parent_chunks, child_spans = read_parents_and_children(text, parent, child)
     OUT = {}
     previous_parent_id = None
@@ -31,14 +29,15 @@ def annotate_parents(text, out, parent, child, ignore_missing_parent=False):
             OUT[child_id] = parent_id
     except StopIteration:
         pass
-    util.write_annotation(out, OUT)
+    if out:
+        util.write_annotation(out, OUT)
+    else:
+        return OUT
 
 
 def annotate_children(text, out, parent, child, ignore_missing_parent=False):
-    """Annotate links to children; parent, child are names for existing annotations.
-    """
-    if isinstance(ignore_missing_parent, basestring):
-        ignore_missing_parent = (ignore_missing_parent.lower() == "true")
+    """Annotate links to children; parent, child are names for existing annotations."""
+    ignore_missing_parent = util.strtobool(ignore_missing_parent)
     parent_chunks, child_spans = read_parents_and_children(text, parent, child)
     OUT = defaultdict(list)
     previous_parent_id = None
@@ -57,15 +56,27 @@ def annotate_children(text, out, parent, child, ignore_missing_parent=False):
             OUT[parent_id].append(child_id)
     except StopIteration:
         pass
-    util.write_annotation(out, OUT, encode=" ".join)
+    if out:
+        util.write_annotation(out, OUT, encode=" ".join)
+    else:
+        return OUT
 
 
 def read_parents_and_children(text, parent, child):
-    corpus_text, anchor2pos, _pos2anchor = util.corpus.read_corpus_text(text)
-    mkSpan = lambda edge: slice(anchor2pos[util.edgeStart(edge)], anchor2pos[util.edgeEnd(edge)])
-    parent_spans = sorted((mkSpan(p), p) for p in util.read_annotation_iterkeys(parent))
+    if isinstance(text, basestring):
+        text = util.corpus.read_corpus_text(text)
+    if isinstance(parent, basestring):
+        parent = util.read_annotation_iterkeys(parent)
+    if isinstance(child, basestring):
+        child = util.read_annotation_iterkeys(child)
+    corpus_text, anchor2pos, _pos2anchor = text
+
+    def make_span(edge):
+        return slice(anchor2pos[util.edgeStart(edge)], anchor2pos[util.edgeEnd(edge)])
+
+    parent_spans = sorted((make_span(p), p) for p in parent)
     parent_chunks = extract_chunks(parent_spans, corpus_text)
-    child_spans = sorted((mkSpan(c), c) for c in util.read_annotation_iterkeys(child))
+    child_spans = sorted((make_span(c), c) for c in child)
     return parent_chunks, child_spans
 
 

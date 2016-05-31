@@ -10,13 +10,20 @@ import re
 
 def text_spans(text, chunk, out):
     """Add the text content for each edge as a new annotation."""
-    corpus_text, anchor2pos, _pos2anchor = util.corpus.read_corpus_text(text)
+    if isinstance(text, basestring):
+        text = util.corpus.read_corpus_text(text)
+    if isinstance(chunk, basestring):
+        chunk = util.read_annotation_iterkeys(chunk)
+    corpus_text, anchor2pos, _pos2anchor = text
     OUT = {}
-    for edge in util.read_annotation_iterkeys(chunk):
+    for edge in chunk:
         start = anchor2pos[util.edgeStart(edge)]
         end = anchor2pos[util.edgeEnd(edge)]
         OUT[edge] = corpus_text[start:end]
-    util.write_annotation(out, OUT)
+    if out:
+        util.write_annotation(out, OUT)
+    else:
+        return OUT
 
 
 def translate_tag(tag, out, mapping):
@@ -105,7 +112,7 @@ def concat(out, left, right, separator="", merge_twins="", encoding=util.UTF8):
 
 
 def concat2(out, annotations, separator="", encoding=util.UTF8):
-    """Concatenates two or more annotations, with an optional separator."""
+    """Concatenate two or more annotations, with an optional separator."""
     if isinstance(annotations, basestring):
         annotations = annotations.split()
 
@@ -114,13 +121,13 @@ def concat2(out, annotations, separator="", encoding=util.UTF8):
 
 
 def merge(out, main, backoff, encoding=util.UTF8):
-    """Takes two annotations, and for keys without values in 'main', uses value from 'backoff'."""
+    """Take two annotations, and for keys without values in 'main', use value from 'backoff'."""
     backoff = util.read_annotation(backoff)
     util.write_annotation(out, ((key, val) if val else (key, backoff[key]) for (key, val) in util.read_annotation_iteritems(main)))
 
 
 def override(out, main, repl, encoding=util.UTF8):
-    """Takes two annotations, and for keys that have values in 'repl', uses value from 'repl'."""
+    """Take two annotations, and for keys that have values in 'repl', use value from 'repl'."""
     repl = util.read_annotation(repl)
     util.write_annotation(out, ((key, repl[key]) if repl.get(key) else (key, val) for (key, val) in util.read_annotation_iteritems(main)))
 
