@@ -37,7 +37,7 @@ def chain(annotations, default=None):
     return dict((key, follow(key)) for key in annotations[0])
 
 
-def export(format, out, order, annotations_columns, annotations_structs, fileid=None, fileids=None, valid_xml=True, columns=(), structs=(), encoding=CWB_ENCODING):
+def export(format, out, order, annotations_columns, annotations_structs, text=None, fileid=None, fileids=None, valid_xml=True, columns=(), structs=(), encoding=CWB_ENCODING):
     """
     Export 'annotations' to the VRT or XML file 'out'.
     The order of the annotation keys is decided by the annotation 'order'.
@@ -46,7 +46,7 @@ def export(format, out, order, annotations_columns, annotations_structs, fileid=
     If an attribute in 'columns' or 'structs' is "-", that annotation is skipped.
     The structs are specified by "elem:attr", giving <elem attr=N> xml tags.
     """
-    assert format in ("vrt", "xml"), "Wrong format specified"
+    assert format in ("vrt", "xml", "formatted"), "Wrong format specified"
     if isinstance(annotations_columns, basestring):
         annotations_columns = annotations_columns.split()
     if isinstance(annotations_structs, basestring):
@@ -55,47 +55,132 @@ def export(format, out, order, annotations_columns, annotations_structs, fileid=
         columns = columns.split()
     structs_count = len(structs.split())
     structs = parse_structural_attributes(structs)
-    
+
     assert len(annotations_columns) == len(columns), "columns and annotations_columns must contain same number of values"
     assert len(annotations_structs) == structs_count, "structs and annotations_structs must contain same number of values"
-    
-    if isinstance(valid_xml, basestring):
-        valid_xml = (valid_xml.lower() == "true")
 
-    # Create parent dictionaries
-    parents = {}
-    for annot, parent_annotation in annotations_structs:
-        if not parent_annotation in parents:
-            parents[parent_annotation] = util.read_annotation(parent_annotation)
-    
-    vrt = defaultdict(dict)
-    
-    for n, annot in enumerate(annotations_structs):
-        # Enumerate structural attributes, to handle attributes without values
-        enumerated_struct = dict((item[0], [i, item[1]]) for i, item in enumerate(util.read_annotation(annot[0]).items(), 1))
-        token_annotations = chain([parents[annot[1]], enumerated_struct])
-        for tok, value in token_annotations.iteritems():
-            if not value:
-                value = ["", ""]
-            value[1] = "|" if value[1] == "|/|" else value[1]
-            value[1] = value[1].replace("\n", " ") if value[1] else ""
-            vrt[tok][n] = value
-    
+    valid_xml = util.strtobool(valid_xml)
+
+    if format == "formatted":
+        write_formatted(out, annotations_columns, annotations_structs, columns, structs, structs_count, text, encoding)
+    else:
+        # Create parent dictionaries
+        parents = {}
+        for annot, parent_annotation in annotations_structs:
+            if not parent_annotation in parents:
+                parents[parent_annotation] = util.read_annotation(parent_annotation)
+
+        vrt = defaultdict(dict)
+
+        for n, annot in enumerate(annotations_structs):
+            # Enumerate structural attributes, to handle attributes without values
+            enumerated_struct = dict((item[0], [i, item[1]]) for i, item in enumerate(util.read_annotation(annot[0]).items(), 1))  # Must enumerate from 1, due to the use of any() later
+            token_annotations = chain([parents[annot[1]], enumerated_struct])
+            for tok, value in token_annotations.iteritems():
+                if not value:
+                    value = ["", ""]
+
+                value[1] = "|" if value[1] == "|/|" else value[1]
+                value[1] = value[1].replace("\n", " ") if value[1] else ""
+                vrt[tok][n] = value
+
+        for n, annot in enumerate(annotations_columns):
+            n += structs_count
+            for tok, value in util.read_annotation_iteritems(annot):
+                if n > structs_count:  # Any column except the first (the word)
+                    value = "|" if value == "|/|" else value
+                vrt[tok][n] = value.replace("\n", " ")
+
+        sortkey = util.read_annotation(order).get
+        tokens = sorted(vrt, key=sortkey)
+        column_nrs = [n+structs_count for (n, col) in enumerate(columns) if col and col != "-"]
+
+        if format == "vrt":
+            write_vrt(out, structs, structs_count, column_nrs, tokens, vrt, encoding)
+        elif format == "xml":
+            write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fileid, fileids, valid_xml, encoding)
+
+
+def write_formatted(out, annotations_columns, annotations_structs, columns, structs, structs_count, text, encoding):
+    txt, anchor2pos, pos2anchor = util.corpus.read_corpus_text(text)
+    structs_order = ["__token__"] + [s[0] for s in structs]
+    anchors = defaultdict(dict)
+    for elem, attrs in structs:
+        for attr in attrs:
+            struct = util.read_annotation(annotations_structs[attr[1]][0])
+            for edge in struct:
+                if util.edgeStart(edge) == util.edgeEnd(edge):
+                    anchors[util.edgeStart(edge)].setdefault("structs", {}).setdefault((elem, anchor2pos[util.edgeEnd(edge)], "close"), []).append((attr[0], struct[edge]))
+                else:
+                    anchors[util.edgeStart(edge)].setdefault("structs", {}).setdefault((elem, anchor2pos[util.edgeEnd(edge)]), []).append((attr[0], struct[edge]))
+                    anchors[util.edgeEnd(edge)].setdefault("close", set()).add((elem, edge))
     for n, annot in enumerate(annotations_columns):
         n += structs_count
         for tok, value in util.read_annotation_iteritems(annot):
             if n > structs_count:  # Any column except the first (the word)
                 value = "|" if value == "|/|" else value
-            vrt[tok][n] = value.replace("\n", " ")
+            anchors[util.edgeStart(tok)].setdefault("token", []).append(value.replace("\n", " "))
+            if n == structs_count:
+                anchors[util.edgeEnd(tok)].setdefault("close", set()).add(("__token__", None))
+    currpos = 0
 
-    sortkey = util.read_annotation(order).get
-    tokens = sorted(vrt, key=sortkey)
-    column_nrs = [n+structs_count for (n, col) in enumerate(columns) if col and col != "-"]
+    with open(out, "w") as OUT:
+        OUT.write("<corpus>")
+        for pos, anchor in sorted(pos2anchor.items(), key=lambda x: x[0]):
+            OUT.write(txt[currpos:pos].replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").encode(encoding))
+            if anchor in anchors:
+                if "close" in anchors[anchor]:
+                    if ("__token__", None) in anchors[anchor]["close"]:
+                        OUT.write("</w>")
+                    OUT.write(''.join('</%s>' % e[0] for e in sorted(anchors[anchor]["close"], key=lambda x: structs_order.index(x[0])) if not e[0] == "__token__").encode(encoding))
 
-    if format == "vrt":
-        write_vrt(out, structs, structs_count, column_nrs, tokens, vrt, encoding)
-    elif format == "xml":
-        write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fileid, fileids, valid_xml, encoding)
+                if "structs" in anchors[anchor]:
+                    for elem, annot in sorted(anchors[anchor]["structs"].iteritems(), key=lambda x: (-x[0][1], -structs_order.index(x[0][0]))):
+                        if not elem in ("close", "token"):
+                            attrstring = ''.join(' %s="%s"' % (attr, val.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
+                                                 for (attr, val) in annot if val and not attr == UNDEF).encode(encoding)
+                            close = "/" if len(elem) == 3 else ""
+                            OUT.write("<%s%s%s>" % (elem[0].encode(encoding), attrstring, close))
+
+                if "token" in anchors[anchor]:
+                    attrstring = "".join(' %s="%s"' % (columns[i + 1], a.replace("&", "&amp;").replace('"', '&quot;').replace("<", "&lt;").replace(">", "&gt;"))
+                                         for i, a in enumerate(anchors[anchor]["token"][1:]) if a).encode(encoding)
+                    OUT.write("<w%s>" % attrstring)
+
+            currpos = pos
+        OUT.write("</corpus>")
+    util.log.info("Exported: %s", out)
+
+
+def write_vrt(out, structs, structs_count, column_nrs, tokens, vrt, encoding):
+    """ The VRT part of the 'export' function: write annotations to vrt file 'out'."""
+    with open(out, "w") as OUT:
+        old_attr_values = dict((elem, None) for (elem, _attrs) in structs)
+        for tok in tokens:
+            cols = vrt[tok]
+            new_attr_values = {}
+            for elem, attrs in structs:
+                new_attr_values[elem] = [(attr, cols[n]) for (attr, n) in attrs if cols.get(n)]
+                if old_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
+                    print >>OUT, "</%s>" % elem.encode(encoding)
+                    old_attr_values[elem] = None
+
+            for elem, _attrs in reversed(structs):
+                if any(x[1][0] for x in new_attr_values[elem]) and new_attr_values[elem] != old_attr_values[elem]:
+                    attrstring = ''.join(' %s="%s"' % (attr, val[1].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
+                                         for (attr, val) in new_attr_values[elem] if not attr == UNDEF).encode(encoding)
+                    print >>OUT, "<%s%s>" % (elem.encode(encoding), attrstring)
+                    old_attr_values[elem] = new_attr_values[elem]
+
+            # Whitespace and / needs to be replaced for CQP parsing to work. / is only allowed in the word itself.
+            line = "\t".join(cols.get(n, UNDEF).replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") if n > structs_count else cols.get(n, UNDEF).replace(" ", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") for n in column_nrs)
+            print >>OUT, remove_control_characters(line).encode(encoding)
+
+        for elem, _attrs in structs:
+            if old_attr_values[elem]:
+                print >>OUT, "</%s>" % elem.encode(encoding)
+
+    util.log.info("Exported %d tokens, %d columns, %d structs: %s", len(tokens), len(column_nrs), len(structs), out)
 
 
 def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fileid, fileids, valid_xml, encoding):
@@ -116,7 +201,7 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
     for tok in tokens:
         cols = vrt[tok]
         new_attr_values = {}
-    
+
         # Close tags/fix overlaps
         for elem, attrs in structs:
             new_attr_values[elem] = [(attr, cols[n]) for (attr, n) in attrs if cols.get(n)]
@@ -157,7 +242,7 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
         for elem, _attrs in reversed(structs):
             if any(x[1][0] for x in new_attr_values[elem]) and new_attr_values[elem] != old_attr_values[elem]:
                 attrstring = ''.join(' %s="%s"' % (attr, val[1].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
-                                     for (attr, val) in new_attr_values[elem] if not attr == UNDEF).encode(encoding)
+                                     for (attr, val) in new_attr_values[elem] if val and not attr == UNDEF).encode(encoding)
                 line = "<%s%s>" % (elem.encode(encoding), attrstring)
                 str_buffer.append(line)
                 old_attr_values[elem] = new_attr_values[elem]
@@ -167,8 +252,8 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
 
         # Add word annotations
         word = cols.get(structs_count, UNDEF).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        attributes = " ".join('%s="%s"' % (columns[n-structs_count], cols.get(n, UNDEF).replace("&", "&amp;").replace('"', '&quot;').replace("<", "&lt;").replace(">", "&gt;")) for n in column_nrs[1:])
-        line = "<w %s>%s</w>" % (attributes, word)
+        attrstring = "".join(' %s="%s"' % (columns[n-structs_count], cols.get(n, UNDEF).replace("&", "&amp;").replace('"', '&quot;').replace("<", "&lt;").replace(">", "&gt;")) for n in column_nrs[1:] if cols.get(n))
+        line = "<w%s>%s</w>" % (attrstring, word)
         str_buffer.append(remove_control_characters(line).encode(encoding))
         if not valid_xml:
             invalid_str_buffer.append(remove_control_characters(line).encode(encoding))
@@ -207,40 +292,9 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
                 if child != elemlist[0]:
                     prev_elem = elemlist[elemlist.index(child) - 1]
                     # If previous element has no id, add id of child
-                    if not prev_elem.attrib.get("_id"): 
+                    if not prev_elem.attrib.get("_id"):
                         prev_elem.set('_id', child.attrib.get("_id"))
         xmltree.write(out, encoding=encoding, xml_declaration=False, method="xml")
-
-    util.log.info("Exported %d tokens, %d columns, %d structs: %s", len(tokens), len(column_nrs), len(structs), out)
-
-
-def write_vrt(out, structs, structs_count, column_nrs, tokens, vrt, encoding):
-    """ The VRT part of the 'export' function: write annotations to vrt file 'out'.""" 
-    with open(out, "w") as OUT:
-        old_attr_values = dict((elem, None) for (elem, _attrs) in structs)
-        for tok in tokens:
-            cols = vrt[tok]
-            new_attr_values = {}
-            for elem, attrs in structs:
-                new_attr_values[elem] = [(attr, cols[n]) for (attr, n) in attrs if cols.get(n)]
-                if old_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
-                    print >>OUT, "</%s>" % elem.encode(encoding)
-                    old_attr_values[elem] = None
-
-            for elem, _attrs in reversed(structs):
-                if any(x[1][0] for x in new_attr_values[elem]) and new_attr_values[elem] != old_attr_values[elem]:
-                    attrstring = ''.join(' %s="%s"' % (attr, val[1].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
-                                         for (attr, val) in new_attr_values[elem] if not attr == UNDEF).encode(encoding)
-                    print >>OUT, "<%s%s>" % (elem.encode(encoding), attrstring)
-                    old_attr_values[elem] = new_attr_values[elem]
-            
-            # Whitespace and / needs to be replaced for CQP parsing to work. / is only allowed in the word itself.
-            line = "\t".join(cols.get(n, UNDEF).replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") if n > structs_count else cols.get(n, UNDEF).replace(" ", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") for n in column_nrs)
-            print >>OUT, remove_control_characters(line).encode(encoding)
-
-        for elem, _attrs in structs:
-            if old_attr_values[elem]:
-                print >>OUT, "</%s>" % elem.encode(encoding)
 
     util.log.info("Exported %d tokens, %d columns, %d structs: %s", len(tokens), len(column_nrs), len(structs), out)
 
@@ -255,9 +309,9 @@ def combine_xml(master, out, xmlfiles="", xmlfiles_list=""):
     elif xmlfiles_list:
         with open(xmlfiles_list) as insource:
             xmlfiles = [line.strip() for line in insource]
-    
+
     xmlfiles.sort()
-    
+
     with open(out, "w") as OUT:
         print >>OUT, '<corpus id="%s">' % master.replace("&", "&amp;").replace('"', '&quot;')
         for infile in xmlfiles:
@@ -292,7 +346,7 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
     corpus_registry = os.path.join(registry, master)
     corpus_datadir = os.path.join(datadir, master)
     util.system.clear_directory(corpus_datadir)
-    
+
     encode_args = ["-s", "-p", "-",
                    "-d", corpus_datadir,
                    "-R", corpus_registry,
@@ -317,7 +371,7 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
     index_args = ["-V", "-r", registry, master.upper()]
     util.system.call_binary("cwb-makeall", index_args, verbose=True)
     util.log.info("Encoded and indexed %d columns, %d structs", len(columns), len(structs))
-    
+
     if not skip_compression:
         util.log.info("Compressing corpus files...")
         compress_args = ["-A", master.upper()]
@@ -394,7 +448,7 @@ def parse_structural_attributes(structural_atts):
     order = []
     for n, struct in enumerate(structural_atts):
         assert not struct or struct == "-" or "." not in struct, "Struct should contain ':' or be equal to '-': %s" % struct
-        
+
         if ":" in struct:
             elem, attr = struct.split(":")
         else:
@@ -417,4 +471,3 @@ if __name__ == '__main__':
                   encode=cwb_encode,
                   align=cwb_align,
                   combine_xml=combine_xml)
-
