@@ -328,7 +328,7 @@ class BetterWordTokenizer():
                 }, 
                 modifiers
             )
-            return self._re_word_tokenizer 
+            return self._re_word_tokenizer
     
     def word_tokenize(self, s): 
         """Tokenize a string to split off punctuation other than periods"""
