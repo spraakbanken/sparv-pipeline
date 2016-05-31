@@ -78,12 +78,37 @@ _EDGE_SEP = ":"
 _SPAN_SEP = "-"
 
 
-# Convert possible string to boolean
-
 def strtobool(value):
+    """Convert possible string to boolean"""
     if isinstance(value, basestring):
         value = (value.lower() == "true")
     return value
+
+
+def cwbset(values, delimiter="|", affix="|", maxlength=4095):
+    """Take an iterable object and return a set in the format used by Corpus Workbench."""
+    values = list(values)
+    if maxlength:
+        length = 1  # Including the last affix
+        for i, value in enumerate(values):
+            length += len(value) + 1
+            if length > maxlength:
+                values = values[:i]
+                break
+    return affix if not values else affix + delimiter.join(values) + affix
+
+
+def truncateset(string, maxlength=4095, delimiter="|", affix="|"):
+    """Truncate a Corpus Workbench set to a maximum length."""
+    if len(string) <= maxlength or string == "|":
+        return string
+    else:
+        length = 1  # Including the last affix
+        values = string[1:-1].split("|")
+        for i, value in enumerate(values):
+            length += len(value) + 1
+            if length > maxlength:
+                return cwbset(values[:i], delimiter, affix)
 
 # Encodings:
 
