@@ -6,17 +6,20 @@ import itertools
 from math import log
 
 
-def annotate(out_complemgrams, out_compwf, out_baseform, out_lemprob, word, msd, baseform_tmp, saldo_comp_model, nst_model, stats_model, delimiter="|", compdelim="+", affix="|", saldo_comp_lexicon=None, stats_lexicon=None):
+def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp, saldo_comp_model, nst_model, stats_model,
+             complemgramfmt=":%.3f", delimiter="|", compdelim="+", affix="|", saldo_comp_lexicon=None, stats_lexicon=None):
     """Divides compound words into prefix(es) and suffix.
     - out_complemgram is the resulting annotation file for compound lemgrams
+      and their probabilities
     - out_compwf is the resulting annotation file for compound wordforms
-    - out_baseform is the resulting annotation file for baseforms (including baseforms for compounds)
-    - out_lemprob is the resulting annotation file for compound lemgram probabilities (rounded to 3 digits)
+    - out_baseform is the resulting annotation file for baseforms (including baseforms for compounds
     - word and msd are existing annotations for wordforms and MSDs
     - baseform_tmp is the existing temporary annotation file for baseforms (not including compounds)
     - saldo_comp_model is the Saldo compound model
     - nst_model is the NST part of speech compound model
     - stats_model is the statistics model (pickled file)
+    - complemgramfmt is a format string for how to print the complemgram and its probability
+      (use empty string to omit probablility)
     - saldo_comp_lexicon, stats_lexicon: these arguments cannot be set from the command line,
       but are used in the catapult. These arguments must be last.
     """
@@ -45,7 +48,6 @@ def annotate(out_complemgrams, out_compwf, out_baseform, out_lemprob, word, msd,
     OUT_complem = {}
     OUT_compwf = {}
     OUT_baseform = {}
-    OUT_lemprob = {}
     IN_baseform = util.read_annotation(baseform_tmp)
 
     for tokid in WORD:
@@ -56,7 +58,7 @@ def annotate(out_complemgrams, out_compwf, out_baseform, out_lemprob, word, msd,
             compounds = rank_compounds(compounds, nst_model, stats_lexicon)
 
         # create complem and compwf annotations
-        make_complem_and_compwf(OUT_complem, OUT_compwf, OUT_lemprob, tokid, compounds, compdelim, delimiter, affix)
+        make_complem_and_compwf(OUT_complem, OUT_compwf, complemgramfmt, tokid, compounds, compdelim, delimiter, affix)
 
         # create new baseform annotation if necessary
         if IN_baseform[tokid] != affix:
@@ -67,7 +69,6 @@ def annotate(out_complemgrams, out_compwf, out_baseform, out_lemprob, word, msd,
     util.write_annotation(out_complemgrams, OUT_complem)
     util.write_annotation(out_compwf, OUT_compwf)
     util.write_annotation(out_baseform, OUT_baseform)
-    util.write_annotation(out_lemprob, OUT_lemprob)
 
 
 class StatsLexicon(object):
@@ -350,12 +351,13 @@ def compound(saldo_lexicon, altlexicon, w, msd=None):
     return out_compounds
 
 
-def make_complem_and_compwf(OUT_complem, OUT_compwf, OUT_lemprob, tokid, compounds, compdelim, delimiter, affix):
+def make_complem_and_compwf(OUT_complem, OUT_compwf, complemgramfmt, tokid, compounds, compdelim, delimiter, affix):
     """Add a list of compound lemgrams to the dictionary OUT_complem[tokid]
     and a list of compound wordforms to OUT_compwf."""
     complem_list = []
     compwf_list = []
     for comp in compounds:
+        prob = comp[0]
         comp = comp[1]
         complems = True
         for a in comp:
@@ -363,7 +365,12 @@ def make_complem_and_compwf(OUT_complem, OUT_compwf, OUT_lemprob, tokid, compoun
                 complems = False
                 break
         if complems:
-            complem_list.append(compdelim.join(affix[1] for affix in comp))
+            if complemgramfmt:
+                # Construct complemgram + lemprob
+                complem_list.append(compdelim.join(affix[1] for affix in comp) + complemgramfmt % prob)
+                print complem_list[-1]
+            else:
+                complem_list.append(compdelim.join(affix[1] for affix in comp))
 
         # if first letter has upper case, check if one of the affixes may be a name:
         if comp[0][0][0] == comp[0][0][0].upper():
@@ -377,10 +384,9 @@ def make_complem_and_compwf(OUT_complem, OUT_compwf, OUT_lemprob, tokid, compoun
         if wf not in compwf_list:
             compwf_list.append(wf)
 
-    # update dictionaries
+    # Update dictionaries
     OUT_complem[tokid] = affix + delimiter.join(complem_list) + affix if compounds and complem_list else affix
     OUT_compwf[tokid] = affix + delimiter.join(compwf_list) + affix if compounds else affix
-    OUT_lemprob[tokid] = affix + delimiter.join("{0:.3f}".format(c[0]) for c in compounds) + affix if compounds else affix
 
 
 def make_new_baseforms(OUT_baseform, tokid, msd_tag, compounds, stats_lexicon, altlexicon, delimiter, affix):
