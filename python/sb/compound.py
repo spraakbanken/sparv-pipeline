@@ -12,7 +12,7 @@ def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp
     - out_complemgram is the resulting annotation file for compound lemgrams
       and their probabilities
     - out_compwf is the resulting annotation file for compound wordforms
-    - out_baseform is the resulting annotation file for baseforms (including baseforms for compounds
+    - out_baseform is the resulting annotation file for baseforms (including baseforms for compounds)
     - word and msd are existing annotations for wordforms and MSDs
     - baseform_tmp is the existing temporary annotation file for baseforms (not including compounds)
     - saldo_comp_model is the Saldo compound model
@@ -51,7 +51,6 @@ def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp
     IN_baseform = util.read_annotation(baseform_tmp)
 
     for tokid in WORD:
-        # print "\n", WORD[tokid].encode("utf-8")
         compounds = compound(saldo_comp_lexicon, altlexicon, WORD[tokid], MSD[tokid])
 
         if compounds:
@@ -368,7 +367,6 @@ def make_complem_and_compwf(OUT_complem, OUT_compwf, complemgramfmt, tokid, comp
             if complemgramfmt:
                 # Construct complemgram + lemprob
                 complem_list.append(compdelim.join(affix[1] for affix in comp) + complemgramfmt % prob)
-                print complem_list[-1]
             else:
                 complem_list.append(compdelim.join(affix[1] for affix in comp))
 
@@ -385,8 +383,8 @@ def make_complem_and_compwf(OUT_complem, OUT_compwf, complemgramfmt, tokid, comp
             compwf_list.append(wf)
 
     # Update dictionaries
-    OUT_complem[tokid] = affix + delimiter.join(complem_list) + affix if compounds and complem_list else affix
-    OUT_compwf[tokid] = affix + delimiter.join(compwf_list) + affix if compounds else affix
+    OUT_complem[tokid] = util.cwbset(complem_list, delimiter, affix) if compounds and complem_list else affix
+    OUT_compwf[tokid] = util.cwbset(compwf_list, delimiter, affix) if compounds else affix
 
 
 def make_new_baseforms(OUT_baseform, tokid, msd_tag, compounds, stats_lexicon, altlexicon, delimiter, affix):
@@ -412,8 +410,7 @@ def make_new_baseforms(OUT_baseform, tokid, msd_tag, compounds, stats_lexicon, a
                 baseform_list.append(baseform)
 
     # update dictionary
-    OUT_baseform[tokid] = affix + delimiter.join(baseform_list) \
-        + affix if (compounds and baseform_list) else affix
+    OUT_baseform[tokid] = util.cwbset(baseform_list, delimiter, affix) if (compounds and baseform_list) else affix
 
 
 def read_xml(xml='saldom.xml', tagset="SUC"):
