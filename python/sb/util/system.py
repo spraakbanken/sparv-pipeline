@@ -57,6 +57,10 @@ def call_java(jar, arguments, options=[], stdin="", search_paths=(),
     assert isinstance(arguments, (list, tuple))
     assert isinstance(options, (list, tuple))
     jarfile = find_binary(jar, search_paths, executable=False)
+    # For WSD: use = instead of space in arguments
+    # TODO: Remove when fixed!
+    if isinstance(arguments[0], tuple):
+        arguments = [x + "=" + y for x, y in arguments]
     java_args = list(options) + ["-jar", jarfile] + list(arguments)
     return call_binary("java", java_args, stdin, search_paths, (), encoding, verbose, return_command)
 
