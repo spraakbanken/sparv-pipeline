@@ -6,6 +6,7 @@ SENT_SEP = "$SENT$"
 def run_wsd(wsdjar, sense_model, context_model, out, sentence, word, ref, lemgram, saldo, pos, encoding=util.UTF8):
     """
     Runs the word sense disambiguation tool (saldowsd.jar) to add probabilities to the saldo annotation.
+    Multiword expressions are not analyzed and receive the probability value -1.
       - wsdjar is the name of the java programme to be used for the wsd
       - sense_model and context_model are the models to be used with wsdjar
       - out is the resulting annotation file
