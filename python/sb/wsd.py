@@ -3,18 +3,20 @@ import util
 SENT_SEP = "$SENT$"
 
 
-def run_wsd(wsdjar, sense_model, context_model, out, sentence, word, ref, lemgram, saldo, pos, encoding=util.UTF8):
+def run_wsd(wsdjar, sense_model, context_model, out, sentence, word, ref, lemgram, saldo, pos, sensefmt=":%.3f", default_prob="-1", encoding=util.UTF8):
     """
     Runs the word sense disambiguation tool (saldowsd.jar) to add probabilities to the saldo annotation.
-    Unanalyzed senses (e.g. multiword expressions) receive the probability value -1.
+    Unanalyzed senses (e.g. multiword expressions) receive the probability value given by default_prob.
       - wsdjar is the name of the java programme to be used for the wsd
       - sense_model and context_model are the models to be used with wsdjar
       - out is the resulting annotation file
       - sentence is an existing annotation for sentences and their children (words)
       - word is an existing annotations for wordforms
       - ref is an existing annotation for word references
-      - lemgram, saldo are existing annotations for inflection tables and meanings
+      - lemgram and saldo are existing annotations for inflection tables and meanings
       - pos is an existing annotations for part-of-speech
+      - sensefmt is a format string for how to print the sense and its probability
+      - default_prob is the default value for unanalyzed senses
     """
 
     sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
@@ -33,10 +35,17 @@ def run_wsd(wsdjar, sense_model, context_model, out, sentence, word, ref, lemgra
         stdin = stdin.encode(encoding)
 
     stdout, stderr = process.communicate(stdin)
+    # TODO: Solve hack line below!
+    # Problem is that regular messages "Reading sense vectors.." are also piped to stderr.
+    if len(stderr) > 52:
+        util.system.kill_process(process)
+        util.log.error(stderr)
+        return
+
     if encoding:
         stdout = stdout.decode(encoding)
 
-    process_output(out, stdout, sentences, SALDO)
+    process_output(out, stdout, sentences, SALDO, sensefmt, default_prob)
 
     # Kill running subprocess
     util.system.kill_process(process)
@@ -56,7 +65,7 @@ def wsd_start(wsdjar, sense_model, context_model, encoding):
                 ("-verbose", "false")]
 
     process = util.system.call_java(wsdjar, wsd_args, options=java_opts,
-                                    stdin="", encoding=encoding, verbose=True,
+                                    stdin="", encoding=encoding,
                                     return_command=True)
     return process
 
@@ -88,7 +97,7 @@ def build_input(sentences, WORD, REF, LEMGRAM, SALDO, POS):
     return "\n".join(rows)
 
 
-def process_output(out, stdout, in_sentences, SALDO):
+def process_output(out, stdout, in_sentences, SALDO, sensefmt, default_prob):
     """Parse WSD output and write annotation."""
     OUT = {}
 
@@ -111,12 +120,14 @@ def process_output(out, stdout, in_sentences, SALDO):
                 for meaning in saldo:
                     if meaning in out_meanings:
                         i = out_meanings.index(meaning)
-                        new_saldo.append(meaning + ":" + out_prob[i])
+                        new_saldo.append(meaning + sensefmt % float(out_prob[i]))
                     else:
-                        new_saldo.append(meaning + ":-1")
+                        new_saldo.append(meaning + sensefmt % float(default_prob))
             else:
-                new_saldo = [meaning + ":-1" for meaning in saldo]
+                new_saldo = [meaning + sensefmt % float(default_prob) for meaning in saldo]
 
+            # Sort by probability
+            new_saldo = sorted(new_saldo, key=lambda x: float(x.split(":")[-1]), reverse=True)
             OUT[in_tok] = util.cwbset(new_saldo)
 
     util.write_annotation(out, OUT)
@@ -137,7 +148,10 @@ def remove_mwe(annotation):
     """For MWEs: strip unnecessary information."""
     annotation = annotation.split("|")
     annotation = [i for i in annotation if "_" not in i]
-    return "|".join(annotation)
+    if annotation:
+        return "|".join(annotation)
+    else:
+        return "_"
 
 
 if __name__ == "__main__":
