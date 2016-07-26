@@ -10,7 +10,7 @@ SENT_SEP = "\n"
 TOK_SEP = " "
 
 
-def tag_ne(out_ne_ex, out_ne_type, out_ne_subtype, word, sentence, encoding=util.UTF8, process_dict=None):
+def tag_ne(out_ne_ex, out_ne_type, out_ne_subtype, out_ne_name, word, sentence, encoding=util.UTF8, process_dict=None):
     """
     Tag named entities using HFST-SweNER.
     SweNER is either run in an already started process defined in
@@ -56,15 +56,16 @@ def tag_ne(out_ne_ex, out_ne_type, out_ne_subtype, word, sentence, encoding=util
     # Otherwise use communicate which buffers properly
     stdout, _ = process.communicate(stdin.encode(encoding))
 
-    parse_swener_output(sentences, stdout, out_ne_ex, out_ne_type, out_ne_subtype)
+    parse_swener_output(sentences, stdout, out_ne_ex, out_ne_type, out_ne_subtype, out_ne_name)
 
 
-def parse_swener_output(sentences, output, out_ne_ex, out_ne_type, out_ne_subtype):
+def parse_swener_output(sentences, output, out_ne_ex, out_ne_type, out_ne_subtype, out_ne_name):
     """Parse the SweNER output and write annotation files."""
 
     out_ex_dict = {}
     out_type_dict = {}
     out_subtype_dict = {}
+    out_name_dict = {}
 
     # Loop through the NE-tagged sentences and parse each one with ElemenTree
     for sent, tagged_sent in zip(sentences, output.strip().split(SENT_SEP)):
@@ -93,6 +94,7 @@ def parse_swener_output(sentences, output, out_ne_ex, out_ne_type, out_ne_subtyp
                     out_ex_dict[edge] = child.tag
                     out_type_dict[edge] = child.get("TYPE")
                     out_subtype_dict[edge] = child.get("SBT")
+                    out_name_dict[edge] = child.text
 
                     # If this child has a tail and it doesn't start with a space, the tagger has split a token in two
                     if child.tail and child.tail.strip() and not child.tail[:1] == " ":
@@ -107,6 +109,7 @@ def parse_swener_output(sentences, output, out_ne_ex, out_ne_type, out_ne_subtyp
     util.write_annotation(out_ne_ex, out_ex_dict)
     util.write_annotation(out_ne_type, out_type_dict)
     util.write_annotation(out_ne_subtype, out_subtype_dict)
+    util.write_annotation(out_ne_name, out_name_dict)
 
 
 def swenerstart(stdin, encoding, verbose):
