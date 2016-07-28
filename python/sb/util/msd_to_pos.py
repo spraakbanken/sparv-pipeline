@@ -1,22 +1,76 @@
 # -*- coding: utf-8 -*-
 
-# maps MSD tags to simple POS tags
-
+# maps MSD tags to simple Universal Depenendy POS tags
+# http://universaldependencies.org/u/pos/all.html
 
 CONVERTERS = {
-    "es": "es_convert",
-    "en": "en_convert",
-    "it": "it_convert",
-    "pt": "pt_convert",
-    "fr": "fr_convert",
-    "ru": "ru_convert",
-    "sk": "sk_convert",
-    "nl": "nl_convert",
-    "de": "de_convert",
-    "pl": "pl_convert",
-    "la": "la_convert",
-    "et": "et_convert",
-    "fi": "fi_convert",
+    "as": "as_convert_fl",
+    "ca": "ca_convert_fl",
+    "cy": "cy_convert_fl",
+    "de": "de_convert_fl",
+    "es": "es_convert_fl",
+    "en": "en_convert_fl",
+    "fr": "fr_convert_fl",
+    "gl": "gl_convert_fl",
+    "it": "it_convert_fl",
+    "pt": "pt_convert_fl",
+    "ru": "ru_convert_fl",
+    "sl": "sl_convert_fl",
+    "bg": "bg_convert_tt",
+    "et": "et_convert_tt",
+    "fi": "fi_convert_tt",
+    "nl": "nl_convert_tt",
+    "la": "la_convert_tt",
+    "pl": "pl_convert_tt",
+    "ro": "ro_convert_tt",
+    "sk": "sk_convert_tt",
+}
+
+# Fallback POS
+FALLBACK = "X"
+
+# UD = {
+#     "ADJ": "adjective",
+#     "ADV": "adverb",
+#     "INTJ": "interjection",
+#     "NOUN": "noun",
+#     "PROPN": "proper noun",
+#     "VERB": "verb",
+#     "ADP": "adposition",
+#     "AUX": "auxiliary verb",
+#     "CONJ": "coordinating conjunction",
+#     "DET": "determiner",
+#     "NUM": "numeral",
+#     "PART": "particle",
+#     "PRON": "pronoun",
+#     "SCONJ": "subordinating conjunction",
+#     "PUNCT": "punctuation",
+#     "SYM": "symbol",
+#     "X": "other"}
+
+#####################################################################
+# FreeLing
+#####################################################################
+
+COMMON_FL_DICT = {
+    "A": "ADJ",
+    "CC": "CONJ",
+    "CS": "SCONJ",
+    "D": "DET",
+    "F": "PUNCT",
+    "I": "INTJ",
+    "NC": "NOUN",
+    "NP": "PROPN",
+    "P": "PRON",
+    "R": "ADV",
+    "S": "ADP",
+    "VM": "VERB",
+    "VA": "AUX",
+    "VS": "VERB",
+    "W": "NUM",
+    "Z": "NUM",
+    "Y": "X",
+    "X": "X"
 }
 
 
@@ -28,122 +82,389 @@ def convert(msd, lang):
         return msd
 
 
-def es_convert(msd):
-    return common_fl_dict[msd[0]]
+def common_fl_convert(msd):
+    if msd[0] in "NVC":
+        return COMMON_FL_DICT.get(msd[0:2], FALLBACK)
+    else:
+        return COMMON_FL_DICT.get(msd[0], FALLBACK)
 
 
-def it_convert(msd):
-    return common_fl_dict[msd[0]]
+def as_convert_fl(msd):
+    return common_fl_convert(msd)
 
 
-def pt_convert(msd):
-    return common_fl_dict[msd[0]]
+def ca_convert_fl(msd):
+    return common_fl_convert(msd)
 
 
-def fr_convert(msd):
-    return common_fl_dict[msd[0]]
-
-common_fl_dict = {
-    "A": "adjective",
-    "R": "adverb",
-    "D": "determiner",
-    "N": "noun",
-    "V": "verb",
-    "P": "pronoun",
-    "C": "conjunction",
-    "I": "interjection",
-    "S": "preposition",
-    "F": "punctuation",
-    "Z": "numeral"
-}
+def cy_convert_fl(msd):
+    return common_fl_convert(msd)
 
 
-def ru_convert(msd):
-    return ru_dict[msd[0]]
+def de_convert_fl(msd):
+    return common_fl_convert(msd)
+
+
+def es_convert_fl(msd):
+    return common_fl_convert(msd)
+
+
+def fr_convert_fl(msd):
+    return common_fl_convert(msd)
+
+
+def gl_convert_fl(msd):
+    return common_fl_convert(msd)
+
+
+def it_convert_fl(msd):
+    return common_fl_convert(msd)
+
+
+def pt_convert_fl(msd):
+    return common_fl_convert(msd)
+
+
+def sl_convert_fl(msd):
+    return common_fl_convert(msd)
+
+
+def ru_convert_fl(msd):
+    return ru_dict.get(msd[0], FALLBACK)
 
 ru_dict = {
-    "A": "adjective",
-    "D": "adverb",
-    "P": "pronominal adverb",
-    "Y": "ordinal number",
-    "R": "pronominal adjective",
-    "M": "part of a composite",
-    "C": "conjunction",
-    "J": "interjection",
-    "Z": "numeral",
-    "T": "particle",
-    "B": "preposition",
-    "N": "noun",
-    "E": "pronoun",
-    "V": "verb",
-    "Q": "participle",
-    "F": "punctuation"
+    "A": "ADJ",
+    "B": "ADP",
+    "C": "CONJ",
+    "D": "ADV",
+    "E": "PRON",
+    "J": "INTJ",
+    "M": "X",
+    "NC": "NOUN",
+    "NP": "PROPN",
+    "P": "ADV",
+    "Y": "NUM",
+    "R": "ADV",
+    "T": "PART",
+    "Q": "VERB",
+    "Z": "NUM",
+    "V": "VERB",
+    "F": "PUNCT",
+    "W": "NUM",
 }
 
 
-def sk_convert(msd):
-    if len(msd) == 1 and not msd.isalpha():
+def en_convert_fl(msd):
+    if msd in ["NN", "NNS"]:
+        return "NOUN"
+    elif msd.startswith("N"):
+        return "PROPN"
+    if msd.startswith("F"):
+        return "PUNCT"
+    if msd.startswith("Z"):
+        return "NUM"
+    return en_dict.get(msd, FALLBACK)
+
+en_dict = {
+    "CC": "CONJ",
+    "DT": "DET",
+    "WDT": "DET",
+    "PDT": "DET",
+    "EX": "PRON",
+    "I": "INTJ",
+    "IN": "ADP",
+    "JJ": "ADJ",
+    "JJR": "ADJ",
+    "JJS": "ADJ",
+    "MD": "VERB",
+    "POS": "ADP",
+    "PRP": "PRON",
+    "PRP$": "PRON",
+    "RB": "ADV",
+    "RBR": "ADV",
+    "RBS": "ADV",
+    "WRB": "ADV",
+    "RP": "PART",
+    "TO": "PART",
+    "UH": "INTJ",
+    "VB": "VERB",
+    "VBD": "VERB",
+    "VBG": "VERB",
+    "VBN": "VERB",
+    "VBP": "VERB",
+    "VBZ": "VERB",
+    "WP": "PRON",
+    "WP$": "PRON",
+    "W": "NUM",
+}
+
+#####################################################################
+# TreeTagger
+#####################################################################
+
+
+def bg_convert_tt(msd):
+    if msd[0] in ["N", "V", "C"]:
+        return bg_dict.get(msd[0:2], FALLBACK)
+    if msd.startswith("PT"):
         return "punctuation"
-    elif msd.startswith(":"):
-        return sk_dict[msd]
     else:
-        return sk_dict[msd[0]]
+        return bg_dict.get(msd[0], FALLBACK)
 
-sk_dict = {
-    "S": "noun",
-    "A": "adjective",
-    "P": "pronoun",
-    "N": "numeral",
-    "V": "verb",
-    "G": "participle",
-    "D": "adverb",
-    "E": "preposition",
-    "O": "conjunction",
-    "T": "particle",
-    "J": "interjection",
-    "R": "reflexive morpheme",
-    "Y": "conditional morpheme",
-    "W": "abbreviation, symbol",
-    "Z": "punctuation",
-    "Q": "undefinable part of speech",
-    "#": "non-verbal element",
-    "%": "foreign language citation",
-    "0": "number",
-    ":r": "proper name",
-    ":q": "incorrect spelling"
-    }
+bg_dict = {
+    # http://www.bultreebank.org/TechRep/BTB-TR03.pdf
+    "Nc": "NOUN",
+    "Np": "PROPN",
+    "A": "ADJ",
+    "H": "PROPN",
+    "P": "PRON",
+    "M": "NUM",
+    "Vp": "VERB",
+    "Vn": "VERB",
+    "Vx": "AUX",
+    "Vy": "AUX",
+    "Vi": "AUX",
+    "D": "ADV",
+    "Cc": "CONJ",
+    "Cs": "SCONJ",
+    "T": "PART",
+    "R": "ADP",
+    "I": "INTJ"
+}
 
 
-def nl_convert(msd):
+def et_convert_tt(msd):
+    if "." in msd:
+        pos = msd.split(".")[0]
+        if pos == "J":
+            return et_dict.get(msd, FALLBACK)
+        return et_dict.get(msd.split(".")[0])
+    else:
+        return et_dict.get(msd, FALLBACK)
+
+et_dict = {
+    # http://www.cl.ut.ee/korpused/morfliides/seletus
+    "S": "NOUN",
+    "V": "VERB",
+    "A": "ADJ",
+    "G": "ADJ",
+    "P": "PRON",
+    "D": "ADV",
+    "K": "ADP",
+    "J. crd": "CONJ",
+    "J. sub": "SCONJ",
+    "N": "NUM",
+    "I": "INTJ",
+    "Y": "X",  # abbreviation
+    "X": "ADV",
+    "Z": "PUNCT",
+    "T": "X"  # foreign
+}
+
+
+def fi_convert_tt(msd):
+    if msd in fi_dict:
+        return fi_dict[msd]
+    else:
+        return fi_dict.get(msd.split("_")[0], FALLBACK)
+
+fi_dict = {
+    # http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/finnish-tags.txt
+    "Abbr": "X",  # abbreviation
+    "Adp": "ADP",
+    "Adv": "ADV",
+    "Interj": "INTJ",
+    "N": "NOUN",
+    "Num": "NUM",
+    "PrfPrc": "VERB",  # participle
+    "Pron": "PRON",
+    "PrsPrc": "VERB",  # participle
+    "Punct": "PUNCT",
+    "SENT": "PUNCT",
+    "V": "VERB",
+    "AgPcp": "VERB",  # participle
+    "A": "ADJ",
+    "CC": "CONJ",
+    "CS": "SCONJ",
+    "NON-TWOL": "X"  # unknown
+}
+
+
+def nl_convert_tt(msd):
     if len(msd) == 2 and msd.startswith("$."):
-        return "punctuation"
+        return "PUNCT"
     elif msd == "pronadv":
-        return "pronomial adverb"
+        return "ADV"  # pronomial adverb
     elif msd == "det__art":
-        return "article"
+        return "DET"
     else:
-        return nl_dict[msd[0:3]]
+        return nl_dict.get(msd[0:3], FALLBACK)
 
 nl_dict = {
-    "adj": "adjective",
-    "adv": "adverb",
-    "con": "conjunction",
-    "det": "article",
-    "det": "pronoun",
-    "int": "interjection",
-    "nou": "noun",
-    "num": "number",
-    "par": 'particle "te"',
-    "pre": "preposition",
-    "pro": "pronoun",
-    "pun": "punctuation",
-    "ver": "verb"
+    # http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/dutch-tagset.txt
+    "adj": "ADJ",
+    "adv": "ADV",
+    "con": "CONJ",
+    "det": "DET",
+    "int": "INTJ",
+    "nou": "NOUN",
+    "num": "NUM",
+    "par": "PART",  # particle "te"
+    "pre": "ADP",
+    "pro": "PRON",
+    "pun": "PUNCT",
+    "ver": "VERB"
 }
 
-def de_convert(msd):
+
+def la_convert_tt(msd):
+    if ":" in msd:
+        return la_dict.get(msd.split(":")[0], FALLBACK)
+    else:
+        return la_dict.get(msd, FALLBACK)
+
+la_dict = {
+    # http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/Lamap-Tagset.pdf
+    "ESSE": "AUX",
+    "V": "VERB",
+    "PRON": "PRON",
+    "REL": "PRON",
+    "POSS": "PRON",
+    "DIMOS": "PRON",
+    "INDEF": "PRON",
+    "N": "NOUN",
+    "NPR": "PROPN",
+    "CC": "CONJ",
+    "CS": "SCONJ",
+    "ADJ": "ADJ",
+    "ADV": "ADV",
+    "PREP": "ADP",
+    "INT": "INTJ",
+    "ABBR": "X",  # abbreviation
+    "EXCL": "INTJ",  # exclamations
+    "FW": "X",  # foreign
+    "SENT": "PUNCT",
+    "PUN": "PUNCT",
+    "SYM": "SYM",
+    "CLI": "X"  # enclitics
+}
+
+
+def pl_convert_tt(msd):
+    if ":" in msd:
+        return pl_dict.get(msd.split(":")[0], FALLBACK)
+    else:
+        return pl_dict.get(msd, FALLBACK)
+
+pl_dict = {
+    # http://nkjp.pl/poliqarp/help/ense2.html
+    "subst": "NOUN",
+    "depr": "NOUN",  # depreciative form
+    "num": "NUM",
+    "numcol": "NUM",
+    "adj": "ADJ",
+    "adja": "ADJ",
+    "adjp": "ADJ",
+    "adjc": "ADJ",
+    "adv": "ADV",
+    "qub": "ADV",
+    "ppron12": "PRON",
+    "ppron3": "PRON",
+    "siebie": "PRON",
+    "fin": "VERB",
+    "bedzie": "VERB",
+    "inf": "VERB",
+    "ger": "VERB",
+    "aglt": "VERB",
+    "praet": "PART",
+    "pcon": "PART",
+    "pant": "PART",
+    "pact": "PART",
+    "ppas": "PART",
+    "impt": "VERB",  # imperative
+    "imps": "VERB",  # impersonal
+    "winien": "AUX",  # winien
+    "pred": "ADJ",  # predicative
+    "prep": "ADP",
+    "conj": "CONJ",
+    "comp": "SCONJ",
+    "brev": "X",  # abbreviation
+    "burk": "X",  # bound word
+    "interj": "INTJ",
+    "interp": "PUNCT",
+    "SENT": "PUNCT",
+    "xxx": "X",  # alien
+    "ign": "X"  # unknown form
+}
+
+
+def ro_convert_tt(msd):
+    if msd[0] in ["N", "V", "C"]:
+        return ro_dict.get(msd[0:2], FALLBACK)
+    else:
+        return ro_dict.get(msd[0], FALLBACK)
+
+ro_dict = {
+    "Nc": "NOUN",
+    "Np": "PROPN",
+    "Vm": "VERB",
+    "Va": "AUX",
+    "Af": "ADJ",
+    "P": "PRON",
+    "D": "DET",
+    "T": "DET",
+    "R": "ADV",
+    "S": "ADP",
+    "Cc": "CONJ",
+    "Cr": "CONJ",
+    "Cs": "SCONJ",
+    "M": "NUM",
+    "Q": "PART",
+    "I": "INTJ",
+    "Y": "X",  # abbreviation
+    "X": "X"
+}
+
+
+def sk_convert_tt(msd):
+    if len(msd) == 1 and not msd.isalpha():
+        return "PUNCT"
+    elif msd.startswith(":"):
+        return sk_dict.get(msd, FALLBACK)
+    else:
+        return sk_dict.get(msd[0], FALLBACK)
+
+sk_dict = {
+    # http://korpus.juls.savba.sk/morpho_en.html
+    "S": "NOUN",
+    "A": "ADJ",
+    "P": "PRON",
+    "N": "NUM",
+    "V": "VERB",
+    "G": "PART",
+    "D": "ADV",
+    "E": "ADP",
+    "O": "CONJ",  # conjunction
+    "T": "PART",
+    "J": "INTJ",
+    "R": "X",  # reflexive morpheme
+    "Y": "X",  # conditional morpheme
+    "W": "SYM",  # abbreviation, symbol
+    "Z": "PUNCT",
+    "Q": "X",
+    "#": "X",  # non-verbal element
+    "%": "X",  # foreign language citation
+    "0": "NUM",
+    ":r": "PROPN",
+    ":q": "X"  # incorrect spelling
+}
+
+
+def de_convert_tt(msd):
     return de_dict[msd]
 
 de_dict = {
+    # http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/stts_guide.pdf
     "ADJA": "adjective",
     "ADJD": "adjective",
     "ADV": "adverb",
@@ -182,7 +503,7 @@ de_dict = {
     "PTKVZ": "particle",
     "PTKANT": "particle",
     "PTKA": "particle",
-    "SGML":  "SGML markup",
+    "SGML": "SGML markup",
     "SPELL": "spelling",
     "TRUNC": "truncated word (first part)",
     "VVFIN": "verb",
@@ -201,200 +522,4 @@ de_dict = {
     "$,": "punctuation",
     "$.": "punctuation",
     "$(": "punctuation"
-}
-
-
-def en_convert(msd):
-    if msd.startswith("F"):
-        return "punctuation"
-    if msd.startswith("Z"):
-        return "number"
-    return en_dict.get(msd, msd)
-
-en_dict = {
-    "CC": "coordinating conjunction",
-    "CD": "cardinal number",
-    "DT": "determiner",
-    "EX": "existential there",
-    "FW": "foreign material",
-    "IN": "preposition / subordinating conjunction",
-    "JJ": "adjective",
-    "JJR": "adjective",
-    "JJS": "adjective",
-    "LS": "list item marker",
-    "MD": "modal",
-    "NN": "noun",
-    "NNS": "noun",
-    "NNP": "proper name",
-    "NNPS": "proper name",
-    "NP": "proper name",
-    "PDT": "predeterminer",
-    "POS": "possessive ending",
-    "PRP": "pronoun",
-    "PRP$": "pronoun",
-    "RB": "adverb",
-    "RBR": "adverb",
-    "RBS": "adverb",
-    "RP": "particle",
-    "TO": "to",
-    "UH": "interjection",
-    "VB": "verb",
-    "VBD": "verb",
-    "VBG": "verb",
-    "VBN": "verb",
-    "VBP": "verb",
-    "VBZ": "verb",
-    "WDT": "wh-determiner",
-    "WP": "pronoun",
-    "WP$": "pronoun",
-    "WRB": "adverb",
-    "I": "interjection"
-    }
-
-
-def pl_convert(msd):
-    if ":" in msd:
-        return pl_dict[msd.split(":")[0]]
-    else:
-        return pl_dict[msd]
-
-pl_dict = {
-    "subst" : "noun",
-    "depr" : "depreciative form",
-    "num" : "numeral",
-    "numcol" : "numeral",
-    "adj" : "adjective",
-    "adja" : "adjective",
-    "adjp" : "adjective",
-    "adjc" : "adjective",
-    "adv" : "adverb",
-    "qub" : "adverb",
-    "ppron12" : "pronoun",
-    "ppron3" : "pronoun",
-    "siebie" : "pronoun",
-    "fin" : "verb",
-    "bedzie" : "verb",
-    "inf" : "verb",
-    "ger" : "verb",
-    "aglt" : "verb",
-    "praet" : "participle",
-    "pcon" : "participle",
-    "pant" : "participle",
-    "pact" : "participle",
-    "ppas" : "participle",
-    "impt" : "imperative",
-    "imps" : "impersonal",
-    "winien" : "winien",
-    "pred" : "predicative",
-    "prep" : "preposition",
-    "conj" : "conjunction",
-    "comp" : "conjunction",
-    "brev" : "abbreviation",
-    "burk" : "bound word",
-    "interj" : "interjection",
-    "interp" : "punctuation",
-    "SENT" : "punctuation",
-    "xxx" : "alien",
-    "ign": "unknown form"
-}
-
-def la_convert(msd):
-    if ":" in msd:
-        return la_dict[msd.split(":")[0]]
-    else:
-        return la_dict[msd]
-
-la_dict = {
-    "ESSE" : "verb",
-    "V" : "verb",
-    "PRON" : "pronoun",
-    "REL" : "pronoun",
-    "POSS" : "pronoun",
-    "DIMOS" : "pronoun",
-    "INDEF" : "pronoun",
-    "N" : "noun",
-    "NPR" : "proper noun",
-    "CC" : "conjunction",
-    "CS" : "conjunction",
-    "ADJ" : "adjective",
-    "ADV" : "adverb",
-    "PREP" : "preposition",
-    "INT" : "interjection",
-    "ABBR" : "abbreviation",
-    "EXCL" : "exclamations",
-    "FW" : "foreign",
-    "SENT" : "punctuation",
-    "PUN" : "punctuation",
-    "SYM" : "symbol",
-    "CLI" : "enclitics"
-}
-
-def et_convert(msd):
-    if "." in msd:
-        return et_dict[msd.split(".")[0]]
-    else:
-        return et_dict[msd]
-
-et_dict = {
-    "S" : "noun",
-    "V" : "verb",
-    "A" : "adjective",
-    "G" : "adjective",
-    "P" : "pronoun",
-    "D" : "adverb",
-    "K" : "adposition",
-    "J" : "conjunction",
-    "N" : "numeral",
-    "I" : "interjection",
-    "Y" : "abbreviation",
-    "X" : "adverb",
-    "Z" : "punctuation",
-    "T" : "foreign"
-}
-
-def bg_convert(msd):
-    if msd.startswith("PT"):
-        return "punctuation"
-    else:
-        return bg_dict[msd[0]]
-
-bg_dict = {
-    "N" : "noun",
-    "A" : "adjective",
-    "H" : "family name",
-    "P" : "pronoun",
-    "M" : "numeral",
-    "V" : "verb",
-    "D" : "adverb",
-    "C" : "conjunction",
-    "T" : "particle",
-    "R" : "preposition",
-    "I" : "interjection"
-}
-
-def fi_convert(msd):
-    if msd in fi_dict:
-        return fi_dict[msd]
-    else:
-        return fi_dict[msd.split("_")[0]]
-
-fi_dict = {
-    "Abbr" : "abbreviation",
-    "Adp" : "adposition",
-    "Adp" : "adposition",
-    "Adv" : "adverb",
-    "Interj" : "interjection",
-    "N" : "noun",
-    "Num" : "numeral",
-    "PrfPrc" : "participle",
-    "Pron" : "pronoun",
-    "PrsPrc" : "participle",
-    "Punct" : "punctuation",
-    "SENT" : "punctuation",
-    "V" : "verb",
-    "AgPcp" : "participle",
-    "A" : "adjective",
-    "CC" : "conjunction",
-    "CS" : "conjunction",
-    "NON-TWOL" : "unknown"
 }
