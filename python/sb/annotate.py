@@ -132,6 +132,13 @@ def override(out, main, repl, encoding=util.UTF8):
     util.write_annotation(out, ((key, repl[key]) if repl.get(key) else (key, val) for (key, val) in util.read_annotation_iteritems(main)))
 
 
+def roundfloat(chunk, out, decimals):
+    """Round floats to the given number of decimals."""
+    decimals = int(decimals)
+    strformat = "%." + str(decimals) + "f"
+    util.write_annotation(out, ((key, strformat % round(float(val), decimals)) for (key, val) in util.read_annotation_iteritems(chunk)))
+
+
 if __name__ == '__main__':
     util.run.main(text_spans=text_spans,
                   translate_tag=translate_tag,
@@ -147,5 +154,6 @@ if __name__ == '__main__':
                   concat=concat,
                   concat2=concat2,
                   merge=merge,
-                  override=override
+                  override=override,
+                  roundfloat=roundfloat
                   )
