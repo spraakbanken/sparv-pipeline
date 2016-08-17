@@ -13,6 +13,7 @@ CONVERTERS = {
     "fr": "fr_convert_fl",
     "gl": "gl_convert_fl",
     "it": "it_convert_fl",
+    "no": "no_convert_fl",
     "pt": "pt_convert_fl",
     "ru": "ru_convert_fl",
     "sl": "sl_convert_fl",
@@ -121,6 +122,10 @@ def it_convert_fl(msd):
     return common_fl_convert(msd)
 
 
+def no_convert_fl(msd):
+    return common_fl_convert(msd)
+
+
 def pt_convert_fl(msd):
     return common_fl_convert(msd)
 
@@ -166,6 +171,7 @@ def en_convert_fl(msd):
     return en_dict.get(msd, FALLBACK)
 
 en_dict = {
+    # https://talp-upc.gitbooks.io/freeling-user-manual/content/tagsets/tagset-en.html
     "CC": "CONJ",
     "DT": "DET",
     "WDT": "DET",
