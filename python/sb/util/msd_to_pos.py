@@ -6,7 +6,7 @@
 CONVERTERS = {
     "as": "as_convert_fl",
     "ca": "ca_convert_fl",
-    "cy": "cy_convert_fl",
+    "cy": "cy_convert_fl",  # Not used yet, Freeling dict is not working.
     "de": "de_convert_fl",
     "es": "es_convert_fl",
     "en": "en_convert_fl",
@@ -405,7 +405,7 @@ pl_dict = {
 
 
 def ro_convert_tt(msd):
-    if msd[0] in ["N", "V", "C"]:
+    if msd[0] in ["N", "V", "C", "S"]:
         return ro_dict.get(msd[0:2], FALLBACK)
     else:
         return ro_dict.get(msd[0], FALLBACK)
@@ -415,15 +415,17 @@ ro_dict = {
     "Np": "PROPN",
     "Vm": "VERB",
     "Va": "AUX",
-    "Af": "ADJ",
+    "A": "ADJ",
     "P": "PRON",
     "D": "DET",
     "T": "DET",
     "R": "ADV",
-    "S": "ADP",
+    "Sp": "ADP",
+    "SE": "Punct"
     "Cc": "CONJ",
     "Cr": "CONJ",
     "Cs": "SCONJ",
+    "CO": "PUNCT"
     "M": "NUM",
     "Q": "PART",
     "I": "INTJ",
