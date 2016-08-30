@@ -421,11 +421,11 @@ ro_dict = {
     "T": "DET",
     "R": "ADV",
     "Sp": "ADP",
-    "SE": "Punct"
+    "SE": "PUNCT",
     "Cc": "CONJ",
     "Cr": "CONJ",
     "Cs": "SCONJ",
-    "CO": "PUNCT"
+    "CO": "PUNCT",
     "M": "NUM",
     "Q": "PART",
     "I": "INTJ",
