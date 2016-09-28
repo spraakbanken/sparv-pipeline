@@ -213,7 +213,7 @@ def bg_convert_tt(msd):
     if msd[0] in ["N", "V", "C"]:
         return bg_dict.get(msd[0:2], FALLBACK)
     if msd.startswith("PT"):
-        return "punctuation"
+        return "PUNCT"
     else:
         return bg_dict.get(msd[0], FALLBACK)
 
