@@ -7,7 +7,7 @@ from math import log
 
 
 def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp, saldo_comp_model, nst_model, stats_model,
-             complemgramfmt=":%.3f", delimiter="|", compdelim="+", affix="|", saldo_comp_lexicon=None, stats_lexicon=None):
+             complemgramfmt=":%.3f", delimiter="|", compdelim="+", affix="|", cutoff=True, saldo_comp_lexicon=None, stats_lexicon=None):
     """Divides compound words into prefix(es) and suffix.
     - out_complemgram is the resulting annotation file for compound lemgrams
       and their probabilities
@@ -25,7 +25,7 @@ def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp
     """
 
     ##################
-    # load models
+    # Load models
     ##################
     if not saldo_comp_lexicon:
         saldo_comp_lexicon = SaldoCompLexicon(saldo_comp_model)
@@ -39,11 +39,11 @@ def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp
     WORD = util.read_annotation(word)
     MSD = util.read_annotation(msd)
 
-    # create alternative lexicon (for words within the file)
+    # Create alternative lexicon (for words within the file)
     altlexicon = InFileLexicon(WORD, MSD)
 
     ##################
-    # do annotation
+    # Do annotation
     ##################
     OUT_complem = {}
     OUT_compwf = {}
@@ -56,10 +56,21 @@ def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp
         if compounds:
             compounds = rank_compounds(compounds, nst_model, stats_lexicon)
 
-        # create complem and compwf annotations
+            if cutoff:
+                # Only keep analyses with the same length (or +1) as the most probable one
+                best_length = len(compounds[0][1])
+                i = 0
+                for c in compounds:
+                    if len(c[1]) > best_length+1 or len(c[1]) < best_length:
+                        break
+
+                    i += 1
+                compounds = compounds[:i]
+
+        # Create complem and compwf annotations
         make_complem_and_compwf(OUT_complem, OUT_compwf, complemgramfmt, tokid, compounds, compdelim, delimiter, affix)
 
-        # create new baseform annotation if necessary
+        # Create new baseform annotation if necessary
         if IN_baseform[tokid] != affix:
             OUT_baseform[tokid] = IN_baseform[tokid]
         else:
@@ -149,8 +160,8 @@ class InFileLexicon(object):
 
     def get_suffixes(self, suffix, msd=None):
         return [(suffix, '0', (s[1],)) for s in self.lookup(suffix.lower())
-                if (s[1][0:2] in ("NN", "VB", "AV"))
-                and (not msd or msd in s[1] or s[1].startswith(msd[:msd.find(".")]))
+                if (s[1][0:2] in ("NN", "VB", "AV")) and
+                (not msd or msd in s[1] or s[1].startswith(msd[:msd.find(".")]))
                 ]
 
 
@@ -160,6 +171,8 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
     valid_spans = set()
     # Create list of possible splitpoint indices for w
     nsplits = range(1, len(w))
+    counter = 0
+    giveup = False
 
     for n in nsplits:
         first = True
@@ -235,7 +248,17 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
                             valid_spans.add(spans[k])
 
                 if not abort:
+                    counter += 1
+                    if counter > 100:
+                        giveup = True
+                        util.log.info("Too many possible compounds for word '%s'" % w)
+                        break
                     yield comp
+
+            if giveup:
+                break
+        if giveup:
+            break
 
 
 def exception(w):
@@ -295,13 +318,13 @@ def rank_compounds(compounds, nst_model, stats_lexicon):
         affixes = [affix[0] for affix in clist[0]]
         for c in clist:
             tags = list(itertools.product(*[affix[2] for affix in c]))
-            # calculate log probability score
+            # Calculate log probability score
             word_probs = max(sum([log(stats_lexicon.lookup_prob(i)) for i in zip(affixes, t)]) for t in tags)
             tag_prob = max(log(nst_model.prob('+'.join(t))) for t in tags)
             score = word_probs + tag_prob
             ranklist.append((score, c))
     ranklist = sorted(ranklist, key=lambda x: x[0], reverse=True)
-    # sort according to length
+    # Sort according to length
     ranklist = sorted(ranklist, key=lambda x: len(x[1]))
     scorelist = scores_to_probs([r for r, c in ranklist])
     # for s, (r, c) in zip(scorelist, ranklist):
@@ -312,6 +335,9 @@ def rank_compounds(compounds, nst_model, stats_lexicon):
 
 def compound(saldo_lexicon, altlexicon, w, msd=None):
     """Create a list of compound analyses for word w."""
+
+    if all(map(lambda x: x == "-", w)):
+        return []
     in_compounds = list(split_word(saldo_lexicon, altlexicon, w, msd))
     out_compounds = []
     for comp in in_compounds:
@@ -370,7 +396,7 @@ def make_complem_and_compwf(OUT_complem, OUT_compwf, complemgramfmt, tokid, comp
             else:
                 complem_list.append(compdelim.join(affix[1] for affix in comp))
 
-        # if first letter has upper case, check if one of the affixes may be a name:
+        # If first letter has upper case, check if one of the affixes may be a name:
         if comp[0][0][0] == comp[0][0][0].upper():
             if not any([True for a in comp if "pm" in a[1][a[1].find('.'):]] + [True for a in comp if "PM" in a[2]]):
                 wf = compdelim.join(affix[0].lower() for affix in comp)
@@ -395,7 +421,7 @@ def make_new_baseforms(OUT_baseform, tokid, msd_tag, compounds, stats_lexicon, a
         comp = comp[1]
         base_suffix = comp[-1][1][:comp[-1][1].find('.')]
         prefix = comp[0][0]
-        # if first letter has upper case, check if one of the affixes is a name:
+        # If first letter has upper case, check if one of the affixes is a name:
         if prefix[0] == prefix[0].upper():
             if not any(True for a in comp if "pm" in a[1][a[1].find('.'):]):
                 baseform = ''.join(affix[0].lower() for affix in comp[:-1]) + base_suffix
@@ -404,12 +430,12 @@ def make_new_baseforms(OUT_baseform, tokid, msd_tag, compounds, stats_lexicon, a
         else:
             baseform = ''.join(affix[0] for affix in comp[:-1]) + base_suffix
 
-        # check if this baseform with the MSD tag occurs in stats_lexicon
+        # Check if this baseform with the MSD tag occurs in stats_lexicon
         if baseform not in baseform_list:
             if stats_lexicon.lookup_word_tag_freq(baseform, msd_tag) > 0 or altlexicon.lookup(baseform.lower()) != []:
                 baseform_list.append(baseform)
 
-    # update dictionary
+    # Update dictionary
     OUT_baseform[tokid] = util.cwbset(baseform_list, delimiter, affix) if (compounds and baseform_list) else affix
 
 
