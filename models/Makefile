@@ -1,5 +1,5 @@
 
-TARGETS = help info clean all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable bettertokenizer.sv.saldo-tokens stats_all.txt stats.pickle dalinm.xml dalin.pickle swedbergm.xml swedberg.pickle
+TARGETS = help info clean all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable bettertokenizer.sv.saldo-tokens stats_all.txt stats.pickle dalinm.xml dalin.pickle swedbergm.xml swedberg.pickle geo.pickle
 .PHONY: help info clean all
 
 help:
@@ -61,3 +61,23 @@ swedbergm.xml:
 
 swedberg.pickle: swedbergm.xml
 	python -m sb.lmflexicon --xml_to_pickle --xml "swedbergm.xml" --filename "swedberg.pickle"
+
+geo_cities1000.txt:
+	@echo "Downloading and extracting cities1000..."
+	@wget http://download.geonames.org/export/dump/cities1000.zip
+	@unzip cities1000.zip
+	@mv cities1000.txt geo_cities1000.txt
+	@rm cities1000.zip
+	@echo "Done."
+
+geo_alternateNames.txt:
+	@echo "Downloading and extracting alternateNames..."
+	@wget http://download.geonames.org/export/dump/alternateNames.zip
+	@unzip alternateNames.zip
+	@mv alternateNames.txt geo_alternateNames.txt
+	@rm alternateNames.zip
+	@echo "Done."
+
+geo.pickle: geo_cities1000.txt geo_alternateNames.txt
+	python -m sb.geo --build_model --geonames "geo_cities1000.txt" --alternate_names "geo_alternateNames.txt" --out "$@"
+
