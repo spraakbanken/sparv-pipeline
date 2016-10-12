@@ -5,6 +5,8 @@ import util
 import itertools
 from math import log
 
+SPLIT_LIMIT = 200
+
 
 def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp, saldo_comp_model, nst_model, stats_model,
              complemgramfmt=":%.3f", delimiter="|", compdelim="+", affix="|", cutoff=True, saldo_comp_lexicon=None, stats_lexicon=None):
@@ -50,22 +52,30 @@ def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp
     OUT_baseform = {}
     IN_baseform = util.read_annotation(baseform_tmp)
 
+    previous_compounds = {}
+
     for tokid in WORD:
-        compounds = compound(saldo_comp_lexicon, altlexicon, WORD[tokid], MSD[tokid])
+        key = (WORD[tokid], MSD[tokid])
+        if key in previous_compounds:
+            compounds = previous_compounds[key]
+        else:
+            compounds = compound(saldo_comp_lexicon, altlexicon, WORD[tokid], MSD[tokid])
 
-        if compounds:
-            compounds = rank_compounds(compounds, nst_model, stats_lexicon)
+            if compounds:
+                compounds = rank_compounds(compounds, nst_model, stats_lexicon)
 
-            if cutoff:
-                # Only keep analyses with the same length (or +1) as the most probable one
-                best_length = len(compounds[0][1])
-                i = 0
-                for c in compounds:
-                    if len(c[1]) > best_length+1 or len(c[1]) < best_length:
-                        break
+                if cutoff:
+                    # Only keep analyses with the same length (or +1) as the most probable one
+                    best_length = len(compounds[0][1])
+                    i = 0
+                    for c in compounds:
+                        if len(c[1]) > best_length+1 or len(c[1]) < best_length:
+                            break
 
-                    i += 1
-                compounds = compounds[:i]
+                        i += 1
+                    compounds = compounds[:i]
+
+            previous_compounds[key] = compounds
 
         # Create complem and compwf annotations
         make_complem_and_compwf(OUT_complem, OUT_compwf, complemgramfmt, tokid, compounds, compdelim, delimiter, affix)
@@ -144,8 +154,9 @@ class InFileLexicon(object):
         lex = {}
         for tokid in word:
             w = word[tokid].lower()
-            # skip words consisting of a single letter (saldo should take care of these)
-            if len(w) > 1:
+            # Skip words consisting of a single letter (saldo should take care of these)
+            # Also skip words consisting of two letters, to avoid an explosion of analyses
+            if len(w) > 2:
                 lex[w] = lex.get(w, set())
                 pos = msd[tokid][:msd[tokid].find(".")] if msd[tokid][:msd[tokid].find(".")] != -1 else msd[tokid]
                 lex[w].add((w, pos))
@@ -249,7 +260,7 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
 
                 if not abort:
                     counter += 1
-                    if counter > 100:
+                    if counter > SPLIT_LIMIT:
                         giveup = True
                         util.log.info("Too many possible compounds for word '%s'" % w)
                         break
@@ -339,6 +350,8 @@ def compound(saldo_lexicon, altlexicon, w, msd=None):
     if all(map(lambda x: x == "-", w)):
         return []
     in_compounds = list(split_word(saldo_lexicon, altlexicon, w, msd))
+    if len(in_compounds) >= SPLIT_LIMIT:
+        return []
     out_compounds = []
     for comp in in_compounds:
         current_combinations = []
