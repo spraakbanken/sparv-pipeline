@@ -79,9 +79,12 @@ def parse_swener_output(sentences, output, out_ne_ex, out_ne_type, out_ne_subtyp
 
         # Init token counter; needed to get start_id and end_id
         i = 0
+        previous_end = 0
+        children = list(root.iter())
 
-        for child in root.iter():
+        for count, child in enumerate(children):
             start_id = util.edgeStart(sent[i])
+            start_i = i
 
             # If current child has text, increase token counter
             if child.text:
@@ -89,21 +92,30 @@ def parse_swener_output(sentences, output, out_ne_ex, out_ne_type, out_ne_subtyp
 
                 # Extract NE tags and save them in dictionaries
                 if child.tag != "sroot":
-                    end_id = util.edgeEnd(sent[i - 1])
-                    edge = util.mkEdge('ne', [start_id, end_id])
-                    out_ex_dict[edge] = child.tag
-                    out_type_dict[edge] = child.get("TYPE")
-                    out_subtype_dict[edge] = child.get("SBT")
-                    out_name_dict[edge] = child.text
+                    if start_i < previous_end:
+                        util.log.warning("Overlapping NE elements found; discarding one.")
+                    else:
+                        end_id = util.edgeEnd(sent[i - 1])
+                        previous_end = i
+                        edge = util.mkEdge('ne', [start_id, end_id])
+                        out_ex_dict[edge] = child.tag
+                        out_type_dict[edge] = child.get("TYPE")
+                        out_subtype_dict[edge] = child.get("SBT")
+                        out_name_dict[edge] = child.text
 
-                    # If this child has a tail and it doesn't start with a space, the tagger has split a token in two
-                    if child.tail and child.tail.strip() and not child.tail[:1] == " ":
+                    # If this child has a tail and it doesn't start with a space, or if it has no tail at all despite not being the last child,
+                    # it means this NE ends in the middle of a token.
+                    if (child.tail and child.tail.strip() and not child.tail[0] == " ") or (not child.tail and count < len(children) - 1):
                         i -= 1
                         util.log.warning("Split token returned by name tagger.")
 
             # If current child has text in the tail, increase token counter
             if child.tail and child.tail.strip():
                 i += len(child.tail.strip().split(TOK_SEP))
+
+            if (child.tag == "sroot" and child.text and not child.text[-1] == " ") or (child.tail and not child.tail[-1] == " "):
+                # The next NE would start in the middle of a token, so decrease the counter by 1
+                i -= 1
 
     # Write annotations
     util.write_annotation(out_ne_ex, out_ex_dict)
