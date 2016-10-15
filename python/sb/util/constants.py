@@ -85,20 +85,20 @@ def strtobool(value):
     return value
 
 
-def cwbset(values, delimiter="|", affix="|", maxlength=4095):
+def cwbset(values, delimiter="|", affix="|", maxlength=4095, encoding="UTF-8"):
     """Take an iterable object and return a set in the format used by Corpus Workbench."""
     values = list(values)
     if maxlength:
         length = 1  # Including the last affix
         for i, value in enumerate(values):
-            length += len(value) + 1
+            length += len(value.encode(encoding)) + 1
             if length > maxlength:
                 values = values[:i]
                 break
     return affix if not values else affix + delimiter.join(values) + affix
 
 
-def truncateset(string, maxlength=4095, delimiter="|", affix="|"):
+def truncateset(string, maxlength=4095, delimiter="|", affix="|", encoding="UTF-8"):
     """Truncate a Corpus Workbench set to a maximum length."""
     if len(string) <= maxlength or string == "|":
         return string
@@ -106,7 +106,7 @@ def truncateset(string, maxlength=4095, delimiter="|", affix="|"):
         length = 1  # Including the last affix
         values = string[1:-1].split("|")
         for i, value in enumerate(values):
-            length += len(value) + 1
+            length += len(value.encode(encoding)) + 1
             if length > maxlength:
                 return cwbset(values[:i], delimiter, affix)
 
