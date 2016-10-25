@@ -7,6 +7,7 @@ Pseudo-XML is almost like XML, but admits overlapping elements.
 
 import re
 import util
+import unicodedata
 from xmlanalyzer import problematic_entity, html_entities  # , is_control_code
 
 # TODO: lägg till metadata-annoteringar, ungefär som i obsolete/tei_parser.py
@@ -75,6 +76,7 @@ def parse(source, text, elements=[], annotations=[], skip=(), overlap=(), header
 
     with open(source) as SRC:
         content = SRC.read().decode(encoding)
+        content = unicodedata.normalize("NFC", content)  # Normalize characters to precomposed form (NFKC can also be used)
     parser = XMLParser(elem_annotations, skipped_elems, can_overlap, header, prefix, text, len(content), head_annotations, skip_if_empty, skip_entities, autoclose, elem_order)
     parser.feed(content)
     parser.close()
