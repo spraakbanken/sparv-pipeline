@@ -68,6 +68,7 @@ COMMON_FL_DICT = {
     "VM": "VERB",
     "VA": "AUX",
     "VS": "VERB",
+    "VV": "VERB",
     "W": "NUM",
     "Z": "NUM",
     "Y": "X",
