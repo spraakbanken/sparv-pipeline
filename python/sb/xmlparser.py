@@ -22,7 +22,7 @@ REGEXP_TOKEN = re.compile(r"([^\W_\d]+|\d+| +|\s|.)", re.UNICODE)
 # idea taken from http://stackoverflow.com/questions/1673749
 
 
-def parse(source, text, elements=[], annotations=[], skip=(), overlap=(), header="teiheader", encoding=util.UTF8, prefix="", fileid="", fileids="", headers="", header_annotations="", skip_if_empty="", skip_entities="", autoclose=""):
+def parse(source, text, elements=[], annotations=[], skip=(), overlap=(), header="teiheader", encoding=util.UTF8, prefix="", fileid="", fileids="", headers="", header_annotations="", skip_if_empty="", skip_entities="", autoclose="", allow_xml_chars=False):
     """Parse one pseudo-xml source file, into the specified corpus."""
     if isinstance(elements, basestring):
         elements = elements.split()
@@ -42,6 +42,7 @@ def parse(source, text, elements=[], annotations=[], skip=(), overlap=(), header
         skip_entities = skip_entities.split()
     if isinstance(autoclose, basestring):
         autoclose = autoclose.split()
+    allow_xml_chars = util.strtobool(allow_xml_chars)
     assert len(elements) == len(annotations), "elements and annotations must be the same length"
     assert prefix or (fileid and fileids), "either prefix or both fileid and fileids must be set"
     if not header:
@@ -77,7 +78,7 @@ def parse(source, text, elements=[], annotations=[], skip=(), overlap=(), header
     with open(source) as SRC:
         content = SRC.read().decode(encoding)
         content = unicodedata.normalize("NFC", content)  # Normalize characters to precomposed form (NFKC can also be used)
-    parser = XMLParser(elem_annotations, skipped_elems, can_overlap, header, prefix, text, len(content), head_annotations, skip_if_empty, skip_entities, autoclose, elem_order)
+    parser = XMLParser(elem_annotations, skipped_elems, can_overlap, header, prefix, text, len(content), head_annotations, skip_if_empty, skip_entities, autoclose, elem_order, allow_xml_chars)
     parser.feed(content)
     parser.close()
 
@@ -88,7 +89,7 @@ from HTMLParser import HTMLParser
 
 
 class XMLParser(HTMLParser):
-    def __init__(self, elem_annotations, skipped_elems, can_overlap, header_elem, prefix, textfile, corpus_size, head_annotations={}, skip_if_empty=[], skip_entities=[], autoclose=[], elem_order=[]):
+    def __init__(self, elem_annotations, skipped_elems, can_overlap, header_elem, prefix, textfile, corpus_size, head_annotations={}, skip_if_empty=[], skip_entities=[], autoclose=[], elem_order=[], allow_xml_chars=False):
         HTMLParser.__init__(self)
         self.errors = False
         self.reset()
@@ -103,7 +104,9 @@ class XMLParser(HTMLParser):
         self.skip_if_empty = skip_if_empty
         self.skip_entities = skip_entities
         self.skipped_elems = skipped_elems
+        self.skipped = {}
         self.autoclose = autoclose
+        self.allow_xml_chars = allow_xml_chars
         self.can_overlap = can_overlap
         self.prefix = prefix
         self.textfile = textfile
@@ -134,6 +137,23 @@ class XMLParser(HTMLParser):
                 util.log.info(self.pos() + "(at EOF) Autoclosing tag </%s>, starting at %s", t, a)
             self.handle_endtag(t)
         self.anchor()
+
+        if self.skipped:
+            new_elements = sorted(self.skipped.items(), key=lambda x: (-x[1], x[0]))
+            new_elements_ann = " ".join(".".join(x[0]) for x in new_elements)
+            new_elements_ele = " ".join(":".join(x[0]) for x in new_elements)
+            if not self.elem_annotations:
+                util.log.info("Found elements:")
+                print
+                print "vrt_structs_annotations = " + new_elements_ann
+                print "vrt_structs             = " + new_elements_ele
+                print "xml_elements    = " + new_elements_ele
+                print "xml_annotations = " + new_elements_ann
+                print
+            else:
+                print
+                print "xml_skip = " + new_elements_ele
+                print
 
         # Only save results if no errors occured
         if not self.errors:
@@ -195,10 +215,13 @@ class XMLParser(HTMLParser):
                     if attr:
                         if (name, "") in self.elem_annotations:
                             util.log.warning(self.pos() + "Skipping XML attribute <%s %s=%s>", name, attr, value)
+                            self.skipped[(name, attr)] = len(self.tagstack)
                         else:
                             util.log.warning(self.pos() + "Skipping XML element <%s %s=%s>", name, attr, value)
+                            self.skipped[(name, attr)] = len(self.tagstack)
                     elif not attrs:
                         util.log.warning(self.pos() + "Skipping XML element <%s>", name)
+                        self.skipped[(name, None)] = len(self.tagstack)
 
         # We use a reversed stack (push from the left), to simplify
         # searching for elements below the top of the stack:
@@ -264,15 +287,16 @@ class XMLParser(HTMLParser):
 
     def handle_data(self, content):
         """Plain text data are tokenized and each 'token' is added to the text."""
-        if "&" in content:
-            util.log.error(self.pos() + "XML special character: &")
-            self.errors = True
-        if "<" in content:
-            util.log.error(self.pos() + "XML special character: <")
-            self.errors = True
-        if ">" in content:
-            util.log.error(self.pos() + "XML special character: >")
-            self.errors = True
+        if not self.allow_xml_chars:
+            if "&" in content:
+                util.log.error(self.pos() + "XML special character: &")
+                self.errors = True
+            if "<" in content:
+                util.log.error(self.pos() + "XML special character: <")
+                self.errors = True
+            if ">" in content:
+                util.log.error(self.pos() + "XML special character: >")
+                self.errors = True
         if self.position == 0 and isinstance(content, unicode):
             content = content.lstrip(u"\ufeff")
         if self.inside_header:
