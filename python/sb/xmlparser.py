@@ -140,8 +140,8 @@ class XMLParser(HTMLParser):
 
         if self.skipped:
             new_elements = sorted(self.skipped.items(), key=lambda x: (-x[1], x[0]))
-            new_elements_ann = " ".join(".".join(x[0]) for x in new_elements)
-            new_elements_ele = " ".join(":".join(x[0]) for x in new_elements)
+            new_elements_ann = " ".join(".".join(x[0]) if not x[0][1] is None else x[0][0] for x in new_elements)
+            new_elements_ele = " ".join(":".join(x[0]) if not x[0][1] is None else x[0][0] for x in new_elements)
             if not self.elem_annotations:
                 util.log.info("Found elements:")
                 print
