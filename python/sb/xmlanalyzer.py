@@ -10,6 +10,7 @@ from collections import defaultdict
 
 import util
 
+
 def analyze(sources, header="teiheader", encoding=util.UTF8, maxcount=0):
     """Analyze a list of source files, and print statistics.
     The maxcount is a cutoff; we only count information about
@@ -44,6 +45,7 @@ def analyze(sources, header="teiheader", encoding=util.UTF8, maxcount=0):
 ######################################################################
 
 from HTMLParser import HTMLParser
+
 
 class XMLAnalyzer(HTMLParser):
     def __init__(self):
@@ -142,7 +144,7 @@ class XMLAnalyzer(HTMLParser):
             overlaps = self.tagstack[:ix]
             end = self.pos()
             self.warn("Tag <%s> at %s - %s, overlapping with %s", name, start, end,
-                      ", ".join("<%s> at %s" % (n,s) for (n,s) in overlaps)) 
+                      ", ".join("<%s> at %s" % (n, s) for (n, s) in overlaps))
 
     def handle_data(self, content):
         """Plain text data are tokenized and each 'token' is added to the text.
@@ -189,7 +191,7 @@ class XMLAnalyzer(HTMLParser):
         except for the single <?XML...> on the first line.
         """
         if data.startswith(u'xml ') and data.endswith(u'?'):
-            if self.getpos() != (1,0):
+            if self.getpos() != (1, 0):
                 self.err("XML declaration not first in file")
         else:
             self.err("Unknown processing instruction: <?%s>", data)
@@ -213,6 +215,7 @@ def statistics(result, maxcount):
     stat_tags(result['header'], maxcount, "Header tags")
     stat_errors(result['warning'], result['error'])
 
+
 def strfiles(files):
     """Return a string of filenames, truncated to at most 3.
     """
@@ -223,11 +226,13 @@ def strfiles(files):
         return ", ".join(filename + ":" + str(line)
                          for (filename, (line, col)) in files.items())
 
+
 def items_by_frequency(freqdist):
     """Sort a dictionary by frequency. Return as a list of pairs.
     """
     frequency = lambda x: x[1]
     return sorted(freqdist.iteritems(), key=frequency, reverse=True)
+
 
 def stat_chars(charinfo, maxcount, title="Characters"):
     """Statistics about the characters in the corpus.
@@ -252,6 +257,7 @@ def stat_chars(charinfo, maxcount, title="Characters"):
         print "      Replace with &amp; &lt; &gt;"
         print
 
+
 def stat_entities(entinfo, maxcount, title="Entities"):
     """Statistics about the entities in the corpus.
     """
@@ -273,6 +279,7 @@ def stat_entities(entinfo, maxcount, title="Entities"):
         print "      Replace them with better entities"
         print
 
+
 def stat_tags(taginfo, maxcount, title="Tags"):
     """Statistics about the xml tags in the corpus.
     """
@@ -288,6 +295,7 @@ def stat_tags(taginfo, maxcount, title="Tags"):
         print "%8d    %-18s%-30s%s" % (count, "<"+tag+">", attrs, files)
     print
 
+
 def stat_errors(warnings, errors):
     """Statistics about the errors and warnings.
     """
@@ -300,9 +308,9 @@ def stat_errors(warnings, errors):
     print
 
 
-
 ######################################################################
 # problematic html entities
+
 
 def problematic_entity(name):
     if name.startswith('#x'):
@@ -311,6 +319,7 @@ def problematic_entity(name):
         return is_control_code(int(name[1:]))
     else:
         return name not in html_entities
+
 
 def is_control_code(code):
     return code < 0x20 or 0x80 <= code < 0xA0
