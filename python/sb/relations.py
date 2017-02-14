@@ -31,7 +31,8 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
         ({1: "NN", 2: "(AT|ET)", 3: "JJ"},),  # "stor hund"
         ({1: "NN", 2: "ET", 3: "VB"}, {3: "VB", 4: "SS", 5: "HP"}, (1, 2, 3, "%(5)s")),     # "brödet som bakats"
         ({1: "NN", 2: "ET", 3: "PP"}, {3: "PP", 4: "PA", 5: "(NN|PM)"}, (1, 2, 5, "%(3)s")),  # "barnen i skolan", "hundarna i Sverige"
-        ({1: "PP", 2: "PA", 3: "NN"},)  # "på bordet"
+        ({1: "PP", 2: "PA", 3: "NN"},),  # "på bordet"
+        ({1: "JJ", 2: "AA", 3: "AB"},)  # "fullständigt galen"
     ]
 
     null_rels = [
@@ -453,7 +454,7 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
 ################################################################################
 
 # Names of every possible relation in the resulting database
-RELNAMES = ["SS", "OBJ", "ADV", "AT", "ET", "PA"]
+RELNAMES = ["SS", "OBJ", "ADV", "AA", "AT", "ET", "PA"]
 rel_enum = "ENUM(%s)" % ", ".join("'%s'" % r for r in RELNAMES)
 
 MYSQL_TABLE = "relations"
