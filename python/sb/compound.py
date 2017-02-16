@@ -185,6 +185,7 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
     nsplits = range(1, len(w))
     counter = 0
     giveup = False
+    iterations = 0
 
     for n in nsplits:
         first = True
@@ -193,6 +194,12 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
 
         # Similar to itertools.combinations, but customized for our needs
         while True:
+            iterations += 1
+            if iterations > 500000:
+                giveup = True
+                util.log.info("Too many iterations for word '%s'" % w)
+                break
+
             if first:
                 first = False
             else:
