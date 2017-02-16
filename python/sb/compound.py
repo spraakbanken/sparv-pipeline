@@ -3,6 +3,7 @@
 import cPickle as pickle
 import util
 import itertools
+import re
 from math import log
 
 SPLIT_LIMIT = 200
@@ -347,8 +348,7 @@ def rank_compounds(compounds, nst_model, stats_lexicon):
 def compound(saldo_lexicon, altlexicon, w, msd=None):
     """Create a list of compound analyses for word w."""
 
-    # TODO: This is not very elegant.
-    if len(w) > 75 or w.count("-") > 5 or w.count(".") > 5:
+    if len(w) > 75 or re.search(r"(.)\1{4,}", w):
         return []
 
     in_compounds = list(split_word(saldo_lexicon, altlexicon, w, msd))
