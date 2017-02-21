@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import cPickle as pickle
-import util
 import itertools
 import re
+import time
 from math import log
+import util
 
 SPLIT_LIMIT = 200
 
@@ -179,6 +180,8 @@ class InFileLexicon(object):
 
 def split_word(saldo_lexicon, altlexicon, w, msd):
     """Split word w into every possible combination of substrings."""
+    MAX_ITERATIONS = 500000
+    MAX_TIME = 20  # Seconds
     invalid_spans = set()
     valid_spans = set()
     # Create list of possible splitpoint indices for w
@@ -186,6 +189,7 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
     counter = 0
     giveup = False
     iterations = 0
+    start_time = time.time()
 
     for n in nsplits:
         first = True
@@ -195,9 +199,13 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
         # Similar to itertools.combinations, but customized for our needs
         while True:
             iterations += 1
-            if iterations > 500000:
+            if iterations > MAX_ITERATIONS:
                 giveup = True
-                util.log.info("Too many iterations for word '%s'" % w)
+                util.log.info("Too many iterations for word '%s'", w)
+                break
+            if time.time() - start_time > MAX_TIME:
+                giveup = True
+                util.log.info("Compound analysis took to long for word '%s'", w)
                 break
 
             if first:
