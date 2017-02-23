@@ -5,7 +5,7 @@ from nltk import FreqDist, LidstoneProbDist
 import util
 
 
-def make_model(stats_infile, picklefile, smoothingparam=0.001, min_freq=2):
+def make_model(stats_infile, picklefile, smoothingparam=0.001, min_freq=2, protocol=-1):
     """Train a probability model on a korp statistics file and save it as a pickle file.
     The model is a LidstoneProbabDist (NLTK) which has tuples (wordform, MSD-tag) as keys
     and smoothed probabilities as values."""
@@ -32,7 +32,7 @@ def make_model(stats_infile, picklefile, smoothingparam=0.001, min_freq=2):
 
     # save probability model as pickle
     with open(picklefile, "w") as p:
-        pickle.dump(pd, p)
+        pickle.dump(pd, p, protocol=protocol)
 
 if __name__ == '__main__':
     util.run.main(make_model)
