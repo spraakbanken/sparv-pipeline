@@ -4,14 +4,13 @@ import cPickle as pickle
 import itertools
 import re
 import time
-from math import log
 import util
 
 SPLIT_LIMIT = 200
 
 
 def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp, saldo_comp_model, nst_model, stats_model,
-             complemgramfmt=":%.3f", delimiter="|", compdelim="+", affix="|", cutoff=True, saldo_comp_lexicon=None, stats_lexicon=None):
+             complemgramfmt=":%.3e", delimiter="|", compdelim="+", affix="|", cutoff=True, saldo_comp_lexicon=None, stats_lexicon=None):
     """Divides compound words into prefix(es) and suffix.
     - out_complemgram is the resulting annotation file for compound lemgrams
       and their probabilities
@@ -71,7 +70,7 @@ def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp
                     best_length = len(compounds[0][1])
                     i = 0
                     for c in compounds:
-                        if len(c[1]) > best_length+1 or len(c[1]) < best_length:
+                        if len(c[1]) > best_length + 1 or len(c[1]) < best_length:
                             break
 
                         i += 1
@@ -316,47 +315,29 @@ def three_consonant_rule(compound):
     return [list(i) for i in list(set(itertools.product(*combinations)))]
 
 
-def scores_to_probs(scores):
-    """Convert compound scores to probabilities.
-    p(x) = (x^-1) / bigsum((x_i)^-1)
-    """
-    bigsum = 0
-    tmp_scores = []
-    probs = []
-    for i in scores:
-        tmp_scores.append(i ** -1.0)
-        bigsum += (i ** -1.0)
-
-    for i in tmp_scores:
-        probs.append(i / bigsum)
-
-    return probs
-
-
 def rank_compounds(compounds, nst_model, stats_lexicon):
     """Return a list of compounds, ordered according to their ranks.
     Ranking is being done according to the amount of affixes (the fewer the higher)
     and the compound probability which is calculated as follows:
-    p((w1, tag1)..(wn, tag1)) = log(p(w1, tag1)) ... + log(p(wn, tagn)) + log(p(tag1, ...tagn))
-    e.g. p(clown+bil) = log(p(clown, NN)) + log(p(bil, NN)) + log(p(NN,NN))
+
+    p((w1, tag1)..(wn, tag1)) = p(w1, tag1) ... * p(wn, tagn) * p(tag1, ...tagn)
+    e.g. p(clown+bil) = p(clown, NN) * p(bil, NN) * p(NN,NN)
     """
     ranklist = []
     for clist in compounds:
         affixes = [affix[0] for affix in clist[0]]
         for c in clist:
             tags = list(itertools.product(*[affix[2] for affix in c]))
-            # Calculate log probability score
-            word_probs = max(sum([log(stats_lexicon.lookup_prob(i)) for i in zip(affixes, t)]) for t in tags)
-            tag_prob = max(log(nst_model.prob('+'.join(t))) for t in tags)
-            score = word_probs + tag_prob
+            # Calculate probability score
+            word_probs = max(reduce(lambda x, y: x * y, [(stats_lexicon.lookup_prob(i)) for i in zip(affixes, t)]) for t in tags)
+            tag_prob = max(nst_model.prob('+'.join(t)) for t in tags)
+            score = word_probs * tag_prob
             ranklist.append((score, c))
     ranklist = sorted(ranklist, key=lambda x: x[0], reverse=True)
     # Sort according to length
     ranklist = sorted(ranklist, key=lambda x: len(x[1]))
-    scorelist = scores_to_probs([r for r, c in ranklist])
-    # for s, (r, c) in zip(scorelist, ranklist):
-    #     print "%.3f, %s" %(s, c)
-    ranklist = [(s, c) for s, (_r, c) in zip(scorelist, ranklist)]
+    # for s, c in ranklist:
+    #     print "%.3e, %s" % (s, c)
     return ranklist
 
 
@@ -521,7 +502,7 @@ PART_DELIM2 = "^2"
 PART_DELIM3 = "^3"
 
 
-def save_to_picklefile(saldofile, lexicon, protocol=1, verbose=True):
+def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
     """Save a Saldo lexicon to a Pickled file.
     The input lexicon should be a dict:
       - lexicon = {wordform: {lemgram: {"msd": set(), "pos": str}}}
