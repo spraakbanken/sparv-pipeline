@@ -27,7 +27,7 @@ def make_model(nst_infile, picklefile, protocol=-1):
     for _w, _c, pos in nst_full_compounds:
         if '+' in pos:
             pos = re.sub(r"\+LN", "", pos)
-            pos_fdist.inc(pos)
+            pos_fdist[pos] += 1
 
     pd = LidstoneProbDist(pos_fdist, 0.001, pos_fdist.B())
 
