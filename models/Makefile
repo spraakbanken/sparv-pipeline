@@ -1,5 +1,5 @@
 
-TARGETS = help info clean all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable bettertokenizer.sv.saldo-tokens stats_all.txt stats.pickle dalinm.xml dalin.pickle swedbergm.xml swedberg.pickle geo.pickle
+TARGETS = help info clean all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable bettertokenizer.sv.saldo-tokens stats_all.txt stats.pickle dalinm.xml dalin.pickle diapivot.xml diapivot.pickle swedbergm.xml swedberg.pickle geo.pickle nst_utf8.txt nst.comp.pos.pickle
 .PHONY: help info clean all
 
 help:
@@ -8,7 +8,7 @@ help:
 clean:
 	rm -f saldom.xml
 
-all: saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable stats.pickle bettertokenizer.sv.saldo-tokens
+all: saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable stats.pickle bettertokenizer.sv.saldo-tokens diapivot.pickle
 
 info:
 	@echo "Subversion revision:"
@@ -59,6 +59,14 @@ dalinm.xml:
 
 dalin.pickle: dalinm.xml
 	python -m sb.lmflexicon --xml_to_pickle --xml "dalinm.xml" --filename "dalin.pickle"
+
+diapivot.xml:
+	@echo "Exporting diapivot.xml from Subversion..."
+	@svn export https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/diapivot/diapivot.xml --force
+	@echo "Done."
+
+diapivot.pickle: diapivot.xml
+	python -m sb.diapivot --xml_to_pickle  --xml "diapivot.xml"  --filename "$@"
 
 swedbergm.xml:
 	@echo "Exporting swedbergm.xml from Subversion..."
