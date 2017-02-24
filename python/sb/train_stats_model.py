@@ -5,7 +5,7 @@ from nltk import FreqDist, LidstoneProbDist
 import util
 
 
-def make_model(stats_infile, picklefile, smoothingparam=0.001, min_freq=2, protocol=-1):
+def make_model(stats_infile, picklefile, smoothingparam=0.001, min_freq=3, protocol=-1):
     """Train a probability model on a korp statistics file and save it as a pickle file.
     The model is a LidstoneProbabDist (NLTK) which has tuples (wordform, MSD-tag) as keys
     and smoothed probabilities as values."""
@@ -14,13 +14,13 @@ def make_model(stats_infile, picklefile, smoothingparam=0.001, min_freq=2, proto
         for line in f:
             fields = line[:-1].split('\t')
             word = fields[0]
-            # skip word forms that only occur once
-            if fields[4] == str(min_freq):
+            # Skip word forms that occur fewer times than min_freq
+            if int(fields[4]) < min_freq:
                 break
-            # get rid of all urls
+            # Get rid of all urls
             if word.startswith("http://"):
                 continue
-            # # words that only occur once may only contain letters and hyphens
+            # # Words that only occur once may only contain letters and hyphens
             # if fields[4] == '1' and any(not (c.isalpha() or c == "-") for c in word):
             #     continue
             # if len(word) > 100:
@@ -30,7 +30,7 @@ def make_model(stats_infile, picklefile, smoothingparam=0.001, min_freq=2, proto
 
     pd = LidstoneProbDist(fdist, smoothingparam, fdist.B())
 
-    # save probability model as pickle
+    # Save probability model as pickle
     with open(picklefile, "w") as p:
         pickle.dump(pd, p, protocol=protocol)
 

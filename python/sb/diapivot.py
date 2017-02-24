@@ -12,9 +12,9 @@ def annotate(out, lemgram, model, affix="|", delimiter="|"):
     """
     lexicon = PivotLexicon(model)
     WORD = util.read_annotation(lemgram)
-    
+
     OUT = {}
-    
+
     for tokid in WORD:
         saldo_ids = []
         for lemgram in WORD[tokid].split(delimiter):
@@ -22,9 +22,9 @@ def annotate(out, lemgram, model, affix="|", delimiter="|"):
             if s_i:
                 saldo_ids += [s_i]
         OUT[tokid] = affix + delimiter.join(set(saldo_ids)) + affix if saldo_ids else affix
-    
+
     util.write_annotation(out, OUT)
-    
+
 
 class PivotLexicon(object):
     """A lexicon for oldswedish-Saldo  lookups.
@@ -62,7 +62,7 @@ def read_xml(xml='diapivot.xml'):
     import xml.etree.cElementTree as cet
     util.log.info("Reading XML lexicon")
     lexicon = {}
-    
+
     context = cet.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
     context = iter(context)
     event, root = context.next()
@@ -70,7 +70,7 @@ def read_xml(xml='diapivot.xml'):
     for event, elem in context:
         if event == "end":
             if elem.tag == 'LexicalEntry':
- 
+
                 lemma = elem.find("Lemma")
                 dalin, saldo = [], ''
                 for form in lemma.findall("FormRepresentation"):
@@ -83,7 +83,7 @@ def read_xml(xml='diapivot.xml'):
                         dalin += [(lem, match)]
 
                 [lexicon.update({d: {'saldo': saldo, 'match': m}}) for (d, m) in dalin]
-            
+
             # Done parsing section. Clear tree to save memory
             if elem.tag in ['LexicalEntry', 'frame', 'resFrame']:
                 root.clear()
@@ -91,7 +91,7 @@ def read_xml(xml='diapivot.xml'):
     test_annotations(lexicon)
     util.log.info("OK, read")
     return lexicon
-    
+
 
 def findval(elems, key):
     for form in elems:
@@ -100,7 +100,7 @@ def findval(elems, key):
         if att == key:
             return form.get("val")
     return ""
-  
+
 
 def test_annotations(lexicon):
     for key in testwords:
@@ -114,23 +114,23 @@ testwords = [u"tigerhjerta..nn.1",
 PART_DELIM1 = "^1"
 
 
-def save_to_picklefile(saldofile, lexicon, protocol=1, verbose=True):
+def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
     """Save a cross lexicon to a Pickled file.
     The input lexicon should be a dict:
       - lexicon = {lemgram: {saldo: str, match : str}}
     """
     if verbose:
         util.log.info("Saving cross lexicon in Pickle format")
-    
+
     picklex = {}
     for lem in lexicon:
         lemgrams = []
-        
+
         for saldo, match in lexicon[lem].items():
             lemgrams.append(PART_DELIM1.join([saldo, match]))
-        
+
         picklex[lem] = sorted(lemgrams)
-    
+
     with open(saldofile, "wb") as F:
         pickle.dump(picklex, F, protocol=protocol)
     if verbose:
@@ -139,11 +139,10 @@ def save_to_picklefile(saldofile, lexicon, protocol=1, verbose=True):
 
 def xml_to_pickle(xml, filename):
     """Read an XML dictionary and save as a pickle file."""
-    
+
     xml_lexicon = read_xml(xml)
     save_to_picklefile(filename, xml_lexicon)
 
 
 if __name__ == '__main__':
     util.run.main(annotate, xml_to_pickle=xml_to_pickle)
-

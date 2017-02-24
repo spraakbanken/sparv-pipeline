@@ -326,7 +326,7 @@ class SaldoLexicon(object):
         return map(_split_triple, annotation_tag_pairs)
 
     @staticmethod
-    def save_to_picklefile(saldofile, lexicon, protocol=1, verbose=True):
+    def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
         """Save a Saldo lexicon to a Pickled file.
         The input lexicon should be a dict:
           - lexicon = {wordform: {{annotation-type: annotation}: (set(possible tags), set(tuples with following words), gap-allowed-boolean, is-particle-verb-boolean)}}

@@ -148,7 +148,7 @@ PART_DELIM1 = "^1"
 PART_DELIM2 = "^2"
 PART_DELIM3 = "^3"
 
-def save_to_picklefile(saldofile, lexicon, protocol=1, verbose=True):
+def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
     """Save a Saldo lexicon to a Pickled file.
     The input lexicon should be a dict:
       - lexicon = {wordform: {lemgram: {"msd": set(), "pos": str}}}

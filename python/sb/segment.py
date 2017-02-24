@@ -98,7 +98,7 @@ def build_token_wordlist(saldo_model, out, segmenter, model=None, no_pickled_mod
         lexicon = pickle.load(F)
         for w in lexicon:
             w2 = map(saldo._split_triple, lexicon[w])
-            mwu_extras = [contw for w3 in w2 for cont in w3[2] for contw in cont if not contw in lexicon]
+            mwu_extras = [contw for w3 in w2 for cont in w3[2] for contw in cont if contw not in lexicon]
             for wf in mwu_extras + [w]:
                 spans = list(segmenter.span_tokenize(wf))
                 if len(spans) > 1 and not wf.endswith(","):
@@ -116,7 +116,7 @@ class ModifiedLanguageVars(nltk.tokenize.punkt.PunktLanguageVars):
     punctuation."""
     # http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt.PunktLanguageVars-class.html
     # http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt-pysrc.html#PunktLanguageVars
-    
+
     # Excludes some characters from starting word tokens
     _re_word_start = ur'''[^\(\"\'‘’–—“”»\`\\{\/\[:;&\#\*@\)}\]\-,…]'''
     # Characters that cannot appear within words
@@ -160,8 +160,8 @@ class ModifiedPunktWordTokenizer(object):
         if not words:
             return words
         pos = len(words) - 1
-        
-        # split sentence-final . from the final word 
+
+        # split sentence-final . from the final word
         # i.e., "peter." "piper." ")" => "peter." "piper" "." ")"
         # but not "t.ex." => "t.ex" "."
         while pos >= 0 and self.is_post_sentence_token.match(words[pos]):
@@ -171,21 +171,18 @@ class ModifiedPunktWordTokenizer(object):
             endword = endword[:-1]
             if endword not in self.abbreviations:
                 words[pos] = endword
-                words.insert(pos+1, ".")
-        
+                words.insert(pos + 1, ".")
+
         return words
 
 
 ######################################################################
 # Training a Punkt sentence tokenizer
 
-PICKLE_PROTOCOL = 2
-
-
-def train_punkt_segmenter(textfiles, modelfile, encoding=util.UTF8):
+def train_punkt_segmenter(textfiles, modelfile, encoding=util.UTF8, protocol=-1):
     if isinstance(textfiles, basestring):
         textfiles = textfiles.split()
-    
+
     util.log.info("Reading files")
     text = u""
     for filename in textfiles:
@@ -196,7 +193,7 @@ def train_punkt_segmenter(textfiles, modelfile, encoding=util.UTF8):
     util.log.info("Saving pickled model")
     params = trainer.get_params()
     with open(modelfile, "wb") as stream:
-        pickle.dump(params, stream, PICKLE_PROTOCOL)
+        pickle.dump(params, stream, protocol=protocol)
     util.log.info("OK")
 
 
@@ -211,26 +208,26 @@ class PunctuationTokenizer(nltk.RegexpTokenizer):
     """ A very simple sentence tokenizer, separating sentences on
     every .!? no matter the context. Use only when PunktSentenceTokenizer
     does not work, for example when there's no whitespace after punctuation. """
-    
+
     def __init__(self):
         nltk.RegexpTokenizer.__init__(self, r"[\.!\?]\s*", gaps=True)
-    
+
     def span_tokenize(self, s):
         result = []
         spans = nltk.RegexpTokenizer.span_tokenize(self, s)
         first = True
         temp = [0, 0]
-        
+
         for start, _ in spans:
             if not first:
                 temp[1] = start
                 result.append(tuple(temp))
             temp[0] = start
             first = False
-            
+
         temp[1] = len(s)
         result.append(tuple(temp))
-        
+
         return result
 
 
@@ -240,7 +237,7 @@ class BetterWordTokenizer():
     custom regular expressions, wordlists, and external configuration files.
     http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt.PunktSentenceTokenizer-class.html
     """
-    
+
     # Format for the complete regular expression to be used for tokenization
     _word_tokenize_fmt = r'''(
         %(misc)s
@@ -260,12 +257,12 @@ class BetterWordTokenizer():
         |
         \S
     )'''
-    
+
     # Used to realign punctuation that should be included in a sentence although it follows the period (or ?, !).
     re_boundary_realignment = re.compile(ur'[“”"\')\]}]+?(?:\s+|(?=--)|$)', re.MULTILINE)
 
     re_punctuated_token = re.compile(r"\w.*\.$", re.UNICODE)
-    
+
     def __init__(self, configuration_file, skip_tokenlist=False):
         # Parse configuration file
         self.case_sensitive = False
@@ -311,11 +308,11 @@ class BetterWordTokenizer():
     def _word_tokenizer_re(self):
         """Compiles and returns a regular expression for word tokenization"""
         try:
-            return self._re_word_tokenizer 
+            return self._re_word_tokenizer
         except AttributeError:
             modifiers = (re.UNICODE | re.VERBOSE) if self.case_sensitive else (re.UNICODE | re.VERBOSE | re.IGNORECASE)
-            self._re_word_tokenizer = re.compile( 
-                self._word_tokenize_fmt % 
+            self._re_word_tokenizer = re.compile(
+                self._word_tokenize_fmt %
                 {
                     'tokens':   ("(?:" + "|".join(self.patterns["tokens"]) + ")|") if self.patterns["tokens"] else "",
                     'abbrevs':  ("(?:" + "|".join(re.escape(a + ".") for a in self.abbreviations) + ")|") if self.abbreviations else "",
@@ -325,12 +322,12 @@ class BetterWordTokenizer():
                     'multi':    self.patterns["multi"],
                     'start':    self.patterns["start"],
                     'end':      self.patterns["end"]
-                }, 
+                },
                 modifiers
             )
             return self._re_word_tokenizer
-    
-    def word_tokenize(self, s): 
+
+    def word_tokenize(self, s):
         """Tokenize a string to split off punctuation other than periods"""
         words = self._word_tokenizer_re().findall(s)
         if not words:
@@ -347,10 +344,10 @@ class BetterWordTokenizer():
             endword = endword[:-1]
             if endword not in self.abbreviations:
                 words[pos] = endword
-                words.insert(pos+1, ".")
-        
+                words.insert(pos + 1, ".")
+
         return words
-    
+
     def span_tokenize(self, s):
         begin = 0
         for w in self.word_tokenize(s):
@@ -362,10 +359,10 @@ class BetterWordTokenizer():
 class CRFTokenizer():
     """ Tokenization based on Conditional Random Fields
         Implemented for Old Swedish, see crf.py for more details"""
-    
+
     def __init__(self, model):
         self.model = model
-    
+
     def span_tokenize(self, s):
         return crf.segment(s, self.model)
 
@@ -375,7 +372,7 @@ class FSVParagraphSplitter():
 
     def __init__(self):
         pass
-    
+
     def span_tokenize(self, s):
         spans = []
         temp = [0, 0]
@@ -395,7 +392,7 @@ class FSVParagraphSplitter():
         spans.append(tuple(temp))
 
         return spans
-  
+
 
 ######################################################################
 
