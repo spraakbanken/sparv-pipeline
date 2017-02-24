@@ -34,7 +34,6 @@ hunpos.saldo.suc-tags.morphtable: saldo.pickle hunpos.suc.morphtable hunpos.suc.
 hunpos.dalinm-swedberg.saldo.suc-tags.morphtable: hunpos.saldo.suc-tags.morphtable
 	python -m sb.hunpos_morphtable_hist --out "$@" --files "hist_hunposfiles/swedberg-gender.hunpos hist_hunposfiles/dalinm.hunpos" --saldosuc_morphtable "$<"
 
-
 bettertokenizer.sv.saldo-tokens:
 	python segment.py --build_token_wordlist --out "$@" --saldo_model "saldo.pickle" --segmenter better_word --model "bettertokenizer.sv" --no_pickled_model=True
 
@@ -45,6 +44,13 @@ stats_all.txt:
 
 stats.pickle: stats_all.txt
 	python -m sb.train_stats_model --stats_infile "stats_all.txt" --picklefile "$@"
+
+nst_utf8.txt:
+    # Requires login
+	svn export https://svn.spraakdata.gu.se/sb-arkiv/lexikon/NST_svensk_leksikon/nst_utf8.txt
+
+nst.comp.pos.pickle: nst_utf8.txt
+	python -m sb.train_nst_comp_model --nst_infile nst_utf8.txt --picklefile nst.comp.pos.pickle
 
 dalinm.xml:
 	@echo "Exporting dalinm.xml from Subversion..."
