@@ -344,7 +344,6 @@ def main():
     verbose = super_verbose or flag('-v')
 
     cwd = os.getcwd()
-    # sb_python_path = path.join(cwd, '../python')
     sb_python_path = path.join(cwd, 'python')
     os.environ['PYTHONPATH'] = sb_python_path
     os.environ['SB_MODELS'] = path.join(cwd, 'models')
