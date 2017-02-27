@@ -270,7 +270,7 @@ def checkout_makefiles(verbose):
     """
     Checkout the Makefiles from the material svn repo.
     """
-    if not path.exists('material'):
+    if not path.exists('makefiles'):
         cmd = """svn checkout
                  https://svn.spraakdata.gu.se/sb-arkiv/material
                  --depth files""".split()
@@ -279,8 +279,8 @@ def checkout_makefiles(verbose):
             sys.exit(exc)
 
     if verbose:
-        # Print the material status for manual inspection
-        call('svn status --show-updates material/'.split(),
+        # Print the makefiles status for manual inspection
+        call('svn status --show-updates makefiles/'.split(),
               stdout=sys.stdout, stderr=sys.stderr)
 
 

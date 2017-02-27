@@ -1,4 +1,4 @@
-include ../../material/Makefile.config
+include ../../makefiles/Makefile.config
 
 corpus = corpusname
 original_dir = original
@@ -19,4 +19,4 @@ token_segmenter = better_word
 sentence_chunk = text
 sentence_segmenter = linebreaks
 
-include ../../material/Makefile.rules
+include ../../makefiles/Makefile.rules
