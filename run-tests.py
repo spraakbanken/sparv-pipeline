@@ -40,12 +40,12 @@ The Sparv Pipeline testsuite. It does these two things:
 Not implemented yet:
     * Code coverage statistics
     * Tests with expected failure
-    * --cleanup does not remove .diff files
+    * --clean does not remove .diff files
 
 Flags:
     -h          Show help
     -v, -v11    Verbose and even more verbose
-    --cleanup   Only run the clean parts, and remove stdout/stderr files
+    --clean     Only run the clean parts, and remove stdout/stderr files
     PATH..      Paths to look for test.yaml instead of tests/
                 Use this if you only want to run some test.
 """
@@ -353,7 +353,7 @@ def main():
 
     checkout_makefiles(verbose=verbose)
 
-    if flag('--cleanup'):
+    if flag('--clean'):
         ok = all(run_tests(dirs_with_test_yaml(sys.argv[1:]),
                            verbose=verbose, cleanup=True))
         sys.exit(0 if ok else -1)
