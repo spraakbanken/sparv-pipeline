@@ -9,6 +9,7 @@ import os
 from glob import glob
 from collections import defaultdict
 import xml.etree.cElementTree as etree
+import tempfile
 
 import util
 
@@ -26,6 +27,25 @@ CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 def chain(annotations, default=None):
     """Create a functional composition of a list of annotations.
     E.g., token.sentence + sentence.id -> token.sentence-id
+
+    >>> from pprint import pprint
+    >>> pprint(
+    ...   chain([{"w:1": "s:A",
+    ...           "w:2": "s:A",
+    ...           "w:3": "s:B",
+    ...           "w:4": "s:C",
+    ...           "w:5": "s:missing"},
+    ...          {"s:A": "text:I",
+    ...           "s:B": "text:II",
+    ...           "s:C": "text:mystery"},
+    ...          {"text:I": "The Bible",
+    ...           "text:II": "The Samannaphala Sutta"}],
+    ...         default="The Principia Discordia"))
+    {'w:1': 'The Bible',
+     'w:2': 'The Bible',
+     'w:3': 'The Samannaphala Sutta',
+     'w:4': 'The Principia Discordia',
+     'w:5': 'The Principia Discordia'}
     """
     def follow(key):
         for annot in annotations:
@@ -153,7 +173,43 @@ def write_formatted(out, annotations_columns, annotations_structs, columns, stru
 
 
 def write_vrt(out, structs, structs_count, column_nrs, tokens, vrt, encoding):
-    """ The VRT part of the 'export' function: write annotations to vrt file 'out'."""
+    """ The VRT part of the 'export' function: write annotations to vrt file 'out'.
+
+    >>> with tempfile.NamedTemporaryFile() as out:
+    ...     write_vrt(out.name,
+    ...               encoding="utf8",
+    ...               **example_data().without("columns"))
+    ...     print(out.read().replace('\\t','    '))
+    <text title="Kokboken" author="Jane Oliver">
+    <s>
+    Ett    DT
+    exempel    NN
+    </s>
+    <s>
+    Banankaka    NN
+    </s>
+    </text>
+    <text title="Nya kokboken" author="Jane Oliver">
+    <s>
+    Flambera    VB
+    </s>
+    </text>
+    <BLANKLINE>
+
+    >>> with tempfile.NamedTemporaryFile() as out:
+    ...     write_vrt(out.name,
+    ...               encoding="utf8",
+    ...               **example_overlapping_data().without("columns"))
+    ...     print(out.read())
+    <b>
+    bold
+    <i>
+    bold_italic
+    </b>
+    italic
+    </i>
+    <BLANKLINE>
+    """
     with open(out, "w") as OUT:
         old_attr_values = dict((elem, None) for (elem, _attrs) in structs)
         for tok in tokens:
@@ -184,7 +240,72 @@ def write_vrt(out, structs, structs_count, column_nrs, tokens, vrt, encoding):
 
 
 def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fileid, fileids, valid_xml, encoding):
-    """ The XML part of the 'export' function: write annotations to a valid xml file, unless valid_xml == False."""
+    """ The XML part of the 'export' function: write annotations to a valid xml file, unless valid_xml == False.
+
+    >>> with tempfile.NamedTemporaryFile() as fileids:
+    ...     util.write_annotation(fileids.name, {"fileid": "kokkonster"})
+    ...     with tempfile.NamedTemporaryFile() as out:
+    ...         write_xml(out.name,
+    ...                   fileid="fileid",
+    ...                   fileids=fileids.name,
+    ...                   valid_xml=True,
+    ...                   encoding="utf8",
+    ...                   **example_data())
+    ...         print(out.read())
+    <corpus>
+    <text title="Kokboken" author="Jane Oliver">
+    <s>
+    <w pos="DT">Ett</w>
+    <w pos="NN">exempel</w>
+    </s>
+    <s>
+    <w pos="NN">Banankaka</w>
+    </s>
+    </text>
+    <text title="Nya kokboken" author="Jane Oliver">
+    <s>
+    <w pos="VB">Flambera</w>
+    </s>
+    </text>
+    </corpus>
+    <BLANKLINE>
+
+    >>> for valid_xml in [True, False]:
+    ...     print('<!-- valid_xml: ' + str(valid_xml) + ' -->')
+    ...     with tempfile.NamedTemporaryFile() as fileids:
+    ...         util.write_annotation(fileids.name, {"fileid": "typography"})
+    ...         with tempfile.NamedTemporaryFile() as out:
+    ...             write_xml(out.name,
+    ...                       fileid="fileid",
+    ...                       fileids=fileids.name,
+    ...                       valid_xml=valid_xml,
+    ...                       encoding="utf8",
+    ...                       **example_overlapping_data())
+    ...             print(out.read())
+    <!-- valid_xml: True -->
+    <corpus>
+    <b>
+    <w>bold</w>
+    <i _id="typography-1">
+    <w>bold_italic</w>
+    </i>
+    </b>
+    <i _id="typography-1">
+    <w>italic</w>
+    </i>
+    </corpus>
+    <!-- valid_xml: False -->
+    <corpus>
+    <b>
+    <w>bold</w>
+    <i>
+    <w>bold_italic</w>
+    </b>
+    <w>italic</w>
+    </i>
+    </corpus>
+    <BLANKLINE>
+    """
 
     assert fileid, "fileid not specified"
     assert fileids, "fileids not specified"
@@ -442,6 +563,11 @@ def cwb_align(master, other, link, aligndir=ALIGNDIR):
 
 
 def parse_structural_attributes(structural_atts):
+    """
+    >>> parse_structural_attributes('s - text:title text:author')
+    [('s', [(u'__UNDEF__', 0)]), ('text', [('title', 2), ('author', 3)])]
+    """
+
     if isinstance(structural_atts, basestring):
         structural_atts = structural_atts.split()
     structs = {}
@@ -464,6 +590,90 @@ def parse_structural_attributes(structural_atts):
 
 def remove_control_characters(text):
     return text.translate(dict((ord(c), None) for c in [chr(i) for i in range(9) + range(11, 13) + range(14, 32) + [127]]))
+
+
+class DictWithWithout(dict):
+    """A dictionary with an without function that excludes some elements."""
+
+    def without(self, *keys):
+        """
+        Returns a copy of the dictionary without these keys.
+
+        >>> DictWithWithout(apa=1, bepa=2).without("apa")
+        {'bepa': 2}
+        """
+        return DictWithWithout(
+            **{k: v for k, v in self.iteritems() if k not in keys})
+
+
+def example_data():
+    """Example data to test the write_* functions."""
+    # Structs come in the reverse nesting order:
+    structs = [["s", [[UNDEF, 0]]],
+               ["text", [["title", 1], ["author", 2]]]]
+    structs_count = 3
+    columns = ["word", "pos"]
+    column_nrs = [3, 4]
+    # The names and the order of the tokens:
+    tokens = [u"w:1", u"w:2", u"w:3", u"w:4"]
+    vrt = {
+        u"w:1": {
+            0: [1, u""],
+            1: [1, u"Kokboken"],
+            2: [1, u"Jane Oliver"],
+            3: u"Ett",
+            4: u"DT"
+        },
+        u"w:2": {
+            0: [1, u""],
+            1: [1, u"Kokboken"],
+            2: [1, u"Jane Oliver"],
+            3: u"exempel",
+            4: u"NN"
+        },
+        u"w:3": {
+            0: [2, u""],
+            1: [1, u"Kokboken"],
+            2: [1, u"Jane Oliver"],
+            3: u"Banankaka",
+            4: u"NN"
+        },
+        u"w:4": {
+            0: [3, u""],
+            1: [2, u"Nya kokboken"],
+            2: [2, u"Jane Oliver"],
+            3: u"Flambera",
+            4: u"VB"
+        }
+      }
+    return DictWithWithout(**locals())
+
+
+def example_overlapping_data():
+    """Overlapping data to test the write_* functions."""
+    structs = [["b", [[UNDEF, 0]]], ["i", [[UNDEF, 1]]]]
+    structs_count = 2
+    columns = ["word"]
+    column_nrs = [2]
+    tokens = [u"w:1", u"w:2", u"w:3"]
+    vrt = {
+        u"w:1": {
+            0: [1, u""],
+            1: [],
+            2: u"bold"
+        },
+        u"w:2": {
+            0: [1, u""],
+            1: [2, u""],
+            2: u"bold_italic"
+        },
+        u"w:3": {
+            0: [],
+            1: [2, u""],
+            2: u"italic"
+        },
+      }
+    return DictWithWithout(**locals())
 
 
 if __name__ == '__main__':
