@@ -183,20 +183,42 @@ def run_test(test_dir, verbose, cleanup=False):
     return partition(check_goal_diffs(test_dir, verbose=verbose))
 
 
+def capture(cmd, filename):
+    """
+    Capture stdout and stderr of a system call.
+
+    Returns the exit code, the file name of the captured output and
+    a callback that returns the captured output.
+
+    >>> import tempfile
+    >>> with tempfile.NamedTemporaryFile() as tmp:
+    ...     exc, name, contents = capture(['echo', '-n', 'mu'], tmp.name)
+    ...     (exc, name == tmp.name, contents())
+    (0, True, 'mu')
+    """
+    with open(filename, 'w') as fd:
+        exc = call(cmd, stdout=fd, stderr=STDOUT)
+    def lazy_contents():
+        with open(filename, 'r') as fd:
+            return fd.read()
+    return exc, filename, lazy_contents
+
+
 def match(goal, built, verbose):
     """
     Check that contents of the files are identical.
     """
     if not path.exists(built):
         return False, built + ' was not built (required by ' + goal + ')'
-    diff_file = built + '.diff'
-    with open(diff_file, 'w') as fd:
-        exc = call(['diff', built, goal], stdout=fd, stderr=STDOUT)
+    exc, diff_file, diff = capture(['diff', built, goal], built + '.diff')
     if exc != 0:
-        msg = built + ' != ' + goal + '\n' + diff_file
+        _, color_diff_file, color_diff = capture(
+            ['git', 'diff', '--word-diff=color', '--no-index', built, goal],
+            built + '.color.diff')
+        msg = built + ' != ' + goal + '\n' + diff_file + '\n' + color_diff_file
         if verbose:
-            with open(diff_file, 'r') as fd:
-                msg += '\n' + indent(fd.read())
+            for contents in [diff, color_diff]:
+                msg += '\n' + indent(contents())
         return False, msg
     else:
         return True, built + ' == ' + goal
