@@ -273,6 +273,7 @@ def checkout_makefiles(verbose):
     if not path.exists('makefiles'):
         cmd = """svn checkout
                  https://svn.spraakdata.gu.se/sb-arkiv/material
+                 makefiles
                  --depth files""".split()
         exc = call(cmd, stdout=sys.stdout, stderr=sys.stderr)
         if exc != 0:
