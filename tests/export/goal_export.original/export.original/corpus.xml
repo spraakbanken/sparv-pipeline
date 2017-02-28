@@ -1,0 +1,36 @@
+<corpus>
+<text title="t1" author="p1">
+<chapter name="c1">
+<w attr="a1" bttr="b1">w1</w>
+<w attr="a2" bttr="b2">w2</w>
+</chapter>
+<chapter name="c2">
+<w attr="a3" bttr="b3">w3</w>
+<w attr="a4" bttr="b4">w4</w>
+<w attr="a5" bttr="b5">w5</w>
+</chapter>
+</text>
+<text title="t2" author="p2">
+<chapter name="c2">
+<w attr="a6" bttr="b6">w6</w>
+<w attr="a7" bttr="b7">w7</w>
+<w attr="a8" bttr="b8">w8</w>
+<w attr="a9" bttr="b9">w9</w>
+</chapter>
+<chapter name="c2">
+<w attr="a10" bttr="b10">w10</w>
+<w attr="a11" bttr="b11">w11</w>
+</chapter>
+</text>
+<text title="t3" author="p3">
+<chapter name="c3">
+<w attr="a12" bttr="b12">w12</w>
+</chapter>
+<chapter name="c2">
+<w attr="a13" bttr="b13">w13</w>
+<w attr="a14" bttr="b14">w14</w>
+<w attr="a15" bttr="b15">w15</w>
+<w attr="a16" bttr="b16">w16</w>
+</chapter>
+</text>
+</corpus>
