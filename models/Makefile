@@ -39,7 +39,7 @@ hunpos.dalinm-swedberg.saldo.suc-tags.morphtable: hunpos.saldo.suc-tags.morphtab
 	$(python) -m sb.hunpos_morphtable_hist --out "$@" --files "hist_hunposfiles/swedberg-gender.hunpos hist_hunposfiles/dalinm.hunpos" --saldosuc_morphtable "$<"
 
 bettertokenizer.sv.saldo-tokens:
-	$(python) segment.py --build_token_wordlist --out "$@" --saldo_model "saldo.pickle" --segmenter better_word --model "bettertokenizer.sv" --no_pickled_model=True
+	$(python) -m sb.segment --build_token_wordlist --out "$@" --saldo_model "saldo.pickle" --segmenter better_word --model "bettertokenizer.sv" --no_pickled_model=True
 
 stats_all.txt:
 	@echo "Exporting stats_all.txt from Subversion..."
