@@ -212,12 +212,12 @@ def match(goal, built, verbose):
         return False, built + ' was not built (required by ' + goal + ')'
     exc, diff_file, diff = capture(['diff', built, goal], built + '.diff')
     if exc != 0:
-        _, color_diff_file, color_diff = capture(
+        _, word_diff_file, word_diff = capture(
             ['git', 'diff', '--word-diff=color', '--no-index', built, goal],
-            built + '.color.diff')
-        msg = built + ' != ' + goal + '\n' + diff_file + '\n' + color_diff_file
+            built + '.word.diff')
+        msg = built + ' != ' + goal + '\n' + diff_file + '\n' + word_diff_file
         if verbose:
-            for contents in [diff, color_diff]:
+            for contents in [diff, word_diff]:
                 msg += '\n' + indent(contents())
         return False, msg
     else:
