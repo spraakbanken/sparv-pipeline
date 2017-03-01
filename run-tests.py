@@ -46,6 +46,7 @@ Flags:
     -h          Show help
     -v, -v11    Verbose and even more verbose
     --clean     Only run the clean parts, and remove stdout/stderr files
+    --models    Remake correct revision in the models directory
     PATH..      Paths to look for test.yaml instead of tests/
                 Use this if you only want to run some test.
 """
@@ -374,6 +375,12 @@ def main():
     os.environ['python'] = os.environ.get('python', 'python2')
 
     checkout_makefiles(verbose=verbose)
+
+    if flag('--models'):
+        revision = '{2017-03-01}'
+        print('Calling make in models/ with svn --revision ' + revision)
+        cmd = 'make -C models all -B -j4 revision=' + revision
+        sys.exit(call(cmd.split(), stdout=sys.stdout, stderr=sys.stderr))
 
     if flag('--clean'):
         ok = all(run_tests(dirs_with_test_yaml(sys.argv[1:]),
