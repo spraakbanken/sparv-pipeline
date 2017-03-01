@@ -151,6 +151,7 @@ def run_test(test_dir, verbose, cleanup=False):
         if cleanup and not clean:
             exc = 0
         else:
+            # TODO: This should be 'wa', but we need to remove files first
             with open(stdout, 'w') as out:
                 with open(stderr, 'w') as err:
                     for fd in [out, err]:
