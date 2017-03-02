@@ -1,0 +1,60 @@
+
+# This file should be included at the top of your corpus Makefile
+
+################################################################################
+#                                  MODELS                                      #
+################################################################################
+
+bettertokenizer_config = $(SB_MODELS)/bettertokenizer.sv
+punkt_model_sv = $(SB_MODELS)/punkt-nltk-svenska.pickle
+punkt_model_en = $(SB_MODELS)/punkt-nltk-english.pickle
+punkt_model := $(punkt_model_sv)
+hunpos_model = $(SB_MODELS)/hunpos.suc3.suc-tags.default-setting.utf8.model
+hunpos_morphtable = $(SB_MODELS)/hunpos.saldo.suc-tags.morphtable
+hunpos_morphtable_patterns = $(SB_MODELS)/hunpos.suc.patterns
+hunpos_morphtable_swedalin = $(SB_MODELS)/hunpos.dalinm-swedberg.saldo.suc-tags.morphtable
+# tag_mapping = parole_to_suc
+saldo_model = $(SB_MODELS)/saldo.pickle
+saldo_compound_model = $(SB_MODELS)/saldo.compound.pickle
+saldo_revision = $(SB_MODELS)/saldo.rev
+dalin_model = $(SB_MODELS)/dalin.pickle
+swedberg_model = $(SB_MODELS)/swedberg.pickle
+nst_comp_model = $(SB_MODELS)/nst.comp.pos.pickle
+stats_model = $(SB_MODELS)/stats.pickle
+malt_model = $(SB_MODELS)/swemalt-1.7.2.mco
+malt_jar = maltparser-1.7.2/maltparser-1.7.2.jar
+tt_bin = treetagger/tree-tagger
+tt_model = $(SB_MODELS)/treetagger_$(lang).bin
+fl_config = $(SB_MODELS)/freeling_$(lang).cfg
+
+################################################################################
+#                                VARIABLES                                     #
+################################################################################
+
+# Remote host name for installation of both corpus data and database
+remote_host = 
+
+# Paths on remote server (targets for install_corpus)
+remote_cwb_datadir = ""
+remote_cwb_registry = ""
+
+# Export hosts and paths (targets for install_export and install_export_original)
+export_host = 
+export_path = 
+export_original_host = 
+export_original_path = 
+
+# Database name for relations, lemgram index and timespan
+mysql_dbname = 
+
+# Python executable
+python = python
+
+# The initial chmod for directories. Defaults to the value 775
+dir_chmod = 775
+
+################################################################################
+
+# Display help when no target is specified
+default: help
+

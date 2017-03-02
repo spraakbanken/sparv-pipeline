@@ -1,0 +1,2 @@
+$(info *** Makefile.common has been replaced by Makefile.config. Please update your Makefile. ***)
+include Makefile.config

@@ -1,0 +1,1046 @@
+
+# This file should be included at the bottom of your corpus Makefile
+
+################################################################################
+#                                MISC CHECKS                                   #
+################################################################################
+
+ifeq ($(SB_MODELS),)
+  $(error Environment variable 'SB_MODELS' not set)
+endif
+
+ifeq ($(wildcard $(SB_MODELS)/.*),)
+  $(error Environment variable 'SB_MODELS' seems to point to a nonexistent or empty directory: $(SB_MODELS))
+endif
+
+ifeq ($(PYTHONPATH),)
+  $(error Environment variable 'PYTHONPATH' not set)
+endif
+
+ifeq ($(corpus),)
+  $(error Variable 'corpus' is not set)
+endif
+
+ifeq ($(files),)
+  $(error Variable 'files' is not set)
+endif
+
+ifeq ($(vrt_columns_annotations),)
+  $(error Variable 'vrt_columns_annotations' is not set)
+endif
+
+ifeq ($(vrt_columns),)
+  $(error Variable 'vrt_columns' is not set)
+endif
+
+ifeq ($(vrt_structs_annotations),)
+  $(error Variable 'vrt_structs_annotations' is not set)
+endif
+
+ifeq ($(vrt_structs),)
+  $(error Variable 'vrt_structs' is not set)
+endif
+
+ifneq ($(filter export export_combined export_compressed install_export,$(MAKECMDGOALS)),)
+  ifneq ($(filter export_original export_combined_original export_compressed_original install_export_original,$(MAKECMDGOALS)),)
+    $(error 'export' and 'export_original' needs to be run separately)
+  endif
+endif
+
+################################################################################
+#                             DEPRECATED CHECKS                                #
+################################################################################
+
+ifneq ($(vrt_annotations),)
+  $(error vrt_annotations is deprecated; use vrt_columns_annotations and vrt_structs_annotations instead)
+endif
+
+ifneq ($(filter n,$(vrt_columns_annotations)),)
+  $(error 'token.n' is a reserved annotation; rename or remove from vrt_columns_annotations)
+endif
+
+ifneq ($(chains),)
+  $(info Note: 'chains' is normally not needed anymore)
+endif
+
+ifneq ($(export_randomized),)
+  $(error export_randomized is deprecated)
+endif
+
+ifneq ($(scramble_level),)
+  $(error scramble_level is deprecated)
+endif
+
+ifneq ($(export_scrambled),)
+  $(error export_scrambled is deprecated)
+endif
+
+ifneq ($(original_as_src),)
+  $(info original_as_src is deprecated)
+endif
+
+################################################################################
+#                                SHORTCUTS                                     #
+################################################################################
+
+# Shortcut variables for indexing prerequisites of rules:
+1 = $(word 1,$+)
+2 = $(word 2,$+)
+3 = $(word 3,$+)
+4 = $(word 4,$+)
+5 = $(word 5,$+)
+6 = $(word 6,$+)
+7 = $(word 7,$+)
+8 = $(word 8,$+)
+9 = $(word 9,$+)
+10 = $(word 10,$+)
+
+# This is to stop GNU make from removing intermediate files:
+.SECONDARY:
+
+################################################################################
+#                            MISC UTILITY MACROS                               #
+################################################################################
+
+# Macro for invoking a command on groups of 1000 words at a time
+# (analogous to xargs(1)).  The macro invokes itself recursively
+# until the list of words is depleted.
+#
+# Usage: $(call xargs,COMMAND,LIST)
+#
+# COMMAND should be a shell command to which the words will be
+# appended as arguments in groups of 1000.
+define xargs
+$(1) $(wordlist 1,1000,$(2))
+$(if $(word 1001,$(2)),$(call xargs,$(1),$(wordlist 1001,$(words $(2)),$(2))))
+endef
+
+# Macro for writing the contents of a word list to a file, one word
+# per line.  This macro will work even for very long lists of words.
+#
+# Usage: $(call write-to-file,FILENAME,LIST)
+define write-to-file
+@: >$(1)
+$(call xargs,@printf "%s\n" >>$(1),$(2))
+endef
+
+define write-to-file0
+@: >$(1)
+$(call xargs,@printf "%s\000" >>$(1),$(2))
+endef
+
+################################################################################
+#                                NULL RULES                                    #
+################################################################################
+
+# Generates empty annotations
+nulls := $(addprefix %.token., $(null_annotations))
+
+$(nulls): %.token
+	for f in $(subst %,$*,$(nulls)); do \
+	  touch $$f; \
+	done
+
+################################################################################
+#                                  RULES                                       #
+################################################################################
+
+annotations = vrt @TEXT $(sort $(xml_annotations) $(xml_header_annotations) $(addprefix token., $(vrt_columns_annotations)) $(vrt_structs_annotations))
+
+# Source directory
+
+ifeq ($(filter xml,$(custom_rules)),)
+  ifeq ($(source_encoding),)
+src := $(original_dir)
+  else
+src := $(root)src
+  endif
+else
+src := $(root)src
+endif
+
+# Misc shortcuts
+
+# Shortcuts for executing "make [filename]"
+$(files): %: $(root)annotations/%.vrt
+
+# Shortcuts for executing "make [annotation]"
+$(annotations): %: $(files:%=$(root)annotations/%.%)
+
+# Allow the user use the old "make TEXT"
+TEXT: $(files:%=$(root)annotations/%.@TEXT)
+
+lemgram_index: $(root)annotations/_lemgram_index_.sql
+timespan: $(root)annotations/_timespan_.sql
+
+debug:
+	@echo "SB_MODELS: $(SB_MODELS)"
+	@echo "PYTHONPATH: $(PYTHONPATH)"
+	@echo "PATH: $(PATH)"
+	@echo "xml-source: $(original_dir)"
+
+targets = clean distclean space clean_export files add vrt cwb xml info install install_corpus install_relations install_lemgrams install_timespan relations export export_combined export_compressed install_export export_original export_combined_original export_compressed_original install_export_original
+.PHONY: help $(targets) $(annotations) $(files)
+
+ifeq ($(filter xml,$(custom_rules)),)
+xml: $(files:%=$(src)/%.xml)
+endif
+
+ifeq ($(sentence_order), random)
+  token_n_suffix = .sentence_random
+endif
+ifeq ($(paragraph_order), random)
+  token_n_suffix = .paragraph_random
+endif
+
+ifeq ($(filter xml,$(custom_rules)),)
+  ifneq ($(source_encoding),)
+$(root)src/%.xml: $(original_dir)/%.xml
+	mkdir -p $(dir $@) -m $(dir_chmod)
+	iconv -f $(source_encoding) -t UTF-8 $(1) > $@
+  endif
+endif
+
+ifeq ($(analysis),fl)
+  ifeq ($(filter freeling,$(custom_rules)),)
+$(root)src/%.xml: $(original_dir)/%.xml
+	mkdir -p $(root)src/ -m $(dir_chmod)
+	$(python) -m sb.freeling --in_file $(1) --out_file $@ --conf_file $(fl_config) --lang $(lang) --slevel "$(freeling_slevel)"
+  endif
+endif
+
+%.vrt: $(foreach struct,$(vrt_structs_annotations),$(addprefix %.parents.token., $(firstword $(subst ., ,$(struct))))) $(addprefix %., $(vrt_structs_annotations)) $(addprefix %.token., $(vrt_columns_annotations) n$(token_n_suffix))
+	$(python) -m sb.cwb --export --format vrt --out $@ \
+		--order $*.token.n$(token_n_suffix) \
+		--annotations_columns "$(addprefix $*.token., $(vrt_columns_annotations))" \
+		--annotations_structs "$(foreach struct,$(vrt_structs_annotations),$(addprefix $*.$(struct):$*.parents.token., $(firstword $(subst ., ,$(struct)))))" \
+		--columns "$(vrt_columns)" \
+		--structs "$(vrt_structs)"
+
+define xml_parse
+$(root)annotations/$(1)%.@TEXT $(addprefix $(root)annotations/$(1)%.,$($(2)xml_annotations)) $(addprefix $(root)annotations/$(1)%.,$($(2)xml_header_annotations)): $(src)/$(1)%.xml $(root)annotations/fileids
+	mkdir -p $$(dir $$@) -m $$(dir_chmod)
+	$(python) -m sb.xmlparser --source $$(1) --text $$(root)annotations/$(1)$$*.@TEXT \
+		--skip "$$($(2)xml_skip)" \
+		--elements "$$($(2)xml_elements)" \
+		--annotations "$$(addprefix $$(root)annotations/$(1)$$*.,$$($(2)xml_annotations))" \
+		--overlap "$$($(2)xml_overlap)" \
+		--fileid "$(1)$$*" --fileids $$(2) \
+		--header "$$($(2)xml_header)" --headers "$$($(2)xml_headers)" --header_annotations "$$(addprefix $$(root)annotations/$(1)$$*.,$$($(2)xml_header_annotations))" \
+		--skip_if_empty "$$($(2)xml_skip_empty)" --skip_entities "$$($(2)xml_skip_entities)" --autoclose "$$($(2)xml_autoclose)" --allow_xml_chars "$$($(2)allow_xml_chars)"
+endef
+
+ifeq ($(xml_folders),)
+  $(eval $(call xml_parse,,))
+else
+  $(foreach xml_folder,$(xml_folders),$(eval $(call xml_parse,$(xml_folder)/,$(xml_folder)_)))
+endif
+
+ifeq ($(token_segmenter), better_word)
+  # The BetterTokenizer model is unpickled
+  token_model_pickle = --no_pickled_model=true
+
+  # Automatically set BetterTokenizer config if omitted
+  ifeq ($(token_model),)
+    token_model = $(bettertokenizer_config)
+  endif
+endif
+
+# Set token_chunk to sentence if omitted
+ifeq ($(token_chunk),)
+  token_chunk = sentence
+endif
+
+ifeq ($(filter token,$(custom_rules)),)
+%.token: %.@TEXT %.$(token_chunk)
+	$(python) -m sb.segment --element w --out $@ --text $(1) --chunk $(2) --segmenter $(token_segmenter) --model "$(token_model)" $(token_model_pickle)
+endif
+
+# Token order
+
+ifeq ($(filter token.n,$(custom_rules)),)
+
+  ifeq ($(sentence_order), random)
+    ifeq ($(paragraph_order), random)
+      $(error sentence_order and paragraph_order are both set to 'random'. Only one can be set to 'random'.)
+    endif
+  endif
+
+%.token.n: %.@TEXT %.token
+	$(python) -m sb.number --position --out $@ --texts $(1) --chunks $(2)
+
+%.token.n.sentence_random: %.token %.sentence.n.random %.children.sentence.token
+	$(python) -m sb.number --parent --out $@ --chunks $(1) --parent_order $(2) --parent_children $(3)
+
+%.token.n.paragraph_random: %.token %.paragraph.n.random %.children.paragraph.token
+	$(python) -m sb.number --parent --out $@ --chunks $(1) --parent_order $(2) --parent_children $(3)
+
+endif
+
+# Paragraph order
+
+ifeq ($(filter paragraph.n,$(custom_rules)),)
+
+  ifeq ($(strip $(paragraph_order)),)
+     paragraph_order = position
+  endif
+
+  ifeq ($(paragraph_order), position)
+
+  endif
+
+  ifeq ($(paragraph_order), random)
+    paragraph_suffix = .random
+  endif
+
+%.paragraph.n: %.@TEXT %.paragraph
+	$(python) -m sb.number --position --out $@ --texts $(1) --chunks $(2)
+
+%.paragraph.n.random: %.paragraph
+	$(python) -m sb.number --random --out $@ --chunks $(1)
+
+endif
+
+# Sentence order
+
+ifeq ($(filter sentence.n,$(custom_rules)),)
+
+  ifeq ($(strip $(sentence_order)),)
+    sentence_order = position
+  endif
+
+  ifeq ($(sentence_order), position)
+
+  endif
+
+  ifeq ($(sentence_order), random)
+    sentence_suffix = .random
+  endif
+
+%.sentence.n: %.@TEXT %.sentence
+	$(python) -m sb.number --position --out $@ --texts $(1) --chunks $(2)
+
+%.sentence.n.random: %.sentence
+	$(python) -m sb.number --random --out $@ --chunks $(1)
+
+endif
+
+# token.word
+ifeq ($(filter token.word,$(custom_rules)),)
+%.token.word: %.@TEXT %.token
+	$(python) -m sb.annotate --text_spans --out $@ --text $(1) --chunk $(2)
+endif
+
+ifeq ($(filter sentence,$(custom_rules)),)
+  ifneq ($(sentence_no_pickled_model),)
+    pickled_model = --no_pickled_model true
+  endif
+
+  # Automatically set sentence_model based on segmenter and language
+  ifeq ($(sentence_model),)
+    ifeq ($(sentence_segmenter),punkt_sentence)
+      ifeq ($(lang),)
+        sentence_model = $(punkt_model_sv)
+      endif
+      ifeq ($(lang),sv)
+        sentence_model = $(punkt_model_sv)
+      endif
+      ifeq ($(lang),en)
+        sentence_model = $(punkt_model_en)
+      endif
+    endif
+  endif
+
+%.sentence: %.@TEXT %.$(sentence_chunk)
+	$(python) -m sb.segment --element s --out $@ --text $(1) --chunk $(2) --segmenter $(sentence_segmenter) --model "$(sentence_model)"  $(pickled_model)
+endif
+
+ifeq ($(filter paragraph,$(custom_rules)),)
+%.paragraph: %.@TEXT %.$(paragraph_chunk)
+	$(python) -m sb.segment --element p --out $@ --text $(1) --chunk $(2) --segmenter $(paragraph_segmenter) --model "$(paragraph_model)"
+endif
+
+%.children.paragraph.token: %.@TEXT %.paragraph %.token
+	$(python) -m sb.parent --children --out $@ --text $(1) --parent $(2) --child $(3) --ignore_missing_parent "$(ignore_missing_parents)"
+
+%.children.sentence.token: %.@TEXT %.sentence %.token
+	$(python) -m sb.parent --children --out $@ --text $(1) --parent $(2) --child $(3) --ignore_missing_parent "$(ignore_missing_parents)"
+
+%.parents.token.paragraph: %.@TEXT %.paragraph %.token
+	$(python) -m sb.parent --parents --out $@ --text $(1) --parent $(2) --child $(3) --ignore_missing_parent "$(ignore_missing_parents)"
+
+%.parents.token.sentence: %.@TEXT %.sentence %.token
+	$(python) -m sb.parent --parents --out $@ --text $(1) --parent $(2) --child $(3) --ignore_missing_parent "$(ignore_missing_parents)"
+
+%.parents.token.ne: %.@TEXT %.ne.type %.token
+	$(python) -m sb.parent --parents --out $@ --text $(1) --parent $(2) --child $(3) --ignore_missing_parent true
+
+ifeq ($(filter ne.type,$(custom_rules)),)
+%.ne.ex %.ne.type %.ne.subtype %.ne.name: %.token.word %.children.sentence.token
+	$(python) -m sb.swener --out_ne_ex $*.ne.ex --out_ne_type $*.ne.type --out_ne_subtype $*.ne.subtype --out_ne_name $*.ne.name --word $(1) --sentence $(2)
+endif
+
+%.token.ref: %.children.sentence.token
+	$(python) -m sb.number --relative --out $@ --parent_children $(1)
+
+ifeq ($(analysis),tt)
+  ifeq ($(filter token.pos token.baseform,$(custom_rules)),)
+%.token.pos %.token.msd %.token.baseform: %.token.word %.children.sentence.token $(tt_model)
+	$(python) -m sb.treetagger --model $(3) --tt_binary $(tt_bin) --out_pos "$*.token.pos" --out_msd "$*.token.msd" --out_lem "$*.token.baseform" --word $(1) --sentence $(2) --lang $(lang)
+  endif
+else
+  ifeq ($(analysis),sv-1800)
+    ifeq ($(filter token.msd,$(custom_rules)),)
+%.token.msd: %.token.word %.children.sentence.token $(hunpos_model) $(hunpos_morphtable_swedalin)
+	$(python) -m sb.hunpos --out $@ --word $(1) --sentence $(2) --model $(3) --tag_mapping "$(tag_mapping)" --morphtable $(4)
+    endif
+    ifeq ($(filter token.pos,$(custom_rules)),)
+%.token.pos: %.token.msd
+	$(python) -m sb.annotate --select --out $@ --annotation $(1) --index 0 --separator "."
+    endif
+
+  else
+
+    ifeq ($(filter token.msd,$(custom_rules)),)
+%.token.msd: %.token.word %.children.sentence.token $(hunpos_model) $(hunpos_morphtable) $(hunpos_morphtable_patterns)
+	$(python) -m sb.hunpos --out $@ --word $(1) --sentence $(2) --model $(3) --tag_mapping "$(tag_mapping)" --morphtable "$(4)" --patterns "$(5)"
+    endif
+
+    ifeq ($(filter token.pos,$(custom_rules)),)
+%.token.pos: %.token.msd
+	$(python) -m sb.annotate --select --out $@ --annotation $(1) --index 0 --separator "."
+    endif
+  endif
+endif
+
+# temporary rule (should be removed when namespaces are sorted...)
+%.token.dalinlemgram: %.token.word %.token.msd %.children.sentence.token %.token.ref $(dalin_model) $(swedberg_model)
+	$(python) -m sb.saldo --out $@ --annotations "lem" --word $(1) --msd $(2) --models "$(5) $(6)" --delimiter "|" --affix="|" \
+    --precision="" --min_precision=$(saldo_min_precision) --precision_filter "$(saldo_precision_filter)" --sentence $(3) --reference $(4) --skip_multiword "$(saldo_skip_multiword)"
+
+ifneq ($(analysis),tt)
+  ifeq ($(filter token.baseform token.lemgram token.sense,$(custom_rules)),)
+
+    # If new compound analysis is omitted, do not create baseform_tmp
+    ifeq ($(filter complemgram compwf,$(vrt_columns)),)
+  	  baseform = baseform
+    else
+      baseform = baseform_tmp
+    endif
+
+    ifeq ($(strip $(saldo_min_precision)),)
+      saldo_min_precision = 0.66
+    endif
+
+    ifeq ($(strip $(saldo_precision_filter)),)
+      saldo_precision_filter = max
+    endif
+
+    ifeq ($(rank_senses),false)
+      sense = sense
+	else
+	  ifneq ($(filter saldo,$(vrt_columns)),)
+		sense = saldo
+	  else
+	  	sense = sense_tmp
+	  endif
+    endif
+
+    ifeq ($(analysis),sv-1800)
+# include annotations from dalin and swedberg
+%.token.$(baseform) %.token.lemgram %.token.$(sense): %.token.word %.token.msd %.children.sentence.token %.token.ref $(saldo_model) $(dalin_model) $(swedberg_model)
+	$(python) -m sb.saldo --out "$*.token.$(baseform) $*.token.lemgram $*.token.$(sense)" --annotations "gf lem saldo" \
+		--word $(1) --msd $(2) --models "$(5) $(6) $(7)" --delimiter "|" --affix="|" --precision="" --min_precision=$(saldo_min_precision) --precision_filter "$(saldo_precision_filter)" --sentence $(3) --reference $(4) --skip_multiword "$(saldo_skip_multiword)"
+    else
+
+%.token.$(baseform) %.token.lemgram %.token.$(sense): %.token.word %.token.msd %.children.sentence.token %.token.ref $(saldo_model)
+	$(python) -m sb.saldo --out "$*.token.$(baseform) $*.token.lemgram $*.token.$(sense)" --annotations "gf lem saldo" \
+		--word $(1) --msd $(2) --models $(5) --delimiter "|" --affix="|" --precision="" --min_precision=$(saldo_min_precision) --precision_filter "$(saldo_precision_filter)" --sentence $(3) --reference $(4) --skip_multiword "$(saldo_skip_multiword)"
+    endif
+  endif
+endif
+
+ifeq ($(baseform),baseform_tmp)
+  ifeq ($(filter token.complemgram token.compwf,$(custom_rules)),)
+%.token.complemgram %.token.compwf %.token.baseform: %.token.word %.token.msd %.token.baseform_tmp $(saldo_compound_model) $(nst_comp_model) $(stats_model)
+	$(python) -m sb.compound --out_complemgram $*.token.complemgram --out_compwf $*.token.compwf --out_baseform $*.token.baseform --word $(1) --msd $(2) --baseform_tmp $(3) \
+		--saldo_comp_model $(4) --nst_model $(5) --stats_model $(6)
+  endif
+endif
+
+ifeq ($(filter token.sense,$(custom_rules)),)
+  ifneq ($(rank_senses),false)
+%.token.sense: %.children.sentence.token %.token.word %.token.ref %.token.lemgram %.token.sense_tmp %.token.pos
+	$(python) -m sb.wsd --wsdjar $(wsd_jar) --sense_model $(wsd_sense_model) --context_model $(wsd_context_model) --out $@ --sentence $(1) --word $(2) --ref $(3) --lemgram $(4) --saldo $(5) --pos $(6)
+  endif
+endif
+
+# Old compound analysis, to be removed
+ifeq ($(filter token.prefix token.suffix,$(custom_rules)),)
+%.token.prefix %.token.suffix: %.token.word %.token.msd $(saldo_compound_model)
+	$(python) -m sb.compound_simple --out_prefix $*.token.prefix --out_suffix $*.token.suffix --word $(1) --msd $(2) --model $(3)
+endif
+
+ifeq ($(filter token.malt,$(custom_rules)),)
+%.token.malt: %.children.sentence.token %.token.word %.token.msd %.token.pos $(malt_model)
+	$(python) -m sb.malt --maltjar $(malt_jar) --out $@ --sentence $(1) --word $(2) --msd $(3) --pos $(4) --model $(5)
+endif
+
+ifeq ($(filter token.deprel,$(custom_rules)),)
+%.token.deprel: %.token.malt
+	$(python) -m sb.annotate --select --out $@ --annotation $(1) --index 0
+endif
+
+ifeq ($(filter token.dephead,$(custom_rules)),)
+%.token.dephead: %.token.malt
+	$(python) -m sb.annotate --select --out $@ --annotation $(1) --index 1
+endif
+
+ifeq ($(filter token.dephead.ref,$(custom_rules)),)
+%.token.dephead.ref: %.token.dephead %.token.ref
+	$(python) -m sb.annotate --chain --out $@ --annotations "$+"
+endif
+
+%.sentence.id: %.sentence
+	$(python) -m sb.annotate --span_as_value --out $@ --keys $(1)
+
+%.token.sentence.id: %.parents.token.sentence %.sentence.id
+	$(python) -m sb.annotate --chain --out $@ --annotations "$+"
+
+%.text.datefrom %.text.dateto: %.$(datefrom) %.$(dateto)
+	$(python) -m sb.dateformat --infrom $(1) --into $(2) --outfrom $*.text.datefrom --outto $*.text.dateto --informat "$(dateformat)" --outformat "%Y%m%d" --splitter "$(datesplitter)" --regex "$(dateregex)"
+
+%.text.timefrom %.text.timeto: %.$(datefrom) %.$(dateto)
+	$(python) -m sb.dateformat --infrom $(1) --into $(2) --outfrom $*.text.timefrom --outto $*.text.timeto --informat "$(dateformat)" --outformat "%H%M%S" --splitter "$(datesplitter)" --regex "$(dateregex)"
+
+################################################################################
+#                                  GEOCONTEXT                                  #
+################################################################################
+
+ifeq ($(paragraph_geocontext),)
+  paragraph_geocontext := paragraph
+endif
+ifeq ($(sentence_geocontext),)
+  sentence_geocontext := sentence
+endif
+
+%.paragraph.geocontext: %.paragraph %.$(paragraph_geocontext) %.@TEXT %.ne.type %.ne.subtype $(geo_model)
+	$(python) -m sb.geo --out $@ --chunk $(1) --context $(2) --text $(3) --ne $(4) --ne_subtype $(5) --model $(6) --language "$(geo_language)"
+
+%.sentence.geocontext: %.sentence %.$(sentence_geocontext) %.@TEXT %.ne.type %.ne.subtype $(geo_model)
+	$(python) -m sb.geo --out $@ --chunk $(1) --context $(2) --text $(3) --ne $(4) --ne_subtype $(5) --model $(6) --language "$(geo_language)"
+
+################################################################################
+#                                  RELATIONS                                   #
+################################################################################
+
+%.relations: %.token.pos %.token.lemgram %.token.dephead %.token.deprel %.children.sentence.token %.token.word %.sentence.id %.token.ref %.token.baseform
+	$(python) -m sb.relations --out $@ --pos $(1) --lemgram $(2) --dephead $(3) --deprel $(4) --sentence $(5) --word $(6) --sentence_id $(7) --ref $(8) --baseform $(9)
+
+relations: $(root)annotations/_relations_.sql
+
+$(root)annotations/_list_relations_: $(files:%=$(root)annotations/%.relations)
+	$(call write-to-file,$@,$+)
+
+$(root)annotations/_relations_.sql: $(root)annotations/_list_relations_
+	$(python) -m sb.relations --frequency --out $@ --source_list "$(1)" --corpus $(corpus) --db_name $(mysql_dbname) --split "$(split_relations)"
+
+################################################################################
+#                                 .INFO FILE                                   #
+################################################################################
+
+has_sentences = $(word 1, $(foreach a, $(vrt_structs), $(if $(filter sentence, $(subst :, ,$(a))), $(a))))
+ifneq ("$(has_sentences)","")
+$(root)annotations/_list_sentences_: $(files:%=$(root)annotations/%.sentence)
+	$(call write-to-file0,$@,$+)
+$(root)annotations/sentencecount: $(root)annotations/_list_sentences_
+	wc -l --files0-from $(1) | tail -1 | grep -oP [0-9]+ | head -1 > $@
+else
+  $(info Info: No sentence information found in corpus)
+$(root)annotations/sentencecount:
+	echo "0" > $@
+endif
+
+ifeq ($(filter text:datefrom,$(vrt_structs)),)
+$(root)annotations/datefirst: $(CORPUS_REGISTRY)/$(corpus)
+	touch $@
+
+$(root)annotations/datelast: $(CORPUS_REGISTRY)/$(corpus)
+	touch $@
+else
+$(root)annotations/datefirst: $(CORPUS_REGISTRY)/$(corpus)
+	cwb-scan-corpus -q $(corpus) text_datefrom text_timefrom | cut -f 2- | sort -n | grep -v -P '^\s+$$' | head -1 | rev | sed -r -e "s/([0-9]{2})([0-9]{2})([0-9]{2})\t([0-9]{2})([0-9]{2})([0-9]{3,4})/\1:\2:\3 \4-\5-\6/" | rev > $@
+
+$(root)annotations/datelast: $(CORPUS_REGISTRY)/$(corpus)
+	cwb-scan-corpus -q $(corpus) text_dateto text_timeto | cut -f 2- | sort -n | tail -1 | rev | sed -r -e "s/([0-9]{2})([0-9]{2})([0-9]{2})\t([0-9]{2})([0-9]{2})([0-9]{3,4})/\1:\2:\3 \4-\5-\6/" | rev > $@
+endif
+
+info: $(CWB_DATADIR)/$(corpus)/.info
+
+$(CWB_DATADIR)/$(corpus)/.info: $(root)annotations/sentencecount $(saldo_revision) $(root)annotations/datefirst $(root)annotations/datelast
+	$(python) -m sb.info --edit --infofile $@ --key "Sentences" --valuefile $(1)
+	$(python) -m sb.info --edit --infofile $@ --key "Saldo" --valuefile $(2)
+	$(python) -m sb.info --edit --infofile $@ --key "FirstDate" --valuefile $(3)
+	$(python) -m sb.info --edit --infofile $@ --key "LastDate" --valuefile $(4)
+	$(python) -m sb.info --edit --infofile $@ --key "Updated" --value "%DATE%"
+
+################################################################################
+
+ifeq ($(filter fileids,$(custom_rules)),)
+$(root)annotations/fileids:
+	mkdir -p $(dir $@) -m $(dir_chmod)
+	$(python) -m sb.fileid --out $@ --files "$(files)" --prefix "$(lang)"
+endif
+
+add: $(root)annotations/fileids
+	$(python) -m sb.fileid --add --out $(root)annotations/fileids.new --files "$(files)" --fileids $(1) --prefix "$(lang)"
+	@touch -r $(1) $(root)annotations/fileids.new
+	@rm $(1)
+	@mv $(root)annotations/fileids.new $(1)
+
+$(root)annotations/_lemgram_index_.sql: $(CORPUS_REGISTRY)/$(corpus)
+	$(python) -m sb.lemgram_index --corpus $(corpus) --out $@ --db_name lemgram_index
+
+$(root)annotations/_timespan_.sql: $(CORPUS_REGISTRY)/$(corpus)
+	$(python) -m sb.timespan --corpus $(corpus) --out $@ --db_name timespan
+
+################################################################################
+#                                XML EXPORT                                    #
+################################################################################
+
+ifeq ($(export_columns_annotations),)
+  export_columns_annotations = $(vrt_columns_annotations)
+endif
+
+ifeq ($(export_structs_annotations),)
+  export_structs_annotations = $(vrt_structs_annotations)
+endif
+
+ifeq ($(export_columns),)
+  export_columns = $(vrt_columns)
+endif
+
+ifeq ($(export_structs),)
+  export_structs = $(vrt_structs)
+endif
+
+# Functions for removing annotations from annotations/columns/strucs lists
+define export_remover
+  # Removes the word in the given position from the given list
+  $(2) := $$(wordlist 1,$$(shell echo $(1)-1 | bc),$$($(2))) $$(wordlist $$(shell echo $(1)+1 | bc),$$(words $$($(2))),$$($(2)))
+endef
+
+define export_skipper
+  # Find position of attribute(s)
+  ii := $$(shell echo "$$(export_structs_annotations)" | sed -r -e "s/[ \t]+/\n/g" | egrep -n "^$(1)$$$$" | sed -r -e 's/^([0-9]*):.*/\1/' | sort -r -n)
+  ifneq ($$(ii),)
+    # For each position, remove from both export_structs_annotations and export_structs
+    $$(foreach i,$$(ii),$$(eval $$(call export_remover,$$(i),export_structs_annotations)))
+    $$(foreach i,$$(ii),$$(eval $$(call export_remover,$$(i),export_structs)))
+  endif
+endef
+
+# Export order
+
+# If any export_original command is used, force original (positional) order
+ifneq ($(filter export_original export_combined_original export_compressed_original install_export_original export_formatted,$(MAKECMDGOALS)),)
+  export_order = original
+endif
+
+# If no export order is given, use same order as vrt
+ifeq ($(export_order),)
+  ifeq ($(sentence_order), random)
+    export_order = sentence_scrambled
+  else
+    ifeq ($(paragraph_order), random)
+      export_order = paragraph_scrambled
+    else
+      export_order = original
+    endif
+  endif
+endif
+
+ifeq ($(export_order), sentence_scrambled)
+  export_order_annotation = n.sentence_random
+  export_suffix = .sentence_scrambled
+
+  # Remove paragraphs since we're sentence scrambling
+  ifeq ($(export_skip),)
+    export_skip = paragraph paragraph\..*
+  endif
+  $(foreach skip,$(export_skip),$(eval $(call export_skipper,$(skip))))
+else
+  ifeq ($(export_order), paragraph_scrambled)
+    export_order_annotation = n.paragraph_random
+    export_suffix = .paragraph_scrambled
+  else
+    ifeq ($(export_order),original)
+      export_order_annotation = n
+      export_suffix = .original
+    else
+      $(error Invalid value for export_order: $(export_order). Possible values: sentence_scrambled, paragraph_scrambled, original, <blank>)
+    endif
+  endif
+endif
+
+export: $(files:%=$(root)export$(export_suffix)/%.xml)
+$(root)export$(export_suffix)/%.xml: $(root)annotations/fileids $(foreach struct,$(export_structs_annotations),$(addprefix $(root)annotations/%.parents.token., $(firstword $(subst ., ,$(struct)))))   $(addprefix $(root)annotations/%., $(export_structs_annotations))   $(addprefix $(root)annotations/%.token., $(export_columns_annotations) $(export_order_annotation))
+	mkdir -p $(dir $@) -m $(dir_chmod)
+	$(python) -m sb.cwb --export --format xml --out $@ \
+		--order $(root)annotations/$*.token.$(export_order_annotation) \
+		--annotations_columns "$(addprefix $(root)annotations/$*.token., $(export_columns_annotations))" \
+		--annotations_structs "$(foreach struct,$(export_structs_annotations),$(addprefix $(root)annotations/$*.$(struct):$(root)annotations/$*.parents.token., $(firstword $(subst ., ,$(struct)))))" \
+		--columns "$(export_columns)" \
+		--structs "$(export_structs)" \
+		--fileid "$*" --fileids $(1)
+
+export_combined: $(corpus)_export$(export_suffix).xml
+$(root)annotations/_list_export$(export_suffix)_: $(files:%=$(root)export$(export_suffix)/%.xml)
+	$(call write-to-file,$@,$+)
+$(corpus)_export$(export_suffix).xml: $(root)annotations/_list_export$(export_suffix)_
+	$(python) -m sb.cwb --combine_xml --out "$(corpus)_export$(export_suffix).xml" --xmlfiles_list "$(1)" --master $(corpus)
+	#rm -rf $(root)export$(export_suffix)/
+
+export_compressed: $(corpus)$(export_suffix).xml.bz2
+$(corpus)$(export_suffix).xml.bz2: $(corpus)_export$(export_suffix).xml
+	bzip2 $(1)
+	mv $(1).bz2 $(corpus)$(export_suffix).xml.bz2
+
+export_original: export
+export_combined_original: export_combined
+export_compressed_original: export_compressed
+
+export_formatted: $(files:%=$(root)export.formatted/%.xml)
+$(root)export.formatted/%.xml: $(root)annotations/fileids $(root)annotations/%.@TEXT $(foreach struct,$(export_structs_annotations),$(addprefix $(root)annotations/%.parents.token., $(firstword $(subst ., ,$(struct)))))   $(addprefix $(root)annotations/%., $(export_structs_annotations))   $(addprefix $(root)annotations/%.token., $(export_columns_annotations) $(export_order_annotation))
+	mkdir -p $(dir $@) -m $(dir_chmod)
+	$(python) -m sb.cwb --export --format formatted --out $@ \
+		--order $(root)annotations/$*.token.$(export_order_annotation) \
+		--annotations_columns "$(addprefix $(root)annotations/$*.token., $(export_columns_annotations))" \
+		--annotations_structs "$(foreach struct,$(export_structs_annotations),$(addprefix $(root)annotations/$*.$(struct):$(root)annotations/$*.parents.token., $(firstword $(subst ., ,$(struct)))))" \
+		--columns "$(export_columns)" \
+		--structs "$(export_structs)" \
+		--fileid "$*" --fileids $(1) --text $(2)
+
+
+################################################################################
+#     Parent-children and chain rules (token + text.id -> token.text.id)       #
+################################################################################
+
+# Rules for when the user has defined parents/children explicitly
+
+define parent_rule_manual
+%.parents.$(1).$$(word 1,$$(subst ., ,$(2))): %.@TEXT %.$(1) %.$(2)
+	$(python) -m sb.parent --parents --out $$@ --text $$(1) --parent $$(3) --child $$(2) --ignore_missing_parent "$$(ignore_missing_parents)"
+endef
+
+define child_rule_manual
+%.children.$$(word 1,$$(subst ., ,$(1))).$(2): %.@TEXT %.$(1) %.$(2)
+	$(python) -m sb.parent --children --out $$@ --text $$(1) --parent $$(2) --child $$(3) --ignore_missing_parent "$$(ignore_missing_parents)"
+endef
+
+
+# Rules for automatic parents/children generation
+
+define parent_rule_automatic
+ifneq ($(2),)
+%.parents.token.$(1): %.@TEXT %.token %.$(2)
+	$(python) -m sb.parent --parents --out $$@ --text $$(1) --parent $$(3) --child $$(2) --ignore_missing_parent "$$(ignore_missing_parents)"
+endif
+endef
+
+define child_rule_automatic
+ifneq ($(2),)
+%.children.$(1).token: %.@TEXT %.$(2) %.token
+	$(python) -m sb.parent --children --out $$@ --text $$(1) --parent $$(2) --child $$(3) --ignore_missing_parent "$$(ignore_missing_parents)"
+endif
+endef
+
+
+# Select which rules to use
+
+ifeq ($(parents),)
+  structural_elements = $(sort $(foreach s, $(vrt_structs_annotations), $(word 1, $(subst ., , $(s)))))
+  $(foreach s, $(structural_elements), $(eval $(call parent_rule_automatic,$(s),$(word 1, $(foreach a, $(xml_annotations) $(xml_header_annotations), $(if $(findstring ^$(s)., ^$(a)), $(a), $(filter $(a), $(s)))))) ))
+else
+  $(info Note: 'parents' is normally not needed anymore)
+  $(foreach parent,$(parents),$(eval $(call parent_rule_manual,$(word 1,$(subst |, ,$(parent))),$(word 2,$(subst |, ,$(parent))))))
+endif
+
+ifeq ($(children),)
+  structural_elements = $(sort $(foreach s, $(vrt_structs_annotations), $(word 1, $(subst ., , $(s)))))
+  $(foreach s, $(structural_elements), $(eval $(call child_rule_automatic,$(s),$(word 1, $(foreach a, $(xml_annotations) $(xml_header_annotations), $(if $(findstring ^$(s)., ^$(a)), $(a), $(filter $(a), $(s)))))) ))
+else
+  $(info Note: 'children' is normally not needed anymore)
+  $(foreach child,$(children),$(eval $(call child_rule_manual,$(word 1,$(subst |, ,$(child))),$(word 2,$(subst |, ,$(child))))))
+endif
+
+
+# Chains
+
+define chain_rule
+%.$(1).$(2).$(3): %.parents.$(1).$(2) %.$(2).$(3)
+	$(python) -m sb.annotate --chain --out $$@ --annotations "$$+"
+endef
+
+$(foreach chain,$(chains),$(eval $(call chain_rule,$(word 1,$(subst ., ,$(chain))),$(word 2,$(subst ., ,$(chain))),$(word 3,$(subst ., ,$(chain))))))
+
+
+################################################################################
+#                         RULES FOR PARALLEL CORPORA                           #
+################################################################################
+
+aligned_languages = $(foreach ac,$(aligned_corpora),$(word 1,$(subst |, ,$(ac))))
+
+ifeq ($(filter run_other_language,$(custom_rules)),)
+.SECONDEXPANSION:
+define run_other_language
+ifneq ($(lang),$(1))
+$(parallel_base)-$(1)/annotations/%:
+	@echo "Executing makefile for other language: $(1)"
+	$(MAKE) lang=$(1) other_lang=$(lang) $$@
+
+ifeq ($(findstring sentlink.random, $(vrt_structs_annotations)), sentlink.random)
+%.sentlink: %.children.sentence.token $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).children.sentence.token %.link.n $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).link.n %.children.link.sentence $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).children.link.sentence
+	$(python) -m sb.sent_align --sentence1 $$(1) --sentence2 $$(2) --link1 $$(3) --link2 $$(4) --sent_parents1 $$(5) --sent_parents2 $$(6) \
+	--out_sentlink1 $$@  --out_sentlink2 $$(parallel_base)-$(1)/annotations/$$(subst $$(root)annotations/,,$$*).sentlink
+else
+%.sentlink: %.link.n
+	cp -p $$(1) $$@
+endif
+
+%.token.wordlink-$(1): %.token.word $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).token.word %.children.sentlink.token $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).children.sentlink.token %.sentlink $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).sentlink $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).token.linkref
+	$(python) -m sb.word_align --word1 $$(1) --word2 $$(2) --linktok1 $$(3) --linktok2 $$(4) --link1 $$(5) --link2 $$(6) --linkref2 $$(7) \
+	--out_wordlink $$@ --out_sentences $$*.linked_sent --outindex1 $$*.ind1 --outindex2 $$*.ind2
+endif
+endef
+endif
+
+$(foreach otherlang,$(aligned_languages),$(eval $(call run_other_language,$(otherlang))))
+
+%.token.linkref: %.children.sentlink.token
+	$(python) -m sb.number --relative --out $@ --parent_children $(1)
+
+%.link.n.random: %.link.n $(foreach l,$(aligned_languages),$(parallel_base)-$(l)/annotations/$$(subst $(root)annotations/,,$$*).link.n)
+	$(python) -m sb.number --shuffle --out $@ --chunks "$+" --prefix $(subst $(root)annotations/,,$*.)
+
+%.sentlink.random: %.sentlink $(foreach l,$(aligned_languages),$(parallel_base)-$(l)/annotations/$$(subst $(root)annotations/,,$$*).sentlink)
+	$(python) -m sb.number --shuffle --out $@ --chunks "$+" --prefix $(subst $(root)annotations/,,$*.)
+
+
+################################################################################
+#                                  HELP                                        #
+################################################################################
+
+help:
+	@echo "Usage: make [-jN] [-n] [target]"
+	@echo "Available targets:"
+	@echo "  vrt                         Make final VRT files."
+	@echo "  cwb                         Compile CWB data from VRT files."
+	@echo
+	@echo "  files                       List input files."
+	@echo "  add                         Update file index with added or removed input files."
+	@echo "  xml                         Pre-process input files if necessary."
+	@echo "  info                        Make the corpus .info file needed by CWB (included in 'cwb' target)."
+	@echo "  relations                   Make the Word Picture database."
+	@echo
+	@echo "  install                     (= corpus, relations, timespan, lemgrams)"
+	@echo "    install_corpus            Install CWB data files to remote host."
+	@echo "    install_relations         Install Word Picture database to remote host."
+	@echo "    install_timespan          Install timespan database to remote host."
+	@echo "    install_lemgrams          Install lemgram database to remote host."
+	@echo "  install_export              Move compressed exported XML to remote host."
+	@echo "  install_export_original     Move compressed exported XML to remote host (unscrambled)."
+	@echo
+	@echo "  export                      Make final exported XML files."
+	@echo "  export_original             Make final exported XML files (unscrambled)."
+	@echo "  export_combined             Make one big combined exported XML file."
+	@echo "  export_combined_original    Make one big combined exported XML file (unscrambled)."
+	@echo "  export_compressed           Make a compressed exported XML file."
+	@echo "  export_compressed_original  Make a compressed exported XML file (unscrambled)."
+	@echo "  export_formatted            Make final exported XML files with whitespace intact."
+	@echo
+	@echo "  align                       Link parallel corpora."
+	@echo
+	@echo "  Make specific annotations:"
+	@echo "  $(patsubst %,% |, $(filter-out vrt, $(annotations)))"
+	@echo
+	@echo "  clean                       Remove all annotations, exports and logs."
+	@echo "  distclean                   Same as 'clean' but also remove time_* files."
+	@echo "  space                       Remove some of the final annotation files to make space."
+	@echo "  clean_export                Remove all files related to XML export."
+	@echo
+	@echo "Options:"
+	@echo "  -jN  Run up to N jobs in parallel."
+	@echo "  -n   Don't actually run any commands; just print them."
+
+files:
+	@echo "Files: $(sort $(files))"
+
+################################################################################
+#                                  CLEAN                                       #
+################################################################################
+
+clean:
+	rm -f -r $(root)annotations/
+	rm -f -r $(root)export.*/
+	rm -f $(root)warnings.log
+	rm -f nohup.out
+
+distclean: clean clean_export
+	rm -f -r $(root)src/
+	rm -f $(root)time_installcorpus
+	rm -f $(root)time_installrelations
+	rm -f $(root)time_installlemgrams
+	rm -f $(root)time_installtimespan
+	rm -f $(root)time_installexport
+	rm -f $(root)time_installexportoriginal
+
+# Removes the final result files to make some space
+space:
+	find $(root)annotations/ -type f -name "*.vrt" -delete
+	find $(root)annotations/ -type f -name "*.sql" -delete
+
+clean_export:
+	rm -f $(corpus)$(export_suffix).xml.bz2
+	rm -f $(corpus).original.xml.bz2
+	rm -rf $(root)export$(export_suffix)/
+	rm -rf $(root)export.original/
+
+################################################################################
+#                                    CWB                                       #
+################################################################################
+
+# CWB
+ifeq ($(filter cwb,$(custom_rules)),)
+cwb: $(CORPUS_REGISTRY)/$(corpus)
+
+$(CORPUS_REGISTRY)/$(corpus): $(files:%=$(root)annotations/%.vrt)
+	$(python) -m sb.cwb --encode --master $(corpus) --columns "$(vrt_columns)" --structs "$(vrt_structs)" --vrtfiles "$+" --skip_compression "$(skip_cwb_compression)" --skip_validation "$(skip_cwb_validation)"
+endif
+
+# ALIGN
+define align
+$(python) -m sb.cwb --align  --master $(corpus) --other $(1) --link "$(2)" --aligndir "$(root)annotations/align"
+endef
+
+ifneq ($(aligned_corpora),)
+align: $(CORPUS_REGISTRY)/$(corpus) $(foreach aligned_corpus,$(aligned_corpora), $(CORPUS_REGISTRY)/$(word 2,$(subst |, ,$(aligned_corpus))))
+	$(foreach aligned_corpus,$(aligned_corpora), $(call align,$(word 2,$(subst |, ,$(aligned_corpus))),$(word 3,$(subst |, ,$(aligned_corpus)))))
+endif
+
+ifneq ($(CWB_DATADIR),)
+  ifneq ($(CORPUS_REGISTRY),)
+deletecwb:
+	@echo "Removing CWB data files for corpus ..."
+	@rm -f -I $(CORPUS_REGISTRY)/$(corpus)
+	@rm -rf -I --preserve-root $(CWB_DATADIR)/$(corpus)/
+	@echo "Done."
+  else
+deletecwb:
+	@echo "Error: Environment variable 'CORPUS_REGISTRY' not set"
+  endif
+else
+deletecwb:
+	@echo "Error: Environment variable 'CWB_DATADIR' not set"
+endif
+
+################################################################################
+#                                  INSTALL                                     #
+################################################################################
+
+ifeq ($(filter install,$(custom_rules)),)
+install: install_corpus install_relations install_lemgrams install_timespan
+
+# CORPUS
+
+allow_install = true
+
+install_corpus: $(root)time_installcorpus
+
+# Check that linked corpora have been aligned before allowing installation
+ifneq ($(aligned_corpora),)
+  allow_install = false
+  ifneq ($(wildcard $(CORPUS_REGISTRY)/$(corpus)),)
+    aligngrep = $(shell grep ALIGNED $(CORPUS_REGISTRY)/$(corpus))
+    ifneq ($(aligngrep),)
+      allow_install = true
+    endif
+  endif
+endif
+
+ifeq ($(allow_install),true)
+$(root)time_installcorpus: $(CORPUS_REGISTRY)/$(corpus) $(CWB_DATADIR)/$(corpus)/.info
+	$(python) -m sb.install --corpus --master $(corpus) --host $(remote_host) --target_datadir $(remote_cwb_datadir) --target_registry $(remote_cwb_registry)
+	@touch $@
+else
+$(root)time_installcorpus:
+	$(error You need to align the linked corpora before installing by running "make align")
+endif
+
+# INFO
+
+install_info: $(CWB_DATADIR)/$(corpus)/.info
+	$(python) -m sb.install --file --host $(remote_host) --local_file "$(CWB_DATADIR)/$(corpus)/.info" --remote_file "$(remote_cwb_datadir)/$(corpus)/.info"
+endif
+
+# RELATIONS
+
+install_relations: $(root)time_installrelations
+
+$(root)time_installrelations: $(root)annotations/_relations_.sql
+	$(python) -m sb.install --mysql  --host $(remote_host)  --db_name $(mysql_dbname)  --sqlfile "$(1)"
+	@touch $@
+
+# LEMGRAM INDEX
+
+install_lemgrams: $(root)time_installlemgrams
+
+$(root)time_installlemgrams: $(root)annotations/_lemgram_index_.sql
+	$(python) -m sb.install --mysql  --host $(remote_host)  --db_name $(mysql_dbname)  --sqlfile "$(1)"
+	@touch $@
+
+# TIMESPAN
+
+install_timespan: $(root)time_installtimespan
+
+$(root)time_installtimespan: $(root)annotations/_timespan_.sql
+	$(python) -m sb.install --mysql  --host $(remote_host)  --db_name $(mysql_dbname)  --sqlfile "$(1)"
+	@touch $@
+
+# EXPORT
+ifeq ($(no_install_export),true)
+install_export:
+	@echo "install_export: operation forbidden for this corpus."
+else
+install_export: $(root)time_installexport
+endif
+
+install_export_original: $(root)time_installexportoriginal
+
+ifneq ($(strip $(export_host)),)
+  ifneq ($(strip $(export_path)),)
+$(root)time_installexport: $(corpus)$(export_suffix).xml.bz2
+	$(python) -m sb.install --file --host $(export_host) --local_file $(1) --remote_file $(export_path)/$(corpus).xml.bz2
+	@touch $@
+  else
+$(root)time_installexport:
+	$(error Variable 'export_path' not defined.)
+  endif
+else
+$(root)time_installexport:
+	$(error Variable 'export_host' not defined.)
+endif
+
+ifneq ($(strip $(export_original_host)),)
+  ifneq ($(strip $(export_original_path)),)
+$(root)time_installexportoriginal: $(corpus)$(export_suffix).xml.bz2
+	$(python) -m sb.install --file --host $(export_original_host) --local_file $(1) --remote_file $(export_original_path)/$(corpus).xml.bz2
+	@touch $@
+  else
+$(root)time_installexportoriginal:
+	$(error Variable 'export_original_path' not defined.)
+  endif
+else
+$(root)time_installexportoriginal:
+	$(error Variable 'export_original_host' not defined.)
+endif
