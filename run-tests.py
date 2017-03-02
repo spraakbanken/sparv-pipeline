@@ -290,25 +290,6 @@ def run_tests(dirs, verbose=False, cleanup=False):
             yield True
 
 
-def checkout_makefiles(verbose):
-    """
-    Checkout the Makefiles from the material svn repo.
-    """
-    if not path.exists('makefiles'):
-        cmd = """svn checkout
-                 https://svn.spraakdata.gu.se/sb-arkiv/material
-                 makefiles
-                 --depth files""".split()
-        exc = call(cmd, stdout=sys.stdout, stderr=sys.stderr)
-        if exc != 0:
-            sys.exit(exc)
-
-    if verbose:
-        # Print the makefiles status for manual inspection
-        call('svn status --show-updates makefiles/'.split(),
-              stdout=sys.stdout, stderr=sys.stderr)
-
-
 def pyfiles():
     """
     Returns the stream of .py files reachable from the current directory.
@@ -374,8 +355,6 @@ def main():
     os.environ['SB_MODELS'] = path.join(cwd, 'models')
     os.environ['PATH'] += ':' + path.join(cwd, 'bin')
     os.environ['python'] = os.environ.get('python', 'python2')
-
-    checkout_makefiles(verbose=verbose)
 
     if flag('--models'):
         revision = '{2017-03-01}'
