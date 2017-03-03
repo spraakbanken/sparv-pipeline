@@ -5,12 +5,12 @@
 #                                MISC CHECKS                                   #
 ################################################################################
 
-ifeq ($(SB_MODELS),)
-  $(error Environment variable 'SB_MODELS' not set)
+ifeq ($(SPARV_MODELS),)
+  $(error Environment variable 'SPARV_MODELS' not set)
 endif
 
-ifeq ($(wildcard $(SB_MODELS)/.*),)
-  $(error Environment variable 'SB_MODELS' seems to point to a nonexistent or empty directory: $(SB_MODELS))
+ifeq ($(wildcard $(SPARV_MODELS)/.*),)
+  $(error Environment variable 'SPARV_MODELS' seems to point to a nonexistent or empty directory: $(SPARV_MODELS))
 endif
 
 ifeq ($(PYTHONPATH),)
@@ -174,7 +174,7 @@ lemgram_index: $(root)annotations/_lemgram_index_.sql
 timespan: $(root)annotations/_timespan_.sql
 
 debug:
-	@echo "SB_MODELS: $(SB_MODELS)"
+	@echo "SPARV_MODELS: $(SPARV_MODELS)"
 	@echo "PYTHONPATH: $(PYTHONPATH)"
 	@echo "PATH: $(PATH)"
 	@echo "xml-source: $(original_dir)"
