@@ -694,6 +694,20 @@ $(root)export$(export_suffix)/%.xml: $(root)annotations/fileids $(foreach struct
 		--structs "$(export_structs)" \
 		--fileid "$*" --fileids $(1)
 
+export_txt: $(files:%=$(root)export.original/%.txt)
+$(root)export$(export_suffix)/%.txt: $(root)annotations/fileids \
+		$(root)annotations/%.token.n \
+		$(root)annotations/%.$(txt_export_struct) \
+		$(root)annotations/%.parents.token.$(firstword $(subst ., ,$(txt_export_struct))) \
+		$(addprefix $(root)annotations/%.token., $(txt_export_column))
+	mkdir -p $(dir $@) -m $(dir_chmod)
+	$(python) -m sb.cwb --export --format txt --out $@ \
+		--fileid "$*" --fileids $(1) \
+		--order $(2) \
+		--annotations_structs "$(3):$(4)" \
+		--annotations_columns "$(5)"
+
+
 export_combined: $(corpus)_export$(export_suffix).xml
 $(root)annotations/_list_export$(export_suffix)_: $(files:%=$(root)export$(export_suffix)/%.xml)
 	$(call write-to-file,$@,$+)

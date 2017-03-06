@@ -66,18 +66,26 @@ def export(format, out, order, annotations_columns, annotations_structs, text=No
     If an attribute in 'columns' or 'structs' is "-", that annotation is skipped.
     The structs are specified by "elem:attr", giving <elem attr=N> xml tags.
     """
-    assert format in ("vrt", "xml", "formatted"), "Wrong format specified"
+    assert format in ("vrt", "xml", "txt", "formatted"), "Wrong format specified"
     if isinstance(annotations_columns, basestring):
         annotations_columns = annotations_columns.split()
     if isinstance(annotations_structs, basestring):
         annotations_structs = [x.split(":") for x in annotations_structs.split()]
-    if isinstance(columns, basestring):
-        columns = columns.split()
-    structs_count = len(structs.split())
-    structs = parse_structural_attributes(structs)
 
-    assert len(annotations_columns) == len(columns), "columns and annotations_columns must contain same number of values"
-    assert len(annotations_structs) == structs_count, "structs and annotations_structs must contain same number of values"
+    if format == "txt":
+        print (columns, structs)
+        assert len(columns) == 0 == len(structs), "columns and structs should be empty with txt output, use the annotations arguments instead"
+        assert len(annotations_columns) <= 1, "use zero columns for label output, one column for token output"
+        assert len(annotations_structs) == 1, "use one structural attribute"
+        structs_count = 1
+    else:
+        if isinstance(columns, basestring):
+            columns = columns.split()
+        structs_count = len(structs.split())
+        structs = parse_structural_attributes(structs)
+
+        assert len(annotations_columns) == len(columns), "columns and annotations_columns must contain same number of values"
+        assert len(annotations_structs) == structs_count, "structs and annotations_structs must contain same number of values"
 
     valid_xml = util.strtobool(valid_xml)
 
@@ -117,11 +125,20 @@ def export(format, out, order, annotations_columns, annotations_structs, text=No
 
         if format == "vrt":
             write_vrt(out, structs, structs_count, column_nrs, tokens, vrt, encoding)
+        elif format == "txt":
+            if len(annotations_columns) == 1:
+                write_words(out, tokens, vrt)
+            else:
+                write_labels(out, tokens, vrt)
         elif format == "xml":
             write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fileid, fileids, valid_xml, encoding)
 
 
 def write_formatted(out, annotations_columns, annotations_structs, columns, structs, structs_count, text, encoding):
+    """
+    The 'formatted' XML part of the 'export' function: export xml with the same
+    whitespace and indentation as in the original.
+    """
     txt, anchor2pos, pos2anchor = util.corpus.read_corpus_text(text)
     structs_order = ["__token__"] + [s[0] for s in structs]
     anchors = defaultdict(dict)
@@ -237,6 +254,90 @@ def write_vrt(out, structs, structs_count, column_nrs, tokens, vrt, encoding):
                 print >>OUT, "</%s>" % elem.encode(encoding)
 
     util.log.info("Exported %d tokens, %d columns, %d structs: %s", len(tokens), len(column_nrs), len(structs), out)
+
+
+def fmt(x, encoding='utf-8'):
+    return remove_control_characters(x).encode(encoding)
+
+
+def write_labels(out, tokens, vrt):
+    """Write a structural attribute to out, separated by lines.
+
+    Each entry in vrt should have one column: the struct.
+
+    >>> tokens = [u"w:1", u"w:2", u"w:3", u"w:4", u"w:5"]
+    >>> vrt = {
+    ...     u"w:1": [[1, u"A"]],
+    ...     u"w:2": [[2, u"B"]],
+    ...     u"w:3": [[2, u"B"]],
+    ...     u"w:4": [[3, u"B"]],
+    ...     u"w:5": [[3, u"B"]]
+    ... }
+    >>> with tempfile.NamedTemporaryFile() as out:
+    ...     write_labels(out.name, tokens, vrt)
+    ...     print out.read(),
+    A
+    B
+    B
+    """
+    with open(out, "w") as OUT:
+        prev = None
+        lines = 0
+        for tok in tokens:
+            now, label = vrt[tok][0]
+            if now != prev:
+                lines += 1
+                print >>OUT, fmt(label)
+            prev = now
+
+    util.log.info("Exported %d lines to %s", lines, out)
+
+
+def write_words(out, tokens, vrt):
+    """Write the tokens to out, separated by line at each structural boundary.
+
+    Each entry in vrt should have two columns: first struct, then word.
+
+    >>> tokens = [u"w:1", u"w:2", u"w:3", u"w:4", u"w:5"]
+    >>> vrt = {
+    ...     u"w:1": [[1, u"A"], u"word1"],
+    ...     u"w:2": [[2, u"B"], u"word2"],
+    ...     u"w:3": [[2, u"B"], u"word3"],
+    ...     u"w:4": [[3, u"B"], u"word4"],
+    ...     u"w:5": [[3, u"B"], u"word5"]
+    ... }
+    >>> with tempfile.NamedTemporaryFile() as out:
+    ...     write_words(out.name, tokens, vrt)
+    ...     print out.read(),
+    word1
+    word2 word3
+    word4 word5
+    """
+    with open(out, "w") as OUT:
+        prev = None
+        lines = 0
+        for tok in tokens:
+            col      = vrt[tok]
+            (now, _) = col[0]
+            word     = col[1]
+
+            if prev is None:
+                prev = now
+
+            # Newline at each struct end
+            if now != prev:
+                lines += 1
+                print >>OUT
+
+            print >>OUT, fmt(word),
+
+            prev = now
+
+        # Newline at EOF
+        lines += 1
+        print >>OUT
+
+    util.log.info("Exported %d tokens in %s lines to %s", len(tokens), lines, out)
 
 
 def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fileid, fileids, valid_xml, encoding):
