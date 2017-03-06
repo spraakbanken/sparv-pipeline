@@ -352,7 +352,7 @@ def main():
     cwd = os.getcwd()
     sb_python_path = path.join(cwd, 'python')
     os.environ['PYTHONPATH'] = sb_python_path
-    os.environ['SB_MODELS'] = path.join(cwd, 'models')
+    os.environ['SPARV_MODELS'] = path.join(cwd, 'models')
     os.environ['PATH'] += ':' + path.join(cwd, 'bin')
     os.environ['python'] = os.environ.get('python', 'python2')
 
