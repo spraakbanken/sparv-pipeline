@@ -10,6 +10,7 @@ from glob import glob
 from collections import defaultdict
 import xml.etree.cElementTree as etree
 import tempfile
+import itertools as it
 
 import util
 
@@ -280,17 +281,45 @@ def write_labels(out, tokens, vrt):
     B
     B
     """
+    lines = 0
     with open(out, "w") as OUT:
-        prev = None
-        lines = 0
-        for tok in tokens:
-            now, label = vrt[tok][0]
-            if now != prev:
-                lines += 1
-                print >>OUT, fmt(label)
-            prev = now
+        for label, _ in vrt_iterate(tokens, vrt, cols=()):
+            print >>OUT, fmt(label)
+            lines += 1
 
-    util.log.info("Exported %d lines to %s", lines, out)
+    util.log.info("Exported %s lines to %s", lines, out)
+
+
+def vrt_iterate(tokens, vrt, cols=(1,)):
+    """
+    >>> tokens = [u"w:1", u"w:2", u"w:3", u"w:4", u"w:5"]
+    >>> vrt = {
+    ...     u"w:1": [[1, u"A"], u"word1"],
+    ...     u"w:2": [[2, u"B"], u"word2"],
+    ...     u"w:3": [[2, u"B"], u"word3"],
+    ...     u"w:4": [[3, u"B"], u"word4"],
+    ...     u"w:5": [[3, u"B"], u"word5"]
+    ... }
+    >>> from pprint import pprint
+    >>> pprint(list(vrt_iterate(tokens, vrt)))
+    [(u'A', [(u'word1',)]),
+     (u'B', [(u'word2',), (u'word3',)]),
+     (u'B', [(u'word4',), (u'word5',)])]
+    """
+    words = []
+    for tok, next_tok in it.izip(tokens, it.chain(tokens[1:], (None,))):
+
+        words.append(tuple(vrt[tok][c] for c in cols))
+
+        if next_tok is None:
+            next = None
+        else:
+            next, _label = vrt[next_tok][0]
+
+        now, label = vrt[tok][0]
+        if now != next:
+            yield label, words
+            words = []
 
 
 def write_words(out, tokens, vrt):
@@ -313,29 +342,11 @@ def write_words(out, tokens, vrt):
     word2 word3
     word4 word5
     """
+    lines = 0
     with open(out, "w") as OUT:
-        prev = None
-        lines = 0
-        for tok in tokens:
-            col      = vrt[tok]
-            (now, _) = col[0]
-            word     = col[1]
-
-            if prev is None:
-                prev = now
-
-            # Newline at each struct end
-            if now != prev:
-                lines += 1
-                print >>OUT
-
-            print >>OUT, fmt(word),
-
-            prev = now
-
-        # Newline at EOF
-        lines += 1
-        print >>OUT
+        for _, words in vrt_iterate(tokens, vrt):
+            print >>OUT, u' '.join(fmt(w[0]) for w in words)
+            lines += 1
 
     util.log.info("Exported %d tokens in %s lines to %s", len(tokens), lines, out)
 
