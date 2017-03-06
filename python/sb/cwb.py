@@ -7,7 +7,7 @@ Tools for exporting, encoding and aligning corpora for Corpus Workbench.
 import os
 #from tempfile import TemporaryFile
 from glob import glob
-from collections import defaultdict
+from collections import defaultdict, Counter
 import xml.etree.cElementTree as etree
 import tempfile
 import itertools as it
@@ -58,6 +58,50 @@ def chain(annotations, default=None):
     return dict((key, follow(key)) for key in annotations[0])
 
 
+def vrt_table(annotations_structs, annotations_columns):
+    """
+    Returns a table suitable for printing as a vrt file from annotations.
+    """
+    structs_count = len(annotations_structs)
+    parents = {}
+    for annot, parent_annotation in annotations_structs:
+        if not parent_annotation in parents:
+            parents[parent_annotation] = util.read_annotation(parent_annotation)
+
+    vrt = defaultdict(dict)
+
+    for n, annot in enumerate(annotations_structs):
+        # Enumerate structural attributes, to handle attributes without values
+        enumerated_struct = dict((item[0], [i, item[1]]) for i, item in enumerate(util.read_annotation(annot[0]).items(), 1))  # Must enumerate from 1, due to the use of any() later
+        token_annotations = chain([parents[annot[1]], enumerated_struct])
+        for tok, value in token_annotations.iteritems():
+            if not value:
+                value = ["", ""]
+
+            value[1] = "|" if value[1] == "|/|" else value[1]
+            value[1] = value[1].replace("\n", " ") if value[1] else ""
+            vrt[tok][n] = value
+
+    for n, annot in enumerate(annotations_columns):
+        n += structs_count
+        for tok, value in util.read_annotation_iteritems(annot):
+            if n > structs_count:  # Any column except the first (the word)
+                value = "|" if value == "|/|" else value
+            vrt[tok][n] = value.replace("\n", " ")
+
+    return vrt
+
+
+def tokens_and_vrt(order, annotations_structs, annotations_columns):
+    """
+    Returns the tokens in order and the vrt table.
+    """
+    vrt = vrt_table(annotations_structs, annotations_columns)
+    sortkey = util.read_annotation(order).get
+    tokens = sorted(vrt, key=sortkey)
+    return tokens, vrt
+
+
 def export(format, out, order, annotations_columns, annotations_structs, text=None, fileid=None, fileids=None, valid_xml=True, columns=(), structs=(), encoding=CWB_ENCODING):
     """
     Export 'annotations' to the VRT or XML file 'out'.
@@ -74,7 +118,6 @@ def export(format, out, order, annotations_columns, annotations_structs, text=No
         annotations_structs = [x.split(":") for x in annotations_structs.split()]
 
     if format == "txt":
-        print (columns, structs)
         assert len(columns) == 0 == len(structs), "columns and structs should be empty with txt output, use the annotations arguments instead"
         assert len(annotations_columns) <= 1, "use zero columns for label output, one column for token output"
         assert len(annotations_structs) == 1, "use one structural attribute"
@@ -93,35 +136,7 @@ def export(format, out, order, annotations_columns, annotations_structs, text=No
     if format == "formatted":
         write_formatted(out, annotations_columns, annotations_structs, columns, structs, structs_count, text, encoding)
     else:
-        # Create parent dictionaries
-        parents = {}
-        for annot, parent_annotation in annotations_structs:
-            if not parent_annotation in parents:
-                parents[parent_annotation] = util.read_annotation(parent_annotation)
-
-        vrt = defaultdict(dict)
-
-        for n, annot in enumerate(annotations_structs):
-            # Enumerate structural attributes, to handle attributes without values
-            enumerated_struct = dict((item[0], [i, item[1]]) for i, item in enumerate(util.read_annotation(annot[0]).items(), 1))  # Must enumerate from 1, due to the use of any() later
-            token_annotations = chain([parents[annot[1]], enumerated_struct])
-            for tok, value in token_annotations.iteritems():
-                if not value:
-                    value = ["", ""]
-
-                value[1] = "|" if value[1] == "|/|" else value[1]
-                value[1] = value[1].replace("\n", " ") if value[1] else ""
-                vrt[tok][n] = value
-
-        for n, annot in enumerate(annotations_columns):
-            n += structs_count
-            for tok, value in util.read_annotation_iteritems(annot):
-                if n > structs_count:  # Any column except the first (the word)
-                    value = "|" if value == "|/|" else value
-                vrt[tok][n] = value.replace("\n", " ")
-
-        sortkey = util.read_annotation(order).get
-        tokens = sorted(vrt, key=sortkey)
+        tokens, vrt = tokens_and_vrt(order, annotations_structs, annotations_columns)
         column_nrs = [n+structs_count for (n, col) in enumerate(columns) if col and col != "-"]
 
         if format == "vrt":
@@ -345,7 +360,7 @@ def write_words(out, tokens, vrt):
     lines = 0
     with open(out, "w") as OUT:
         for _, words in vrt_iterate(tokens, vrt):
-            print >>OUT, u' '.join(fmt(w[0]) for w in words)
+            print >>OUT, ' '.join(fmt(w[0]) for w in words)
             lines += 1
 
     util.log.info("Exported %d tokens in %s lines to %s", len(tokens), lines, out)
