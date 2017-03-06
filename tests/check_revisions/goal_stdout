@@ -1,4 +1,4 @@
->>> shasum ../../models/*pickle ../../makefiles/Makefile*
+>>> shasum ../../models/*pickle
 26913912d83d690d38a0d3dcaded3d8d87283d71  ../../models/dalin.pickle
 8926591ff7bcd3c56e44ca628d16b686a5d0795f  ../../models/diapivot.pickle
 fb0b6df7700c711b68f98b6f3f36aa9aac5a15ba  ../../models/fsvm.pickle
@@ -8,12 +8,3 @@ ff8779c0719ce133244076484c0cd7cc3d85dde3  ../../models/punkt-nltk-svenska.pickle
 d2a7a87daaa414c2b9b16e6156db146c24b58899  ../../models/saldo.pickle
 2f8b764363d065b5170016198ff9db0e66673064  ../../models/stats.pickle
 c1781f584e3a9fad775f199c2d9bac8e4d8018b7  ../../models/swedberg.pickle
-dd1beb3ae2c44fe4fa8e64b93408843569f0def2  ../../makefiles/Makefile.common
-f212bb9e22fd3c7dc84e3c99f0b8d564cd53b415  ../../makefiles/Makefile.config
-887befd60d75ce226c8dfd9a705d882b8e69c127  ../../makefiles/Makefile.config_default
-adac92264e28cf725c24bbb2db58f171b474cef8  ../../makefiles/Makefile.example
-d5e25b6baadbefe11d160ec2699b51b613408914  ../../makefiles/Makefile.example_SB
-318fc1470ecdf08ec79747415f7736374a15efa0  ../../makefiles/Makefile.langs
-ba683d8b397e56653b7936e0a6be66122a7f6c7d  ../../makefiles/Makefile.multi
-12db2bd0b67603cea8b39a8aab6ba307b7c282fd  ../../makefiles/Makefile.rules
-e4d2a8469381f982f7ef643724d76c4691e5faf1  ../../makefiles/Makefile.template
