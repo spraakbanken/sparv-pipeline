@@ -684,7 +684,10 @@ else
 endif
 
 export: $(files:%=$(root)export$(export_suffix)/%.xml)
-$(root)export$(export_suffix)/%.xml: $(root)annotations/fileids $(foreach struct,$(export_structs_annotations),$(addprefix $(root)annotations/%.parents.token., $(firstword $(subst ., ,$(struct)))))   $(addprefix $(root)annotations/%., $(export_structs_annotations))   $(addprefix $(root)annotations/%.token., $(export_columns_annotations) $(export_order_annotation))
+$(root)export$(export_suffix)/%.xml: $(root)annotations/fileids \
+		$(foreach struct,$(export_structs_annotations),$(addprefix $(root)annotations/%.parents.token., $(firstword $(subst ., ,$(struct))))) \
+		$(addprefix $(root)annotations/%., $(export_structs_annotations)) \
+		$(addprefix $(root)annotations/%.token., $(export_columns_annotations) $(export_order_annotation))
 	mkdir -p $(dir $@) -m $(dir_chmod)
 	$(python) -m sb.cwb --export --format xml --out $@ \
 		--order $(root)annotations/$*.token.$(export_order_annotation) \
