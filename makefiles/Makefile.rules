@@ -21,10 +21,6 @@ ifeq ($(corpus),)
   $(error Variable 'corpus' is not set)
 endif
 
-ifeq ($(files),)
-  $(error Variable 'files' is not set)
-endif
-
 ifeq ($(vrt_columns_annotations),)
   $(error Variable 'vrt_columns_annotations' is not set)
 endif
@@ -157,6 +153,11 @@ src := $(root)src
   endif
 else
 src := $(root)src
+endif
+
+# Default files variable
+ifeq ($(files),)
+  files := $(basename $(subst $(original_dir)/,,$(shell find $(original_dir)/ -type f -name '*.xml')))
 endif
 
 # Misc shortcuts
