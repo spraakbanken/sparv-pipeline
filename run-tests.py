@@ -107,7 +107,7 @@ def indent(lines_or_str, indent_str='  ', join=True):
         lines = lines_or_str.split('\n')
     else:
         lines = lines_or_str
-    indented = (indent_str + line for line in lines)
+    indented = (indent_str + line.rstrip() for line in lines)
     if join:
         return '\n'.join(indented)
     else:
