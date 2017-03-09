@@ -61,6 +61,8 @@ def chain(annotations, default=None):
 def vrt_table(annotations_structs, annotations_columns):
     """
     Returns a table suitable for printing as a vrt file from annotations.
+
+    The structs are a pair of annotation and its parent.
     """
     structs_count = len(annotations_structs)
     parents = {}
@@ -72,7 +74,10 @@ def vrt_table(annotations_structs, annotations_columns):
 
     for n, annot in enumerate(annotations_structs):
         # Enumerate structural attributes, to handle attributes without values
-        enumerated_struct = dict((item[0], [i, item[1]]) for i, item in enumerate(util.read_annotation(annot[0]).items(), 1))  # Must enumerate from 1, due to the use of any() later
+        enumerated_struct = dict(
+            (item[0], [i, item[1]])
+            for i, item in enumerate(util.read_annotation(annot[0]).items(), 1))
+                          # Must enumerate from 1, due to the use of any() later
         token_annotations = chain([parents[annot[1]], enumerated_struct])
         for tok, value in token_annotations.iteritems():
             if not value:
@@ -298,33 +303,48 @@ def write_labels(out, tokens, vrt):
     """
     lines = 0
     with open(out, "w") as OUT:
-        for label, _ in vrt_iterate(tokens, vrt, cols=()):
+        for label, _ in vrt_iterate(tokens, vrt, project=lambda *_: None):
             print >>OUT, fmt(label)
             lines += 1
 
     util.log.info("Exported %s lines to %s", lines, out)
 
 
-def vrt_iterate(tokens, vrt, cols=(1,)):
+def vrt_iterate(tokens, vrt, project=lambda col: col[1],
+                             project_struct=lambda label, _last_token: label):
     """
+    Yields documents from vrt separated using the first column in vrt,
+    together with each token's column projected using the supplied function.
+
     >>> tokens = [u"w:1", u"w:2", u"w:3", u"w:4", u"w:5"]
     >>> vrt = {
-    ...     u"w:1": [[1, u"A"], u"word1"],
-    ...     u"w:2": [[2, u"B"], u"word2"],
-    ...     u"w:3": [[2, u"B"], u"word3"],
-    ...     u"w:4": [[3, u"B"], u"word4"],
-    ...     u"w:5": [[3, u"B"], u"word5"]
+    ...     u"w:1": [[1, u"A"], u"word1", u"pos1"],
+    ...     u"w:2": [[2, u"B"], u"word2", u"pos2"],
+    ...     u"w:3": [[2, u"B"], u"word3", u"pos3"],
+    ...     u"w:4": [[3, u"B"], u"word4", u"pos4"],
+    ...     u"w:5": [[3, u"B"], u"word5", u"pos5"]
     ... }
-    >>> from pprint import pprint
-    >>> pprint(list(vrt_iterate(tokens, vrt)))
-    [(u'A', [(u'word1',)]),
-     (u'B', [(u'word2',), (u'word3',)]),
-     (u'B', [(u'word4',), (u'word5',)])]
+    >>> list(vrt_iterate(tokens, vrt))          # doctest: +NORMALIZE_WHITESPACE
+    [(u'A', [u'word1']),
+     (u'B', [u'word2', u'word3']),
+     (u'B', [u'word4', u'word5'])]
+    >>> pos = lambda col: col[2]
+    >>> list(vrt_iterate(tokens, vrt, project=pos))
+    ...                                         # doctest: +NORMALIZE_WHITESPACE
+    [(u'A', [u'pos1']),
+     (u'B', [u'pos2', u'pos3']),
+     (u'B', [u'pos4', u'pos5'])]
+    >>> last_tok = lambda _label, tok: tok
+    >>> list(vrt_iterate(tokens, vrt, project_struct=last_tok))
+    ...                                         # doctest: +NORMALIZE_WHITESPACE
+    [(u'w:1', [u'word1']),
+     (u'w:3', [u'word2', u'word3']),
+     (u'w:5', [u'word4', u'word5'])]
     """
     words = []
     for tok, next_tok in it.izip(tokens, it.chain(tokens[1:], (None,))):
 
-        words.append(tuple(vrt[tok][c] for c in cols))
+        words.append(project(vrt[tok]))
 
         if next_tok is None:
             next = None
@@ -333,7 +353,7 @@ def vrt_iterate(tokens, vrt, cols=(1,)):
 
         now, label = vrt[tok][0]
         if now != next:
-            yield label, words
+            yield project_struct(label, tok), words
             words = []
 
 
@@ -360,7 +380,7 @@ def write_words(out, tokens, vrt):
     lines = 0
     with open(out, "w") as OUT:
         for _, words in vrt_iterate(tokens, vrt):
-            print >>OUT, ' '.join(fmt(w[0]) for w in words)
+            print >>OUT, ' '.join(fmt(w) for w in words)
             lines += 1
 
     util.log.info("Exported %d tokens in %s lines to %s", len(tokens), lines, out)
