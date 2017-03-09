@@ -1,0 +1,4 @@
+- clean: make distclean
+- clean: rm -rf models
+- make train -j4 train=text.label
+- make export -j4

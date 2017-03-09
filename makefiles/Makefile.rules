@@ -330,6 +330,7 @@ endif
 ifeq ($(filter token.word,$(custom_rules)),)
 %.token.word: %.@TEXT %.token
 	$(python) -m sb.annotate --text_spans --out $@ --text $(1) --chunk $(2)
+
 endif
 
 ifeq ($(filter sentence,$(custom_rules)),)
@@ -710,6 +711,24 @@ $(root)export$(export_suffix)/%.txt: $(root)annotations/fileids \
 		--order $(2) \
 		--annotations_structs "$(3):$(4)" \
 		--annotations_columns "$(5)"
+
+
+# example usage: make train train=text.party
+train:  $(files:%=annotations/%.token.n) \
+		$(files:%=annotations/%.$(train)) \
+		$(files:%=annotations/%.parents.token.$(firstword $(subst ., ,$(train)))) \
+		$(files:%=annotations/%.token.word)
+	mkdir -p $(root)models
+	$(python) -m sb.vw --train --files "$+" --outprefix "$(root)models/$(train)"
+
+ifdef predict
+%.$(predict): %.token.n \
+		%.$(firstword $(subst ., ,$(predict))) \
+		%.parents.token.$(firstword $(subst ., ,$(predict))) \
+		%.token.word
+	$(python) -m sb.vw --predict --model $(predict_model) \
+		--order "$(1)" --struct "$(2)" --parent "$(3)" --word "$(4)" --out "$@"
+endif
 
 
 export_combined: $(corpus)_export$(export_suffix).xml
