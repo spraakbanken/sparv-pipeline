@@ -8,6 +8,7 @@ from functools import wraps
 from collections import Counter, namedtuple, OrderedDict
 import sys
 import json
+import tempfile
 
 
 def predict(model, order, struct, parent, word, out):
@@ -17,17 +18,19 @@ def predict(model, order, struct, parent, word, out):
     Both model and model.json must exist. See --train.
     """
 
-    index_to_label = json.load(open(model + '.json'))['index_to_label']
-
-    def no_target(_):
-        return '| '
-
-    args = ['--initial_regressor', model, '--testonly', '-p', '/dev/stdout']
+    data = (Example(None, text.words, text.last_token)
+            for text in texts([(order, struct, parent, word)]))
 
     par = util.read_annotation(parent)
-    util.write_annotation(out,
-        ((par[tok], index_to_label[s.rstrip()]) for s, tok in
-         VW(args, no_target, [(order, struct, parent, word)], yield_lines=True)))
+
+    index_to_label = json.load(open(model + '.json'))['index_to_label']
+
+    args = ['--initial_regressor', model]
+
+    predictions = ((par[tok], index_to_label[s.rstrip()])
+                   for s, tok in vw_predict(args, data))
+
+    util.write_annotation(out, predictions)
 
 
 def interleave(xs, k):
@@ -86,26 +89,23 @@ def train(files, outprefix):
         index_to_label[i] = label
 
     # Train model
-    args = [
-        '--oaa', str(k),
-        '--passes', '10',
-        '--cache', '--kill_cache',
-        '--bit_precision', '24',
-        '--final_regressor', modelfile]
-    N_train = next(VW(args, every(10, invert=True)(answer.get), order_struct_parent_word))
+    args = ['--oaa', str(k),
+            '--passes', '10',
+            '--cache', '--kill_cache',
+            '--bit_precision', '24',
+            '--final_regressor', modelfile]
+    data = (Example(answer[text.label], text.words)
+            for text in every(10, texts(order_struct_parent_word), invert=True))
+    vw_train(args, data)
 
     # Performance evaluation
-    predicted = []
+    args = ['--initial_regressor', modelfile]
     target = []
-    @every(10)
-    def secret(label):
-        target.append(label_to_index[label])
-        return b'| '
-    def process_line(s, _):
-        predicted.append(int(s))
-    args = ['--initial_regressor', modelfile, '--testonly', '-p', '/dev/stdout']
-    predicted = [int(s) for s, _ in
-                 VW(args, secret, order_struct_parent_word, yield_lines=True)]
+    def data():
+        for text in every(10, texts(order_struct_parent_word)):
+            target.append(label_to_index[text.label])
+            yield Example(None, text.words)
+    predicted = [int(s) for s, _tag in vw_predict(args, data())]
     N_eval = len(predicted)
 
     assert len(predicted) == len(target)
@@ -115,7 +115,7 @@ def train(files, outprefix):
         labels = [index_to_label[i] for i in order],
         index_to_label = index_to_label,
         label_to_index = label_to_index,
-        N_train = N_train,
+        N_train = N - N_eval,
         N_eval = N_eval,
         stats = {index_to_label[i]: p.as_dict()
                  for i, p in
@@ -224,109 +224,107 @@ def confusion_matrix(target, predicted, order):
     return [[ matrix.get((t, p), 0) for p in order ] for t in order]
 
 
-
-def every(sep, invert=False):
+def every(sep, generator, invert=False):
     """
-    Every sep time the function is called, execute it, otherwise return None.
+    Iterate over the generator, returning every sep element of it.
 
-    The function is hard-coded to be unary.
-    To make it more general change arg to *args, **kwargs.
-
-    >>> @every(3)
-    ... def greet(person):
-    ...     return 'Hello ' + person
-    >>> greet('Dan')
-    >>> greet('Malin')
-    >>> greet('Maria')
-    'Hello Maria'
-    >>> greet('Martin')
-    >>> greet('Anne')
-    >>> greet('Jonatan')
-    'Hello Jonatan'
-
-    >>> @every(3, invert=True)
-    ... def greet(person):
-    ...     return 'Hello ' + person
-    >>> greet('Dan')
-    'Hello Dan'
-    >>> greet('Malin')
-    'Hello Malin'
-    >>> greet('Maria')
-    >>> greet('Martin')
-    'Hello Martin'
-    >>> greet('Anne')
-    'Hello Anne'
-    >>> greet('Jonatan')
+    >>> list(every(3, 'Dan Malin Maria Martin Anne Jonatan'.split()))
+    ['Maria', 'Jonatan']
+    >>> ' '.join(every(3, 'Dan Malin Maria Martin Anne Jonatan'.split(), True))
+    'Dan Malin Martin Anne'
     """
-    def decorator(func):
-        x = [0]
-        @wraps(func)
-        def do(arg):
-            x[0] += 1
-            last = x[0] == sep
-            if last:
-                x[0] = 0
-            if last != invert:
-                return func(arg)
-            else:
-                return None
-        return do
-    return decorator
+    for i, x in enumerate(generator):
+        if ((i+1) % sep == 0) != invert:
+            yield x
 
 
-def VW(args, target_for_example, order_struct_parent_word, yield_lines=False):
-    stdout = PIPE if yield_lines else sys.stdout
-    vw = Popen(['vw'] + args, stdin=PIPE, stdout=stdout, stderr=sys.stderr)
-    util.log.info('Running: vw ' + ' '.join(args))
-    stdin = vw.stdin
+Text = namedtuple('Text', 'label words last_token')
 
+
+def texts(order_struct_parent_word):
+    """
+    Get all the texts from an iterator of 4-tuples of annotations that
+    contain token order, the structural attribute (like a label),
+    its parenting of the words, and the words themselves.
+    """
     X = 0
     for order, struct, parent, word in order_struct_parent_word:
         x = 0
         util.log.info("Processing %s %s %s", struct, parent, word)
         tokens, vrt = cwb.tokens_and_vrt(order, [(struct, parent)], [word])
-        for (label, last_tok), words in \
+        for (label, last_token), words in \
                 cwb.vrt_iterate(tokens, vrt, project_struct=lambda *xs: xs):
-            line = target_for_example(label)
-            if line:
-                for word in words:
-                    line += cwb.fmt(vw_features.normalize(word)) + b' '
-                # line have values like '2:4.9882 | apa bepa cepa' when training
-                stdin.write(line + b'\n')
-                x += 1
-                if yield_lines:
-                    stdin.flush()
-                    yield vw.stdout.readline(), last_tok
-        util.log.info("Examples from %s: %s", struct, x)
+            words = b' '.join(map(vw_normalize, words))
+            x += 1
+            yield Text(label, words, last_token)
+        util.log.info("Texts from %s: %s", struct, x)
         X += x
-    util.log.info("Total examples: %s", X)
+    util.log.info("Total texts: %s", X)
 
-    stdin.close()
+
+Example = namedtuple('Example', 'label features tag')
+Example.__new__.__defaults__ = (None,)
+
+
+def _vw_run(args, data, yield_lines):
+    vw = Popen(['vw'] + args, stdin=PIPE, stdout=PIPE, stderr=sys.stderr)
+    util.log.info('Running: vw ' + ' '.join(args))
+    for ex in data:
+        vw.stdin.write((ex.label or b'') + b' | ' + ex.features + b'\n')
+        if yield_lines:
+            vw.stdin.flush()
+            yield vw.stdout.readline().rstrip(), ex.tag
+    vw.stdin.close()
     vw.wait()
-    if not yield_lines:
-        yield X
 
 
-class vw_features(object):
-    """Normalization for Vowpal Wabbit features (vw)."""
-    escape_symbols = [
-        # Replace digits with X
-         (unicode(x), u'X') for x in range(10)
-        ] + map(tuple, (
-            # Vowpal Wabbit needs these to be escaped:
-            u' S', # separates features
-            u'|I', # separates namespaces
-            u':C'  # separates feature and its value
-        ))
-    escape_table={ord(k): v for k, v in escape_symbols}
+def vw_train(args, data):
+    """
+    Train using vowpal wabbit on an iterator of Examples.
 
-    @staticmethod
-    def normalize(s):
-        u"""
-        >>> print(vw_features.normalize(u'VW | abcåäö:123'))
-        vwSISabcåäöCXXX
-        """
-        return s.lower().translate(vw_features.escape_table)
+    >>> with tempfile.NamedTemporaryFile() as tmp:
+    ...     _ = vw_train(['--final_regressor', tmp.name, '--oaa', '2', '--quiet'],
+    ...                  [Example('1', 'a b c'), Example('2', 'c d e')])
+    ...     list(vw_predict(['--initial_regressor', tmp.name, '--quiet'],
+    ...                     [Example(None, 'a b c', 'abc_tag'),
+    ...                      Example(None, 'c d e', 'cde_tag')]))
+    [('1', 'abc_tag'), ('2', 'cde_tag')]
+    """
+    return tuple(_vw_run(args, data, False)) # force evaluation using tuple
+
+
+
+def vw_predict(args, data, raw=False):
+    """
+    Predict using vowpal wabbit on an iterator of Examples.
+
+    Argument list is adjusted for testing and getting predictions as a stream.
+    """
+    more_args = ['--testonly', '-r' if raw else '-p', '/dev/stdout']
+    return _vw_run(args + more_args, data, True)
+
+
+_escape_symbols = [
+    # Replace digits with X
+     (unicode(x), u'X') for x in range(10)
+    ] + map(tuple, (
+        # Vowpal Wabbit needs these to be escaped:
+        u' S', # separates features
+        u'|I', # separates namespaces
+        u':C'  # separates feature and its value
+    ))
+_escape_table={ord(k): v for k, v in _escape_symbols}
+
+
+def vw_normalize(s):
+    u"""
+    Normalize a string so it can be used as a VW feature.
+
+    >>> print(vw_normalize(u'VW | abcåäö:123').decode('utf-8'))
+    vwSISabcåäöCXXX
+    """
+
+    return cwb.fmt(s.lower().translate(_escape_table))
 
 
 def triangulate(xs):
