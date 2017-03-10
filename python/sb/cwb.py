@@ -136,25 +136,19 @@ def export(format, out, order, annotations_columns, annotations_structs, text=No
     If an attribute in 'columns' or 'structs' is "-", that annotation is skipped.
     The structs are specified by "elem:attr", giving <elem attr=N> xml tags.
     """
-    assert format in ("vrt", "xml", "txt", "formatted"), "Wrong format specified"
+    assert format in ("vrt", "xml", "formatted"), "Wrong format specified"
     if isinstance(annotations_columns, basestring):
         annotations_columns = annotations_columns.split()
     if isinstance(annotations_structs, basestring):
         annotations_structs = [x.split(":") for x in annotations_structs.split()]
 
-    if format == "txt":
-        assert len(columns) == 0 == len(structs), "columns and structs should be empty with txt output, use the annotations arguments instead"
-        assert len(annotations_columns) <= 1, "use zero columns for label output, one column for token output"
-        assert len(annotations_structs) == 1, "use one structural attribute"
-        structs_count = 1
-    else:
-        if isinstance(columns, basestring):
-            columns = columns.split()
-        structs_count = len(structs.split())
-        structs = parse_structural_attributes(structs)
+    if isinstance(columns, basestring):
+        columns = columns.split()
+    structs_count = len(structs.split())
+    structs = parse_structural_attributes(structs)
 
-        assert len(annotations_columns) == len(columns), "columns and annotations_columns must contain same number of values"
-        assert len(annotations_structs) == structs_count, "structs and annotations_structs must contain same number of values"
+    assert len(annotations_columns) == len(columns), "columns and annotations_columns must contain same number of values"
+    assert len(annotations_structs) == structs_count, "structs and annotations_structs must contain same number of values"
 
     valid_xml = util.strtobool(valid_xml)
 
@@ -166,11 +160,6 @@ def export(format, out, order, annotations_columns, annotations_structs, text=No
 
         if format == "vrt":
             write_vrt(out, structs, structs_count, column_nrs, tokens, vrt, encoding)
-        elif format == "txt":
-            if len(annotations_columns) == 1:
-                write_words(out, tokens, vrt)
-            else:
-                write_labels(out, tokens, vrt)
         elif format == "xml":
             write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fileid, fileids, valid_xml, encoding)
 
@@ -295,115 +284,6 @@ def write_vrt(out, structs, structs_count, column_nrs, tokens, vrt, encoding):
                 print >>OUT, "</%s>" % elem.encode(encoding)
 
     util.log.info("Exported %d tokens, %d columns, %d structs: %s", len(tokens), len(column_nrs), len(structs), out)
-
-
-def fmt(x, encoding='utf-8'):
-    return remove_control_characters(x).encode(encoding)
-
-
-def write_labels(out, tokens, vrt):
-    """Write a structural attribute to out, separated by lines.
-
-    Each entry in vrt should have one column: the struct.
-
-    >>> tokens = [u"w:1", u"w:2", u"w:3", u"w:4", u"w:5"]
-    >>> vrt = {
-    ...     u"w:1": [[1, u"A"]],
-    ...     u"w:2": [[2, u"B"]],
-    ...     u"w:3": [[2, u"B"]],
-    ...     u"w:4": [[3, u"B"]],
-    ...     u"w:5": [[3, u"B"]]
-    ... }
-    >>> with tempfile.NamedTemporaryFile() as out:
-    ...     write_labels(out.name, tokens, vrt)
-    ...     print out.read(),
-    A
-    B
-    B
-    """
-    lines = 0
-    with open(out, "w") as OUT:
-        for label, _ in vrt_iterate(tokens, vrt, project=lambda *_: None):
-            print >>OUT, fmt(label)
-            lines += 1
-
-    util.log.info("Exported %s lines to %s", lines, out)
-
-
-def vrt_iterate(tokens, vrt, project=lambda col: col[1],
-                             project_struct=lambda label, _last_token: label):
-    """
-    Yields documents from vrt separated using the first column in vrt,
-    together with each token's column projected using the supplied function.
-
-    >>> tokens = [u"w:1", u"w:2", u"w:3", u"w:4", u"w:5"]
-    >>> vrt = {
-    ...     u"w:1": [[1, u"A"], u"word1", u"pos1"],
-    ...     u"w:2": [[2, u"B"], u"word2", u"pos2"],
-    ...     u"w:3": [[2, u"B"], u"word3", u"pos3"],
-    ...     u"w:4": [[3, u"B"], u"word4", u"pos4"],
-    ...     u"w:5": [[3, u"B"], u"word5", u"pos5"]
-    ... }
-    >>> list(vrt_iterate(tokens, vrt))          # doctest: +NORMALIZE_WHITESPACE
-    [(u'A', [u'word1']),
-     (u'B', [u'word2', u'word3']),
-     (u'B', [u'word4', u'word5'])]
-    >>> pos = lambda col: col[2]
-    >>> list(vrt_iterate(tokens, vrt, project=pos))
-    ...                                         # doctest: +NORMALIZE_WHITESPACE
-    [(u'A', [u'pos1']),
-     (u'B', [u'pos2', u'pos3']),
-     (u'B', [u'pos4', u'pos5'])]
-    >>> last_tok = lambda _label, tok: tok
-    >>> list(vrt_iterate(tokens, vrt, project_struct=last_tok))
-    ...                                         # doctest: +NORMALIZE_WHITESPACE
-    [(u'w:1', [u'word1']),
-     (u'w:3', [u'word2', u'word3']),
-     (u'w:5', [u'word4', u'word5'])]
-    """
-    words = []
-    for tok, next_tok in it.izip(tokens, it.chain(tokens[1:], (None,))):
-
-        words.append(project(vrt[tok]))
-
-        if next_tok is None:
-            next = None
-        else:
-            next, _label = vrt[next_tok][0]
-
-        now, label = vrt[tok][0]
-        if now != next:
-            yield project_struct(label, tok), words
-            words = []
-
-
-def write_words(out, tokens, vrt):
-    """Write the tokens to out, separated by line at each structural boundary.
-
-    Each entry in vrt should have two columns: first struct, then word.
-
-    >>> tokens = [u"w:1", u"w:2", u"w:3", u"w:4", u"w:5"]
-    >>> vrt = {
-    ...     u"w:1": [[1, u"A"], u"word1"],
-    ...     u"w:2": [[2, u"B"], u"word2"],
-    ...     u"w:3": [[2, u"B"], u"word3"],
-    ...     u"w:4": [[3, u"B"], u"word4"],
-    ...     u"w:5": [[3, u"B"], u"word5"]
-    ... }
-    >>> with tempfile.NamedTemporaryFile() as out:
-    ...     write_words(out.name, tokens, vrt)
-    ...     print out.read(),
-    word1
-    word2 word3
-    word4 word5
-    """
-    lines = 0
-    with open(out, "w") as OUT:
-        for _, words in vrt_iterate(tokens, vrt):
-            print >>OUT, ' '.join(fmt(w) for w in words)
-            lines += 1
-
-    util.log.info("Exported %d tokens in %s lines to %s", len(tokens), lines, out)
 
 
 def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fileid, fileids, valid_xml, encoding):
@@ -757,6 +637,43 @@ def parse_structural_attributes(structural_atts):
 
 def remove_control_characters(text):
     return text.translate(dict((ord(c), None) for c in [chr(i) for i in range(9) + range(11, 13) + range(14, 32) + [127]]))
+
+
+def vrt_iterate(tokens, vrt):
+    """
+    Yields documents from vrt separated using the first column in vrt.
+
+    >>> tokens = [u"w:1", u"w:2", u"w:3", u"w:4", u"w:5"]
+    >>> vrt = {
+    ...     u"w:1": [[1, u"A"], u"word1", u"pos1"],
+    ...     u"w:2": [[2, u"B"], u"word2", u"pos2"],
+    ...     u"w:3": [[2, u"B"], u"word3", u"pos3"],
+    ...     u"w:4": [[3, u"B"], u"word4", u"pos4"],
+    ...     u"w:5": [[3, u"B"], u"word5", u"pos5"]
+    ... }
+    >>> list(vrt_iterate(tokens, vrt))          # doctest: +NORMALIZE_WHITESPACE
+    [((u'A', u'w:1'), [[u'word1', u'pos1']]),
+     ((u'B', u'w:3'), [[u'word2', u'pos2'], [u'word3', u'pos3']]),
+     ((u'B', u'w:5'), [[u'word4', u'pos4'], [u'word5', u'pos5']])]
+    """
+    cols = []
+    for tok, next_tok in it.izip(tokens, it.chain(tokens[1:], (None,))):
+
+        try:
+            cols.append(vrt[tok][1:])
+        except:
+            import pdb
+            pdb.set_trace()
+
+        if next_tok is None:
+            next = None
+        else:
+            next, _label = vrt[next_tok][0]
+
+        now, label = vrt[tok][0]
+        if now != next:
+            yield (label, tok), cols
+            cols = []
 
 
 class DictWithWithout(dict):
