@@ -58,6 +58,26 @@ def chain(annotations, default=None):
     return dict((key, follow(key)) for key in annotations[0])
 
 
+class ListWithGet(list):
+    """
+    Lists with a get function just like dict's.
+    """
+    def get(self, n, default=None):
+        """
+        Lookup and if the index is out of bounds return the default value.
+
+        >>> xs = ListWithGet('abc')
+        >>> xs
+        ['a', 'b', 'c']
+        >>> [ xs.get(i, 'default_'+str(i)) for i in range(-1,5) ]
+        ['default_-1', 'a', 'b', 'c', 'default_3', 'default_4']
+        """
+        if n >= 0 and n < len(self):
+            return self[n]
+        else:
+            return default
+
+
 def vrt_table(annotations_structs, annotations_columns):
     """
     Returns a table suitable for printing as a vrt file from annotations.
@@ -70,7 +90,7 @@ def vrt_table(annotations_structs, annotations_columns):
         if not parent_annotation in parents:
             parents[parent_annotation] = util.read_annotation(parent_annotation)
 
-    vrt = defaultdict(dict)
+    vrt = defaultdict(ListWithGet)
 
     for n, annot in enumerate(annotations_structs):
         # Enumerate structural attributes, to handle attributes without values
@@ -85,14 +105,14 @@ def vrt_table(annotations_structs, annotations_columns):
 
             value[1] = "|" if value[1] == "|/|" else value[1]
             value[1] = value[1].replace("\n", " ") if value[1] else ""
-            vrt[tok][n] = value
+            vrt[tok].append(value)
 
     for n, annot in enumerate(annotations_columns):
         n += structs_count
         for tok, value in util.read_annotation_iteritems(annot):
             if n > structs_count:  # Any column except the first (the word)
                 value = "|" if value == "|/|" else value
-            vrt[tok][n] = value.replace("\n", " ")
+            vrt[tok].append(value.replace("\n", " "))
 
     return vrt
 
@@ -764,34 +784,34 @@ def example_data():
     # The names and the order of the tokens:
     tokens = [u"w:1", u"w:2", u"w:3", u"w:4"]
     vrt = {
-        u"w:1": {
-            0: [1, u""],
-            1: [1, u"Kokboken"],
-            2: [1, u"Jane Oliver"],
-            3: u"Ett",
-            4: u"DT"
-        },
-        u"w:2": {
-            0: [1, u""],
-            1: [1, u"Kokboken"],
-            2: [1, u"Jane Oliver"],
-            3: u"exempel",
-            4: u"NN"
-        },
-        u"w:3": {
-            0: [2, u""],
-            1: [1, u"Kokboken"],
-            2: [1, u"Jane Oliver"],
-            3: u"Banankaka",
-            4: u"NN"
-        },
-        u"w:4": {
-            0: [3, u""],
-            1: [2, u"Nya kokboken"],
-            2: [2, u"Jane Oliver"],
-            3: u"Flambera",
-            4: u"VB"
-        }
+        u"w:1": ListWithGet([
+            [1, u""],
+            [1, u"Kokboken"],
+            [1, u"Jane Oliver"],
+            u"Ett",
+            u"DT"
+        ]),
+        u"w:2": ListWithGet([
+            [1, u""],
+            [1, u"Kokboken"],
+            [1, u"Jane Oliver"],
+            u"exempel",
+            u"NN"
+        ]),
+        u"w:3": ListWithGet([
+            [2, u""],
+            [1, u"Kokboken"],
+            [1, u"Jane Oliver"],
+            u"Banankaka",
+            u"NN"
+        ]),
+        u"w:4": ListWithGet([
+            [3, u""],
+            [2, u"Nya kokboken"],
+            [2, u"Jane Oliver"],
+            u"Flambera",
+            u"VB"
+        ])
       }
     return DictWithWithout(**locals())
 
@@ -804,21 +824,21 @@ def example_overlapping_data():
     column_nrs = [2]
     tokens = [u"w:1", u"w:2", u"w:3"]
     vrt = {
-        u"w:1": {
-            0: [1, u""],
-            1: [],
-            2: u"bold"
-        },
-        u"w:2": {
-            0: [1, u""],
-            1: [2, u""],
-            2: u"bold_italic"
-        },
-        u"w:3": {
-            0: [],
-            1: [2, u""],
-            2: u"italic"
-        },
+        u"w:1": ListWithGet([
+            [1, u""],
+            [],
+            u"bold"
+        ]),
+        u"w:2": ListWithGet([
+            [1, u""],
+            [2, u""],
+            u"bold_italic"
+        ]),
+        u"w:3": ListWithGet([
+            [],
+            [2, u""],
+            u"italic"
+        ]),
       }
     return DictWithWithout(**locals())
 
