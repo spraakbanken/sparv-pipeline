@@ -22,24 +22,18 @@ def clear_annotation(file):
         os.remove(file)
 
 
-def feed_annotation(file, encode=None, append=False):
-    """
-    Feed annotations to a file using the send function to iterators.
-    Send tuples of key, value to feed, send None to stop.
-
-    The file is overwritten if it exists.
-
+def write_annotation(file, annotation, encode=None, append=False):
+    """Write an annotation to a file. The file is overwritten if it exists.
+    The annotation can be a dictionary, or a sequence of (key,value) pairs.
     If specified, encode should be a function from values to unicode strings.
     """
+    if isinstance(annotation, dict):
+        annotation = annotation.iteritems()
     system.make_directory(os.path.dirname(file))
     mode = "a" if append else "w"
     with open(file, mode) as DB:
         ctr = 0
-        while True:
-            annotation = yield
-            if annotation is None:
-                break
-            key, value = annotation
+        for key, value in annotation:
             if value is None:
                 value = ""
             if encode:
@@ -49,25 +43,6 @@ def feed_annotation(file, encode=None, append=False):
             print >>DB, (key + ANNOTATION_DELIM + value).encode(UTF8)
             ctr += 1
     log.info("Wrote %d items: %s", ctr, file)
-
-
-def write_annotation(file, annotation, encode=None, append=False):
-    """Write an annotation to a file. The file is overwritten if it exists.
-    The annotation can be a dictionary, or a sequence of (key,value) pairs.
-    If specified, encode should be a function from values to unicode strings.
-    """
-    if isinstance(annotation, dict):
-        annotation = annotation.iteritems()
-    i = feed_annotation(file, encode, append)
-    i.next()
-    for annot in annotation:
-        i.send(annot)
-    try:
-        i.send(None)
-    except StopIteration:
-        pass
-    else:
-        raise ValueError('?')
 
 
 def read_annotation(file, decode=None):

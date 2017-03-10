@@ -19,26 +19,15 @@ def predict(model, order, struct, parent, word, out):
 
     index_to_label = json.load(open(model + '.json'))['index_to_label']
 
-    i = util.feed_annotation(out)
-    i.next()
-
-    par = util.read_annotation(parent)
-    def process_line(s, tok):
-        i.send((par[tok], index_to_label[s.rstrip()]))
-
     def no_target(_):
         return '| '
 
     args = ['--initial_regressor', model, '--testonly', '-p', '/dev/stdout']
 
-    VW(args, no_target, [(order, struct, parent, word)], process_line)
-
-    try:
-        i.send(None)
-    except StopIteration:
-        pass
-    else:
-        raise ValueError('?')
+    par = util.read_annotation(parent)
+    util.write_annotation(out,
+        ((par[tok], index_to_label[s.rstrip()]) for s, tok in
+         VW(args, no_target, [(order, struct, parent, word)], yield_lines=True)))
 
 
 def interleave(xs, k):
@@ -103,7 +92,7 @@ def train(files, outprefix):
         '--cache', '--kill_cache',
         '--bit_precision', '24',
         '--final_regressor', modelfile]
-    N_train = VW(args, every(10, invert=True)(answer.get), order_struct_parent_word)
+    N_train = next(VW(args, every(10, invert=True)(answer.get), order_struct_parent_word))
 
     # Performance evaluation
     predicted = []
@@ -115,7 +104,9 @@ def train(files, outprefix):
     def process_line(s, _):
         predicted.append(int(s))
     args = ['--initial_regressor', modelfile, '--testonly', '-p', '/dev/stdout']
-    N_eval = VW(args, secret, order_struct_parent_word, process_line=process_line)
+    predicted = [int(s) for s, _ in
+                 VW(args, secret, order_struct_parent_word, yield_lines=True)]
+    N_eval = len(predicted)
 
     assert len(predicted) == len(target)
 
@@ -283,8 +274,8 @@ def every(sep, invert=False):
     return decorator
 
 
-def VW(args, target_for_example, order_struct_parent_word, process_line=None):
-    stdout = PIPE if process_line else sys.stdout
+def VW(args, target_for_example, order_struct_parent_word, yield_lines=False):
+    stdout = PIPE if yield_lines else sys.stdout
     vw = Popen(['vw'] + args, stdin=PIPE, stdout=stdout, stderr=sys.stderr)
     util.log.info('Running: vw ' + ' '.join(args))
     stdin = vw.stdin
@@ -303,16 +294,17 @@ def VW(args, target_for_example, order_struct_parent_word, process_line=None):
                 # line have values like '2:4.9882 | apa bepa cepa' when training
                 stdin.write(line + b'\n')
                 x += 1
-                if process_line:
+                if yield_lines:
                     stdin.flush()
-                    process_line(vw.stdout.readline(), last_tok) # handle predicted value
+                    yield vw.stdout.readline(), last_tok
         util.log.info("Examples from %s: %s", struct, x)
         X += x
     util.log.info("Total examples: %s", X)
 
     stdin.close()
     vw.wait()
-    return X
+    if not yield_lines:
+        yield X
 
 
 class vw_features(object):
