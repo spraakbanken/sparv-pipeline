@@ -92,16 +92,23 @@ def vrt_table(annotations_structs, annotations_columns):
 
     vrt = defaultdict(ListWithGet)
 
-    for n, annot in enumerate(annotations_structs):
+    for n, (annot, parent_annotation) in enumerate(annotations_structs):
         # Enumerate structural attributes, to handle attributes without values
-        enumerated_struct = dict(
-            (item[0], [i, item[1]])
-            for i, item in enumerate(util.read_annotation(annot[0]).items(), 1))
-                          # Must enumerate from 1, due to the use of any() later
-        token_annotations = chain([parents[annot[1]], enumerated_struct])
-        for tok, value in token_annotations.iteritems():
+        enumerated_struct = {
+            span: [index, value, span]
+            for index, (span, value)
+            in enumerate(util.read_annotation(annot).items(), 1)
+            # Must enumerate from 1, due to the use of any() later
+        }
+        token_annotations = (
+            (word_tok, enumerated_struct.get(tok_span))
+            for word_tok, tok_span
+            in parents[parent_annotation].iteritems()
+        )
+        for tok, value in token_annotations:
             if not value:
-                value = ["", ""]
+                # Should this ever happen?
+                value = ["", "", None] # span?
 
             value[1] = "|" if value[1] == "|/|" else value[1]
             value[1] = value[1].replace("\n", " ") if value[1] else ""
@@ -645,16 +652,16 @@ def vrt_iterate(tokens, vrt):
 
     >>> tokens = [u"w:1", u"w:2", u"w:3", u"w:4", u"w:5"]
     >>> vrt = {
-    ...     u"w:1": [[1, u"A"], u"word1", u"pos1"],
-    ...     u"w:2": [[2, u"B"], u"word2", u"pos2"],
-    ...     u"w:3": [[2, u"B"], u"word3", u"pos3"],
-    ...     u"w:4": [[3, u"B"], u"word4", u"pos4"],
-    ...     u"w:5": [[3, u"B"], u"word5", u"pos5"]
+    ...     u"w:1": [[1, u"A", u"w:1-1"], u"word1", u"pos1"],
+    ...     u"w:2": [[2, u"B", u"w:2-3"], u"word2", u"pos2"],
+    ...     u"w:3": [[2, u"B", u"w:2-3"], u"word3", u"pos3"],
+    ...     u"w:4": [[3, u"B", u"w:4-5"], u"word4", u"pos4"],
+    ...     u"w:5": [[3, u"B", u"w:4-5"], u"word5", u"pos5"]
     ... }
     >>> list(vrt_iterate(tokens, vrt))          # doctest: +NORMALIZE_WHITESPACE
-    [((u'A', u'w:1'), [[u'word1', u'pos1']]),
-     ((u'B', u'w:3'), [[u'word2', u'pos2'], [u'word3', u'pos3']]),
-     ((u'B', u'w:5'), [[u'word4', u'pos4'], [u'word5', u'pos5']])]
+    [([u'A', u'w:1-1'], [[u'word1', u'pos1']]),
+     ([u'B', u'w:2-3'], [[u'word2', u'pos2'], [u'word3', u'pos3']]),
+     ([u'B', u'w:4-5'], [[u'word4', u'pos4'], [u'word5', u'pos5']])]
     """
     cols = []
     for tok, next_tok in it.izip(tokens, it.chain(tokens[1:], (None,))):
@@ -668,11 +675,11 @@ def vrt_iterate(tokens, vrt):
         if next_tok is None:
             next = None
         else:
-            next, _label = vrt[next_tok][0]
+            next = vrt[next_tok][0][0]
 
-        now, label = vrt[tok][0]
+        now = vrt[tok][0][0]
         if now != next:
-            yield (label, tok), cols
+            yield vrt[tok][0][1:], cols
             cols = []
 
 
