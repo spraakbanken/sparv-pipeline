@@ -74,6 +74,39 @@ def read_annotation_iteritems(file, decode=None):
     log.info("Read %d items: %s", ctr, file)
 
 
+def chain(annotations, default=None):
+    """Create a functional composition of a list of annotations.
+    E.g., token.sentence + sentence.id -> token.sentence-id
+
+    >>> from pprint import pprint
+    >>> pprint(dict(
+    ...   chain([{"w:1": "s:A",
+    ...           "w:2": "s:A",
+    ...           "w:3": "s:B",
+    ...           "w:4": "s:C",
+    ...           "w:5": "s:missing"},
+    ...          {"s:A": "text:I",
+    ...           "s:B": "text:II",
+    ...           "s:C": "text:mystery"},
+    ...          {"text:I": "The Bible",
+    ...           "text:II": "The Samannaphala Sutta"}],
+    ...         default="The Principia Discordia")))
+    {'w:1': 'The Bible',
+     'w:2': 'The Bible',
+     'w:3': 'The Samannaphala Sutta',
+     'w:4': 'The Principia Discordia',
+     'w:5': 'The Principia Discordia'}
+    """
+    def follow(key):
+        for annot in annotations:
+            try:
+                key = annot[key]
+            except KeyError:
+                return default
+        return key
+    return ((key, follow(key)) for key in annotations[0])
+
+
 ######################################################################
 # Corpus text
 

@@ -43,13 +43,7 @@ def chain(out, annotations, default=None):
     if isinstance(annotations, basestring):
         annotations = annotations.split()
     annotations = [util.read_annotation(a) for a in annotations]
-
-    def follow(key):
-        for annot in annotations:
-            try: key = annot[key]
-            except KeyError: return default
-        return key
-    util.write_annotation(out, ((key, follow(key)) for key in annotations[0]))
+    util.write_annotation(out, util.corpus.chain(annotations, default))
 
 
 def span_as_value(out, keys):
