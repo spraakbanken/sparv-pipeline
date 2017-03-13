@@ -18,15 +18,19 @@ def predict(model, order, struct, parent, word, out):
     Both model and model.json must exist. See --train.
     """
 
-    data = (Example(None, text.words, text.last_token)
-            for text in texts([(order, struct, parent, word)]))
+    data = (
+        Example(None, text.words, text.span)
+        for text in texts([(order, struct, parent, word)])
+    )
 
     index_to_label = json.load(open(model + '.json'))['index_to_label']
 
     args = ['--initial_regressor', model]
 
-    predictions = ((span, index_to_label[s])
-                   for s, span in vw_predict(args, data))
+    predictions = (
+        (span, index_to_label[s])
+        for s, span in vw_predict(args, data)
+    )
 
     util.write_annotation(out, predictions)
 
@@ -73,8 +77,10 @@ def train(files, outprefix):
             '--cache', '--kill_cache',
             '--bit_precision', '24',
             '--final_regressor', modelfile]
-    data = (Example(answer[text.label], text.words)
-            for text in every(10, texts(order_struct_parent_word), invert=True))
+    data = (
+        Example(answer[text.label], text.words)
+        for text in every(10, texts(order_struct_parent_word), invert=True)
+    )
     vw_train(args, data)
 
     # Performance evaluation
