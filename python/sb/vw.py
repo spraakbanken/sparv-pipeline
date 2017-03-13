@@ -21,14 +21,12 @@ def predict(model, order, struct, parent, word, out):
     data = (Example(None, text.words, text.last_token)
             for text in texts([(order, struct, parent, word)]))
 
-    par = util.read_annotation(parent)
-
     index_to_label = json.load(open(model + '.json'))['index_to_label']
 
     args = ['--initial_regressor', model]
 
-    predictions = ((par[tok], index_to_label[s.rstrip()])
-                   for s, tok in vw_predict(args, data))
+    predictions = ((span, index_to_label[s])
+                   for s, span in vw_predict(args, data))
 
     util.write_annotation(out, predictions)
 
@@ -123,7 +121,7 @@ def make_testdata(corpus_desc='abcd abcd dcba cbad', docs=1000):
         print('</text>')
 
 
-Text = namedtuple('Text', 'label words last_token')
+Text = namedtuple('Text', 'label span words')
 
 
 def texts(order_struct_parent_word):
@@ -137,10 +135,10 @@ def texts(order_struct_parent_word):
         x = 0
         util.log.info("Processing %s %s %s", struct, parent, word)
         tokens, vrt = cwb.tokens_and_vrt(order, [(struct, parent)], [word])
-        for (label, last_token), cols in cwb.vrt_iterate(tokens, vrt):
+        for (label, span), cols in cwb.vrt_iterate(tokens, vrt):
             words = b' '.join(vw_normalize(col[0]) for col in cols)
             x += 1
-            yield Text(label, words, last_token)
+            yield Text(label, span, words)
         util.log.info("Texts from %s: %s", struct, x)
         X += x
     util.log.info("Total texts: %s", X)
