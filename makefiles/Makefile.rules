@@ -237,6 +237,11 @@ else
   $(foreach xml_folder,$(xml_folders),$(eval $(call xml_parse,$(xml_folder)/,$(xml_folder)_)))
 endif
 
+# Set default token_segmenter if omitted
+ifeq ($(token_segmenter),)
+  token_segmenter = $(default_token_segmenter)
+endif
+
 ifeq ($(token_segmenter), better_word)
   # The BetterTokenizer model is unpickled
   token_model_pickle = --no_pickled_model=true
@@ -330,12 +335,16 @@ endif
 ifeq ($(filter token.word,$(custom_rules)),)
 %.token.word: %.@TEXT %.token
 	$(python) -m sb.annotate --text_spans --out $@ --text $(1) --chunk $(2)
-
 endif
 
 ifeq ($(filter sentence,$(custom_rules)),)
   ifneq ($(sentence_no_pickled_model),)
     pickled_model = --no_pickled_model true
+  endif
+  
+  # Set default sentence_segmenter if omitted
+  ifeq ($(sentence_segmenter),)
+    sentence_segmenter = $(default_sentence_segmenter)
   endif
 
   # Automatically set sentence_model based on segmenter and language
@@ -449,7 +458,7 @@ ifneq ($(analysis),tt)
     endif
 
     ifeq ($(analysis),sv-1800)
-# include annotations from dalin and swedberg
+# Include annotations from dalin and swedberg
 %.token.$(baseform) %.token.lemgram %.token.$(sense): %.token.word %.token.msd %.children.sentence.token %.token.ref $(saldo_model) $(dalin_model) $(swedberg_model)
 	$(python) -m sb.saldo --out "$*.token.$(baseform) $*.token.lemgram $*.token.$(sense)" --annotations "gf lem saldo" \
 		--word $(1) --msd $(2) --models "$(5) $(6) $(7)" --delimiter "|" --affix="|" --precision="" --min_precision=$(saldo_min_precision) --precision_filter "$(saldo_precision_filter)" --sentence $(3) --reference $(4) --skip_multiword "$(saldo_skip_multiword)"
