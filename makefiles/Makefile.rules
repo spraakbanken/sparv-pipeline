@@ -534,6 +534,16 @@ endif
 %.text.timefrom %.text.timeto: %.$(datefrom) %.$(dateto)
 	$(python) -m sb.dateformat --infrom $(1) --into $(2) --outfrom $*.text.timefrom --outto $*.text.timeto --informat "$(dateformat)" --outformat "%H%M%S" --splitter "$(datesplitter)" --regex "$(dateregex)"
 
+
+%.text.lix: %.token.n %.text %.parents.token.text %.sentence %.parents.token.sentence %.token.word %.token.pos
+	$(python) -m sb.readability --lix --order $(1) --text $(2) --parent_text $(3) --sentence $(4) --parent_sentence $(5) --words $(6) --pos $(7) --out $@
+
+%.text.ovix: %.token.n %.text %.parents.token.text %.token.word %.token.pos
+	$(python) -m sb.readability --ovix --order $(1) --text $(2) --parent_text $(3) --words $(4) --pos $(5) --out $@
+
+%.text.nk: %.token.n %.text %.parents.token.text %.token.pos
+	$(python) -m sb.readability --nominal_ratio --order $(1) --text $(2) --parent_text $(3) --pos $(4) --out $@
+
 ################################################################################
 #                                  GEOCONTEXT                                  #
 ################################################################################
@@ -1100,3 +1110,4 @@ else
 $(root)time_installexportoriginal:
 	$(error Variable 'export_original_host' not defined.)
 endif
+

@@ -161,7 +161,7 @@ def run_test(test_dir, verbose, cleanup=False):
                         run.append(cmd)
                         exc = call(cmd, stdout=out, stderr=err, shell=True)
 
-        if exc != 0:
+        if exc != 0 and not clean:
             info = [cmd + ' failed (exit code: ' + str(exc) + ')']
             for f in [stdout, stderr]:
                 with open(f, 'r') as fd:

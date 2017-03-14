@@ -74,7 +74,8 @@ def vrt_table(annotations_structs, annotations_columns):
         )
         for tok, value in token_annotations:
             if not value:
-                # Should this ever happen?
+                # Martin claims that this happens for tokens that are outside
+                # the structural attribute, such as b in "<text>a</text> b"
                 value = ["", "", None] # span?
 
             value[1] = "|" if value[1] == "|/|" else value[1]
@@ -109,6 +110,12 @@ def export(format, out, order, annotations_columns, annotations_structs, text=No
     The structural attributes are specified by 'structs', default no structs.
     If an attribute in 'columns' or 'structs' is "-", that annotation is skipped.
     The structs are specified by "elem:attr", giving <elem attr=N> xml tags.
+
+    annotations_structs corresponds to vrt_struct_annotations from the Makefiles:
+
+    Q: Brukar vi skriva vrt_struct_annotations i någon speciell ordning efter
+       vilka taggar som omsluter andra?
+    A: Ja, ju "större" desto längre till höger, exv `s p text`
     """
     assert format in ("vrt", "xml", "formatted"), "Wrong format specified"
     if isinstance(annotations_columns, basestring):
@@ -613,9 +620,9 @@ def remove_control_characters(text):
     return text.translate(dict((ord(c), None) for c in [chr(i) for i in range(9) + range(11, 13) + range(14, 32) + [127]]))
 
 
-def vrt_iterate(tokens, vrt):
+def vrt_iterate(tokens, vrt, trail=[0]):
     """
-    Yields documents from vrt separated using the first column in vrt.
+    Yields segments from vrt separated using the structural attributes from trail.
 
     >>> tokens = [u"w:1", u"w:2", u"w:3", u"w:4", u"w:5"]
     >>> vrt = {
@@ -629,25 +636,51 @@ def vrt_iterate(tokens, vrt):
     [([u'A', u'w:1-1'], [[u'word1', u'pos1']]),
      ([u'B', u'w:2-3'], [[u'word2', u'pos2'], [u'word3', u'pos3']]),
      ([u'B', u'w:4-5'], [[u'word4', u'pos4'], [u'word5', u'pos5']])]
+
+    >>> tokens = [u'w:0',u'w:1',u'w:2',u'w:3',u'w:4',u'w:5']
+    >>> vrt = {
+    ...     u'w:0': [[0, u'text:0', u'w:0-1'], [0, u's:0', u'w:0-1'], u'word0'],
+    ...     u'w:1': [[0, u'text:0', u'w:0-1'], [0, u's:0', u'w:0-1'], u'word1'],
+    ...     u'w:2': [[0, u'text:0', u'w:0-1'], [1, u's:1', u'w:1-2'], u'word2'],
+    ...     u'w:3': [[0, u'text:0', u'w:0-1'], [1, u's:1', u'w:1-2'], u'word3'],
+    ...     u'w:4': [[1, u'text:1', u'w:1-2'], [2, u's:2', u'w:2-3'], u'word4'],
+    ...     u'w:5': [[1, u'text:1', u'w:1-2'], [2, u's:2', u'w:2-3'], u'word5'],
+    ... }
+    >>> list(vrt_iterate(tokens, vrt, trail=[1]))
+    ...                                         # doctest: +NORMALIZE_WHITESPACE
+    [([u's:0', u'w:0-1'], [[u'word0'], [u'word1']]),
+     ([u's:1', u'w:1-2'], [[u'word2'], [u'word3']]),
+     ([u's:2', u'w:2-3'], [[u'word4'], [u'word5']])]
+    >>> [ (text, list(sent))
+    ...   for text, sent in vrt_iterate(tokens, vrt, trail=[0,1]) ]
+    ...                                         # doctest: +NORMALIZE_WHITESPACE
+    [([u'text:0', u'w:0-1'],
+      [([u's:0', u'w:0-1'], [[u'word0'], [u'word1']]),
+       ([u's:1', u'w:1-2'], [[u'word2'], [u'word3']])]),
+     ([u'text:1', u'w:1-2'],
+      [([u's:2', u'w:2-3'], [[u'word4'], [u'word5']])])]
+
     """
     cols = []
+    toks = []
     for tok, next_tok in it.izip(tokens, it.chain(tokens[1:], (None,))):
 
-        try:
-            cols.append(vrt[tok][1:])
-        except:
-            import pdb
-            pdb.set_trace()
+        cols.append(vrt[tok][trail[-1]+1:])
+        toks.append(tok)
 
         if next_tok is None:
             next = None
         else:
-            next = vrt[next_tok][0][0]
+            next = vrt[next_tok][trail[0]][0]
 
-        now = vrt[tok][0][0]
+        now = vrt[tok][trail[0]][0]
         if now != next:
-            yield vrt[tok][0][1:], cols
+            if len(trail[1:]):
+                yield vrt[tok][trail[0]][1:], vrt_iterate(toks, vrt, trail[1:])
+            else:
+                yield vrt[tok][trail[0]][1:], cols
             cols = []
+            toks = []
 
 
 class DictWithWithout(dict):
