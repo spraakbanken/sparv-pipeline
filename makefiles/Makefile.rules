@@ -22,11 +22,15 @@ ifeq ($(corpus),)
 endif
 
 ifeq ($(vrt_columns_annotations),)
-  $(error Variable 'vrt_columns_annotations' is not set)
+  ifeq ($(_default_annotations),)
+    $(error Variable 'vrt_columns_annotations' is not set)
+  endif
 endif
 
 ifeq ($(vrt_columns),)
-  $(error Variable 'vrt_columns' is not set)
+  ifeq ($(_default),)
+    $(error Variable 'vrt_columns' is not set)
+  endif
 endif
 
 ifeq ($(vrt_structs_annotations),)
@@ -140,6 +144,12 @@ $(nulls): %.token
 ################################################################################
 #                                  RULES                                       #
 ################################################################################
+
+# Default word annotations
+ifeq ($(vrt_columns_annotations),)
+  vrt_columns_annotations = $(_default_annotations)
+  vrt_columns             = $(_default)
+endif
 
 annotations = vrt @TEXT $(sort $(xml_annotations) $(xml_header_annotations) $(addprefix token., $(vrt_columns_annotations)) $(vrt_structs_annotations))
 
