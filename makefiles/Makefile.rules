@@ -151,6 +151,12 @@ ifeq ($(vrt_columns_annotations),)
   vrt_columns             = $(_default)
 endif
 
+# Remove date attributes if date source is undefined
+ifeq ($(datefrom),)
+  vrt_structs_annotations := $(filter-out $(_time_annotations),$(vrt_structs_annotations))
+  vrt_structs := $(filter-out $(_time),$(vrt_structs))
+endif
+
 annotations = vrt @TEXT $(sort $(xml_annotations) $(xml_header_annotations) $(addprefix token., $(vrt_columns_annotations)) $(vrt_structs_annotations))
 
 # Source directory
@@ -1110,4 +1116,3 @@ else
 $(root)time_installexportoriginal:
 	$(error Variable 'export_original_host' not defined.)
 endif
-
