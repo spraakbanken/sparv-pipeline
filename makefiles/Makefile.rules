@@ -157,6 +157,16 @@ ifeq ($(datefrom),)
   vrt_structs := $(filter-out $(_time),$(vrt_structs))
 endif
 
+# Remove paragraph structs if no paragraphs are present
+ifeq ($(paragraph_chunk),)
+  ifeq ($(filter paragraph,$(xml_annotations)),)
+    ifeq ($(filter paragraph,$(custom_rules)),)
+      vrt_structs_annotations := $(filter-out $(_default_paragraph_annotations),$(vrt_structs_annotations))
+      vrt_structs := $(filter-out $(_default_paragraph),$(vrt_structs))
+    endif
+  endif
+endif
+
 annotations = vrt @TEXT $(sort $(xml_annotations) $(xml_header_annotations) $(addprefix token., $(vrt_columns_annotations)) $(vrt_structs_annotations))
 
 # Source directory
