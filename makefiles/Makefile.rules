@@ -22,15 +22,11 @@ ifeq ($(corpus),)
 endif
 
 ifeq ($(vrt_columns_annotations),)
-  ifeq ($(_default_annotations),)
-    $(error Variable 'vrt_columns_annotations' is not set)
-  endif
+  $(error Variable 'vrt_columns_annotations' is not set)
 endif
 
 ifeq ($(vrt_columns),)
-  ifeq ($(_default),)
-    $(error Variable 'vrt_columns' is not set)
-  endif
+  $(error Variable 'vrt_columns' is not set)
 endif
 
 ifeq ($(vrt_structs_annotations),)
@@ -144,12 +140,6 @@ $(nulls): %.token
 ################################################################################
 #                                  RULES                                       #
 ################################################################################
-
-# Default word annotations
-ifeq ($(vrt_columns_annotations),)
-  vrt_columns_annotations = $(_default_annotations)
-  vrt_columns             = $(_default)
-endif
 
 # Remove date attributes if date source is undefined
 ifeq ($(datefrom),)
