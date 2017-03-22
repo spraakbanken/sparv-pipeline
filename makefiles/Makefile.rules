@@ -195,6 +195,10 @@ debug:
 	@echo "PYTHONPATH: $(PYTHONPATH)"
 	@echo "PATH: $(PATH)"
 	@echo "xml-source: $(original_dir)"
+	@echo "vrt_columns_annotations: $(vrt_columns_annotations)"
+	@echo "vrt_columns:             $(vrt_columns)"
+	@echo "vrt_structs_annotations: $(vrt_structs_annotations)"
+	@echo "vrt_structs:             $(vrt_structs)"
 
 targets = clean distclean space clean_export files add vrt cwb xml info install install_corpus install_relations install_lemgrams install_timespan relations export export_combined export_compressed install_export export_original export_combined_original export_compressed_original install_export_original
 .PHONY: help $(targets) $(annotations) $(files)
@@ -377,6 +381,24 @@ ifeq ($(filter sentence,$(custom_rules)),)
       endif
     endif
   endif
+
+# Try to set default sentence_chunk if omitted
+ifeq ($(sentence_chunk),)
+  # Use paragraph as chunk if available
+  ifneq ($(paragraph_chunk),)
+    sentence_chunk = paragraph
+  else
+    ifneq ($(filter paragraph,$(xml_annotations)),)
+      sentence_chunk = paragraph
+    else
+      ifneq ($(filter paragraph,$(custom_rules)),)
+        sentence_chunk = paragraph
+      else
+        $(error Variable 'sentence_chunk' is not set)
+      endif
+    endif
+  endif
+endif
 
 %.sentence: %.@TEXT %.$(sentence_chunk)
 	$(python) -m sb.segment --element s --out $@ --text $(1) --chunk $(2) --segmenter $(sentence_segmenter) --model "$(sentence_model)"  $(pickled_model)
