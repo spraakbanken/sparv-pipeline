@@ -6,7 +6,7 @@
 CONVERTERS = {
     "as": "as_convert_fl",
     "ca": "ca_convert_fl",
-    "cy": "cy_convert_fl",  # Not used yet, Freeling dict is not working.
+    "cy": "cy_convert_fl",  # Not used yet, FreeLing dict is not working.
     "de": "de_convert_fl",
     "es": "es_convert_fl",
     "en": "en_convert_fl",
@@ -172,7 +172,7 @@ def en_convert_fl(msd):
     return en_dict.get(msd, FALLBACK)
 
 en_dict = {
-    # https://talp-upc.gitbooks.io/freeling-user-manual/content/tagsets/tagset-en.html
+    # https://talp-upc.gitbooks.io/freeling-user-manual/content/tagsets/tagset-en.html  # FreeLing
     "CC": "CONJ",
     "DT": "DET",
     "WDT": "DET",

@@ -222,13 +222,13 @@ $(root)src/%.xml: $(original_dir)/%.xml
   endif
 endif
 
-ifeq ($(analysis),fl)
-  ifeq ($(filter freeling,$(custom_rules)),)
-$(root)src/%.xml: $(original_dir)/%.xml
-	mkdir -p $(root)src/ -m $(dir_chmod)
-	$(python) -m sb.freeling --in_file $(1) --out_file $@ --conf_file $(fl_config) --lang $(lang) --slevel "$(freeling_slevel)"
-  endif
-endif
+ifeq ($(analysis),fl) # FreeLing
+  ifeq ($(filter freeling,$(custom_rules)),) # FreeLing
+$(root)src/%.xml: $(original_dir)/%.xml # FreeLing
+	mkdir -p $(root)src/ -m $(dir_chmod) # FreeLing
+	$(python) -m sb.freeling --in_file $(1) --out_file $@ --conf_file $(fl_config) --lang $(lang) --slevel "$(freeling_slevel)"  # FreeLing
+  endif # FreeLing
+endif # FreeLing
 
 %.vrt: $(foreach struct,$(vrt_structs_annotations),$(addprefix %.parents.token., $(firstword $(subst ., ,$(struct))))) $(addprefix %., $(vrt_structs_annotations)) $(addprefix %.token., $(vrt_columns_annotations) n$(token_n_suffix))
 	$(python) -m sb.cwb --export --format vrt --out $@ \
