@@ -1,51 +1,55 @@
-
 # This file should be included at the top of your corpus Makefile
 
 ################################################################################
 #                                  MODELS                                      #
 ################################################################################
 
-bettertokenizer_config = $(SB_MODELS)/bettertokenizer.sv
-punkt_model_sv = $(SB_MODELS)/punkt-nltk-svenska.pickle
-punkt_model_en = $(SB_MODELS)/punkt-nltk-english.pickle
+bettertokenizer_config = $(SPARV_MODELS)/bettertokenizer.sv
+punkt_model_sv = $(SPARV_MODELS)/punkt-nltk-svenska.pickle
+punkt_model_en = $(SPARV_MODELS)/punkt-nltk-english.pickle
 punkt_model := $(punkt_model_sv)
-hunpos_model = $(SB_MODELS)/hunpos.suc3.suc-tags.default-setting.utf8.model
-hunpos_morphtable = $(SB_MODELS)/hunpos.saldo.suc-tags.morphtable
-hunpos_morphtable_patterns = $(SB_MODELS)/hunpos.suc.patterns
-hunpos_morphtable_swedalin = $(SB_MODELS)/hunpos.dalinm-swedberg.saldo.suc-tags.morphtable
+hunpos_model = $(SPARV_MODELS)/hunpos.suc3.suc-tags.default-setting.utf8.model
+hunpos_morphtable = $(SPARV_MODELS)/hunpos.saldo.suc-tags.morphtable
+hunpos_morphtable_patterns = $(SPARV_MODELS)/hunpos.suc.patterns
+hunpos_morphtable_swedalin = $(SPARV_MODELS)/hunpos.dalinm-swedberg.saldo.suc-tags.morphtable
 # tag_mapping = parole_to_suc
-saldo_model = $(SB_MODELS)/saldo.pickle
-saldo_compound_model = $(SB_MODELS)/saldo.compound.pickle
-saldo_revision = $(SB_MODELS)/saldo.rev
-dalin_model = $(SB_MODELS)/dalin.pickle
-swedberg_model = $(SB_MODELS)/swedberg.pickle
-nst_comp_model = $(SB_MODELS)/nst.comp.pos.pickle
-stats_model = $(SB_MODELS)/stats.pickle
-malt_model = $(SB_MODELS)/swemalt-1.7.2.mco
+saldo_model = $(SPARV_MODELS)/saldo.pickle
+saldo_compound_model = $(SPARV_MODELS)/saldo.compound.pickle
+saldo_revision = $(SPARV_MODELS)/saldo.rev
+dalin_model = $(SPARV_MODELS)/dalin.pickle
+swedberg_model = $(SPARV_MODELS)/swedberg.pickle
+nst_comp_model = $(SPARV_MODELS)/nst.comp.pos.pickle
+stats_model = $(SPARV_MODELS)/stats.pickle
+malt_model = $(SPARV_MODELS)/swemalt-1.7.2.mco
 malt_jar = maltparser-1.7.2/maltparser-1.7.2.jar
+wsd_jar = wsd/saldowsd.jar
+wsd_sense_model = $(SPARV_MODELS)/wsd/ALL_512_128_w10_A2_140403_ctx1.bin
+wsd_context_model = $(SPARV_MODELS)/wsd/lem_cbow0_s512_w10_NEW2_ctx.bin
 tt_bin = treetagger/tree-tagger
-tt_model = $(SB_MODELS)/treetagger_$(lang).bin
-fl_config = $(SB_MODELS)/freeling_$(lang).cfg
+tt_model = $(SPARV_MODELS)/treetagger_$(lang).bin
+fl_config = $(SPARV_MODELS)/freeling_$(lang).cfg  # FreeLing
+geo_model = $(SPARV_MODELS)/geo.pickle
+geo_language = sv
 
 ################################################################################
 #                                VARIABLES                                     #
 ################################################################################
 
 # Remote host name for installation of both corpus data and database
-remote_host = 
+remote_host =
 
 # Paths on remote server (targets for install_corpus)
 remote_cwb_datadir = ""
 remote_cwb_registry = ""
 
 # Export hosts and paths (targets for install_export and install_export_original)
-export_host = 
-export_path = 
-export_original_host = 
-export_original_path = 
+export_host =
+export_path =
+export_original_host =
+export_original_path =
 
 # Database name for relations, lemgram index and timespan
-mysql_dbname = 
+mysql_dbname =
 
 # Python executable
 python = python
@@ -54,7 +58,61 @@ python = python
 dir_chmod = 775
 
 ################################################################################
+#                               DEFAULT SETTINGS                               #
+################################################################################
+
+default_token_segmenter = better_word
+default_sentence_segmenter = punkt_sentence
+
+################################################################################
+#                             DEFAULT ANNOTATIONS                              #
+################################################################################
+
+# These variables are optional and only used for convenience.
+
+
+# Positional annotations
+_saldo_annotations = baseform lemgram sense prefix suffix compwf complemgram
+_saldo             = lemma    lex     sense prefix suffix compwf complemgram
+
+_dep_annotations = ref dephead.ref deprel
+_dep             = ref dephead     deprel
+
+_default_annotations := word pos msd $(_saldo_annotations)     $(_dep_annotations)
+_default             := word pos msd $(_saldo)     $(_dep)
+
+
+# Structural annotations
+_ne_annotations = ne.ex ne.type ne.subtype ne.name
+_ne             = ne:ex ne:type ne:subtype ne:name
+
+_time_annotations = text.datefrom text.dateto text.timefrom text.timeto
+_time             = text:datefrom text:dateto text:timefrom text:timeto
+
+_default_smallest_annotations := $(_ne_annotations)
+_default_smallest             := $(_ne)
+
+_default_sentence_annotations = sentence.id sentence.geocontext
+_default_sentence             = sentence:id sentence:_geocontext
+
+_default_paragraph_annotations = paragraph.n paragraph.geocontext
+_default_paragraph             = paragraph:n paragraph:_geocontext
+
+_default_text_annotations := $(_time_annotations)
+_default_text             := $(_time)
+
+_default_structs_annotations := $(_default_smallest_annotations) $(_default_sentence_annotations) $(_default_paragraph_annotations) $(_default_text_annotations)
+_default_structs             := $(_default_smallest)             $(_default_sentence)             $(_default_paragraph)             $(_default_text)
+
+
+# Default annotations
+vrt_columns_annotations := $(_default_annotations)
+vrt_columns             := $(_default)
+
+vrt_structs_annotations := $(_default_structs_annotations)
+vrt_structs             := $(_default_structs)
+
+################################################################################
 
 # Display help when no target is specified
 default: help
-

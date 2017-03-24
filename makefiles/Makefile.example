@@ -1,13 +1,12 @@
-include ../Makefile.config
+include $(SPARV_MAKEFILES)/Makefile.config
 
 corpus = corpusname
 original_dir = original
-files := $(basename $(notdir $(wildcard $(original_dir)/*.xml)))
 
-vrt_columns_annotations = word pos msd baseform lemgram saldo prefix suffix ref dephead.ref deprel
-vrt_columns             = word pos msd lemma    lex     saldo prefix suffix ref dephead     deprel
-vrt_structs_annotations = sentence.id
-vrt_structs             = sentence:id
+vrt_columns_annotations = word pos msd baseform lemgram sense prefix suffix compwf complemgram ref dephead.ref deprel
+vrt_columns             = word pos msd lemma    lex     sense prefix suffix compwf complemgram ref dephead     deprel
+vrt_structs_annotations = $(_ne_annotations) sentence.id sentence.geocontext  paragraph.n paragraph.geocontext
+vrt_structs             = $(_ne)             sentence:id sentence:_geocontext paragraph:n paragraph:_geocontext
 
 xml_elements    = text
 xml_annotations = text
@@ -22,4 +21,4 @@ sentence_segmenter = punkt_sentence
 paragraph_chunk = text
 paragraph_segmenter = blanklines
 
-include ../Makefile.rules
+include $(SPARV_MAKEFILES)/Makefile.rules

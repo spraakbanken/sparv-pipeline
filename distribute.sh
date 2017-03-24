@@ -6,7 +6,8 @@
 # This requires that the affected code lines are marked with a "FreeLing" comment.
 
 # user fksparv cannot access SVN repo :(
-USER=anne
+USER=
+if [ -z ${USER} ]; then echo "Please set variable USER!"&& exit 1; fi
 
 DATE=`date +%Y-%m-%d`
 # Extract version number from first line in file 'VERSION'
@@ -24,10 +25,8 @@ echo 'Exporting sources from SVN...';
 svn export https://svn.spraakdata.gu.se/sb-arkiv/tools/annotate >/dev/null;
 svn export https://svn.spraakdata.gu.se/repos/sparv/catapult >/dev/null;
 echo 'Cleaning up...';
-rm annotate/makefiles/Makefile.common;
 rm annotate/makefiles/Makefile.config;
 mv annotate/makefiles/Makefile.config_default annotate/makefiles/Makefile.config;
-rm annotate/makefiles/Makefile.example_SB;
 mv annotate/VERSION VERSION;
 mv annotate/MIT.license MIT.license;
 rm annotate/AGPL.license;
@@ -65,10 +64,8 @@ echo 'Exporting sources from SVN...';
 svn export https://svn.spraakdata.gu.se/sb-arkiv/tools/annotate >/dev/null;
 svn export https://svn.spraakdata.gu.se/repos/sparv/catapult >/dev/null;
 echo 'Cleaning up...';
-rm annotate/makefiles/Makefile.common;
 rm annotate/makefiles/Makefile.config;
 mv annotate/makefiles/Makefile.config_default annotate/makefiles/Makefile.config;
-rm annotate/makefiles/Makefile.example_SB;
 mv annotate/VERSION VERSION;
 rm annotate/MIT.license;
 mv annotate/AGPL.license AGPL.license;
