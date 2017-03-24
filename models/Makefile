@@ -1,5 +1,5 @@
 
-TARGETS = help info clean all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable bettertokenizer.sv.saldo-tokens stats_all.txt stats.pickle dalinm.xml dalin.pickle diapivot.xml diapivot.pickle swedbergm.xml swedberg.pickle geo.pickle nst_utf8.txt nst.comp.pos.pickle
+TARGETS = help info clean space all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable bettertokenizer.sv.saldo-tokens stats_all.txt stats.pickle dalinm.xml dalin.pickle diapivot.xml diapivot.pickle swedbergm.xml swedberg.pickle geo.pickle nst_utf8.txt nst.comp.pos.pickle
 .PHONY: help info clean all
 
 ifndef python
@@ -10,7 +10,10 @@ help:
 	@echo "make ($(TARGETS))"
 
 clean:
-	rm -f saldom.xml
+	rm -f saldom.xml saldo.pickle saldo.compound.pickle stats.pickle stats_all.txt
+
+space:
+	rm -f stats_all.txt saldom.xml nst_utf8.txt dalinm.xml diapivot.xml swedbergm.xml
 
 all: saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable stats.pickle bettertokenizer.sv.saldo-tokens diapivot.pickle
 
@@ -98,4 +101,3 @@ geo_alternateNames.txt:
 
 geo.pickle: geo_cities1000.txt geo_alternateNames.txt
 	$(python) -m sb.geo --build_model --geonames "geo_cities1000.txt" --alternate_names "geo_alternateNames.txt" --out "$@"
-
