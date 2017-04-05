@@ -788,17 +788,16 @@ ifdef predict
 endif
 
 
-export_combined: $(corpus)_export$(export_suffix).xml
+export_combined: $(root)$(corpus)_export$(export_suffix).xml
 $(root)annotations/_list_export$(export_suffix)_: $(files:%=$(root)export$(export_suffix)/%.xml)
 	$(call write-to-file,$@,$+)
 $(root)$(corpus)_export$(export_suffix).xml: $(root)annotations/_list_export$(export_suffix)_
-	$(python) -m sb.cwb --combine_xml --out "$(corpus)_export$(export_suffix).xml" --xmlfiles_list "$(1)" --master $(corpus)
-	#rm -rf $(root)export$(export_suffix)/
+	$(python) -m sb.cwb --combine_xml --out "$@" --xmlfiles_list "$(1)" --master $(corpus)
 
-export_compressed: $(corpus)$(export_suffix).xml.bz2
-$(corpus)$(export_suffix).xml.bz2: $(corpus)_export$(export_suffix).xml
+export_compressed: $(root)$(corpus)$(export_suffix).xml.bz2
+$(root)$(corpus)$(export_suffix).xml.bz2: $(root)$(corpus)_export$(export_suffix).xml
 	bzip2 $(1)
-	mv $(1).bz2 $(corpus)$(export_suffix).xml.bz2
+	mv $(1).bz2 $@
 
 export_original: export
 export_combined_original: export_combined
