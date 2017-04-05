@@ -147,14 +147,20 @@ ifeq ($(datefrom),)
   vrt_structs := $(filter-out $(_time),$(vrt_structs))
 endif
 
-# Remove paragraph structs if no paragraphs are present
+# Remove paragraph structs if no paragraphs are present, or if sentence_order = random
 ifeq ($(paragraph_chunk),)
   ifeq ($(filter paragraph,$(xml_annotations)),)
     ifeq ($(filter paragraph,$(custom_rules)),)
-      vrt_structs_annotations := $(filter-out $(_default_paragraph_annotations),$(vrt_structs_annotations))
-      vrt_structs := $(filter-out $(_default_paragraph),$(vrt_structs))
+      remove_paragraph_structs = true
     endif
   endif
+endif
+ifeq ($(sentence_order),random)
+  remove_paragraph_structs = true
+endif
+ifdef remove_paragraph_structs
+      vrt_structs_annotations := $(filter-out $(_default_paragraph_annotations),$(vrt_structs_annotations))
+      vrt_structs := $(filter-out $(_default_paragraph),$(vrt_structs))
 endif
 
 annotations = vrt @TEXT $(sort $(xml_annotations) $(xml_header_annotations) $(addprefix token., $(vrt_columns_annotations)) $(vrt_structs_annotations))
