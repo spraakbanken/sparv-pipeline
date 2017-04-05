@@ -1112,7 +1112,7 @@ install_export_original: $(root)time_installexportoriginal
 
 ifneq ($(strip $(export_host)),)
   ifneq ($(strip $(export_path)),)
-$(root)time_installexport: $(corpus)$(export_suffix).xml.bz2
+$(root)time_installexport: $(root)$(corpus)$(export_suffix).xml.bz2
 	$(python) -m sb.install --file --host $(export_host) --local_file $(1) --remote_file $(export_path)/$(corpus).xml.bz2
 	@touch $@
   else
@@ -1126,7 +1126,7 @@ endif
 
 ifneq ($(strip $(export_original_host)),)
   ifneq ($(strip $(export_original_path)),)
-$(root)time_installexportoriginal: $(corpus)$(export_suffix).xml.bz2
+$(root)time_installexportoriginal: $(root)$(corpus)$(export_suffix).xml.bz2
 	$(python) -m sb.install --file --host $(export_original_host) --local_file $(1) --remote_file $(export_original_path)/$(corpus).xml.bz2
 	@touch $@
   else
