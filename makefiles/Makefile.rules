@@ -791,7 +791,7 @@ endif
 export_combined: $(corpus)_export$(export_suffix).xml
 $(root)annotations/_list_export$(export_suffix)_: $(files:%=$(root)export$(export_suffix)/%.xml)
 	$(call write-to-file,$@,$+)
-$(corpus)_export$(export_suffix).xml: $(root)annotations/_list_export$(export_suffix)_
+$(root)$(corpus)_export$(export_suffix).xml: $(root)annotations/_list_export$(export_suffix)_
 	$(python) -m sb.cwb --combine_xml --out "$(corpus)_export$(export_suffix).xml" --xmlfiles_list "$(1)" --master $(corpus)
 	#rm -rf $(root)export$(export_suffix)/
 
