@@ -200,7 +200,7 @@ debug:
 	@echo "vrt_structs_annotations: $(vrt_structs_annotations)"
 	@echo "vrt_structs:             $(vrt_structs)"
 
-targets = clean distclean space clean_export files add vrt cwb xml info install install_corpus install_relations install_lemgrams install_timespan relations export export_combined export_compressed install_export export_original export_combined_original export_compressed_original install_export_original
+targets = clean distclean space clean_export files add vrt cwb xml info install install_corpus install_relations install_lemgrams install_timespan relations export export_combined export_compressed install_export export_original export_combined_original export_compressed_original install_export_original export_formatted
 .PHONY: help $(targets) $(annotations) $(files)
 
 ifeq ($(filter xml,$(custom_rules)),)
