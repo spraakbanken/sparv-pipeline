@@ -284,8 +284,8 @@ ifeq ($(token_chunk),)
 endif
 
 ifeq ($(filter token,$(custom_rules)),)
-%.token: %.@TEXT %.$(token_chunk)
-	$(python) -m sb.segment --element w --out $@ --text $(1) --chunk $(2) --segmenter $(token_segmenter) --model "$(token_model)" $(token_model_pickle)
+%.token: %.@TEXT $(addprefix %., $(token_chunk))
+	$(python) -m sb.segment --element w --out $@ --text $(1) --chunk "$(addprefix $*., $(token_chunk))" --segmenter $(token_segmenter) --model "$(token_model)" $(token_model_pickle)
 endif
 
 # Token order
@@ -406,13 +406,13 @@ ifeq ($(sentence_chunk),)
   endif
 endif
 
-%.sentence: %.@TEXT %.$(sentence_chunk)
-	$(python) -m sb.segment --element s --out $@ --text $(1) --chunk $(2) --segmenter $(sentence_segmenter) --model "$(sentence_model)"  $(pickled_model)
+%.sentence: %.@TEXT $(addprefix %., $(sentence_chunk))
+	$(python) -m sb.segment --element s --out $@ --text $(1) --chunk "$(addprefix $*., $(sentence_chunk))" --segmenter $(sentence_segmenter) --model "$(sentence_model)"  $(pickled_model)
 endif
 
 ifeq ($(filter paragraph,$(custom_rules)),)
-%.paragraph: %.@TEXT %.$(paragraph_chunk)
-	$(python) -m sb.segment --element p --out $@ --text $(1) --chunk $(2) --segmenter $(paragraph_segmenter) --model "$(paragraph_model)"
+%.paragraph: %.@TEXT $(addprefix %., $(paragraph_chunk))
+	$(python) -m sb.segment --element p --out $@ --text $(1) --chunk "$(addprefix $*., $(paragraph_chunk))" --segmenter $(paragraph_segmenter) --model "$(paragraph_model)"
 endif
 
 %.children.paragraph.token: %.@TEXT %.paragraph %.token
@@ -797,7 +797,7 @@ endif
 export_combined: $(root)$(corpus)_export$(export_suffix).xml
 $(root)annotations/_list_export$(export_suffix)_: $(files:%=$(root)export$(export_suffix)/%.xml)
 	$(call write-to-file,$@,$+)
-$(root)$(corpus)_export$(export_suffix).xml: $(root)annotations/_list_export$(export_suffix)_
+$(root)$(corpus)_export$(export_suffix).xml: $(root)annotations/_list_export$(export_suffix)_ $(files:%=$(root)export$(export_suffix)/%.xml)
 	$(python) -m sb.cwb --combine_xml --out "$@" --xmlfiles_list "$(1)" --master $(corpus)
 
 export_compressed: $(root)$(corpus)$(export_suffix).xml.bz2

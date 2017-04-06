@@ -37,9 +37,12 @@ def do_segmentation(text, element, out, chunk, segmenter, existing_segments=None
     # E.g., "one two <s>three four</s> five <s>six</s>"
     #   ==> ["one two ", "three four", " five ", "six"]
     #   (but using spans (pairs of anchors) instead of strings)
-    CHUNK = util.read_annotation(chunk)
-    positions = set(anchor2pos[anchor] for edge in CHUNK
-                    for span in util.edgeSpans(edge) for anchor in span)
+
+    positions = set()
+    for c in chunk.split():
+        CHUNK = util.read_annotation(c)
+        positions = positions.union(set(anchor2pos[anchor] for edge in CHUNK
+                        for span in util.edgeSpans(edge) for anchor in span))
     positions = sorted(set([0, len(corpus_text)]) | positions)
     chunk_spans = zip(positions, positions[1:])
 
