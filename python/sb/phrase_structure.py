@@ -28,6 +28,9 @@ def annotate(out_phrase_name, out_phrase_func, word, sentence, pos, msd, ref, de
         # Get PS tree
         sen = Sentence(tokenlist)
         if not sen.is_cyclic():
+            import sys, pprint
+            print >>sys.stderr, pprint.pformat(convert_sentence(sen).top.to_tree_str())
+            continue
             tree = convert_sentence(sen).top.to_tree_str()
 
             # # Make root
@@ -36,7 +39,7 @@ def annotate(out_phrase_name, out_phrase_func, word, sentence, pos, msd, ref, de
             c += 1
 
             # Make other nodes
-            children = parse_tree(tree[1], [])
+            children = flatten_tree(tree[1], [])
             position = 0
             open_elem_stack = []
             # print
@@ -71,10 +74,58 @@ def annotate(out_phrase_name, out_phrase_func, word, sentence, pos, msd, ref, de
     util.write_annotation(out_phrase_func, out_func_dict)
 
 
-def parse_tree(tree, children=[]):
+import pprint
+def log(f):
+    """
+    Make a function write its input when called and output when finished.
+
+    >>> @log
+    ... def test(x, *ys, **kws):
+    ...     return kws.get('c',0)+sum(x*y for y in ys)
+    >>> test(2, 3, 4, c=1) == 1+2*3+2*4
+    test(2, 3, 4, {'c': 1})
+    test(2, 3, 4, {'c': 1}) = 15
+    True
+    """
+    import sys
+    import functools
+    @functools.wraps(f)
+    def g(*args, **kws):
+        call = f.__name__ + pprint.pformat(args + (kws, ))
+        print >>sys.stderr, call
+        res = f(*args, **kws)
+        print >>sys.stderr, call + ' = ' + pprint.pformat(res)
+        return res
+    return g
+
+
+import pprint
+def log(f):
+    """
+    Make a function write its input when called and output when finished.
+
+    >>> @log
+    ... def test(x, *ys, **kws):
+    ...     return kws.get('c',0)+sum(x*y for y in ys)
+    >>> test(2, 3, 4, c=1) == 1+2*3+2*4
+    test(2, 3, 4, {'c': 1})
+    test(2, 3, 4, {'c': 1}) = 15
+    True
+    """
+    def g(*args, **kws):
+        call = f.__name__ + pprint.pformat(args + (kws, ))
+        print(call)
+        res = f(*args, **kws)
+        print(call + ' = ' + pprint.pformat(res))
+        return res
+    return g
+
+
+@log
+def flatten_tree(tree, children=[]):
     for child in tree:
         if has_children(child):
-            parse_tree(child, children)
+            flatten_tree(child, children)
         else:
             children.append(child)
     return children
@@ -83,9 +134,12 @@ def parse_tree(tree, children=[]):
 def has_children(elem):
     if type(elem) == list:
         return True
-    for child in elem:
-        if type(child) == list:
-            return True
+    try:
+        for child in elem:
+            if type(child) == list:
+                return True
+    except TypeError:
+        return False
     return False
 
 
@@ -146,6 +200,7 @@ class Token(object):
                 return True
             seen[n.position] = 1
             n = n.dephead
+        return False
 
     @staticmethod
     def ustr(us):
@@ -186,11 +241,7 @@ class Sentence(object):
         return out.strip()
 
     def is_cyclic(self):
-        for n in self.tokens:
-            if n.is_cyclic():
-
-                return True
-        return False
+        return any(n.is_cyclic() for n in self.tokens)
 
 ##############################################################################
 # from file "to_const.py":
@@ -241,8 +292,8 @@ class Nonterminal(object):
         self.fun = fun
         self.headchild = headchild
         self.children = children
-        self.start = min([c.start for c in self.children])
-        self.end = max([c.end for c in self.children])
+        self.start = min(c.start for c in self.children)
+        self.end = max(c.end for c in self.children)
         self.parent = None
 
     def head_position(self):
@@ -305,67 +356,48 @@ def convert_sentence(sen):
     """Do a recursive analysis of sen.
     Return a PSTree object (phrase structure tree)
     if the analysis was successful."""
-    try:
-        return PSTree(convert(sen.tokens[0]))
-    except Exception as ex:
-        print ex
-        print "Depth problem!"
-        print sen.to_tree_str()
-        sys.exit(1)
+    return PSTree(convert(sen.tokens[0]))
 
 
-def convert(token, depth=0):
+def convert(token):
     """Recursively analyse the phrase structure of token."""
-    if depth == 200:
-        raise Exception("depth")
+    children = [convert(c) for c in token.deps]
+    def nonterminal(label):
+        head = Terminal("HEAD", token)
+        add_head(children, head)
+        return Nonterminal(label, token.deprel, head, children)
     if token.position == 0:
-        children = [convert(c, depth + 1) for c in token.deps]
         return Nonterminal("ROOT", "ROOT", token, children)
     elif token.deprel == "HD":
         return Terminal(token.deprel, token)
     elif token.pos == "KN" or token.pos == "MID":
-        children = [convert(c, depth + 1) for c in token.deps]
-        if len(children) > 0:
-            head = Terminal("HEAD", token)
+        if children:
             lbl = get_coord_label(children)
-            add_head(children, head)
-            return Nonterminal(lbl, token.deprel, head, children)
+            return nonterminal(lbl)
         else:
             return Terminal(token.deprel, token)
     elif token.pos == "NN" or token.pos == "PN" or token.pos == "PM":
-        children = [convert(c, depth + 1) for c in token.deps]
-        head = Terminal("HEAD", token)
-        add_head(children, head)
         if starts_with_wh(token):
             # "vars mamma" etc
-            return Nonterminal("NP-wh", token.deprel, head, children)
+            return nonterminal("NP-wh")
         else:
-            return Nonterminal("NP", token.deprel, head, children)
+            return nonterminal("NP")
     elif token.pos == "PP":
-        children = [convert(c, depth + 1) for c in token.deps]
         if len(children) == 0:
             return Terminal(token.deprel, token)
-        head = Terminal("HEAD", token)
-        add_head(children, head)
-        if any([c.fun == "UA" for c in children]):
-            return Nonterminal("SBAR", token.deprel, head, children)
+        if any(c.fun == "UA" for c in children):
+            return nonterminal("SBAR")
         elif wh_after_prep(token):
             # "i vilken" etc
-            return Nonterminal("PrP-wh", token.deprel, head, children)
+            return nonterminal("PrP-wh")
         else:
-            return Nonterminal("PrP", token.deprel, head, children)
+            return nonterminal("PrP")
     elif token.pos == "SN":
-        children = [convert(c, depth + 1) for c in token.deps]
-        if len(children) > 0:
-            head = Terminal("HEAD", token)
-            add_head(children, head)
-            return Nonterminal("SBAR", token.deprel, head, children)
+        if children > 0:
+            return nonterminal("SBAR")
         else:
             return Terminal(token.deprel, token)
     elif token.pos == "VB":
-        children = [convert(c, depth + 1) for c in token.deps]
-        head = Terminal("HEAD", token)
-        add_head(children, head)
         if has_subject(token):
             if starts_with_wh(token):
                 if is_attributive_subclause(token):
@@ -387,56 +419,34 @@ def convert(token, depth=0):
                 label = "VP-inf"
             else:
                 label = "VP-fin"
-        return Nonterminal(label, token.deprel, head, children)
+        return nonterminal(label)
     elif token.pos == "IE":
         vbc = find_first_by_pos(token.deps, "VB")
         if vbc:
             ds2 = token.deps + vbc.deps
             ds2.remove(vbc)
             c_ie = Terminal("IM-att", token)
-            children = [convert(c, depth + 1) for c in ds2] + [c_ie]
+            children = [convert(c) for c in ds2] + [c_ie]
             sort_by_head_pos(children)
             head = Terminal("HEAD", vbc)
             add_head(children, head)
             return Nonterminal("VP-att", token.deprel, head, children)
-        elif len(token.deps) > 0:
-            children = [convert(c, depth + 1) for c in token.deps]
-            head = Terminal("HEAD", token)
-            add_head(children, head)
-            return Nonterminal("XX", token.deprel, head, children)
+        elif children:
+            return nonterminal("XX")
         else:
             return Terminal(token.deprel, token)
-
     elif token.pos == "JJ" or token.pos == "PC":
-        children = [convert(c, depth + 1) for c in token.deps]
-        head = Terminal("HEAD", token)
-        add_head(children, head)
-        return Nonterminal("ADJP", token.deprel, head, children)
+        return nonterminal("ADJP")
     elif token.pos == "AB":
-        children = [convert(c, depth + 1) for c in token.deps]
-        head = Terminal("HEAD", token)
-        add_head(children, head)
-        return Nonterminal("ADVP", token.deprel, head, children)
+        return nonterminal("ADVP")
     elif token.pos == "HP":
-        children = [convert(c, depth + 1) for c in token.deps]
-        head = Terminal("HEAD", token)
-        add_head(children, head)
-        return Nonterminal("NP-wh", token.deprel, head, children)
+        return nonterminal("NP-wh")
     elif token.pos == "HA":
-        children = [convert(c, depth + 1) for c in token.deps]
-        head = Terminal("HEAD", token)
-        add_head(children, head)
-        return Nonterminal("ADVP-wh", token.deprel, head, children)
+        return nonterminal("ADVP-wh")
     elif token.pos == "RG":
-        children = [convert(c, depth + 1) for c in token.deps]
-        head = Terminal("HEAD", token)
-        add_head(children, head)
-        return Nonterminal("QP", token.deprel, head, children)
-    elif len(token.deps) > 0:
-        children = [convert(c, depth + 1) for c in token.deps]
-        head = Terminal("HEAD", token)
-        add_head(children, head)
-        return Nonterminal("XX", token.deprel, head, children)
+        return nonterminal("QP")
+    elif children:
+        return nonterminal("XX")
     else:
         return Terminal(token.deprel, token)
 
