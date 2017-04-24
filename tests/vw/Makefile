@@ -16,6 +16,8 @@ xml_skip =
 token_chunk = text
 token_segmenter = better_word
 
+sentence_chunk = text
+
 predict = text.predicted
 predict_model = models/text.label.model
 
