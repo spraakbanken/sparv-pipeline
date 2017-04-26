@@ -13,19 +13,24 @@ from vowpalwabbit import pyvw
 import pylibvw
 
 
-def predict(model, order, struct, parent, word, out):
+def predict(model, order, struct, parent, word, out, pos):
     """
     Predict a structural attribute.
 
     Both model and model.json must exist. See --train.
     """
 
+    m_json = json.load(open(model + '.json'))
+
     data = (
         Example(None, text.words, text.span)
-        for text in texts([(order, struct, parent, word)])
+        for text in texts([(order, struct, parent, word, pos)],
+                          map_label=lambda _: '?',
+                          min_word_length=m_json['min_word_length'],
+                          banned_pos=m_json['banned_pos'])
     )
 
-    index_to_label = json.load(open(model + '.json'))['index_to_label']
+    index_to_label = m_json['index_to_label']
 
     args = ['--initial_regressor', model]
 
@@ -59,30 +64,32 @@ def take(bound, xs):
             yield x
 
 
-def train(files, outprefix, dry_run_labels=False, label_map_json=None, bound=None):
+def train(files, outprefix,
+          dry_run_labels=False, label_map_json=None,
+          bound=None, min_word_length=0, banned_pos=''):
     """
     Train a model using vowpal wabbit.
 
     Creates outprefix.model and outprefix.model.json.
 
-    Files is a string of 4*N whitespace-separated elements.
+    Files is a string of 5*N whitespace-separated elements.
     First N copies of: order,
      then N copies of: annotation_struct,
      then N copies of: parent,
      then N copies of: word.
+     then N copies of: pos.
     """
 
     modelfile=outprefix + '.model'
     jsonfile=outprefix + '.model.json'
 
     files = files.split()
-    order_struct_parent_word = interleave(files, 4)
+    order_struct_parent_word_pos = interleave(files, 5)
     map_label = make_label_map(label_map_json)
-
-
+    min_word_length = int(min_word_length) if min_word_length else 0
 
     # Look at the structs annotations to get the labels and their distribution:
-    _, structs, _, _ = zip(*order_struct_parent_word)
+    _, structs, _, _, _ = zip(*order_struct_parent_word_pos)
     # todo: skip labels with very low occurrences
     labels = Counter(map_label(label)
                      for annotfile in structs
@@ -111,6 +118,9 @@ def train(files, outprefix, dry_run_labels=False, label_map_json=None, bound=Non
         import sys
         sys.exit()
 
+    def itertexts():
+        return take(bound, texts(order_struct_parent_word_pos, map_label, min_word_length, banned_pos))
+
     # Train model
     args = ['--oaa', str(k),
             '--passes', '10',
@@ -119,7 +129,7 @@ def train(files, outprefix, dry_run_labels=False, label_map_json=None, bound=Non
             '--final_regressor', modelfile]
     data = (
         Example(answer[text.label], text.words)
-        for text in every(10, take(bound, texts(order_struct_parent_word, map_label)), invert=True)
+        for text in every(10, itertexts(), invert=True)
     )
     vw_train(args, data)
 
@@ -127,7 +137,7 @@ def train(files, outprefix, dry_run_labels=False, label_map_json=None, bound=Non
     args = ['--initial_regressor', modelfile]
     target = []
     def data():
-        for text in every(10, take(bound, texts(order_struct_parent_word, map_label))):
+        for text in every(10, itertexts()):
             target.append(label_to_index[text.label])
             yield Example(None, text.words)
     predicted = [int(s) for s, _tag in vw_predict(args, data())]
@@ -137,6 +147,8 @@ def train(files, outprefix, dry_run_labels=False, label_map_json=None, bound=Non
 
     order = list(range(1, 1+k))
     info = dict(
+        min_word_length = min_word_length,
+        banned_pos = banned_pos,
         labels = [index_to_label[i] for i in order],
         index_to_label = index_to_label,
         label_to_index = label_to_index,
@@ -170,26 +182,35 @@ def make_testdata(corpus_desc='abcd abcd dcba cbad', docs=1000):
 Text = namedtuple('Text', 'label span words')
 
 
-def texts(order_struct_parent_word, map_label):
+def texts(order_struct_parent_word_pos, map_label, min_word_length, banned_pos):
     """
-    Get all the texts from an iterator of 4-tuples of annotations that
+    Get all the texts from an iterator of 5-tuples of annotations that
     contain token order, the structural attribute (like a label),
     its parenting of the words, and the words themselves.
     """
     X = 0
-    for order, struct, parent, word in order_struct_parent_word:
+    S = 0
+    banned_pos = (banned_pos or '').split()
+    for order, struct, parent, word, pos in order_struct_parent_word_pos:
         x = 0
+        s = 0
         util.log.info("Processing %s %s %s", struct, parent, word)
-        tokens, vrt = cwb.tokens_and_vrt(order, [(struct, parent)], [word])
+        tokens, vrt = cwb.tokens_and_vrt(order, [(struct, parent)], [word, pos])
         for (label, span), cols in cwb.vrt_iterate(tokens, vrt):
-            words = b' '.join(vw_normalize(col[0]) for col in cols if len(col[0]) > 3)
-            x += 1
+            words = b' '.join(vw_normalize(col[0])
+                              for col in cols
+                              if len(col[0]) >= min_word_length
+                              if col[1] not in banned_pos)
             mapped_label = map_label(label)
             if mapped_label:
+                x += 1
                 yield Text(mapped_label, span, words)
-        util.log.info("Texts from %s: %s", struct, x)
+            else:
+                s += 1
+        util.log.info("Texts from %s: %s (skipped: %s)", struct, x, s)
         X += x
-    util.log.info("Total texts: %s", X)
+        S += s
+    util.log.info("Total texts: %s (skipped: %s)", X, S)
 
 
 Example = namedtuple('Example', 'label features tag')
