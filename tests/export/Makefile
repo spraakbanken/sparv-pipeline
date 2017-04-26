@@ -16,4 +16,6 @@ xml_skip =
 txt_export_column = word
 txt_export_struct = chapter.name
 
+sentence_chunk = chapter
+
 include ../../makefiles/Makefile.rules
