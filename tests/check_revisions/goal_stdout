@@ -1,4 +1,4 @@
->>> shasum ../../models/*pickle
+>>> sha1sum ../../models/*pickle
 26913912d83d690d38a0d3dcaded3d8d87283d71  ../../models/dalin.pickle
 8926591ff7bcd3c56e44ca628d16b686a5d0795f  ../../models/diapivot.pickle
 fb0b6df7700c711b68f98b6f3f36aa9aac5a15ba  ../../models/fsvm.pickle
