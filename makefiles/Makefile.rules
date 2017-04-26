@@ -785,7 +785,7 @@ train:  $(files:%=$(root)annotations/%.token.n) \
 		$(files:%=$(root)annotations/%.parents.token.$(firstword $(subst ., ,$(train)))) \
 		$(files:%=$(root)annotations/%.token.word)
 	mkdir -p $(root)models
-	$(python) -m sb.vw --train --files "$+" --outprefix "$(root)models/$(train)"
+	$(python) -m sb.vw --train --files "$+" --outprefix "$(root)models/$(train)" --dry_run_labels "$(dry_run_labels)" --label_map "$(label_map)" --bound "$(bound)"
 
 ifdef predict
 %.$(predict): %.token.n \
