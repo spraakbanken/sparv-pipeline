@@ -35,7 +35,29 @@ def predict(model, order, struct, parent, word, out):
     util.write_annotation(out, predictions)
 
 
-def train(files, outprefix):
+def make_label_map(label_map_json):
+    if label_map_json:
+        with open(label_map_json, 'r') as fp:
+            d = json.load(fp)
+        return lambda label: d.get(label, None)
+    else:
+        return lambda label: label
+
+
+def take(bound, xs):
+    if bound:
+        i = 0
+        for x in xs:
+            i += 1
+            if i >= bound:
+                break
+            yield x
+    else:
+        for x in xs:
+            yield x
+
+
+def train(files, outprefix, dry_run_labels=False, label_map_json=None, bound=None):
     """
     Train a model using vowpal wabbit.
 
@@ -53,13 +75,20 @@ def train(files, outprefix):
 
     files = files.split()
     order_struct_parent_word = interleave(files, 4)
+    map_label = make_label_map(label_map_json)
+
+
 
     # Look at the structs annotations to get the labels and their distribution:
     _, structs, _, _ = zip(*order_struct_parent_word)
-    labels = Counter(label
+    labels = Counter(map_label(label)
                      for annotfile in structs
-                     for _tok, label in util.read_annotation_iteritems(annotfile))
+                     for _tok, label in util.read_annotation_iteritems(annotfile)
+                     if map_label(label))
     N = sum(labels.values())
+    if bound:
+        bound = int(bound)
+        N = min(bound, N)
     k = len(labels)
     label_to_index = {}
     index_to_label = {}
@@ -71,6 +100,14 @@ def train(files, outprefix):
         label_to_index[label] = i
         index_to_label[i] = label
 
+    if dry_run_labels == 'true':
+        from pprint import pprint
+        pprint(labels.most_common())
+        print(json.dumps({l: l for l in labels}, indent=2))
+        util.log.info('texts: %s, labels: %s', N, k)
+        import sys
+        sys.exit()
+
     # Train model
     args = ['--oaa', str(k),
             '--passes', '10',
@@ -79,7 +116,7 @@ def train(files, outprefix):
             '--final_regressor', modelfile]
     data = (
         Example(answer[text.label], text.words)
-        for text in every(10, texts(order_struct_parent_word), invert=True)
+        for text in every(10, take(bound, texts(order_struct_parent_word, map_label)), invert=True)
     )
     vw_train(args, data)
 
@@ -87,7 +124,7 @@ def train(files, outprefix):
     args = ['--initial_regressor', modelfile]
     target = []
     def data():
-        for text in every(10, texts(order_struct_parent_word)):
+        for text in every(10, take(bound, texts(order_struct_parent_word, map_label))):
             target.append(label_to_index[text.label])
             yield Example(None, text.words)
     predicted = [int(s) for s, _tag in vw_predict(args, data())]
@@ -130,7 +167,7 @@ def make_testdata(corpus_desc='abcd abcd dcba cbad', docs=1000):
 Text = namedtuple('Text', 'label span words')
 
 
-def texts(order_struct_parent_word):
+def texts(order_struct_parent_word, map_label):
     """
     Get all the texts from an iterator of 4-tuples of annotations that
     contain token order, the structural attribute (like a label),
@@ -142,9 +179,11 @@ def texts(order_struct_parent_word):
         util.log.info("Processing %s %s %s", struct, parent, word)
         tokens, vrt = cwb.tokens_and_vrt(order, [(struct, parent)], [word])
         for (label, span), cols in cwb.vrt_iterate(tokens, vrt):
-            words = b' '.join(vw_normalize(col[0]) for col in cols)
+            words = b' '.join(vw_normalize(col[0]) for col in cols if len(col[0]) > 3)
             x += 1
-            yield Text(label, span, words)
+            mapped_label = map_label(label)
+            if mapped_label:
+                yield Text(mapped_label, span, words)
         util.log.info("Texts from %s: %s", struct, x)
         X += x
     util.log.info("Total texts: %s", X)
