@@ -64,7 +64,7 @@ def take(bound, xs):
             yield x
 
 
-def train(files, outprefix,
+def train(file_list, outprefix,
           dry_run_labels=False, label_map_json=None,
           bound=None, min_word_length=0, banned_pos=''):
     """
@@ -72,8 +72,8 @@ def train(files, outprefix,
 
     Creates outprefix.model and outprefix.model.json.
 
-    Files is a string of 5*N whitespace-separated elements.
-    First N copies of: order,
+    file_list is a file with 5*N lines of annotation filenames:
+    first N copies of: order,
      then N copies of: annotation_struct,
      then N copies of: parent,
      then N copies of: word.
@@ -83,7 +83,8 @@ def train(files, outprefix,
     modelfile=outprefix + '.model'
     jsonfile=outprefix + '.model.json'
 
-    files = files.split()
+    with open(file_list, 'r') as fp:
+        files = fp.read().split()
     order_struct_parent_word_pos = interleave(files, 5)
     map_label = make_label_map(label_map_json)
     min_word_length = int(min_word_length) if min_word_length else 0

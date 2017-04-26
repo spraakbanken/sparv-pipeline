@@ -780,13 +780,18 @@ $(root)export$(export_suffix)/%.txt: $(root)annotations/fileids \
 
 
 # example usage: make train train=text.party
-train:  $(files:%=$(root)annotations/%.token.n) \
+$(root)models/file_list_$(extra_model_name): \
+		$(files:%=$(root)annotations/%.token.n) \
 		$(files:%=$(root)annotations/%.$(train)) \
 		$(files:%=$(root)annotations/%.parents.token.$(firstword $(subst ., ,$(train)))) \
 		$(files:%=$(root)annotations/%.token.word) \
 		$(files:%=$(root)annotations/%.token.pos)
 	mkdir -p $(root)models
-	$(python) -m sb.vw --train --files "$+" --outprefix "$(root)models/$(train)$(extra_model_name)" --dry_run_labels "$(dry_run_labels)" --label_map "$(label_map)" --bound "$(bound)" --min_word_length "$(min_word_length)" --banned_pos "$(banned_pos)"
+	$(call write-to-file,$@,$+)
+		
+train: $(root)models/file_list_$(extra_model_name)
+	mkdir -p $(root)models
+	$(python) -m sb.vw --train --file_list $< --outprefix "$(root)models/$(train)$(extra_model_name)" --dry_run_labels "$(dry_run_labels)" --label_map "$(label_map)" --bound "$(bound)" --min_word_length "$(min_word_length)" --banned_pos "$(banned_pos)"
 
 ifdef predict
 %.$(predict): %.token.n \
