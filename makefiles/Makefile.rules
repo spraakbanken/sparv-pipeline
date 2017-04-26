@@ -163,6 +163,9 @@ ifdef remove_paragraph_structs
       vrt_structs := $(filter-out $(_default_paragraph),$(vrt_structs))
 endif
 
+# Determine if corpus has sentences
+has_sentences = $(strip $(foreach a, $(vrt_structs_annotations), $(if $(filter $(word 1, $(subst ., ,$(a))), sentence), true)))
+
 annotations = vrt @TEXT $(sort $(xml_annotations) $(xml_header_annotations) $(addprefix token., $(vrt_columns_annotations)) $(vrt_structs_annotations))
 
 # Source directory
@@ -205,6 +208,10 @@ debug:
 	@echo "vrt_columns:             $(vrt_columns)"
 	@echo "vrt_structs_annotations: $(vrt_structs_annotations)"
 	@echo "vrt_structs:             $(vrt_structs)"
+	@echo "xml_elements:            $(xml_elements)"
+	@echo "xml_annotations:         $(xml_annotations)"
+	@echo "xml_headers:             $(xml_headers)"
+	@echo "xml_header_annotations:  $(xml_header_annotations)"
 
 targets = clean distclean space clean_export files add vrt cwb xml info install install_corpus install_relations install_lemgrams install_timespan relations export export_combined export_compressed install_export export_original export_combined_original export_compressed_original install_export_original export_formatted
 .PHONY: help $(targets) $(annotations) $(files)
@@ -388,25 +395,27 @@ ifeq ($(filter sentence,$(custom_rules)),)
     endif
   endif
 
-# Try to set default sentence_chunk if omitted
-ifeq ($(sentence_chunk),)
-  # Use paragraph as chunk if available
-  ifneq ($(paragraph_chunk),)
-    sentence_chunk = paragraph
-  else
-    ifneq ($(filter paragraph,$(xml_annotations)),)
+  # Try to set default sentence_chunk if omitted
+  ifeq ($(sentence_chunk),)
+    # Use paragraph as chunk if available
+    ifneq ($(paragraph_chunk),)
       sentence_chunk = paragraph
     else
-      ifneq ($(filter paragraph,$(custom_rules)),)
+      ifneq ($(filter paragraph,$(xml_annotations)),)
         sentence_chunk = paragraph
       else
-        ifneq ($(analysis),fl) # FreeLing
-          $(error Variable 'sentence_chunk' is not set)
-        endif # FreeLing
+        ifneq ($(filter paragraph,$(custom_rules)),)
+          sentence_chunk = paragraph
+        else
+          ifeq ($(has_sentences),true)
+            ifneq ($(analysis),fl) # FreeLing
+              $(info Variable 'sentence_chunk' is not set)
+            endif # FreeLing
+          endif
+        endif
       endif
     endif
   endif
-endif
 
 %.sentence: %.@TEXT $(addprefix %., $(sentence_chunk))
 	$(python) -m sb.segment --element s --out $@ --text $(1) --chunk "$(addprefix $*., $(sentence_chunk))" --segmenter $(sentence_segmenter) --model "$(sentence_model)"  $(pickled_model)
@@ -617,8 +626,7 @@ $(root)annotations/_relations_.sql: $(root)annotations/_list_relations_
 #                                 .INFO FILE                                   #
 ################################################################################
 
-has_sentences = $(word 1, $(foreach a, $(vrt_structs), $(if $(filter sentence, $(subst :, ,$(a))), $(a))))
-ifneq ("$(has_sentences)","")
+ifeq ($(has_sentences), true)
 $(root)annotations/_list_sentences_: $(files:%=$(root)annotations/%.sentence)
 	$(call write-to-file0,$@,$+)
 $(root)annotations/sentencecount: $(root)annotations/_list_sentences_
