@@ -134,6 +134,14 @@ def run_test(test_dir, verbose, cleanup=False):
 
     run = []
 
+    seen = set()
+    def rm_if_unseen(filename):
+        if filename not in seen:
+            if os.path.exists(filename):
+                os.remove(filename)
+        seen.add(filename)
+        return filename
+
     for line in lines:
         if isinstance(line, types.DictType) and 'clean' in line:
             clean = True
@@ -151,9 +159,8 @@ def run_test(test_dir, verbose, cleanup=False):
         if cleanup and not clean:
             exc = 0
         else:
-            # TODO: This should be 'wa', but we need to remove files first
-            with open(stdout, 'w') as out:
-                with open(stderr, 'w') as err:
+            with open(rm_if_unseen(stdout), 'a') as out:
+                with open(rm_if_unseen(stderr), 'a') as err:
                     for fd in [out, err]:
                         fd.write('>>> ' + cmd + '\n')
                         fd.flush()
@@ -277,7 +284,7 @@ def run_tests(dirs, verbose=False, cleanup=False):
         errors, checked = run_test(dir, verbose=verbose, cleanup=cleanup)
         if errors:
             print('fail: ' + dir)
-            print(indent(errors))
+            print(indent(map(indent, errors)))
             yield False
         else:
             n = str(len(checked))
