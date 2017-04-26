@@ -9,6 +9,8 @@ from collections import Counter, namedtuple, OrderedDict
 import sys
 import json
 import tempfile
+from vowpalwabbit import pyvw
+import pylibvw
 
 
 def predict(model, order, struct, parent, word, out):
@@ -28,7 +30,7 @@ def predict(model, order, struct, parent, word, out):
     args = ['--initial_regressor', model]
 
     predictions = (
-        (span, index_to_label[s])
+        (span, index_to_label[str(s)])
         for s, span in vw_predict(args, data)
     )
 
@@ -81,6 +83,7 @@ def train(files, outprefix, dry_run_labels=False, label_map_json=None, bound=Non
 
     # Look at the structs annotations to get the labels and their distribution:
     _, structs, _, _ = zip(*order_struct_parent_word)
+    # todo: skip labels with very low occurrences
     labels = Counter(map_label(label)
                      for annotfile in structs
                      for _tok, label in util.read_annotation_iteritems(annotfile)
@@ -203,7 +206,12 @@ def vw_train(args, data):
     ...     list(vw_predict(['--initial_regressor', tmp.name, '--quiet'],
     ...                     [Example(None, 'a b c', 'abc_tag'),
     ...                      Example(None, 'c d e', 'cde_tag')]))
-    [('1', 'abc_tag'), ('2', 'cde_tag')]
+    ...     list(vw_predict(['--initial_regressor', tmp.name, '--quiet'],
+    ...                     [Example(None, 'a b c', 'abc_tag'),
+    ...                      Example(None, 'c d e', 'cde_tag')],
+    ...                     raw=True))
+    [(1, 'abc_tag'), (2, 'cde_tag')]
+    ['1:0.343459 2:-0.343459', '1:-0.334946 2:0.334946']
     """
     tuple(_vw_run(args, data, False)) # force evaluation using tuple
 
@@ -214,20 +222,27 @@ def vw_predict(args, data, raw=False):
 
     Argument list is adjusted for testing and getting predictions as a stream.
     """
-    more_args = ['--testonly', '-r' if raw else '-p', '/dev/stdout']
-    return _vw_run(args + more_args, data, True)
+    if raw:
+        with tempfile.NamedTemporaryFile() as tmp:
+            more_args = ['--testonly', '-r', tmp.name]
+            for _ in _vw_run(args + more_args, data, True):
+                pass
+            return open(tmp.name, 'r').read().rstrip().split('\n')
+    else:
+        more_args = ['--testonly']
+        return _vw_run(args + more_args, data, True)
 
 
-def _vw_run(args, data, yield_lines):
-    vw = Popen(['vw'] + args, stdin=PIPE, stdout=PIPE, stderr=sys.stderr)
+def _vw_run(args, data, predict_and_yield):
+    vw = pyvw.vw(' '.join(args))
     util.log.info('Running: vw ' + ' '.join(args))
-    for ex in data:
-        vw.stdin.write((ex.label or b'') + b' | ' + ex.features + b'\n')
-        if yield_lines:
-            vw.stdin.flush()
-            yield vw.stdout.readline().rstrip(), ex.tag
-    vw.stdin.close()
-    vw.wait()
+    for d in data:
+        ex = vw.example((d.label or b'') + b' | ' + d.features + b'\n')
+        if predict_and_yield:
+            yield vw.predict(ex, pylibvw.vw.lMulticlass), d.tag
+        else:
+            vw.learn(ex)
+    vw.finish()
 
 
 def vw_normalize(s):
