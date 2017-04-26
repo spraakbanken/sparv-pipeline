@@ -1,250 +1,250 @@
 <corpus>
-<text label="cbad" predicted="cbad">
-<w>b</w>
-<w>b</w>
-<w>b</w>
-<w>c</w>
-<w>c</w>
-<w>a</w>
-<w>c</w>
-<w>a</w>
-<w>b</w>
-<w>c</w>
-<w>b</w>
-<w>c</w>
-<w>a</w>
-<w>b</w>
+<text label="cbad" predicted="cbad" predicted_raw="|cbad:0.627368|dcba:-1.0|abcd:-0.179792|">
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
 </text>
-<text label="abcd" predicted="abcd">
-<w>b</w>
-<w>c</w>
-<w>b</w>
-<w>a</w>
-<w>d</w>
-<w>c</w>
-<w>d</w>
-<w>c</w>
-<w>b</w>
-<w>c</w>
-<w>b</w>
-<w>a</w>
-<w>b</w>
-<w>b</w>
-<w>b</w>
-<w>d</w>
-<w>a</w>
-<w>c</w>
-<w>a</w>
-<w>a</w>
-<w>d</w>
-<w>c</w>
-<w>b</w>
-<w>c</w>
-<w>a</w>
-<w>b</w>
-<w>a</w>
-<w>a</w>
-<w>c</w>
-<w>a</w>
-<w>b</w>
-<w>a</w>
-<w>a</w>
-<w>b</w>
-<w>c</w>
-<w>b</w>
-<w>b</w>
-<w>c</w>
+<text label="abcd" predicted="abcd" predicted_raw="|cbad:-0.761751|dcba:-1.0|abcd:0.588892|">
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
 </text>
-<text label="abcd" predicted="abcd">
-<w>a</w>
-<w>a</w>
-<w>b</w>
-<w>c</w>
-<w>a</w>
-<w>b</w>
-<w>c</w>
-<w>c</w>
-<w>b</w>
-<w>a</w>
-<w>b</w>
-<w>a</w>
-<w>b</w>
-<w>a</w>
-<w>a</w>
-<w>a</w>
-<w>b</w>
-<w>b</w>
-<w>c</w>
-<w>a</w>
-<w>b</w>
-<w>d</w>
-<w>a</w>
-<w>a</w>
-<w>c</w>
-<w>c</w>
-<w>a</w>
-<w>a</w>
-<w>a</w>
-<w>a</w>
-<w>b</w>
-<w>b</w>
-<w>d</w>
-<w>d</w>
-<w>b</w>
-<w>a</w>
+<text label="abcd" predicted="abcd" predicted_raw="|cbad:-1.0|dcba:-1.0|abcd:1.0|">
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
 </text>
-<text label="dcba" predicted="dcba">
-<w>c</w>
-<w>d</w>
-<w>d</w>
-<w>c</w>
-<w>d</w>
-<w>a</w>
-<w>d</w>
-<w>a</w>
-<w>d</w>
-<w>d</w>
-<w>c</w>
-<w>d</w>
-<w>a</w>
-<w>d</w>
-<w>d</w>
-<w>d</w>
-<w>b</w>
-<w>c</w>
-<w>d</w>
-<w>b</w>
-<w>a</w>
-<w>b</w>
-<w>c</w>
-<w>a</w>
+<text label="dcba" predicted="dcba" predicted_raw="|cbad:-1.0|dcba:1.0|abcd:-1.0|">
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
 </text>
-<text label="dcba" predicted="dcba">
-<w>c</w>
-<w>b</w>
-<w>c</w>
-<w>c</w>
-<w>d</w>
-<w>d</w>
-<w>d</w>
-<w>d</w>
-<w>d</w>
-<w>c</w>
-<w>c</w>
-<w>d</w>
-<w>c</w>
-<w>c</w>
-<w>c</w>
-<w>c</w>
-<w>d</w>
-<w>d</w>
+<text label="dcba" predicted="dcba" predicted_raw="|cbad:-0.343368|dcba:1.0|abcd:-1.0|">
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
 </text>
-<text label="dcba" predicted="dcba">
-<w>c</w>
-<w>d</w>
-<w>d</w>
-<w>b</w>
-<w>d</w>
-<w>a</w>
-<w>b</w>
-<w>c</w>
-<w>d</w>
-<w>b</w>
-<w>d</w>
-<w>b</w>
-<w>a</w>
-<w>c</w>
+<text label="dcba" predicted="dcba" predicted_raw="|cbad:-1.0|dcba:1.0|abcd:-0.672427|">
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
 </text>
-<text label="dcba" predicted="dcba">
-<w>a</w>
-<w>c</w>
-<w>d</w>
-<w>d</w>
-<w>d</w>
-<w>d</w>
-<w>d</w>
-<w>c</w>
-<w>c</w>
-<w>b</w>
-<w>c</w>
-<w>c</w>
-<w>c</w>
-<w>d</w>
-<w>d</w>
-<w>b</w>
-<w>d</w>
-<w>a</w>
-<w>b</w>
-<w>d</w>
-<w>a</w>
-<w>c</w>
-<w>d</w>
-<w>d</w>
-<w>b</w>
-<w>a</w>
-<w>c</w>
-<w>b</w>
-<w>c</w>
-<w>c</w>
-<w>d</w>
-<w>b</w>
-<w>a</w>
-<w>d</w>
+<text label="dcba" predicted="dcba" predicted_raw="|cbad:-1.0|dcba:1.0|abcd:-1.0|">
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
 </text>
-<text label="cbad" predicted="cbad">
-<w>b</w>
-<w>d</w>
-<w>c</w>
-<w>d</w>
-<w>a</w>
-<w>a</w>
-<w>c</w>
-<w>c</w>
-<w>b</w>
-<w>c</w>
-<w>c</w>
-<w>c</w>
-<w>b</w>
-<w>a</w>
-<w>d</w>
-<w>b</w>
-<w>a</w>
-<w>b</w>
-<w>c</w>
-<w>c</w>
-<w>b</w>
-<w>b</w>
-<w>b</w>
-<w>c</w>
-<w>d</w>
-<w>c</w>
-<w>d</w>
-<w>b</w>
-<w>c</w>
-<w>c</w>
-<w>c</w>
-<w>b</w>
-<w>b</w>
-<w>d</w>
+<text label="cbad" predicted="cbad" predicted_raw="|cbad:0.753494|dcba:-0.9698|abcd:-1.0|">
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
 </text>
-<text label="cbad" predicted="dcba">
-<w>b</w>
-<w>c</w>
-<w>d</w>
-<w>d</w>
-<w>b</w>
-<w>c</w>
-<w>c</w>
-<w>c</w>
-<w>a</w>
-<w>a</w>
-<w>d</w>
-<w>c</w>
-<w>b</w>
-<w>c</w>
-<w>d</w>
-<w>c</w>
-<w>b</w>
-<w>b</w>
+<text label="cbad" predicted="dcba" predicted_raw="|cbad:0.0968076|dcba:0.117138|abcd:-1.0|">
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:-0.210035|dcba:-0.331784|abcd:0.314353|">a</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:-0.293959|dcba:0.564639|abcd:-0.134601|">d</w>
+<w weights="|cbad:0.237563|dcba:-0.067474|abcd:-0.2619|">c</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
+<w weights="|cbad:0.0398831|dcba:-0.191301|abcd:0.0145381|">b</w>
 </text>
 </corpus>

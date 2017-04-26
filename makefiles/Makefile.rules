@@ -788,7 +788,7 @@ $(root)models/file_list_$(extra_model_name): \
 		$(files:%=$(root)annotations/%.token.pos)
 	mkdir -p $(root)models
 	$(call write-to-file,$@,$+)
-		
+
 train: $(root)models/file_list_$(extra_model_name)
 	mkdir -p $(root)models
 	$(python) -m sb.vw --train --file_list $< --outprefix "$(root)models/$(train)$(extra_model_name)" --dry_run_labels "$(dry_run_labels)" --label_map "$(label_map)" --bound "$(bound)" --min_word_length "$(min_word_length)" --banned_pos "$(banned_pos)"
@@ -801,6 +801,22 @@ ifdef predict
 		%.token.pos
 	$(python) -m sb.vw --predict --model $(predict_model) \
 		--order "$(1)" --struct "$(2)" --parent "$(3)" --word "$(4)" --pos "$(5)" --out "$@"
+endif
+
+ifdef predict_raw
+%.$(predict_raw): %.token.n \
+		%.$(firstword $(subst ., ,$(predict_raw))) \
+		%.parents.token.$(firstword $(subst ., ,$(predict_raw))) \
+		%.token.word \
+		%.token.pos
+	$(python) -m sb.vw --predict --model $(predict_raw_model) \
+		--order "$(1)" --struct "$(2)" --parent "$(3)" --word "$(4)" --pos "$(5)" --out "$@" --raw true
+endif
+
+
+ifdef word_weights
+%.$(word_weights): %.token.word %.token.pos
+	$(python) -m sb.vw --word_weights --model $(word_weights_model) --word "$(1)" --pos "$(2)" --out "$@"
 endif
 
 

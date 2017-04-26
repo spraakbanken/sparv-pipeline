@@ -5,7 +5,7 @@ import sb.cwb as cwb
 from subprocess import Popen, PIPE
 import itertools as it
 from functools import wraps
-from collections import Counter, namedtuple, OrderedDict
+from collections import Counter, namedtuple, OrderedDict, defaultdict
 import sys
 import json
 import tempfile
@@ -13,12 +13,55 @@ from vowpalwabbit import pyvw
 import pylibvw
 
 
-def predict(model, order, struct, parent, word, out, pos):
+def word_weights(model, word, pos, out):
+    """
+    Report the weight for each label for each word.
+
+    Both model and model.json must exist. See --train and --predict.
+    """
+    m_json = json.load(open(model + '.json'))
+    index_to_label = m_json['index_to_label']
+    min_word_length = int(m_json['min_word_length'] or '0')
+    banned_pos = (m_json['banned_pos'] or '').split()
+    words = util.read_annotation(word)
+    poss = util.read_annotation(pos)
+    data = (Example(None, vw_normalize(word))
+            for span, word in words.iteritems()
+            if len(word) >= min_word_length
+            if poss[span] not in banned_pos)
+    weights = defaultdict(list)
+    with tempfile.NamedTemporaryFile() as tmp:
+        args = ['--initial_regressor', model, '--invert_hash', tmp.name]
+        for _ in vw_predict(args, data):
+            pass
+        for line in open(tmp.name, 'r').readlines():
+            # allmänna[1]:14342849:0.0139527
+            colons = line.split(':')
+            if len(colons) == 3:
+                word, _hash, weight = colons
+                bracesplit = word.rsplit('[', 1)
+                if len(bracesplit) == 2:
+                    word, index = bracesplit
+                    n = int(index[:-1]) + 1
+                else:
+                    n = 1
+                weights[word].append(index_to_label[str(n)] + ':' + weight)
+    ws = (
+        (span, '|' + '|'.join(weights[vw_normalize(word)]) + '|')
+        for span, word in words.iteritems()
+        if vw_normalize(word) in weights
+    )
+    util.write_annotation(out, ws)
+
+
+def predict(model, order, struct, parent, word, out, pos, raw=False):
     """
     Predict a structural attribute.
 
     Both model and model.json must exist. See --train.
     """
+
+    raw = raw == 'true'
 
     m_json = json.load(open(model + '.json'))
 
@@ -34,10 +77,16 @@ def predict(model, order, struct, parent, word, out, pos):
 
     args = ['--initial_regressor', model]
 
-    predictions = (
-        (span, index_to_label[str(s)])
-        for s, span in vw_predict(args, data)
-    )
+    if raw:
+        predictions = (
+            (span, '|' + '|'.join(index_to_label[str(s)] + ':' + str(v) for s, v in ss) + '|')
+            for ss, span in vw_predict(args, data, raw=True)
+        )
+    else:
+        predictions = (
+            (span, index_to_label[str(s)])
+            for s, span in vw_predict(args, data)
+        )
 
     util.write_annotation(out, predictions)
 
@@ -232,8 +281,10 @@ def vw_train(args, data):
     ...                     [Example(None, 'a b c', 'abc_tag'),
     ...                      Example(None, 'c d e', 'cde_tag')],
     ...                     raw=True))
+    ...                                         # doctest: +NORMALIZE_WHITESPACE
     [(1, 'abc_tag'), (2, 'cde_tag')]
-    ['1:0.343459 2:-0.343459', '1:-0.334946 2:0.334946']
+    [(((1, 0.343459), (2, -0.343459)), 'abc_tag'),
+     (((1, -0.334946), (2, 0.334946)), 'cde_tag')]
     """
     tuple(_vw_run(args, data, False)) # force evaluation using tuple
 
@@ -247,12 +298,19 @@ def vw_predict(args, data, raw=False):
     if raw:
         with tempfile.NamedTemporaryFile() as tmp:
             more_args = ['--testonly', '-r', tmp.name]
-            for _ in _vw_run(args + more_args, data, True):
-                pass
-            return open(tmp.name, 'r').read().rstrip().split('\n')
+            tags = []
+            for _, tag in _vw_run(args + more_args, data, True):
+                tags.append(tag)
+            lines = open(tmp.name, 'r').read().rstrip().split('\n')
+            for line, tag in it.izip(lines, tags):
+                def pred(label, raw_pred):
+                    return (int(label), float(raw_pred))
+                preds = tuple(pred(*p.split(':')) for p in line.split())
+                yield preds, tag
     else:
         more_args = ['--testonly']
-        return _vw_run(args + more_args, data, True)
+        for x in _vw_run(args + more_args, data, True):
+            yield x
 
 
 def _vw_run(args, data, predict_and_yield):
@@ -443,5 +501,8 @@ def nub(xs):
 
 if __name__ == '__main__':
     import doctest
-    util.run.main(train=train, predict=predict, make_testdata=make_testdata,
+    util.run.main(train=train,
+                  predict=predict,
+                  make_testdata=make_testdata,
+                  word_weights=word_weights,
                   test=lambda verbose=False: doctest.testmod(verbose=verbose))
