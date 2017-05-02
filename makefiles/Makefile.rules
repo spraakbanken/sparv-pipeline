@@ -805,26 +805,24 @@ ifdef predict
 %.$(predict): %.token.n \
 		%.$(firstword $(subst ., ,$(predict))) \
 		%.parents.token.$(firstword $(subst ., ,$(predict))) \
-		%.token.word \
-		%.token.pos
+		%.token.word 
 	$(python) -m sb.vw --predict --model $(predict_model) \
-		--order "$(1)" --struct "$(2)" --parent "$(3)" --word "$(4)" --pos "$(5)" --out "$@"
+		--order "$(1)" --struct "$(2)" --parent "$(3)" --word "$(4)" --pos "" --out "$@"
 endif
 
 ifdef predict_raw
 %.$(predict_raw): %.token.n \
 		%.$(firstword $(subst ., ,$(predict_raw))) \
 		%.parents.token.$(firstword $(subst ., ,$(predict_raw))) \
-		%.token.word \
-		%.token.pos
+		%.token.word 
 	$(python) -m sb.vw --predict --model $(predict_raw_model) \
-		--order "$(1)" --struct "$(2)" --parent "$(3)" --word "$(4)" --pos "$(5)" --out "$@" --raw true
+		--order "$(1)" --struct "$(2)" --parent "$(3)" --word "$(4)" --pos "" --out "$@" --raw true
 endif
 
 
 ifdef word_weights
-%.$(word_weights): %.token.word %.token.pos
-	$(python) -m sb.vw --word_weights --model $(word_weights_model) --word "$(1)" --pos "$(2)" --out "$@"
+%.$(word_weights): %.token.word 
+	$(python) -m sb.vw --word_weights --model $(word_weights_model) --word "$(1)" --pos "" --out "$@"
 endif
 
 

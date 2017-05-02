@@ -24,11 +24,11 @@ def word_weights(model, word, pos, out):
     min_word_length = int(m_json['min_word_length'] or '0')
     banned_pos = (m_json['banned_pos'] or '').split()
     words = util.read_annotation(word)
-    poss = util.read_annotation(pos)
+    poss = util.read_annotation(pos) if pos else {}
     data = (Example(None, vw_normalize(word))
             for span, word in words.iteritems()
             if len(word) >= min_word_length
-            if poss[span] not in banned_pos)
+            if not pos or poss[span] not in banned_pos)
     weights = defaultdict(list)
     with tempfile.NamedTemporaryFile() as tmp:
         args = ['--initial_regressor', model, '--invert_hash', tmp.name]
@@ -39,7 +39,10 @@ def word_weights(model, word, pos, out):
             colons = line.split(':')
             if len(colons) == 3:
                 word, _hash, weight = colons
-                bracesplit = word.rsplit('[', 1)
+                if word[-1] == ']':
+                    bracesplit = word.rsplit('[', 1)
+                else:
+                    bracesplit = []
                 if len(bracesplit) == 2:
                     word, index = bracesplit
                     n = int(index[:-1]) + 1
@@ -245,12 +248,12 @@ def texts(order_struct_parent_word_pos, map_label, min_word_length, banned_pos):
         x = 0
         s = 0
         util.log.info("Processing %s %s %s", struct, parent, word)
-        tokens, vrt = cwb.tokens_and_vrt(order, [(struct, parent)], [word, pos])
+        tokens, vrt = cwb.tokens_and_vrt(order, [(struct, parent)], [word] + ([pos] if pos else []))
         for (label, span), cols in cwb.vrt_iterate(tokens, vrt):
             words = b' '.join(vw_normalize(col[0])
                               for col in cols
                               if len(col[0]) >= min_word_length
-                              if col[1] not in banned_pos)
+                              if not pos or col[1] not in banned_pos)
             mapped_label = map_label(label)
             if mapped_label:
                 x += 1
