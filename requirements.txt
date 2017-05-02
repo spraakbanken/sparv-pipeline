@@ -1,0 +1,14 @@
+argparse==1.4.0
+beautifulsoup4==4.5.3
+bs4==0.0.1
+dateutils==0.6.6
+lxml==3.6.4
+nltk==3.2.1
+pip==1.4.1
+python-dateutil==2.5.3
+pytz==2016.7
+PyYAML==3.12
+setuptools==0.9.8
+six==1.10.0
+vowpalwabbit==8.2.0
+wsgiref==0.1.2
