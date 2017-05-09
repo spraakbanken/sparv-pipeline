@@ -10,7 +10,7 @@ token_list:	./bettertokenizer.sv.saldo-tokens
 start:	({[]})"“”'‘’`»;:–—\/&#*@-,…
 
 # Characters that cannot appear within words (no regex escaping needed)
-within:	({[]})"“”'‘’»;–—\/*%…?!
+within:	({[]})"“”'‘’»;–—\/*%…?!,
 
 # Characters that cannot end word tokens (in addition to the characters defined above) (no regex escaping needed)
 end:	`:&#@,.
