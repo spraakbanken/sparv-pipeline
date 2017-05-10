@@ -35,17 +35,17 @@ def lix_annot(order, text, parent_text, sentence, parent_sentence, words, pos, o
                             trail=[0, 1])
 
     util.write_annotation(out, (
-        (span, str(lix((actual_words(cols, skip_pos) for _, cols in sentences), fmt)))
+        (span, fmt % lix((actual_words(cols, skip_pos) for _, cols in sentences)))
         for (_, span), sentences in texts
     ))
 
 
-def lix(sentences, fmt):
+def lix(sentences):
     """
     Calculates LIX, assuming that all tokens are actual words: not punctuation
     nor delimiters.
 
-    >>> print(lix(4*["a bc def ghij klmno pqrstu vxyzåäö".split()], "%.2f"))
+    >>> print("%.2f" % lix(4*["a bc def ghij klmno pqrstu vxyzåäö".split()]))
     21.29
     """
     s = 0.0
@@ -57,7 +57,7 @@ def lix(sentences, fmt):
             w += 1
             l += int(len(word) > 6)
     lix = w / s + 100 * l / w
-    return fmt % lix
+    return lix
 
 
 def ovix_annot(order, text, parent_text, words, pos, out, skip_pos="MAD MID PAD", fmt="%.2f"):
@@ -65,12 +65,12 @@ def ovix_annot(order, text, parent_text, words, pos, out, skip_pos="MAD MID PAD"
     columns = [words, pos]
     texts = cwb.vrt_iterate(*cwb.tokens_and_vrt(order, structs, columns))
     util.write_annotation(out, (
-        (span, str(ovix(actual_words(cols, skip_pos), fmt)))
+        (span, fmt % ovix(actual_words(cols, skip_pos)))
         for (_, span), cols in texts
     ))
 
 
-def ovix(words, fmt):
+def ovix(words):
     """
     Calculates OVIX, assuming that all tokens are actual words: not punctuation
     nor delimiters.
@@ -78,7 +78,7 @@ def ovix(words, fmt):
     Words are compared ignoring case.
 
     >>> for i in range(5):
-    ...     print(ovix((i*"a bc def ghij klmno pqrstu vxyzåäö ").split(), "%.2f"))
+    ...     print("%.2f" % ovix((i*"a bc def ghij klmno pqrstu vxyzåäö ").split()))
     nan
     inf
     11.32
@@ -99,8 +99,7 @@ def ovix(words, fmt):
     elif uw == w:
         return float('inf')
     else:
-        ovix = log(w) / log(2 - log(uw) / log(w))
-        return fmt % ovix
+        return log(w) / log(2 - log(uw) / log(w))
 
 
 def nominal_ratio_annot(order, text, parent_text, pos, out, noun_pos="NN PP PC", verb_pos="PN AB VB", fmt="%.2f"):
@@ -108,24 +107,24 @@ def nominal_ratio_annot(order, text, parent_text, pos, out, noun_pos="NN PP PC",
     columns = [pos]
     texts = cwb.vrt_iterate(*cwb.tokens_and_vrt(order, structs, columns))
     util.write_annotation(out, (
-        (span, str(nominal_ratio([col[0] for col in cols], noun_pos, verb_pos, fmt)))
+        (span, fmt % nominal_ratio([col[0] for col in cols], noun_pos, verb_pos))
         for (_, span), cols in texts
     ))
 
 
-def nominal_ratio(pos, noun_pos, verb_pos, fmt):
+def nominal_ratio(pos, noun_pos, verb_pos):
     """
     Calculates nominal ratio (nominalkvot).
 
-    >>> nominal_ratio('NN JJ'.split(), noun_pos="NN PP PC", verb_pos="PN AB VB", fmt="%.1f")
+    >>> "%.1f" % nominal_ratio('NN JJ'.split(), noun_pos="NN PP PC", verb_pos="PN AB VB")
     'inf'
-    >>> nominal_ratio('NN NN VB'.split(), noun_pos="NN PP PC", verb_pos="PN AB VB", fmt="%.1f")
+    >>> "%.1f" % nominal_ratio('NN NN VB'.split(), noun_pos="NN PP PC", verb_pos="PN AB VB")
     '2.0'
-    >>> nominal_ratio('NN PP PC PN AB VB MAD MID'.split(), noun_pos="NN PP PC", verb_pos="PN AB VB", fmt="%.1f")
+    >>> "%.1f" % nominal_ratio('NN PP PC PN AB VB MAD MID'.split(), noun_pos="NN PP PC", verb_pos="PN AB VB")
     '1.0'
-    >>> nominal_ratio('NN AB VB PP PN PN MAD'.split(), noun_pos="NN PP PC", verb_pos="PN AB VB", fmt="%.1f")
+    >>> "%.1f" % nominal_ratio('NN AB VB PP PN PN MAD'.split(), noun_pos="NN PP PC", verb_pos="PN AB VB")
     '0.5'
-    >>> nominal_ratio('RG VB'.split(), noun_pos="NN PP PC", verb_pos="PN AB VB", fmt="%.1f")
+    >>> "%.1f" % nominal_ratio('RG VB'.split(), noun_pos="NN PP PC", verb_pos="PN AB VB")
     '0.0'
     """
     # nouns prepositions participles
@@ -134,9 +133,9 @@ def nominal_ratio(pos, noun_pos, verb_pos, fmt):
     verbs = sum(1 for p in pos if p in verb_pos.split())
     try:
         nk = float(nouns) / float(verbs)
-        return fmt % nk
+        return nk
     except ZeroDivisionError:
-        return 'inf'
+        return float('inf')
 
 
 if __name__ == '__main__':
