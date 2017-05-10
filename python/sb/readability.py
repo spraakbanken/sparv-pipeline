@@ -56,8 +56,12 @@ def lix(sentences):
         for word in words:
             w += 1
             l += int(len(word) > 6)
-    lix = w / s + 100 * l / w
-    return lix
+    if w == 0 and s == 0:
+        return float('NaN')
+    elif w == 0 or s == 0:
+        return float('inf')
+    else:
+        return w / s + 100 * l / w
 
 
 def ovix_annot(order, text, parent_text, words, pos, out, skip_pos="MAD MID PAD", fmt="%.2f"):
