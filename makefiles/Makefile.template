@@ -1,12 +1,12 @@
 # This file must be included at the top.
-include ../Makefile.config
+include $(SPARV_MAKEFILES)/Makefile.config
 
 # Makefile.multi only needs to be included if this Makefile should be used for more
 # than one corpus, each located in a subdirectory directly under the current directory.
-# include ../Makefile.multi
+# include $(SPARV_MAKEFILES)/Makefile.multi
 
 # The internal name of the corpus. Something short and in lowercase. Preferably
-# the same name as the directory containing this file.
+# the same name as the directory containing this file. Not used when including Makefile.multi.
 corpus =
 
 # The relative path to the XML files
@@ -14,7 +14,8 @@ original_dir = $(root)original/xml
 
 # The following line should contain a list (or an expression resulting in a list)
 # of all the source files in the original_dir, excluding the file extension and the original_dir path.
-files := $(basename $(notdir $(wildcard $(original_dir)/*.xml)))
+# If omitted, all XML files under original_dir will be used as source files.
+# files := $(basename $(notdir $(wildcard $(original_dir)/*.xml)))
 
 # If source files are not encoded in UTF-8, specify their encoding here
 source_encoding =
@@ -110,6 +111,7 @@ skip_cwb_validation =
 # in the source material).
 # *_chunk should be an annotation which is a "parent" to the strings that will
 # be tokenized. E.g. "sentence" for token, "paragraph" or "text" for sentence.
+# More than one chunk can be specified, separated by space.
 token_chunk = sentence
 token_segmenter = better_word
 token_model =
@@ -193,16 +195,12 @@ chains =
 ignore_missing_parents =
 
 
-# Any custom rules you define below that should override the default rules must
+# Any custom rules you define below that should override the default rules, must
 # be specified here, by listing the resulting annotations separated by whitespace.
 # Example: token.pos token.baseform
 custom_rules =
 
-################################################################################
-#                                  RULES                                       #
-################################################################################
-
 # Custom rules goes here.
 
 # This file must be included at the end.
-include ../Makefile.rules
+include $(SPARV_MAKEFILES)/Makefile.rules
