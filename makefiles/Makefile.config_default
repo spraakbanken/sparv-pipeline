@@ -1,7 +1,7 @@
 # This file should be included at the top of your corpus Makefile
 
 ################################################################################
-#                                  MODELS                                      #
+#                                    MODELS                                    #
 ################################################################################
 
 bettertokenizer_config = $(SPARV_MODELS)/bettertokenizer.sv
@@ -26,13 +26,17 @@ wsd_jar = wsd/saldowsd.jar
 wsd_sense_model = $(SPARV_MODELS)/wsd/ALL_512_128_w10_A2_140403_ctx1.bin
 wsd_context_model = $(SPARV_MODELS)/wsd/lem_cbow0_s512_w10_NEW2_ctx.bin
 tt_bin = treetagger/tree-tagger
-tt_model = $(SPARV_MODELS)/treetagger_$(lang).bin
-fl_config = $(SPARV_MODELS)/freeling_$(lang).cfg  # FreeLing
+tt_model = $(SPARV_MODELS)/treetagger/$(lang).par
+fl_config = $(SPARV_MODELS)/freeling/$(lang).cfg  # FreeLing
 geo_model = $(SPARV_MODELS)/geo.pickle
 geo_language = sv
 
+non_word_pos = "MAD MID PAD PUNCT SYM"
+noun_pos = "NN NOUN PP ADP PC" # nouns, prepositions, participles
+verb_pos = "PN PRON AB ADV VB VERB" # pronouns, adverbs, verbs
+
 ################################################################################
-#                                VARIABLES                                     #
+#                                  VARIABLES                                   #
 ################################################################################
 
 # Remote host name for installation of both corpus data and database
@@ -52,7 +56,9 @@ export_original_path =
 mysql_dbname =
 
 # Python executable
+ifndef python
 python = python
+endif
 
 # The initial chmod for directories. Defaults to the value 775
 dir_chmod = 775
@@ -72,6 +78,7 @@ default_sentence_segmenter = punkt_sentence
 
 
 # Positional annotations
+
 _saldo_annotations = baseform lemgram sense prefix suffix compwf complemgram
 _saldo             = lemma    lex     sense prefix suffix compwf complemgram
 
@@ -83,6 +90,7 @@ _default             := word pos msd $(_saldo)     $(_dep)
 
 
 # Structural annotations
+
 _ne_annotations = ne.ex ne.type ne.subtype ne.name
 _ne             = ne:ex ne:type ne:subtype ne:name
 
@@ -95,11 +103,14 @@ _default_smallest             := $(_ne)
 _default_sentence_annotations = sentence.id sentence.geocontext
 _default_sentence             = sentence:id sentence:_geocontext
 
-_default_paragraph_annotations = paragraph.n paragraph.geocontext
-_default_paragraph             = paragraph:n paragraph:_geocontext
+_default_paragraph_annotations = paragraph paragraph.geocontext
+_default_paragraph             = paragraph paragraph:_geocontext
 
-_default_text_annotations := $(_time_annotations)
-_default_text             := $(_time)
+_default_readability_annotations = text.lix text.ovix text.nk
+_default_readability             = text:lix text:ovix text:nk
+
+_default_text_annotations := $(_time_annotations) $(_default_readability_annotations)
+_default_text             := $(_time)             $(_default_readability)
 
 _default_structs_annotations := $(_default_smallest_annotations) $(_default_sentence_annotations) $(_default_paragraph_annotations) $(_default_text_annotations)
 _default_structs             := $(_default_smallest)             $(_default_sentence)             $(_default_paragraph)             $(_default_text)
