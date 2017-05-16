@@ -189,6 +189,12 @@ ifeq ($(datefrom),)
   vrt_structs := $(filter-out $(_time),$(vrt_structs))
 endif
 
+# Remove readability measures if part of speech is missing
+ifeq ($(filter pos,$(vrt_columns)),)
+  vrt_structs_annotations := $(filter-out $(_default_readability_annotations),$(vrt_structs_annotations))
+  vrt_structs := $(filter-out $(_default_readability),$(vrt_structs))
+endif
+
 # Remove paragraph structs if no paragraphs are present, or if sentence_order = random
 ifeq ($(paragraph_chunk),)
   ifeq ($(filter paragraph,$(xml_annotations)),)
