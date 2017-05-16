@@ -212,7 +212,7 @@ ifdef remove_paragraph_structs
 endif
 
 # Determine if corpus has sentences
-has_sentences = $(strip $(foreach a, $(vrt_structs_annotations), $(if $(filter $(word 1, $(subst ., ,$(a))), sentence), true)))
+has_sentences = $(word 1, $(foreach a, $(vrt_structs_annotations), $(if $(filter $(word 1, $(subst ., ,$(a))), sentence), true)))
 
 annotations = vrt @TEXT $(sort $(xml_annotations) $(xml_header_annotations) $(addprefix token., $(vrt_columns_annotations)) $(vrt_structs_annotations))
 
