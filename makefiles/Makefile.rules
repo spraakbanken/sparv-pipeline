@@ -138,6 +138,48 @@ $(nulls): %.token
 	done
 
 ################################################################################
+#                              AUTOMATIC STRUCTS                               #
+################################################################################
+
+# Automatically create annotations from structural elements, needed
+# by the parents/children rules.
+
+# This block should contain two blank lines
+define newline
+
+
+endef
+
+define auto_annotations_script
+import sys
+pairs = zip(sys.argv[2].split(), sys.argv[1].split())
+d = {}
+for a, e in pairs:
+    for ee in e.split("+"):
+        d.setdefault(a.split(".")[0], set()).add(ee.rsplit(":", 1)[0])
+d = sorted(d.iteritems()) + [(p[0], (p[1],)) for p in pairs if not p[0] in d]
+print len(d) + 2, len(d) + 3
+print " ".join("+".join(e) for a, e in d)
+print " ".join(a for a, e in d)
+endef
+
+ifneq ($(xml_annotations),)
+  auto_elements := $(shell echo '$(subst $(newline),@NEWLINE@,${auto_annotations_script})' | sed 's/@NEWLINE@/\n/g' | $(python) - "$(xml_elements)" "$(xml_annotations)")
+  n = $(firstword $(auto_elements))
+  m = $(word 2,$(auto_elements))
+  xml_elements := $(wordlist 3,$(n),$(auto_elements))
+  xml_annotations := $(wordlist $(m),$(words $(auto_elements)),$(auto_elements))
+endif
+
+ifneq ($(xml_header_annotations),)
+  auto_elements := $(shell echo '$(subst $(newline),@NEWLINE@,${auto_annotations_script})' | sed 's/@NEWLINE@/\n/g' | $(python) - "$(xml_headers)" "$(xml_header_annotations)")
+  n = $(firstword $(auto_elements))
+  m = $(word 2,$(auto_elements))
+  xml_headers := $(wordlist 3,$(n),$(auto_elements))
+  xml_header_annotations := $(wordlist $(m),$(words $(auto_elements)),$(auto_elements))
+endif
+
+################################################################################
 #                                  RULES                                       #
 ################################################################################
 
@@ -873,17 +915,13 @@ endef
 # Rules for automatic parents/children generation
 
 define parent_rule_automatic
-ifneq ($(2),)
-%.parents.token.$(1): %.@TEXT %.token %.$(2)
+%.parents.token.$(1): %.@TEXT %.token %.$(1)
 	$(python) -m sb.parent --parents --out $$@ --text $$(1) --parent $$(3) --child $$(2) --ignore_missing_parent "$$(ignore_missing_parents)"
-endif
 endef
 
 define child_rule_automatic
-ifneq ($(2),)
-%.children.$(1).token: %.@TEXT %.$(2) %.token
+%.children.$(1).token: %.@TEXT %.$(1) %.token
 	$(python) -m sb.parent --children --out $$@ --text $$(1) --parent $$(2) --child $$(3) --ignore_missing_parent "$$(ignore_missing_parents)"
-endif
 endef
 
 
@@ -891,7 +929,7 @@ endef
 
 ifeq ($(parents),)
   structural_elements = $(sort $(foreach s, $(vrt_structs_annotations), $(word 1, $(subst ., , $(s)))))
-  $(foreach s, $(structural_elements), $(eval $(call parent_rule_automatic,$(s),$(word 1, $(foreach a, $(xml_annotations) $(xml_header_annotations), $(if $(findstring ^$(s)., ^$(a)), $(a), $(filter $(a), $(s)))))) ))
+  $(foreach s, $(structural_elements), $(eval $(call parent_rule_automatic,$(s))))
 else
   $(info Note: 'parents' is normally not needed anymore)
   $(foreach parent,$(parents),$(eval $(call parent_rule_manual,$(word 1,$(subst |, ,$(parent))),$(word 2,$(subst |, ,$(parent))))))
@@ -899,7 +937,7 @@ endif
 
 ifeq ($(children),)
   structural_elements = $(sort $(foreach s, $(vrt_structs_annotations), $(word 1, $(subst ., , $(s)))))
-  $(foreach s, $(structural_elements), $(eval $(call child_rule_automatic,$(s),$(word 1, $(foreach a, $(xml_annotations) $(xml_header_annotations), $(if $(findstring ^$(s)., ^$(a)), $(a), $(filter $(a), $(s)))))) ))
+  $(foreach s, $(structural_elements), $(eval $(call child_rule_automatic,$(s))))
 else
   $(info Note: 'children' is normally not needed anymore)
   $(foreach child,$(children),$(eval $(call child_rule_manual,$(word 1,$(subst |, ,$(child))),$(word 2,$(subst |, ,$(child))))))
