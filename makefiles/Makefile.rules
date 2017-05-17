@@ -251,11 +251,14 @@ debug:
 	@echo "SPARV_MODELS: $(SPARV_MODELS)"
 	@echo "PYTHONPATH: $(PYTHONPATH)"
 	@echo "PATH: $(PATH)"
+	@echo
 	@echo "xml-source: $(original_dir)"
+	@echo
 	@echo "vrt_columns_annotations: $(vrt_columns_annotations)"
 	@echo "vrt_columns:             $(vrt_columns)"
 	@echo "vrt_structs_annotations: $(vrt_structs_annotations)"
 	@echo "vrt_structs:             $(vrt_structs)"
+	@echo
 	@echo "xml_elements:            $(xml_elements)"
 	@echo "xml_annotations:         $(xml_annotations)"
 	@echo "xml_headers:             $(xml_headers)"
