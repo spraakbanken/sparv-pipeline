@@ -230,7 +230,7 @@ endif
 
 # Default files variable
 ifeq ($(files),)
-  files := $(basename $(subst $(original_dir)/,,$(shell find $(original_dir)/ -type f -name '*.xml')))
+  files := $(basename $(subst $(original_dir)/,,$(shell find -L $(original_dir)/ -type f -name '*.xml')))
 endif
 
 # Misc shortcuts
