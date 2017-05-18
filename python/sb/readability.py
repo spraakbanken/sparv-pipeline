@@ -11,7 +11,7 @@ from math import log
 
 def actual_words(cols, skip_pos):
     """
-    Removes words with punctuation and delimiter POS (provided by skip_pos).
+    Remove words with punctuation and delimiter POS (provided by skip_pos).
 
     >>> ' '.join(actual_words(
     ...     [('Hej', 'IN'),
@@ -42,7 +42,7 @@ def lix_annot(order, text, parent_text, sentence, parent_sentence, words, pos, o
 
 def lix(sentences):
     """
-    Calculates LIX, assuming that all tokens are actual words: not punctuation
+    Calculate LIX, assuming that all tokens are actual words: not punctuation
     nor delimiters.
 
     >>> print("%.2f" % lix(4*["a bc def ghij klmno pqrstu vxyzåäö".split()]))
@@ -76,7 +76,7 @@ def ovix_annot(order, text, parent_text, words, pos, out, skip_pos="MAD MID PAD"
 
 def ovix(words):
     """
-    Calculates OVIX, assuming that all tokens are actual words: not punctuation
+    Calculate OVIX, assuming that all tokens are actual words: not punctuation
     nor delimiters.
 
     Words are compared ignoring case.
@@ -118,7 +118,7 @@ def nominal_ratio_annot(order, text, parent_text, pos, out, noun_pos="NN PP PC",
 
 def nominal_ratio(pos, noun_pos, verb_pos):
     """
-    Calculates nominal ratio (nominalkvot).
+    Calculate nominal ratio (nominalkvot).
 
     >>> "%.1f" % nominal_ratio('NN JJ'.split(), noun_pos="NN PP PC", verb_pos="PN AB VB")
     'inf'
