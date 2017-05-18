@@ -39,7 +39,7 @@ class ListWithGet(list):
         >>> [ xs.get(i, 'default_'+str(i)) for i in range(-1,5) ]
         ['default_-1', 'a', 'b', 'c', 'default_3', 'default_4']
         """
-        if n >= 0 and n < len(self):
+        if 0 <= n < len(self):
             return self[n]
         else:
             return default
@@ -74,9 +74,9 @@ def vrt_table(annotations_structs, annotations_columns):
         )
         for tok, value in token_annotations:
             if not value:
-                # Martin claims that this happens for tokens that are outside
-                # the structural attribute, such as b in "<text>a</text> b"
-                value = ["", "", None] # span?
+                # This happens for tokens that are outside the structural
+                # attribute, such as b in "<text>a</text> b"
+                value = ["", "", None]
 
             value[1] = "|" if value[1] == "|/|" else value[1]
             value[1] = value[1].replace("\n", " ") if value[1] else ""
