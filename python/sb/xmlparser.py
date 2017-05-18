@@ -64,7 +64,9 @@ def parse(source, text, elements=[], annotations=[], skip=(), overlap=(), header
                             for elemgroup, annotation in zip(elements, annotations)
                             for elem in elemgroup.split("+")]
 
-    elem_annotations = dict(elem_order)
+    elem_annotations = {}
+    for pair in elem_order:
+        elem_annotations.setdefault(pair[0], []).append(pair[1])
 
     head_annotations = dict((elsplit(head), annotation)
                             for head, annotation in zip(headers, header_annotations))
@@ -116,7 +118,7 @@ class XMLParser(HTMLParser):
         self.anchor2pos = {}
         self.anchor2line = {}
         self.textbuffer = []
-        self.dbs = dict((annot, {}) for annot in elem_annotations.values())
+        self.dbs = dict((annot, {}) for annots in elem_annotations.values() for annot in annots)
         self.header_temp = dict((header, "") for header in head_annotations.values())
         self.header_dbs = dict((header, {}) for header in head_annotations.values())
         util.resetIdent(self.prefix, maxidents=corpus_size)
@@ -274,8 +276,9 @@ class XMLParser(HTMLParser):
                 edge = util.mkEdge(name, (start, end))
                 for attr, value in attrs:
                     try:
-                        annotation = self.elem_annotations[name, attr]
-                        self.dbs[annotation][edge] = value
+                        annotations = self.elem_annotations[name, attr]
+                        for annotation in annotations:
+                            self.dbs[annotation][edge] = value
                     except KeyError:
                         pass
             
