@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-A parser for pseuo-XML documents.
+A parser for pseudo-XML documents.
 Pseudo-XML is almost like XML, but admits overlapping elements.
 """
 
