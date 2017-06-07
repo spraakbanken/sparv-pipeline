@@ -218,6 +218,10 @@ annotations = vrt @TEXT $(sort $(xml_annotations) $(xml_header_annotations) $(ad
 
 # Source directory
 
+ifeq ($(original_dir),)
+  original_dir = $(root)original/xml
+endif
+
 ifeq ($(filter xml,$(custom_rules)),)
   ifeq ($(source_encoding),)
 src := $(original_dir)
