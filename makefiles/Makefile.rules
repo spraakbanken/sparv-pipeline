@@ -163,21 +163,31 @@ print " ".join("+".join(e) for a, e in d)
 print " ".join(a for a, e in d)
 endef
 
-ifneq ($(xml_annotations),)
-  auto_elements := $(shell echo '$(subst $(newline),@NEWLINE@,${auto_annotations_script})' | sed 's/@NEWLINE@/\n/g' | $(python) - "$(xml_elements)" "$(xml_annotations)")
-  n = $(firstword $(auto_elements))
-  m = $(word 2,$(auto_elements))
-  xml_elements := $(wordlist 3,$(n),$(auto_elements))
-  xml_annotations := $(wordlist $(m),$(words $(auto_elements)),$(auto_elements))
+define auto_structs
+ifneq ($$($(1)xml_annotations),)
+  auto_elements := $$(shell echo '$$(subst $$(newline),@NEWLINE@,$${auto_annotations_script})' | sed 's/@NEWLINE@/\n/g' | $$(python) - "$$($(1)xml_elements)" "$$($(1)xml_annotations)")
+  n = $$(firstword $$(auto_elements))
+  m = $$(word 2,$$(auto_elements))
+  $(1)xml_elements := $$(wordlist 3,$$(n),$$(auto_elements))
+  $(1)xml_annotations := $$(wordlist $$(m),$$(words $$(auto_elements)),$$(auto_elements))
 endif
 
-ifneq ($(xml_header_annotations),)
-  auto_elements := $(shell echo '$(subst $(newline),@NEWLINE@,${auto_annotations_script})' | sed 's/@NEWLINE@/\n/g' | $(python) - "$(xml_headers)" "$(xml_header_annotations)")
-  n = $(firstword $(auto_elements))
-  m = $(word 2,$(auto_elements))
-  xml_headers := $(wordlist 3,$(n),$(auto_elements))
-  xml_header_annotations := $(wordlist $(m),$(words $(auto_elements)),$(auto_elements))
+ifneq ($$($(1)xml_header_annotations),)
+  auto_elements := $$(shell echo '$$(subst $$(newline),@NEWLINE@,$${auto_annotations_script})' | sed 's/@NEWLINE@/\n/g' | $$(python) - "$$($(1)xml_headers)" "$$($(1)xml_header_annotations)")
+  n = $$(firstword $$(auto_elements))
+  m = $$(word 2,$$(auto_elements))
+  $(1)xml_headers := $$(wordlist 3,$$(n),$$(auto_elements))
+  $(1)xml_header_annotations := $$(wordlist $$(m),$$(words $$(auto_elements)),$$(auto_elements))
 endif
+
+endef
+
+ifeq ($(xml_folders),)
+  $(eval $(call auto_structs,,))
+else
+  $(foreach xml_folder,$(xml_folders),$(eval $(call auto_structs,$(xml_folder)_)))
+endif
+
 
 ################################################################################
 #                                  RULES                                       #
@@ -251,7 +261,9 @@ TEXT: $(files:%=$(root)annotations/%.@TEXT)
 lemgram_index: $(root)annotations/_lemgram_index_.sql
 timespan: $(root)annotations/_timespan_.sql
 
-debug:
+debug: debugmain $(addprefix debug_,$(xml_folders))
+
+debugmain:
 	@echo "SPARV_MODELS: $(SPARV_MODELS)"
 	@echo "PYTHONPATH: $(PYTHONPATH)"
 	@echo "PATH: $(PATH)"
@@ -267,6 +279,19 @@ debug:
 	@echo "xml_annotations:         $(xml_annotations)"
 	@echo "xml_headers:             $(xml_headers)"
 	@echo "xml_header_annotations:  $(xml_header_annotations)"
+
+define xml_debug
+debug_$(1):
+	@echo
+	@echo "$(1)_xml_elements:            $$($(1)_xml_elements)"
+	@echo "$(1)_xml_annotations:         $$($(1)_xml_annotations)"
+	@echo "$(1)_xml_headers:             $$($(1)_xml_headers)"
+	@echo "$(1)_xml_header_annotations:  $$($(1)_xml_header_annotations)"
+endef
+
+ifneq ($(xml_folders),)
+  $(foreach xml_folder,$(xml_folders),$(eval $(call xml_debug,$(xml_folder))))
+endif
 
 targets = clean distclean space clean_export files add vrt cwb xml info install install_corpus install_relations install_lemgrams install_timespan relations export export_combined export_compressed install_export export_original export_combined_original export_compressed_original install_export_original export_formatted
 .PHONY: help $(targets) $(annotations) $(files)
