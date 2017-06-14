@@ -37,6 +37,7 @@ def lix_annot(order, text, parent_text, sentence, parent_sentence, words, pos, o
     util.write_annotation(out, (
         (span, fmt % lix((actual_words(cols, skip_pos) for _, cols in sentences)))
         for (_, span), sentences in texts
+        if span is not None
     ))
 
 
@@ -71,6 +72,7 @@ def ovix_annot(order, text, parent_text, words, pos, out, skip_pos="MAD MID PAD"
     util.write_annotation(out, (
         (span, fmt % ovix(actual_words(cols, skip_pos)))
         for (_, span), cols in texts
+        if span is not None
     ))
 
 
@@ -113,6 +115,7 @@ def nominal_ratio_annot(order, text, parent_text, pos, out, noun_pos="NN PP PC",
     util.write_annotation(out, (
         (span, fmt % nominal_ratio([col[0] for col in cols], noun_pos, verb_pos))
         for (_, span), cols in texts
+        if span is not None
     ))
 
 
