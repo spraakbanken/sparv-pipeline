@@ -83,6 +83,7 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
     ofrom = {}
     
     for key, val in ifrom:
+        val = val.strip()
         if not val:
             ofrom[key] = None
             continue
