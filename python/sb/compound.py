@@ -7,6 +7,7 @@ import time
 import util
 
 SPLIT_LIMIT = 200
+COMP_LIMIT = 100
 
 
 def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp, saldo_comp_model, nst_model, stats_model,
@@ -340,6 +341,10 @@ def rank_compounds(compounds, nst_model, stats_lexicon):
     #     print "%.3e, %s" % (s, c)
     return ranklist
 
+def deep_len(lst):
+    """Return the deep length of a list."""
+    return sum(deep_len(el) if isinstance(el, (list, tuple)) else 1 for el in lst)
+
 
 def compound(saldo_lexicon, altlexicon, w, msd=None):
     """Create a list of compound analyses for word w."""
@@ -348,7 +353,7 @@ def compound(saldo_lexicon, altlexicon, w, msd=None):
         return []
 
     in_compounds = list(split_word(saldo_lexicon, altlexicon, w, msd))
-
+    
     if len(in_compounds) >= SPLIT_LIMIT:
         return []
 
@@ -381,7 +386,10 @@ def compound(saldo_lexicon, altlexicon, w, msd=None):
         if not anas:
             continue
         current_combinations.append(anas)
-
+        
+        if deep_len(current_combinations) > COMP_LIMIT:
+            continue
+        
         # Check if all parts got an analysis
         if len(current_combinations) == len(comp):
             out_compounds.append(list(set(itertools.product(*current_combinations))))
