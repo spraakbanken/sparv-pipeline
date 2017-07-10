@@ -180,12 +180,12 @@ def write_formatted(out, annotations_columns, annotations_structs, columns, stru
                 if "close" in anchors[anchor]:
                     if ("__token__", None) in anchors[anchor]["close"]:
                         OUT.write("</w>")
-                    OUT.write(''.join('</%s>' % e[0] for e in sorted(anchors[anchor]["close"], key=lambda x: structs_order.index(x[0])) if not e[0] == "__token__").encode(encoding))
+                    OUT.write("".join("</%s>" % e[0] for e in sorted(anchors[anchor]["close"], key=lambda x: structs_order.index(x[0])) if not e[0] == "__token__").encode(encoding))
 
                 if "structs" in anchors[anchor]:
                     for elem, annot in sorted(anchors[anchor]["structs"].iteritems(), key=lambda x: (-x[0][1], -structs_order.index(x[0][0]))):
                         if not elem in ("close", "token"):
-                            attrstring = ''.join(' %s="%s"' % (attr, val.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
+                            attrstring = "".join(' %s="%s"' % (attr, val.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
                                                  for (attr, val) in annot if val and not attr == UNDEF).encode(encoding)
                             close = "/" if len(elem) == 3 else ""
                             OUT.write("<%s%s%s>" % (elem[0].encode(encoding), attrstring, close))
@@ -314,11 +314,11 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
     <corpus>
     <b>
     <w>bold</w>
-    <i _id="typography-1">
+    <i _overlap="typography-1">
     <w>bold_italic</w>
     </i>
     </b>
-    <i _id="typography-1">
+    <i _overlap="typography-1">
     <w>italic</w>
     </i>
     </corpus>
@@ -375,7 +375,7 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
                     if not elemids.get(pending_elem):
                         elemid += 1
                         elemids[pending_elem] = elemid
-                    line = '<%s _id="%s-%s"%s>' % (pending_elem.encode(encoding), fileid, elemids[pending_elem], attrstring)
+                    line = '<%s _overlap="%s-%s"%s>' % (pending_elem.encode(encoding), fileid, elemids[pending_elem], attrstring)
                     str_buffer.append(line)
                     open_tag_stack.append(pending_tag_stack.pop())
                     old_attr_values[elem] = None
@@ -432,17 +432,17 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
         with open(out, "w") as OUT:
             print >>OUT, str_buffer
     else:
-        # Go through xml structure and add missing _id attributes
+        # Go through xml structure and add missing _overlap attributes
         xmltree = etree.ElementTree(etree.fromstring(str_buffer))
         for child in xmltree.getroot().iter():
             # If child has and id, get previous element with same tag
-            if child.tag != "w" and child.attrib.get("_id"):
+            if child.tag != "w" and child.attrib.get("_overlap"):
                 elemlist = list(xmltree.getroot().iter(child.tag))
                 if child != elemlist[0]:
                     prev_elem = elemlist[elemlist.index(child) - 1]
                     # If previous element has no id, add id of child
-                    if not prev_elem.attrib.get("_id"):
-                        prev_elem.set('_id', child.attrib.get("_id"))
+                    if not prev_elem.attrib.get("_overlap"):
+                        prev_elem.set("_overlap", child.attrib.get("_overlap"))
         xmltree.write(out, encoding=encoding, xml_declaration=False, method="xml")
 
     util.log.info("Exported %d tokens, %d columns, %d structs: %s", len(tokens), len(column_nrs), len(structs), out)
@@ -462,7 +462,7 @@ def combine_xml(master, out, xmlfiles="", xmlfiles_list=""):
     xmlfiles.sort()
 
     with open(out, "w") as OUT:
-        print >>OUT, '<corpus id="%s">' % master.replace("&", "&amp;").replace('"', '&quot;')
+        print >>OUT, '<corpus id="%s">' % master.replace("&", "&amp;").replace('"', "&quot;")
         for infile in xmlfiles:
             util.log.info("Read: %s", infile)
             with open(infile, "r") as IN:
@@ -592,7 +592,7 @@ def cwb_align(master, other, link, aligndir=ALIGNDIR):
 
 def parse_structural_attributes(structural_atts):
     """
-    >>> parse_structural_attributes('s - text:title text:author')
+    >>> parse_structural_attributes("s - text:title text:author")
     [('s', [(u'__UNDEF__', 0)]), ('text', [('title', 2), ('author', 3)])]
     """
 
@@ -767,7 +767,7 @@ def example_overlapping_data():
     return DictWithWithout(**locals())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     util.run.main(export=export,
                   encode=cwb_encode,
                   align=cwb_align,
