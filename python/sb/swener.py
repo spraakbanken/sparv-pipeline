@@ -74,7 +74,11 @@ def parse_swener_output(sentences, output, out_ne_ex, out_ne_type, out_ne_subtyp
         # Filter out tags on the format <EnamexXxxXxx> since they seem to always overlap with <ENAMEX> elements,
         # making the XML invalid.
         xml_sent = re.sub(r'</?Enamex[^>\s]+>', '', xml_sent)
-        root = etree.fromstring(xml_sent)
+        try:
+            root = etree.fromstring(xml_sent)
+        except:
+            util.log.warning("Error parsing sentence. Skipping.")
+            continue
 
         # Init token counter; needed to get start_id and end_id
         i = 0

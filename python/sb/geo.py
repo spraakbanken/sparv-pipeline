@@ -123,7 +123,8 @@ def contextual(out, chunk, context, ne, ne_subtype, text, model, method="populou
                         context_locations.append((location_text, list(location_data)))
                         chunk_locations[ch].append((location_text, list(location_data)))
                     else:
-                        util.log.info("No location found for %s" % ne_text[n].replace("%", "%%"))
+                        pass
+                        #util.log.info("No location found for %s" % ne_text[n].replace("%", "%%"))
 
         chunk_locations = most_populous(chunk_locations)
 
