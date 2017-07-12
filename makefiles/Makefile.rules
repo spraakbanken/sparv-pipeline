@@ -1117,12 +1117,15 @@ clean_export:
 #                                    CWB                                       #
 ################################################################################
 
+$(root)annotations/_list_vrt_: $(files:%=$(root)annotations/%.vrt)
+	$(call write-to-file,$@,$+)
+
 # CWB
 ifeq ($(filter cwb,$(custom_rules)),)
 cwb: $(CORPUS_REGISTRY)/$(corpus)
 
-$(CORPUS_REGISTRY)/$(corpus): $(files:%=$(root)annotations/%.vrt)
-	$(python) -m sb.cwb --encode --master $(corpus) --columns "$(vrt_columns)" --structs "$(vrt_structs)" --vrtfiles "$+" --skip_compression "$(skip_cwb_compression)" --skip_validation "$(skip_cwb_validation)"
+$(CORPUS_REGISTRY)/$(corpus): $(root)annotations/_list_vrt_
+	$(python) -m sb.cwb --encode --master $(corpus) --columns "$(vrt_columns)" --structs "$(vrt_structs)" --vrtlist "$(1)" --skip_compression "$(skip_cwb_compression)" --skip_validation "$(skip_cwb_validation)"
 endif
 
 # ALIGN
