@@ -65,8 +65,9 @@ def call_java(jar, arguments, options=[], stdin="", search_paths=(),
     return call_binary("java", java_args, stdin, search_paths, (), encoding, verbose, return_command)
 
 
-def call_binary(name, arguments, stdin="", search_paths=(),
-                binary_names=(), encoding=None, verbose=False, return_command=False):
+def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
+                binary_names=(), encoding=None, verbose=False,
+                use_shell=False, return_command=False):
     """
     Call a binary with arguments and stdin, return a pair (stdout, stderr).
     If the verbose flag is True, pipes all stderr output to stderr,
@@ -81,13 +82,19 @@ def call_binary(name, arguments, stdin="", search_paths=(),
     assert isinstance(stdin, (basestring, list, tuple))
 
     binary = find_binary(name, search_paths, binary_names)
-    command = [binary] + list(arguments)
+    if raw_command:
+        use_shell = True
+        command = raw_command % binary
+        if arguments:
+            command = " ".join([command] + arguments)
+    else:
+        command = [binary] + list(arguments)
     if isinstance(stdin, (list, tuple)):
         stdin = "\n".join(stdin)
     if isinstance(stdin, unicode):
         stdin = unicode_convert.encode(stdin, encoding)
-    log.info("CALL: %s", " ".join(command))
-    command = Popen(command, shell=False,
+    log.info("CALL: %s", " ".join(command) if not raw_command else command)
+    command = Popen(command, shell=use_shell,
                     stdin=PIPE, stdout=PIPE,
                     stderr=(None if verbose else PIPE),
                     close_fds=False)

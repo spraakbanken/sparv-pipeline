@@ -85,6 +85,12 @@ def strtobool(value):
     return value
 
 
+def single_true(iterable):
+    """Return True if one and only one element in iterable evaluates to True."""
+    i = iter(iterable)
+    return any(i) and not any(i)
+
+
 def cwbset(values, delimiter="|", affix="|", maxlength=4095, encoding="UTF-8"):
     """Take an iterable object and return a set in the format used by Corpus Workbench."""
     values = list(values)

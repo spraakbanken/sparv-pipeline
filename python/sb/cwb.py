@@ -33,10 +33,10 @@ class ListWithGet(list):
         """
         Lookup and if the index is out of bounds return the default value.
 
-        >>> xs = ListWithGet('abc')
+        >>> xs = ListWithGet("abc")
         >>> xs
         ['a', 'b', 'c']
-        >>> [ xs.get(i, 'default_'+str(i)) for i in range(-1,5) ]
+        >>> [xs.get(i, 'default_' + str(i)) for i in range(-1, 5)]
         ['default_-1', 'a', 'b', 'c', 'default_3', 'default_4']
         """
         if 0 <= n < len(self):
@@ -47,7 +47,7 @@ class ListWithGet(list):
 
 def vrt_table(annotations_structs, annotations_columns):
     """
-    Returns a table suitable for printing as a vrt file from annotations.
+    Return a table suitable for printing as a vrt file from annotations.
 
     The structs are a pair of annotation and its parent.
     """
@@ -472,14 +472,14 @@ def combine_xml(master, out, xmlfiles="", xmlfiles_list=""):
         util.log.info("Exported: %s" % out)
 
 
-def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
+def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None, vrtlist=None,
                encoding=CWB_ENCODING, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY, skip_compression=False, skip_validation=False):
     """
     Encode a number of VRT files, by calling cwb-encode.
     params, structs describe the attributes that are exported in the VRT files.
     """
     assert master != "", "Master not specified"
-    assert bool(vrtdir) != bool(vrtfiles), "Either VRTDIR or VRTFILES must be specified"
+    assert util.single_true((vrtdir, vrtfiles, vrtlist)), "Either VRTDIR, VRTFILES or VRTLIST must be specified"
     assert datadir, "CWB_DATADIR not specified"
     assert registry, "CORPUS_REGISTRY not specified"
     if isinstance(skip_validation, basestring):
@@ -504,9 +504,10 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
                    ]
     if vrtdir:
         encode_args += ["-F", vrtdir]
-    if vrtfiles:
+    elif vrtfiles:
         for vrt in vrtfiles:
             encode_args += ["-f", vrt]
+
     for col in columns:
         if col != "-":
             encode_args += ["-P", col]
@@ -515,7 +516,12 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None,
         if attrs2:
             attrs2 = "+" + attrs2
         encode_args += ["-S", "%s:0%s" % (struct, attrs2)]
-    util.system.call_binary("cwb-encode", encode_args, verbose=True)
+
+    if vrtlist:
+        # Use xargs to avoid "Argument list too long" problems
+        util.system.call_binary("cwb-encode", raw_command="cat %s | xargs cat | %%s %s" % (vrtlist, " ".join(encode_args)), verbose=True, use_shell=True)
+    else:
+        util.system.call_binary("cwb-encode", encode_args, verbose=True)
 
     index_args = ["-V", "-r", registry, master.upper()]
     util.system.call_binary("cwb-makeall", index_args, verbose=True)
@@ -622,7 +628,7 @@ def remove_control_characters(text):
 
 def vrt_iterate(tokens, vrt, trail=[0]):
     """
-    Yields segments from vrt separated using the structural attributes from trail.
+    Yield segments from vrt separated using the structural attributes from trail.
 
     >>> tokens = [u"w:1", u"w:2", u"w:3", u"w:4", u"w:5"]
     >>> vrt = {
@@ -684,11 +690,11 @@ def vrt_iterate(tokens, vrt, trail=[0]):
 
 
 class DictWithWithout(dict):
-    """A dictionary with an without function that excludes some elements."""
+    """A dictionary with a without function that excludes some elements."""
 
     def without(self, *keys):
         """
-        Returns a copy of the dictionary without these keys.
+        Return a copy of the dictionary without these keys.
 
         >>> DictWithWithout(apa=1, bepa=2).without("apa")
         {'bepa': 2}
