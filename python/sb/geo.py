@@ -124,7 +124,7 @@ def contextual(out, chunk, context, ne, ne_subtype, text, model, method="populou
                         chunk_locations[ch].append((location_text, list(location_data)))
                     else:
                         pass
-                        #util.log.info("No location found for %s" % ne_text[n].replace("%", "%%"))
+                        # util.log.info("No location found for %s" % ne_text[n].replace("%", "%%"))
 
         chunk_locations = most_populous(chunk_locations)
 
@@ -134,7 +134,7 @@ def contextual(out, chunk, context, ne, ne_subtype, text, model, method="populou
     util.write_annotation(out, result)
 
 
-def metadata(out, chunk, source, model, method="populous", language=[], encoding="UTF-8"):
+def metadata(out, chunk, source, model, text=None, method="populous", language=[], encoding="UTF-8"):
     """Get location data based on metadata containing location names.
     """
 
@@ -142,13 +142,26 @@ def metadata(out, chunk, source, model, method="populous", language=[], encoding
         language = language.split()
 
     model = load_model(model, language=language)
+
+    same_target_source = chunk == source
     chunk = util.read_annotation(chunk)
     source = util.read_annotation(source)
+
+    # If location source and target chunk are not the same, we need
+    # to find the parent/child relations between them.
+    if not same_target_source and text:
+        text = util.read_corpus_text(text)
+        target_source_parents = parent.annotate_parents(text, None, source, chunk, ignore_missing_parent=True)
+
     result = {}
     chunk_locations = {}
 
     for c in chunk:
-        location_source = source.get(c)
+        if same_target_source:
+            location_source = source.get(c)
+        else:
+            location_source = source.get(target_source_parents.get(c))
+
         if location_source:
             location_data = model.get(location_source.strip().lower())
             if location_data:
