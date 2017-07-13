@@ -22,7 +22,9 @@ REGEXP_TOKEN = re.compile(r"([^\W_\d]+|\d+| +|\s|.)", re.UNICODE)
 # idea taken from http://stackoverflow.com/questions/1673749
 
 
-def parse(source, text, elements=[], annotations=[], skip=(), overlap=(), header="teiheader", encoding=util.UTF8, prefix="", fileid="", fileids="", headers="", header_annotations="", skip_if_empty="", skip_entities="", autoclose="", allow_xml_chars=False):
+def parse(source, text, elements=[], annotations=[], skip=(), overlap=(), header="teiheader", encoding=util.UTF8,
+          prefix="", fileid="", fileids="", headers="", header_annotations="", skip_if_empty="", skip_entities="",
+          autoclose="", allow_xml_chars=False):
     """Parse one pseudo-xml source file, into the specified corpus."""
     if isinstance(elements, basestring):
         elements = elements.split()
@@ -142,8 +144,8 @@ class XMLParser(HTMLParser):
 
         if self.skipped:
             new_elements = sorted(self.skipped.items(), key=lambda x: (-x[1], x[0]))
-            new_elements_ann = " ".join(".".join(x[0]) if not x[0][1] is None else x[0][0] for x in new_elements)
-            new_elements_ele = " ".join(":".join(x[0]) if not x[0][1] is None else x[0][0] for x in new_elements)
+            new_elements_ann = " ".join(".".join([x[0][0].replace(":", "_"), x[0][1]]) if not x[0][1] is None else x[0][0].replace(":", "_") for x in new_elements)
+            new_elements_ele = " ".join(":".join([x[0][0].replace(":", "\\:"), x[0][1]]) if not x[0][1] is None else x[0][0].replace(":", "\\:") for x in new_elements)
             if not self.elem_annotations:
                 util.log.info("Found elements:")
                 print
