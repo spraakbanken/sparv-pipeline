@@ -62,7 +62,9 @@ def call_java(jar, arguments, options=[], stdin="", search_paths=(),
     if isinstance(arguments[0], tuple):
         arguments = [x + "=" + y for x, y in arguments]
     java_args = list(options) + ["-jar", jarfile] + list(arguments)
-    return call_binary("java", java_args, stdin, search_paths, (), encoding, verbose, return_command)
+    return call_binary("java", arguments=java_args, stdin=stdin,
+                       search_paths=search_paths, encoding=encoding,
+                       verbose=verbose, return_command=return_command)
 
 
 def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
