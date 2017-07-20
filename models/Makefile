@@ -15,7 +15,7 @@ clean:
 space:
 	rm -f stats_all.txt saldom.xml nst_utf8.txt dalinm.xml diapivot.xml swedbergm.xml
 
-all: saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable stats.pickle bettertokenizer.sv.saldo-tokens diapivot.pickle
+all: saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable stats.pickle bettertokenizer.sv.saldo-tokens diapivot.pickle geo.pickle
 
 info:
 	@echo "Subversion revision:"
