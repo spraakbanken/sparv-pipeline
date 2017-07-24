@@ -16,6 +16,7 @@ __all__ = [
     'number',
     'parent',
     'relations',
+    'readability',
     'saldo',
     'segment',
     'swener',
