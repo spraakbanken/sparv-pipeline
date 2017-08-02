@@ -165,7 +165,7 @@ endef
 
 define auto_structs
 ifneq ($$($(1)xml_annotations),)
-  auto_elements := $$(shell echo '$$(subst $$(newline),@NEWLINE@,$${auto_annotations_script})' | sed 's/@NEWLINE@/\n/g' | $$(python) - "$$($(1)xml_elements)" "$$($(1)xml_annotations)")
+  auto_elements := $$(shell echo '$$(subst $$(newline),@NEWLINE@,$${auto_annotations_script})' | sed 's/@NEWLINE@/\n/g' | python - "$$($(1)xml_elements)" "$$($(1)xml_annotations)")
   n = $$(firstword $$(auto_elements))
   m = $$(word 2,$$(auto_elements))
   $(1)xml_elements := $$(wordlist 3,$$(n),$$(auto_elements))
@@ -173,7 +173,7 @@ ifneq ($$($(1)xml_annotations),)
 endif
 
 ifneq ($$($(1)xml_header_annotations),)
-  auto_elements := $$(shell echo '$$(subst $$(newline),@NEWLINE@,$${auto_annotations_script})' | sed 's/@NEWLINE@/\n/g' | $$(python) - "$$($(1)xml_headers)" "$$($(1)xml_header_annotations)")
+  auto_elements := $$(shell echo '$$(subst $$(newline),@NEWLINE@,$${auto_annotations_script})' | sed 's/@NEWLINE@/\n/g' | python - "$$($(1)xml_headers)" "$$($(1)xml_header_annotations)")
   n = $$(firstword $$(auto_elements))
   m = $$(word 2,$$(auto_elements))
   $(1)xml_headers := $$(wordlist 3,$$(n),$$(auto_elements))
