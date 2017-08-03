@@ -61,7 +61,7 @@ def extract_pos(out, lemgrams, extralemgrams='', delimiter="|", affix="|"):
 
     def mkpos(tokid, thelems):
         pos = [re.search('\.\.(.*?)\.', lem) for lem in thelems]
-        return set(sum([lemgrampos.translatetag(p.group(1)) for p in pos if oktag(p)], []))
+        return set(sum([util.tagsets.lag18002pos(p.group(1)) for p in pos if oktag(p)], []))
 
     annotate_standard(out, lemgrams, mkpos, extralemgrams)
 
@@ -401,9 +401,9 @@ def findmultiwordexpressions(incomplete_multis, complete_multis, theword, ref, M
 def getsingleannotation(lexicons, word, key,msdtag):
     annotation = []
     # TODO the translation of tags is not fully working yet.
-    # the precision must be set to 0.25 in order for the 
+    # the precision must be set to 0.25 in order for the
     # lemgrams to be kept.
-        
+
     for lexicon in lexicons:
         #for (ann,msdtags,wordlist,_,_,) in lexicon.lookup(word):
         #   print 'word',word

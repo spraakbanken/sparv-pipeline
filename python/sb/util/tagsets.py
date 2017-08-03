@@ -1256,7 +1256,7 @@ _suc_tag_replacements = [
     (r"SN",                           r"(SN|IE)"),  # ie doesn't exist in SALDO anymore
     (r"(AB|KN|PP|VB)A",               r"\1 AN"),
     (r"[MS]XC",                       r"(NN|JJ|AB) .* SMS"),
-                                      
+
     (r"ABH? INVAR",                     r"(AB|PL|HA)"),
     (r"ABH? (KOM|POS|SMS|SUV)",         r"AB \1"),
 
@@ -1273,19 +1273,19 @@ _suc_tag_replacements = [
     (r"AVH? (KOM|SUV) .*(NOM|GEN)",                                    r"JJ \1 .* \2"),
     (r"AVH? SMS",                                                      r"JJ .* SMS"),
     (r"AVA",                                                         r"AB AN"),
-    
+
     (r"NL (NOM|GEN)",                              r"(RG|RO) .*\1"),
-    
+
     (r"NN (V|P) (SIN|PLU) (IND|DEF) (NOM|GEN)",     r"NN (UTR|NEU|-) (\2|-) (\3|-) (\4|-)"),
     (r"NNH? (UTR|NEU) (SIN|PLU) (IND|DEF) (NOM|GEN)", r"NN (\1|-) (\2|-) (\3|-) (\4|-)"),
     (r"NNH? .* SMS",                                  r"NN .* SMS"),
     (r"NNA .* SMS",                                 r"(NN|PM) .* SMS"),
     (r"NNA .* (SIN|PLU) (IND|DEF) (NOM|GEN)",       r"NN (AN|.* \1 \2 \3)"),
-    
+
     (r"PMA .* (NOM|GEN)",                           r"PM \1"),
     (r"PM .* (NOM|GEN)",                            r"PM \1"),
     (r"PM .* SMS",                                  r"PM .* SMS"),
-    
+
     (r"PN .*POSS",                                  r"(PS|HS)"),
     (r"PN KOM GEN",                                 r"PS"),
     (r"PN SUV (IND|DEF)",                           r"JJ SUV .* \1"),
@@ -1298,7 +1298,7 @@ _suc_tag_replacements = [
     (r"PN SIN NEU NOM",                             r"(PN NEU SIN|DT NEU SIN .*|JJ POS NEU SIN IND NOM)"),
     (r"PN SIN NEU GEN",                             r"(PN NEU SIN|DT NEU SIN .*|PS UTR+NEU SIN+PLU DEF)"),
     (r"PN (ACK|NOM|INVAR|KOM|SMS)",                 r"(PN|HP|HS)"),
-    
+
     (r"VB (INF|SUP) (AKT|SFO)",                     r"VB \1 \2"),
     (r"VB (PRS|PRT) .* (AKT|SFO)",                  r"VB .*\1 \2"),
     (r"VB PCPRS (NOM|GEN)",                         r"PC PRS .* \1"),
@@ -1361,3 +1361,44 @@ saldo_to_granska = dict((saldotag, set().union(*(suc_to_granska[suctag] for suct
 
 saldo_to_saldo = dict((saldotag, set([saldotag])) for saldotag in saldo_tags)
 
+
+def lag18002pos(tag):
+    """A mapping from the tags in the lemgrams of lag1800 (a subset of saldos part
+    of speech tags) to the korp POS-tagset."""
+
+    d = {'nn': ['NN'],
+         'av': ['JJ'],
+         'vb': ['VB'],
+         'pm': ['PM'],
+         'ab': ['AB'],
+         'in': ['IN'],
+         'pp': ['PP'],
+         'pn': ['PN'],
+         'sn': ['SN'],
+         'kn': ['KN'],
+         'ie': ['IE'],
+         'abh': ['AB'],
+         'avh': ['NN'],
+         'nnm': ['NN'],
+         'nna': ['NN'],
+         'avm': ['JJ'],
+         'ava': ['JJ'],
+         'vbm': ['VB'],
+         'pmm': ['PM'],
+         'abm': ['AB'],
+         'aba': ['AB'],
+         'pnm': ['PN'],
+         'inm': ['IN'],
+         'ppm': ['PP'],
+         'ppa': ['PP'],
+         'knm': ['KN'],
+         'kna': ['KN'],
+         'snm': ['SN'],
+         'nl': ['RG', 'RO'],
+         'nlm': ['RG', 'RO'],
+         'al': ['DT'],
+         'pma': ['PM'],
+         'vb': ['VB']
+         }
+
+    return d.get(tag, [])
