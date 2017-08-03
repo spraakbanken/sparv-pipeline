@@ -138,7 +138,7 @@ class XMLAnalyzer(HTMLParser):
         except ValueError:
             self.err("Closing element </%s>, but it is not open", name)
             return
-        
+
         name, start = self.tagstack.pop(ix)
         if ix > 0:
             overlaps = self.tagstack[:ix]
@@ -149,9 +149,12 @@ class XMLAnalyzer(HTMLParser):
     def handle_data(self, content):
         """Plain text data are tokenized and each 'token' is added to the text.
         """
-        if "&" in content: self.err("XML special character: &")
-        if "<" in content: self.err("XML special character: <")
-        if ">" in content: self.err("XML special character: >")
+        if "&" in content:
+            self.err("XML special character: &")
+        if "<" in content:
+            self.err("XML special character: <")
+        if ">" in content:
+            self.err("XML special character: >")
         for char in content:
             self.info['char']['freq'][char] += 1
             self.info['char']['files'][char].setdefault(self.corpus, self.getpos())
@@ -221,7 +224,7 @@ def strfiles(files):
     """
     if len(files) > 3:
         (filename, (line, col)) = files.items()[0]
-        return "%s:%d, (...and %d more files...)" % (filename, line, len(files)-1)
+        return "%s:%d, (...and %d more files...)" % (filename, line, len(files) - 1)
     else:
         return ", ".join(filename + ":" + str(line)
                          for (filename, (line, col)) in files.items())
@@ -238,19 +241,21 @@ def stat_chars(charinfo, maxcount, title="Characters"):
     """Statistics about the characters in the corpus.
     """
     chars = charinfo['freq']
-    if not chars: return
+    if not chars:
+        return
     print
     print "%-60sFiles" % title
     print "-" * 100
     for char, count in items_by_frequency(chars):
-        if 0 < maxcount < count: continue
+        if 0 < maxcount < count:
+            continue
         code = ord(char)
         files = strfiles(charinfo['files'][char])
-        char = "    CTRL" if is_control_code(code) else "("+char+")"
+        char = "    CTRL" if is_control_code(code) else "(" + char + ")"
         encoded = char.encode(util.UTF8)
         extra = len(encoded) - len(char)
         print ("%8d    U+%04X %5d       %-10s%s                   %s" %
-               (count, code, code, encoded, " "*extra, files))
+               (count, code, code, encoded, " " * extra, files))
     print
     if "&" in chars or "<" in chars or ">" in chars:
         print "NOTE: There are occurrences of & < > in the text"
@@ -262,7 +267,8 @@ def stat_entities(entinfo, maxcount, title="Entities"):
     """Statistics about the entities in the corpus.
     """
     entities = entinfo['freq']
-    if not entities: return
+    if not entities:
+        return
     print
     print "%-60sFiles" % title
     print "-" * 100
@@ -270,9 +276,10 @@ def stat_entities(entinfo, maxcount, title="Entities"):
     for name, count in items_by_frequency(entities):
         if problematic_entity(name):
             problematic.add(name)
-        if 0 < maxcount < count: continue
+        if 0 < maxcount < count:
+            continue
         files = strfiles(entinfo['files'][name])
-        print u"%8d    %-10s                                      %s" % (count, "&"+name+";", files)
+        print u"%8d    %-10s                                      %s" % (count, "&" + name + ";", files)
     print
     if problematic:
         print "NOTE: Control characters and unknown entities:", ", ".join(problematic)
@@ -284,22 +291,25 @@ def stat_tags(taginfo, maxcount, title="Tags"):
     """Statistics about the xml tags in the corpus.
     """
     tags = taginfo['freq']
-    if not tags: return
+    if not tags:
+        return
     print
     print "%-30s%-30sFiles" % (title, "Attributes")
     print "-" * 100
     for tag, count in items_by_frequency(tags):
-        if 0 < maxcount < count: continue
+        if 0 < maxcount < count:
+            continue
         attrs = " ".join(sorted(taginfo['attrs'][tag]))
         files = strfiles(taginfo['files'][tag])
-        print "%8d    %-18s%-30s%s" % (count, "<"+tag+">", attrs, files)
+        print "%8d    %-18s%-30s%s" % (count, "<" + tag + ">", attrs, files)
     print
 
 
 def stat_errors(warnings, errors):
     """Statistics about the errors and warnings.
     """
-    if not errors and not warnings: return
+    if not errors and not warnings:
+        return
     print
     print "   File                Warnings  Errors"
     print "-" * 100
@@ -439,12 +449,12 @@ sigmav  = 0x003C2,
 
 # HTML entities (from http://www.derose.net/steve/utilities/XMLUTILS/entityNameList)
 html_entities = {
-    
+
     "ebreve": 0x0115,
     "obreve": 0x014F,
     "ibreve": 0x012D,
-    
-    ############################### 0x00000 (ASCII/ISO 646) 
+
+    ############################### 0x00000 (ASCII/ISO 646)
     "excl": 0x00021,
     "quot": 0x00022,
     "num": 0x00023,
@@ -477,7 +487,7 @@ html_entities = {
     "verbar": 0x0007C,
     "rcub": 0x0007D,
     ############################### 0x00080 (Latin-1) (C1)
-    
+
     ############################### 0x000A0 (Latin-1) (G1)
     "nbsp": 0x000A0,
     "iexcl": 0x000A1,
@@ -495,7 +505,7 @@ html_entities = {
     "shy": 0x000AD,
     "reg": 0x000AE,
     "macr": 0x000AF,
-    
+
     "deg": 0x000B0,
     "plusmn": 0x000B1,
     "sup2": 0x000B2,
@@ -513,7 +523,7 @@ html_entities = {
     "half": 0x000BD,
     "frac34": 0x000BE,
     "iquest": 0x000BF,
-    
+
     "Agrave": 0x000C0,
     "Aacute": 0x000C1,
     "Acirc": 0x000C2,
@@ -530,7 +540,7 @@ html_entities = {
     "Iacute": 0x000CD,
     "Icirc": 0x000CE,
     "Iuml": 0x000CF,
-    
+
     "ETH": 0x000D0,
     "Ntilde": 0x000D1,
     "Ograve": 0x000D2,
@@ -547,7 +557,7 @@ html_entities = {
     "Yacute": 0x000DD,
     "THORN": 0x000DE,
     "szlig": 0x000DF,
-    
+
     "agrave": 0x000E0,
     "aacute": 0x000E1,
     "acirc": 0x000E2,
@@ -564,7 +574,7 @@ html_entities = {
     "iacute": 0x000ED,
     "icirc": 0x000EE,
     "iuml": 0x000EF,
-    
+
     "eth": 0x000F0,
     "ntilde": 0x000F1,
     "ograve": 0x000F2,
@@ -581,7 +591,7 @@ html_entities = {
     "yacute": 0x000FD,
     "thorn": 0x000FE,
     "yuml": 0x000FF,
-    
+
     ############################### 0x00100 Latin Extended-A (0x00100-0x0017F)
     "Amacr": 0x00100,
     "amacr": 0x00101,
@@ -599,7 +609,7 @@ html_entities = {
     "ccaron": 0x0010D,
     "Dcaron": 0x0010E,
     "dcaron": 0x0010F,
-    
+
     "Dstrok": 0x00110,
     "dstrok": 0x00111,
     "Emacr": 0x00112,
@@ -615,7 +625,7 @@ html_entities = {
     "gcirc": 0x0011D,
     "Gbreve": 0x0011E,
     "gbreve": 0x0011F,
-    
+
     "Gdot": 0x00120,
     "gdot": 0x00121,
     "Gcedil": 0x00122,
@@ -709,16 +719,16 @@ html_entities = {
     "zcaron": 0x0017E,
     "fnof": 0x00192,
     "gacute": 0x001F5,
-    
+
     ############################### 0x00180 Latin Extended-B (0x00180-0x0024F)
-    
-    
+
+
     ############################### 0x00200 Latin Extended-B (0x00180-0x0024F)
-    
-    
+
+
     ############################### 0x00250 IPA Extensions (0x00250-0x002AF)
     "epsiv": 0x0025B,
-    
+
     ############################### 0x002B0 Spacing Modifier Letters (0x002B0-0x002FF)
     "circ": 0x002C6,
     "caron": 0x002C7,
@@ -728,9 +738,9 @@ html_entities = {
     "ogon": 0x002DB,
     "tilde": 0x002DC,
     "dblac": 0x002DD,
-    
+
     ############################### 0x00300 Combining Diacritical Marks (0x00300-0x0036F)
-    
+
     ############################### 0x00370 Greek and Coptic (0x00370-0x003FF)
     "Aacgr": 0x00386,
     "Eacgr": 0x00388,
@@ -866,8 +876,8 @@ html_entities = {
     "kappav": 0x003F0,
     "rhov": 0x003F1,
     "bepsi": 0x003F6,
-    
-    ############################### 0x00400 Cyrillic 
+
+    ############################### 0x00400 Cyrillic
     "IOcy": 0x00401,
     "DJcy": 0x00402,
     "GJcy": 0x00403,
@@ -960,7 +970,7 @@ html_entities = {
     "kjcy": 0x0045C,
     "ubrcy": 0x0045E,
     "dzcy": 0x0045F,
-    
+
     ############################### 0x02000 General Punctuation (0x02000-0x0206F)
     "ensp": 0x02002,
     "emsp": 0x02003,
@@ -1010,15 +1020,15 @@ html_entities = {
     "frasl": 0x02044,
     "bsemi": 0x0204F,
     "qprime": 0x02057,
-    
+
     ############################### 0x02070 Superscripts and Subscripts (0x02070-0x0209F)
     ############################### 0x020A0 Currency Symbols (0x020A0-0x020CF)
     "euro": 0x020AC,
     "tdot": 0x020DB,
-    
-    ############################### 0x020D0 Combining Diacritical Marks for Symbols (0x020D0-0x020FF)    
+
+    ############################### 0x020D0 Combining Diacritical Marks for Symbols (0x020D0-0x020FF)
     "DotDot": 0x020DC,
-    
+
     ############################### 0x02100 Letterlike Symbols (0x02100-0x0214F)
     "Copf": 0x02102,
     "incare": 0x02105,
@@ -1068,7 +1078,7 @@ html_entities = {
     "beth": 0x02136,
     "gimel": 0x02137,
     "daleth": 0x02138,
-    
+
     ############################### 0x02150 Number Forms (0x02150-0x0218F)
     "frac13": 0x02153,
     "frac23": 0x02154,
@@ -1082,7 +1092,7 @@ html_entities = {
     "frac38": 0x0215C,
     "frac58": 0x0215D,
     "frac78": 0x0215E,
-    
+
     ############################### 0x02190 Arrows (0x02190-0x021FF)
     "larr": 0x02190,
     "uarr": 0x02191,
@@ -1163,7 +1173,7 @@ html_entities = {
     "loarr": 0x021FD,
     "roarr": 0x021FE,
     "hoarr": 0x021FF,
-    
+
     ############################### 0x02200 Mathematical Operators
     "forall": 0x02200,
     "comp": 0x02201,
@@ -1300,7 +1310,7 @@ html_entities = {
     "scE": 0x0227E,
     "scap": 0x0227F,
     "scsim": 0x0227F,
-    
+
     "npr": 0x02280,
     "nsc": 0x02281,
     "sub": 0x02282,
@@ -1440,8 +1450,8 @@ html_entities = {
     "nis": 0x022FC,
     "notnivc": 0x022FD,
     "notnivb": 0x022FE,
-    
-    ############################### 0x02300 Miscellaneous Technical 
+
+    ############################### 0x02300 Miscellaneous Technical
     "Barwed": 0x02306,
     "lceil": 0x02308,
     "rceil": 0x02309,
@@ -1474,15 +1484,15 @@ html_entities = {
     "rmoust": 0x023B1,
     "tbrk": 0x023B4,
     "bbrk": 0x023B5,
-    
-    ############################### 0x02400 Control Pictures (0x02400-0x0243F)  
+
+    ############################### 0x02400 Control Pictures (0x02400-0x0243F)
     "blank": 0x02423,
-    
-    ############################### 0x02440 Optical Character Recognition (0x02440-0x0245F) 
-    
+
+    ############################### 0x02440 Optical Character Recognition (0x02440-0x0245F)
+
     ############################### 0x02460 Enclosed Alphanumerics (0x02460-0x024FF)
     "oS": 0x024C8,
-    
+
     ############################### 0x02500 Box Drawing (0x02500-0x0257F)
     "boxh": 0x02500,
     "boxv": 0x02502,
@@ -1524,7 +1534,7 @@ html_entities = {
     "boxvH": 0x0256A,
     "boxVh": 0x0256B,
     "boxVH": 0x0256C,
-    
+
     ############################### 0x02580 Block Elements (0x02580-0x0259F)
     "uhblk": 0x02580,
     "lhblk": 0x02584,
@@ -1532,7 +1542,7 @@ html_entities = {
     "blk14": 0x02591,
     "blk12": 0x02592,
     "blk34": 0x02593,
-    
+
     ############################### 0x025A0 Geometric Shapes (0x025A0-0x025FF)7
     "squ": 0x025A1,
     "square": 0x025A1,
@@ -1557,7 +1567,7 @@ html_entities = {
     "ultri": 0x025F8,
     "urtri": 0x025F9,
     "lltri": 0x025FA,
-    
+
     ############################### 0x02600 Miscellaneous Symbols
     "starf": 0x02605,
     "phone": 0x0260E,
@@ -1571,19 +1581,19 @@ html_entities = {
     "flat": 0x0266D,
     "natur": 0x0266E,
     "sharp": 0x0266F,
-    
+
     ############################### 0x02700 Dingbats (0x02700-0x027BF)
     "check": 0x02713,
     "cross": 0x02717,
     "malt": 0x02720,
     "sext": 0x02736,
-    
+
     ############################### 0x027C0 Miscellaneous Mathematical Symbols-A (0x027C0-0x027EF)
-    
+
     ############################### 0x027F0 Supplemental Arrows-A (0x027F0-0x027FF)
-    
-    ############################### 0x02800 Braille Patterns 
-    
+
+    ############################### 0x02800 Braille Patterns
+
     ############################### 0x02900 Supplemental Arrows-B
     "Map": 0x02905,
     "lbarr": 0x0290C,
@@ -1649,7 +1659,7 @@ html_entities = {
     "rfisht": 0x0297D,
     "ufisht": 0x0297E,
     "dfisht": 0x0297F,
-    
+
     ############################### 0x02980 Miscellaneous Mathematical Symbols-B
     "lbrke": 0x0298B,
     "rbrke": 0x0298C,
@@ -1708,7 +1718,7 @@ html_entities = {
     "eqvparsl": 0x029E5,
     "lozf": 0x029EB,
     "dsol": 0x029F6,
-    
+
     ############################### 0x02A00
     "qint": 0x02A0C,
     "fpartint": 0x02A0D,
@@ -1862,7 +1872,7 @@ html_entities = {
     "topcir": 0x02AF1,
     "nhpar": 0x02AF2,
     "parsim": 0x02AF3,
-    
+
     ############################### 0x03000 CJK Symbols and Punctuation (0x03000-0x0303F)
     "Lang": 0x0300A,
     "Rang": 0x0300B,
@@ -1872,15 +1882,15 @@ html_entities = {
     "ropar": 0x03019,
     "lobrk": 0x0301A,
     "robrk": 0x0301B,
-    
+
     ############################### Hiragana (0x03040-0x0309F)
-    
+
     ############################### Katakana (0x030A0-0x030FF)
-    
+
     ############################### 0x0E000 Private Use Area
-    
+
     ############################### 0x0F000 Private Use Area
-    
+
     ############################### 0x0F500 Private Use Area
     "loang": 0x0F558,
     "roang": 0x0F559,
@@ -1892,16 +1902,16 @@ html_entities = {
     "xhArr": 0x0F57B,
     "xmap": 0x0F57D,
     "dzigrarr": 0x0F5A2,
-    
+
     ############################### 0x0F900 CJK Compatibility Ideographs (0x0F900-0x0FAFF)
-    
+
     ############################### 0x0FB00
     "fflig": 0x0FB00,
     "filig": 0x0FB01,
     "fllig": 0x0FB02,
     "ffilig": 0x0FB03,
     "ffllig": 0x0FB04,
-    
+
     ############################### 0x1D400 (Mathematical Alphanumeric Symbols)
     "Ascr": 0x1D49C,
     "Cscr": 0x1D49E,
@@ -1943,7 +1953,7 @@ html_entities = {
     "xscr": 0x1D4CD,
     "yscr": 0x1D4CE,
     "zscr": 0x1D4CF,
-    
+
     ############################### 0x1D500 Mathematical Alphanumeric Symbols
     "Afr": 0x1D504,
     "Bfr": 0x1D505,
@@ -2013,9 +2023,9 @@ html_entities = {
     "Xopf": 0x1D54F,
     "Yopf": 0x1D550,
     ############################### 0x1D600 Mathematical Alphanumeric Symbols
-    
+
     ############################### 0x1D700 Mathematical Alphanumeric Symbols
-    
+
     ############################### 0x1D800 (empty)
     }
 

@@ -1,7 +1,8 @@
 
-import sys
 from collections import defaultdict
 import util
+import sys
+import pprint
 
 
 def annotate(out_phrase_name, out_phrase_func, word, sentence, pos, msd, ref, dephead_ref, deprel):
@@ -28,7 +29,6 @@ def annotate(out_phrase_name, out_phrase_func, word, sentence, pos, msd, ref, de
         # Get PS tree
         sen = Sentence(tokenlist)
         if not sen.is_cyclic():
-            import sys, pprint
             print >>sys.stderr, pprint.pformat(convert_sentence(sen).top.to_tree_str())
             continue
             tree = convert_sentence(sen).top.to_tree_str()
@@ -74,7 +74,6 @@ def annotate(out_phrase_name, out_phrase_func, word, sentence, pos, msd, ref, de
     util.write_annotation(out_phrase_func, out_func_dict)
 
 
-import pprint
 def log(f):
     """
     Make a function write its input when called and output when finished.
@@ -89,6 +88,7 @@ def log(f):
     """
     import sys
     import functools
+
     @functools.wraps(f)
     def g(*args, **kws):
         call = f.__name__ + pprint.pformat(args + (kws, ))
@@ -99,7 +99,6 @@ def log(f):
     return g
 
 
-import pprint
 def log(f):
     """
     Make a function write its input when called and output when finished.
@@ -362,6 +361,7 @@ def convert_sentence(sen):
 def convert(token):
     """Recursively analyse the phrase structure of token."""
     children = [convert(c) for c in token.deps]
+
     def nonterminal(label):
         head = Terminal("HEAD", token)
         add_head(children, head)

@@ -2,7 +2,7 @@
 
 import re
 import os
-import codecs #, tempfile
+import codecs
 import util
 
 """
@@ -52,7 +52,7 @@ def maltparse(maltjar, model, out, word, pos, msd, sentence, encoding=util.UTF8,
         feats = re.sub(r"[ ,.]", "|", MSD[tok]).replace("+", "/")
         return TAG_SEP.join((str(nr), form, lemma, cpos, pos, feats))
 
-    stdin = SENT_SEP.join(TOK_SEP.join(conll_token(n+1, tok) for n, tok in enumerate(sent))
+    stdin = SENT_SEP.join(TOK_SEP.join(conll_token(n + 1, tok) for n, tok in enumerate(sent))
                           for sent in sentences)
 
     if encoding:
@@ -183,7 +183,7 @@ def write_conll_file(sentences, filename, encoding=util.UTF8):
                     pos = token.get('pos', '_')
                     cpos = token.get('cpos', pos)
                     feats = token.get('feats', token.get('msd', '_'))
-                    #feats = re.sub(r'[ ,.]', '|', feats)
+                    # feats = re.sub(r'[ ,.]', '|', feats)
                     cols = (nr, form, lemma, cpos, pos, feats)
                 else:
                     raise ValueError("Unknown token: %r" % token)

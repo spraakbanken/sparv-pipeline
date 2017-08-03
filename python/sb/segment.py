@@ -42,7 +42,7 @@ def do_segmentation(text, element, out, chunk, segmenter, existing_segments=None
     for c in chunk.split():
         CHUNK = util.read_annotation(c)
         positions = positions.union(set(anchor2pos[anchor] for edge in CHUNK
-                        for span in util.edgeSpans(edge) for anchor in span))
+                                    for span in util.edgeSpans(edge) for anchor in span))
     positions = sorted(set([0, len(corpus_text)]) | positions)
     chunk_spans = zip(positions, positions[1:])
 

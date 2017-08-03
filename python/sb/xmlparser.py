@@ -50,7 +50,7 @@ def parse(source, text, elements=[], annotations=[], skip=(), overlap=(), header
     if not header:
         header = "teiheader"
     header = header.split()
-    
+
     if fileid and fileids:
         FILEIDS = util.read_annotation(fileids)
         prefix = FILEIDS[fileid]
@@ -63,8 +63,8 @@ def parse(source, text, elements=[], annotations=[], skip=(), overlap=(), header
         return tag, attr
 
     elem_order = [(elsplit(elem), annotation)
-                            for elemgroup, annotation in zip(elements, annotations)
-                            for elem in elemgroup.split("+")]
+                  for elemgroup, annotation in zip(elements, annotations)
+                  for elem in elemgroup.split("+")]
 
     elem_annotations = {}
     for pair in elem_order:
@@ -134,7 +134,7 @@ class XMLParser(HTMLParser):
         """
         while self.tagstack:
             t, a, _ = self.tagstack[0]
-            if not t in self.autoclose:
+            if t not in self.autoclose:
                 util.log.error(self.pos() + "(at EOF) Autoclosing tag </%s>, starting at %s", t, a)
                 self.errors = True
             else:
@@ -172,7 +172,7 @@ class XMLParser(HTMLParser):
                     util.write_annotation(annot, db)
             for header, db in self.header_dbs.iteritems():
                 util.write_annotation(header, db)
-        
+
         HTMLParser.close(self)
 
     def anchor(self):
@@ -188,7 +188,7 @@ class XMLParser(HTMLParser):
             self.anchor2pos[anchor] = position
             self.anchor2line[anchor] = "(%d:%d)" % self.getpos()
         return anchor
-    
+
     def add_token(self, token):
         """Add a token to the text, creating anchors before and after.
         """
@@ -207,8 +207,8 @@ class XMLParser(HTMLParser):
         path = path + "." + name if path else name
         if path in self.header_elem or name in self.header_elem or self.inside_header:
             self.inside_header = True
-            #return
-        
+            # return
+
         elem_attrs = attrs + [("", "")]
         if not self.inside_header:
             # Check if we are skipping this element
@@ -253,7 +253,7 @@ class XMLParser(HTMLParser):
             return
 
         name, start, attrs = self.tagstack.pop(ix)
-        
+
         if self.inside_header:
             path = ".".join(tag[0] for tag in reversed(self.tagstack))
             path = path + "." + name if path else name
@@ -273,7 +273,7 @@ class XMLParser(HTMLParser):
                 overlapping_elems = ["<%s> [%s:]" % (t[0], self.anchor2line[t[1]]) for t in overlaps]
                 util.log.warning(self.pos() + "Tag <%s> [%s:%s], overlapping with %s",
                                  name, self.anchor2line[start], self.anchor2line[end], ", ".join(overlapping_elems))
-            
+
             if not ((start == end or (start < end and self.textbuffer[-1].strip() == "")) and name in self.skip_if_empty):
                 edge = util.mkEdge(name, (start, end))
                 for attr, value in attrs:
@@ -283,7 +283,7 @@ class XMLParser(HTMLParser):
                             self.dbs[annotation][edge] = value
                     except KeyError:
                         pass
-            
+
             if name in self.text_roots and not self.tagstack:
                 headedge = util.mkEdge("header", (start, end))
                 for headann, headval in self.header_temp.iteritems():
@@ -325,7 +325,7 @@ class XMLParser(HTMLParser):
             code = int(name[1:], 16)
         else:
             code = int(name)
-        
+
         if self.inside_header:
             element_path = ".".join(tag[0] for tag in reversed(self.tagstack))
             if (element_path, "TEXT") in self.head_annotations:
@@ -344,13 +344,13 @@ class XMLParser(HTMLParser):
             self.errors = True
             return
         code = html_entities[name]
-        
+
         if self.inside_header:
             element_path = ".".join(tag[0] for tag in reversed(self.tagstack))
             if (element_path, "TEXT") in self.head_annotations:
                 self.header_temp[self.head_annotations[(element_path, "TEXT")]] += unichr(code)
             return
-        
+
         self.add_token(unichr(code))
 
     def handle_comment(self, comment):

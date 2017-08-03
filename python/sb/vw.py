@@ -2,9 +2,7 @@
 
 import sb.util as util
 import sb.cwb as cwb
-from subprocess import Popen, PIPE
 import itertools as it
-from functools import wraps
 from collections import Counter, namedtuple, OrderedDict, defaultdict
 import sys
 import json
@@ -132,8 +130,8 @@ def train(file_list, outprefix,
      then N copies of: pos.
     """
 
-    modelfile=outprefix + '.model'
-    jsonfile=outprefix + '.model.json'
+    modelfile = outprefix + '.model'
+    jsonfile = outprefix + '.model.json'
 
     with open(file_list, 'r') as fp:
         files = fp.read().split()
@@ -157,7 +155,7 @@ def train(file_list, outprefix,
     index_to_label = {}
     answer = {}
     for i, (label, occurences) in enumerate(labels.iteritems(), start=1):
-        w = float(N)/occurences
+        w = float(N) / occurences
         util.log.info('%s: occurences: %s, weight: %s', label, occurences, w)
         answer[label] = ('%s:%s | ' % (i, w)).encode()
         label_to_index[label] = i
@@ -168,7 +166,6 @@ def train(file_list, outprefix,
         pprint(labels.most_common())
         print(json.dumps({l: l for l in labels}, indent=2))
         util.log.info('texts: %s, labels: %s', N, k)
-        import sys
         sys.exit()
 
     def itertexts():
@@ -189,6 +186,7 @@ def train(file_list, outprefix,
     # Performance evaluation
     args = ['--initial_regressor', modelfile]
     target = []
+
     def data():
         for text in every(10, itertexts()):
             target.append(label_to_index[text.label])
@@ -198,19 +196,19 @@ def train(file_list, outprefix,
 
     assert len(predicted) == len(target)
 
-    order = list(range(1, 1+k))
+    order = list(range(1, 1 + k))
     info = dict(
-        min_word_length = min_word_length,
-        banned_pos = banned_pos,
-        labels = [index_to_label[i] for i in order],
-        index_to_label = index_to_label,
-        label_to_index = label_to_index,
-        N_train = N - N_eval,
-        N_eval = N_eval,
-        stats = {index_to_label[i]: p.as_dict()
-                 for i, p in
-                 multiclass_performance(target, predicted).iteritems()},
-        confusion_matrix = confusion_matrix(target, predicted, order))
+        min_word_length=min_word_length,
+        banned_pos=banned_pos,
+        labels=[index_to_label[i] for i in order],
+        index_to_label=index_to_label,
+        label_to_index=label_to_index,
+        N_train=N - N_eval,
+        N_eval=N_eval,
+        stats={index_to_label[i]: p.as_dict()
+               for i, p in
+               multiclass_performance(target, predicted).iteritems()},
+        confusion_matrix=confusion_matrix(target, predicted, order))
     with open(jsonfile, 'w') as f:
         json.dump(info, f, sort_keys=True, indent=2)
     util.log.info('Wrote ' + jsonfile)
@@ -222,7 +220,7 @@ def make_testdata(corpus_desc='abcd abcd dcba cbad', docs=1000):
     """
     import random
     n_docs = int(docs)
-    make = lambda s: (s, triangulate(s))
+    # make = lambda s: (s, triangulate(s))
     corpuses = [(s, tuple(triangulate(s))) for s in corpus_desc.split()]
     for _ in range(n_docs):
         corpus, freq = random.choice(corpuses)
@@ -289,7 +287,7 @@ def vw_train(args, data):
     [(((1, 0.343459), (2, -0.343459)), 'abc_tag'),
      (((1, -0.334946), (2, 0.334946)), 'cde_tag')]
     """
-    tuple(_vw_run(args, data, False)) # force evaluation using tuple
+    tuple(_vw_run(args, data, False))  # force evaluation using tuple
 
 
 def vw_predict(args, data, raw=False):
@@ -339,16 +337,14 @@ def vw_normalize(s):
     return s.lower().translate(_escape_table).encode('utf-8')
 
 
-_escape_symbols = [
-    # Replace digits with X
-     (unicode(x), u'X') for x in range(10)
-    ] + map(tuple, (
-        # Vowpal Wabbit needs these to be escaped:
-        u' S', # separates features
-        u'|I', # separates namespaces
-        u':C'  # separates feature and its value
-    ))
-_escape_table={ord(k): v for k, v in _escape_symbols}
+# Replace digits with X
+_escape_symbols = [(unicode(x), u'X') for x in range(10)]
+# Vowpal Wabbit needs these to be escaped:
+_escape_symbols += [(u' ', u'S'),  # separates features
+                    (u'|', u'I'),  # separates namespaces
+                    (u':', u'C')]  # separates feature and its value
+
+_escape_table = {ord(k): v for k, v in _escape_symbols}
 
 
 ### Performance
@@ -361,8 +357,8 @@ class Performance(object):
 
         https://en.wikipedia.org/wiki/Precision_and_recall
         """
-        div = lambda x, y: 0.0 if y == 0 else float(x)/float(y)
-        harmonic_mean = lambda x, y: div(2*x*y, x+y)
+        div = lambda x, y: 0.0 if y == 0 else float(x) / float(y)
+        harmonic_mean = lambda x, y: div(2 * x * y, x + y)
         n = TP + TN + FP + FN
         self.ACC = div(TP + TN, n)
         self.PRE = div(TP, TP + FP)
@@ -393,10 +389,10 @@ def binary_performance(target, predicted):
     True
     """
     d = Counter(zip(target, predicted))
-    return Performance(TP = d[1, 1],
-                       TN = d[0, 0],
-                       FP = d[0, 1],
-                       FN = d[1, 0])
+    return Performance(TP=d[1, 1],
+                       TN=d[0, 0],
+                       FP=d[0, 1],
+                       FN=d[1, 0])
 
 
 def multiclass_performance(target, predicted):
@@ -409,7 +405,7 @@ def multiclass_performance(target, predicted):
      3: Performance(ACC=0.875, PRE=1.000, REC=0.500, PRF=0.667)}
     """
     return {
-        i: binary_performance((t==i for t in target), (p==i for p in predicted))
+        i: binary_performance((t == i for t in target), (p == i for p in predicted))
         for i in nub(it.chain(target, predicted))
     }
 
@@ -429,7 +425,7 @@ def confusion_matrix(target, predicted, order):
     """
 
     matrix = Counter(zip(target, predicted))
-    return [[ matrix.get((t, p), 0) for p in order ] for t in order]
+    return [[matrix.get((t, p), 0) for p in order] for t in order]
 
 
 ### Utility functions
@@ -447,7 +443,7 @@ def triangulate(xs):
     []
     """
     for i, _ in enumerate(xs):
-        for x in xs[:i+1]:
+        for x in xs[:i + 1]:
             yield x
 
 
@@ -463,7 +459,7 @@ def interleave(xs, k):
     >>> interleave('abcdABCD1234', 3)
     [('a', 'A', '1'), ('b', 'B', '2'), ('c', 'C', '3'), ('d', 'D', '4')]
     """
-    ts = [[] for _ in range(len(xs)/k)]
+    ts = [[] for _ in range(len(xs) / k)]
     ts_iter = it.cycle(ts)
     for x in xs:
         next(ts_iter).append(x)
@@ -480,7 +476,7 @@ def every(sep, generator, invert=False):
     'Dan Malin Martin Anne'
     """
     for i, x in enumerate(generator):
-        if ((i+1) % sep == 0) != invert:
+        if ((i + 1) % sep == 0) != invert:
             yield x
 
 

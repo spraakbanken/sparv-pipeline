@@ -17,7 +17,7 @@ def align_texts(word1, word2, linktok1, linktok2, link1, link2, linkref2, out_wo
     LINKREF2 = util.read_annotation(linkref2)
     WORD1 = util.read_annotation(word1)
     WORD2 = util.read_annotation(word2)
-    
+
     text1, text2 = make_sent_aligned_text(WORD1, WORD2, linktok1, linktok2, link1, link2, out_sentences)
     indices = word_align(out_sentences, outindex1, outindex2)
 
@@ -81,13 +81,13 @@ def word_align(sentencefile, indexfile1, indexfile2):
 
 
 # def inspect_results(inspect, WORD1, WORD2, linktok1, linktok2, link1, link2, OUT_WORDLINK, delimiter):
-#     """Create a word aligned text file ("inspection.txt") for 
+#     """Create a word aligned text file ("inspection.txt") for
 #     manual inspection of the word alignment result."""
 #     LINKTOK1 = util.read_annotation(linktok1)
 #     LINKTOK2 = util.read_annotation(linktok2)
 #     REVERSED_LINK1 = {v:k for k, v in util.read_annotation(link1).items()}
 #     REVERSED_LINK2 = {v:k for k, v in util.read_annotation(link2).items()}
-    
+
 #     inspection = open(inspect, 'wb')
 #     for link in util.read_annotation(link1).values():
 #         if link in REVERSED_LINK2:

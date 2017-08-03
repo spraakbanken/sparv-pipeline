@@ -12,7 +12,7 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
 
     SENTID = util.read_annotation(sentence_id)
     sentences = [(SENTID[key], sent.split()) for key, sent in util.read_annotation_iteritems(sentence) if key]
-    #sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
+    # sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
     WORD = util.read_annotation(word)
     POS = util.read_annotation(pos)
     LEM = util.read_annotation(lemgram)
@@ -20,7 +20,7 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
     DEPREL = util.read_annotation(deprel)
     REF = util.read_annotation(ref)
     BF = util.read_annotation(baseform)  # Used for "depextra"
-    
+
     # http://stp.ling.uu.se/~nivre/swedish_treebank/dep.html
     # Tuples with relations (head, rel, dep) to be found (with indexes) and an optional tuple specifying which info should be stored and how
     rels = [
@@ -38,13 +38,13 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
     null_rels = [
         ("VB", ["OO"]),  # Verb som saknar objekt
     ]
-    
+
     triples = []
-    
+
     for sentid, sent in sentences:
         incomplete = {}  # Tokens looking for heads, with head as key
         tokens = {}   # Tokens in same sentence, with token_id as key
-        
+
         # Link the tokens together
         for token_id in sent:
             token_pos = POS[token_id]
@@ -57,11 +57,11 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
 
             if token_lem == "|":
                 token_lem = token_word
-            
+
             this = {"pos": token_pos, "lemgram": token_lem, "word": token_word, "head": None, "dep": [], "ref": token_ref, "bf": token_bf}
-            
+
             tokens[token_id] = this
-            
+
             if not token_dh == "-":
                 # This token is looking for a head (token is not root)
                 dep_triple = (token_dr, this)
@@ -71,7 +71,7 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
                     tokens[token_dh]["dep"].append(dep_triple)
                 else:
                     incomplete.setdefault(token_dh, []).append((token_id, dep_triple))
-            
+
             # Is someone else looking for the current token as head?
             if token_id in incomplete:
                 for t in incomplete[token_id]:
@@ -80,10 +80,10 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
                 del incomplete[token_id]
 
         assert not incomplete, "incomplete is not empty"
-                
+
         def _match(pattern, value):
             return bool(re.match(r"^%s$" % pattern, value))
-        
+
         def _findrel(head, rel, dep):
             result = []
             if isinstance(head, dict):
@@ -95,7 +95,7 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
                 if h and _match(rel, h[0]) and _match(head, h[1]["pos"]):
                         result.append(h[1])
             return result
-        
+
         # Look for relations
         for v in tokens.itervalues():
             for d in v["dep"]:
@@ -106,7 +106,7 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
                         if len(rel) == 1:
                             triple = ((v["lemgram"], v["word"], v["pos"], v["ref"]), d[0], (d[1]["lemgram"], d[1]["word"], d[1]["pos"], d[1]["ref"]), ("", None), sentid, v["ref"], d[1]["ref"])
                         else:
-                            lookup = dict( zip( map(str, sorted(r.keys())), (v, d[0], d[1]) ) )
+                            lookup = dict(zip(map(str, sorted(r.keys())), (v, d[0], d[1])))
                             i = set(rel[0].keys()).intersection(set(rel[1].keys())).pop()
                             rel2 = [x[1] for x in sorted(rel[1].items())]
                             index1 = rel[0].keys().index(i)
@@ -114,12 +114,12 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
                             if index1 == 2 and index2 == 0:
                                 result = _findrel(d[1], rel2[1], rel2[2])
                                 if result:
-                                    lookup.update( dict( zip( map(str, sorted(rel[1].keys())), (d[1], rel2[1], result[0])) ) )
+                                    lookup.update(dict(zip(map(str, sorted(rel[1].keys())), (d[1], rel2[1], result[0]))))
                             elif index1 == 0 and index2 == 0:
                                 result = _findrel(v, rel2[1], rel2[2])
                                 if result:
-                                    lookup.update( dict( zip( map(str, sorted(rel[1].keys())), (v, rel2[1], result[0])) ) )
-                            
+                                    lookup.update(dict(zip(map(str, sorted(rel[1].keys())), (v, rel2[1], result[0]))))
+
                             pp = rel[-1]
                             if len(lookup.keys()) > 3:
                                 lookup_bf = dict((key, val["bf"]) for key, val in lookup.iteritems() if isinstance(val, dict))
@@ -150,20 +150,20 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
 def _mutate_triple(triple):
     """ Split |head1|head2|...| REL |dep1|dep2|...| into several separate relations.
     Also remove multi-words which are in both head and dep, and remove the :nn part from words. """
-    
+
     head, rel, dep, extra, sentid, refhead, refdep = triple
 
     triples = []
     is_lemgrams = {}
     parts = {"head": head, "dep": dep}
-    
+
     for part, val in parts.items():
         if val[0].startswith("|") and val[0].endswith("|"):
             parts[part] = [w[:w.find(":")] if ":" in w else w for w in val[0].split("|") if w]
             is_lemgrams[part] = True
         else:
             parts[part] = [val[0]]
-    
+
     def _remove_doubles(a, b):
         """ Remove multi-words which are in both. """
         if a in is_lemgrams and b in is_lemgrams:
@@ -171,11 +171,11 @@ def _mutate_triple(triple):
             for double in doubles:
                 parts[a].remove(double)
                 parts[b].remove(double)
-    
+
     _remove_doubles("head", "dep")
-    #_remove_doubles("extra", "dep")
-    #_remove_doubles("head", "extra")
-    
+    # _remove_doubles("extra", "dep")
+    # _remove_doubles("head", "extra")
+
     # Remove multiword deps for words that are already in "extra"
     if extra[1] and dep[0].startswith("|") and dep[0].endswith("|"):
         dep_multi = [dm for dm in dep[0].split("|") if ":" in dm]
@@ -186,13 +186,13 @@ def _mutate_triple(triple):
                     parts["dep"].remove(w)
                 except:
                     pass
-    
+
     if extra[0].startswith("|") and extra[0].endswith("|"):
         extra = [e for e in sorted([x for x in extra[0].split("|") if x], key=len)]
         extra = extra[0] if extra else ""
     else:
         extra = extra[0]
-    
+
     for new_head in parts["head"]:
         for new_dep in parts["dep"]:
             # head: lemgram, dep: lemgram
@@ -270,7 +270,7 @@ def frequency(corpus, db_name, out, source="", source_list="", split=False):
             dep_rel_count = defaultdict(int)    # Frequency of (rel, dep)
 
         REL = util.read_annotation(s)
-        basename = s.rsplit(".", 1)[0]
+        # basename = s.rsplit(".", 1)[0]
 
         for _, triple in REL.iteritems():
             head, headpos, rel, dep, deppos, extra, sid, refh, refd, bfhead, bfdep, wfhead, wfdep = triple.split(u"\t")
@@ -326,10 +326,10 @@ def frequency(corpus, db_name, out, source="", source_list="", split=False):
     write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_name, db_table, split, first=(file_count == 1), last=True)
 
     util.log.info("Done creating SQL files")
-    
+
 
 def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, sql_file, db_name, db_table, split=False, first=False, last=False):
-    
+
     temp_db_table = "temp_" + db_table
     update_freq = "ON DUPLICATE KEY UPDATE freq = freq + VALUES(freq)" if split else ""
 
@@ -350,9 +350,9 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
         mysql.disable_keys(temp_db_table, temp_db_table + "_strings", temp_db_table + "_rel", temp_db_table + "_head_rel", temp_db_table + "_dep_rel", temp_db_table + "_sentences")
         mysql.disable_checks()
         mysql.set_names()
-    
+
     rows = []
-    
+
     for string, index in strings.iteritems():
         if len(string) == 3:
             string, pos, stringextra = string
@@ -367,9 +367,9 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
             "stringextra": stringextra,
             "pos": pos}
         rows.append(row)
-    
+
     mysql.add_row(temp_db_table + "_strings", rows, "")
-    
+
     sentence_rows = []
     rows = []
     for head, rels in freq.iteritems():
@@ -391,14 +391,14 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
                 rows.append(row)
 
     mysql.add_row(temp_db_table, rows, update_freq)
-    
+
     rows = []
     for rel, freq in rel_count.iteritems():
         row = {
             "rel": rel,
             "freq": freq}
         rows.append(row)
-    
+
     mysql.add_row(temp_db_table + "_rel", rows, update_freq)
 
     rows = []
@@ -409,7 +409,7 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
             "rel": rel,
             "freq": freq}
         rows.append(row)
-    
+
     mysql.add_row(temp_db_table + "_head_rel", rows, update_freq)
 
     rows = []
@@ -420,7 +420,7 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
             "rel": rel,
             "freq": freq}
         rows.append(row)
-    
+
     mysql.add_row(temp_db_table + "_dep_rel", rows, update_freq)
 
     for index, sentenceset in sentences.iteritems():
@@ -450,7 +450,7 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
         mysql.enable_checks()
 
     util.log.info("%s written", sql_file)
-    
+
 ################################################################################
 
 # Names of every possible relation in the resulting database
@@ -476,7 +476,7 @@ MYSQL_RELATIONS = {'columns': [
                    'constraints': [("UNIQUE INDEX", "relation", ("head", "rel", "dep"))],
                    'default charset': 'utf8',
                    'row_format': 'compressed'
-                   #'collate': 'utf8_bin'
+                   # 'collate': 'utf8_bin'
                    }
 
 MYSQL_STRINGS = {'columns': [
@@ -536,7 +536,7 @@ MYSQL_SENTENCES = {'columns': [
                    'collate': 'utf8_bin',
                    'row_format': 'compressed'
                    }
-################################################################################    
+################################################################################
 
 if __name__ == '__main__':
     util.run.main(relations, frequency=frequency)

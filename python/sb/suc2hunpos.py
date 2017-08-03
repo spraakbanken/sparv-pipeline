@@ -10,14 +10,14 @@ def suc2hunpos(out, msd, sentences, word):
     WORD = util.read_annotation(word)
     MSD = util.read_annotation(msd)
     sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentences)]
-    
+
     OUT = []
-    
+
     for sentence in sentences:
         for tokid in sentence:
             OUT.append((WORD[tokid], MSD[tokid]))
         OUT.append(("", ""))
-    
+
     write_hunsource(out, OUT)
 
 

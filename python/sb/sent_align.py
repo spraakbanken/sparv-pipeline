@@ -9,7 +9,7 @@ def align_texts(sentence1, sentence2, link1, link2, sent_parents1, sent_parents2
     - sentence1 and sentence2 contain information about which word-IDs there are in each sentence
     - link1 and link2 are existing annotations for the link IDs in the two texts
     - linkref2 is the existing annotation for the linkref IDs in text 2
-    - sent_parents1 and sent_parents2 contain information about which sentences there are in each of the old sentence links 
+    - sent_parents1 and sent_parents2 contain information about which sentences there are in each of the old sentence links
     - out_sentlink1 and out_sentlink2, are the resulting annotations for the new sentence links
     """
 
@@ -62,7 +62,7 @@ def align_texts(sentence1, sentence2, link1, link2, sent_parents1, sent_parents2
 # available at https://code.google.com/p/gachalign/
 # code license: GNU GPL v3
 
-BEAD_COSTS = {(1, 1): 0, (2, 1): 230, (1, 2): 230, (0, 1): 450, 
+BEAD_COSTS = {(1, 1): 0, (2, 1): 230, (1, 2): 230, (0, 1): 450,
               (1, 0): 450, (2, 2): 440}
 
 
@@ -79,8 +79,8 @@ def gachalign(text1, text2, mean=1.0, variance=6.8, bc=BEAD_COSTS):
 
 
 def align(t1, t2, mean_xy, variance_xy, bead_costs):
-    """ The minimization function to choose the sentence pair with 
-    cheapest alignment cost. 
+    """ The minimization function to choose the sentence pair with
+    cheapest alignment cost.
     """
     m = {}
     for i in range(len(t1) + 1):
@@ -111,7 +111,7 @@ def length_cost(sx, sy, mean_xy, variance_xy):
     delta = (l2-l1*c)/math.sqrt((l1+l2*c)/2 * s2)
     substituting c = 1 and c = l2/l1, gives the original cost function."""
     lx, ly = sum(sx), sum(sy)
-    m = (lx + ly * mean_xy) / 2 
+    m = (lx + ly * mean_xy) / 2
     try:
         delta = (lx - ly * mean_xy) / math.sqrt(m * variance_xy)
     except ZeroDivisionError:

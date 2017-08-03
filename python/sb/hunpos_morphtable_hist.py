@@ -11,7 +11,7 @@ SALDO_TO_SUC['nl invar'] = {'NL.NOM'}
 
 
 def make_table(out, files, saldosuc_morphtable):
-    """ Read files and make a morphtable of the information in them 
+    """ Read files and make a morphtable of the information in them
     together with the information from SALDO (saldosuc_morphtable).
     Used by SB_MODELS/Makefile
     - out specifies the resulting morphtable file to be written
@@ -28,7 +28,7 @@ def make_table(out, files, saldosuc_morphtable):
                 continue
             xs = line.split('\t')
             word, msd = xs[0].strip(), xs[1].strip()
-            if ' ' in word:   
+            if ' ' in word:
                 if msd.startswith('nn'):  # We assume that the head of a noun mwe is the last word
                     word = word.split()[-1]
                 if msd.startswith('vb'):  # We assume that the head of a verbal mwe is the first word
@@ -43,7 +43,7 @@ def make_table(out, files, saldosuc_morphtable):
                 words.setdefault(word.title(), set()).update(suc)
     with codecs.open(out, encoding="UTF-8", mode="w") as out:
         for w, ts in words.items():
-            line = ('\t'.join([w]+list(ts)) + "\n")
+            line = ('\t'.join([w] + list(ts)) + "\n")
             out.write(line)
 
 
@@ -56,34 +56,34 @@ def read_saldosuc(words, saldosuc_morphtable):
 def force_parse(msd):
     # This is a modifcation of _make_saldo_to_suc in utils.tagsets.py
     params = msd.split()
-    
-    #try ignoring gender, m/f => u
+
+    # try ignoring gender, m/f => u
     for i, param in enumerate(params):
         if param.strip() in ['m', 'f']:
             params[i] = 'u'
     new_suc = SALDO_TO_SUC.get(' '.join(params), '')
-    
+
     if new_suc:
-        #print 'Add translation', msd,new_suc
+        # print 'Add translation', msd,new_suc
         SALDO_TO_SUC[msd] = new_suc
         return new_suc
-    
+
     # try changing place: nn sg n indef nom => nn n sg indef nom
     if params[0] == 'nn':
         new_suc = SALDO_TO_SUC.get(' '.join([params[0], params[2], params[1], params[3], params[4]]), '')
-       
+
     if new_suc:
-        #print 'Add translation', msd,new_suc
+        # print 'Add translation', msd,new_suc
         SALDO_TO_SUC[msd] = new_suc
         return new_suc
-    
+
     # try adding case info: av pos def pl => av pos def pl nom/gen
     if params[0] == 'av':
         new_suc = SALDO_TO_SUC.get(' '.join(params + ['nom']), set())
         new_suc.update(SALDO_TO_SUC.get(' '.join(params + ['gen']), set()))
-       
+
     if new_suc:
-        #print 'Add translation', msd,new_suc
+        # print 'Add translation', msd,new_suc
         SALDO_TO_SUC[msd] = new_suc
         return new_suc
 
@@ -98,7 +98,7 @@ def force_parse(msd):
     new_suc = set(suctag for suctag in util.tagsets.suc_tags if re.match(sucfilter, suctag))
     SALDO_TO_SUC[msd] = new_suc
     return new_suc
-    
+
 
 if __name__ == "__main__":
     util.run.main(make_table)

@@ -30,7 +30,7 @@ def make_morphtable(out, saldo_model, suc, morphtable_base="", morphtable_patter
             # Only use MSD not containing "-"
             for w in words:
                 for msd in w[1]:
-                    if not "-" in msd:
+                    if "-" not in msd:
                         tags[word].add(msd)
                         if add_capitalized:
                             # Add a capitalized form of the word

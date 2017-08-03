@@ -2,8 +2,8 @@
 
 __all__ = [
     'annotate',
-    'compound',
     'compound_simple',
+    'compound',
     'cwb',
     'dateformat',
     'fileid',

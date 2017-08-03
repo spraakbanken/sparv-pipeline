@@ -27,7 +27,7 @@ def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset
           the tool used for text annotation cannot handle this at all
     """
     annotation_elements = annotation_elements.split()
-    #assert annotation_element in ("writtenForm lemgram") "Invalid annotation element"
+    # assert annotation_element in ("writtenForm lemgram") "Invalid annotation element"
     import xml.etree.cElementTree as cet
     if verbose:
         util.log.info("Reading XML lexicon")
@@ -102,7 +102,7 @@ def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset
 
 
 def convert_default(pos, inh, param, tagmap):
-    saldotag = ' '.join(([pos]+inh+[param]))
+    saldotag = ' '.join(([pos] + inh + [param]))
     tags = tagmap.get(saldotag)
     if tags:
         return tags

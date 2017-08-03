@@ -11,33 +11,33 @@ CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 
 def make_index(corpus, out, db_name, attributes=["lex", "prefix", "suffix"]):
-    
+
     if isinstance(attributes, basestring):
         attributes = attributes.split()
 
     attribute_fields = {"lex": "freq", "prefix": "freq_prefix", "suffix": "freq_suffix"}
-    
+
     corpus = corpus.upper()
     index = count_lemgrams(corpus, attributes)
-    
+
     mysql = MySQL(db_name, encoding=util.UTF8, output=out)
     mysql.create_table(MYSQL_TABLE, drop=False, **MYSQL_INDEX)
     mysql.delete_rows(MYSQL_TABLE, {"corpus": corpus})
     mysql.set_names()
-    
+
     rows = []
     for lemgram, freq in index.items():
         row = {"lemgram": lemgram,
                "corpus": corpus
                }
-        
+
         for i, attr in enumerate(attributes):
             row[attribute_fields[attr]] = freq[i]
-        
+
         for attr in attribute_fields:
-            if not attr in attributes:
+            if attr not in attributes:
                 row[attribute_fields[attr]] = 0
-            
+
         rows.append(row)
 
     util.log.info("Creating SQL")
@@ -45,7 +45,7 @@ def make_index(corpus, out, db_name, attributes=["lex", "prefix", "suffix"]):
 
 
 def count_lemgrams(corpus, attributes):
-    
+
     util.log.info("Reading corpus")
     result = {}
     process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-r", CORPUS_REGISTRY, corpus] + attributes, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -60,11 +60,11 @@ def count_lemgrams(corpus, attributes):
         temp = line.split("\t")
         freq = int(temp[0])
         for i in range(len(temp) - 1):
-            for value in temp[i+1].split("|"):
-                if value and not ":" in value:
+            for value in temp[i + 1].split("|"):
+                if value and ":" not in value:
                     result.setdefault(value, [0] * len(attributes))
                     result[value][i] += freq
-    
+
     return result
 
 ################################################################################

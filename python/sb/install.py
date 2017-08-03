@@ -19,10 +19,10 @@ def install_corpus(host, master, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY, 
     else:
         target = os.path.join(target_datadir, master) if target_datadir else None
         util.system.rsync(os.path.join(datadir, master), host, target)
-        
+
         target_registry_file = os.path.join(target_registry, master) if target_registry else os.path.join(registry, master)
         source_registry_file = os.path.join(registry, master + ".tmp") if target_registry else os.path.join(registry, master)
-        
+
         if target_registry:
             # Fix absolute paths in registry file
             with open(os.path.join(registry, master), "r") as registry_in:
@@ -32,9 +32,9 @@ def install_corpus(host, master, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY, 
                             line = re.sub(r"HOME .*(\/.+)", r"HOME " + target_datadir + r"\1", line)
                         elif line.startswith("INFO"):
                             line = re.sub(r"INFO .*(\/.+)\/\.info", r"INFO " + target_datadir + r"\1/.info", line)
-                        
+
                         registry_out.write(line)
-        
+
         util.system.rsync(source_registry_file, host, target_registry_file)
         if target_registry:
             os.remove(os.path.join(registry, master + ".tmp"))
@@ -62,11 +62,11 @@ def install_mysql(host, db_name, sqlfile):
     Inserts tables and data from local SQL-file to remote MySQL database.
     sqlfile may be a whitespace separated list of SQL-files.
     """
-    
+
     sqlfiles = sqlfile.split()
     file_count = 0
     file_total = len(sqlfiles)
-    
+
     for sqlf in sqlfiles:
         file_count += 1
         if not os.path.exists(sqlf):

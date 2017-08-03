@@ -84,17 +84,17 @@ def parse_swener_output(sentences, output, out_ne_ex, out_ne_type, out_ne_subtyp
         i = 0
         previous_end = 0
         children = list(root.iter())
-        
+
         try:
-    
+
             for count, child in enumerate(children):
                 start_id = util.edgeStart(sent[i])
                 start_i = i
-    
+
                 # If current child has text, increase token counter
                 if child.text:
                     i += len(child.text.strip().split(TOK_SEP))
-    
+
                     # Extract NE tags and save them in dictionaries
                     if child.tag != "sroot":
                         if start_i < previous_end:
@@ -107,17 +107,17 @@ def parse_swener_output(sentences, output, out_ne_ex, out_ne_type, out_ne_subtyp
                             out_type_dict[edge] = child.get("TYPE")
                             out_subtype_dict[edge] = child.get("SBT")
                             out_name_dict[edge] = child.text
-    
+
                         # If this child has a tail and it doesn't start with a space, or if it has no tail at all despite not being the last child,
                         # it means this NE ends in the middle of a token.
                         if (child.tail and child.tail.strip() and not child.tail[0] == " ") or (not child.tail and count < len(children) - 1):
                             i -= 1
                             util.log.warning("Split token returned by name tagger.")
-    
+
                 # If current child has text in the tail, increase token counter
                 if child.tail and child.tail.strip():
                     i += len(child.tail.strip().split(TOK_SEP))
-    
+
                 if (child.tag == "sroot" and child.text and not child.text[-1] == " ") or (child.tail and not child.tail[-1] == " "):
                     # The next NE would start in the middle of a token, so decrease the counter by 1
                     i -= 1

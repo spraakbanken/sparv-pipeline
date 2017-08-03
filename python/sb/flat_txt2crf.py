@@ -6,10 +6,10 @@ vowels = frozenset(u'aeiouvöäåy')
 
 def features((word, lookslikeanumber), tag):
     return (word.lower(),
-             'CAP' if word[0].isupper() else 'NOCAP',
-             word.lower()[-2:],
-             'NUMLIKE' if lookslikeanumber else 'PNCLIKE' if word in punctuation else 'WRDLIKE',
-             tag)
+            'CAP' if word[0].isupper() else 'NOCAP',
+            word.lower()[-2:],
+            'NUMLIKE' if lookslikeanumber else 'PNCLIKE' if word in punctuation else 'WRDLIKE',
+            tag)
 
 
 def thousands(w):
@@ -73,7 +73,7 @@ def lookslikeanumber(w):
     return lookslikearomananumber(w) or lookslikeanarabicnumber(w)
 
 
-# NB! normalize does a [jJ] -> [iI] conversion first... 
+# NB! normalize does a [jJ] -> [iI] conversion first...
 twonormdict = dict([(u'AA', u'A'), (u'Aa', u'A'), (u'aa', u'a'),
                     (u'EE', u'E'), (u'Ee', u'E'), (u'ee', u'e'),
                     (u'II', u'I'), (u'Ii', u'I'), (u'ii', u'i'),
@@ -81,23 +81,23 @@ twonormdict = dict([(u'AA', u'A'), (u'Aa', u'A'), (u'aa', u'a'),
                     (u'UU', u'V'), (u'Uu', u'V'), (u'uu', u'v'),
                     (u'WW', u'V'), (u'Ww', u'V'), (u'ww', u'v'),
                     (u'ÖÖ', u'Ö'), (u'Öö', u'Ö'), (u'öö', u'ö'),
-                    (u'ÄÄ', u'Ä'), (u'Ää', u'Ä'), (u'ää', u'ä'), 
+                    (u'ÄÄ', u'Ä'), (u'Ää', u'Ä'), (u'ää', u'ä'),
                     (u'ÅÅ', u'a'), (u'Åå', u'a'), (u'åå', u'a'),
                     (u'YY', u'Y'), (u'Yy', u'Y'), (u'yy', u'y'),
                     (u'ØØ', u'Ö'), (u'Øø', u'Ö'), (u'øø', u'ö'),
                     (u'ÆÆ', u'Ä'), (u'Ææ', u'Ä'), (u'ææ', u'ä'),
-                    (u'TH', u'T'), (u'Th', u'T'), (u'th', u't'),  
+                    (u'TH', u'T'), (u'Th', u'T'), (u'th', u't'),
                     (u'DH', u'D'), (u'Dh', u'D'), (u'dh', u'd'),
                     (u'GH', u'G'), (u'Gh', u'G'), (u'gh', u'g'),
                     (u'FF', u'F'), (u'Ff', u'F'), (u'ff', u'f'),
                     (u'ch', u'k')])
 
-onenormdict = dict([(u'Ø', u'Ö'), (u'ø', u'ö'), 
-                    (u'Æ', u'Ä'), (u'æ', u'ä'), 
+onenormdict = dict([(u'Ø', u'Ö'), (u'ø', u'ö'),
+                    (u'Æ', u'Ä'), (u'æ', u'ä'),
                     (u'Å', u'a'), (u'å', u'a'),
-                    (u'W', u'V'), (u'w', u'v'), 
+                    (u'W', u'V'), (u'w', u'v'),
                     (u'U', u'V'), (u'u', u'v'),
-                    (u'C', u'K'), (u'c', u'k'), 
+                    (u'C', u'K'), (u'c', u'k'),
                     (u'Q', u'K'), (u'q', u'k'),
                     (u'Þ', u'D'), (u'þ', u'd'),
                     (u'Ð', u'D'), (u'ð', u'd')])
@@ -111,18 +111,18 @@ def normalize(word):
         normword = []
         i = 0
         while i < len(word):
-            if word[i:i+2] in twonormdict:
-                normword.append(twonormdict[word[i:i+2]])
-                i += 2 
+            if word[i:i + 2] in twonormdict:
+                normword.append(twonormdict[word[i:i + 2]])
+                i += 2
             elif word[i] in onenormdict:
                 normword.append(onenormdict[word[i]])
                 i += 1
             else:
                 normword.append(word[i])
                 i += 1
-        
+
         return ''.join(normword), 0
-                   
+
 
 def main(stream):
     newdiv = 1
@@ -147,7 +147,7 @@ def main(stream):
             print '\t'.join((next(raws),) + l_features(words[0], u'SNG') + ('id', '52'))
             newdiv = 0
         else:
-            lastword = words.pop() 
+            lastword = words.pop()
             words = iter(words)
             for i, w in enumerate(words):
                 print '\t'.join((next(raws), ) + l_features(w, u'LF%s' % (i,)) + ('id', '53'))
@@ -158,11 +158,8 @@ def main(stream):
                 print '\t'.join((next(raws),) + l_features(w, u'MID') + ('id', '54'))
 
             print '\t'.join((next(raws),) + l_features(lastword, u'RHT') + ('id', '54'))
-            
+
             newdiv = 0
 
     if not newdiv:
-        print 
-
-#sys.stdout = codecs.getwriter('utf8')(sys.stdout)
-#main(codecs.getreader('utf8')(sys.stdin))
+        print

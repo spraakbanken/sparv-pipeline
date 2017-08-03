@@ -39,7 +39,8 @@ def msdtag(model, out, word, sentence, tag_mapping=None, morphtable=None, patter
     stdin = SENT_SEP.join(TOK_SEP.join(replace_word(WORD[tokid]) for tokid in sent)
                           for sent in sentences)
     args = [model]
-    if morphtable: args.extend(["-m", morphtable])
+    if morphtable:
+        args.extend(["-m", morphtable])
     stdout, _ = util.system.call_binary("hunpos-tag", args, stdin, encoding=encoding, verbose=True)
 
     OUT = {}

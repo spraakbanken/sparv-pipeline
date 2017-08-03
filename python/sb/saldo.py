@@ -373,7 +373,7 @@ class SaldoLexicon(object):
 
 def _join_annotation(annotation, delimiter, affix):
     seen = set()
-    return dict([(a, affix + delimiter.join(b for b in annotation[a] if not b in seen and not seen.add(b)) + affix) for a in annotation])
+    return dict([(a, affix + delimiter.join(b for b in annotation[a] if b not in seen and not seen.add(b)) + affix) for a in annotation])
 
 # The minimun precision difference for two annotations to be considered equal
 PRECISION_DIFF = 0.01
@@ -395,7 +395,7 @@ def get_precision(msd, msdtags):
 def normalize_precision(annotations):
     """Normalize the rankings in the annotation list so that the sum is 1."""
     total_precision = sum(prec for (prec, _annotation, prefix) in annotations)
-    return [(prec/total_precision, annotation, prefix) for (prec, annotation, prefix) in annotations]
+    return [(prec / total_precision, annotation, prefix) for (prec, annotation, prefix) in annotations]
 
 
 # Delimiters that hopefully are never found in an annotation or in a POS tag:
@@ -407,7 +407,7 @@ PART_DELIM3 = "^3"
 
 def _split_triple(annotation_tag_words):
     annotation, tags, words, gap_allowed, particle = annotation_tag_words.split(PART_DELIM1)
-    #annotationlist = [x for x in annotation.split(PART_DELIM3) if x]
+    # annotationlist = [x for x in annotation.split(PART_DELIM3) if x]
     annotationdict = {}
     for a in annotation.split(PART_DELIM2):
         key, values = a.split(PART_DELIM3, 1)
@@ -440,7 +440,7 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
      - tagset is the tagset for the possible tags (currently: 'SUC', 'Parole', 'Saldo')
     """
     annotation_elements = annotation_elements.split()
-    #assert annotation_element in ("gf", "lem", "saldo"), "Invalid annotation element"
+    # assert annotation_element in ("gf", "lem", "saldo"), "Invalid annotation element"
     import xml.etree.cElementTree as cet
     tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower())
     if verbose:
