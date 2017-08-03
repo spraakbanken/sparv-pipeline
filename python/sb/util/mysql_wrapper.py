@@ -11,7 +11,7 @@ MAX_ALLOWED_PACKET = 900000
 
 class MySQL(object):
     binaries = ('mysql', 'mysql5')
-    
+
     def __init__(self, database, username=None, password=None, encoding="ascii", output="", append=False):
         self.arguments = [database]
         if username:
@@ -42,7 +42,7 @@ class MySQL(object):
                 log.info("MySQL: %s", out)
             if err:
                 log.error("MySQL: %s", err)
-        #return out
+        # return out
 
     def create_table(self, table, drop, columns, primary=None, indexes=None, constraints=None, **kwargs):
         sqlcolumns = [u"  %s %s %s DEFAULT %s" %
@@ -75,7 +75,7 @@ class MySQL(object):
     def disable_keys(self, *tables):
         for table in tables:
             self.execute("ALTER TABLE %s DISABLE KEYS;" % _ATOM(table))
-    
+
     def enable_keys(self, *tables):
         for table in tables:
             self.execute("ALTER TABLE %s ENABLE KEYS;" % _ATOM(table))
@@ -96,21 +96,21 @@ class MySQL(object):
 
     def unlock(self):
         self.execute(u"UNLOCK TABLES;")
-    
+
     def set_names(self, encoding="utf8"):
         self.execute(u"SET NAMES %s;" % encoding)
-    
+
     def delete_rows(self, table, conditions):
         conditions = " AND ".join(["%s = %s" % (_ATOM(k), _VALUE(v)) for (k, v) in conditions.items()])
         self.execute(u"DELETE FROM %s WHERE %s;" % (_ATOM(table), conditions))
-    
+
     def drop_table(self, *tables):
         self.execute(u"DROP TABLE IF EXISTS %s;" % _ATOMSEQ(tables))
-    
+
     def rename_table(self, tables):
         renames = [u"%s TO %s" % (_ATOM(old), _ATOM(new)) for old, new in tables.items()]
         self.execute(u"RENAME TABLE %s;" % ", ".join(renames))
-    
+
     def add_row(self, table, rows, extra=""):
         if isinstance(rows, dict):
             rows = [rows]
@@ -118,12 +118,12 @@ class MySQL(object):
         sql = []
         values = []
         input_length = 0
-        
+
         def insert(values, extra=""):
             if extra:
                 extra = "\n" + extra
             return u"INSERT INTO %s (%s) VALUES\n" % (table, ", ".join(sorted(rows[0].keys()))) + ",\n".join(values) + "%s;" % extra
-        
+
         for row in rows:
             if isinstance(row, dict):
                 rowlist = sorted(row.items(), key=lambda x: x[0])
@@ -134,7 +134,7 @@ class MySQL(object):
                     values = []
                     input_length = len(valueline)
                 values += [valueline]
-        
+
         if values:
             sql.append(insert(values, extra))
         self.execute("\n".join(sql))
