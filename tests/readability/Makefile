@@ -4,8 +4,8 @@ corpus = corpusname
 original_dir = original
 files := $(basename $(notdir $(wildcard $(original_dir)/*.xml)))
 
-vrt_columns_annotations = word
-vrt_columns             = word
+vrt_columns_annotations = word pos
+vrt_columns             = word pos
 vrt_structs_annotations = sentence paragraph text text.nk text.lix text.ovix text.what
 vrt_structs             = sentence paragraph text text:nk text:lix text:ovix text:what
 
