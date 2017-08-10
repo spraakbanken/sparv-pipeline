@@ -152,20 +152,20 @@ endef
 
 define auto_annotations_script
 import sys
-pairs = zip(sys.argv[2].split(), sys.argv[1].split())
+pairs = list(zip(sys.argv[2].split(), sys.argv[1].split()))
 d = {}
 for a, e in pairs:
     for ee in e.split("+"):
         d.setdefault(a.split(".")[0], set()).add(ee.rsplit(":", 1)[0])
-d = sorted(d.iteritems()) + [(p[0], (p[1],)) for p in pairs if not p[0] in d]
-print len(d) + 2, len(d) + 3
-print " ".join("+".join(e) for a, e in d)
-print " ".join(a for a, e in d)
+d = sorted(d.items()) + [(p[0], (p[1],)) for p in pairs if not p[0] in d]
+print(len(d) + 2, len(d) + 3)
+print(" ".join("+".join(e) for a, e in d))
+print(" ".join(a for a, e in d))
 endef
 
 define auto_structs
 ifneq ($$($(1)xml_annotations),)
-  auto_elements := $$(shell echo '$$(subst $$(newline),@NEWLINE@,$${auto_annotations_script})' | sed 's/@NEWLINE@/\n/g' | python - "$$($(1)xml_elements)" "$$($(1)xml_annotations)")
+  auto_elements := $$(shell echo '$$(subst $$(newline),@NEWLINE@,$${auto_annotations_script})' | sed 's/@NEWLINE@/\n/g' | python3 - "$$($(1)xml_elements)" "$$($(1)xml_annotations)")
   n = $$(firstword $$(auto_elements))
   m = $$(word 2,$$(auto_elements))
   $(1)xml_elements := $$(wordlist 3,$$(n),$$(auto_elements))
@@ -173,7 +173,7 @@ ifneq ($$($(1)xml_annotations),)
 endif
 
 ifneq ($$($(1)xml_header_annotations),)
-  auto_elements := $$(shell echo '$$(subst $$(newline),@NEWLINE@,$${auto_annotations_script})' | sed 's/@NEWLINE@/\n/g' | python - "$$($(1)xml_headers)" "$$($(1)xml_header_annotations)")
+  auto_elements := $$(shell echo '$$(subst $$(newline),@NEWLINE@,$${auto_annotations_script})' | sed 's/@NEWLINE@/\n/g' | python3 - "$$($(1)xml_headers)" "$$($(1)xml_header_annotations)")
   n = $$(firstword $$(auto_elements))
   m = $$(word 2,$$(auto_elements))
   $(1)xml_headers := $$(wordlist 3,$$(n),$$(auto_elements))
@@ -885,7 +885,7 @@ ifdef predict
 %.$(predict): %.token.n \
 		%.$(firstword $(subst ., ,$(predict))) \
 		%.parents.token.$(firstword $(subst ., ,$(predict))) \
-		%.token.word 
+		%.token.word
 	$(python) -m sb.vw --predict --model $(predict_model) \
 		--order "$(1)" --struct "$(2)" --parent "$(3)" --word "$(4)" --pos "" --out "$@"
 endif
@@ -894,14 +894,14 @@ ifdef predict_raw
 %.$(predict_raw): %.token.n \
 		%.$(firstword $(subst ., ,$(predict_raw))) \
 		%.parents.token.$(firstword $(subst ., ,$(predict_raw))) \
-		%.token.word 
+		%.token.word
 	$(python) -m sb.vw --predict --model $(predict_raw_model) \
 		--order "$(1)" --struct "$(2)" --parent "$(3)" --word "$(4)" --pos "" --out "$@" --raw true
 endif
 
 
 ifdef word_weights
-%.$(word_weights): %.token.word 
+%.$(word_weights): %.token.word
 	$(python) -m sb.vw --word_weights --model $(word_weights_model) --word "$(1)" --pos "" --out "$@"
 endif
 
