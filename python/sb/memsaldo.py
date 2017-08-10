@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-
 import sb.saldo
 import sb.compound
-import util
-
+import sb.util as util
 from sb.util.membrane import serve_membranes
 
 
