@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+
 """
 The Sparv Pipeline testsuite. It does these two things:
 
@@ -51,7 +51,7 @@ Flags:
                 Use this if you only want to run some test.
 """
 
-from __future__ import print_function
+# from __future__ import print_function
 from subprocess import STDOUT, call
 from contextlib import contextmanager
 from os import path
@@ -60,7 +60,6 @@ import sys
 import yaml
 import doctest
 import importlib
-import types
 
 
 @contextmanager
@@ -103,7 +102,7 @@ def indent(lines_or_str, indent_str='  ', join=True):
     >>> indent(['ab','cd'], join=False)
     ['  ab', '  cd']
     """
-    if isinstance(lines_or_str, types.StringTypes):
+    if isinstance(lines_or_str, str):
         lines = lines_or_str.split('\n')
     else:
         lines = lines_or_str
@@ -126,7 +125,7 @@ def run_test(test_dir, verbose, cleanup=False):
     except Exception as e:
         return ['Error when loading test.yaml:', str(e)], []
 
-    if not isinstance(lines, types.ListType):
+    if not isinstance(lines, list):
         lines = [lines]
 
     ###
@@ -143,14 +142,14 @@ def run_test(test_dir, verbose, cleanup=False):
         return filename
 
     for line in lines:
-        if isinstance(line, types.DictType) and 'clean' in line:
+        if isinstance(line, dict) and 'clean' in line:
             clean = True
             cmd = line['clean']
         else:
             clean = False
             cmd = line
 
-        if not isinstance(cmd, types.StringTypes):
+        if not isinstance(cmd, str):
             return ['Invalid cmd in test.yaml:', str(cmd)], []
 
         prefix = 'clean_' if clean else ''
@@ -284,7 +283,7 @@ def run_tests(dirs, verbose=False, cleanup=False):
         errors, checked = run_test(dir, verbose=verbose, cleanup=cleanup)
         if errors:
             print('fail: ' + dir)
-            print(indent(map(indent, errors)))
+            print(indent(list(map(indent, errors))))
             yield False
         else:
             n = str(len(checked))
@@ -361,7 +360,8 @@ def main():
     os.environ['PYTHONPATH'] = sb_python_path
     os.environ['SPARV_MODELS'] = path.join(cwd, 'models')
     os.environ['PATH'] += ':' + path.join(cwd, 'bin')
-    os.environ['python'] = os.environ.get('python', 'python2')
+    os.environ['python'] = os.environ.get('python', 'python3')
+    # os.environ['python'] = "../venv/bin/python3"
 
     if flag('--models'):
         revision = '{2017-03-01}'
