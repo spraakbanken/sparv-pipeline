@@ -157,7 +157,7 @@ d = {}
 for a, e in pairs:
     for ee in e.split("+"):
         d.setdefault(a.split(".")[0], set()).add(ee.rsplit(":", 1)[0])
-d = sorted(d.items()) + [(p[0], (p[1],)) for p in pairs if not p[0] in d]
+d = sorted(d.items()) + [(p[0], (p[1],)) for p in pairs if p[0] not in d]
 print(len(d) + 2, len(d) + 3)
 print(" ".join("+".join(e) for a, e in d))
 print(" ".join(a for a, e in d))
@@ -267,6 +267,7 @@ debugmain:
 	@echo "SPARV_MODELS: $(SPARV_MODELS)"
 	@echo "PYTHONPATH: $(PYTHONPATH)"
 	@echo "PATH: $(PATH)"
+	@echo "PYTHON: $(python)"
 	@echo
 	@echo "xml-source: $(original_dir)"
 	@echo
