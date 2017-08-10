@@ -43,6 +43,7 @@ saldo_to_granska: 1-many mapping between Saldo and Granska-ish
 saldo_to_parole: 1-many mapping between Saldo and Parole
 saldo_to_saldo: 1-many identity mapping of Saldo tags
 """
+from __future__ import print_function
 
 TAGSEP = "."
 
@@ -1188,15 +1189,15 @@ granska_to_parole = {
     'uo': 'XF',
 }
 
-parole_to_suc = dict((parole, suc) for (suc, parole) in suc_to_parole.items())
+parole_to_suc = dict((parole, suc) for (suc, parole) in list(suc_to_parole.items()))
 
-granska_to_suc = dict((granska, parole_to_suc[parole]) for (granska, parole) in granska_to_parole.items())
+granska_to_suc = dict((granska, parole_to_suc[parole]) for (granska, parole) in list(granska_to_parole.items()))
 
 parole_to_granska = {}
-for granska, parole in granska_to_parole.items():
+for granska, parole in list(granska_to_parole.items()):
     parole_to_granska.setdefault(parole, set()).add(granska)
 
-suc_to_granska = dict((suc, parole_to_granska[parole]) for (suc, parole) in suc_to_parole.items())
+suc_to_granska = dict((suc, parole_to_granska[parole]) for (suc, parole) in list(suc_to_parole.items()))
 
 suc_tags = set(suc_descriptions)
 
@@ -1216,8 +1217,8 @@ assert suc_tags == set(granska_to_suc.values())
 
 assert granska_tags == set(granska_to_parole.keys())
 assert granska_tags == set(granska_to_suc.keys())
-assert granska_tags == set().union(*parole_to_granska.values())
-assert granska_tags == set().union(*suc_to_granska.values())
+assert granska_tags == set().union(*list(parole_to_granska.values()))
+assert granska_tags == set().union(*list(suc_to_granska.values()))
 
 assert parole_tags == set(parole_to_suc.keys())
 assert parole_tags == set(parole_to_granska.keys())
@@ -1339,8 +1340,8 @@ def _make_saldo_to_suc(compound=False):
             if m:
                 break
         if m is None:
-            print paramstr
-            print
+            print(paramstr)
+            print()
         sucfilter = m.expand(post).replace(" ", r"\.").replace("+", r"\+")
         # print sucfilter, "=",
         tagmap[saldotag] = set(suctag for suctag in suc_tags
@@ -1354,10 +1355,10 @@ saldo_to_suc = _make_saldo_to_suc()
 saldo_to_suc_compound = _make_saldo_to_suc(compound=True)  # For use with the compound module
 
 saldo_to_parole = dict((saldotag, set(suc_to_parole[suctag] for suctag in suctags))
-                       for saldotag, suctags in saldo_to_suc.items())
+                       for saldotag, suctags in list(saldo_to_suc.items()))
 
 saldo_to_granska = dict((saldotag, set().union(*(suc_to_granska[suctag] for suctag in suctags)))
-                        for saldotag, suctags in saldo_to_suc.items())
+                        for saldotag, suctags in list(saldo_to_suc.items()))
 
 saldo_to_saldo = dict((saldotag, set([saldotag])) for saldotag in saldo_tags)
 

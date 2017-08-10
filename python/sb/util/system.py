@@ -3,13 +3,12 @@
 """
 System utilities for Språkbanken
 """
-
 import subprocess
 import sys
 import os
 import errno
 import shutil
-import log
+from . import log
 
 
 def dirname(file):
@@ -78,10 +77,10 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
     *** for maltparser: ***
     If return_command is set, then the process is returned.
     """
-    import unicode_convert
+    from . import unicode_convert
     from subprocess import Popen, PIPE
     assert isinstance(arguments, (list, tuple))
-    assert isinstance(stdin, (basestring, list, tuple))
+    assert isinstance(stdin, (str, list, tuple))
 
     binary = find_binary(name, search_paths, binary_names)
     if raw_command:
@@ -93,7 +92,7 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
         command = [binary] + list(arguments)
     if isinstance(stdin, (list, tuple)):
         stdin = "\n".join(stdin)
-    if isinstance(stdin, unicode):
+    if isinstance(stdin, str):
         stdin = unicode_convert.encode(stdin, encoding)
     log.info("CALL: %s", " ".join(command) if not raw_command else command)
     command = Popen(command, shell=use_shell,
@@ -106,9 +105,9 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
         stdout, stderr = command.communicate(stdin)
         if command.returncode:
             if stdout:
-                print stdout
+                print(stdout)
             if stderr:
-                print >>sys.stderr, stderr
+                print(stderr, file=sys.stderr)
             raise OSError("%s returned error code %d" % (binary, command.returncode))
         if encoding:
             stdout = stdout.decode(encoding)
@@ -121,12 +120,12 @@ def find_binary(name, search_paths=(), binary_names=(), executable=True):
     """
     Search for the binary for a program. Stolen and modified from NLTK.
     """
-    assert isinstance(name, basestring)
+    assert isinstance(name, str)
     assert isinstance(search_paths, (list, tuple))
     assert isinstance(binary_names, (list, tuple))
 
     search_paths = list(search_paths) + ['.'] + os.getenv("PATH").split(":")
-    search_paths = map(os.path.expanduser, search_paths)
+    search_paths = list(map(os.path.expanduser, search_paths))
 
     if not binary_names:
         binary_names = [name]

@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-
-import util
 import re
 import xml.sax.saxutils
 import xml.etree.cElementTree as etree
+import sb.util as util
 
 RESTART_THRESHOLD_LENGTH = 64000
 SENT_SEP = "\n"
@@ -21,14 +20,14 @@ def tag_ne(out_ne_ex, out_ne_type, out_ne_subtype, out_ne_name, word, sentence, 
     """
 
     if process_dict is None:
-        process = swenerstart("", encoding, verbose=True)
-    else:
-        process = process_dict['process']
-        # If process seems dead, spawn a new one
-        if process.stdin.closed or process.stdout.closed or process.poll():
-            util.system.kill_process(process)
-            process = swenerstart("", encoding, verbose=True)
-            process_dict['process'] = process
+        process = swenerstart("", encoding, verbose=False)
+    # else:
+    #     process = process_dict['process']
+    #     # If process seems dead, spawn a new one
+    #     if process.stdin.closed or process.stdout.closed or process.poll():
+    #         util.system.kill_process(process)
+    #         process = swenerstart("", encoding, verbose=False)
+    #         process_dict['process'] = process
 
     # Collect all text
     sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
@@ -54,9 +53,11 @@ def tag_ne(out_ne_ex, out_ne_type, out_ne_subtype, out_ne_name, word, sentence, 
 
     # else:
     # Otherwise use communicate which buffers properly
+    # util.log.info("STDIN %s %s", type(stdin.encode(encoding)), stdin.encode(encoding))
     stdout, _ = process.communicate(stdin.encode(encoding))
+    # util.log.info("STDOUT %s %s", type(stdout.decode(encoding)), stdout.decode(encoding))
 
-    parse_swener_output(sentences, stdout, out_ne_ex, out_ne_type, out_ne_subtype, out_ne_name)
+    parse_swener_output(sentences, stdout.decode(encoding), out_ne_ex, out_ne_type, out_ne_subtype, out_ne_name)
 
 
 def parse_swener_output(sentences, output, out_ne_ex, out_ne_type, out_ne_subtype, out_ne_name):

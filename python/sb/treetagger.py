@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-
-import util
+import sb.util as util
 
 SENT_SEP = "\n<eos>\n"
 TOK_SEP = "\n"

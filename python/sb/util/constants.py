@@ -15,7 +15,7 @@ def resetIdent(seed, maxidents=None):
     if maxidents:
         global _ANCHORLEN
         _ANCHORLEN = int(math.log(maxidents, 16) + 1.5)
-    seed = int(hexlify(seed), 16)  # For random.seed to work consistently regardless of platform
+    seed = int(hexlify(seed.encode()), 16)  # For random.seed to work consistently regardless of platform
     random.seed(seed)
 
 _ANCHORLEN = 10
@@ -28,8 +28,7 @@ def mkIdent(prefix, identifiers=()):
     prefix = prefix.replace(_EDGE_SEP, "").replace(_SPAN_SEP, "")
     while True:
         n = random.getrandbits(_ANCHORLEN * 4)
-        ident = prefix + hex(n)[2:-1].zfill(_ANCHORLEN)  # IMPORTANT: [2:-1] removes trailing 'L'. This is needed in Python 2.x.
-                                                         # If this code is ever translated into 3.x, it must be changed to [2:]!
+        ident = prefix + hex(n)[2:].zfill(_ANCHORLEN)
         if ident not in identifiers:
             return ident
 
@@ -80,7 +79,7 @@ _SPAN_SEP = "-"
 
 def strtobool(value):
     """Convert possible string to boolean"""
-    if isinstance(value, basestring):
+    if isinstance(value, str):
         value = (value.lower() == "true")
     return value
 
@@ -175,4 +174,4 @@ COLORS = {
     "on_magenta":   "\033[45m",
     "on_cyan":      "\033[46m",
     "on_white":     "\033[47m"
-} 
+}

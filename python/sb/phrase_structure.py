@@ -1,6 +1,6 @@
-
+# -*- coding: utf-8 -*-
 from collections import defaultdict
-import util
+import sb.util as util
 import sys
 import pprint
 
@@ -29,7 +29,7 @@ def annotate(out_phrase_name, out_phrase_func, word, sentence, pos, msd, ref, de
         # Get PS tree
         sen = Sentence(tokenlist)
         if not sen.is_cyclic():
-            print >>sys.stderr, pprint.pformat(convert_sentence(sen).top.to_tree_str())
+            print(pprint.pformat(convert_sentence(sen).top.to_tree_str()), file=sys.stderr)
             continue
             tree = convert_sentence(sen).top.to_tree_str()
 
@@ -92,9 +92,9 @@ def log(f):
     @functools.wraps(f)
     def g(*args, **kws):
         call = f.__name__ + pprint.pformat(args + (kws, ))
-        print >>sys.stderr, call
+        print(call, file=sys.stderr)
         res = f(*args, **kws)
-        print >>sys.stderr, call + ' = ' + pprint.pformat(res)
+        print(call + ' = ' + pprint.pformat(res), file=sys.stderr)
         return res
     return g
 
@@ -455,7 +455,7 @@ def convert(token):
 
 def add_head(l, h):
     hp = h.head_position()
-    for ix in xrange(len(l)):
+    for ix in range(len(l)):
         if hp < l[ix].head_position():
             l.insert(ix, h)
             return

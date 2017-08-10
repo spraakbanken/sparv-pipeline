@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import os
-import system
-import log
-import constants
+from . import system
+from . import log
+from . import constants
 
 # Max size of SQL statement
 MAX_ALLOWED_PACKET = 900000
@@ -33,7 +33,7 @@ class MySQL(object):
         if self.output:
             # Write SQL statement to file
             with open(self.output, "a") as outfile:
-                print >>outfile, sql.encode(constants.UTF8)
+                print(sql.encode(constants.UTF8), file=outfile)
         else:
             # Execute SQL statement
             out, err = system.call_binary(self.binaries[0], self.arguments, sql % args,
@@ -49,11 +49,11 @@ class MySQL(object):
                       (_ATOM(name), _TYPE(typ), extra or "", _VALUE(default))
                       for name, typ, default, extra in columns]
         if primary:
-            if isinstance(primary, basestring):
+            if isinstance(primary, str):
                 primary = primary.split()
             sqlcolumns += [u"PRIMARY KEY (%s)" % _ATOMSEQ(primary)]
         for index in indexes:
-            if isinstance(index, basestring):
+            if isinstance(index, str):
                 index = index.split()
             sqlcolumns += [u"INDEX %s (%s)" % (_ATOM("-".join(index)), _ATOMSEQ(index))]
         if constraints:
@@ -67,7 +67,7 @@ class MySQL(object):
 
         sql += u",\n ".join(sqlcolumns) + u") "
 
-        for key, value in kwargs.items():
+        for key, value in list(kwargs.items()):
             sql += u" %s = %s " % (key, value)
         sql += u";"
         self.execute(sql)
@@ -101,14 +101,14 @@ class MySQL(object):
         self.execute(u"SET NAMES %s;" % encoding)
 
     def delete_rows(self, table, conditions):
-        conditions = " AND ".join(["%s = %s" % (_ATOM(k), _VALUE(v)) for (k, v) in conditions.items()])
+        conditions = " AND ".join(["%s = %s" % (_ATOM(k), _VALUE(v)) for (k, v) in list(conditions.items())])
         self.execute(u"DELETE FROM %s WHERE %s;" % (_ATOM(table), conditions))
 
     def drop_table(self, *tables):
         self.execute(u"DROP TABLE IF EXISTS %s;" % _ATOMSEQ(tables))
 
     def rename_table(self, tables):
-        renames = [u"%s TO %s" % (_ATOM(old), _ATOM(new)) for old, new in tables.items()]
+        renames = [u"%s TO %s" % (_ATOM(old), _ATOM(new)) for old, new in list(tables.items())]
         self.execute(u"RENAME TABLE %s;" % ", ".join(renames))
 
     def add_row(self, table, rows, extra=""):
@@ -126,7 +126,7 @@ class MySQL(object):
 
         for row in rows:
             if isinstance(row, dict):
-                rowlist = sorted(row.items(), key=lambda x: x[0])
+                rowlist = sorted(list(row.items()), key=lambda x: x[0])
                 valueline = u"(%s)" % (_VALUESEQ([x[1] for x in rowlist]))
                 input_length += len(valueline)
                 if input_length > MAX_ALLOWED_PACKET:
@@ -144,7 +144,7 @@ def _TYPE(typ):
     return _TYPE_CONVERSIONS.get(typ, typ)
 
 _TYPE_CONVERSIONS = {str: "varchar(255)",
-                     unicode: "varchar(255)",
+                     str: "varchar(255)",
                      int: "int(11)",
                      float: "float",
                      'year': "year(4)",
@@ -152,7 +152,7 @@ _TYPE_CONVERSIONS = {str: "varchar(255)",
 
 
 def _ATOM(atom):
-    assert isinstance(atom, basestring)
+    assert isinstance(atom, str)
     return "`%s`" % (atom,)
 
 
@@ -162,10 +162,10 @@ def _ATOMSEQ(atoms):
 
 
 def _VALUE(val):
-    assert (val is None) or isinstance(val, (basestring, int, float))
+    assert (val is None) or isinstance(val, (str, int, float))
     if val is None:
         return "NULL"
-    if isinstance(val, basestring):
+    if isinstance(val, str):
         return "'%s'" % (_ESCAPE(val),)
     else:
         return "%s" % (val,)
@@ -178,7 +178,7 @@ def _VALUESEQ(vals):
 
 def _DICT(dct, filter_null=False):
     assert isinstance(dct, dict)
-    return ", ".join("%s = %s" % (_ATOM(k), _VALUE(v)) for (k, v) in dct.items()
+    return ", ".join("%s = %s" % (_ATOM(k), _VALUE(v)) for (k, v) in list(dct.items())
                      if not (filter_null and v is None))
 
 

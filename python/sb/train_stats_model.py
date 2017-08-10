@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import codecs
-import cPickle as pickle
+import pickle
 from nltk import FreqDist, LidstoneProbDist
-import util
+import sb.util as util
 
 
 def make_model(stats_infile, picklefile, smoothingparam=0.001, min_freq=3, protocol=-1):
@@ -31,7 +31,7 @@ def make_model(stats_infile, picklefile, smoothingparam=0.001, min_freq=3, proto
     pd = LidstoneProbDist(fdist, smoothingparam, fdist.B())
 
     # Save probability model as pickle
-    with open(picklefile, "w") as p:
+    with open(picklefile, "wb") as p:
         pickle.dump(pd, p, protocol=protocol)
 
 if __name__ == '__main__':

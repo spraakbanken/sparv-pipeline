@@ -4,11 +4,9 @@
 An analyzer for pseuo-XML documents.
 Pseudo-XML is almost like XML, but admits overlapping elements.
 """
-
 import os
 from collections import defaultdict
-
-import util
+import sb.util as util
 
 
 def analyze(sources, header="teiheader", encoding=util.UTF8, maxcount=0):
@@ -17,7 +15,7 @@ def analyze(sources, header="teiheader", encoding=util.UTF8, maxcount=0):
     things less frequent than maxcount.
     """
     maxcount = int(maxcount)
-    if isinstance(sources, basestring):
+    if isinstance(sources, str):
         sources = sources.split()
 
     parser = XMLAnalyzer()
@@ -33,9 +31,9 @@ def analyze(sources, header="teiheader", encoding=util.UTF8, maxcount=0):
                 parser.feed(line.decode(encoding))
             parser.close()
         util.log.statistics()
-    print
+    print()
     statistics(parser.info, maxcount)
-    print
+    print()
     # Some hacks for the final statistics:
     util.log.init()
     util.log.starttime = total_starttime
@@ -44,7 +42,7 @@ def analyze(sources, header="teiheader", encoding=util.UTF8, maxcount=0):
 
 ######################################################################
 
-from HTMLParser import HTMLParser
+from html.parser import HTMLParser
 
 
 class XMLAnalyzer(HTMLParser):
@@ -209,9 +207,9 @@ class XMLAnalyzer(HTMLParser):
 # statistics
 
 def statistics(result, maxcount):
-    print
-    print "#" * 100
-    print "## Statistics"
+    print()
+    print("#" * 100)
+    print("## Statistics")
     stat_chars(result['char'], maxcount)
     stat_entities(result['entity'], maxcount)
     stat_tags(result['tag'], maxcount, "Body tags")
@@ -223,18 +221,18 @@ def strfiles(files):
     """Return a string of filenames, truncated to at most 3.
     """
     if len(files) > 3:
-        (filename, (line, col)) = files.items()[0]
+        (filename, (line, col)) = list(files.items())[0]
         return "%s:%d, (...and %d more files...)" % (filename, line, len(files) - 1)
     else:
         return ", ".join(filename + ":" + str(line)
-                         for (filename, (line, col)) in files.items())
+                         for (filename, (line, col)) in list(files.items()))
 
 
 def items_by_frequency(freqdist):
     """Sort a dictionary by frequency. Return as a list of pairs.
     """
     frequency = lambda x: x[1]
-    return sorted(freqdist.iteritems(), key=frequency, reverse=True)
+    return sorted(iter(list(freqdist.items())), key=frequency, reverse=True)
 
 
 def stat_chars(charinfo, maxcount, title="Characters"):
@@ -243,9 +241,9 @@ def stat_chars(charinfo, maxcount, title="Characters"):
     chars = charinfo['freq']
     if not chars:
         return
-    print
-    print "%-60sFiles" % title
-    print "-" * 100
+    print()
+    print("%-60sFiles" % title)
+    print("-" * 100)
     for char, count in items_by_frequency(chars):
         if 0 < maxcount < count:
             continue
@@ -256,11 +254,11 @@ def stat_chars(charinfo, maxcount, title="Characters"):
         extra = len(encoded) - len(char)
         print ("%8d    U+%04X %5d       %-10s%s                   %s" %
                (count, code, code, encoded, " " * extra, files))
-    print
+    print()
     if "&" in chars or "<" in chars or ">" in chars:
-        print "NOTE: There are occurrences of & < > in the text"
-        print "      Replace with &amp; &lt; &gt;"
-        print
+        print("NOTE: There are occurrences of & < > in the text")
+        print("      Replace with &amp; &lt; &gt;")
+        print()
 
 
 def stat_entities(entinfo, maxcount, title="Entities"):
@@ -269,9 +267,9 @@ def stat_entities(entinfo, maxcount, title="Entities"):
     entities = entinfo['freq']
     if not entities:
         return
-    print
-    print "%-60sFiles" % title
-    print "-" * 100
+    print()
+    print("%-60sFiles" % title)
+    print("-" * 100)
     problematic = set()
     for name, count in items_by_frequency(entities):
         if problematic_entity(name):
@@ -279,12 +277,12 @@ def stat_entities(entinfo, maxcount, title="Entities"):
         if 0 < maxcount < count:
             continue
         files = strfiles(entinfo['files'][name])
-        print u"%8d    %-10s                                      %s" % (count, "&" + name + ";", files)
-    print
+        print(u"%8d    %-10s                                      %s" % (count, "&" + name + ";", files))
+    print()
     if problematic:
-        print "NOTE: Control characters and unknown entities:", ", ".join(problematic)
-        print "      Replace them with better entities"
-        print
+        print("NOTE: Control characters and unknown entities:", ", ".join(problematic))
+        print("      Replace them with better entities")
+        print()
 
 
 def stat_tags(taginfo, maxcount, title="Tags"):
@@ -293,16 +291,16 @@ def stat_tags(taginfo, maxcount, title="Tags"):
     tags = taginfo['freq']
     if not tags:
         return
-    print
-    print "%-30s%-30sFiles" % (title, "Attributes")
-    print "-" * 100
+    print()
+    print("%-30s%-30sFiles" % (title, "Attributes"))
+    print("-" * 100)
     for tag, count in items_by_frequency(tags):
         if 0 < maxcount < count:
             continue
         attrs = " ".join(sorted(taginfo['attrs'][tag]))
         files = strfiles(taginfo['files'][tag])
-        print "%8d    %-18s%-30s%s" % (count, "<" + tag + ">", attrs, files)
-    print
+        print("%8d    %-18s%-30s%s" % (count, "<" + tag + ">", attrs, files))
+    print()
 
 
 def stat_errors(warnings, errors):
@@ -310,12 +308,12 @@ def stat_errors(warnings, errors):
     """
     if not errors and not warnings:
         return
-    print
-    print "   File                Warnings  Errors"
-    print "-" * 100
+    print()
+    print("   File                Warnings  Errors")
+    print("-" * 100)
     for f in sorted(set(warnings) | set(errors)):
-        print "   %-20s%6s  %6s" % (f, warnings[f] or "", errors[f] or "")
-    print
+        print("   %-20s%6s  %6s" % (f, warnings[f] or "", errors[f] or ""))
+    print()
 
 
 ######################################################################

@@ -4,11 +4,11 @@
 Annotates geographical features.
 """
 
-import util
-import parent
-import annotate
+import sb.util as util
+import sb.parent as parent
+import sb.annotate as annotate
 import codecs
-import cPickle as pickle
+import pickle
 from collections import defaultdict
 
 
@@ -55,7 +55,7 @@ def load_model(model, language=()):
         m = pickle.load(infile)
 
     result = defaultdict(set)
-    for geonameid, l in m.iteritems():
+    for geonameid, l in list(m.items()):
         result[l["name"].lower()].add((l["name"], l["latitude"], l["longitude"], l["country"], l["population"]))
         for lang in l["alternate_names"]:
             if lang in language or not language:
@@ -91,7 +91,7 @@ def contextual(out, chunk, context, ne, ne_subtype, text, model, method="populou
     chunk = text chunk to which the annotation will be added.
     """
 
-    if isinstance(language, basestring):
+    if isinstance(language, str):
         language = language.split()
 
     model = load_model(model, language=language)
@@ -108,7 +108,7 @@ def contextual(out, chunk, context, ne, ne_subtype, text, model, method="populou
 
     result = {}
 
-    for cont, chunks in children_context_chunk.iteritems():
+    for cont, chunks in list(children_context_chunk.items()):
         all_locations = []  # TODO: Maybe not needed for anything?
         context_locations = []
         chunk_locations = defaultdict(list)
@@ -138,7 +138,7 @@ def metadata(out, chunk, source, model, text=None, method="populous", language=[
     """Get location data based on metadata containing location names.
     """
 
-    if isinstance(language, basestring):
+    if isinstance(language, str):
         language = language.split()
 
     model = load_model(model, language=language)

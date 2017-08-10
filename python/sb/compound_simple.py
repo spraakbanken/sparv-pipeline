@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-
-import cPickle as pickle
-import util
+import pickle
+import sb.util as util
 
 
 def annotate(out_prefix, out_suffix, word, msd, model, delimiter="|", affix="|", lexicon=None):
@@ -50,7 +49,7 @@ class SaldoLexicon(object):
             annotation_tag_pairs = self.lexicon.get(word, [])
         else:
             annotation_tag_pairs = self.lexicon.get(word, []) + self.lexicon.get(word.lower(), [])
-        return map(_split_triple, annotation_tag_pairs)
+        return list(map(_split_triple, annotation_tag_pairs))
 
     def get_prefixes(self, prefix):
         return [ (prefix, p[0]) for p in self.lookup(prefix) if set(p[1]).intersection(set(["c", "ci"])) ]
@@ -65,7 +64,7 @@ class SaldoLexicon(object):
 
 def prefixes_suffixes(w):
     """ Split a word into every possible prefix-suffix pair. """
-    return [(w[:i], w[i:]) for i in xrange(1, len(w))]
+    return [(w[:i], w[i:]) for i in range(1, len(w))]
 
 
 def exception(w):
@@ -108,7 +107,7 @@ def read_xml(xml='saldom.xml', tagset="SUC"):
 
     context = cet.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
     context = iter(context)
-    event, root = context.next()
+    event, root = next(context)
 
     for event, elem in context:
         if event == "end":
@@ -159,7 +158,7 @@ def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
     for word in lexicon:
         lemgrams = []
 
-        for lemgram, annotation in lexicon[word].items():
+        for lemgram, annotation in list(lexicon[word].items()):
             msds = PART_DELIM2.join(annotation["msd"])
             tags = PART_DELIM2.join(annotation.get("tags", []))
             lemgrams.append( PART_DELIM1.join([lemgram, msds, annotation["pos"], tags] ) )

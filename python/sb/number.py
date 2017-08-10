@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-
 from collections import defaultdict
 import random
-import util
+import sb.util as util
 import re
 from binascii import hexlify
 
@@ -11,9 +10,9 @@ START_DEFAULT = 1
 
 def number_by_position(out, texts, chunks, prefix="", start=START_DEFAULT):
     """ Number chunks by their position. """
-    if isinstance(chunks, basestring):
+    if isinstance(chunks, str):
         chunks = chunks.split()
-    if isinstance(texts, basestring):
+    if isinstance(texts, str):
         texts = texts.split()
     assert len(chunks) == len(texts), "You must supply the same number of texts and chunks."
 
@@ -72,14 +71,14 @@ def number_by_parent(out, chunks, parent_order, parent_children, prefix="", star
 def number_relative(out, parent_children, prefix="", start=START_DEFAULT):
     """ Number chunks by their relative position within a parent. """
     PARENT_CHILDREN = util.read_annotation(parent_children)
-    
+
     util.write_annotation(out, ((child, "%s%0*d" % (prefix, len(str(len(PARENT_CHILDREN[parent].split()) - 1 + start)), cnr))
                                 for parent in PARENT_CHILDREN
-                                    for cnr, child in enumerate(PARENT_CHILDREN[parent].split(), start)))
+                                for cnr, child in enumerate(PARENT_CHILDREN[parent].split(), start)))
 
 
 def read_chunks_and_write_new_ordering(out, chunks, order, prefix="", start=START_DEFAULT):
-    if isinstance(chunks, basestring):
+    if isinstance(chunks, str):
         chunks = chunks.split()
 
     new_order = defaultdict(list)

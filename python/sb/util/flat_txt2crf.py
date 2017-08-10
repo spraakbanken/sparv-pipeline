@@ -2,12 +2,12 @@
 """
 Used by crf.py
 """
-
 punctuation = frozenset([u',', u':', u'/', u'.', u'·', u'¶', u';', '°', '-', '—'])
 vowels = frozenset(u'aeiouvöäåy')
 
 
-def features((word, lookslikeanumber), tag):
+def features(xxx_todo_changeme, tag):
+    (word, lookslikeanumber) = xxx_todo_changeme
     return (word.lower(),
             'CAP' if word[0].isupper() else 'NOCAP',
             word.lower()[-2:],
@@ -139,30 +139,30 @@ def main(stream):
 
         raws = iter(raws)
 
-        print 'words length %d' % words_length
+        print('words length %d' % words_length)
         if words_length == 0:
             if not newdiv:
-                print
+                print()
                 newdiv = 1
             else:
                 pass
         elif words_length == 1:
-            print '\t'.join((next(raws),) + l_features(words[0], u'SNG') + ('id', '52'))
+            print('\t'.join((next(raws),) + l_features(words[0], u'SNG') + ('id', '52')))
             newdiv = 0
         else:
             lastword = words.pop()
             words = iter(words)
             for i, w in enumerate(words):
-                print '\t'.join((next(raws), ) + l_features(w, u'LF%s' % (i,)) + ('id', '53'))
+                print('\t'.join((next(raws), ) + l_features(w, u'LF%s' % (i,)) + ('id', '53')))
                 if i >= 1:
                     break
 
             for w in words:
-                print '\t'.join((next(raws),) + l_features(w, u'MID') + ('id', '54'))
+                print('\t'.join((next(raws),) + l_features(w, u'MID') + ('id', '54')))
 
-            print '\t'.join((next(raws),) + l_features(lastword, u'RHT') + ('id', '54'))
+            print('\t'.join((next(raws),) + l_features(lastword, u'RHT') + ('id', '54')))
 
             newdiv = 0
 
     if not newdiv:
-        print
+        print()

@@ -2,7 +2,7 @@
 """
 Creates training material from SUC2 for use with the HUNPOS-tagger.
 """
-import util.system
+import sb.util as util
 import os.path
 
 
@@ -30,9 +30,9 @@ def write_hunsource(file, annotation):
                 value = ""
             value = value.replace("\\", r"\\").replace("\n", r"\n")
             if key:
-                print >>DB, (key + "\t" + value).encode(util.UTF8)
+                print((key + "\t" + value).encode(util.UTF8), file=DB)
             else:
-                print >>DB, "".encode(util.UTF8)
+                print("".encode(util.UTF8), file=DB)
             ctr += 1
     util.log.info("Wrote %d items: %s", ctr, file)
 

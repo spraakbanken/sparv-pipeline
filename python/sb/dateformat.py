@@ -6,12 +6,12 @@ Formats dates and times.
 import datetime
 import re
 from dateutil.relativedelta import relativedelta
-import util
+import sb.util as util
 
 
-def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outformat="%Y%m%d%H%M%S", splitter=None, regex=None, encoding="UTF-8"):
+def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outformat="%Y%m%d%H%M%S", splitter=None, regex=None):
     """Takes dates and input formats. Converts to specified format.
-    
+
     - infrom, annotation containing from-dates
     - outfrom, annotation with from-dates to be written
     - into, annotation containing to-dates (optional)
@@ -20,34 +20,34 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
     - outformat, the desired format of the outfrom and outto dates. Several formats can be specified separated by |. They will be tied to their respective in-format.
     - splitter, a character or more separating two dates in 'infrom', treating them as from-date and to-date
     - regex, a regular expression with a catching group whose content will be used in the parsing instead of the whole string
-    
+
     http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior
     """
-    
+
     def get_smallest_unit(informat):
-        smallest_unit = 0 # No date
-    
-        if not "%y" in informat and not "%Y" in informat:
+        smallest_unit = 0  # No date
+
+        if "%y" not in informat and "%Y" not in informat:
             pass
-        elif not "%b" in informat and not "%B" in informat and not "%m" in informat:
+        elif "%b" not in informat and "%B" not in informat and "%m" not in informat:
             smallest_unit = 1  # year
-        elif not "%d" in informat:
+        elif "%d" not in informat:
             smallest_unit = 2  # month
-        elif not "%H" in informat and not "%I" in informat:
+        elif "%H" not in informat and "%I" not in informat:
             smallest_unit = 3  # day
-        elif not "%M" in informat:
+        elif "%M" not in informat:
             smallest_unit = 4  # hour
-        elif not "%S" in informat:
+        elif "%S" not in informat:
             smallest_unit = 5  # minute
         else:
             smallest_unit = 6  # second
-        
+
         return smallest_unit
-    
+
     def get_date_length(informat):
         parts = informat.split("%")
         length = len(parts[0])  # First value is either blank or not part of date
-        
+
         lengths = {"Y": 4,
                    "3Y": 3,
                    "y": 2,
@@ -66,28 +66,28 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                 length += add + len(part[1:])
             else:
                 return None
-        
+
         return length
-    
+
     if not into:
         into = infrom
-       
-    informat = informat.decode("UTF-8").split("|")
-    outformat = outformat.decode("UTF-8").split("|")
+
+    informat = informat.split("|")
+    outformat = outformat.split("|")
     if splitter:
-        splitter = splitter.decode("UTF-8")
-    
+        splitter = splitter
+
     assert len(outformat) == 1 or (len(outformat) == len(informat)), "The number of out-formats must be equal to one or the number of in-formats."
-    
+
     ifrom = util.read_annotation_iteritems(infrom)
     ofrom = {}
-    
+
     for key, val in ifrom:
         val = val.strip()
         if not val:
             ofrom[key] = None
             continue
-        
+
         tries = 0
         for inf in informat:
             if splitter and splitter in inf:
@@ -98,7 +98,7 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
             else:
                 vals = [val]
                 inf = [inf]
-            
+
             if regex:
                 temp = []
                 for v in vals:
@@ -110,23 +110,23 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                     ofrom[key] = None
                     continue
                 vals = temp
-                    
+
             tries += 1
             try:
                 fromdates = []
                 for i, v in enumerate(vals):
                     if "%3Y" in inf[i]:
                         datelen = get_date_length(inf[i])
-                        if datelen and not datelen == len(v.encode(encoding)):
+                        if datelen and not datelen == len(v):
                             raise ValueError
                         inf[i] = inf[i].replace("%3Y", "%Y")
                         v = "0" + v
                     if "%0m" in inf[i] or "%0d" in inf[i]:
                         inf[i] = inf[i].replace("%0m", "%m").replace("%0d", "%d")
                         datelen = get_date_length(inf[i])
-                        if datelen and not datelen == len(v.encode(encoding)):
+                        if datelen and not datelen == len(v):
                             raise ValueError
-                    fromdates.append(datetime.datetime.strptime(v.encode(encoding), inf[i]))
+                    fromdates.append(datetime.datetime.strptime(v, inf[i]))
                 if len(fromdates) == 1 or outto:
                     ofrom[key] = strftime(fromdates[0], outformat[0] if len(outformat) == 1 else outformat[tries - 1])
                 else:
@@ -145,12 +145,12 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
     if outto:
         ito = util.read_annotation_iteritems(into)
         oto = {}
-    
+
         for key, val in ito:
             if not val:
                 oto[key] = None
                 continue
-            
+
             tries = 0
             for inf in informat:
                 if splitter and splitter in inf:
@@ -161,7 +161,7 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                 else:
                     vals = [val]
                     inf = [inf]
-                
+
                 if regex:
                     temp = []
                     for v in vals:
@@ -173,23 +173,23 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                         oto[key] = None
                         continue
                     vals = temp
-                
+
                 tries += 1
                 try:
                     todates = []
                     for i, v in enumerate(vals):
                         if "%3Y" in inf[i]:
                             datelen = get_date_length(inf[i])
-                            if datelen and not datelen == len(v.encode(encoding)):
+                            if datelen and not datelen == len(v):
                                 raise ValueError
                             inf[i] = inf[i].replace("%3Y", "%Y")
                             v = "0" + v
                         if "%0m" in inf[i] or "%0d" in inf[i]:
                             inf[i] = inf[i].replace("%0m", "%m").replace("%0d", "%d")
                             datelen = get_date_length(inf[i])
-                            if datelen and not datelen == len(v.encode(encoding)):
+                            if datelen and not datelen == len(v):
                                 raise ValueError
-                        todates.append(datetime.datetime.strptime(v.encode(encoding), inf[i]))
+                        todates.append(datetime.datetime.strptime(v, inf[i]))
                     smallest_unit = get_smallest_unit(inf[0])
                     if smallest_unit == 1:
                         add = relativedelta(years=1)
@@ -203,7 +203,7 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                         add = relativedelta(minutes=1)
                     elif smallest_unit == 6:
                         add = relativedelta(seconds=1)
-                    
+
                     todates = [todate + add - relativedelta(seconds=1) for todate in todates]
                     oto[key] = strftime(todates[-1], outformat[0] if len(outformat) == 1 else outformat[tries - 1])
                     break
@@ -212,7 +212,7 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                         util.log.error("Could not parse: %s", str(vals))
                         raise
                     continue
-        
+
         util.write_annotation(outto, oto)
 
 
@@ -228,33 +228,32 @@ def strftime(dt, fmt):
                                    dt.hour, dt.minute,
                                    dt.second, dt.microsecond,
                                    dt.tzinfo)
-        
+
         if re.search('(?<!%)((?:%%)*)(%y)', fmt):
             util.log.warning("Using %y time format with year prior to 1900 could produce unusual results!")
-        
+
         tmp_fmt = fmt
         tmp_fmt = re.sub('(?<!%)((?:%%)*)(%y)', '\\1\x11\x11', tmp_fmt, re.U)
         tmp_fmt = re.sub('(?<!%)((?:%%)*)(%Y)', '\\1\x12\x12\x12\x12', tmp_fmt, re.U)
         tmp_fmt = tmp_fmt.replace(str(TEMPYEAR), '\x13\x13\x13\x13')
         tmp_fmt = tmp_fmt.replace(str(TEMPYEAR)[-2:], '\x14\x14')
-        
+
         result = tmp_dt.strftime(tmp_fmt)
-        
+
         if '%c' in fmt:
             # local datetime format - uses full year but hard for us to guess where.
             result = result.replace(str(TEMPYEAR), str(dt.year))
-        
+
         result = result.replace('\x11\x11', str(dt.year)[-2:])
         result = result.replace('\x12\x12\x12\x12', str(dt.year))
         result = result.replace('\x13\x13\x13\x13', str(TEMPYEAR))
         result = result.replace('\x14\x14', str(TEMPYEAR)[-2:])
-            
+
         return result
-        
+
     else:
         return dt.strftime(fmt)
 
 
 if __name__ == '__main__':
-    util.run.main(dateformat
-                  )
+    util.run.main(dateformat)

@@ -3,9 +3,8 @@
 """
 Add annotations for parent links and/or children links.
 """
-
 from collections import defaultdict
-import util
+import sb.util as util
 
 
 def annotate_parents(text, out, parent, child, ignore_missing_parent=False):
@@ -15,12 +14,12 @@ def annotate_parents(text, out, parent, child, ignore_missing_parent=False):
     OUT = {}
     previous_parent_id = None
     try:
-        parent_span, parent_id = parent_chunks.next()
+        parent_span, parent_id = next(parent_chunks)
         for child_span, child_id in child_spans:
             while child_span.stop > parent_span.stop:
                 if parent_id:
                     previous_parent_id = parent_id
-                parent_span, parent_id = parent_chunks.next()
+                parent_span, parent_id = next(parent_chunks)
             if not parent_id or parent_span.start > child_span.start:
                 if not ignore_missing_parent:
                     util.log.warning("Child '%s' missing parent; closest parent is %s",
@@ -42,12 +41,12 @@ def annotate_children(text, out, parent, child, ignore_missing_parent=False):
     OUT = defaultdict(list)
     previous_parent_id = None
     try:
-        parent_span, parent_id = parent_chunks.next()
+        parent_span, parent_id = next(parent_chunks)
         for child_span, child_id in child_spans:
             while child_span.stop > parent_span.stop:
                 if parent_id:
                     previous_parent_id = parent_id
-                parent_span, parent_id = parent_chunks.next()
+                parent_span, parent_id = next(parent_chunks)
             if not parent_id or parent_span.start > child_span.start:
                 if not ignore_missing_parent:
                     util.log.warning("Child '%s' missing parent; closest parent is %s",
@@ -57,17 +56,17 @@ def annotate_children(text, out, parent, child, ignore_missing_parent=False):
     except StopIteration:
         pass
     if out:
-        util.write_annotation(out, OUT, encode=" ".join)
+        util.write_annotation(out, OUT, transform=" ".join)
     else:
         return OUT
 
 
 def read_parents_and_children(text, parent, child):
-    if isinstance(text, basestring):
+    if isinstance(text, str):
         text = util.corpus.read_corpus_text(text)
-    if isinstance(parent, basestring):
+    if isinstance(parent, str):
         parent = util.read_annotation_iterkeys(parent)
-    if isinstance(child, basestring):
+    if isinstance(child, str):
         child = util.read_annotation_iterkeys(child)
     corpus_text, anchor2pos, _pos2anchor = text
 

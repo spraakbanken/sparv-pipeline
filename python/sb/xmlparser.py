@@ -4,11 +4,10 @@
 A parser for pseudo-XML documents.
 Pseudo-XML is almost like XML, but admits overlapping elements.
 """
-
 import re
-import util
+import sb.util as util
 import unicodedata
-from xmlanalyzer import problematic_entity, html_entities  # , is_control_code
+from sb.xmlanalyzer import problematic_entity, html_entities  # , is_control_code
 
 # TODO: lägg till metadata-annoteringar, ungefär som i obsolete/tei_parser.py
 # ELLER: skapa ett annat skript: headerparser.py, som endast parsar och annoterar metadata
@@ -26,23 +25,23 @@ def parse(source, text, elements=[], annotations=[], skip=(), overlap=(), header
           prefix="", fileid="", fileids="", headers="", header_annotations="", skip_if_empty="", skip_entities="",
           autoclose="", allow_xml_chars=False):
     """Parse one pseudo-xml source file, into the specified corpus."""
-    if isinstance(elements, basestring):
+    if isinstance(elements, str):
         elements = elements.split()
-    if isinstance(annotations, basestring):
+    if isinstance(annotations, str):
         annotations = annotations.split()
-    if isinstance(skip, basestring):
+    if isinstance(skip, str):
         skip = skip.split()
-    if isinstance(overlap, basestring):
+    if isinstance(overlap, str):
         overlap = overlap.split()
-    if isinstance(headers, basestring):
+    if isinstance(headers, str):
         headers = headers.split()
-    if isinstance(header_annotations, basestring):
+    if isinstance(header_annotations, str):
         header_annotations = header_annotations.split()
-    if isinstance(skip_if_empty, basestring):
+    if isinstance(skip_if_empty, str):
         skip_if_empty = skip_if_empty.split()
-    if isinstance(skip_entities, basestring):
+    if isinstance(skip_entities, str):
         skip_entities = skip_entities.split()
-    if isinstance(autoclose, basestring):
+    if isinstance(autoclose, str):
         autoclose = autoclose.split()
     allow_xml_chars = util.strtobool(allow_xml_chars)
     assert len(elements) == len(annotations), "elements and annotations must be the same length"
@@ -80,21 +79,21 @@ def parse(source, text, elements=[], annotations=[], skip=(), overlap=(), header
                       for t1 in tags.split("+") for t2 in tags.split("+") if t1 != t2)
 
     with open(source) as SRC:
-        content = SRC.read().decode(encoding)
+        content = SRC.read()
         content = unicodedata.normalize("NFC", content)  # Normalize characters to precomposed form (NFKC can also be used)
-    parser = XMLParser(elem_annotations, skipped_elems, can_overlap, header, prefix, text, len(content), head_annotations, skip_if_empty, skip_entities, autoclose, elem_order, allow_xml_chars)
+    parser = XMLParser(elem_annotations, skipped_elems, can_overlap, header, prefix, text, len(content.encode(util.UTF8)), head_annotations, skip_if_empty, skip_entities, autoclose, elem_order, allow_xml_chars)
     parser.feed(content)
     parser.close()
 
 
 ######################################################################
 
-from HTMLParser import HTMLParser
+from html.parser import HTMLParser
 
 
 class XMLParser(HTMLParser):
     def __init__(self, elem_annotations, skipped_elems, can_overlap, header_elem, prefix, textfile, corpus_size, head_annotations={}, skip_if_empty=[], skip_entities=[], autoclose=[], elem_order=[], allow_xml_chars=False):
-        HTMLParser.__init__(self)
+        HTMLParser.__init__(self, convert_charrefs=False)
         self.errors = False
         self.reset()
         self.tagstack = []
@@ -102,8 +101,8 @@ class XMLParser(HTMLParser):
         self.inside_header = False
         self.elem_annotations = elem_annotations
         self.elem_order = elem_order
-        self.text_roots = set([re.split(r"(?<!\\)\.", header[0])[0].replace(r"\.", ".") for header in head_annotations.keys()])
-        head_annotations = dict(((k[0].replace(r"\.", "."), k[1]), v) for k, v in head_annotations.iteritems())
+        self.text_roots = set([re.split(r"(?<!\\)\.", header[0])[0].replace(r"\.", ".") for header in list(head_annotations.keys())])
+        head_annotations = dict(((k[0].replace(r"\.", "."), k[1]), v) for k, v in list(head_annotations.items()))
         self.head_annotations = head_annotations
         self.skip_if_empty = skip_if_empty
         self.skip_entities = skip_entities
@@ -115,14 +114,14 @@ class XMLParser(HTMLParser):
         self.prefix = prefix
         self.textfile = textfile
         self.position = 0
-        self.max_nr_zeros = len(str(corpus_size))
+        # self.max_nr_zeros = len(str(corpus_size))
         self.pos2anchor = {}
         self.anchor2pos = {}
         self.anchor2line = {}
         self.textbuffer = []
-        self.dbs = dict((annot, {}) for annots in elem_annotations.values() for annot in annots)
-        self.header_temp = dict((header, "") for header in head_annotations.values())
-        self.header_dbs = dict((header, {}) for header in head_annotations.values())
+        self.dbs = dict((annot, {}) for annots in list(elem_annotations.values()) for annot in annots)
+        self.header_temp = dict((header, "") for header in list(head_annotations.values()))
+        self.header_dbs = dict((header, {}) for header in list(head_annotations.values()))
         util.resetIdent(self.prefix, maxidents=corpus_size)
 
     def pos(self):
@@ -143,21 +142,21 @@ class XMLParser(HTMLParser):
         self.anchor()
 
         if self.skipped:
-            new_elements = sorted(self.skipped.items(), key=lambda x: (-x[1], x[0]))
+            new_elements = sorted(list(self.skipped.items()), key=lambda x: (-x[1], x[0]))
             new_elements_ann = " ".join(".".join([x[0][0].replace(":", "_"), x[0][1]]) if not x[0][1] is None else x[0][0].replace(":", "_") for x in new_elements)
             new_elements_ele = " ".join(":".join([x[0][0].replace(":", "\\:"), x[0][1]]) if not x[0][1] is None else x[0][0].replace(":", "\\:") for x in new_elements)
             if not self.elem_annotations:
                 util.log.info("Found elements:")
-                print
-                print "vrt_structs_annotations = " + new_elements_ann
-                print "vrt_structs             = " + new_elements_ele
-                print "xml_elements    = " + new_elements_ele
-                print "xml_annotations = " + new_elements_ann
-                print
+                print()
+                print("vrt_structs_annotations = " + new_elements_ann)
+                print("vrt_structs             = " + new_elements_ele)
+                print("xml_elements    = " + new_elements_ele)
+                print("xml_annotations = " + new_elements_ann)
+                print()
             else:
-                print
-                print "xml_skip = " + new_elements_ele
-                print
+                print()
+                print("xml_skip = " + new_elements_ele)
+                print()
 
         # Only save results if no errors occured
         if not self.errors:
@@ -168,9 +167,9 @@ class XMLParser(HTMLParser):
                     annot, db = elem[1], self.dbs[elem[1]]
                     util.write_annotation(annot, db)
             else:
-                for annot, db in self.dbs.iteritems():
+                for annot, db in list(self.dbs.items()):
                     util.write_annotation(annot, db)
-            for header, db in self.header_dbs.iteritems():
+            for header, db in list(self.header_dbs.items()):
                 util.write_annotation(header, db)
 
         HTMLParser.close(self)
@@ -286,12 +285,13 @@ class XMLParser(HTMLParser):
 
             if name in self.text_roots and not self.tagstack:
                 headedge = util.mkEdge("header", (start, end))
-                for headann, headval in self.header_temp.iteritems():
+                for headann, headval in list(self.header_temp.items()):
                     self.header_dbs[headann][headedge] = headval
                     self.header_temp[headann] = ""
 
     def handle_data(self, content):
         """Plain text data are tokenized and each 'token' is added to the text."""
+        # util.log.info("CONTENT %s", content)
         if not self.allow_xml_chars:
             if "&" in content:
                 util.log.error(self.pos() + "XML special character: &")
@@ -302,14 +302,16 @@ class XMLParser(HTMLParser):
             if ">" in content:
                 util.log.error(self.pos() + "XML special character: >")
                 self.errors = True
-        if self.position == 0 and isinstance(content, unicode):
+        if self.position == 0 and isinstance(content, str):
             content = content.lstrip(u"\ufeff")
         if self.inside_header:
             element_path = ".".join(tag[0] for tag in reversed(self.tagstack))
             if (element_path, "TEXT") in self.head_annotations:
                 self.header_temp[self.head_annotations[(element_path, "TEXT")]] += re.sub(r"\s{2,}", " ", content)
             return
+        # util.log.info("REGEXP %s", REGEXP_TOKEN.split(content))
         for token in REGEXP_TOKEN.split(content):
+            # util.log.info("TOKEN %s", token)
             self.add_token(token)
 
     def handle_charref(self, name):
@@ -329,9 +331,9 @@ class XMLParser(HTMLParser):
         if self.inside_header:
             element_path = ".".join(tag[0] for tag in reversed(self.tagstack))
             if (element_path, "TEXT") in self.head_annotations:
-                self.header_temp[self.head_annotations[(element_path, "TEXT")]] += unichr(code)
+                self.header_temp[self.head_annotations[(element_path, "TEXT")]] += chr(code)
             return
-        self.add_token(unichr(code))
+        self.add_token(chr(code))
 
     def handle_entityref(self, name):
         """Entity refs &bullet; are looked up in a database and
@@ -348,10 +350,10 @@ class XMLParser(HTMLParser):
         if self.inside_header:
             element_path = ".".join(tag[0] for tag in reversed(self.tagstack))
             if (element_path, "TEXT") in self.head_annotations:
-                self.header_temp[self.head_annotations[(element_path, "TEXT")]] += unichr(code)
+                self.header_temp[self.head_annotations[(element_path, "TEXT")]] += chr(code)
             return
 
-        self.add_token(unichr(code))
+        self.add_token(chr(code))
 
     def handle_comment(self, comment):
         """XML comments are added as annotations themselves."""

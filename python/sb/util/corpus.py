@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import os.path
-import log
-import system
-from constants import *
+from . import log
+from . import system
+from .constants import *
 
 ######################################################################
 # Annotations
@@ -22,13 +22,13 @@ def clear_annotation(file):
         os.remove(file)
 
 
-def write_annotation(file, annotation, encode=None, append=False):
+def write_annotation(file, annotation, transform=None, append=False):
     """Write an annotation to a file. The file is overwritten if it exists.
     The annotation can be a dictionary, or a sequence of (key,value) pairs.
-    If specified, encode should be a function from values to unicode strings.
+    If specified, transform should be a function from values to unicode strings.
     """
     if isinstance(annotation, dict):
-        annotation = annotation.iteritems()
+        annotation = iter(annotation.items())
     system.make_directory(os.path.dirname(file))
     mode = "a" if append else "w"
     with open(file, mode) as DB:
@@ -36,11 +36,11 @@ def write_annotation(file, annotation, encode=None, append=False):
         for key, value in annotation:
             if value is None:
                 value = ""
-            if encode:
-                value = encode(value)
+            if transform:
+                value = transform(value)
             # value = value.replace("\\", r"\\").replace("\n", r"\n").replace("\r", "")  # Use if we allow linebreaks in tokens
             value = value.replace("\n", "").replace("\r", "")  # Don't allow linebreaks in tokens
-            print >>DB, (key + ANNOTATION_DELIM + value).encode(UTF8)
+            print((key + ANNOTATION_DELIM + value), file=DB)
             ctr += 1
     log.info("Wrote %d items: %s", ctr, file)
 
@@ -65,7 +65,7 @@ def read_annotation_iteritems(file, decode=None):
     ctr = 0
     with open(file, "r") as DB:
         for line in DB:
-            key, _, value = line.rstrip("\n\r").decode(UTF8).partition(ANNOTATION_DELIM)
+            key, _, value = line.rstrip("\n\r").partition(ANNOTATION_DELIM)
             # value = re.sub(r"((?<!\\)(?:\\\\)*)\\n", "\1\n", value).replace(r"\\", "\\")  # Replace literal "\n" with linebreak (only needed if we allow "\n" in tokens)
             if decode:
                 value = decode(value)
@@ -121,27 +121,27 @@ def read_corpus_text(corpusfile):
      - pos2anchor is a dict from positions to anchors.
     """
     with open(corpusfile, "r") as F:
-        text = F.read().decode(UTF8)
+        text = F.read()
     textbuffer = []
     position = 0
     anchor2pos = {}
     pos2anchor = {}
     end = -1
     while True:  # The only way to exit this loop is when ANCHOR_DELIM is not found anymore
-        start = text.find(ANCHOR_DELIM, end+1)
+        start = text.find(ANCHOR_DELIM, end + 1)
         if start < 0:
-            textbuffer.append(text[end+1:len(text)])
+            textbuffer.append(text[end + 1:len(text)])
             break
-        textbuffer.append(text[end+1:start])
+        textbuffer.append(text[end + 1:start])
         position += start - end - 1
-        end = text.find(ANCHOR_DELIM, start+1)
+        end = text.find(ANCHOR_DELIM, start + 1)
         if end < 0:
             raise IOError("Mismatched anchor delimiters in corpus file: %s" % ANCHOR_DELIM)
-        elif end == start+1:
+        elif end == start + 1:
             textbuffer.append(ANCHOR_DELIM)
             position += 1
         else:
-            anchor = text[start+1:end]
+            anchor = text[start + 1:end]
             anchor2pos[anchor] = position
             pos2anchor[position] = anchor
     text = "".join(textbuffer)
@@ -157,11 +157,10 @@ def write_corpus_text(corpusfile, text, pos2anchor):
     with open(corpusfile, "w") as F:
         pos = 0
         for nextpos, anchor in sorted(pos2anchor.items()):
-            out = (text[pos:nextpos].replace(ANCHOR_DELIM, ANCHOR_DELIM+ANCHOR_DELIM) +
+            out = (text[pos:nextpos].replace(ANCHOR_DELIM, ANCHOR_DELIM + ANCHOR_DELIM) +
                    ANCHOR_DELIM + anchor + ANCHOR_DELIM)
-            F.write(out.encode(UTF8))
+            F.write(out)
             pos = nextpos
-        out = text[pos:len(text)].replace(ANCHOR_DELIM, ANCHOR_DELIM+ANCHOR_DELIM)
-        F.write(out.encode(UTF8))
+        out = text[pos:len(text)].replace(ANCHOR_DELIM, ANCHOR_DELIM + ANCHOR_DELIM)
+        F.write(out)
     log.info("Wrote %d chars, %d anchors: %s", len(text), len(pos2anchor), corpusfile)
-

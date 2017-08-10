@@ -3,7 +3,7 @@
 import time
 import sys
 import os
-import constants
+from . import constants
 
 totalwarnings = 0
 totalerrors = 0
@@ -35,18 +35,18 @@ def strtime():
 
 
 def newline():
-    print >> sys.stderr
+    print(file=sys.stderr)
 
 
 def line(ch):
-    print >> sys.stderr, process_id_prefix + ch * 80
+    print(process_id_prefix + ch * 80, file=sys.stderr)
 
 
 def output(msg="", *args):
     """Prints a message (plus newline) on stderr."""
-    args = tuple(arg.decode(constants.UTF8) if isinstance(arg, str) else arg for arg in args)
-    msge = (msg % args).encode(constants.UTF8)
-    print >> sys.stderr, process_id_prefix + "|", msge
+    args = tuple(arg if isinstance(arg, str) else arg for arg in args)
+    msge = msg % args
+    print(process_id_prefix + "|", msge, file=sys.stderr)
     m = process_id_prefix + "| " + msge
     global lastmessage
     lastmessage.append(m)
@@ -93,7 +93,7 @@ def statistics():
         save_to_logfile()
         raise_error = ""  # raw_input("Press enter to continue. Enter anything else to break: ")
         if raise_error.strip() != "":
-            raise StandardError
+            raise Exception
     line("^")
     newline()
     global lastmessage
@@ -107,7 +107,7 @@ def save_to_logfile():
         o.write(process_id_prefix + "_" * 80)
         o.write("\n")
         for l in lastmessage:
-            for v in constants.COLORS.values():
+            for v in list(constants.COLORS.values()):
                 l = l.replace(v, "")
             o.write(l + "\n")
         o.write(process_id_prefix + "^" * 80)

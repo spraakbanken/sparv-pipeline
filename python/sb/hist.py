@@ -1,8 +1,7 @@
 # -*- coding: utf_8 -*-
-import saldo
-import lemgrampos
-import util
-import diapivot
+import sb.saldo as saldo
+import sb.util as util
+import sb.diapivot as diapivot
 import codecs
 import re
 import itertools
@@ -40,8 +39,8 @@ def annotate_variants(word, out, spellmodel, delimiter="|", affix="|", model=Non
     variations = parsevariant(spellmodel)
 
     def findvariants(tokid, theword):
-        variants = filter(lambda (x, d): x != theword, variations.get(theword.lower(), []))
-        #return set(_concat([getsingleannotation(lexicon, v, 'lemgram') for v, d in variants]))
+        variants = [x_d for x_d in variations.get(theword.lower(), []) if x_d[0] != theword]
+        # return set(_concat([getsingleannotation(lexicon, v, 'lemgram') for v, d in variants]))
         return set([v for v, d in variants])
 
     annotate_standard(out, word, findvariants, split=False)
@@ -87,7 +86,7 @@ def annotate_fallback(out, word, msd, lemgram, models, key='lemgram', lexicons=N
         if not lemgrams:
             word = WORD[tokid]
             msdtag = MSD[tokid]
-            fallbacks.extend(getsingleannotation(lexicons, word, key,msdtag))
+            fallbacks.extend(getsingleannotation(lexicons, word, key, msdtag))
 
         return fallbacks
 
@@ -119,18 +118,18 @@ def annotate_diachron(out, lemgram, model, extralemgrams='', delimiter="|", affi
 def mergemany(out, annotations, separator="|"):
     """Concatenate values from two or more annotations, with an optional separator.
        Removes superfluous separators"""
-    #annotations = [util.read_annotation(a) for a in annotations]
+    # annotations = [util.read_annotation(a) for a in annotations]
     d = {}
     OUT = {}
 
-    if isinstance(annotations, basestring):
+    if isinstance(annotations, str):
         annotations = annotations.split()
     for annotation in [util.read_annotation(a) for a in annotations]:
-        for key_a, val_a in annotation.items():
+        for key_a, val_a in list(annotation.items()):
             if val_a:
                 d.setdefault(key_a, []).append(val_a)
 
-    for key, lst in d.items():
+    for key, lst in list(d.items()):
         OUT[key] = separator + separator.join(lst) + separator if lst else separator
 
     util.write_annotation(out, OUT)
@@ -143,7 +142,7 @@ def merge(out, left, right, separator=""):
     OUT = {}
 
     for key_a, val_a in util.read_annotation_iteritems(left):
-        val = filter(lambda x: x != separator, [val_a, b[key_a]])
+        val = [x for x in [val_a, b[key_a]] if x != separator]
         OUT[key_a] = separator.join(list(val)) if val else separator
 
     util.write_annotation(out, OUT)
@@ -178,7 +177,7 @@ def annotate_standard(out, input_annotation, annotator, extra_input='', delimite
     """
     def merge(d1, d2):
         result = dict(d1)
-        for k, v in d2.iteritems():
+        for k, v in list(d2.items()):
             if k in result:
                 result[k] = result[k] + delimiter + v
             else:
@@ -242,7 +241,7 @@ def annotate_full(word, sentence, reference, out, annotations, models,  msd="",
     out = out.split()
     assert len(out) == len(annotations), "Number of target files and annotations must be the same"
 
-    if isinstance(skip_multiword, basestring):
+    if isinstance(skip_multiword, str):
         skip_multiword = (skip_multiword.lower() == "true")
     if skip_multiword:
         util.log.info("Skipping multi word annotations")
@@ -292,7 +291,7 @@ def annotate_full(word, sentence, reference, out, annotations, models,  msd="",
         # Then save the rest of the multi word expressions in sentence_tokens
         savemultiwords(complete_multis, sentence_tokens)
 
-        for token in sentence_tokens.values():
+        for token in list(sentence_tokens.values()):
             OUT[token["tokid"]] = saldo._join_annotation(token["annotations"], delimiter, affix)
 
         # Loop to next sentence
@@ -320,7 +319,7 @@ def findsingleword(theword, lexicons, msdtag, precision, min_precision, precisio
                              for (annotation, msdtags, wordslist, _, _, prefix) in ann_tags_words if not wordslist]
 
     if min_precision > 0:
-        annotation_precisions = filter(lambda x: x[0] >= min_precision, annotation_precisions)
+        annotation_precisions = [x for x in annotation_precisions if x[0] >= min_precision]
     annotation_precisions = normalize_precision(annotation_precisions)
     annotation_precisions.sort(reverse=True)
 
@@ -398,7 +397,7 @@ def findmultiwordexpressions(incomplete_multis, complete_multis, theword, ref, M
         incomplete_multis.extend(looking_for)
 
 
-def getsingleannotation(lexicons, word, key,msdtag):
+def getsingleannotation(lexicons, word, key, msdtag):
     annotation = []
     # TODO the translation of tags is not fully working yet.
     # the precision must be set to 0.25 in order for the
@@ -410,10 +409,10 @@ def getsingleannotation(lexicons, word, key,msdtag):
         #   print 'msd',msdtag
         #   print 'msdtags',msdtags
         #   print msdtag in (re.sub('av','jj',m.split()[0]).upper() for m in msdtags)
-        res = [(saldo.get_precision(msdtag, msdtags),ann) for (ann, msdtags, wordslist, _, _) in lexicon.lookup(word) if not wordslist]
+        res = [(saldo.get_precision(msdtag, msdtags), ann) for (ann, msdtags, wordslist, _, _) in lexicon.lookup(word) if not wordslist]
         #print word.encode('utf8'),msdtag
         #print lexicon.lookup(word)
-        res = [a for x,a in sorted(res,reverse=True) if x>=0.25] # TODO use saldo.py for this!!!
+        res = [a for x, a in sorted(res, reverse=True) if x >= 0.25]  # TODO use saldo.py for this!!!
         if res:
             annotation = res
             break
@@ -433,12 +432,12 @@ def removeunwantedoverlaps(complete_multis):
                 # that is, that the same reference-id is not used twice in a mwe
                 remove.add(ci)
             elif re.search(r"\.\.(\w+)\.", c[1]["lemgram"][0]).groups()[0] == re.search(r"\.\.(\w+)\.", d[1]["lemgram"][0]).groups()[0]:
-            # Both are of same POS
+                # Both are of same POS
                 if d[0][0] < c[0][0] and d[0][-1] > c[0][0] and d[0][-1] < c[0][-1]:
-                # A case of x1 y1 x2 y2. Remove y.
+                    # A case of x1 y1 x2 y2. Remove y.
                     remove.add(ci)
                 elif c[0][0] < d[0][0] and d[0][-1] == c[0][-1]:
-                    #A case of x1 y1 xy2. Remove x.
+                    # A case of x1 y1 xy2. Remove x.
                     remove.add(ci)
 
     for c in sorted(remove, reverse=True):
@@ -452,7 +451,7 @@ def savemultiwords(complete_multis, sentence_tokens):
         for tok_ref in c[0]:
             if first:
                 first_ref = tok_ref
-            for ann, val in c[1].items():
+            for ann, val in list(c[1].items()):
                 if not first:
                     val = [x + ":" + first_ref for x in val]
                 sentence_tokens[tok_ref]["annotations"].setdefault(ann, []).extend(val)
@@ -482,7 +481,7 @@ def annotate_mwe(variants, word, reference, sentence, out, annotations, models, 
 
     sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
     OUT = {}
-    output_info = {}
+    # output_info = {}
 
     for sent in sentences:
         incomplete_multis = []  # :: [{annotation, words, [ref], is_particle, lastwordWasGap, numberofgaps}]
@@ -497,7 +496,7 @@ def annotate_mwe(variants, word, reference, sentence, out, annotations, models, 
             annotation_info = {}
             sentence_tokens[ref] = {"tokid": tokid, "word": word, "variant": thewords, "annotations": annotation_info}
 
-            endword = len(thewords)-1
+            endword = len(thewords) - 1
             for i, theword in enumerate(thewords):
 
                 ann_tags_words = findsingleword(theword, lexicons, '', annotation_info)  # emtpy msd tag
@@ -512,13 +511,13 @@ def annotate_mwe(variants, word, reference, sentence, out, annotations, models, 
         # Then save the rest of the multi word expressions in sentence_tokens
         savemultiwords(complete_multis, sentence_tokens)
 
-        for token in sentence_tokens.values():
+        for token in list(sentence_tokens.values()):
             OUT[token["tokid"]] = saldo._join_annotation(token["annotations"], delimiter, affix)
 
         # Loop to next sentence
 
     for out_file, annotation in zip(out, annotations):
-        print 'adding', [(tok, OUT[tok].get(annotation, affix)) for tok in OUT]
+        print('adding', [(tok, OUT[tok].get(annotation, affix)) for tok in OUT])
         util.write_annotation(out_file, [(tok, OUT[tok].get(annotation, affix)) for tok in OUT], append=True)
 
 
@@ -559,6 +558,7 @@ def findvariantmultiwordexpressions(incomplete_multis, complete_multis, theword,
     if len(looking_for) > 0:
         incomplete_multis.extend(looking_for)
 
+
 def get_precision(msd, msdtags):
     """
     A very simple way of calculating the precision of a Saldo annotation:
@@ -574,10 +574,11 @@ def get_precision(msd, msdtags):
 # The minimun precision difference for two annotations to be considered equal
 PRECISION_DIFF = 0.01
 
+
 def normalize_precision(annotations):
     """Normalize the rankings in the annotation list so that the sum is 1."""
     total_precision = sum(prec for (prec, _annotation, prefix) in annotations)
-    return [(prec/total_precision, annotation, prefix) for (prec, annotation, prefix) in annotations]
+    return [(prec / total_precision, annotation, prefix) for (prec, annotation, prefix) in annotations]
 
 
 def _concat(xs):

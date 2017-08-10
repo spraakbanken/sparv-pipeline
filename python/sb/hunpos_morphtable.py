@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-
-import util
-import saldo
+import sb.util as util
+import sb.saldo as saldo
 import codecs
 from collections import defaultdict
 
@@ -22,10 +21,10 @@ def make_morphtable(out, saldo_model, suc, morphtable_base="", morphtable_patter
     tags = defaultdict(set)
 
     # Get all wordforms from SALDO
-    for word in l.lexicon.iterkeys():
+    for word in list(l.lexicon.keys()):
         words = l.lookup(word)
         # Filter out multi word expressions
-        words = filter(lambda x: len(x[2]) == 0, words)
+        words = [x for x in words if len(x[2]) == 0]
         if words:
             # Only use MSD not containing "-"
             for w in words:

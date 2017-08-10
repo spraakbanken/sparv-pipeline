@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-
 import math
-import util
+import sb.util as util
 
 
 def align_texts(sentence1, sentence2, link1, link2, sent_parents1, sent_parents2, out_sentlink1, out_sentlink2):
@@ -13,7 +12,7 @@ def align_texts(sentence1, sentence2, link1, link2, sent_parents1, sent_parents2
     - out_sentlink1 and out_sentlink2, are the resulting annotations for the new sentence links
     """
 
-    REVERSED_LINK2 = {v: k for k, v in util.read_annotation(link2).items()}
+    REVERSED_LINK2 = {v: k for k, v in list(util.read_annotation(link2).items())}
     SENTPARENTS1 = util.read_annotation(sent_parents1)
     SENTPARENTS2 = util.read_annotation(sent_parents2)
     SENT1 = util.read_annotation(sentence1)
@@ -68,8 +67,8 @@ BEAD_COSTS = {(1, 1): 0, (2, 1): 230, (1, 2): 230, (0, 1): 450,
 
 def gachalign(text1, text2, mean=1.0, variance=6.8, bc=BEAD_COSTS):
     """ Alignment wrapper function """
-    lt1 = map(len, [s[1] for s in text1])
-    lt2 = map(len, [s[1] for s in text2])
+    lt1 = list(map(len, [s[1] for s in text1]))
+    lt2 = list(map(len, [s[1] for s in text2]))
 
     if mean == "gacha":
         mean = len([s[1] for s in text1]) / float(len([s[1] for s in text2]))
@@ -88,17 +87,17 @@ def align(t1, t2, mean_xy, variance_xy, bead_costs):
             if i == j == 0:
                 m[0, 0] = (0, 0, 0)
             else:
-                m[i, j] = min((m[i-di, j-dj][0] +
-                               length_cost(t1[i-di:i], t2[j-dj:j], mean_xy, variance_xy) +
+                m[i, j] = min((m[i - di, j - dj][0] +
+                               length_cost(t1[i - di:i], t2[j - dj:j], mean_xy, variance_xy) +
                                bead_cost, di, dj)
-                              for (di, dj), bead_cost in BEAD_COSTS.iteritems()
-                              if i-di >= 0 and j-dj >= 0)
+                              for (di, dj), bead_cost in list(BEAD_COSTS.items())
+                              if i - di >= 0 and j - dj >= 0)
     i, j = len(t1), len(t2)
     while True:
         (c, di, dj) = m[i, j]
         if di == dj == 0:
             break
-        yield (i-di, i), (j-dj, j)
+        yield (i - di, i), (j - dj, j)
         i -= di
         j -= dj
 

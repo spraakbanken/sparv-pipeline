@@ -2,7 +2,7 @@
 from glob import glob
 import os
 import subprocess
-import util
+import sb.util as util
 import re
 
 CWB_DATADIR = os.environ.get('CWB_DATADIR')
@@ -82,7 +82,7 @@ def install_mysql_dump(host, db_name, tables):
     """
     Copies selected tables (including data) from local to remote MySQL database.
     """
-    if isinstance(tables, basestring):
+    if isinstance(tables, str):
         tables = tables.split()
     util.log.info("Copying MySQL database: %s, tables: %s", db_name, ", ".join(tables))
     subprocess.check_call('mysqldump %s %s | ssh %s "mysql %s"' %

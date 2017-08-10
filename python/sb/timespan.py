@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-
 import subprocess
 import os
-import util
-from util.mysql_wrapper import MySQL
+import sb.util as util
+from sb.util.mysql_wrapper import MySQL
 
 # Path to the cwb-scan-corpus binary
 CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
@@ -28,14 +27,14 @@ def timespan(corpus, db_name, out):
                 reply, error = process.communicate("set PrettyPrint off;%s;info;" % corpus)
 
                 if error:
-                    print error
+                    print(error)
                     raise Exception
 
                 for line in reply.splitlines():
                     if line.startswith("Size: "):
                         reply = "%s\t\t\t\t" % line[6:].strip()
             else:
-                print error
+                print(error)
                 raise Exception
 
         spans = {}

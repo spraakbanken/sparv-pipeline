@@ -5,17 +5,16 @@ Tools for exporting, encoding and aligning corpora for Corpus Workbench.
 """
 
 import os
-#from tempfile import TemporaryFile
 from glob import glob
-from collections import defaultdict, Counter
+from collections import defaultdict
 import xml.etree.cElementTree as etree
-import tempfile
 import itertools as it
+import tempfile
 
-import util
+import sb.util as util
 
 ALIGNDIR = "annotations/align"
-UNDEF = u"__UNDEF__"
+UNDEF = "__UNDEF__"
 
 CWB_ENCODING = os.environ.get("CWB_ENCODING", "utf8")
 CWB_DATADIR = os.environ.get("CWB_DATADIR")
@@ -54,7 +53,7 @@ def vrt_table(annotations_structs, annotations_columns):
     structs_count = len(annotations_structs)
     parents = {}
     for annot, parent_annotation in annotations_structs:
-        if not parent_annotation in parents:
+        if parent_annotation not in parents:
             parents[parent_annotation] = util.read_annotation(parent_annotation)
 
     vrt = defaultdict(ListWithGet)
@@ -64,13 +63,13 @@ def vrt_table(annotations_structs, annotations_columns):
         enumerated_struct = {
             span: [index, value, span]
             for index, (span, value)
-            in enumerate(util.read_annotation(annot).items(), 1)
+            in enumerate(list(util.read_annotation(annot).items()), 1)
             # Must enumerate from 1, due to the use of any() later
         }
         token_annotations = (
             (word_tok, enumerated_struct.get(tok_span))
             for word_tok, tok_span
-            in parents[parent_annotation].iteritems()
+            in list(parents[parent_annotation].items())
         )
         for tok, value in token_annotations:
             if not value:
@@ -118,12 +117,12 @@ def export(format, out, order, annotations_columns, annotations_structs, text=No
     A: Ja, ju "större" desto längre till höger, exv `s p text`
     """
     assert format in ("vrt", "xml", "formatted"), "Wrong format specified"
-    if isinstance(annotations_columns, basestring):
+    if isinstance(annotations_columns, str):
         annotations_columns = annotations_columns.split()
-    if isinstance(annotations_structs, basestring):
+    if isinstance(annotations_structs, str):
         annotations_structs = [x.split(":") for x in annotations_structs.split()]
 
-    if isinstance(columns, basestring):
+    if isinstance(columns, str):
         columns = columns.split()
     structs_count = len(structs.split())
     structs = parse_structural_attributes(structs)
@@ -134,18 +133,18 @@ def export(format, out, order, annotations_columns, annotations_structs, text=No
     valid_xml = util.strtobool(valid_xml)
 
     if format == "formatted":
-        write_formatted(out, annotations_columns, annotations_structs, columns, structs, structs_count, text, encoding)
+        write_formatted(out, annotations_columns, annotations_structs, columns, structs, structs_count, text)
     else:
         tokens, vrt = tokens_and_vrt(order, annotations_structs, annotations_columns)
-        column_nrs = [n+structs_count for (n, col) in enumerate(columns) if col and col != "-"]
+        column_nrs = [n + structs_count for (n, col) in enumerate(columns) if col and col != "-"]
 
         if format == "vrt":
-            write_vrt(out, structs, structs_count, column_nrs, tokens, vrt, encoding)
+            write_vrt(out, structs, structs_count, column_nrs, tokens, vrt)
         elif format == "xml":
-            write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fileid, fileids, valid_xml, encoding)
+            write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fileid, fileids, valid_xml)
 
 
-def write_formatted(out, annotations_columns, annotations_structs, columns, structs, structs_count, text, encoding):
+def write_formatted(out, annotations_columns, annotations_structs, columns, structs, structs_count, text):
     """
     The 'formatted' XML part of the 'export' function: export xml with the same
     whitespace and indentation as in the original.
@@ -174,25 +173,25 @@ def write_formatted(out, annotations_columns, annotations_structs, columns, stru
 
     with open(out, "w") as OUT:
         OUT.write("<corpus>")
-        for pos, anchor in sorted(pos2anchor.items(), key=lambda x: x[0]):
-            OUT.write(txt[currpos:pos].replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").encode(encoding))
+        for pos, anchor in sorted(list(pos2anchor.items()), key=lambda x: x[0]):
+            OUT.write(txt[currpos:pos].replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
             if anchor in anchors:
                 if "close" in anchors[anchor]:
                     if ("__token__", None) in anchors[anchor]["close"]:
                         OUT.write("</w>")
-                    OUT.write("".join("</%s>" % e[0] for e in sorted(anchors[anchor]["close"], key=lambda x: structs_order.index(x[0])) if not e[0] == "__token__").encode(encoding))
+                    OUT.write("".join("</%s>" % e[0] for e in sorted(anchors[anchor]["close"], key=lambda x: structs_order.index(x[0])) if not e[0] == "__token__"))
 
                 if "structs" in anchors[anchor]:
-                    for elem, annot in sorted(anchors[anchor]["structs"].iteritems(), key=lambda x: (-x[0][1], -structs_order.index(x[0][0]))):
-                        if not elem in ("close", "token"):
+                    for elem, annot in sorted(iter(list(anchors[anchor]["structs"].items())), key=lambda x: (-x[0][1], -structs_order.index(x[0][0]))):
+                        if elem not in ("close", "token"):
                             attrstring = "".join(' %s="%s"' % (attr, val.replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
-                                                 for (attr, val) in annot if val and not attr == UNDEF).encode(encoding)
+                                                 for (attr, val) in annot if val and not attr == UNDEF)
                             close = "/" if len(elem) == 3 else ""
-                            OUT.write("<%s%s%s>" % (elem[0].encode(encoding), attrstring, close))
+                            OUT.write("<%s%s%s>" % (elem[0], attrstring, close))
 
                 if "token" in anchors[anchor]:
                     attrstring = "".join(' %s="%s"' % (columns[i + 1], a.replace("&", "&amp;").replace('"', '&quot;').replace("<", "&lt;").replace(">", "&gt;"))
-                                         for i, a in enumerate(anchors[anchor]["token"][1:]) if a).encode(encoding)
+                                         for i, a in enumerate(anchors[anchor]["token"][1:]) if a)
                     OUT.write("<w%s>" % attrstring)
 
             currpos = pos
@@ -200,14 +199,13 @@ def write_formatted(out, annotations_columns, annotations_structs, columns, stru
     util.log.info("Exported: %s", out)
 
 
-def write_vrt(out, structs, structs_count, column_nrs, tokens, vrt, encoding):
+def write_vrt(out, structs, structs_count, column_nrs, tokens, vrt):
     """ The VRT part of the 'export' function: write annotations to vrt file 'out'.
 
     >>> with tempfile.NamedTemporaryFile() as out:
     ...     write_vrt(out.name,
-    ...               encoding="utf8",
     ...               **example_data().without("columns"))
-    ...     print(out.read().replace('\\t','    '))
+    ...     print(out.read().decode("UTF-8").replace('\\t', '    '))
     <text title="Kokboken" author="Jane Oliver">
     <s>
     Ett    DT
@@ -226,9 +224,8 @@ def write_vrt(out, structs, structs_count, column_nrs, tokens, vrt, encoding):
 
     >>> with tempfile.NamedTemporaryFile() as out:
     ...     write_vrt(out.name,
-    ...               encoding="utf8",
     ...               **example_overlapping_data().without("columns"))
-    ...     print(out.read())
+    ...     print(out.read().decode("UTF-8"))
     <b>
     bold
     <i>
@@ -246,28 +243,28 @@ def write_vrt(out, structs, structs_count, column_nrs, tokens, vrt, encoding):
             for elem, attrs in structs:
                 new_attr_values[elem] = [(attr, cols[n]) for (attr, n) in attrs if cols.get(n)]
                 if old_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
-                    print >>OUT, "</%s>" % elem.encode(encoding)
+                    print("</%s>" % elem, file=OUT)
                     old_attr_values[elem] = None
 
             for elem, _attrs in reversed(structs):
                 if any(x[1][0] for x in new_attr_values[elem]) and new_attr_values[elem] != old_attr_values[elem]:
                     attrstring = ''.join(' %s="%s"' % (attr, val[1].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
-                                         for (attr, val) in new_attr_values[elem] if not attr == UNDEF).encode(encoding)
-                    print >>OUT, "<%s%s>" % (elem.encode(encoding), attrstring)
+                                         for (attr, val) in new_attr_values[elem] if not attr == UNDEF)
+                    print("<%s%s>" % (elem, attrstring), file=OUT)
                     old_attr_values[elem] = new_attr_values[elem]
 
             # Whitespace and / needs to be replaced for CQP parsing to work. / is only allowed in the word itself.
             line = "\t".join(cols.get(n, UNDEF).replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") if n > structs_count else cols.get(n, UNDEF).replace(" ", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") for n in column_nrs)
-            print >>OUT, remove_control_characters(line).encode(encoding)
+            print(remove_control_characters(line), file=OUT)
 
         for elem, _attrs in structs:
             if old_attr_values[elem]:
-                print >>OUT, "</%s>" % elem.encode(encoding)
+                print("</%s>" % elem, file=OUT)
 
     util.log.info("Exported %d tokens, %d columns, %d structs: %s", len(tokens), len(column_nrs), len(structs), out)
 
 
-def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fileid, fileids, valid_xml, encoding):
+def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fileid, fileids, valid_xml):
     """ The XML part of the 'export' function: write annotations to a valid xml file, unless valid_xml == False.
 
     >>> with tempfile.NamedTemporaryFile() as fileids:
@@ -277,9 +274,8 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
     ...                   fileid="fileid",
     ...                   fileids=fileids.name,
     ...                   valid_xml=True,
-    ...                   encoding="utf8",
     ...                   **example_data())
-    ...         print(out.read())
+    ...         print(out.read().decode("UTF-8"))
     <corpus>
     <text title="Kokboken" author="Jane Oliver">
     <s>
@@ -307,9 +303,8 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
     ...                       fileid="fileid",
     ...                       fileids=fileids.name,
     ...                       valid_xml=valid_xml,
-    ...                       encoding="utf8",
     ...                       **example_overlapping_data())
-    ...             print(out.read())
+    ...             print(out.read().decode("UTF-8"))
     <!-- valid_xml: True -->
     <corpus>
     <b>
@@ -338,7 +333,7 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
     assert fileid, "fileid not specified"
     assert fileids, "fileids not specified"
 
-    fileid = util.read_annotation(fileids)[fileid].encode(encoding)
+    fileid = util.read_annotation(fileids)[fileid]
     overlap = False
     open_tag_stack = []
     pending_tag_stack = []
@@ -356,33 +351,33 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
             new_attr_values[elem] = [(attr, cols[n]) for (attr, n) in attrs if cols.get(n)]
             if old_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
                 if not valid_xml:
-                    invalid_str_buffer.append("</%s>" % elem.encode(encoding))
+                    invalid_str_buffer.append("</%s>" % elem)
 
                 # Check for overlap
                 while elem != open_tag_stack[-1][0]:
                     overlap = True
                     # Close top stack element, remember to re-open later
-                    str_buffer.append("</%s>" % open_tag_stack[-1][0].encode(encoding))
+                    str_buffer.append("</%s>" % open_tag_stack[-1][0])
                     pending_tag_stack.append(open_tag_stack.pop())
 
                 # Fix pending tags
                 while pending_tag_stack:
                     if elem == open_tag_stack[-1][0]:
-                        str_buffer.append("</%s>" % elem.encode(encoding))
+                        str_buffer.append("</%s>" % elem)
                         open_tag_stack.pop()
                     # Re-open pending tag
                     pending_elem, attrstring = pending_tag_stack[-1]
                     if not elemids.get(pending_elem):
                         elemid += 1
                         elemids[pending_elem] = elemid
-                    line = '<%s _overlap="%s-%s"%s>' % (pending_elem.encode(encoding), fileid, elemids[pending_elem], attrstring)
+                    line = '<%s _overlap="%s-%s"%s>' % (pending_elem, fileid, elemids[pending_elem], attrstring)
                     str_buffer.append(line)
                     open_tag_stack.append(pending_tag_stack.pop())
                     old_attr_values[elem] = None
 
                 # Close last open tag from overlap
                 if elem == open_tag_stack[-1][0] and not pending_tag_stack:
-                    str_buffer.append("</%s>" % elem.encode(encoding))
+                    str_buffer.append("</%s>" % elem)
                     open_tag_stack.pop()
                     old_attr_values[elem] = None
                     elemids = {}
@@ -391,30 +386,30 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
         for elem, _attrs in reversed(structs):
             if any(x[1][0] for x in new_attr_values[elem]) and new_attr_values[elem] != old_attr_values[elem]:
                 attrstring = ''.join(' %s="%s"' % (attr, val[1].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
-                                     for (attr, val) in new_attr_values[elem] if val and not attr == UNDEF).encode(encoding)
-                line = "<%s%s>" % (elem.encode(encoding), attrstring)
+                                     for (attr, val) in new_attr_values[elem] if val and not attr == UNDEF)
+                line = "<%s%s>" % (elem, attrstring)
                 str_buffer.append(line)
                 old_attr_values[elem] = new_attr_values[elem]
                 open_tag_stack.append((elem, attrstring))
                 if not valid_xml:
-                    invalid_str_buffer.append("<%s%s>" % (elem.encode(encoding), attrstring))
+                    invalid_str_buffer.append("<%s%s>" % (elem, attrstring))
 
         # Add word annotations
         word = cols.get(structs_count, UNDEF).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        attrstring = "".join(' %s="%s"' % (columns[n-structs_count], cols.get(n, UNDEF).replace("&", "&amp;").replace('"', '&quot;').replace("<", "&lt;").replace(">", "&gt;")) for n in column_nrs[1:] if cols.get(n))
+        attrstring = "".join(' %s="%s"' % (columns[n - structs_count], cols.get(n, UNDEF).replace("&", "&amp;").replace('"', '&quot;').replace("<", "&lt;").replace(">", "&gt;")) for n in column_nrs[1:] if cols.get(n))
         line = "<w%s>%s</w>" % (attrstring, word)
-        str_buffer.append(remove_control_characters(line).encode(encoding))
+        str_buffer.append(remove_control_characters(line))
         if not valid_xml:
-            invalid_str_buffer.append(remove_control_characters(line).encode(encoding))
+            invalid_str_buffer.append(remove_control_characters(line))
 
     # Close remaining open tags
     if open_tag_stack:
         for elem in reversed(open_tag_stack):
-            str_buffer.append("</%s>" % elem[0].encode(encoding))
+            str_buffer.append("</%s>" % elem[0])
     if not valid_xml:
         for elem, _attrs in structs:
             if old_attr_values[elem]:
-                invalid_str_buffer.append("</%s>" % elem.encode(encoding))
+                invalid_str_buffer.append("</%s>" % elem)
 
     str_buffer.append("</corpus>")
     invalid_str_buffer.append("</corpus>")
@@ -426,11 +421,11 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
     if not valid_xml:
         # Write string buffer to invalid xml file
         with open(out, "w") as OUT:
-            print >>OUT, invalid_str_buffer
+            print(invalid_str_buffer, file=OUT)
     elif not overlap:
         # Write string buffer
         with open(out, "w") as OUT:
-            print >>OUT, str_buffer
+            print(str_buffer, file=OUT)
     else:
         # Go through xml structure and add missing _overlap attributes
         xmltree = etree.ElementTree(etree.fromstring(str_buffer))
@@ -443,7 +438,7 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
                     # If previous element has no id, add id of child
                     if not prev_elem.attrib.get("_overlap"):
                         prev_elem.set("_overlap", child.attrib.get("_overlap"))
-        xmltree.write(out, encoding=encoding, xml_declaration=False, method="xml")
+        xmltree.write(out, xml_declaration=False, method="xml")
 
     util.log.info("Exported %d tokens, %d columns, %d structs: %s", len(tokens), len(column_nrs), len(structs), out)
 
@@ -454,7 +449,8 @@ def combine_xml(master, out, xmlfiles="", xmlfiles_list=""):
     assert (xmlfiles or xmlfiles_list), "Missing source"
 
     if xmlfiles:
-        if isinstance(xmlfiles, basestring): xmlfiles = xmlfiles.split()
+        if isinstance(xmlfiles, str):
+            xmlfiles = xmlfiles.split()
     elif xmlfiles_list:
         with open(xmlfiles_list) as insource:
             xmlfiles = [line.strip() for line in insource]
@@ -462,13 +458,13 @@ def combine_xml(master, out, xmlfiles="", xmlfiles_list=""):
     xmlfiles.sort()
 
     with open(out, "w") as OUT:
-        print >>OUT, '<corpus id="%s">' % master.replace("&", "&amp;").replace('"', "&quot;")
+        print('<corpus id="%s">' % master.replace("&", "&amp;").replace('"', "&quot;"), file=OUT)
         for infile in xmlfiles:
             util.log.info("Read: %s", infile)
             with open(infile, "r") as IN:
                 # Append everything but <corpus> and </corpus>
-                print >>OUT, IN.read()[9:-10],
-        print >>OUT, "</corpus>"
+                print(IN.read()[9:-10], end=' ', file=OUT)
+        print("</corpus>", file=OUT)
         util.log.info("Exported: %s" % out)
 
 
@@ -482,13 +478,13 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None, vrtlist=
     assert util.single_true((vrtdir, vrtfiles, vrtlist)), "Either VRTDIR, VRTFILES or VRTLIST must be specified"
     assert datadir, "CWB_DATADIR not specified"
     assert registry, "CORPUS_REGISTRY not specified"
-    if isinstance(skip_validation, basestring):
+    if isinstance(skip_validation, str):
         skip_validation = (skip_validation.lower() == "true")
-    if isinstance(skip_compression, basestring):
+    if isinstance(skip_compression, str):
         skip_compression = (skip_compression.lower() == "true")
-    if isinstance(vrtfiles, basestring):
+    if isinstance(vrtfiles, str):
         vrtfiles = vrtfiles.split()
-    if isinstance(columns, basestring):
+    if isinstance(columns, str):
         columns = columns.split()
     structs = parse_structural_attributes(structs)
 
@@ -567,7 +563,7 @@ def cwb_align(master, other, link, aligndir=ALIGNDIR):
     args = ["-v", "-o", alignfile, "-V", link_attr, master, other, link_name]
     result, _ = util.system.call_binary("cwb-align", args, verbose=True)
     with open(alignfile + ".result", "w") as F:
-        print >>F, result
+        print(result, file=F)
     _, lastline = result.rsplit("Alignment complete.", 1)
     util.log.info("%s", lastline.strip())
     if " 0 alignment" in lastline.strip():
@@ -582,9 +578,9 @@ def cwb_align(master, other, link, aligndir=ALIGNDIR):
 
     if not skip_align:
         with open(regfile, "a") as F:
-            print >>F
-            print >>F, "# Added by cwb.py"
-            print >>F, "ALIGNED", other
+            print(file=F)
+            print("# Added by cwb.py", file=F)
+            print("ALIGNED", other, file=F)
         util.log.info("Added alignment to registry: %s", regfile)
     # args = [master, ":add", ":a", other]
     # result, _ = util.system.call_binary("cwb-regedit", args, verbose=True)
@@ -599,10 +595,10 @@ def cwb_align(master, other, link, aligndir=ALIGNDIR):
 def parse_structural_attributes(structural_atts):
     """
     >>> parse_structural_attributes("s - text:title text:author")
-    [('s', [(u'__UNDEF__', 0)]), ('text', [('title', 2), ('author', 3)])]
+    [('s', [('__UNDEF__', 0)]), ('text', [('title', 2), ('author', 3)])]
     """
 
-    if isinstance(structural_atts, basestring):
+    if isinstance(structural_atts, str):
         structural_atts = structural_atts.split()
     structs = {}
     order = []
@@ -623,55 +619,55 @@ def parse_structural_attributes(structural_atts):
 
 
 def remove_control_characters(text):
-    return text.translate(dict((ord(c), None) for c in [chr(i) for i in range(9) + range(11, 13) + range(14, 32) + [127]]))
+    return text.translate(dict((ord(c), None) for c in [chr(i) for i in list(range(9)) + list(range(11, 13)) + list(range(14, 32)) + [127]]))
 
 
 def vrt_iterate(tokens, vrt, trail=[0]):
     """
     Yield segments from vrt separated using the structural attributes from trail.
 
-    >>> tokens = [u"w:1", u"w:2", u"w:3", u"w:4", u"w:5"]
+    >>> tokens = ["w:1", "w:2", "w:3", "w:4", "w:5"]
     >>> vrt = {
-    ...     u"w:1": [[1, u"A", u"w:1-1"], u"word1", u"pos1"],
-    ...     u"w:2": [[2, u"B", u"w:2-3"], u"word2", u"pos2"],
-    ...     u"w:3": [[2, u"B", u"w:2-3"], u"word3", u"pos3"],
-    ...     u"w:4": [[3, u"B", u"w:4-5"], u"word4", u"pos4"],
-    ...     u"w:5": [[3, u"B", u"w:4-5"], u"word5", u"pos5"]
+    ...     "w:1": [[1, "A", "w:1-1"], "word1", "pos1"],
+    ...     "w:2": [[2, "B", "w:2-3"], "word2", "pos2"],
+    ...     "w:3": [[2, "B", "w:2-3"], "word3", "pos3"],
+    ...     "w:4": [[3, "B", "w:4-5"], "word4", "pos4"],
+    ...     "w:5": [[3, "B", "w:4-5"], "word5", "pos5"]
     ... }
     >>> list(vrt_iterate(tokens, vrt))          # doctest: +NORMALIZE_WHITESPACE
-    [([u'A', u'w:1-1'], [[u'word1', u'pos1']]),
-     ([u'B', u'w:2-3'], [[u'word2', u'pos2'], [u'word3', u'pos3']]),
-     ([u'B', u'w:4-5'], [[u'word4', u'pos4'], [u'word5', u'pos5']])]
+    [(['A', 'w:1-1'], [['word1', 'pos1']]),
+     (['B', 'w:2-3'], [['word2', 'pos2'], ['word3', 'pos3']]),
+     (['B', 'w:4-5'], [['word4', 'pos4'], ['word5', 'pos5']])]
 
-    >>> tokens = [u'w:0',u'w:1',u'w:2',u'w:3',u'w:4',u'w:5']
+    >>> tokens = ['w:0','w:1','w:2','w:3','w:4','w:5']
     >>> vrt = {
-    ...     u'w:0': [[0, u'text:0', u'w:0-1'], [0, u's:0', u'w:0-1'], u'word0'],
-    ...     u'w:1': [[0, u'text:0', u'w:0-1'], [0, u's:0', u'w:0-1'], u'word1'],
-    ...     u'w:2': [[0, u'text:0', u'w:0-1'], [1, u's:1', u'w:1-2'], u'word2'],
-    ...     u'w:3': [[0, u'text:0', u'w:0-1'], [1, u's:1', u'w:1-2'], u'word3'],
-    ...     u'w:4': [[1, u'text:1', u'w:1-2'], [2, u's:2', u'w:2-3'], u'word4'],
-    ...     u'w:5': [[1, u'text:1', u'w:1-2'], [2, u's:2', u'w:2-3'], u'word5'],
+    ...     'w:0': [[0, 'text:0', 'w:0-1'], [0, 's:0', 'w:0-1'], 'word0'],
+    ...     'w:1': [[0, 'text:0', 'w:0-1'], [0, 's:0', 'w:0-1'], 'word1'],
+    ...     'w:2': [[0, 'text:0', 'w:0-1'], [1, 's:1', 'w:1-2'], 'word2'],
+    ...     'w:3': [[0, 'text:0', 'w:0-1'], [1, 's:1', 'w:1-2'], 'word3'],
+    ...     'w:4': [[1, 'text:1', 'w:1-2'], [2, 's:2', 'w:2-3'], 'word4'],
+    ...     'w:5': [[1, 'text:1', 'w:1-2'], [2, 's:2', 'w:2-3'], 'word5'],
     ... }
     >>> list(vrt_iterate(tokens, vrt, trail=[1]))
     ...                                         # doctest: +NORMALIZE_WHITESPACE
-    [([u's:0', u'w:0-1'], [[u'word0'], [u'word1']]),
-     ([u's:1', u'w:1-2'], [[u'word2'], [u'word3']]),
-     ([u's:2', u'w:2-3'], [[u'word4'], [u'word5']])]
+    [(['s:0', 'w:0-1'], [['word0'], ['word1']]),
+     (['s:1', 'w:1-2'], [['word2'], ['word3']]),
+     (['s:2', 'w:2-3'], [['word4'], ['word5']])]
     >>> [ (text, list(sent))
     ...   for text, sent in vrt_iterate(tokens, vrt, trail=[0,1]) ]
     ...                                         # doctest: +NORMALIZE_WHITESPACE
-    [([u'text:0', u'w:0-1'],
-      [([u's:0', u'w:0-1'], [[u'word0'], [u'word1']]),
-       ([u's:1', u'w:1-2'], [[u'word2'], [u'word3']])]),
-     ([u'text:1', u'w:1-2'],
-      [([u's:2', u'w:2-3'], [[u'word4'], [u'word5']])])]
+    [(['text:0', 'w:0-1'],
+      [(['s:0', 'w:0-1'], [['word0'], ['word1']]),
+       (['s:1', 'w:1-2'], [['word2'], ['word3']])]),
+     (['text:1', 'w:1-2'],
+      [(['s:2', 'w:2-3'], [['word4'], ['word5']])])]
 
     """
     cols = []
     toks = []
-    for tok, next_tok in it.izip(tokens, it.chain(tokens[1:], (None,))):
+    for tok, next_tok in zip(tokens, it.chain(tokens[1:], (None,))):
 
-        cols.append(vrt[tok][trail[-1]+1:])
+        cols.append(vrt[tok][trail[-1] + 1:])
         toks.append(tok)
 
         if next_tok is None:
@@ -700,7 +696,7 @@ class DictWithWithout(dict):
         {'bepa': 2}
         """
         return DictWithWithout(
-            **{k: v for k, v in self.iteritems() if k not in keys})
+            **{k: v for k, v in list(self.items()) if k not in keys})
 
 
 def example_data():
@@ -712,37 +708,37 @@ def example_data():
     columns = ["word", "pos"]
     column_nrs = [3, 4]
     # The names and the order of the tokens:
-    tokens = [u"w:1", u"w:2", u"w:3", u"w:4"]
+    tokens = ["w:1", "w:2", "w:3", "w:4"]
     vrt = {
-        u"w:1": ListWithGet([
-            [1, u""],
-            [1, u"Kokboken"],
-            [1, u"Jane Oliver"],
-            u"Ett",
-            u"DT"
+        "w:1": ListWithGet([
+            [1, ""],
+            [1, "Kokboken"],
+            [1, "Jane Oliver"],
+            "Ett",
+            "DT"
         ]),
-        u"w:2": ListWithGet([
-            [1, u""],
-            [1, u"Kokboken"],
-            [1, u"Jane Oliver"],
-            u"exempel",
-            u"NN"
+        "w:2": ListWithGet([
+            [1, ""],
+            [1, "Kokboken"],
+            [1, "Jane Oliver"],
+            "exempel",
+            "NN"
         ]),
-        u"w:3": ListWithGet([
-            [2, u""],
-            [1, u"Kokboken"],
-            [1, u"Jane Oliver"],
-            u"Banankaka",
-            u"NN"
+        "w:3": ListWithGet([
+            [2, ""],
+            [1, "Kokboken"],
+            [1, "Jane Oliver"],
+            "Banankaka",
+            "NN"
         ]),
-        u"w:4": ListWithGet([
-            [3, u""],
-            [2, u"Nya kokboken"],
-            [2, u"Jane Oliver"],
-            u"Flambera",
-            u"VB"
+        "w:4": ListWithGet([
+            [3, ""],
+            [2, "Nya kokboken"],
+            [2, "Jane Oliver"],
+            "Flambera",
+            "VB"
         ])
-      }
+    }
     return DictWithWithout(**locals())
 
 
@@ -752,24 +748,24 @@ def example_overlapping_data():
     structs_count = 2
     columns = ["word"]
     column_nrs = [2]
-    tokens = [u"w:1", u"w:2", u"w:3"]
+    tokens = ["w:1", "w:2", "w:3"]
     vrt = {
-        u"w:1": ListWithGet([
-            [1, u""],
+        "w:1": ListWithGet([
+            [1, ""],
             [],
-            u"bold"
+            "bold"
         ]),
-        u"w:2": ListWithGet([
-            [1, u""],
-            [2, u""],
-            u"bold_italic"
+        "w:2": ListWithGet([
+            [1, ""],
+            [2, ""],
+            "bold_italic"
         ]),
-        u"w:3": ListWithGet([
+        "w:3": ListWithGet([
             [],
-            [2, u""],
-            u"italic"
+            [2, ""],
+            "italic"
         ]),
-      }
+    }
     return DictWithWithout(**locals())
 
 

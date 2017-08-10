@@ -7,7 +7,7 @@ Requires installation of crfpp (https://taku910.github.io/crfpp/).
 """
 
 import CRFPP
-from util.flat_txt2crf import normalize, features
+from sb.util.flat_txt2crf import normalize, features
 
 """ Expects a model that operating on the tags
         SNG | LF0 (LF1 MID*)? RHT
@@ -64,8 +64,8 @@ def segment(sentence, model):
             # print "Done tagging crf"
             return anchors
 
-    except RuntimeError, e:
-        print "RuntimeError: ", e,
+    except RuntimeError as e:
+        print("RuntimeError: ", e, end=' ')
 
 
 def crf_anchors(tagger, enumerated_sent):
@@ -80,7 +80,7 @@ def crf_anchors(tagger, enumerated_sent):
 
     for i in range(0, size):
         label = tagger.y2(i)
-        w, span = words.next()
+        w, span = next(words)
         # print w,span
 
         if label == 'SNG':

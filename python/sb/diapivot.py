@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-import util
-import cPickle as pickle
+import sb.util as util
+import pickle
 
 
 def annotate(out, lemgram, model, affix="|", delimiter="|"):
@@ -44,7 +44,7 @@ class PivotLexicon(object):
             annotation_tag_pairs = self.lexicon.get(lem, [])
         else:
             annotation_tag_pairs = self.lexicon.get(lem, []) + self.lexicon.get(lem.lower(), [])
-        return map(_split_val, annotation_tag_pairs)
+        return list(map(_split_val, annotation_tag_pairs))
 
     def get_exactMatch(self, word):
         s = self.lookup(word)
@@ -65,7 +65,7 @@ def read_xml(xml='diapivot.xml'):
 
     context = cet.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
     context = iter(context)
-    event, root = context.next()
+    event, root = next(context)
 
     for event, elem in context:
         if event == "end":
@@ -126,7 +126,7 @@ def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
     for lem in lexicon:
         lemgrams = []
 
-        for saldo, match in lexicon[lem].items():
+        for saldo, match in list(lexicon[lem].items()):
             lemgrams.append(PART_DELIM1.join([saldo, match]))
 
         picklex[lem] = sorted(lemgrams)

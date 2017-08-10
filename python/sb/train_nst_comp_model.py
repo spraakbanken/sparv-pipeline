@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-
 import codecs
-import cPickle as pickle
+import pickle
 import re
-import util
+import sb.util as util
 from nltk import FreqDist, LidstoneProbDist
 
 
@@ -13,7 +12,7 @@ def make_model(nst_infile, picklefile, protocol=-1):
     and smoothed probabilities as values."""
     # Collect all compounds from nst data
     nst_full_compounds = set()
-    with codecs.open(nst_infile, encoding='utf-8') as f:
+    with codecs.open(nst_infile, encoding='UTF-8') as f:
         for line in f:
             fields = line[:-1].split('\t')
             word = fields[0]
@@ -32,7 +31,7 @@ def make_model(nst_infile, picklefile, protocol=-1):
     pd = LidstoneProbDist(pos_fdist, 0.001, pos_fdist.B())
 
     # Save probability model as pickle
-    with open(picklefile, "w") as f:
+    with open(picklefile, "wb") as f:
         pickle.dump(pd, f, protocol=protocol)
 
 

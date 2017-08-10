@@ -2,13 +2,13 @@
 
 import os.path
 import re
-import util
 import nltk
-import cPickle as pickle
-import saldo
 import codecs
+import pickle
+import sb.util as util
+import sb.saldo as saldo
 try:
-    import crf  # for CRF++ models
+    from . import crf  # for CRF++ models
 except ImportError:
     pass
 
@@ -22,7 +22,7 @@ def do_segmentation(text, element, out, chunk, segmenter, existing_segments=None
     if model:
         if not no_pickled_model:
             with open(model, "rb") as M:
-                model = pickle.load(M)
+                model = pickle.load(M, encoding='UTF-8')
         segmenter_args = (model,)
     else:
         segmenter_args = ()
@@ -44,7 +44,7 @@ def do_segmentation(text, element, out, chunk, segmenter, existing_segments=None
         positions = positions.union(set(anchor2pos[anchor] for edge in CHUNK
                                     for span in util.edgeSpans(edge) for anchor in span))
     positions = sorted(set([0, len(corpus_text)]) | positions)
-    chunk_spans = zip(positions, positions[1:])
+    chunk_spans = list(zip(positions, positions[1:]))
 
     if existing_segments:
         OUT = util.read_annotation(existing_segments)
@@ -100,7 +100,7 @@ def build_token_wordlist(saldo_model, out, segmenter, model=None, no_pickled_mod
     with open(saldo_model, "rb") as F:
         lexicon = pickle.load(F)
         for w in lexicon:
-            w2 = map(saldo._split_triple, lexicon[w])
+            w2 = list(map(saldo._split_triple, lexicon[w]))
             mwu_extras = [contw for w3 in w2 for cont in w3[2] for contw in cont if contw not in lexicon]
             for wf in mwu_extras + [w]:
                 spans = list(segmenter.span_tokenize(wf))
@@ -121,11 +121,11 @@ class ModifiedLanguageVars(nltk.tokenize.punkt.PunktLanguageVars):
     # http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt-pysrc.html#PunktLanguageVars
 
     # Excludes some characters from starting word tokens
-    _re_word_start = ur'''[^\(\"\'‘’–—“”»\`\\{\/\[:;&\#\*@\)}\]\-,…]'''
+    _re_word_start = r'''[^\(\"\'‘’–—“”»\`\\{\/\[:;&\#\*@\)}\]\-,…]'''
     # Characters that cannot appear within words
-    _re_non_word_chars = ur'(?:[?!)\"“”»–—\\;\/}\]\*:\'‘’\({\[…%])'
+    _re_non_word_chars = r'(?:[?!)\"“”»–—\\;\/}\]\*:\'‘’\({\[…%])'
     # Used to realign punctuation that should be included in a sentence although it follows the period (or ?, !).
-    re_boundary_realignment = re.compile(ur'[“”"\')\]}]+?(?:\s+|(?=--)|$)', re.MULTILINE)
+    re_boundary_realignment = re.compile(r'[“”"\')\]}]+?(?:\s+|(?=--)|$)', re.MULTILINE)
 
     def __init__(self):
         pass
@@ -183,7 +183,7 @@ class ModifiedPunktWordTokenizer(object):
 # Training a Punkt sentence tokenizer
 
 def train_punkt_segmenter(textfiles, modelfile, encoding=util.UTF8, protocol=-1):
-    if isinstance(textfiles, basestring):
+    if isinstance(textfiles, str):
         textfiles = textfiles.split()
 
     util.log.info("Reading files")
@@ -234,7 +234,7 @@ class PunctuationTokenizer(nltk.RegexpTokenizer):
         return result
 
 
-class BetterWordTokenizer():
+class BetterWordTokenizer(object):
     """
     A word tokenizer based on the PunktWordTokenizer code, heavily modified to add support for
     custom regular expressions, wordlists, and external configuration files.
@@ -262,7 +262,7 @@ class BetterWordTokenizer():
     )'''
 
     # Used to realign punctuation that should be included in a sentence although it follows the period (or ?, !).
-    re_boundary_realignment = re.compile(ur'[“”"\')\]}]+?(?:\s+|(?=--)|$)', re.MULTILINE)
+    re_boundary_realignment = re.compile(r'[“”"\')\]}]+?(?:\s+|(?=--)|$)', re.MULTILINE)
 
     re_punctuated_token = re.compile(r"\w.*\.$", re.UNICODE)
 
@@ -284,7 +284,7 @@ class BetterWordTokenizer():
                         try:
                             key, val = line.strip().split(None, 1)
                         except ValueError as e:
-                            print "Error parsing configuration file:", line
+                            print("Error parsing configuration file:", line)
                             raise e
                         key = key[:-1]
 
@@ -359,7 +359,7 @@ class BetterWordTokenizer():
             begin += len(w)
 
 
-class CRFTokenizer():
+class CRFTokenizer(object):
     """ Tokenization based on Conditional Random Fields
         Implemented for Old Swedish, see crf.py for more details"""
 
@@ -370,7 +370,7 @@ class CRFTokenizer():
         return crf.segment(s, self.model)
 
 
-class FSVParagraphSplitter():
+class FSVParagraphSplitter(object):
     """ A paragraph splitter for old Swedish. """
 
     def __init__(self):

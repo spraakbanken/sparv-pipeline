@@ -6,7 +6,7 @@ Safe unicode conversions
 
 
 def utf8(u):
-    return unicode(u).encode("utf8")
+    return str(u).encode("utf8")
 
 
 def latin1(u):
@@ -31,14 +31,14 @@ def latin1plus(u):
      * CP-1252 symbols are not replaced"""
     replacements = u"ŠS šs ŽZ žz ŒOE œoe ŸY ƒf"
     replacements = dict((ord(r[0]), r[1:]) for r in replacements.split())
-    u = unicode(u).translate(replacements)
+    u = str(u).translate(replacements)
     return cp1252(u)
 
 
 def encode(u, encoding):
     if encoding == "latin1+":
         return latin1plus(u)
-    u = unicode(u)
+    u = str(u)
     try:
         return u.encode(encoding)
     except UnicodeEncodeError:
@@ -84,7 +84,7 @@ _DIACRITIC_REPLACEMENTS = {
     u"æ": u"ae",  # ä ?
     u"Œ": u"OE",  # Ö ?
     u"œ": u"oe",  # ö ?
-    u"Ø": u"Ö", 
+    u"Ø": u"Ö",
     u"ø": u"ö",
     u"Ð": u"DH",
     u"ð": u"dh",

@@ -4,15 +4,15 @@
 Small annotations that don't fit as standalone python files.
 """
 
-import util
+from . import util
 import re
 
 
 def text_spans(text, chunk, out):
     """Add the text content for each edge as a new annotation."""
-    if isinstance(text, basestring):
+    if isinstance(text, str):
         text = util.corpus.read_corpus_text(text)
-    if isinstance(chunk, basestring):
+    if isinstance(chunk, str):
         chunk = util.read_annotation_iterkeys(chunk)
     corpus_text, anchor2pos, _pos2anchor = text
     OUT = {}
@@ -30,7 +30,7 @@ def translate_tag(tag, out, mapping):
     """Convert part-of-speech tags, specified by the mapping.
     Example mappings: parole_to_suc, suc_to_simple, ...
     """
-    if isinstance(mapping, basestring):
+    if isinstance(mapping, str):
         mapping = util.tagsets.__dict__[mapping]
     util.write_annotation(out, ((n, mapping.get(t, t))
                                 for (n, t) in util.read_annotation_iteritems(tag)))
@@ -40,7 +40,7 @@ def chain(out, annotations, default=None):
     """Create a functional composition of a list of annotations.
     E.g., token.sentence + sentence.id -> token.sentence-id
     """
-    if isinstance(annotations, basestring):
+    if isinstance(annotations, str):
         annotations = annotations.split()
     annotations = [util.read_annotation(a) for a in annotations]
     util.write_annotation(out, util.corpus.chain(annotations, default))
@@ -56,7 +56,7 @@ def select(out, annotation, index, separator=None):
     The given annotation values are separated by 'separator',
     by default whitespace, with at least index + 1 elements.
     """
-    if isinstance(index, basestring):
+    if isinstance(index, str):
         index = int(index)
     util.write_annotation(out, ((key, items.split(separator)[index])
                                 for (key, items) in util.read_annotation_iteritems(annotation)))
@@ -107,7 +107,7 @@ def concat(out, left, right, separator="", merge_twins="", encoding=util.UTF8):
 
 def concat2(out, annotations, separator="", encoding=util.UTF8):
     """Concatenate two or more annotations, with an optional separator."""
-    if isinstance(annotations, basestring):
+    if isinstance(annotations, str):
         annotations = annotations.split()
 
     annotations = [util.read_annotation(a) for a in annotations]

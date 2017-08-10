@@ -4,9 +4,9 @@
 Adds annotations from Saldo.
 """
 
-import util
+import sb.util as util
 import itertools
-import cPickle as pickle
+import pickle
 import re
 import os
 
@@ -62,12 +62,12 @@ def annotate(word, sentence, reference, out, annotations, models, msd="",
     out = out.split()
     assert len(out) == len(annotations), "Number of target files and annotations must be the same"
 
-    if isinstance(skip_multiword, basestring):
+    if isinstance(skip_multiword, str):
         skip_multiword = (skip_multiword.lower() == "true")
     if skip_multiword:
         util.log.info("Skipping multi word annotations")
 
-    if isinstance(allow_multiword_overlap, basestring):
+    if isinstance(allow_multiword_overlap, str):
         allow_multiword_overlap = (allow_multiword_overlap.lower() == "true")
 
     min_precision = float(min_precision)
@@ -120,7 +120,7 @@ def annotate(word, sentence, reference, out, annotations, models, msd="",
         # Then save the rest of the multi word expressions in sentence_tokens
         save_multiwords(complete_multis, sentence_tokens)
 
-        for token in sentence_tokens.values():
+        for token in list(sentence_tokens.values()):
             OUT[token["tokid"]] = _join_annotation(token["annotations"], delimiter, affix)
 
         # Loop to next sentence
@@ -149,9 +149,9 @@ def find_single_word(thewords, lexicon_list, msdtag, precision, min_precision, p
                              for (annotation, msdtags, wordslist, _, _, prefix) in ann_tags_words if not wordslist]
 
     if min_precision > 0:
-        annotation_precisions = filter(lambda x: x[0] >= min_precision, annotation_precisions)
+        annotation_precisions = [x for x in annotation_precisions if x[0] >= min_precision]
     annotation_precisions = normalize_precision(annotation_precisions)
-    annotation_precisions.sort(reverse=True)
+    annotation_precisions.sort(reverse=True, key=lambda x: x[0])
 
     if precision_filter and annotation_precisions:
         if precision_filter == "first":
@@ -285,7 +285,7 @@ def save_multiwords(complete_multis, sentence_tokens):
         for tok_ref in c[0]:
             if first:
                 first_ref = tok_ref
-            for ann, val in c[1].items():
+            for ann, val in list(c[1].items()):
                 if not first:
                     val = [x + ":" + first_ref for x in val]
                 sentence_tokens[tok_ref]["annotations"].setdefault(ann, []).extend(val)
@@ -323,7 +323,7 @@ class SaldoLexicon(object):
             annotation_tag_pairs = self.lexicon.get(word, [])
         else:
             annotation_tag_pairs = self.lexicon.get(word, []) + self.lexicon.get(word.lower(), [])
-        return map(_split_triple, annotation_tag_pairs)
+        return list(map(_split_triple, annotation_tag_pairs))
 
     @staticmethod
     def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
@@ -337,7 +337,7 @@ class SaldoLexicon(object):
         picklex = {}
         for word in lexicon:
             annotations = []
-            for annotation, extra in lexicon[word].items():
+            for annotation, extra in list(lexicon[word].items()):
                 #annotationlist = PART_DELIM3.join(annotation)
                 annotationlist = PART_DELIM2.join(k + PART_DELIM3 + PART_DELIM3.join(annotation[k]) for k in annotation)
                 taglist =        PART_DELIM3.join(sorted(extra[0]))
@@ -365,8 +365,8 @@ class SaldoLexicon(object):
         with open(saldofile, "w") as F:
             for word in sorted(lexicon):
                 annotations = [PART_DELIM.join([annotation] + sorted(postags))
-                               for annotation, postags in lexicon[word].items()]
-                print >>F, " ".join([word] + annotations).encode(util.UTF8)
+                               for annotation, postags in list(lexicon[word].items())]
+                print(" ".join([word] + annotations).encode(util.UTF8), file=F)
         if verbose:
             util.log.info("OK, saved")
 
@@ -449,7 +449,7 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
 
     context = cet.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
     context = iter(context)
-    event, root = context.next()
+    event, root = next(context)
 
     for event, elem in context:
         if event == "end":
@@ -533,7 +533,7 @@ def save_to_cstlemmatizer(cstfile, lexicon, encoding="latin-1", verbose=True):
                     # the order between word, lemma, postag depends on
                     # the argument -c to cstlemma, this order is -cBFT:
                     line = "%s\t%s\t%s" % (word, lemma, postag)
-                    print >> F, line.encode(encoding)
+                    print(line.encode(encoding), file=F)
     if verbose:
         util.log.info("OK, saved")
 
@@ -547,8 +547,8 @@ def extract_tags(lexicon):
       - lexicon = {wordform: {annotation: set(possible tags)}}
     """
     tags = set()
-    for annotations in lexicon.values():
-        tags.update(*annotations.values())
+    for annotations in list(lexicon.values()):
+        tags.update(*list(annotations.values()))
     return tags
 
 

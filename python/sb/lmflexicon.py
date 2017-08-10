@@ -9,9 +9,8 @@ To pickle a file, run
 lmflexicon.xml_to_pickle("swedberg.xml", "swedberg.pickle", skip_multiword=False)
 lmlexicon place in subversion: https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/dalinm
 """
-
-import saldo
-import util
+import sb.saldo as saldo
+import sb.util as util
 import re
 
 ######################################################################
@@ -36,7 +35,7 @@ def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset
 
     context = cet.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
     context = iter(context)
-    event, root = context.next()
+    event, root = next(context)
 
     for event, elem in context:
         if event == "end":
@@ -114,7 +113,7 @@ def convert_default(pos, inh, param, tagmap):
     if tags:
         return tags
     tags = []
-    for t in tagmap.keys():
+    for t in list(tagmap.keys()):
         if t.split()[0] == pos:
             tags.extend(tagmap.get(t))
     return tags
@@ -153,7 +152,7 @@ def findval(elems, key):
                 yield form.get("val")
         yield ""
 
-    return iterfindval().next()
+    return next(iterfindval())
 
 
 ######################################################################

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-
 import codecs
-import util
+import sb.util as util
 import re
 
 # Constants
@@ -42,7 +41,7 @@ def make_table(out, files, saldosuc_morphtable):
                 words.setdefault(word.lower(), set()).update(suc)
                 words.setdefault(word.title(), set()).update(suc)
     with codecs.open(out, encoding="UTF-8", mode="w") as out:
-        for w, ts in words.items():
+        for w, ts in list(words.items()):
             line = ('\t'.join([w] + list(ts)) + "\n")
             out.write(line)
 

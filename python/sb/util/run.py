@@ -3,7 +3,7 @@
 import inspect
 import sys
 import os
-import log
+from . import log
 from getopt import getopt, GetoptError
 
 
@@ -23,7 +23,7 @@ def main(*default_functions, **functions):
     available_options = set(fun for fun in functions if fun is not None)
 
     # Each function argument is a possible commandline option:
-    for fun in list(default_functions) + functions.values():
+    for fun in list(default_functions) + list(functions.values()):
         spec = inspect.getargspec(fun)
         if spec.varargs or spec.keywords:
             exit("\nsb.util.run.main: I cannot handle functions with ** or * arguments.\n")
@@ -66,7 +66,7 @@ def main(*default_functions, **functions):
     # Now we can call the function:
     log.init(showpid=True)
     log.header()
-    log.info("RUN: %s(%s)", fun.__name__, ", ".join("%s='%s'" % i for i in options.items()))
+    log.info("RUN: %s(%s)", fun.__name__, ", ".join("%s='%s'" % i for i in list(options.items())))
     fun(**options)
     log.statistics()
     if log.totalerrors:
@@ -94,6 +94,6 @@ def print_usage_and_exit(*default_functions, **functions):
         if spec.varargs:
             usage += " %s..." % spec.varargs
         usage += "\n\n"
-        if isinstance(fun.__doc__, basestring) and fun.__doc__.strip():
+        if isinstance(fun.__doc__, str) and fun.__doc__.strip():
             usage += "--> " + fun.__doc__.strip() + "\n\n"
     exit(usage)

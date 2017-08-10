@@ -1,4 +1,5 @@
-import util
+# -*- coding: utf-8 -*-
+import sb.util as util
 
 SENT_SEP = "$SENT$"
 

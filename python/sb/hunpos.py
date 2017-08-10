@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-
 import codecs
 import re
-import util.tagsets
+import sb.util as util
 
 SENT_SEP = "\n\n"
 TOK_SEP = "\n"
@@ -13,7 +12,7 @@ TAG_COLUMN = 1
 def msdtag(model, out, word, sentence, tag_mapping=None, morphtable=None, patterns=None, encoding=util.UTF8):
     """POS/MSD tag using the Hunpos tagger.
     """
-    if isinstance(tag_mapping, basestring) and tag_mapping:
+    if isinstance(tag_mapping, str) and tag_mapping:
         tag_mapping = util.tagsets.__dict__[tag_mapping]
     elif tag_mapping is None or tag_mapping == "":
         tag_mapping = {}

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-
-import util
+import sb.util as util
 
 
 def fileid(out, files=None, filelist=None, prefix=""):
@@ -21,16 +20,16 @@ def fileid(out, files=None, filelist=None, prefix=""):
 
     for f in files:
         util.resetIdent(f, numfiles)
-        OUT[f] = prefix + util.mkIdent("", OUT.values())
+        OUT[f] = prefix + util.mkIdent("", list(OUT.values()))
 
     util.write_annotation(out, OUT)
 
 
 def add(out, fileids, files=None, filelist=None, prefix=""):
     """ Adds IDs for new files to an existing list of file IDs, and removes missing ones. """
-    
+
     assert files or filelist, "files or filelist must be specified"
-    
+
     if filelist:
         with open(filelist, "r") as f:
             files = f.read().strip()
@@ -43,15 +42,15 @@ def add(out, fileids, files=None, filelist=None, prefix=""):
 
     # Add new files
     for f in files:
-        if not f in OUT:
+        if f not in OUT:
             util.resetIdent(f, numfiles)
-            OUT[f] = prefix + util.mkIdent("", OUT.values())
+            OUT[f] = prefix + util.mkIdent("", list(OUT.values()))
             util.log.info("File %s added.", f)
 
     # Remove deleted files
     todelete = []
     for f in OUT:
-        if not f in files:
+        if f not in files:
             todelete.append(f)
             util.log.info("File %s removed.", f)
 

@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-
-import util
+import sb.util as util
 from collections import defaultdict
-from util.mysql_wrapper import MySQL
+from sb.util.mysql_wrapper import MySQL
 import re
 import math
 
@@ -97,7 +96,7 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
             return result
 
         # Look for relations
-        for v in tokens.itervalues():
+        for v in list(tokens.values()):
             for d in v["dep"]:
                 for rel in rels:
                     r = rel[0]
@@ -106,24 +105,24 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
                         if len(rel) == 1:
                             triple = ((v["lemgram"], v["word"], v["pos"], v["ref"]), d[0], (d[1]["lemgram"], d[1]["word"], d[1]["pos"], d[1]["ref"]), ("", None), sentid, v["ref"], d[1]["ref"])
                         else:
-                            lookup = dict(zip(map(str, sorted(r.keys())), (v, d[0], d[1])))
+                            lookup = dict(list(zip(list(map(str, sorted(r.keys()))), (v, d[0], d[1]))))
                             i = set(rel[0].keys()).intersection(set(rel[1].keys())).pop()
                             rel2 = [x[1] for x in sorted(rel[1].items())]
-                            index1 = rel[0].keys().index(i)
-                            index2 = rel[1].keys().index(i)
+                            index1 = list(rel[0].keys()).index(i)
+                            index2 = list(rel[1].keys()).index(i)
                             if index1 == 2 and index2 == 0:
                                 result = _findrel(d[1], rel2[1], rel2[2])
                                 if result:
-                                    lookup.update(dict(zip(map(str, sorted(rel[1].keys())), (d[1], rel2[1], result[0]))))
+                                    lookup.update(dict(list(zip(list(map(str, sorted(rel[1].keys()))), (d[1], rel2[1], result[0])))))
                             elif index1 == 0 and index2 == 0:
                                 result = _findrel(v, rel2[1], rel2[2])
                                 if result:
-                                    lookup.update(dict(zip(map(str, sorted(rel[1].keys())), (v, rel2[1], result[0]))))
+                                    lookup.update(dict(list(zip(list(map(str, sorted(rel[1].keys()))), (v, rel2[1], result[0])))))
 
                             pp = rel[-1]
-                            if len(lookup.keys()) > 3:
-                                lookup_bf = dict((key, val["bf"]) for key, val in lookup.iteritems() if isinstance(val, dict))
-                                lookup_ref = dict((key, val["ref"]) for key, val in lookup.iteritems() if isinstance(val, dict))
+                            if len(list(lookup.keys())) > 3:
+                                lookup_bf = dict((key, val["bf"]) for key, val in list(lookup.items()) if isinstance(val, dict))
+                                lookup_ref = dict((key, val["ref"]) for key, val in list(lookup.items()) if isinstance(val, dict))
                                 triple = (
                                     (lookup[str(pp[0])]["lemgram"], lookup[str(pp[0])]["word"], lookup[str(pp[0])]["pos"], lookup[str(pp[0])]["ref"]),
                                     lookup[str(pp[1])],
@@ -157,7 +156,7 @@ def _mutate_triple(triple):
     is_lemgrams = {}
     parts = {"head": head, "dep": dep}
 
-    for part, val in parts.items():
+    for part, val in list(parts.items()):
         if val[0].startswith("|") and val[0].endswith("|"):
             parts[part] = [w[:w.find(":")] if ":" in w else w for w in val[0].split("|") if w]
             is_lemgrams[part] = True
@@ -226,7 +225,7 @@ def frequency(corpus, db_name, out, source="", source_list="", split=False):
          but installing the data will take much longer.
     """
 
-    if isinstance(split, basestring):
+    if isinstance(split, str):
         split = (split.lower() == "true")
 
     db_table = MYSQL_TABLE + "_" + corpus.upper()
@@ -272,7 +271,7 @@ def frequency(corpus, db_name, out, source="", source_list="", split=False):
         REL = util.read_annotation(s)
         # basename = s.rsplit(".", 1)[0]
 
-        for _, triple in REL.iteritems():
+        for _, triple in list(REL.items()):
             head, headpos, rel, dep, deppos, extra, sid, refh, refd, bfhead, bfdep, wfhead, wfdep = triple.split(u"\t")
             bfhead, bfdep, wfhead, wfdep = int(bfhead), int(bfdep), int(wfhead), int(wfdep)
 
@@ -353,7 +352,7 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
 
     rows = []
 
-    for string, index in strings.iteritems():
+    for string, index in list(strings.items()):
         if len(string) == 3:
             string, pos, stringextra = string
             if stringextra == "":
@@ -372,9 +371,9 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
 
     sentence_rows = []
     rows = []
-    for head, rels in freq.iteritems():
-        for rel, deps in rels.iteritems():
-            for dep, dep2 in deps.iteritems():
+    for head, rels in list(freq.items()):
+        for rel, deps in list(rels.items()):
+            for dep, dep2 in list(deps.items()):
                 index, count, bfwf = dep2
 
                 row = {
@@ -393,7 +392,7 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
     mysql.add_row(temp_db_table, rows, update_freq)
 
     rows = []
-    for rel, freq in rel_count.iteritems():
+    for rel, freq in list(rel_count.items()):
         row = {
             "rel": rel,
             "freq": freq}
@@ -402,7 +401,7 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
     mysql.add_row(temp_db_table + "_rel", rows, update_freq)
 
     rows = []
-    for head_rel, freq in head_rel_count.iteritems():
+    for head_rel, freq in list(head_rel_count.items()):
         head, rel = head_rel
         row = {
             "head": head,
@@ -413,7 +412,7 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
     mysql.add_row(temp_db_table + "_head_rel", rows, update_freq)
 
     rows = []
-    for dep_rel, freq in dep_rel_count.iteritems():
+    for dep_rel, freq in list(dep_rel_count.items()):
         dep, rel = dep_rel
         row = {
             "dep": dep,
@@ -423,7 +422,7 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
 
     mysql.add_row(temp_db_table + "_dep_rel", rows, update_freq)
 
-    for index, sentenceset in sentences.iteritems():
+    for index, sentenceset in list(sentences.items()):
         for sentence in sentenceset:
             srow = {
                 "id": index,

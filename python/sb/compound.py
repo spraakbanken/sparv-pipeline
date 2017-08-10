@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-
-import cPickle as pickle
+import pickle
 import itertools
 import re
 import time
-import util
+import sb.util as util
+from functools import reduce
 
 SPLIT_LIMIT = 200
 COMP_LIMIT = 100
@@ -34,7 +34,7 @@ def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp
     if not saldo_comp_lexicon:
         saldo_comp_lexicon = SaldoCompLexicon(saldo_comp_model)
 
-    with open(nst_model, "r") as f:
+    with open(nst_model, "rb") as f:
         nst_model = pickle.load(f)
 
     if not stats_lexicon:
@@ -100,7 +100,7 @@ class StatsLexicon(object):
     def __init__(self, stats_model, verbose=True):
         if verbose:
             util.log.info("Reading statistics model: %s", stats_model)
-        with open(stats_model, "r") as s:
+        with open(stats_model, "rb") as s:
             self.lexicon = pickle.load(s)
         if verbose:
             util.log.info("Done")
@@ -130,7 +130,7 @@ class SaldoCompLexicon(object):
             annotation_tag_pairs = self.lexicon.get(word, [])
         else:
             annotation_tag_pairs = self.lexicon.get(word, []) + self.lexicon.get(word.lower(), [])
-        return map(_split_triple, annotation_tag_pairs)
+        return list(map(_split_triple, annotation_tag_pairs))
 
     def get_prefixes(self, prefix):
         return [(prefix, p[0], tuple(p[3])) for p in self.lookup(prefix) if
@@ -185,7 +185,7 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
     invalid_spans = set()
     valid_spans = set()
     # Create list of possible splitpoint indices for w
-    nsplits = range(1, len(w))
+    nsplits = list(range(1, len(w)))
     counter = 0
     giveup = False
     iterations = 0
@@ -194,7 +194,7 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
     for n in nsplits:
         first = True
         nn = len(nsplits)
-        indices = range(n)
+        indices = list(range(n))
 
         # Similar to itertools.combinations, but customized for our needs
         while True:
@@ -211,7 +211,7 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
             if first:
                 first = False
             else:
-                for i in reversed(range(n)):
+                for i in reversed(list(range(n))):
                     if indices[i] != i + nn - n:
                         break
                 else:
@@ -223,7 +223,7 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
             splitpoint = tuple(i + 1 for i in indices)
 
             # Create list of affix spans
-            spans = zip((0,) + splitpoint, splitpoint + (None,))
+            spans = list(zip((0,) + splitpoint, splitpoint + (None,)))
 
             # Abort if current compound contains an affix known to be invalid
             abort = False
@@ -353,7 +353,7 @@ def compound(saldo_lexicon, altlexicon, w, msd=None):
         return []
 
     in_compounds = list(split_word(saldo_lexicon, altlexicon, w, msd))
-    
+
     if len(in_compounds) >= SPLIT_LIMIT:
         return []
 
@@ -386,10 +386,10 @@ def compound(saldo_lexicon, altlexicon, w, msd=None):
         if not anas:
             continue
         current_combinations.append(anas)
-        
+
         if deep_len(current_combinations) > COMP_LIMIT:
             continue
-        
+
         # Check if all parts got an analysis
         if len(current_combinations) == len(comp):
             out_compounds.append(list(set(itertools.product(*current_combinations))))
@@ -470,7 +470,7 @@ def read_xml(xml='saldom.xml', tagset="SUC"):
 
     context = cet.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
     context = iter(context)
-    event, root = context.next()
+    event, root = next(context)
 
     for event, elem in context:
         if event == "end":
@@ -522,7 +522,7 @@ def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
     for word in lexicon:
         lemgrams = []
 
-        for lemgram, annotation in lexicon[word].items():
+        for lemgram, annotation in list(lexicon[word].items()):
             msds = PART_DELIM2.join(annotation["msd"])
             tags = PART_DELIM2.join(annotation.get("tags", []))
             lemgrams.append(PART_DELIM1.join([lemgram, msds, annotation["pos"], tags]))

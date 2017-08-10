@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import sb.util as util
 import sb.cwb as cwb
 import itertools as it
@@ -24,7 +23,7 @@ def word_weights(model, word, pos, out):
     words = util.read_annotation(word)
     poss = util.read_annotation(pos) if pos else {}
     data = (Example(None, vw_normalize(word))
-            for span, word in words.iteritems()
+            for span, word in list(words.items())
             if len(word) >= min_word_length
             if not pos or poss[span] not in banned_pos)
     weights = defaultdict(list)
@@ -49,7 +48,7 @@ def word_weights(model, word, pos, out):
                 weights[word].append(index_to_label[str(n)] + ':' + weight)
     ws = (
         (span, '|' + '|'.join(weights[vw_normalize(word)]) + '|')
-        for span, word in words.iteritems()
+        for span, word in list(words.items())
         if vw_normalize(word) in weights
     )
     util.write_annotation(out, ws)
@@ -140,7 +139,7 @@ def train(file_list, outprefix,
     min_word_length = int(min_word_length) if min_word_length else 0
 
     # Look at the structs annotations to get the labels and their distribution:
-    _, structs, _, _, _ = zip(*order_struct_parent_word_pos)
+    _, structs, _, _, _ = list(zip(*order_struct_parent_word_pos))
     # todo: skip labels with very low occurrences
     labels = Counter(map_label(label)
                      for annotfile in structs
@@ -154,7 +153,7 @@ def train(file_list, outprefix,
     label_to_index = {}
     index_to_label = {}
     answer = {}
-    for i, (label, occurences) in enumerate(labels.iteritems(), start=1):
+    for i, (label, occurences) in enumerate(iter(list(labels.items())), start=1):
         w = float(N) / occurences
         util.log.info('%s: occurences: %s, weight: %s', label, occurences, w)
         answer[label] = ('%s:%s | ' % (i, w)).encode()
@@ -207,7 +206,7 @@ def train(file_list, outprefix,
         N_eval=N_eval,
         stats={index_to_label[i]: p.as_dict()
                for i, p in
-               multiclass_performance(target, predicted).iteritems()},
+               list(multiclass_performance(target, predicted).items())},
         confusion_matrix=confusion_matrix(target, predicted, order))
     with open(jsonfile, 'w') as f:
         json.dump(info, f, sort_keys=True, indent=2)
@@ -338,7 +337,7 @@ def vw_normalize(s):
 
 
 # Replace digits with X
-_escape_symbols = [(unicode(x), u'X') for x in range(10)]
+_escape_symbols = [(str(x), u'X') for x in range(10)]
 # Vowpal Wabbit needs these to be escaped:
 _escape_symbols += [(u' ', u'S'),  # separates features
                     (u'|', u'I'),  # separates namespaces
@@ -371,7 +370,7 @@ class Performance(object):
         return OrderedDict((k, self.__dict__[k]) for k in keys)
 
     def __repr__(self):
-        perf = ', '.join('%s=%.3f' % kv for kv in self.as_dict().iteritems())
+        perf = ', '.join('%s=%.3f' % kv for kv in list(self.as_dict().items()))
         return "Performance(" + perf + ")"
 
 
@@ -388,7 +387,7 @@ def binary_performance(target, predicted):
     >>> p.REC == 3/4.0
     True
     """
-    d = Counter(zip(target, predicted))
+    d = Counter(list(zip(target, predicted)))
     return Performance(TP=d[1, 1],
                        TN=d[0, 0],
                        FP=d[0, 1],
@@ -424,7 +423,7 @@ def confusion_matrix(target, predicted, order):
      [1, 0, 1]]
     """
 
-    matrix = Counter(zip(target, predicted))
+    matrix = Counter(list(zip(target, predicted)))
     return [[matrix.get((t, p), 0) for p in order] for t in order]
 
 
@@ -459,7 +458,7 @@ def interleave(xs, k):
     >>> interleave('abcdABCD1234', 3)
     [('a', 'A', '1'), ('b', 'B', '2'), ('c', 'C', '3'), ('d', 'D', '4')]
     """
-    ts = [[] for _ in range(len(xs) / k)]
+    ts = [[] for _ in range(len(xs) // k)]  # Changed to floor division in python3
     ts_iter = it.cycle(ts)
     for x in xs:
         next(ts_iter).append(x)

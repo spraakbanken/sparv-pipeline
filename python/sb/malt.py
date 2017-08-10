@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-
 import re
 import os
 import codecs
-import util
+import sb.util as util
 
 """
 Running malt processes are only kept if the input is small: otherwise
@@ -98,7 +97,7 @@ def maltparse(maltjar, model, out, word, pos, msd, sentence, encoding=util.UTF8,
             headid = sent[head - 1] if head else "-"
             OUT[tok] = (deprel, headid)
 
-    util.write_annotation(out, OUT, encode=" ".join)
+    util.write_annotation(out, OUT, transform=" ".join)
 
 
 def maltstart(maltjar, model, encoding, send_empty_sentence=False):
@@ -169,7 +168,7 @@ def write_conll_file(sentences, filename, encoding=util.UTF8):
         for sent in sentences:
             nr = 1
             for token in sent:
-                if isinstance(token, basestring):
+                if isinstance(token, str):
                     cols = (nr, token)
                 elif isinstance(token, (tuple, list)):
                     cols = list(token)
@@ -187,9 +186,9 @@ def write_conll_file(sentences, filename, encoding=util.UTF8):
                     cols = (nr, form, lemma, cpos, pos, feats)
                 else:
                     raise ValueError("Unknown token: %r" % token)
-                print >>F, "\t".join(unicode(col) for col in cols)
+                print("\t".join(str(col) for col in cols), file=F)
                 nr += 1
-            print >>F
+            print(file=F)
 
 ################################################################################
 
