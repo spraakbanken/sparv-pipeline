@@ -107,6 +107,17 @@ def chain(annotations, default=None):
     return ((key, follow(key)) for key in annotations[0])
 
 
+def test_annotations(lexicon, testwords):
+    """
+    For testing the validity of a lexicon.
+    Takes a dictionary (lexicon) and a list of test words.
+    Prints the value for each test word.
+    """
+    log.info("Testing annotations...")
+    for key in testwords:
+        log.output("  %s = %s", key, lexicon.get(key))
+
+
 ######################################################################
 # Corpus text
 

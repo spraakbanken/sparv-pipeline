@@ -513,7 +513,15 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
             if elem.tag in ['LexicalEntry', 'frame', 'resFrame']:
                 root.clear()
 
-    test_annotations(lexicon)
+    testwords = [u"äggtoddyarna",
+                 u"Linköpingsbors",
+                 u"katabatiska",
+                 u"väg-",
+                 u"formar",
+                 u"in",
+                 u"datorrelaterade"]
+    util.test_annotations(lexicon, testwords)
+
     if verbose:
         util.log.info("OK, read")
     return lexicon
@@ -550,19 +558,6 @@ def extract_tags(lexicon):
     for annotations in list(lexicon.values()):
         tags.update(*list(annotations.values()))
     return tags
-
-
-def test_annotations(lexicon):
-    for key in testwords:
-        util.log.output("%s = %s", key, lexicon.get(key))
-
-testwords = [u"äggtoddyarna",
-             u"Linköpingsbors",
-             u"katabatiska",
-             u"väg-",
-             u"formar",
-             u"in",
-             u"datorrelaterade"]
 
 
 def xml_to_pickle(xml, filename, annotation_elements="gf lem saldo"):
