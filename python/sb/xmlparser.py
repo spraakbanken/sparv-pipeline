@@ -291,7 +291,6 @@ class XMLParser(HTMLParser):
 
     def handle_data(self, content):
         """Plain text data are tokenized and each 'token' is added to the text."""
-        # util.log.info("CONTENT %s", content)
         if not self.allow_xml_chars:
             if "&" in content:
                 util.log.error(self.pos() + "XML special character: &")
@@ -309,9 +308,7 @@ class XMLParser(HTMLParser):
             if (element_path, "TEXT") in self.head_annotations:
                 self.header_temp[self.head_annotations[(element_path, "TEXT")]] += re.sub(r"\s{2,}", " ", content)
             return
-        # util.log.info("REGEXP %s", REGEXP_TOKEN.split(content))
         for token in REGEXP_TOKEN.split(content):
-            # util.log.info("TOKEN %s", token)
             self.add_token(token)
 
     def handle_charref(self, name):
