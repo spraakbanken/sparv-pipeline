@@ -1,5 +1,5 @@
 
-TARGETS = help info clean space all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable bettertokenizer.sv.saldo-tokens stats_all.txt stats.pickle dalinm.xml dalin.pickle diapivot.xml diapivot.pickle swedbergm.xml swedberg.pickle geo.pickle nst_utf8.txt nst.comp.pos.pickle
+TARGETS = help info clean space all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable bettertokenizer.sv.saldo-tokens stats_all.txt stats.pickle dalinm.xml dalin.pickle diapivot.xml diapivot.pickle swedbergm.xml swedberg.pickle geo.pickle nst_utf8.txt nst.comp.pos.pickle blingbring.xml blingbring.pickle
 .PHONY: help info clean all
 
 ifndef python
@@ -10,12 +10,12 @@ help:
 	@echo "make ($(TARGETS))"
 
 clean:
-	rm -f saldom.xml saldo.pickle saldo.compound.pickle stats.pickle stats_all.txt
+	rm -f saldom.xml saldo.pickle saldo.compound.pickle stats.pickle stats_all.txt blingbring.pickle
 
 space:
-	rm -f stats_all.txt saldom.xml nst_utf8.txt dalinm.xml diapivot.xml swedbergm.xml
+	rm -f stats_all.txt saldom.xml nst_utf8.txt dalinm.xml diapivot.xml swedbergm.xml blingbring.xml
 
-all: saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable stats.pickle bettertokenizer.sv.saldo-tokens diapivot.pickle geo.pickle
+all: saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable stats.pickle bettertokenizer.sv.saldo-tokens diapivot.pickle geo.pickle blingbring.pickle
 
 info:
 	@echo "Subversion revision:"
@@ -101,3 +101,11 @@ geo_alternateNames.txt:
 
 geo.pickle: geo_cities1000.txt geo_alternateNames.txt
 	$(python) -m sb.geo --build_model --geonames "geo_cities1000.txt" --alternate_names "geo_alternateNames.txt" --out "$@"
+
+blingbring.xml:
+	@echo "Exporting blingbring.xml from Subversion..."
+	@svn export https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/blingbring/blingbring.xml --force
+	@echo "Done."
+
+blingbring.pickle: blingbring.xml
+	$(python) -m sb.lexical_classes --xml_to_pickle --xml "blingbring.xml" --filename "$@"
