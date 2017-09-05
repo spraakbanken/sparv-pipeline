@@ -3,33 +3,54 @@ import sb.util as util
 import pickle
 
 
-def annotate_blingbring(out_blingbring, saldoids, model, wsd=None, lexicon=None, delimiter="|", affix="|"):
+def annotate_bb_words(out_blingbring, model, saldoids, delimiter="|", affix="|", lexicon=None):
+    """
+    Annotate words with blingbring classes (rogetID).
+    - out_blingbring: resulting annotation file
+    - model: pickled blingbring lexicon.
+    - saldoids: existing annotation with saldoIDs.
+    - delimiter: delimiter character to put between ambiguous results
+    - affix: optional character to put before and after results to mark a set.
+    - lexicon: this argument cannot be set from the command line,
+      but is used in the catapult. This argument must be last.
+    """
     if not lexicon:
         lexicon = Blingbring(model)
-    # Otherwise use pre-loaded lexicons (from catapult)
+    # Otherwise use pre-loaded lexicon (from catapult)
 
     OUT_blingbring = {}
 
-    if wsd:
-        SALDO_ID = util.read_annotation(wsd)
-        for tokid in SALDO_ID:
-            saldo_id = SALDO_ID[tokid].strip("|").split("|")[0].split(":")[0] if SALDO_ID[tokid] != "|" else None
-            rogetid = set()
-            if saldo_id:
-                rogetid = rogetid.union(lexicon.lookup(saldo_id))
-            OUT_blingbring[tokid] = util.cwbset(sorted(rogetid), delimiter, affix) if rogetid else affix
+    SALDO_ID = util.read_annotation(saldoids)
+    for tokid in SALDO_ID:
+        rogetid = set()
+        if ":" in SALDO_ID[tokid]:  # WSD
+            ranked_saldo = SALDO_ID[tokid].strip("|").split("|") if SALDO_ID[tokid] != "|" else None
+            saldo_tuples = [(i.split(":")[0], i.split(":")[1]) for i in ranked_saldo]
+            util.log.info("tuple, %s", saldo_tuples)
 
-    else:
-        SALDO_ID = util.read_annotation(saldoids)
-        for tokid in SALDO_ID:
+            # Handle wsd with equal probability for several words
+            saldo_ids = [saldo_tuples[0]]
+            del saldo_tuples[0]
+            while saldo_tuples and (saldo_tuples[0][1] == saldo_ids[0][1]):
+                saldo_ids = [saldo_tuples[0]]
+                del saldo_tuples[0]
+
+            saldo_ids = [i[0] for i in saldo_ids]
+
+        else:  # no WSD
             saldo_ids = SALDO_ID[tokid].strip("|").split("|") if SALDO_ID[tokid] != "|" else None
-            rogetid = set()
-            if saldo_ids:
-                for sid in saldo_ids:
-                    rogetid = rogetid.union(lexicon.lookup(sid))
-            OUT_blingbring[tokid] = util.cwbset(sorted(rogetid), delimiter, affix) if rogetid else affix
+
+        if saldo_ids:
+            for sid in saldo_ids:
+                rogetid = rogetid.union(lexicon.lookup(sid))
+
+        OUT_blingbring[tokid] = util.cwbset(sorted(rogetid), delimiter, affix) if rogetid else affix
 
     util.write_annotation(out_blingbring, OUT_blingbring)
+
+
+def annotate_bb_document():
+    pass
 
 
 class Blingbring(object):
@@ -100,4 +121,6 @@ def xml_to_pickle(xml, filename, protocol=-1, verbose=True):
 
 
 if __name__ == '__main__':
-    util.run.main(annotate_blingbring, xml_to_pickle=xml_to_pickle)
+    util.run.main(annotate_bb_words=annotate_bb_words,
+                  annotate_bb_document=annotate_bb_document,
+                  xml_to_pickle=xml_to_pickle)
