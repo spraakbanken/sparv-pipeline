@@ -588,8 +588,10 @@ ifneq ($(analysis),tt)
 	else
 	  ifneq ($(filter saldo,$(vrt_columns)),)
 		sense = saldo
+        saldo_ids = saldo
 	  else
 	  	sense = sense_tmp
+        saldo_ids = sense
 	  endif
     endif
 
@@ -646,6 +648,12 @@ endif
 ifeq ($(filter token.dephead.ref,$(custom_rules)),)
 %.token.dephead.ref: %.token.dephead %.token.ref
 	$(python) -m sb.annotate --chain --out $@ --annotations "$+"
+endif
+
+ifeq ($(filter token.blingbring,$(custom_rules)),)
+
+%.token.blingbring: %.token.$(saldo_ids) $(blingbring_lexicon)
+	$(python) -m sb.lexical_classes --annotate_bb_words --out_blingbring $@ --saldoids $(1) --model $(2)
 endif
 
 %.sentence.id: %.sentence
