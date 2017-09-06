@@ -651,9 +651,13 @@ ifeq ($(filter token.dephead.ref,$(custom_rules)),)
 endif
 
 ifeq ($(filter token.blingbring,$(custom_rules)),)
-
 %.token.blingbring: %.token.$(saldo_ids) $(blingbring_lexicon)
 	$(python) -m sb.lexical_classes --annotate_bb_words --out_blingbring $@ --saldoids $(1) --model $(2)
+endif
+
+ifeq ($(filter text.blingbring,$(custom_rules)),)
+%.text.blingbring_doc: %.token.blingbring %.text
+	$(python) -m sb.lexical_classes --annotate_bb_doc --out $@ --in_bb_word $(1) --text $(2)
 endif
 
 %.sentence.id: %.sentence
