@@ -26,7 +26,6 @@ def annotate_bb_words(out_blingbring, model, saldoids, delimiter="|", affix="|",
         if ":" in SALDO_ID[tokid]:  # WSD
             ranked_saldo = SALDO_ID[tokid].strip("|").split("|") if SALDO_ID[tokid] != "|" else None
             saldo_tuples = [(i.split(":")[0], i.split(":")[1]) for i in ranked_saldo]
-            util.log.info("tuple, %s", saldo_tuples)
 
             # Handle wsd with equal probability for several words
             saldo_ids = [saldo_tuples[0]]
@@ -37,7 +36,7 @@ def annotate_bb_words(out_blingbring, model, saldoids, delimiter="|", affix="|",
 
             saldo_ids = [i[0] for i in saldo_ids]
 
-        else:  # no WSD
+        else:  # No WSD
             saldo_ids = SALDO_ID[tokid].strip("|").split("|") if SALDO_ID[tokid] != "|" else None
 
         if saldo_ids:
@@ -45,12 +44,50 @@ def annotate_bb_words(out_blingbring, model, saldoids, delimiter="|", affix="|",
                 rogetid = rogetid.union(lexicon.lookup(sid))
 
         OUT_blingbring[tokid] = util.cwbset(sorted(rogetid), delimiter, affix) if rogetid else affix
-
     util.write_annotation(out_blingbring, OUT_blingbring)
 
 
-def annotate_bb_document():
-    pass
+def annotate_bb_document(out, in_bb_word, text, cutoff=10, delimiter="|", affix="|"):
+    """
+    Annotate documents with blingbring classes (rogetID).
+    - out: resulting annotation file
+    - in_bb_word: pickled blingbring lexicon.
+    - text: existing annotation file for text parent.
+    - cutoff: value for limiting the resulting bring classes.
+              The result will contain all words with the top x frequencies.
+              Words with frequency = 1 will be removed from the result.
+    - delimiter: delimiter character to put between ambiguous results.
+    - affix: optional character to put before and after results to mark a set.
+    """
+    cutoff = int(cutoff)
+    OUT_bb_doc = {}
+
+    roget_words = util.read_annotation(in_bb_word)
+    text = util.read_annotation(text)
+
+    roget_freqs = {}
+
+    for tokid in roget_words:
+        words = roget_words[tokid].strip("|").split("|") if roget_words[tokid] != "|" else []
+        for w in words:
+            roget_freqs[w] = roget_freqs.setdefault(w, 0) + 1
+
+    # Sort words according to frequency and remove words with frequency = 1
+    ordered_words = sorted(roget_freqs.items(), key=lambda x: x[1], reverse=True)
+    ordered_words = [w for w in ordered_words if w[1] > 1]
+
+    if len(ordered_words) > cutoff:
+        cutoff_freq = ordered_words[cutoff - 1][1]
+        ordered_words = [w for w in ordered_words if w[1] >= cutoff_freq]
+
+    # Join tuples with words and frequencies
+    ordered_words = [":".join([word, str(freq)]) for word, freq in ordered_words]
+    # util.log.info("%s", ordered_words)
+
+    for tokid in text:
+        OUT_bb_doc[tokid] = util.cwbset(ordered_words, delimiter, affix) if ordered_words else affix
+
+    util.write_annotation(out, OUT_bb_doc)
 
 
 class Blingbring(object):
@@ -89,7 +126,6 @@ def read_xml(xml='blingbring.xml', verbose=True):
                 senseids = [sid.attrib.get("id") for sid in elem.findall("Sense")]
                 rogetid = elem.find("Lemma/FormRepresentation/feat[@att='roget_head_id']").attrib.get("val")
                 rogetid = rogetid.split("/")[-1]
-                # print(senseids, rogetid)
                 for senseid in senseids:
                     lexicon.setdefault(senseid, set()).add(rogetid)
 
