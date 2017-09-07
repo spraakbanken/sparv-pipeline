@@ -4,7 +4,8 @@ import sb.util as util
 SENT_SEP = "$SENT$"
 
 
-def run_wsd(wsdjar, sense_model, context_model, out, sentence, word, ref, lemgram, saldo, pos, sensefmt=":%.3f", default_prob="-1", encoding=util.UTF8):
+def run_wsd(wsdjar, sense_model, context_model, out, sentence, word, ref, lemgram, saldo, pos,
+            sensefmt=util._SCORESEP + "%.3f", default_prob="-1", encoding=util.UTF8):
     """
     Runs the word sense disambiguation tool (saldowsd.jar) to add probabilities to the saldo annotation.
     Unanalyzed senses (e.g. multiword expressions) receive the probability value given by default_prob.
@@ -80,7 +81,7 @@ def build_input(sentences, WORD, REF, LEMGRAM, SALDO, POS):
             word = WORD[tokid]
             ref = REF[tokid]
             pos = POS[tokid].lower()
-            saldo = SALDO[tokid].strip("|") if SALDO[tokid] != "|" else "_"
+            saldo = SALDO[tokid].strip(util._AFFIX) if SALDO[tokid] != util._AFFIX else "_"
             if "_" in saldo and len(saldo) > 1:
                 mwe = True
 
@@ -114,7 +115,7 @@ def process_output(out, stdout, in_sentences, SALDO, sensefmt, default_prob):
             out_prob = out_tok.split("\t")[6]
             out_prob = [i for i in out_prob.split("|") if i != "_"]
             out_meanings = [i for i in out_tok.split("\t")[5].split("|") if i != "_"]
-            saldo = [i for i in SALDO[in_tok].split("|") if i]
+            saldo = [i for i in SALDO[in_tok].strip(util._AFFIX).split(util._DELIM) if i]
 
             new_saldo = []
             if out_prob:
@@ -136,8 +137,8 @@ def process_output(out, stdout, in_sentences, SALDO, sensefmt, default_prob):
 
 def make_lemgram(lemgram, word, pos):
     """Construct lemgram and simple_lemgram format."""
-    lemgram = lemgram.strip("|") if lemgram != "|" else "_"
-    simple_lemgram = "|".join(set((l[:l.rfind(".")] for l in lemgram.split("|"))))
+    lemgram = lemgram.strip(util._AFFIX) if lemgram != util._AFFIX else "_"
+    simple_lemgram = util._DELIM.join(set((l[:l.rfind(".")] for l in lemgram.split(util._DELIM))))
 
     # Fix simple lemgram for tokens without lemgram (word + pos)
     if not simple_lemgram:
@@ -147,10 +148,10 @@ def make_lemgram(lemgram, word, pos):
 
 def remove_mwe(annotation):
     """For MWEs: strip unnecessary information."""
-    annotation = annotation.split("|")
+    annotation = annotation.split(util._DELIM)
     annotation = [i for i in annotation if "_" not in i]
     if annotation:
-        return "|".join(annotation)
+        return util._DELIM.join(annotation)
     else:
         return "_"
 

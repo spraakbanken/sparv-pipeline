@@ -11,7 +11,8 @@ COMP_LIMIT = 100
 
 
 def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp, saldo_comp_model, nst_model, stats_model,
-             complemgramfmt=":%.3e", delimiter="|", compdelim="+", affix="|", cutoff=True, saldo_comp_lexicon=None, stats_lexicon=None):
+             complemgramfmt=util._SCORESEP + "%.3e", delimiter=util._DELIM, compdelim=util._COMPSEP, affix=util._AFFIX,
+             cutoff=True, saldo_comp_lexicon=None, stats_lexicon=None):
     """Divides compound words into prefix(es) and suffix.
     - out_complemgram is the resulting annotation file for compound lemgrams
       and their probabilities
