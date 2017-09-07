@@ -31,7 +31,7 @@ def number_by_position(out, texts, chunks, prefix="", start=START_DEFAULT):
 def number_by_random(out, chunks, prefix="", start=START_DEFAULT):
     """ Number chunks randomly. """
     def order(chunknr, edge, _value):
-        random.seed(int(hexlify(edge), 16))
+        random.seed(int(hexlify(edge.encode()), 16))
         return (chunknr, random.random())
 
     read_chunks_and_write_new_ordering(out, chunks, order, prefix, start)
