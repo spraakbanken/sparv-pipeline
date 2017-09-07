@@ -235,13 +235,13 @@ def read_sensaldo(tsv="sensaldo_provisional.txt", verbose=True):
 def blingbring_to_pickle(xml, filename, protocol=-1, verbose=True):
     """Read blingbring xml dictionary and save as a pickle file."""
     lexicon = read_blingbring(xml)
-    lexicon_to_pickle(xml, filename, lexicon)
+    lexicon_to_pickle(lexicon, filename)
 
 
 def sensaldo_to_pickle(tsv, filename, protocol=-1, verbose=True):
     """Read sensaldo tsv dictionary and save as a pickle file."""
     lexicon = read_sensaldo(tsv)
-    lexicon_to_pickle(tsv, filename, lexicon)
+    lexicon_to_pickle(lexicon, filename)
 
 
 def lexicon_to_pickle(lexicon, filename, protocol=-1, verbose=True):
