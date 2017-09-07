@@ -1,5 +1,5 @@
 
-TARGETS = help info clean space all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable bettertokenizer.sv.saldo-tokens stats_all.txt stats.pickle dalinm.xml dalin.pickle diapivot.xml diapivot.pickle swedbergm.xml swedberg.pickle geo.pickle nst_utf8.txt nst.comp.pos.pickle blingbring.xml blingbring.pickle
+TARGETS = help info clean space all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable bettertokenizer.sv.saldo-tokens stats_all.txt stats.pickle dalinm.xml dalin.pickle diapivot.xml diapivot.pickle swedbergm.xml swedberg.pickle geo.pickle nst_utf8.txt nst.comp.pos.pickle blingbring.xml blingbring.pickle sensaldo.pickle
 .PHONY: help info clean all
 
 ifndef python
@@ -108,4 +108,7 @@ blingbring.xml:
 	@echo "Done."
 
 blingbring.pickle: blingbring.xml
-	$(python) -m sb.lexical_classes --xml_to_pickle --xml "blingbring.xml" --filename "$@"
+	$(python) -m sb.lexical_classes --blingbring_to_pickle --xml "blingbring.xml" --filename "$@"
+
+sensaldo.pickle: sensaldo_provisional.txt
+	$(python) -m sb.lexical_classes --sensaldo_to_pickle --tsv "sensaldo_provisional.txt" --filename "$@"
