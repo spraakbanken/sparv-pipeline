@@ -3,12 +3,12 @@ import sb.util as util
 import pickle
 
 
-def annotate_bb_words(out, model, saldoids, delimiter=util._DELIM, affix=util._AFFIX, lexicon=None):
+def annotate_bb_words(out, model, saldoids, delimiter=util.DELIM, affix=util.AFFIX, lexicon=None):
     """Blingbring wrapper for annotate_words. Annotations words with blingbring classes (rogetID)."""
     annotate_words(out, model, saldoids, get_blingbring, delimiter, affix, lexicon=None)
 
 
-def annotate_sent_words(out, model, saldoids, delimiter=util._DELIM, affix=util._AFFIX, lexicon=None):
+def annotate_sent_words(out, model, saldoids, delimiter=util.DELIM, affix=util.AFFIX, lexicon=None):
     """Sentiment wrapper for annotate_words. Annotations words with sentiments."""
     annotate_words(out, model, saldoids, get_sentiment, delimiter, affix, lexicon=None)
 
@@ -33,10 +33,10 @@ def annotate_words(out, model, saldoids, annotation, delimiter, affix, lexicon=N
 
     SALDO_ID = util.read_annotation(saldoids)
     for tokid in SALDO_ID:
-        if util._SCORESEP in SALDO_ID[tokid]:  # WSD
-            ranked_saldo = SALDO_ID[tokid].strip(util._AFFIX).split(util._DELIM) \
-                if SALDO_ID[tokid] != util._AFFIX else None
-            saldo_tuples = [(i.split(util._SCORESEP)[0], i.split(util._SCORESEP)[1]) for i in ranked_saldo]
+        if util.SCORESEP in SALDO_ID[tokid]:  # WSD
+            ranked_saldo = SALDO_ID[tokid].strip(util.AFFIX).split(util.DELIM) \
+                if SALDO_ID[tokid] != util.AFFIX else None
+            saldo_tuples = [(i.split(util.SCORESEP)[0], i.split(util.SCORESEP)[1]) for i in ranked_saldo]
 
             # Handle wsd with equal probability for several words
             saldo_ids = [saldo_tuples[0]]
@@ -48,8 +48,8 @@ def annotate_words(out, model, saldoids, annotation, delimiter, affix, lexicon=N
             saldo_ids = [i[0] for i in saldo_ids]
 
         else:  # No WSD
-            saldo_ids = SALDO_ID[tokid].strip(util._AFFIX).split(util._DELIM) \
-                if SALDO_ID[tokid] != util._AFFIX else None
+            saldo_ids = SALDO_ID[tokid].strip(util.AFFIX).split(util.DELIM) \
+                if SALDO_ID[tokid] != util.AFFIX else None
 
         result = annotation(saldo_ids, lexicon)
 
@@ -76,13 +76,13 @@ def get_sentiment(saldo_ids, lexicon):
         if sents:
             if len(sents) > 1:
                 sents = sorted(sents.items(), key=lambda x: x[1], reverse=True)
-                sents = [util._SCORESEP.join([sent, str(freq)]) for sent, freq in sents]
+                sents = [util.SCORESEP.join([sent, str(freq)]) for sent, freq in sents]
             else:
                 sents = [sorted(sents.items())[0][0]]
     return sorted(sents)
 
 
-def annotate_sent_doc(out, in_token_sent, text, delimiter=util._DELIM, affix=util._AFFIX):
+def annotate_sent_doc(out, in_token_sent, text, delimiter=util.DELIM, affix=util.AFFIX):
     """
     Annotate documents with sentiments.
     - out: resulting annotation file
@@ -95,19 +95,19 @@ def annotate_sent_doc(out, in_token_sent, text, delimiter=util._DELIM, affix=uti
     sentiment_freqs = {}
 
     for tokid in in_token:
-        sentiments = in_token[tokid].strip(util._AFFIX).split(util._DELIM) \
-            if in_token[tokid] != util._AFFIX else []
+        sentiments = in_token[tokid].strip(util.AFFIX).split(util.DELIM) \
+            if in_token[tokid] != util.AFFIX else []
         if sentiments:
             for sent in sentiments:
-                if util._SCORESEP in sent:  # Sentiment contains frequency
-                    s, f = sent.split(util._SCORESEP)
+                if util.SCORESEP in sent:  # Sentiment contains frequency
+                    s, f = sent.split(util.SCORESEP)
                     sentiment_freqs[s] = sentiment_freqs.setdefault(s, 0) + int(f)
                 else:
                     sentiment_freqs[sent] = sentiment_freqs.setdefault(sent, 0) + 1
 
     # Sort dictionary and join tuples with words and frequencies
     sentiment_freqs = sorted(sentiment_freqs.items(), key=lambda x: x[1], reverse=True)
-    sentiment_freqs = [util._SCORESEP.join([sent, str(freq)]) for sent, freq in sentiment_freqs]
+    sentiment_freqs = [util.SCORESEP.join([sent, str(freq)]) for sent, freq in sentiment_freqs]
 
     # Write annotation on text level
     text = util.read_annotation(text)
@@ -118,7 +118,7 @@ def annotate_sent_doc(out, in_token_sent, text, delimiter=util._DELIM, affix=uti
     util.write_annotation(out, out_sentiments)
 
 
-def annotate_bb_doc(out, in_token_bb, text, cutoff=10, delimiter=util._DELIM, affix=util._AFFIX):
+def annotate_bb_doc(out, in_token_bb, text, cutoff=10, delimiter=util.DELIM, affix=util.AFFIX):
     """
     Annotate documents with blingbring classes (rogetID).
     - out: resulting annotation file
@@ -137,8 +137,8 @@ def annotate_bb_doc(out, in_token_bb, text, cutoff=10, delimiter=util._DELIM, af
     roget_freqs = {}
 
     for tokid in roget_words:
-        words = roget_words[tokid].strip(util._AFFIX).split(util._DELIM) \
-            if roget_words[tokid] != util._AFFIX else []
+        words = roget_words[tokid].strip(util.AFFIX).split(util.DELIM) \
+            if roget_words[tokid] != util.AFFIX else []
         for w in words:
             roget_freqs[w] = roget_freqs.setdefault(w, 0) + 1
 
@@ -151,7 +151,7 @@ def annotate_bb_doc(out, in_token_bb, text, cutoff=10, delimiter=util._DELIM, af
         ordered_words = [w for w in ordered_words if w[1] >= cutoff_freq]
 
     # Join tuples with words and frequencies
-    ordered_words = [util._SCORESEP.join([word, str(freq)]) for word, freq in ordered_words]
+    ordered_words = [util.SCORESEP.join([word, str(freq)]) for word, freq in ordered_words]
     # util.log.info("%s", ordered_words)
 
     # Write annotation on text level

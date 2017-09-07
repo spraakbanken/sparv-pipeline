@@ -11,7 +11,7 @@ COMP_LIMIT = 100
 
 
 def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp, saldo_comp_model, nst_model, stats_model,
-             complemgramfmt=util._SCORESEP + "%.3e", delimiter=util._DELIM, compdelim=util._COMPSEP, affix=util._AFFIX,
+             complemgramfmt=util.SCORESEP + "%.3e", delimiter=util.DELIM, compdelim=util.COMPSEP, affix=util.AFFIX,
              cutoff=True, saldo_comp_lexicon=None, stats_lexicon=None):
     """Divides compound words into prefix(es) and suffix.
     - out_complemgram is the resulting annotation file for compound lemgrams
@@ -506,9 +506,9 @@ def read_xml(xml='saldom.xml', tagset="SUC"):
     return lexicon
 
 
-PART_DELIM1 = "^1"
-PART_DELIM2 = "^2"
-PART_DELIM3 = "^3"
+PARTDELIM1 = "^1"
+PARTDELIM2 = "^2"
+PARTDELIM3 = "^3"
 
 
 def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
@@ -524,9 +524,9 @@ def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
         lemgrams = []
 
         for lemgram, annotation in list(lexicon[word].items()):
-            msds = PART_DELIM2.join(annotation["msd"])
-            tags = PART_DELIM2.join(annotation.get("tags", []))
-            lemgrams.append(PART_DELIM1.join([lemgram, msds, annotation["pos"], tags]))
+            msds = PARTDELIM2.join(annotation["msd"])
+            tags = PARTDELIM2.join(annotation.get("tags", []))
+            lemgrams.append(PARTDELIM1.join([lemgram, msds, annotation["pos"], tags]))
 
         picklex[word] = sorted(lemgrams)
 
@@ -537,9 +537,9 @@ def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
 
 
 def _split_triple(annotation_tag_words):
-    lemgram, msds, pos, tags = annotation_tag_words.split(PART_DELIM1)
-    msds = msds.split(PART_DELIM2)
-    tags = tags.split(PART_DELIM2)
+    lemgram, msds, pos, tags = annotation_tag_words.split(PARTDELIM1)
+    msds = msds.split(PARTDELIM2)
+    tags = tags.split(PARTDELIM2)
     tags = list(set([t[:t.find(".")] if t.find(".") != -1 else t for t in tags]))
     return lemgram, msds, pos, tags
 

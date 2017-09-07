@@ -76,10 +76,10 @@ def _safe_join(sep, elems):
 _EDGE_SEP = ":"
 _SPAN_SEP = "-"
 
-_DELIM = "|"       # Delimiter char to put between ambiguous results
-_AFFIX = "|"       # Char to put before and after results to mark a set
-_SCORESEP = ":"    # Char that separates an annotation from a score
-_COMPSEP = "+"     # Char to separate compound parts
+DELIM = "|"       # Delimiter char to put between ambiguous results
+AFFIX = "|"       # Char to put before and after results to mark a set
+SCORESEP = ":"    # Char that separates an annotation from a score
+COMPSEP = "+"     # Char to separate compound parts
 
 
 def strtobool(value):
