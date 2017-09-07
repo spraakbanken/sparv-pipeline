@@ -118,6 +118,22 @@ def test_annotations(lexicon, testwords):
         log.output("  %s = %s", key, lexicon.get(key))
 
 
+class PickledLexicon(object):
+    """Read basic pickled lexicon and look up keys."""
+    def __init__(self, picklefile, verbose=True):
+        import pickle
+        if verbose:
+            log.info("Reading lexicon: %s", picklefile)
+        with open(picklefile, "rb") as F:
+            self.lexicon = pickle.load(F)
+        if verbose:
+            log.info("OK, read %d words", len(self.lexicon))
+
+    def lookup(self, key, default=set()):
+        """Lookup a key in the lexicon."""
+        return self.lexicon.get(key, default)
+
+
 ######################################################################
 # Corpus text
 
