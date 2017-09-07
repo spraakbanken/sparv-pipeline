@@ -95,9 +95,11 @@ def single_true(iterable):
     return any(i) and not any(i)
 
 
-def cwbset(values, delimiter="|", affix="|", maxlength=4095, encoding="UTF-8"):
+def cwbset(values, delimiter="|", affix="|", sort=False, maxlength=4095, encoding="UTF-8"):
     """Take an iterable object and return a set in the format used by Corpus Workbench."""
     values = list(values)
+    if sort:
+        values.sort()
     if maxlength:
         length = 1  # Including the last affix
         for i, value in enumerate(values):
