@@ -652,12 +652,22 @@ endif
 
 ifeq ($(filter token.blingbring,$(custom_rules)),)
 %.token.blingbring: %.token.$(saldo_ids) $(blingbring_lexicon)
-	$(python) -m sb.lexical_classes --annotate_bb_words --out_blingbring $@ --saldoids $(1) --model $(2)
+	$(python) -m sb.lexical_classes --annotate_bb_words --out $@ --saldoids $(1) --model $(2)
 endif
 
 ifeq ($(filter text.blingbring,$(custom_rules)),)
-%.text.blingbring_doc: %.token.blingbring %.text
-	$(python) -m sb.lexical_classes --annotate_bb_doc --out $@ --in_bb_word $(1) --text $(2)
+%.text.blingbring: %.token.blingbring %.text
+	$(python) -m sb.lexical_classes --annotate_bb_doc --out $@ --in_token_bb $(1) --text $(2)
+endif
+
+ifeq ($(filter token.sentiment,$(custom_rules)),)
+%.token.sentiment: %.token.$(saldo_ids) $(sensaldo_lexicon)
+	$(python) -m sb.lexical_classes --annotate_sent_words --out $@ --saldoids $(1) --model $(2)
+endif
+
+ifeq ($(filter text.sentiment,$(custom_rules)),)
+%.text.sentiment: %.token.sentiment %.text
+	$(python) -m sb.lexical_classes --annotate_sent_doc --out $@ --in_token_sent $(1) --text $(2)
 endif
 
 %.sentence.id: %.sentence
