@@ -619,8 +619,8 @@ endif
 
 ifeq ($(filter token.sense,$(custom_rules)),)
   ifneq ($(rank_senses),false)
-%.token.sense: %.children.sentence.token %.token.word %.token.ref %.token.lemgram %.token.sense_tmp %.token.pos
-	$(python) -m sb.wsd --wsdjar $(wsd_jar) --sense_model $(wsd_sense_model) --context_model $(wsd_context_model) --out $@ --sentence $(1) --word $(2) --ref $(3) --lemgram $(4) --saldo $(5) --pos $(6)
+%.token.sense: %.children.sentence.token %.token.word %.token.ref %.token.lemgram %.token.sense_tmp %.token.pos %.@TEXT
+	$(python) -m sb.wsd --wsdjar $(wsd_jar) --sense_model $(wsd_sense_model) --context_model $(wsd_context_model) --out $@ --sentence $(1) --word $(2) --ref $(3) --lemgram $(4) --saldo $(5) --pos $(6) --text $(7)
   endif
 endif
 
