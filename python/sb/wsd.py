@@ -4,7 +4,7 @@ import sb.util as util
 SENT_SEP = "$SENT$"
 
 
-def run_wsd(wsdjar, sense_model, context_model, out, sentence, word, ref, lemgram, saldo, pos,
+def run_wsd(wsdjar, sense_model, context_model, out, sentence, word, ref, lemgram, saldo, pos, text,
             sensefmt=util.SCORESEP + "%.3f", default_prob="-1", encoding=util.UTF8):
     """
     Runs the word sense disambiguation tool (saldowsd.jar) to add probabilities to the saldo annotation.
@@ -17,16 +17,21 @@ def run_wsd(wsdjar, sense_model, context_model, out, sentence, word, ref, lemgra
       - ref is an existing annotation for word references
       - lemgram and saldo are existing annotations for inflection tables and meanings
       - pos is an existing annotations for part-of-speech
+      - text is an existing file with the input text and its anchors.
       - sensefmt is a format string for how to print the sense and its probability
       - default_prob is the default value for unanalyzed senses
     """
 
-    sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
     WORD = util.read_annotation(word)
     REF = util.read_annotation(ref)
     LEMGRAM = util.read_annotation(lemgram)
     SALDO = util.read_annotation(saldo)
     POS = util.read_annotation(pos)
+    textpos = util.read_corpus_text(text)[1]
+
+    # Sort sentences according to their text position because WSD is context dependent.
+    sentences = sorted(util.read_annotation_iteritems(sentence), key=lambda x: textpos[util.edgeStart(x[0])])
+    sentences = [sent.split() for _, sent in sentences]
 
     # Start WSD process
     process = wsd_start(wsdjar, sense_model, context_model, encoding)
