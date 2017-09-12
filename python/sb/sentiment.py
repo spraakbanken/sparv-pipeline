@@ -3,15 +3,20 @@
 import sb.util as util
 
 
-def sentiment(sense, out, model, max_decimals=6):
+def sentiment(sense, out, model, max_decimals=6, lexicon=None):
     """Assign sentiment values to tokens based on their sense annotation.
-    When more than one sense is possible, calulate a weighted mean."""
+    When more than one sense is possible, calulate a weighted mean.
+    - sense: existing annotation with saldoIDs.
+    - out: resulting annotation file.
+    - model: pickled lexicon with saldoIDs as keys.
+    - max_decimals: int stating the amount of decimals the result is rounded to.
+    - lexicon: this argument cannot be set from the command line,
+      but is used in the catapult. This argument must be last.
+    """
 
-    senses = {}
-    with open(model, encoding="UTF-8") as infile:
-        for line in infile:
-            s, _, v = line.split()
-            senses[s] = float(v)
+    if not lexicon:
+        lexicon = util.PickledLexicon(model)
+    # Otherwise use pre-loaded lexicon (from catapult)
 
     sense = util.read_annotation(sense)
     result = {}
@@ -25,12 +30,50 @@ def sentiment(sense, out, model, max_decimals=6):
             p = float(token_senses[s])
             if p < 0:
                 p = 1.0 / len(token_senses)
-            sum += senses.get(s, 0.0) * p
+            sentval = float(lexicon.lookup(s, (None, 0.0))[1])
+            sum += sentval * p
 
         result[token] = str(round(sum, max_decimals))
 
     util.write_annotation(out, result)
 
+
+def read_sensaldo(tsv="sensaldo_provisional.txt", verbose=True):
+    """
+    Read the TSV version of the sensaldo lexicon (sensaldo.txt).
+    Return a lexicon dictionary: {senseid: (sentiment, ranking)}
+    """
+    import csv
+
+    if verbose:
+        util.log.info("Reading TSV lexicon")
+    lexicon = {}
+
+    with open(tsv) as f:
+        for line in csv.reader(f, delimiter="\t"):
+            saldoid = line[0]
+            sentiment = line[1]
+            ranking = line[2]
+            lexicon[saldoid] = (sentiment, ranking)
+
+    testwords = ["hemsk..1",
+                 "terrier..1",
+                 "festlig..2"
+                 ]
+    util.test_annotations(lexicon, testwords)
+
+    if verbose:
+        util.log.info("OK, read")
+    return lexicon
+
+
+def sensaldo_to_pickle(tsv, filename, protocol=-1, verbose=True):
+    """Read sensaldo tsv dictionary and save as a pickle file."""
+    lexicon = read_sensaldo(tsv)
+    util.lexicon_to_pickle(lexicon, filename)
+
+
 if __name__ == '__main__':
-    util.run.main(sentiment
+    util.run.main(sentiment,
+                  sensaldo_to_pickle=sensaldo_to_pickle
                   )

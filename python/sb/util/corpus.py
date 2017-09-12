@@ -107,6 +107,17 @@ def chain(annotations, default=None):
     return ((key, follow(key)) for key in annotations[0])
 
 
+def lexicon_to_pickle(lexicon, filename, protocol=-1, verbose=True):
+    """Save lexicon as a pickle file."""
+    import pickle
+    if verbose:
+        log.info("Saving lexicon in pickle format")
+    with open(filename, "wb") as F:
+        pickle.dump(lexicon, F, protocol=protocol)
+    if verbose:
+        log.info("OK, saved")
+
+
 def test_annotations(lexicon, testwords):
     """
     For testing the validity of a lexicon.
