@@ -15,7 +15,7 @@ clean:
 space:
 	rm -f stats_all.txt saldom.xml nst_utf8.txt dalinm.xml diapivot.xml swedbergm.xml blingbring.xml
 
-all: saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable stats.pickle bettertokenizer.sv.saldo-tokens diapivot.pickle geo.pickle blingbring.pickle
+all: saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable stats.pickle bettertokenizer.sv.saldo-tokens diapivot.pickle geo.pickle blingbring.pickle sensaldo.pickle
 
 info:
 	@echo "Subversion revision:"
@@ -111,4 +111,4 @@ blingbring.pickle: blingbring.xml
 	$(python) -m sb.lexical_classes --blingbring_to_pickle --xml "blingbring.xml" --filename "$@"
 
 sensaldo.pickle: sensaldo_provisional.txt
-	$(python) -m sb.lexical_classes --sensaldo_to_pickle --tsv "sensaldo_provisional.txt" --filename "$@"
+	$(python) -m sb.sentiment --sensaldo_to_pickle --tsv "sensaldo_provisional.txt" --filename "$@"
