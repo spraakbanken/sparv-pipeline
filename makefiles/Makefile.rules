@@ -656,8 +656,8 @@ ifeq ($(filter token.blingbring,$(custom_rules)),)
 endif
 
 ifeq ($(filter text.blingbring,$(custom_rules)),)
-%.text.blingbring: %.token.blingbring %.text
-	$(python) -m sb.lexical_classes --annotate_bb_doc --out $@ --in_token_bb $(1) --text $(2)
+%.text.blingbring: %.token.blingbring %.children.text.token
+	$(python) -m sb.lexical_classes --annotate_bb_doc --out $@ --in_token_bb $(1) --text_children $(2)
 endif
 
 ifeq ($(filter token.sentiment,$(custom_rules)),)
