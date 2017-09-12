@@ -118,12 +118,12 @@ def annotate_sent_doc(out, in_token_sent, text, delimiter=util.DELIM, affix=util
     util.write_annotation(out, out_sentiments)
 
 
-def annotate_bb_doc(out, in_token_bb, text, cutoff=10, delimiter=util.DELIM, affix=util.AFFIX):
+def annotate_bb_doc(out, in_token_bb, text_children, cutoff=10, delimiter=util.DELIM, affix=util.AFFIX):
     """
     Annotate documents with blingbring classes (rogetID).
     - out: resulting annotation file
     - in_token_bb: existing annotation with blingbring tokens.
-    - text: existing annotation file for text parent.
+    - text_children: existing annotation for text-IDs and their word children.
     - cutoff: value for limiting the resulting bring classes.
               The result will contain all words with the top x frequencies.
               Words with frequency = 1 will be removed from the result.
@@ -131,34 +131,30 @@ def annotate_bb_doc(out, in_token_bb, text, cutoff=10, delimiter=util.DELIM, aff
     - affix: optional character to put before and after results to mark a set.
     """
     cutoff = int(cutoff)
-
+    text_children = util.read_annotation(text_children)
     roget_words = util.read_annotation(in_token_bb)
 
-    roget_freqs = {}
-
-    for tokid in roget_words:
-        words = roget_words[tokid].strip(util.AFFIX).split(util.DELIM) \
-            if roget_words[tokid] != util.AFFIX else []
-        for w in words:
-            roget_freqs[w] = roget_freqs.setdefault(w, 0) + 1
-
-    # Sort words according to frequency and remove words with frequency = 1
-    ordered_words = sorted(roget_freqs.items(), key=lambda x: x[1], reverse=True)
-    ordered_words = [w for w in ordered_words if w[1] > 1]
-
-    if len(ordered_words) > cutoff:
-        cutoff_freq = ordered_words[cutoff - 1][1]
-        ordered_words = [w for w in ordered_words if w[1] >= cutoff_freq]
-
-    # Join tuples with words and frequencies
-    ordered_words = [util.SCORESEP.join([word, str(freq)]) for word, freq in ordered_words]
-    # util.log.info("%s", ordered_words)
-
-    # Write annotation on text level
-    text = util.read_annotation(text)
     out_bb_doc = {}
-    for tokid in text:
-        out_bb_doc[tokid] = util.cwbset(ordered_words, delimiter, affix) if ordered_words else affix
+
+    for textid, words in text_children.items():
+        roget_freqs = {}
+        for tokid in words.split():
+            rogwords = roget_words[tokid].strip(util.AFFIX).split(util.DELIM) \
+                if roget_words[tokid] != util.AFFIX else []
+            for w in rogwords:
+                roget_freqs[w] = roget_freqs.setdefault(w, 0) + 1
+
+        # Sort words according to frequency and remove words with frequency = 1
+        ordered_words = sorted(roget_freqs.items(), key=lambda x: x[1], reverse=True)
+        ordered_words = [w for w in ordered_words if w[1] > 1]
+
+        if len(ordered_words) > cutoff:
+            cutoff_freq = ordered_words[cutoff - 1][1]
+            ordered_words = [w for w in ordered_words if w[1] >= cutoff_freq]
+
+        # Join tuples with words and frequencies
+        ordered_words = [util.SCORESEP.join([word, str(freq)]) for word, freq in ordered_words]
+        out_bb_doc[textid] = util.cwbset(ordered_words, delimiter, affix) if ordered_words else affix
 
     util.write_annotation(out, out_bb_doc)
 
