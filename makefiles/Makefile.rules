@@ -630,6 +630,11 @@ ifeq ($(filter token.prefix token.suffix,$(custom_rules)),)
 	$(python) -m sb.compound_simple --out_prefix $*.token.prefix --out_suffix $*.token.suffix --word $(1) --msd $(2) --model $(3)
 endif
 
+ifeq ($(filter token.sentiment,$(custom_rules)),)
+%.token.sentiment: %.token.$(saldo_ids) $(sentiment_model)
+	$(python) -m sb.sentiment --out $@ --sense $(1) --model $(2)
+endif
+
 ifeq ($(filter token.malt,$(custom_rules)),)
 %.token.malt: %.children.sentence.token %.token.word %.token.msd %.token.pos $(malt_model)
 	$(python) -m sb.malt --maltjar $(malt_jar) --out $@ --sentence $(1) --word $(2) --msd $(3) --pos $(4) --model $(5)
@@ -658,11 +663,6 @@ endif
 ifeq ($(filter text.blingbring,$(custom_rules)),)
 %.text.blingbring: %.token.blingbring %.children.text.token
 	$(python) -m sb.lexical_classes --annotate_bb_doc --out $@ --in_token_bb $(1) --text_children $(2)
-endif
-
-ifeq ($(filter token.sentiment,$(custom_rules)),)
-%.token.sentiment: %.token.$(saldo_ids) $(sensaldo_lexicon)
-	$(python) -m sb.lexical_classes --annotate_sent_words --out $@ --saldoids $(1) --model $(2)
 endif
 
 ifeq ($(filter text.sentiment,$(custom_rules)),)
