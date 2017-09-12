@@ -665,11 +665,6 @@ ifeq ($(filter text.blingbring,$(custom_rules)),)
 	$(python) -m sb.lexical_classes --annotate_bb_doc --out $@ --in_token_bb $(1) --text_children $(2)
 endif
 
-ifeq ($(filter text.sentiment,$(custom_rules)),)
-%.text.sentiment: %.token.sentiment %.text
-	$(python) -m sb.lexical_classes --annotate_sent_doc --out $@ --in_token_sent $(1) --text $(2)
-endif
-
 %.sentence.id: %.sentence
 	$(python) -m sb.annotate --span_as_value --out $@ --keys $(1)
 
