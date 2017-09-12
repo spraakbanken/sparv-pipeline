@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import sb.util as util
-import io
 
 
 def sentiment(sense, out, model, max_decimals=6):
@@ -9,7 +8,7 @@ def sentiment(sense, out, model, max_decimals=6):
     When more than one sense is possible, calulate a weighted mean."""
 
     senses = {}
-    with io.open(model, encoding="UTF-8") as infile:
+    with open(model, encoding="UTF-8") as infile:
         for line in infile:
             s, _, v = line.split()
             senses[s] = float(v)
@@ -18,8 +17,8 @@ def sentiment(sense, out, model, max_decimals=6):
     result = {}
 
     for token in sense:
-        token_senses = dict([s.rsplit(util.SCORESEP, 1) if util.SCORESEP in s else (s, -1.0) for s in sense[token].split(util.DELIM) if s])
-        print(token_senses)
+        token_senses = dict([s.rsplit(util.SCORESEP, 1) if util.SCORESEP in s else (s, -1.0)
+                             for s in sense[token].split(util.DELIM) if s])
 
         sum = 0.0
         for s in token_senses:
