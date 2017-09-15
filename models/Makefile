@@ -110,5 +110,6 @@ blingbring.xml:
 blingbring.pickle: blingbring.xml
 	$(python) -m sb.lexical_classes --blingbring_to_pickle --xml "blingbring.xml" --filename "$@"
 
-sensaldo.pickle: sensaldo_provisional.txt
-	$(python) -m sb.sentiment --sensaldo_to_pickle --tsv "sensaldo_provisional.txt" --filename "$@"
+sensaldo.pickle: sensaldo.txt
+	$(python) -m sb.sentiment --sensaldo_to_pickle --tsv "sensaldo.txt" --filename "$@"
+

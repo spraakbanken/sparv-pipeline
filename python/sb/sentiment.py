@@ -38,7 +38,27 @@ def sentiment(sense, out, model, max_decimals=6, lexicon=None):
     util.write_annotation(out, result)
 
 
-def read_sensaldo(tsv="sensaldo_provisional.txt", verbose=True):
+def sentiment_class(out, sent, classes):
+    """Translate numeric sentiment values into classes.
+    - out: resulting annotation file.
+    - sent: existing sentiment annotation.
+    - classes: numeric spans and classes, on the format '0:0.33:negative|0.33:0.66:neutral|0.66:1:positive'."""
+
+    classes = dict((tuple(float(n) for n in c.split(":")[:2]), c.split(":")[2]) for c in classes.split("|"))
+    sent = util.read_annotation(sent)
+    result = {}
+
+    for token in sent:
+        sent_value = float(sent[token])
+        for c in classes:
+            if c[0] <= sent_value <= c[1]:
+                result[token] = classes[c]
+                break
+
+    util.write_annotation(out, result)
+
+
+def read_sensaldo(tsv="sensaldo.txt", verbose=True):
     """
     Read the TSV version of the sensaldo lexicon (sensaldo.txt).
     Return a lexicon dictionary: {senseid: (sentiment, ranking)}
@@ -75,5 +95,6 @@ def sensaldo_to_pickle(tsv, filename, protocol=-1, verbose=True):
 
 if __name__ == '__main__':
     util.run.main(sentiment,
+                  sentiment_class=sentiment_class,
                   sensaldo_to_pickle=sensaldo_to_pickle
                   )

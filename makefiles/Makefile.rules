@@ -635,6 +635,11 @@ ifeq ($(filter token.sentiment,$(custom_rules)),)
 	$(python) -m sb.sentiment --out $@ --sense $(1) --model $(2)
 endif
 
+ifeq ($(filter token.sentimentclass,$(custom_rules)),)
+%.token.sentimentclass: %.token.sentiment
+	$(python) -m sb.sentiment --sentiment_class --out $@ --sent $(1) --classes "0.0:0.0050:negative|0.0050:0.9950:neutral|0.9950:1.0:positive"
+endif
+
 ifeq ($(filter token.malt,$(custom_rules)),)
 %.token.malt: %.children.sentence.token %.token.word %.token.msd %.token.pos $(malt_model)
 	$(python) -m sb.malt --maltjar $(malt_jar) --out $@ --sentence $(1) --word $(2) --msd $(3) --pos $(4) --model $(5)
