@@ -19,23 +19,25 @@ def timespan(corpus, db_name, out):
 
         process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-r", CORPUS_REGISTRY, corpus] + dateattribs, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         reply, error = process.communicate()
-        if error and "Error:" in error:  # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
-            if "Error: can't open attribute" in error and (".text_datefrom" in error or ".text_dateto" in error):
-                util.log.info("No date information present in corpus.")
-                # No date information in corpus. Calculate total token count instead.
-                process = subprocess.Popen([CQP_EXECUTABLE, "-c", "-r", CORPUS_REGISTRY], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                reply, error = process.communicate("set PrettyPrint off;%s;info;" % corpus)
+        if error:
+            error = error.decode()
+            if "Error:" in error:  # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
+                if "Error: can't open attribute" in error and (".text_datefrom" in error or ".text_dateto" in error):
+                    util.log.info("No date information present in corpus.")
+                    # No date information in corpus. Calculate total token count instead.
+                    process = subprocess.Popen([CQP_EXECUTABLE, "-c", "-r", CORPUS_REGISTRY], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    reply, error = process.communicate("set PrettyPrint off;%s;info;" % corpus)
 
-                if error:
+                    if error:
+                        print(error)
+                        raise Exception
+
+                    for line in reply.splitlines():
+                        if line.startswith("Size: "):
+                            reply = "%s\t\t\t\t" % line[6:].strip()
+                else:
                     print(error)
                     raise Exception
-
-                for line in reply.splitlines():
-                    if line.startswith("Size: "):
-                        reply = "%s\t\t\t\t" % line[6:].strip()
-            else:
-                print(error)
-                raise Exception
 
         spans = {}
 
