@@ -12,7 +12,7 @@ MAX_ALLOWED_PACKET = 900000
 class MySQL(object):
     binaries = ('mysql', 'mysql5')
 
-    def __init__(self, database, username=None, password=None, encoding="ascii", output="", append=False):
+    def __init__(self, database, username=None, password=None, encoding="UTF-8", output="", append=False):
         self.arguments = [database]
         if username:
             self.arguments += ['-u', username]
@@ -32,8 +32,8 @@ class MySQL(object):
             self.first_output = False
         if self.output:
             # Write SQL statement to file
-            with open(self.output, "a") as outfile:
-                print(sql.encode(constants.UTF8), file=outfile)
+            with open(self.output, "a", encoding=self.encoding) as outfile:
+                outfile.write(sql + "\n")
         else:
             # Execute SQL statement
             out, err = system.call_binary(self.binaries[0], self.arguments, sql % args,

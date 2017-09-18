@@ -49,7 +49,7 @@ def count_lemgrams(corpus, attributes):
     result = {}
     process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-r", CORPUS_REGISTRY, corpus] + attributes, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     reply, error = process.communicate()
-    if error and "Error:" in error:  # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
+    if error and "Error:" in error.decode():  # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
         print(error)
         raise Exception
     for line in reply.splitlines():
