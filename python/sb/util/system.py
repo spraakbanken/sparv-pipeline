@@ -92,7 +92,7 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
         command = [binary] + list(arguments)
     if isinstance(stdin, (list, tuple)):
         stdin = "\n".join(stdin)
-    if isinstance(stdin, str):
+    if encoding is not None and isinstance(stdin, str):
         stdin = unicode_convert.encode(stdin, encoding)
     log.info("CALL: %s", " ".join(command) if not raw_command else command)
     command = Popen(command, shell=use_shell,
