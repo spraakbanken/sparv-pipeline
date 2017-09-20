@@ -28,7 +28,7 @@ def analyze(sources, header="teiheader", encoding=util.UTF8, maxcount=0):
             corpus, _ext = os.path.splitext(os.path.basename(source))
             parser.init_parser(corpus, header)
             for line in F:
-                parser.feed(line.decode(encoding))
+                parser.feed(line)
             parser.close()
         util.log.statistics()
     print()
