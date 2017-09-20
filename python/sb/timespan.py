@@ -19,6 +19,7 @@ def timespan(corpus, db_name, out):
 
         process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-r", CORPUS_REGISTRY, corpus] + dateattribs, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         reply, error = process.communicate()
+        reply = reply.decode()
         if error:
             error = error.decode()
             if "Error:" in error:  # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
@@ -26,13 +27,13 @@ def timespan(corpus, db_name, out):
                     util.log.info("No date information present in corpus.")
                     # No date information in corpus. Calculate total token count instead.
                     process = subprocess.Popen([CQP_EXECUTABLE, "-c", "-r", CORPUS_REGISTRY], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                    reply, error = process.communicate("set PrettyPrint off;%s;info;" % corpus)
+                    reply, error = process.communicate(bytes("set PrettyPrint off;%s;info;" % corpus, "UTF-8"))
 
                     if error:
                         print(error)
                         raise Exception
 
-                    for line in reply.splitlines():
+                    for line in reply.decode().splitlines():
                         if line.startswith("Size: "):
                             reply = "%s\t\t\t\t" % line[6:].strip()
                 else:
@@ -42,7 +43,6 @@ def timespan(corpus, db_name, out):
         spans = {}
 
         for line in reply.splitlines():
-            line = line.decode("UTF-8")
             if not line:
                 continue
             line = line.split("\t")
