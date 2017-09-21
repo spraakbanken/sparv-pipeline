@@ -661,13 +661,23 @@ ifeq ($(filter token.dephead.ref,$(custom_rules)),)
 endif
 
 ifeq ($(filter token.blingbring,$(custom_rules)),)
-%.token.blingbring: %.token.$(saldo_ids) $(blingbring_lexicon)
-	$(python) -m sb.lexical_classes --annotate_bb_words --out $@ --saldoids $(1) --model $(2)
+%.token.blingbring: %.token.$(saldo_ids) $(blingbring_model) %.token.pos
+	$(python) -m sb.lexical_classes --annotate_bb_words --out $@ --saldoids $(1) --model $(2) --pos $(3) --class_set $(blingbring_class_set)
+endif
+
+ifeq ($(filter token.swefn,$(custom_rules)),)
+%.token.swefn: %.token.$(saldo_ids) $(swefn_model) %.token.pos
+	$(python) -m sb.lexical_classes --annotate_swefn_words --out $@ --saldoids $(1) --model $(2) --pos $(3) --pos_limit $(pos_limit)
 endif
 
 ifeq ($(filter text.blingbring,$(custom_rules)),)
-%.text.blingbring: %.token.blingbring %.children.text.token
-	$(python) -m sb.lexical_classes --annotate_bb_doc --out $@ --in_token_bb $(1) --text_children $(2)
+%.text.blingbring: %.token.blingbring %.children.text.token %.token.$(saldo_ids)
+	$(python) -m sb.lexical_classes --annotate_bb_doc --out $@ --in_token_bb $(1) --text_children $(2) --saldoids $(3)
+endif
+
+ifeq ($(filter text.swefn,$(custom_rules)),)
+%.text.swefn: %.token.swefn %.children.text.token %.token.$(saldo_ids)
+	$(python) -m sb.lexical_classes --annotate_swefn_doc --out $@ --in_token_swefn $(1) --text_children $(2) --saldoids $(3)
 endif
 
 %.sentence.id: %.sentence
