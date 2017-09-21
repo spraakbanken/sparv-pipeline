@@ -31,8 +31,8 @@ def tt_proc(model, tt_binary, out_pos, out_msd, out_lem, word, sentence, lang, e
     for sent, tagged_sent in zip(sentences, stdout.strip().split(SENT_SEP)):
         for token_id, tagged_token in zip(sent, tagged_sent.strip().split(TOK_SEP)):
             tag = tagged_token.strip().split(TAG_SEP)[TAG_COLUMN]
-            OUT_MSD[token_id] = tag.encode(encoding)
-            OUT_POS[token_id] = util.msd_to_pos.convert(tag.encode(encoding), lang)
+            OUT_MSD[token_id] = tag
+            OUT_POS[token_id] = util.msd_to_pos.convert(tag, lang)
     util.write_annotation(out_msd, OUT_MSD)
     util.write_annotation(out_pos, OUT_POS)
 
