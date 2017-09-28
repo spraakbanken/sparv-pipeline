@@ -24,7 +24,7 @@ def annotate_bb_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", class_
                    delimiter=delimiter, affix=affix, lexicon=lexicon)
 
 
-def annotate_swefn_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", class_set=None, disambiguate=False,
+def annotate_swefn_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", class_set=None, disambiguate=True,
                          delimiter=util.DELIM, affix=util.AFFIX, lexicon=None):
     """SweFN specific wrapper for annotate_words. See annotate_words for more info."""
 
