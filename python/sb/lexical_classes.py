@@ -21,10 +21,10 @@ def annotate_bb_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", class_
         return sorted(rogetid)
 
     annotate_words(out, model, saldoids, pos, annotate_bring, pos_limit=pos_limit, class_set=class_set,
-                   delimiter=delimiter, affix=affix, lexicon=None)
+                   delimiter=delimiter, affix=affix, lexicon=lexicon)
 
 
-def annotate_swefn_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", class_set=None,
+def annotate_swefn_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", class_set=None, disambiguate=False,
                          delimiter=util.DELIM, affix=util.AFFIX, lexicon=None):
     """SweFN specific wrapper for annotate_words. See annotate_words for more info."""
 
@@ -36,11 +36,11 @@ def annotate_swefn_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", cla
                 swefnid = swefnid.union(lexicon.lookup(sid, default=set()))
         return sorted(swefnid)
 
-    annotate_words(out, model, saldoids, pos, annotate_swefn, pos_limit=pos_limit, class_set=None,
-                   delimiter=delimiter, affix=affix, lexicon=None)
+    annotate_words(out, model, saldoids, pos, annotate_swefn, pos_limit=pos_limit, class_set=class_set,
+                   disambiguate=disambiguate, delimiter=delimiter, affix=affix, lexicon=lexicon)
 
 
-def annotate_words(out, model, saldoids, pos, annotate, pos_limit, class_set=None,
+def annotate_words(out, model, saldoids, pos, annotate, pos_limit, class_set=None, disambiguate=True,
                    delimiter=util.DELIM, affix=util.AFFIX, lexicon=None):
     """
     Annotate words with blingbring classes (rogetID).
@@ -83,14 +83,20 @@ def annotate_words(out, model, saldoids, pos, annotate, pos_limit, class_set=Non
                 if sense[tokid] != util.AFFIX else None
             saldo_tuples = [(i.split(util.SCORESEP)[0], i.split(util.SCORESEP)[1]) for i in ranked_saldo]
 
+            if not disambiguate:
+                saldo_ids = [i[0] for i in saldo_tuples]
+                print(saldo_ids)
+
+            # Only take the most likely analysis into account.
             # Handle wsd with equal probability for several words
-            saldo_ids = [saldo_tuples[0]]
-            del saldo_tuples[0]
-            while saldo_tuples and (saldo_tuples[0][1] == saldo_ids[0][1]):
+            else:
                 saldo_ids = [saldo_tuples[0]]
                 del saldo_tuples[0]
+                while saldo_tuples and (saldo_tuples[0][1] == saldo_ids[0][1]):
+                    saldo_ids = [saldo_tuples[0]]
+                    del saldo_tuples[0]
 
-            saldo_ids = [i[0] for i in saldo_ids]
+                saldo_ids = [i[0] for i in saldo_ids]
 
         else:  # No WSD
             saldo_ids = sense[tokid].strip(util.AFFIX).split(util.DELIM) \
