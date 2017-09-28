@@ -662,7 +662,7 @@ endif
 
 ifeq ($(filter token.blingbring,$(custom_rules)),)
 %.token.blingbring: %.token.$(saldo_ids) $(blingbring_model) %.token.pos
-	$(python) -m sb.lexical_classes --annotate_bb_words --out $@ --saldoids $(1) --model $(2) --pos $(3) --class_set $(blingbring_class_set)
+	$(python) -m sb.lexical_classes --annotate_bb_words --out $@ --saldoids $(1) --model $(2) --pos $(3) --class_set $(blingbring_class_set) --pos_limit $(pos_limit)
 endif
 
 ifeq ($(filter token.swefn,$(custom_rules)),)
