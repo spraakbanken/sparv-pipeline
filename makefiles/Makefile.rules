@@ -671,13 +671,13 @@ ifeq ($(filter token.swefn,$(custom_rules)),)
 endif
 
 ifeq ($(filter text.blingbring,$(custom_rules)),)
-%.text.blingbring: %.token.blingbring %.children.text.token %.token.$(saldo_ids)
-	$(python) -m sb.lexical_classes --annotate_bb_doc --out $@ --in_token_bb $(1) --text_children $(2) --saldoids $(3)
+%.text.blingbring: %.token.blingbring %.children.text.token %.token.$(saldo_ids) $(blingbring_freq_model)
+	$(python) -m sb.lexical_classes --annotate_doc --out $@ --in_token_annotation $(1) --text_children $(2) --saldoids $(3) --freq_model $(4) --cutoff 3
 endif
 
 ifeq ($(filter text.swefn,$(custom_rules)),)
-%.text.swefn: %.token.swefn %.children.text.token %.token.$(saldo_ids)
-	$(python) -m sb.lexical_classes --annotate_swefn_doc --out $@ --in_token_swefn $(1) --text_children $(2) --saldoids $(3)
+%.text.swefn: %.token.swefn %.children.text.token %.token.$(saldo_ids) $(swefn_freq_model)
+	$(python) -m sb.lexical_classes --annotate_doc --out $@ --in_token_annotation $(1) --text_children $(2) --saldoids $(3) --freq_model $(4) --cutoff 3
 endif
 
 %.sentence.id: %.sentence

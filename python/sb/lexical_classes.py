@@ -1,6 +1,15 @@
 # -*- coding: utf-8 -*-
 
 import sb.util as util
+import os
+import sys
+import subprocess
+from collections import defaultdict
+
+# Path to the cwb binaries
+CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
+CWB_DESCRIBE_EXECUTABLE = "cwb-describe-corpus"
+CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 
 def annotate_bb_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", class_set="bring",
@@ -70,6 +79,7 @@ def annotate_words(out, model, saldoids, pos, annotate, pos_limit, class_set=Non
     result_dict = {}
     sense = util.read_annotation(saldoids)
     token_pos = util.read_annotation(pos)
+
     for tokid in sense:
 
         # Check if part of speech of this token is allowed
@@ -103,7 +113,6 @@ def annotate_words(out, model, saldoids, pos, annotate, pos_limit, class_set=Non
                 if sense[tokid] != util.AFFIX else None
 
         result = annotate(saldo_ids, lexicon)
-
         result_dict[tokid] = util.cwbset(result, delimiter, affix) if result else affix
     util.write_annotation(out, result_dict)
 
@@ -119,34 +128,40 @@ def pos_ok(token_pos, tokid, pos_limit):
         return True
 
 
-def annotate_bb_doc(out, in_token_bb, text_children, saldoids, cutoff=10, types=False,
-                    delimiter=util.DELIM, affix=util.AFFIX):
+def annotate_doc(out, in_token_annotation, text_children, saldoids, cutoff=10, types=False,
+                 delimiter=util.DELIM, affix=util.AFFIX, freq_model=None, decimals=3):
     """
-    Annotate documents with blingbring classes (rogetID).
+    Annotate documents with lexical classes.
     - out: resulting annotation file
-    - in_token_bb: existing annotation with blingbring tokens.
+    - in_token_annotation: existing annotation with lexical classes on token level.
     - text_children: existing annotation for text-IDs and their word children.
     - saldoids: existing annotation with saldoIDs, needed when types=True.
     - cutoff: value for limiting the resulting bring classes.
               The result will contain all words with the top x frequencies.
               Words with frequency = 1 will be removed from the result.
-    - types: if True, count every blingbring class only once per saldo ID occurrence.
+    - types: if True, count every class only once per saldo ID occurrence.
     - delimiter: delimiter character to put between ambiguous results.
     - affix: optional character to put before and after results to mark a set.
+    - freq_model: pickled file with reference frequencies.
+    - decimals: number of decimals to keep in output.
     """
     cutoff = int(cutoff)
     types = util.strtobool(types)
     text_children = util.read_annotation(text_children)
-    roget_words = util.read_annotation(in_token_bb)
+    classes = util.read_annotation(in_token_annotation)
     sense = util.read_annotation(saldoids)
 
-    out_bb_doc = {}
+    if freq_model:
+        freq_model = util.PickledLexicon(freq_model)
+
+    out_doc = {}
 
     for textid, words in text_children.items():
         seen_types = set()
-        roget_freqs = {}
+        class_freqs = defaultdict(int)
+        words = words.split()
 
-        for tokid in words.split():
+        for tokid in words:
             # Count only sense types
             if types:
                 senses = str(sorted([s.split(util.SCORESEP)[0] for s in sense[tokid].strip(util.AFFIX).split(util.DELIM)]))
@@ -155,80 +170,36 @@ def annotate_bb_doc(out, in_token_bb, text_children, saldoids, cutoff=10, types=
                 else:
                     seen_types.add(senses)
 
-            rogwords = roget_words[tokid].strip(util.AFFIX).split(util.DELIM) \
-                if roget_words[tokid] != util.AFFIX else []
+            rogwords = classes[tokid].strip(util.AFFIX).split(util.DELIM) \
+                if classes[tokid] != util.AFFIX else []
             for w in rogwords:
-                roget_freqs[w] = roget_freqs.setdefault(w, 0) + 1
+                class_freqs[w] += 1
 
-        # Sort words according to frequency and remove words with frequency = 1
-        ordered_words = sorted(roget_freqs.items(), key=lambda x: x[1], reverse=True)
-        ordered_words = [w for w in ordered_words if w[1] > 1]
+        if freq_model:
+            for c in class_freqs:
+                # Relative frequency
+                rel = class_freqs[c] / len(words)
+                # Calculate class dominance
+                class_freqs[c] = rel / freq_model.lookup(c.replace("_", " "))
 
-        if len(ordered_words) > cutoff:
-            cutoff_freq = ordered_words[cutoff - 1][1]
-            ordered_words = [w for w in ordered_words if w[1] >= cutoff_freq]
-
-        # Join tuples with words and frequencies
-        ordered_words = [util.SCORESEP.join([word, str(freq)]) for word, freq in ordered_words]
-        out_bb_doc[textid] = util.cwbset(ordered_words, delimiter, affix) if ordered_words else affix
-
-    util.write_annotation(out, out_bb_doc)
-
-
-def annotate_swefn_doc(out, in_token_swefn, text_children, saldoids, cutoff=10, types=False,
-                       delimiter=util.DELIM, affix=util.AFFIX):
-    """
-    Annotate documents with sweFN classes.
-    - out: resulting annotation file
-    - in_token_bb: existing annotation with blingbring tokens.
-    - text_children: existing annotation for text-IDs and their word children.
-    - saldoids: existing annotation with saldoIDs, needed when types=True.
-    - cutoff: value for limiting the resulting bring classes.
-              The result will contain all words with the top x frequencies.
-              Words with frequency = 1 will be removed from the result.
-    - types: if True, count every sweFN class only once per saldo ID occurrence.
-    - delimiter: delimiter character to put between ambiguous results.
-    - affix: optional character to put before and after results to mark a set.
-    """
-    cutoff = int(cutoff)
-    types = util.strtobool(types)
-    text_children = util.read_annotation(text_children)
-    fn_words = util.read_annotation(in_token_swefn)
-    sense = util.read_annotation(saldoids)
-
-    out_bb_doc = {}
-
-    for textid, words in text_children.items():
-        seen_types = set()
-        fn_freqs = {}
-
-        for tokid in words.split():
-            # Count only sense types
-            if types:
-                senses = str(sorted([s.split(util.SCORESEP)[0] for s in sense[tokid].strip(util.AFFIX).split(util.DELIM)]))
-                if senses in seen_types:
-                    continue
-                else:
-                    seen_types.add(senses)
-
-            fnwords = fn_words[tokid].strip(util.AFFIX).split(util.DELIM) \
-                if fn_words[tokid] != util.AFFIX else []
-            for w in fnwords:
-                fn_freqs[w] = fn_freqs.setdefault(w, 0) + 1
-
-        # Sort words according to frequency and remove words with frequency = 1
-        ordered_words = sorted(fn_freqs.items(), key=lambda x: x[1], reverse=True)
-        ordered_words = [w for w in ordered_words if w[1] > 1]
+        # Sort words according to frequency/dominance
+        ordered_words = sorted(class_freqs.items(), key=lambda x: x[1], reverse=True)
+        if freq_model:
+            # Remove words with dominance < 1
+            ordered_words = [w for w in ordered_words if w[1] >= 1]
+        else:
+            # Remove words with frequency 1
+            ordered_words = [w for w in ordered_words if w[1] > 1]
 
         if len(ordered_words) > cutoff:
             cutoff_freq = ordered_words[cutoff - 1][1]
             ordered_words = [w for w in ordered_words if w[1] >= cutoff_freq]
 
-        # Join tuples with words and frequencies
-        ordered_words = [util.SCORESEP.join([word, str(freq)]) for word, freq in ordered_words]
-        out_bb_doc[textid] = util.cwbset(ordered_words, delimiter, affix) if ordered_words else affix
+        # Join words and frequencies/dominances
+        ordered_words = [util.SCORESEP.join([word, str(round(freq, decimals))]) for word, freq in ordered_words]
+        out_doc[textid] = util.cwbset(ordered_words, delimiter, affix) if ordered_words else affix
 
-    util.write_annotation(out, out_bb_doc)
+    util.write_annotation(out, out_doc)
 
 
 def read_blingbring(tsv="blingbring.txt", classmap="rogetMap.xml", verbose=True):
@@ -378,11 +349,57 @@ def swefn_to_pickle(xml, filename, protocol=-1, verbose=True):
     util.lexicon_to_pickle(lexicon, filename)
 
 
+def create_freq_pickle(corpus, annotation, filename):
+    """Build pickle with relative frequency for a given annotation in a reference corpus."""
+    stats = defaultdict(int)
+
+    # Get corpus size
+    process = subprocess.Popen([CWB_DESCRIBE_EXECUTABLE, "-r", CORPUS_REGISTRY, corpus],
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    reply, error = process.communicate()
+    reply = reply.decode()
+
+    if error:
+        error = error.decode()
+        util.log.error(error)
+        sys.exit(1)
+
+    for line in reply.splitlines():
+        if line.startswith("size (tokens)"):
+            _, size = line.split(":")
+            size = int(size.strip())
+
+    # Get frequency of annotation
+    process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-r", CORPUS_REGISTRY, corpus] + [annotation],
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    reply, error = process.communicate()
+    reply = reply.decode()
+    if error:
+        error = error.decode()
+        if "Error:" in error:  # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
+            if "Error: can't open attribute" in error:
+                util.log.error("Annotation '%s' not found", annotation)
+                sys.exit(1)
+
+    for line in reply.splitlines():
+        if not line.strip():
+            continue
+        freq, classes = line.split("\t")
+        for c in classes.split("|"):
+            if c:
+                stats[c.replace("_", " ")] += int(freq)
+
+    for c in stats:
+        stats[c] = stats[c] / size
+
+    util.lexicon_to_pickle(stats, filename)
+
+
 if __name__ == '__main__':
     util.run.main(annotate_bb_words=annotate_bb_words,
-                  annotate_bb_doc=annotate_bb_doc,
+                  annotate_doc=annotate_doc,
                   blingbring_to_pickle=blingbring_to_pickle,
                   annotate_swefn_words=annotate_swefn_words,
-                  annotate_swefn_doc=annotate_swefn_doc,
-                  swefn_to_pickle=swefn_to_pickle
+                  swefn_to_pickle=swefn_to_pickle,
+                  create_freq_pickle=create_freq_pickle
                   )
