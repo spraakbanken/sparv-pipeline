@@ -630,6 +630,12 @@ ifeq ($(filter token.prefix token.suffix,$(custom_rules)),)
 	$(python) -m sb.compound_simple --out_prefix $*.token.prefix --out_suffix $*.token.suffix --word $(1) --msd $(2) --model $(3)
 endif
 
+# Remove sentiment if saldo is missing
+ifeq ($(filter $(saldo_ids),$(vrt_columns)),)
+  vrt_columns_annotations := $(filter-out $(_default_sentiment_annotations),$(vrt_columns_annotations))
+  vrt_columns := $(filter-out $(_default_sentiment),$(vrt_columns))
+endif
+
 ifeq ($(filter token.sentiment,$(custom_rules)),)
 %.token.sentiment: %.token.$(saldo_ids) $(sentiment_model)
 	$(python) -m sb.sentiment --out $@ --sense $(1) --model $(2)
@@ -660,6 +666,30 @@ ifeq ($(filter token.dephead.ref,$(custom_rules)),)
 	$(python) -m sb.annotate --chain --out $@ --annotations "$+"
 endif
 
+%.sentence.id: %.sentence
+	$(python) -m sb.annotate --span_as_value --out $@ --keys $(1)
+
+%.token.sentence.id: %.parents.token.sentence %.sentence.id
+	$(python) -m sb.annotate --chain --out $@ --annotations "$+"
+
+%.text.datefrom %.text.dateto: %.$(datefrom) %.$(dateto)
+	$(python) -m sb.dateformat --infrom $(1) --into $(2) --outfrom $*.text.datefrom --outto $*.text.dateto --informat "$(dateformat)" --outformat "%Y%m%d" --splitter "$(datesplitter)" --regex "$(dateregex)"
+
+%.text.timefrom %.text.timeto: %.$(datefrom) %.$(dateto)
+	$(python) -m sb.dateformat --infrom $(1) --into $(2) --outfrom $*.text.timefrom --outto $*.text.timeto --informat "$(dateformat)" --outformat "%H%M%S" --splitter "$(datesplitter)" --regex "$(dateregex)"
+
+################################################################################
+#                               LEXICAL CLASSES                                #
+################################################################################
+
+# Remove lexical classes if part of speech or saldo is missing
+ifneq ($(filter-out $(vrt_columns), $(saldo_ids) pos),)
+  vrt_columns_annotations := $(filter-out $(_lexical_class_annotations),$(vrt_columns_annotations))
+  vrt_columns := $(filter-out $(_lexical_class),$(vrt_columns))
+  vrt_structs_annotations := $(filter-out $(_lexical_class_doc_annotations),$(vrt_structs_annotations))
+  vrt_structs := $(filter-out $(_lexical_class_doc),$(vrt_structs))
+endif
+
 ifeq ($(filter token.blingbring,$(custom_rules)),)
 %.token.blingbring: %.token.$(saldo_ids) $(blingbring_model) %.token.pos
 	$(python) -m sb.lexical_classes --annotate_bb_words --out $@ --saldoids $(1) --model $(2) --pos $(3) --class_set $(blingbring_class_set) --pos_limit $(pos_limit)
@@ -680,17 +710,9 @@ ifeq ($(filter text.swefn,$(custom_rules)),)
 	$(python) -m sb.lexical_classes --annotate_doc --out $@ --in_token_annotation $(1) --text_children $(2) --saldoids $(3) --freq_model $(4) --cutoff 3
 endif
 
-%.sentence.id: %.sentence
-	$(python) -m sb.annotate --span_as_value --out $@ --keys $(1)
-
-%.token.sentence.id: %.parents.token.sentence %.sentence.id
-	$(python) -m sb.annotate --chain --out $@ --annotations "$+"
-
-%.text.datefrom %.text.dateto: %.$(datefrom) %.$(dateto)
-	$(python) -m sb.dateformat --infrom $(1) --into $(2) --outfrom $*.text.datefrom --outto $*.text.dateto --informat "$(dateformat)" --outformat "%Y%m%d" --splitter "$(datesplitter)" --regex "$(dateregex)"
-
-%.text.timefrom %.text.timeto: %.$(datefrom) %.$(dateto)
-	$(python) -m sb.dateformat --infrom $(1) --into $(2) --outfrom $*.text.timefrom --outto $*.text.timeto --informat "$(dateformat)" --outformat "%H%M%S" --splitter "$(datesplitter)" --regex "$(dateregex)"
+################################################################################
+#                             READABILITY MEASURES                             #
+################################################################################
 
 # Readability measures
 %.text.lix: %.token.n %.text %.parents.token.text %.sentence %.parents.token.sentence %.token.word %.token.pos
