@@ -772,6 +772,7 @@ $(CWB_DATADIR)/$(corpus)/.info: $(root)annotations/sentencecount $(saldo_revisio
 	$(python) -m sb.info --edit --infofile $@ --key "FirstDate" --valuefile $(3)
 	$(python) -m sb.info --edit --infofile $@ --key "LastDate" --valuefile $(4)
 	$(python) -m sb.info --edit --infofile $@ --key "Updated" --value "%DATE%"
+	$(python) -m sb.info --edit --infofile $@ --key "Protected" --value "$(protected)"
 
 ################################################################################
 
