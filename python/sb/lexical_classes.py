@@ -190,7 +190,10 @@ def annotate_doc(out, in_token_annotation, text_children, saldoids, cutoff=10, t
                 # Relative frequency
                 rel = class_freqs[c] / len(words)
                 # Calculate class dominance
-                class_freqs[c] = rel / freq_model.lookup(c.replace("_", " "))
+                ref_freq = freq_model.lookup(c.replace("_", " "), 0)
+                if not ref_freq:
+                    util.log.error("Class '%s' is missing" % ref_freq)
+                class_freqs[c] = (rel / ref_freq)
 
         # Sort words according to frequency/dominance
         ordered_words = sorted(class_freqs.items(), key=lambda x: x[1], reverse=True)
@@ -359,50 +362,71 @@ def swefn_to_pickle(xml, filename, protocol=-1, verbose=True):
     util.lexicon_to_pickle(lexicon, filename)
 
 
-def create_freq_pickle(corpus, annotation, filename):
-    """Build pickle with relative frequency for a given annotation in a reference corpus."""
-    stats = defaultdict(int)
+def create_freq_pickle(corpus, annotation, filename, model, class_set=None):
+    """Build pickle with relative frequency for a given annotation in one or
+       more reference corpora."""
 
-    # Get corpus size
-    process = subprocess.Popen([CWB_DESCRIBE_EXECUTABLE, "-r", CORPUS_REGISTRY, corpus],
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    reply, error = process.communicate()
-    reply = reply.decode()
+    lexicon = util.PickledLexicon(model)
+    # Get total number of classes
+    if class_set:
+        all_classes = set(cc for c in lexicon.lexicon.values() for cc in c[class_set])
+    else:
+        all_classes = set(cc for c in lexicon.lexicon.values() for cc in c)
+    lexicon_size = len(all_classes)
+    smoothing = 0.1
 
-    if error:
-        error = error.decode()
-        util.log.error(error)
-        sys.exit(1)
+    corpus_stats = defaultdict(int)
+    corpus_size = 0
 
-    for line in reply.splitlines():
-        if line.startswith("size (tokens)"):
-            _, size = line.split(":")
-            size = int(size.strip())
+    if isinstance(corpus, str):
+        corpus = corpus.split()
 
-    # Get frequency of annotation
-    process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-r", CORPUS_REGISTRY, corpus] + [annotation],
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    reply, error = process.communicate()
-    reply = reply.decode()
-    if error:
-        error = error.decode()
-        if "Error:" in error:  # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
-            if "Error: can't open attribute" in error:
-                util.log.error("Annotation '%s' not found", annotation)
-                sys.exit(1)
+    for c in corpus:
 
-    for line in reply.splitlines():
-        if not line.strip():
-            continue
-        freq, classes = line.split("\t")
-        for c in classes.split("|"):
-            if c:
-                stats[c.replace("_", " ")] += int(freq)
+        # Get corpus size
+        process = subprocess.Popen([CWB_DESCRIBE_EXECUTABLE, "-r", CORPUS_REGISTRY, c],
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        reply, error = process.communicate()
+        reply = reply.decode()
 
-    for c in stats:
-        stats[c] = stats[c] / size
+        if error:
+            error = error.decode()
+            util.log.error(error)
+            sys.exit(1)
 
-    util.lexicon_to_pickle(stats, filename)
+        for line in reply.splitlines():
+            if line.startswith("size (tokens)"):
+                _, size = line.split(":")
+                corpus_size += int(size.strip())
+
+        # Get frequency of annotation
+        util.log.info("Getting frequencies from %s", c)
+        process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-r", CORPUS_REGISTRY, c] + [annotation],
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        reply, error = process.communicate()
+        reply = reply.decode()
+        if error:
+            error = error.decode()
+            if "Error:" in error:  # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
+                if "Error: can't open attribute" in error:
+                    util.log.error("Annotation '%s' not found", annotation)
+                    sys.exit(1)
+
+        for line in reply.splitlines():
+            if not line.strip():
+                continue
+            freq, classes = line.split("\t")
+            for cl in classes.split("|"):
+                if cl:
+                    corpus_stats[cl.replace("_", " ")] += int(freq)
+
+    rel_freq = defaultdict(float)
+
+    for cl in all_classes:
+        cl = cl.replace("_", " ")
+        rel_freq[cl] = (corpus_stats[cl] + smoothing) / (corpus_size + smoothing * lexicon_size)
+
+    util.lexicon_to_pickle(rel_freq, filename)
 
 
 if __name__ == '__main__':
