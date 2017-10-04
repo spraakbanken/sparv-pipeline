@@ -12,6 +12,8 @@ __all__ = [
     'info',
     'install',
     'lemgram_index',
+    'lexical_classes',
+    'sentiment',
     'malt',
     'number',
     'parent',
