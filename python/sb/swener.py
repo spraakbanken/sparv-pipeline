@@ -99,7 +99,8 @@ def parse_swener_output(sentences, output, out_ne_ex, out_ne_type, out_ne_subtyp
                     # Extract NE tags and save them in dictionaries
                     if child.tag != "sroot":
                         if start_i < previous_end:
-                            util.log.warning("Overlapping NE elements found; discarding one.")
+                            pass
+                            # util.log.warning("Overlapping NE elements found; discarding one.")
                         else:
                             end_id = util.edgeEnd(sent[i - 1])
                             previous_end = i
@@ -113,7 +114,7 @@ def parse_swener_output(sentences, output, out_ne_ex, out_ne_type, out_ne_subtyp
                         # it means this NE ends in the middle of a token.
                         if (child.tail and child.tail.strip() and not child.tail[0] == " ") or (not child.tail and count < len(children) - 1):
                             i -= 1
-                            util.log.warning("Split token returned by name tagger.")
+                            # util.log.warning("Split token returned by name tagger.")
 
                 # If current child has text in the tail, increase token counter
                 if child.tail and child.tail.strip():
