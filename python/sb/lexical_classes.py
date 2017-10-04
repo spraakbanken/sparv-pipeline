@@ -12,45 +12,54 @@ CWB_DESCRIBE_EXECUTABLE = "cwb-describe-corpus"
 CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 
-def annotate_bb_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", class_set="bring",
-                      delimiter=util.DELIM, affix=util.AFFIX, lexicon=None):
+def annotate_bb_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", class_set="bring", connect_IDs=False,
+                      delimiter=util.DELIM, affix=util.AFFIX, scoresep=util.SCORESEP, lexicon=None):
     """Blingbring specific wrapper for annotate_words. See annotate_words for more info."""
     # pos_limit="NN VB JJ AB" | None
+    connect_IDs = util.strtobool(connect_IDs)
 
     if class_set not in ["bring", "roget_head", "roget_subsection", "roget_section", "roget_class"]:
         util.log.warning("Class '%s' not available. Fallback to 'bring'.")
         class_set = "bring"
 
     # Blingbring annotation function
-    def annotate_bring(saldo_ids, lexicon):
+    def annotate_bring(saldo_ids, lexicon, connect_IDs=False, scoresep=util.SCORESEP):
         rogetid = set()
         if saldo_ids:
             for sid in saldo_ids:
-                rogetid = rogetid.union(lexicon.lookup(sid, default=dict()).get(class_set, set()))
+                if connect_IDs:
+                    rogetid = rogetid.union(set(i + scoresep + sid for i in lexicon.lookup(sid, default=set())))
+                else:
+                    rogetid = rogetid.union(lexicon.lookup(sid, default=dict()).get(class_set, set()))
         return sorted(rogetid)
 
     annotate_words(out, model, saldoids, pos, annotate_bring, pos_limit=pos_limit, class_set=class_set,
-                   delimiter=delimiter, affix=affix, lexicon=lexicon)
+                   connect_IDs=connect_IDs, delimiter=delimiter, affix=affix, scoresep=scoresep, lexicon=lexicon)
 
 
-def annotate_swefn_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", class_set=None, disambiguate=True,
-                         delimiter=util.DELIM, affix=util.AFFIX, lexicon=None):
+def annotate_swefn_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", disambiguate=True, connect_IDs=False,
+                         delimiter=util.DELIM, affix=util.AFFIX, scoresep=util.SCORESEP, lexicon=None):
     """SweFN specific wrapper for annotate_words. See annotate_words for more info."""
+    disambiguate = util.strtobool(disambiguate)
+    connect_IDs = util.strtobool(connect_IDs)
 
     # SweFN annotation function
-    def annotate_swefn(saldo_ids, lexicon):
+    def annotate_swefn(saldo_ids, lexicon, connect_IDs=False, scoresep=util.SCORESEP):
         swefnid = set()
         if saldo_ids:
             for sid in saldo_ids:
-                swefnid = swefnid.union(lexicon.lookup(sid, default=set()))
+                if connect_IDs:
+                    swefnid = swefnid.union(set(i + scoresep + sid for i in lexicon.lookup(sid, default=set())))
+                else:
+                    swefnid = swefnid.union(lexicon.lookup(sid, default=set()))
         return sorted(swefnid)
 
-    annotate_words(out, model, saldoids, pos, annotate_swefn, pos_limit=pos_limit, class_set=class_set,
-                   disambiguate=disambiguate, delimiter=delimiter, affix=affix, lexicon=lexicon)
+    annotate_words(out, model, saldoids, pos, annotate_swefn, pos_limit=pos_limit, disambiguate=disambiguate,
+                   connect_IDs=connect_IDs, delimiter=delimiter, affix=affix, scoresep=scoresep, lexicon=lexicon)
 
 
 def annotate_words(out, model, saldoids, pos, annotate, pos_limit, class_set=None, disambiguate=True,
-                   delimiter=util.DELIM, affix=util.AFFIX, lexicon=None):
+                   connect_IDs=False, delimiter=util.DELIM, affix=util.AFFIX, scoresep=util.SCORESEP, lexicon=None):
     """
     Annotate words with blingbring classes (rogetID).
     - out_sent: resulting annotation file.
@@ -63,6 +72,8 @@ def annotate_words(out, model, saldoids, pos, annotate, pos_limit, class_set=Non
     - class_set: output Bring classes or Roget IDs ("bring", "roget_head",
         "roget_subsection", "roget_section" or "roget_class").
         Set to None when not annotating blingbring.
+    - disambiguate: use WSD and use only the most likely saldo ID.
+    - connect_IDs: for sweFN: paste saldo ID after each sweFN ID.
     - delimiter: delimiter character to put between ambiguous results
     - affix: optional character to put before and after results to mark a set.
     - lexicon: this argument cannot be set from the command line,
@@ -95,7 +106,6 @@ def annotate_words(out, model, saldoids, pos, annotate, pos_limit, class_set=Non
 
             if not disambiguate:
                 saldo_ids = [i[0] for i in saldo_tuples]
-                print(saldo_ids)
 
             # Only take the most likely analysis into account.
             # Handle wsd with equal probability for several words
@@ -112,7 +122,7 @@ def annotate_words(out, model, saldoids, pos, annotate, pos_limit, class_set=Non
             saldo_ids = sense[tokid].strip(util.AFFIX).split(util.DELIM) \
                 if sense[tokid] != util.AFFIX else None
 
-        result = annotate(saldo_ids, lexicon)
+        result = annotate(saldo_ids, lexicon, connect_IDs, scoresep)
         result_dict[tokid] = util.cwbset(result, delimiter, affix) if result else affix
     util.write_annotation(out, result_dict)
 
