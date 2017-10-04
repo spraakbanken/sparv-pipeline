@@ -62,9 +62,9 @@ def select(out, annotation, index, separator=None):
                                 for (key, items) in util.read_annotation_iteritems(annotation)))
 
 
-def constant(chunk, out, value=None, encoding=util.UTF8):
+def constant(chunk, out, value=None):
     """Create an annotation with a constant value for each key."""
-    util.write_annotation(out, ((key, value.decode(encoding) if value else value) for key in util.read_annotation_iterkeys(chunk)))
+    util.write_annotation(out, ((key, value if value else value) for key in util.read_annotation_iterkeys(chunk)))
 
 
 def affix(chunk, out, prefix="", suffix=""):
@@ -97,21 +97,21 @@ def find_replace_regex(chunk, out, find, sub=""):
     util.write_annotation(out, ((key, re.sub(find, sub, val)) for (key, val) in util.read_annotation_iteritems(chunk)))
 
 
-def concat(out, left, right, separator="", merge_twins="", encoding=util.UTF8):
+def concat(out, left, right, separator="", merge_twins=""):
     """Concatenate values from two annotations, with an optional separator.
     If merge_twins is set to True, no concatenation will be done on identical values."""
     merge_twins = merge_twins.lower() == "true"
     b = util.read_annotation(right)
-    util.write_annotation(out, ((key_a, u"%s%s%s" % (val_a, separator.decode(encoding), b[key_a]) if not (merge_twins and val_a == b[key_a]) else val_a) for (key_a, val_a) in util.read_annotation_iteritems(left)))
+    util.write_annotation(out, ((key_a, u"%s%s%s" % (val_a, separator, b[key_a]) if not (merge_twins and val_a == b[key_a]) else val_a) for (key_a, val_a) in util.read_annotation_iteritems(left)))
 
 
-def concat2(out, annotations, separator="", encoding=util.UTF8):
+def concat2(out, annotations, separator=""):
     """Concatenate two or more annotations, with an optional separator."""
     if isinstance(annotations, str):
         annotations = annotations.split()
 
     annotations = [util.read_annotation(a) for a in annotations]
-    util.write_annotation(out, [(k, separator.decode(encoding).join([a[k] for a in annotations])) for k in annotations[0]])
+    util.write_annotation(out, [(k, separator.join([a[k] for a in annotations])) for k in annotations[0]])
 
 
 def merge(out, main, backoff, encoding=util.UTF8):
