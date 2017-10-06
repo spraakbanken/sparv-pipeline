@@ -14,7 +14,7 @@ clean:
 	rm -f saldom.xml saldo.pickle saldo.compound.pickle stats.pickle stats_all.txt blingbring.pickle swefn.pickle
 
 space:
-	rm -f stats_all.txt saldom.xml nst_utf8.txt dalinm.xml diapivot.xml swedbergm.xml blingbring.xml swefn.xml
+	rm -f stats_all.txt saldom.xml nst_utf8.txt dalinm.xml diapivot.xml swedbergm.xml blingbring.txt swefn.xml
 
 all: saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable stats.pickle bettertokenizer.sv.saldo-tokens diapivot.pickle geo.pickle blingbring.pickle sensaldo.pickle swefn.pickle
 
