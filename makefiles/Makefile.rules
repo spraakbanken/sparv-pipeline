@@ -125,6 +125,24 @@ define write-to-file0
 $(call xargs,@printf "%s\000" >>$(1),$(2))
 endef
 
+# Functions for removing annotations from annotations/columns/strucs lists
+define annotation_remover
+  # Removes the word in the given position from the given list
+  $(2) := $$(wordlist 1,$$(shell echo $(1)-1 | bc),$$($(2))) $$(wordlist $$(shell echo $(1)+1 | bc),$$(words $$($(2))),$$($(2)))
+endef
+
+# Usage: $(call remove_annotation,text.date,vrt_structs_annotations,vrt_structs)
+define remove_annotation
+  # Find position of attribute(s)
+  ii := $$(shell echo "$$($(2))" | sed -r -e "s/[ \t]+/\n/g" | egrep -n "^$(1)$$$$" | sed -r -e 's/^([0-9]*):.*/\1/' | sort -r -n)
+  ifneq ($$(ii),)
+    # For each position, remove from both export_structs_annotations and export_structs
+    $$(foreach i,$$(ii),$$(eval $$(call annotation_remover,$$(i),$(2))))
+    $$(foreach i,$$(ii),$$(eval $$(call annotation_remover,$$(i),$(3))))
+  endif
+endef
+
+
 ################################################################################
 #                                NULL RULES                                    #
 ################################################################################
@@ -195,14 +213,16 @@ endif
 
 # Remove date attributes if date source is undefined
 ifeq ($(datefrom),)
-  vrt_structs_annotations := $(filter-out $(_time_annotations),$(vrt_structs_annotations))
-  vrt_structs := $(filter-out $(_time),$(vrt_structs))
+  $(foreach skip,$(_time_annotations),$(eval $(call remove_annotation,$(skip),vrt_structs_annotations,vrt_structs)))
 endif
 
 # Remove readability measures if part of speech is missing
-ifeq ($(filter pos,$(vrt_columns)),)
-  vrt_structs_annotations := $(filter-out $(_default_readability_annotations),$(vrt_structs_annotations))
-  vrt_structs := $(filter-out $(_default_readability),$(vrt_structs))
+ifeq ($(filter_annotations), true)
+  ifeq ($(filter_out), true)
+    ifeq ($(filter pos,$(vrt_columns)),)
+      $(foreach skip,$(_default_readability_annotations),$(eval $(call remove_annotation,$(skip),vrt_structs_annotations,vrt_structs)))
+    endif
+  endif
 endif
 
 # Remove paragraph structs if no paragraphs are present, or if sentence_order = random
@@ -217,8 +237,7 @@ ifeq ($(sentence_order),random)
   remove_paragraph_structs = true
 endif
 ifdef remove_paragraph_structs
-      vrt_structs_annotations := $(filter-out $(_default_paragraph_annotations),$(vrt_structs_annotations))
-      vrt_structs := $(filter-out $(_default_paragraph),$(vrt_structs))
+  $(foreach skip,$(_default_paragraph_annotations),$(eval $(call remove_annotation,$(skip),vrt_structs_annotations,vrt_structs)))
 endif
 
 # Determine if corpus has sentences
@@ -280,7 +299,12 @@ debugmain:
 	@echo "xml_annotations:         $(xml_annotations)"
 	@echo "xml_headers:             $(xml_headers)"
 	@echo "xml_header_annotations:  $(xml_header_annotations)"
-
+	@echo
+	@echo "export_columns:             $(export_columns)"
+	@echo "export_columns_annotations: $(export_columns_annotations)"
+	@echo "export_structs:             $(export_structs)"
+	@echo "export_structs_annotations: $(export_structs_annotations)"
+	
 define xml_debug
 debug_$(1):
 	@echo
@@ -631,9 +655,10 @@ ifeq ($(filter token.prefix token.suffix,$(custom_rules)),)
 endif
 
 # Remove sentiment if saldo is missing
-ifeq ($(filter $(saldo_ids),$(vrt_columns)),)
-  vrt_columns_annotations := $(filter-out $(_default_sentiment_annotations),$(vrt_columns_annotations))
-  vrt_columns := $(filter-out $(_default_sentiment),$(vrt_columns))
+ifeq ($(filter_annotations), true)
+  ifeq ($(filter $(saldo_ids),$(vrt_columns)),)
+    $(foreach skip,$(_sentiment_annotations),$(eval $(call remove_annotation,$(skip),vrt_columns_annotations,vrt_columns)))
+  endif
 endif
 
 ifeq ($(filter token.sentiment,$(custom_rules)),)
@@ -683,11 +708,11 @@ endif
 ################################################################################
 
 # Remove lexical classes if part of speech or saldo is missing
-ifneq ($(filter-out $(vrt_columns), $(saldo_ids) pos),)
-  vrt_columns_annotations := $(filter-out $(_lexical_class_annotations),$(vrt_columns_annotations))
-  vrt_columns := $(filter-out $(_lexical_class),$(vrt_columns))
-  vrt_structs_annotations := $(filter-out $(_lexical_class_doc_annotations),$(vrt_structs_annotations))
-  vrt_structs := $(filter-out $(_lexical_class_doc),$(vrt_structs))
+ifeq ($(filter_annotations), true)
+  ifneq ($(filter-out $(vrt_columns), $(saldo_ids) pos),)
+    $(foreach skip,$(_lexical_class_annotations),$(eval $(call remove_annotation,$(skip),vrt_columns_annotations,vrt_columns)))
+    $(foreach skip,$(_lexical_class_doc_annotations),$(eval $(call remove_annotation,$(skip),vrt_structs_annotations,vrt_structs)))
+  endif
 endif
 
 ifeq ($(filter token.blingbring,$(custom_rules)),)
@@ -836,22 +861,6 @@ ifeq ($(export_structs),)
   export_structs = $(vrt_structs)
 endif
 
-# Functions for removing annotations from annotations/columns/strucs lists
-define export_remover
-  # Removes the word in the given position from the given list
-  $(2) := $$(wordlist 1,$$(shell echo $(1)-1 | bc),$$($(2))) $$(wordlist $$(shell echo $(1)+1 | bc),$$(words $$($(2))),$$($(2)))
-endef
-
-define export_skipper
-  # Find position of attribute(s)
-  ii := $$(shell echo "$$(export_structs_annotations)" | sed -r -e "s/[ \t]+/\n/g" | egrep -n "^$(1)$$$$" | sed -r -e 's/^([0-9]*):.*/\1/' | sort -r -n)
-  ifneq ($$(ii),)
-    # For each position, remove from both export_structs_annotations and export_structs
-    $$(foreach i,$$(ii),$$(eval $$(call export_remover,$$(i),export_structs_annotations)))
-    $$(foreach i,$$(ii),$$(eval $$(call export_remover,$$(i),export_structs)))
-  endif
-endef
-
 # Export order
 
 # If any export_original command is used, force original (positional) order
@@ -880,7 +889,7 @@ ifeq ($(export_order), sentence_scrambled)
   ifeq ($(export_skip),)
     export_skip = paragraph paragraph\..*
   endif
-  $(foreach skip,$(export_skip),$(eval $(call export_skipper,$(skip))))
+  $(foreach skip,$(export_skip),$(eval $(call remove_annotation,$(skip),export_structs_annotations,export_structs)))
 else
   ifeq ($(export_order), paragraph_scrambled)
     export_order_annotation = n.paragraph_random
