@@ -25,15 +25,18 @@ def sentiment(sense, out, model, max_decimals=6, lexicon=None):
         token_senses = dict([s.rsplit(util.SCORESEP, 1) if util.SCORESEP in s else (s, -1.0)
                              for s in sense[token].split(util.DELIM) if s])
 
-        sum = 0.0
-        for s in token_senses:
-            p = float(token_senses[s])
-            if p < 0:
-                p = 1.0 / len(token_senses)
-            sentval = float(lexicon.lookup(s, (None, 0.0))[1])
-            sum += sentval * p
+        if token_senses:
+            sum = 0.0
+            for s in token_senses:
+                p = float(token_senses[s])
+                if p < 0:
+                    p = 1.0 / len(token_senses)
+                sentval = float(lexicon.lookup(s, (None, 0.5))[1])
+                sum += sentval * p
+            result[token] = str(round(sum, max_decimals))
+        else:
+            result[token] = None
 
-        result[token] = str(round(sum, max_decimals))
 
     util.write_annotation(out, result)
 
@@ -49,6 +52,9 @@ def sentiment_class(out, sent, classes):
     result = {}
 
     for token in sent:
+        if not sent[token]:
+            result[token] = None
+            continue
         sent_value = float(sent[token])
         for c in classes:
             if c[0] <= sent_value <= c[1]:
