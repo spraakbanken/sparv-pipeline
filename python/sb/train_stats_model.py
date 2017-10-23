@@ -7,7 +7,7 @@ import sb.util as util
 
 def make_model(stats_infile, picklefile, smoothingparam=0.001, min_freq=3, protocol=-1):
     """Train a probability model on a korp statistics file and save it as a pickle file.
-    The model is a LidstoneProbabDist (NLTK) which has tuples (wordform, MSD-tag) as keys
+    The model is a LidstoneProbDist (NLTK) which has tuples (wordform, MSD-tag) as keys
     and smoothed probabilities as values."""
     fdist = FreqDist()
     with codecs.open(stats_infile, encoding='utf-8') as f:
