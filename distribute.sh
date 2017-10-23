@@ -13,8 +13,8 @@ DATE=`date +%Y-%m-%d`
 # Extract version number from first line in file 'VERSION'
 line=$(head -n 1 VERSION)
 VERSION=${line#"version: "}
-DIR_MIT=sparv_backend\_$VERSION\_MIT\_$DATE
-DIR_AGPL=sparv_backend\_$VERSION\_AGPL\_$DATE
+DIR_MIT=sparv_pipeline\_$VERSION\_MIT\_$DATE
+DIR_AGPL=sparv_pipeline\_$VERSION\_AGPL\_$DATE
 
 # export tools/annotate and catapult & zip content
 echo -e "Distributing current version under MIT license!\n"
@@ -33,12 +33,6 @@ rm annotate/AGPL.license;
 rm annotate/distribute.sh;
 mv annotate/README.txt README.txt;
 rm annotate/SB_README.txt;
-rm annotate/models/saldom.xml;
-rm annotate/models/saldo.pickle;
-rm annotate/models/saldo.compound.pickle;
-rm annotate/models/hunpos.saldo.suc-tags.morphtable;
-rm annotate/models/stats.pickle;
-rm annotate/models/bettertokenizer.sv.saldo-tokens;
 echo 'Removing references to Freeling';
 rm annotate/python/sb/freeling.py;
 rm -rf annotate/models/freeling;
@@ -72,12 +66,6 @@ mv annotate/AGPL.license AGPL.license;
 rm annotate/distribute.sh;
 mv annotate/README.txt README.txt;
 rm annotate/SB_README.txt;
-rm annotate/models/saldom.xml;
-rm annotate/models/saldo.pickle;
-rm annotate/models/saldo.compound.pickle;
-rm annotate/models/hunpos.saldo.suc-tags.morphtable;
-rm annotate/models/stats.pickle;
-rm annotate/models/bettertokenizer.sv.saldo-tokens;
 rm annotate/models/freeling/*;
 rm annotate/models/treetagger/*;
 rm annotate/bin/treetagger/*;
