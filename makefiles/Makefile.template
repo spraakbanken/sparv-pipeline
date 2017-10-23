@@ -98,7 +98,7 @@ xml_skip =
 xml_skip_empty =
 # HTML-entities to ignore and skip
 xml_skip_entities =
-# Self-close the following tags
+# Self-close the following elements (for example if the input contains <br> elements).
 xml_autoclose =
 
 
