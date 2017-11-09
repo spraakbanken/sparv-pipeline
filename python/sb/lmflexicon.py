@@ -95,7 +95,10 @@ def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset
             if elem.tag in ['LexicalEntry', 'frame', 'resFrame']:
                 root.clear()
     if verbose:
-        saldo.test_annotations(lexicon)
+        testwords = ["äplebuske",
+                     "stöpljus",
+                     "katt"]
+        util.test_annotations(lexicon, testwords)
         util.log.info("OK, read")
     return lexicon
 
