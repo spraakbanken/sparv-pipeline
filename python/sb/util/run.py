@@ -77,7 +77,7 @@ def print_usage_and_exit(*default_functions, **functions):
     """Exit Python with a usage message derived from the given functions.
     """
     for fun in default_functions:
-        functions[None] = fun
+        functions[""] = fun
     module = "sb." + os.path.splitext(os.path.basename(sys.argv[0]))[0]
     usage = "Usage:\n\n"
     for choice, fun in sorted(functions.items()):
