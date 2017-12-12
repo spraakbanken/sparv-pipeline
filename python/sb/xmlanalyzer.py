@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-An analyzer for pseuo-XML documents.
+An analyzer for pseudo-XML documents.
 Pseudo-XML is almost like XML, but admits overlapping elements.
 """
 import os
