@@ -304,7 +304,7 @@ debugmain:
 	@echo "export_columns_annotations: $(export_columns_annotations)"
 	@echo "export_structs:             $(export_structs)"
 	@echo "export_structs_annotations: $(export_structs_annotations)"
-	
+
 define xml_debug
 debug_$(1):
 	@echo
@@ -513,9 +513,9 @@ ifeq ($(filter sentence,$(custom_rules)),)
           sentence_chunk = paragraph
         else
           ifeq ($(has_sentences),true)
-            ifneq ($(analysis),fl) # FreeLing
+            ifneq ($(analysis),fl)
               $(info Variable 'sentence_chunk' is not set)
-            endif # FreeLing
+            endif
           endif
         endif
       endif
@@ -1140,6 +1140,8 @@ help:
 	@echo "  distclean                   Same as 'clean' but also remove time_* files."
 	@echo "  space                       Remove some of the final annotation files to make space."
 	@echo "  clean_export                Remove all files related to XML export."
+	@echo
+	@echo "  debug                       Show positional and structural attributes that will be included."
 	@echo
 	@echo "Options:"
 	@echo "  -jN  Run up to N jobs in parallel."
