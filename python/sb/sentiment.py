@@ -77,10 +77,11 @@ def read_sensaldo(tsv="sensaldo.txt", verbose=True):
 
     with open(tsv) as f:
         for line in csv.reader(f, delimiter="\t"):
-            saldoid = line[0]
-            sentiment = line[1]
-            ranking = line[2]
-            lexicon[saldoid] = (sentiment, ranking)
+            if not line[0].startswith("#"):
+                saldoid = line[0]
+                sentiment = line[1]
+                ranking = line[2]
+                lexicon[saldoid] = (sentiment, ranking)
 
     testwords = ["hemsk..1",
                  "terrier..1",
