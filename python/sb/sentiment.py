@@ -37,7 +37,6 @@ def sentiment(sense, out, model, max_decimals=6, lexicon=None):
         else:
             result[token] = None
 
-
     util.write_annotation(out, result)
 
 
@@ -67,25 +66,24 @@ def sentiment_class(out, sent, classes):
 def read_sensaldo(tsv="sensaldo.txt", verbose=True):
     """
     Read the TSV version of the sensaldo lexicon (sensaldo.txt).
-    Return a lexicon dictionary: {senseid: (sentiment, ranking)}
+    Return a lexicon dictionary: {senseid: (class, ranking)}
     """
-    import csv
 
     if verbose:
         util.log.info("Reading TSV lexicon")
     lexicon = {}
 
     with open(tsv) as f:
-        for line in csv.reader(f, delimiter="\t"):
-            if not line[0].startswith("#"):
-                saldoid = line[0]
-                sentiment = line[1]
-                ranking = line[2]
-                lexicon[saldoid] = (sentiment, ranking)
+        for line in f:
+            if line.lstrip().startswith("#"):
+                continue
 
-    testwords = ["hemsk..1",
-                 "terrier..1",
-                 "festlig..2"
+            saldoid, _, cls, value = line.split()
+            lexicon[saldoid] = (cls, value)
+
+    testwords = ["förskräcklig..1",
+                 "griskulting..1",
+                 "festlig..1"
                  ]
     util.test_annotations(lexicon, testwords)
 
