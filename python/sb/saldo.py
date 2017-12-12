@@ -510,16 +510,16 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
                             lexicon.setdefault(word, {}).setdefault(annotations, (set(), set(), False, False))[0].update(tags)
 
             # Done parsing section. Clear tree to save memory
-            if elem.tag in ['LexicalEntry', 'frame', 'resFrame']:
+            if elem.tag in ["LexicalEntry", "frame", "resFrame"]:
                 root.clear()
 
-    testwords = [u"äggtoddyarna",
-                 u"Linköpingsbors",
-                 u"katabatiska",
-                 u"väg-",
-                 u"formar",
-                 u"in",
-                 u"datorrelaterade"]
+    testwords = ["äggtoddyarna",
+                 "Linköpingsbors",
+                 "katabatiska",
+                 "väg-",
+                 "formar",
+                 "in",
+                 "datorrelaterade"]
     util.test_annotations(lexicon, testwords)
 
     if verbose:
