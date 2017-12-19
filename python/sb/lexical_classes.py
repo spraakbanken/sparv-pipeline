@@ -12,11 +12,11 @@ CWB_DESCRIBE_EXECUTABLE = "cwb-describe-corpus"
 CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 
-def annotate_bb_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", class_set="bring", connect_IDs=False,
+def annotate_bb_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", class_set="bring", connect_ids=False,
                       delimiter=util.DELIM, affix=util.AFFIX, scoresep=util.SCORESEP, lexicon=None):
     """Blingbring specific wrapper for annotate_words. See annotate_words for more info."""
     # pos_limit="NN VB JJ AB" | None
-    connect_IDs = util.strtobool(connect_IDs)
+    connect_ids = util.strtobool(connect_ids)
 
     if class_set not in ["bring", "roget_head", "roget_subsection", "roget_section", "roget_class"]:
         util.log.warning("Class '%s' not available. Fallback to 'bring'.")
@@ -34,14 +34,14 @@ def annotate_bb_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", class_
         return sorted(rogetid)
 
     annotate_words(out, model, saldoids, pos, annotate_bring, pos_limit=pos_limit, class_set=class_set,
-                   connect_IDs=connect_IDs, delimiter=delimiter, affix=affix, scoresep=scoresep, lexicon=lexicon)
+                   connect_ids=connect_ids, delimiter=delimiter, affix=affix, scoresep=scoresep, lexicon=lexicon)
 
 
-def annotate_swefn_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", disambiguate=True, connect_IDs=False,
+def annotate_swefn_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", disambiguate=True, connect_ids=False,
                          delimiter=util.DELIM, affix=util.AFFIX, scoresep=util.SCORESEP, lexicon=None):
     """SweFN specific wrapper for annotate_words. See annotate_words for more info."""
     disambiguate = util.strtobool(disambiguate)
-    connect_IDs = util.strtobool(connect_IDs)
+    connect_ids = util.strtobool(connect_ids)
 
     # SweFN annotation function
     def annotate_swefn(saldo_ids, lexicon, connect_IDs=False, scoresep=util.SCORESEP):
@@ -55,11 +55,11 @@ def annotate_swefn_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", dis
         return sorted(swefnid)
 
     annotate_words(out, model, saldoids, pos, annotate_swefn, pos_limit=pos_limit, disambiguate=disambiguate,
-                   connect_IDs=connect_IDs, delimiter=delimiter, affix=affix, scoresep=scoresep, lexicon=lexicon)
+                   connect_ids=connect_ids, delimiter=delimiter, affix=affix, scoresep=scoresep, lexicon=lexicon)
 
 
 def annotate_words(out, model, saldoids, pos, annotate, pos_limit, class_set=None, disambiguate=True,
-                   connect_IDs=False, delimiter=util.DELIM, affix=util.AFFIX, scoresep=util.SCORESEP, lexicon=None):
+                   connect_ids=False, delimiter=util.DELIM, affix=util.AFFIX, scoresep=util.SCORESEP, lexicon=None):
     """
     Annotate words with blingbring classes (rogetID).
     - out_sent: resulting annotation file.
@@ -122,7 +122,7 @@ def annotate_words(out, model, saldoids, pos, annotate, pos_limit, class_set=Non
             saldo_ids = sense[tokid].strip(util.AFFIX).split(util.DELIM) \
                 if sense[tokid] != util.AFFIX else None
 
-        result = annotate(saldo_ids, lexicon, connect_IDs, scoresep)
+        result = annotate(saldo_ids, lexicon, connect_ids, scoresep)
         result_dict[tokid] = util.cwbset(result, delimiter, affix) if result else affix
     util.write_annotation(out, result_dict)
 
@@ -138,7 +138,7 @@ def pos_ok(token_pos, tokid, pos_limit):
         return True
 
 
-def annotate_doc(out, in_token_annotation, text_children, saldoids, cutoff=10, types=False,
+def annotate_doc(out, in_token_annotation, text_children, saldoids=None, cutoff=10, types=False,
                  delimiter=util.DELIM, affix=util.AFFIX, freq_model=None, decimals=3):
     """
     Annotate documents with lexical classes.
@@ -159,7 +159,7 @@ def annotate_doc(out, in_token_annotation, text_children, saldoids, cutoff=10, t
     types = util.strtobool(types)
     text_children = util.read_annotation(text_children)
     classes = util.read_annotation(in_token_annotation)
-    sense = util.read_annotation(saldoids)
+    sense = util.read_annotation(saldoids) if types else None
 
     if freq_model:
         freq_model = util.PickledLexicon(freq_model)
@@ -180,8 +180,7 @@ def annotate_doc(out, in_token_annotation, text_children, saldoids, cutoff=10, t
                 else:
                     seen_types.add(senses)
 
-            rogwords = classes[tokid].strip(util.AFFIX).split(util.DELIM) \
-                if classes[tokid] != util.AFFIX else []
+            rogwords = classes[tokid].strip(util.AFFIX).split(util.DELIM) if classes[tokid] != util.AFFIX else []
             for w in rogwords:
                 class_freqs[w] += 1
 
@@ -362,12 +361,12 @@ def swefn_to_pickle(xml, filename, protocol=-1, verbose=True):
     util.lexicon_to_pickle(lexicon, filename)
 
 
-def create_freq_pickle(corpus, annotation, filename, model, class_set=None):
+def create_freq_pickle(corpus, annotation, filename, model, class_set=None, score_separator=util.SCORESEP):
     """Build pickle with relative frequency for a given annotation in one or
        more reference corpora."""
 
     lexicon = util.PickledLexicon(model)
-    # Get total number of classes
+    # Create a set of all possible classes
     if class_set:
         all_classes = set(cc for c in lexicon.lexicon.values() for cc in c[class_set])
     else:
@@ -382,7 +381,6 @@ def create_freq_pickle(corpus, annotation, filename, model, class_set=None):
         corpus = corpus.split()
 
     for c in corpus:
-
         # Get corpus size
         process = subprocess.Popen([CWB_DESCRIBE_EXECUTABLE, "-r", CORPUS_REGISTRY, c],
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -418,7 +416,14 @@ def create_freq_pickle(corpus, annotation, filename, model, class_set=None):
             freq, classes = line.split("\t")
             for cl in classes.split("|"):
                 if cl:
-                    corpus_stats[cl.replace("_", " ")] += int(freq)
+                    freq = int(freq)
+                    if score_separator:
+                        cl, score = cl.rsplit(score_separator, 1)
+                        score = float(score)
+                        if score <= 0:
+                            continue
+                        freq = freq * score
+                    corpus_stats[cl.replace("_", " ")] += freq
 
     rel_freq = defaultdict(float)
 
