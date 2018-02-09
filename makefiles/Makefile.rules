@@ -1138,7 +1138,7 @@ help:
 	@echo "  $(patsubst %,% |, $(filter-out vrt, $(annotations)))"
 	@echo
 	@echo "  clean                       Remove all annotations, exports and logs."
-	@echo "  distclean                   Same as 'clean' but also remove time_* files."
+	@echo "  distclean                   Same as 'clean' but also remove time_* files and the src directory."
 	@echo "  space                       Remove some of the final annotation files to make space."
 	@echo "  clean_export                Remove all files related to XML export."
 	@echo
