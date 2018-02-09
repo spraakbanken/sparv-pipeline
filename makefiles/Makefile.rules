@@ -341,6 +341,7 @@ $(root)src/%.xml: $(original_dir)/%.xml
 endif
 
 ifeq ($(analysis),fl) # FreeLing
+  custom_rules += xml # FreeLing
   ifeq ($(filter freeling,$(custom_rules)),) # FreeLing
 $(root)src/%.xml: $(original_dir)/%.xml # FreeLing
 	mkdir -p $(root)src/ -m $(dir_chmod) # FreeLing
