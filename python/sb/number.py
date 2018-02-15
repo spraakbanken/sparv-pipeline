@@ -49,7 +49,7 @@ def renumber_by_shuffle(out, chunks, prefix="", start=START_DEFAULT):
     """ Renumber already numbered chunks, in new random order.
         Retains the connection between parallelly numbered chunks by using the values as random seed. """
     def order(_chunknr, _edge, value):
-        random.seed(int(hexlify(value), 16))
+        random.seed(int(hexlify(value.encode()), 16))
         return random.random(), natural_sorting(value)
 
     read_chunks_and_write_new_ordering(out, chunks, order, prefix, start)
