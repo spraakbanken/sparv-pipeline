@@ -134,7 +134,7 @@ endef
 # Usage: $(call remove_annotation,text.date,vrt_structs_annotations,vrt_structs)
 define remove_annotation
   # Find position of attribute(s)
-  ii := $$(shell echo "$$($(2))" | sed -r -e "s/[ \t]+/\n/g" | egrep -n "^$(1)$$$$" | sed -r -e 's/^([0-9]*):.*/\1/' | sort -r -n)
+  ii := $$(shell echo "$$($(2))" | perl -p -e "s/[ \t]+/\n/g" | egrep -n "^$(1)$$$$" | sed -r -e 's/^([0-9]*):.*/\1/' | sort -r -n)
   ifneq ($$(ii),)
     # For each position, remove from both export_structs_annotations and export_structs
     $$(foreach i,$$(ii),$$(eval $$(call annotation_remover,$$(i),$(2))))
@@ -183,7 +183,7 @@ endef
 
 define auto_structs
 ifneq ($$($(1)xml_annotations),)
-  auto_elements := $$(shell echo '$$(subst $$(newline),@NEWLINE@,$${auto_annotations_script})' | sed 's/@NEWLINE@/\n/g' | python3 - "$$($(1)xml_elements)" "$$($(1)xml_annotations)")
+  auto_elements := $$(shell echo '$$(subst $$(newline),@NEWLINE@,$${auto_annotations_script})' | perl -p -e 's/\@NEWLINE\@/\n/g' | python3 - "$$($(1)xml_elements)" "$$($(1)xml_annotations)")
   n = $$(firstword $$(auto_elements))
   m = $$(word 2,$$(auto_elements))
   $(1)xml_elements := $$(wordlist 3,$$(n),$$(auto_elements))
@@ -191,7 +191,7 @@ ifneq ($$($(1)xml_annotations),)
 endif
 
 ifneq ($$($(1)xml_header_annotations),)
-  auto_elements := $$(shell echo '$$(subst $$(newline),@NEWLINE@,$${auto_annotations_script})' | sed 's/@NEWLINE@/\n/g' | python3 - "$$($(1)xml_headers)" "$$($(1)xml_header_annotations)")
+  auto_elements := $$(shell echo '$$(subst $$(newline),@NEWLINE@,$${auto_annotations_script})' | perl -p -e 's/\@NEWLINE\@/\n/g' | python3 - "$$($(1)xml_headers)" "$$($(1)xml_header_annotations)")
   n = $$(firstword $$(auto_elements))
   m = $$(word 2,$$(auto_elements))
   $(1)xml_headers := $$(wordlist 3,$$(n),$$(auto_elements))
