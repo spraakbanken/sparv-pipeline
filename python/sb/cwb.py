@@ -438,7 +438,7 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
                     # If previous element has no id, add id of child
                     if not prev_elem.attrib.get("_overlap"):
                         prev_elem.set("_overlap", child.attrib.get("_overlap"))
-        xmltree.write(out, xml_declaration=False, method="xml")
+        xmltree.write(out, xml_declaration=False, method="xml", encoding=util.UTF8)
 
     util.log.info("Exported %d tokens, %d columns, %d structs: %s", len(tokens), len(column_nrs), len(structs), out)
 
