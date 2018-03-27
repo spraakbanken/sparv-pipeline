@@ -824,16 +824,21 @@ $(CWB_DATADIR)/$(corpus)/.info: $(root)annotations/sentencecount $(saldo_revisio
 
 ################################################################################
 
+$(root)annotations/_list_files_:
+	$(call write-to-file,$@,$(files))
+
 ifeq ($(filter fileids,$(custom_rules)),)
-$(root)annotations/fileids:
+$(root)annotations/fileids: $(root)annotations/_list_files_
 	mkdir -p $(dir $@) -m $(dir_chmod)
-	$(python) -m sb.fileid --out $@ --files "$(files)" --prefix "$(lang)"
+	$(python) -m sb.fileid --out $@ --filelist "$(1)" --prefix "$(lang)"
 endif
 
 add: $(root)annotations/fileids
-	$(python) -m sb.fileid --add --out $(root)annotations/fileids.new --files "$(files)" --fileids $(1) --prefix "$(lang)"
+	$(call write-to-file,$(root)annotations/_list_files_add_,$(files))
+	$(python) -m sb.fileid --add --out $(root)annotations/fileids.new --filelist "$(root)annotations/_list_files_add_" --fileids $(1) --prefix "$(lang)"
 	@touch -r $(1) $(root)annotations/fileids.new
 	@rm $(1)
+	@rm $(root)annotations/_list_files_add_
 	@mv $(root)annotations/fileids.new $(1)
 
 $(root)annotations/_lemgram_index_.sql: $(CORPUS_REGISTRY)/$(corpus)
