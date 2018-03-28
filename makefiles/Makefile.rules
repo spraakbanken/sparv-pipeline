@@ -825,11 +825,11 @@ $(CWB_DATADIR)/$(corpus)/.info: $(root)annotations/sentencecount $(saldo_revisio
 ################################################################################
 
 $(root)annotations/_list_files_:
+	mkdir -p $(dir $@) -m $(dir_chmod)
 	$(call write-to-file,$@,$(files))
 
 ifeq ($(filter fileids,$(custom_rules)),)
 $(root)annotations/fileids: $(root)annotations/_list_files_
-	mkdir -p $(dir $@) -m $(dir_chmod)
 	$(python) -m sb.fileid --out $@ --filelist "$(1)" --prefix "$(lang)"
 endif
 
