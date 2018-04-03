@@ -1,0 +1,4 @@
+models/*.pickle filter=lfs diff=lfs merge=lfs -text
+models/*.model filter=lfs diff=lfs merge=lfs -text
+models/suc3.morphtable.words filter=lfs diff=lfs merge=lfs -text
+*.xml filter=lfs diff=lfs merge=lfs -text
