@@ -469,10 +469,10 @@ def every(sep, generator, invert=False):
     """
     Iterate over the generator, returning every sep element of it.
 
-    >>> list(every(3, 'Dan Malin Maria Martin Anne Jonatan'.split()))
-    ['Maria', 'Jonatan']
-    >>> ' '.join(every(3, 'Dan Malin Maria Martin Anne Jonatan'.split(), True))
-    'Dan Malin Martin Anne'
+    >>> list(every(3, 'A B C D E F'.split()))
+    ['C', 'F']
+    >>> ' '.join(every(3, 'A B C D E F'.split(), True))
+    'A B D E'
     """
     for i, x in enumerate(generator):
         if ((i + 1) % sep == 0) != invert:
