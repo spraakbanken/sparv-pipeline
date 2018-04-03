@@ -108,8 +108,8 @@ blingbring.txt:
 	@svn export https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/bring/blingbring.txt --force
 	@echo "Done."
 
-blingbring.pickle: blingbring.txt rogetMap.xml
-	$(python) -m sb.lexical_classes --blingbring_to_pickle --tsv "blingbring.txt" --classmap "rogetMap.xml" --filename "$@"
+blingbring.pickle: blingbring.txt roget_hierarchy.xml
+	$(python) -m sb.lexical_classes --blingbring_to_pickle --tsv "blingbring.txt" --classmap "roget_hierarchy.xml" --filename "$@"
 
 swefn.xml:
 	@echo "Exporting swefn.xml from Subversion..."

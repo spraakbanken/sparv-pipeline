@@ -273,12 +273,10 @@ def read_blingbring(tsv="blingbring.txt", classmap="rogetMap.xml", verbose=True)
     return lexicon
 
 
-def read_rogetmap(xml="rogetMap.xml", verbose=True):
+def read_rogetmap(xml="roget_hierarchy.xml", verbose=True):
     """
     Parse Roget map (Roget hierarchy) into a dictionary with
     Roget head words as keys.
-    Roget map was taken from Open Roget's Thesaurus
-    (http://www.cs.utoronto.ca/~akennedy/resources.html).
     """
     import xml.etree.cElementTree as cet
     if verbose:
@@ -295,7 +293,7 @@ def read_rogetmap(xml="rogetMap.xml", verbose=True):
             l2 = elem.get("name")
         elif elem.tag == "subsection":
             l3 = elem.get("name")
-        elif elem.tag == "head":
+        elif elem.tag == "headword":
             head = elem.get("name")
             lexicon[head] = (l3, l2, l1)
 
