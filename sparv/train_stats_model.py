@@ -2,7 +2,7 @@
 import codecs
 import pickle
 from nltk import FreqDist, LidstoneProbDist
-import sb.util as util
+import sparv.util as util
 
 
 def make_model(stats_infile, picklefile, smoothingparam=0.001, min_freq=3, protocol=-1):

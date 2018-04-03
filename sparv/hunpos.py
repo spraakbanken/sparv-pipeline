@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import codecs
 import re
-import sb.util as util
+import sparv.util as util
 
 SENT_SEP = "\n\n"
 TOK_SEP = "\n"

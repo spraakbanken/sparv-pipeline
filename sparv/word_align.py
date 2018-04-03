@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import codecs
-import sb.util as util
+import sparv.util as util
 
 
 def align_texts(word1, word2, linktok1, linktok2, link1, link2, linkref2, out_wordlink, out_sentences, outindex1, outindex2, delimiter="|", affix="|"):

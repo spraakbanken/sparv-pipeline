@@ -7,7 +7,7 @@ Requires installation of crfpp (https://taku910.github.io/crfpp/).
 """
 
 import CRFPP
-from sb.util.flat_txt2crf import normalize, features
+from sparv.util.flat_txt2crf import normalize, features
 
 """ Expects a model that operating on the tags
         SNG | LF0 (LF1 MID*)? RHT

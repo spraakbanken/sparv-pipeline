@@ -4,7 +4,7 @@
 Add annotations for parent links and/or children links.
 """
 from collections import defaultdict
-import sb.util as util
+import sparv.util as util
 
 
 def annotate_parents(text, out, parent, child, ignore_missing_parent=False):

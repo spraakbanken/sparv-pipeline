@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-import sb.util as util
-import sb.cwb as cwb
+import sparv.util as util
+import sparv.cwb as cwb
 import itertools as it
 from collections import Counter, namedtuple, OrderedDict, defaultdict
 import sys

@@ -5,8 +5,8 @@ import re
 import nltk
 import codecs
 import pickle
-import sb.util as util
-import sb.saldo as saldo
+import sparv.util as util
+import sparv.saldo as saldo
 try:
     from . import crf  # for CRF++ models
 except ImportError:

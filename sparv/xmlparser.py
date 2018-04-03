@@ -5,9 +5,9 @@ A parser for pseudo-XML documents.
 Pseudo-XML is almost like XML, but admits overlapping elements.
 """
 import re
-import sb.util as util
+import sparv.util as util
 import unicodedata
-from sb.xmlanalyzer import problematic_entity, html_entities  # , is_control_code
+from sparv.xmlanalyzer import problematic_entity, html_entities  # , is_control_code
 
 # TODO: lägg till metadata-annoteringar, ungefär som i obsolete/tei_parser.py
 # ELLER: skapa ett annat skript: headerparser.py, som endast parsar och annoterar metadata

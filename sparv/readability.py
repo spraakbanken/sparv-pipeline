@@ -3,8 +3,8 @@
 """
 Readability measures (läsbarhetsmått).
 """
-import sb.util as util
-import sb.cwb as cwb
+import sparv.util as util
+import sparv.cwb as cwb
 from math import log
 
 

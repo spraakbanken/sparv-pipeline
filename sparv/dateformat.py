@@ -6,7 +6,7 @@ Formats dates and times.
 import datetime
 import re
 from dateutil.relativedelta import relativedelta
-import sb.util as util
+import sparv.util as util
 
 
 def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outformat="%Y%m%d%H%M%S", splitter=None, regex=None):

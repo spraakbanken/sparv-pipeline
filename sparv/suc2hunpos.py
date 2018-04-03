@@ -2,7 +2,7 @@
 """
 Creates training material from SUC2 for use with the HUNPOS-tagger.
 """
-import sb.util as util
+import sparv.util as util
 import os.path
 
 

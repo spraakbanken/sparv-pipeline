@@ -2,7 +2,7 @@
 import codecs
 import pickle
 import re
-import sb.util as util
+import sparv.util as util
 from nltk import FreqDist, LidstoneProbDist
 
 

@@ -6,7 +6,7 @@ Pseudo-XML is almost like XML, but admits overlapping elements.
 """
 import os
 from collections import defaultdict
-import sb.util as util
+import sparv.util as util
 
 
 def analyze(sources, header="teiheader", encoding=util.UTF8, maxcount=0):

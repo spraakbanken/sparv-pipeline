@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import sb.util as util
+import sparv.util as util
 import os
 import sys
 import subprocess

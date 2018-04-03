@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 import subprocess
-import sb.util as util
-from sb.util.mysql_wrapper import MySQL
+import sparv.util as util
+from sparv.util.mysql_wrapper import MySQL
 
 # Path to the cwb-scan-corpus binary
 CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"

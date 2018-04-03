@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from collections import defaultdict
 import random
-import sb.util as util
+import sparv.util as util
 import re
 from binascii import hexlify
 

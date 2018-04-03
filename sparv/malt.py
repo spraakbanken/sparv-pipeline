@@ -2,7 +2,7 @@
 import re
 import os
 import codecs
-import sb.util as util
+import sparv.util as util
 
 """
 Running malt processes are only kept if the input is small: otherwise

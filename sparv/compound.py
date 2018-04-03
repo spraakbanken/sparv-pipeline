@@ -3,7 +3,7 @@ import pickle
 import itertools
 import re
 import time
-import sb.util as util
+import sparv.util as util
 from functools import reduce
 
 SPLIT_LIMIT = 200

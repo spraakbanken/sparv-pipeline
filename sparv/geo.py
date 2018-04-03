@@ -4,9 +4,9 @@
 Annotates geographical features.
 """
 
-import sb.util as util
-import sb.parent as parent
-import sb.annotate as annotate
+import sparv.util as util
+import sparv.parent as parent
+import sparv.annotate as annotate
 import codecs
 import pickle
 from collections import defaultdict

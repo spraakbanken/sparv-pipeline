@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from collections import defaultdict
-import sb.util as util
+import sparv.util as util
 import sys
 import pprint
 

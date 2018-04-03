@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import sb.util as util
+import sparv.util as util
 
 
 def sentiment(sense, out, model, max_decimals=6, lexicon=None):

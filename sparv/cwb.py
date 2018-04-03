@@ -11,7 +11,7 @@ import xml.etree.cElementTree as etree
 import itertools as it
 import tempfile
 
-import sb.util as util
+import sparv.util as util
 
 ALIGNDIR = "annotations/align"
 UNDEF = "__UNDEF__"

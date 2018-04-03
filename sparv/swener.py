@@ -2,7 +2,7 @@
 import re
 import xml.sax.saxutils
 import xml.etree.cElementTree as etree
-import sb.util as util
+import sparv.util as util
 
 RESTART_THRESHOLD_LENGTH = 64000
 SENT_SEP = "\n"

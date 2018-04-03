@@ -1,7 +1,7 @@
 # -*- coding: utf_8 -*-
-import sb.saldo as saldo
-import sb.util as util
-import sb.diapivot as diapivot
+import sparv.saldo as saldo
+import sparv.util as util
+import sparv.diapivot as diapivot
 import codecs
 import re
 import itertools

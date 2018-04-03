@@ -4,7 +4,7 @@
 Adds annotations from Saldo.
 """
 
-import sb.util as util
+import sparv.util as util
 import itertools
 import pickle
 import re

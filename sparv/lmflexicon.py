@@ -9,8 +9,8 @@ To pickle a file, run
 lmflexicon.xml_to_pickle("swedberg.xml", "swedberg.pickle", skip_multiword=False)
 lmlexicon place in subversion: https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/dalinm
 """
-import sb.saldo as saldo
-import sb.util as util
+import sparv.saldo as saldo
+import sparv.util as util
 import re
 
 ######################################################################

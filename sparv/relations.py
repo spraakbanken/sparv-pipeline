@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-import sb.util as util
+import sparv.util as util
 from collections import defaultdict
-from sb.util.mysql_wrapper import MySQL
+from sparv.util.mysql_wrapper import MySQL
 import re
 import math
 

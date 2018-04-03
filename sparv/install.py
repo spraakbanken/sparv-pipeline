@@ -2,7 +2,7 @@
 from glob import glob
 import os
 import subprocess
-import sb.util as util
+import sparv.util as util
 import re
 
 CWB_DATADIR = os.environ.get('CWB_DATADIR')

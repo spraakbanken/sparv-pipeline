@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import pickle
-import sb.util as util
+import sparv.util as util
 
 
 def annotate(out_prefix, out_suffix, word, msd, model, delimiter="|", affix="|", lexicon=None):

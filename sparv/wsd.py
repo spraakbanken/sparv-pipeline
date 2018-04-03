@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import sb.util as util
+import sparv.util as util
 
 SENT_SEP = "$SENT$"
 

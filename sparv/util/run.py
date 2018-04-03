@@ -17,7 +17,7 @@ def main(*default_functions, **functions):
 
     if default_functions:
         if len(default_functions) > 1:
-            exit("\nsb.util.run.main: Only one default function, please.\n")
+            exit("\nsparv.util.run.main: Only one default function, please.\n")
 
     # Each function is a possible commandline option:
     available_options = set(fun for fun in functions if fun is not None)
@@ -26,10 +26,10 @@ def main(*default_functions, **functions):
     for fun in list(default_functions) + list(functions.values()):
         spec = inspect.getargspec(fun)
         if spec.varargs or spec.keywords:
-            exit("\nsb.util.run.main: I cannot handle functions with ** or * arguments.\n")
+            exit("\nsparv.util.run.main: I cannot handle functions with ** or * arguments.\n")
         for arg in spec.args:
             if arg in functions:
-                exit("\nsb.util.run.main: Function name and argument name must not be the same: %s\n" % arg)
+                exit("\nsparv.util.run.main: Function name and argument name must not be the same: %s\n" % arg)
             available_options.add(arg + "=")
 
     # Now read the commandline options:
@@ -78,7 +78,7 @@ def print_usage_and_exit(*default_functions, **functions):
     """
     for fun in default_functions:
         functions[""] = fun
-    module = "sb." + os.path.splitext(os.path.basename(sys.argv[0]))[0]
+    module = "sparv." + os.path.splitext(os.path.basename(sys.argv[0]))[0]
     usage = "Usage:\n\n"
     for choice, fun in sorted(functions.items()):
         usage += "python -m %s" % module
