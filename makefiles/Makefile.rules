@@ -345,12 +345,12 @@ ifeq ($(analysis),fl) # FreeLing
   ifeq ($(filter freeling,$(custom_rules)),) # FreeLing
 $(root)src/%.xml: $(original_dir)/%.xml # FreeLing
 	mkdir -p $(root)src/ -m $(dir_chmod) # FreeLing
-	$(python) -m sb.freeling --in_file $(1) --out_file $@ --conf_file $(fl_config) --lang $(lang) --slevel "$(freeling_slevel)"  # FreeLing
+	$(python) -m sparv.freeling --in_file $(1) --out_file $@ --conf_file $(fl_config) --lang $(lang) --slevel "$(freeling_slevel)"  # FreeLing
   endif # FreeLing
 endif # FreeLing
 
 %.vrt: $(foreach struct,$(vrt_structs_annotations),$(addprefix %.parents.token., $(firstword $(subst ., ,$(struct))))) $(addprefix %., $(vrt_structs_annotations)) $(addprefix %.token., $(vrt_columns_annotations) n$(token_n_suffix))
-	$(python) -m sb.cwb --export --format vrt --out $@ \
+	$(python) -m sparv.cwb --export --format vrt --out $@ \
 		--order $*.token.n$(token_n_suffix) \
 		--annotations_columns "$(addprefix $*.token., $(vrt_columns_annotations))" \
 		--annotations_structs "$(foreach struct,$(vrt_structs_annotations),$(addprefix $*.$(struct):$*.parents.token., $(firstword $(subst ., ,$(struct)))))" \
@@ -360,7 +360,7 @@ endif # FreeLing
 define xml_parse
 $(root)annotations/$(1)%.@TEXT $(addprefix $(root)annotations/$(1)%.,$($(2)xml_annotations)) $(addprefix $(root)annotations/$(1)%.,$($(2)xml_header_annotations)): $(src)/$(1)%.xml $(root)annotations/fileids
 	mkdir -p $$(dir $$@) -m $$(dir_chmod)
-	$(python) -m sb.xmlparser --source $$(1) --text $$(root)annotations/$(1)$$*.@TEXT \
+	$(python) -m sparv.xmlparser --source $$(1) --text $$(root)annotations/$(1)$$*.@TEXT \
 		--skip "$$($(2)xml_skip)" \
 		--elements "$$($(2)xml_elements)" \
 		--annotations "$$(addprefix $$(root)annotations/$(1)$$*.,$$($(2)xml_annotations))" \
@@ -398,7 +398,7 @@ endif
 
 ifeq ($(filter token,$(custom_rules)),)
 %.token: %.@TEXT $(addprefix %., $(token_chunk))
-	$(python) -m sb.segment --element w --out $@ --text $(1) --chunk "$(addprefix $*., $(token_chunk))" --segmenter $(token_segmenter) --model "$(token_model)" $(token_model_pickle)
+	$(python) -m sparv.segment --element w --out $@ --text $(1) --chunk "$(addprefix $*., $(token_chunk))" --segmenter $(token_segmenter) --model "$(token_model)" $(token_model_pickle)
 endif
 
 # Token order
@@ -412,13 +412,13 @@ ifeq ($(filter token.n,$(custom_rules)),)
   endif
 
 %.token.n: %.@TEXT %.token
-	$(python) -m sb.number --position --out $@ --texts $(1) --chunks $(2)
+	$(python) -m sparv.number --position --out $@ --texts $(1) --chunks $(2)
 
 %.token.n.sentence_random: %.token %.sentence.n.random %.children.sentence.token
-	$(python) -m sb.number --parent --out $@ --chunks $(1) --parent_order $(2) --parent_children $(3)
+	$(python) -m sparv.number --parent --out $@ --chunks $(1) --parent_order $(2) --parent_children $(3)
 
 %.token.n.paragraph_random: %.token %.paragraph.n.random %.children.paragraph.token
-	$(python) -m sb.number --parent --out $@ --chunks $(1) --parent_order $(2) --parent_children $(3)
+	$(python) -m sparv.number --parent --out $@ --chunks $(1) --parent_order $(2) --parent_children $(3)
 
 endif
 
@@ -439,10 +439,10 @@ ifeq ($(filter paragraph.n,$(custom_rules)),)
   endif
 
 %.paragraph.n: %.@TEXT %.paragraph
-	$(python) -m sb.number --position --out $@ --texts $(1) --chunks $(2)
+	$(python) -m sparv.number --position --out $@ --texts $(1) --chunks $(2)
 
 %.paragraph.n.random: %.paragraph
-	$(python) -m sb.number --random --out $@ --chunks $(1)
+	$(python) -m sparv.number --random --out $@ --chunks $(1)
 
 endif
 
@@ -463,17 +463,17 @@ ifeq ($(filter sentence.n,$(custom_rules)),)
   endif
 
 %.sentence.n: %.@TEXT %.sentence
-	$(python) -m sb.number --position --out $@ --texts $(1) --chunks $(2)
+	$(python) -m sparv.number --position --out $@ --texts $(1) --chunks $(2)
 
 %.sentence.n.random: %.sentence
-	$(python) -m sb.number --random --out $@ --chunks $(1)
+	$(python) -m sparv.number --random --out $@ --chunks $(1)
 
 endif
 
 # token.word
 ifeq ($(filter token.word,$(custom_rules)),)
 %.token.word: %.@TEXT %.token
-	$(python) -m sb.annotate --text_spans --out $@ --text $(1) --chunk $(2)
+	$(python) -m sparv.annotate --text_spans --out $@ --text $(1) --chunk $(2)
 endif
 
 ifeq ($(filter sentence,$(custom_rules)),)
@@ -524,70 +524,70 @@ ifeq ($(filter sentence,$(custom_rules)),)
   endif
 
 %.sentence: %.@TEXT $(addprefix %., $(sentence_chunk))
-	$(python) -m sb.segment --element s --out $@ --text $(1) --chunk "$(addprefix $*., $(sentence_chunk))" --segmenter $(sentence_segmenter) --model "$(sentence_model)"  $(pickled_model)
+	$(python) -m sparv.segment --element s --out $@ --text $(1) --chunk "$(addprefix $*., $(sentence_chunk))" --segmenter $(sentence_segmenter) --model "$(sentence_model)"  $(pickled_model)
 endif
 
 ifeq ($(filter paragraph,$(custom_rules)),)
 %.paragraph: %.@TEXT $(addprefix %., $(paragraph_chunk))
-	$(python) -m sb.segment --element p --out $@ --text $(1) --chunk "$(addprefix $*., $(paragraph_chunk))" --segmenter $(paragraph_segmenter) --model "$(paragraph_model)"
+	$(python) -m sparv.segment --element p --out $@ --text $(1) --chunk "$(addprefix $*., $(paragraph_chunk))" --segmenter $(paragraph_segmenter) --model "$(paragraph_model)"
 endif
 
 %.children.paragraph.token: %.@TEXT %.paragraph %.token
-	$(python) -m sb.parent --children --out $@ --text $(1) --parent $(2) --child $(3) --ignore_missing_parent "$(ignore_missing_parents)"
+	$(python) -m sparv.parent --children --out $@ --text $(1) --parent $(2) --child $(3) --ignore_missing_parent "$(ignore_missing_parents)"
 
 %.children.sentence.token: %.@TEXT %.sentence %.token
-	$(python) -m sb.parent --children --out $@ --text $(1) --parent $(2) --child $(3) --ignore_missing_parent "$(ignore_missing_parents)"
+	$(python) -m sparv.parent --children --out $@ --text $(1) --parent $(2) --child $(3) --ignore_missing_parent "$(ignore_missing_parents)"
 
 %.parents.token.paragraph: %.@TEXT %.paragraph %.token
-	$(python) -m sb.parent --parents --out $@ --text $(1) --parent $(2) --child $(3) --ignore_missing_parent "$(ignore_missing_parents)"
+	$(python) -m sparv.parent --parents --out $@ --text $(1) --parent $(2) --child $(3) --ignore_missing_parent "$(ignore_missing_parents)"
 
 %.parents.token.sentence: %.@TEXT %.sentence %.token
-	$(python) -m sb.parent --parents --out $@ --text $(1) --parent $(2) --child $(3) --ignore_missing_parent "$(ignore_missing_parents)"
+	$(python) -m sparv.parent --parents --out $@ --text $(1) --parent $(2) --child $(3) --ignore_missing_parent "$(ignore_missing_parents)"
 
 %.parents.token.ne: %.@TEXT %.ne.type %.token
-	$(python) -m sb.parent --parents --out $@ --text $(1) --parent $(2) --child $(3) --ignore_missing_parent true
+	$(python) -m sparv.parent --parents --out $@ --text $(1) --parent $(2) --child $(3) --ignore_missing_parent true
 
 ifeq ($(filter ne.type,$(custom_rules)),)
 %.ne.ex %.ne.type %.ne.subtype %.ne.name: %.token.word %.children.sentence.token
-	$(python) -m sb.swener --out_ne_ex $*.ne.ex --out_ne_type $*.ne.type --out_ne_subtype $*.ne.subtype --out_ne_name $*.ne.name --word $(1) --sentence $(2)
+	$(python) -m sparv.swener --out_ne_ex $*.ne.ex --out_ne_type $*.ne.type --out_ne_subtype $*.ne.subtype --out_ne_name $*.ne.name --word $(1) --sentence $(2)
 endif
 
 %.token.ref: %.children.sentence.token
-	$(python) -m sb.number --relative --out $@ --parent_children $(1)
+	$(python) -m sparv.number --relative --out $@ --parent_children $(1)
 
 ifeq ($(analysis),tt)
   ifeq ($(filter token.pos token.baseform,$(custom_rules)),)
 %.token.pos %.token.msd %.token.baseform: %.token.word %.children.sentence.token $(tt_model)
-	$(python) -m sb.treetagger --model $(3) --tt_binary $(tt_bin) --out_pos "$*.token.pos" --out_msd "$*.token.msd" --out_lem "$*.token.baseform" --word $(1) --sentence $(2) --lang $(lang)
+	$(python) -m sparv.treetagger --model $(3) --tt_binary $(tt_bin) --out_pos "$*.token.pos" --out_msd "$*.token.msd" --out_lem "$*.token.baseform" --word $(1) --sentence $(2) --lang $(lang)
   endif
 else
   ifeq ($(analysis),sv-1800)
     ifeq ($(filter token.msd,$(custom_rules)),)
 %.token.msd: %.token.word %.children.sentence.token $(hunpos_model) $(hunpos_morphtable_swedalin)
-	$(python) -m sb.hunpos --out $@ --word $(1) --sentence $(2) --model $(3) --tag_mapping "$(tag_mapping)" --morphtable $(4)
+	$(python) -m sparv.hunpos --out $@ --word $(1) --sentence $(2) --model $(3) --tag_mapping "$(tag_mapping)" --morphtable $(4)
     endif
     ifeq ($(filter token.pos,$(custom_rules)),)
 %.token.pos: %.token.msd
-	$(python) -m sb.annotate --select --out $@ --annotation $(1) --index 0 --separator "."
+	$(python) -m sparv.annotate --select --out $@ --annotation $(1) --index 0 --separator "."
     endif
 
   else
 
     ifeq ($(filter token.msd,$(custom_rules)),)
 %.token.msd: %.token.word %.children.sentence.token $(hunpos_model) $(hunpos_morphtable) $(hunpos_morphtable_patterns)
-	$(python) -m sb.hunpos --out $@ --word $(1) --sentence $(2) --model $(3) --tag_mapping "$(tag_mapping)" --morphtable "$(4)" --patterns "$(5)"
+	$(python) -m sparv.hunpos --out $@ --word $(1) --sentence $(2) --model $(3) --tag_mapping "$(tag_mapping)" --morphtable "$(4)" --patterns "$(5)"
     endif
 
     ifeq ($(filter token.pos,$(custom_rules)),)
 %.token.pos: %.token.msd
-	$(python) -m sb.annotate --select --out $@ --annotation $(1) --index 0 --separator "."
+	$(python) -m sparv.annotate --select --out $@ --annotation $(1) --index 0 --separator "."
     endif
   endif
 endif
 
 # temporary rule (should be removed when namespaces are sorted...)
 %.token.dalinlemgram: %.token.word %.token.msd %.children.sentence.token %.token.ref $(dalin_model) $(swedberg_model)
-	$(python) -m sb.saldo --out $@ --annotations "lem" --word $(1) --msd $(2) --models "$(5) $(6)" --delimiter "|" --affix="|" \
+	$(python) -m sparv.saldo --out $@ --annotations "lem" --word $(1) --msd $(2) --models "$(5) $(6)" --delimiter "|" --affix="|" \
     --precision="" --min_precision=$(saldo_min_precision) --precision_filter "$(saldo_precision_filter)" --sentence $(3) --reference $(4) --skip_multiword "$(saldo_skip_multiword)"
 
 ifneq ($(analysis),tt)
@@ -623,12 +623,12 @@ ifneq ($(analysis),tt)
     ifeq ($(analysis),sv-1800)
 # Include annotations from dalin and swedberg
 %.token.$(baseform) %.token.lemgram %.token.$(sense): %.token.word %.token.msd %.children.sentence.token %.token.ref $(saldo_model) $(dalin_model) $(swedberg_model)
-	$(python) -m sb.saldo --out "$*.token.$(baseform) $*.token.lemgram $*.token.$(sense)" --annotations "gf lem saldo" \
+	$(python) -m sparv.saldo --out "$*.token.$(baseform) $*.token.lemgram $*.token.$(sense)" --annotations "gf lem saldo" \
 		--word $(1) --msd $(2) --models "$(5) $(6) $(7)" --delimiter "|" --affix="|" --precision="" --min_precision=$(saldo_min_precision) --precision_filter "$(saldo_precision_filter)" --sentence $(3) --reference $(4) --skip_multiword "$(saldo_skip_multiword)"
     else
 
 %.token.$(baseform) %.token.lemgram %.token.$(sense): %.token.word %.token.msd %.children.sentence.token %.token.ref $(saldo_model)
-	$(python) -m sb.saldo --out "$*.token.$(baseform) $*.token.lemgram $*.token.$(sense)" --annotations "gf lem saldo" \
+	$(python) -m sparv.saldo --out "$*.token.$(baseform) $*.token.lemgram $*.token.$(sense)" --annotations "gf lem saldo" \
 		--word $(1) --msd $(2) --models $(5) --delimiter "|" --affix="|" --precision="" --min_precision=$(saldo_min_precision) --precision_filter "$(saldo_precision_filter)" --sentence $(3) --reference $(4) --skip_multiword "$(saldo_skip_multiword)"
     endif
   endif
@@ -637,7 +637,7 @@ endif
 ifeq ($(baseform),baseform_tmp)
   ifeq ($(filter token.complemgram token.compwf,$(custom_rules)),)
 %.token.complemgram %.token.compwf %.token.baseform: %.token.word %.token.msd %.token.baseform_tmp $(saldo_compound_model) $(nst_comp_model) $(stats_model)
-	$(python) -m sb.compound --out_complemgram $*.token.complemgram --out_compwf $*.token.compwf --out_baseform $*.token.baseform --word $(1) --msd $(2) --baseform_tmp $(3) \
+	$(python) -m sparv.compound --out_complemgram $*.token.complemgram --out_compwf $*.token.compwf --out_baseform $*.token.baseform --word $(1) --msd $(2) --baseform_tmp $(3) \
 		--saldo_comp_model $(4) --nst_model $(5) --stats_model $(6)
   endif
 endif
@@ -645,14 +645,14 @@ endif
 ifeq ($(filter token.sense,$(custom_rules)),)
   ifneq ($(rank_senses),false)
 %.token.sense: %.children.sentence.token %.token.word %.token.ref %.token.lemgram %.token.sense_tmp %.token.pos %.@TEXT
-	$(python) -m sb.wsd --wsdjar $(wsd_jar) --sense_model $(wsd_sense_model) --context_model $(wsd_context_model) --out $@ --sentence $(1) --word $(2) --ref $(3) --lemgram $(4) --saldo $(5) --pos $(6) --text $(7)
+	$(python) -m sparv.wsd --wsdjar $(wsd_jar) --sense_model $(wsd_sense_model) --context_model $(wsd_context_model) --out $@ --sentence $(1) --word $(2) --ref $(3) --lemgram $(4) --saldo $(5) --pos $(6) --text $(7)
   endif
 endif
 
 # Old compound analysis, to be removed
 ifeq ($(filter token.prefix token.suffix,$(custom_rules)),)
 %.token.prefix %.token.suffix: %.token.word %.token.msd $(saldo_compound_model)
-	$(python) -m sb.compound_simple --out_prefix $*.token.prefix --out_suffix $*.token.suffix --word $(1) --msd $(2) --model $(3)
+	$(python) -m sparv.compound_simple --out_prefix $*.token.prefix --out_suffix $*.token.suffix --word $(1) --msd $(2) --model $(3)
 endif
 
 # Remove sentiment if saldo is missing
@@ -664,45 +664,45 @@ endif
 
 ifeq ($(filter token.sentiment,$(custom_rules)),)
 %.token.sentiment: %.token.$(saldo_ids) $(sentiment_model)
-	$(python) -m sb.sentiment --out $@ --sense $(1) --model $(2)
+	$(python) -m sparv.sentiment --out $@ --sense $(1) --model $(2)
 endif
 
 ifeq ($(filter token.sentimentclass,$(custom_rules)),)
 %.token.sentimentclass: %.token.sentiment
-	$(python) -m sb.sentiment --sentiment_class --out $@ --sent $(1) --classes "-1.0:-0.5:negative|-0.5:0.5:neutral|0.5:1.0:positive"
+	$(python) -m sparv.sentiment --sentiment_class --out $@ --sent $(1) --classes "-1.0:-0.5:negative|-0.5:0.5:neutral|0.5:1.0:positive"
 endif
 
 ifeq ($(filter token.malt,$(custom_rules)),)
 %.token.malt: %.children.sentence.token %.token.word %.token.msd %.token.pos $(malt_model)
-	$(python) -m sb.malt --maltjar $(malt_jar) --out $@ --sentence $(1) --word $(2) --msd $(3) --pos $(4) --model $(5)
+	$(python) -m sparv.malt --maltjar $(malt_jar) --out $@ --sentence $(1) --word $(2) --msd $(3) --pos $(4) --model $(5)
 endif
 
 ifeq ($(filter token.deprel,$(custom_rules)),)
 %.token.deprel: %.token.malt
-	$(python) -m sb.annotate --select --out $@ --annotation $(1) --index 0
+	$(python) -m sparv.annotate --select --out $@ --annotation $(1) --index 0
 endif
 
 ifeq ($(filter token.dephead,$(custom_rules)),)
 %.token.dephead: %.token.malt
-	$(python) -m sb.annotate --select --out $@ --annotation $(1) --index 1
+	$(python) -m sparv.annotate --select --out $@ --annotation $(1) --index 1
 endif
 
 ifeq ($(filter token.dephead.ref,$(custom_rules)),)
 %.token.dephead.ref: %.token.dephead %.token.ref
-	$(python) -m sb.annotate --chain --out $@ --annotations "$+"
+	$(python) -m sparv.annotate --chain --out $@ --annotations "$+"
 endif
 
 %.sentence.id: %.sentence
-	$(python) -m sb.annotate --span_as_value --out $@ --keys $(1)
+	$(python) -m sparv.annotate --span_as_value --out $@ --keys $(1)
 
 %.token.sentence.id: %.parents.token.sentence %.sentence.id
-	$(python) -m sb.annotate --chain --out $@ --annotations "$+"
+	$(python) -m sparv.annotate --chain --out $@ --annotations "$+"
 
 %.text.datefrom %.text.dateto: %.$(datefrom) %.$(dateto)
-	$(python) -m sb.dateformat --infrom $(1) --into $(2) --outfrom $*.text.datefrom --outto $*.text.dateto --informat "$(dateformat)" --outformat "%Y%m%d" --splitter "$(datesplitter)" --regex "$(dateregex)"
+	$(python) -m sparv.dateformat --infrom $(1) --into $(2) --outfrom $*.text.datefrom --outto $*.text.dateto --informat "$(dateformat)" --outformat "%Y%m%d" --splitter "$(datesplitter)" --regex "$(dateregex)"
 
 %.text.timefrom %.text.timeto: %.$(datefrom) %.$(dateto)
-	$(python) -m sb.dateformat --infrom $(1) --into $(2) --outfrom $*.text.timefrom --outto $*.text.timeto --informat "$(dateformat)" --outformat "%H%M%S" --splitter "$(datesplitter)" --regex "$(dateregex)"
+	$(python) -m sparv.dateformat --infrom $(1) --into $(2) --outfrom $*.text.timefrom --outto $*.text.timeto --informat "$(dateformat)" --outformat "%H%M%S" --splitter "$(datesplitter)" --regex "$(dateregex)"
 
 ################################################################################
 #                               LEXICAL CLASSES                                #
@@ -718,22 +718,22 @@ endif
 
 ifeq ($(filter token.blingbring,$(custom_rules)),)
 %.token.blingbring: %.token.$(saldo_ids) $(blingbring_model) %.token.pos
-	$(python) -m sb.lexical_classes --annotate_bb_words --out $@ --saldoids $(1) --model $(2) --pos $(3) --class_set $(blingbring_class_set) --pos_limit $(pos_limit)
+	$(python) -m sparv.lexical_classes --annotate_bb_words --out $@ --saldoids $(1) --model $(2) --pos $(3) --class_set $(blingbring_class_set) --pos_limit $(pos_limit)
 endif
 
 ifeq ($(filter token.swefn,$(custom_rules)),)
 %.token.swefn: %.token.$(saldo_ids) $(swefn_model) %.token.pos
-	$(python) -m sb.lexical_classes --annotate_swefn_words --out $@ --saldoids $(1) --model $(2) --pos $(3) --pos_limit $(pos_limit)
+	$(python) -m sparv.lexical_classes --annotate_swefn_words --out $@ --saldoids $(1) --model $(2) --pos $(3) --pos_limit $(pos_limit)
 endif
 
 ifeq ($(filter text.blingbring,$(custom_rules)),)
 %.text.blingbring: %.token.blingbring %.children.text.token %.token.$(saldo_ids) $(blingbring_freq_model)
-	$(python) -m sb.lexical_classes --annotate_doc --out $@ --in_token_annotation $(1) --text_children $(2) --saldoids $(3) --freq_model $(4) --cutoff 3
+	$(python) -m sparv.lexical_classes --annotate_doc --out $@ --in_token_annotation $(1) --text_children $(2) --saldoids $(3) --freq_model $(4) --cutoff 3
 endif
 
 ifeq ($(filter text.swefn,$(custom_rules)),)
 %.text.swefn: %.token.swefn %.children.text.token %.token.$(saldo_ids) $(swefn_freq_model)
-	$(python) -m sb.lexical_classes --annotate_doc --out $@ --in_token_annotation $(1) --text_children $(2) --saldoids $(3) --freq_model $(4) --cutoff 3
+	$(python) -m sparv.lexical_classes --annotate_doc --out $@ --in_token_annotation $(1) --text_children $(2) --saldoids $(3) --freq_model $(4) --cutoff 3
 endif
 
 ################################################################################
@@ -742,13 +742,13 @@ endif
 
 # Readability measures
 %.text.lix: %.token.n %.text %.parents.token.text %.sentence %.parents.token.sentence %.token.word %.token.pos
-	$(python) -m sb.readability --lix --order $(1) --text $(2) --parent_text $(3) --sentence $(4) --parent_sentence $(5) --words $(6) --pos $(7) --out $@ --skip_pos $(non_word_pos)
+	$(python) -m sparv.readability --lix --order $(1) --text $(2) --parent_text $(3) --sentence $(4) --parent_sentence $(5) --words $(6) --pos $(7) --out $@ --skip_pos $(non_word_pos)
 
 %.text.ovix: %.token.n %.text %.parents.token.text %.token.word %.token.pos
-	$(python) -m sb.readability --ovix --order $(1) --text $(2) --parent_text $(3) --words $(4) --pos $(5) --out $@ --skip_pos $(non_word_pos)
+	$(python) -m sparv.readability --ovix --order $(1) --text $(2) --parent_text $(3) --words $(4) --pos $(5) --out $@ --skip_pos $(non_word_pos)
 
 %.text.nk: %.token.n %.text %.parents.token.text %.token.pos
-	$(python) -m sb.readability --nominal_ratio --order $(1) --text $(2) --parent_text $(3) --pos $(4) --out $@ --noun_pos $(noun_pos) --verb_pos $(verb_pos)
+	$(python) -m sparv.readability --nominal_ratio --order $(1) --text $(2) --parent_text $(3) --pos $(4) --out $@ --noun_pos $(noun_pos) --verb_pos $(verb_pos)
 
 
 ################################################################################
@@ -763,17 +763,17 @@ ifeq ($(sentence_geocontext),)
 endif
 
 %.paragraph.geocontext: %.paragraph %.$(paragraph_geocontext) %.@TEXT %.ne.type %.ne.subtype $(geo_model)
-	$(python) -m sb.geo --out $@ --chunk $(1) --context $(2) --text $(3) --ne $(4) --ne_subtype $(5) --model $(6) --language "$(geo_language)"
+	$(python) -m sparv.geo --out $@ --chunk $(1) --context $(2) --text $(3) --ne $(4) --ne_subtype $(5) --model $(6) --language "$(geo_language)"
 
 %.sentence.geocontext: %.sentence %.$(sentence_geocontext) %.@TEXT %.ne.type %.ne.subtype $(geo_model)
-	$(python) -m sb.geo --out $@ --chunk $(1) --context $(2) --text $(3) --ne $(4) --ne_subtype $(5) --model $(6) --language "$(geo_language)"
+	$(python) -m sparv.geo --out $@ --chunk $(1) --context $(2) --text $(3) --ne $(4) --ne_subtype $(5) --model $(6) --language "$(geo_language)"
 
 ################################################################################
 #                                  RELATIONS                                   #
 ################################################################################
 
 %.relations: %.token.pos %.token.lemgram %.token.dephead %.token.deprel %.children.sentence.token %.token.word %.sentence.id %.token.ref %.token.baseform
-	$(python) -m sb.relations --out $@ --pos $(1) --lemgram $(2) --dephead $(3) --deprel $(4) --sentence $(5) --word $(6) --sentence_id $(7) --ref $(8) --baseform $(9)
+	$(python) -m sparv.relations --out $@ --pos $(1) --lemgram $(2) --dephead $(3) --deprel $(4) --sentence $(5) --word $(6) --sentence_id $(7) --ref $(8) --baseform $(9)
 
 relations: $(root)annotations/_relations_.sql
 
@@ -781,7 +781,7 @@ $(root)annotations/_list_relations_: $(files:%=$(root)annotations/%.relations)
 	$(call write-to-file,$@,$+)
 
 $(root)annotations/_relations_.sql: $(root)annotations/_list_relations_
-	$(python) -m sb.relations --frequency --out $@ --source_list "$(1)" --corpus $(corpus) --db_name $(mysql_dbname) --split "$(split_relations)"
+	$(python) -m sparv.relations --frequency --out $@ --source_list "$(1)" --corpus $(corpus) --db_name $(mysql_dbname) --split "$(split_relations)"
 
 ################################################################################
 #                                 .INFO FILE                                   #
@@ -815,12 +815,12 @@ endif
 info: $(CWB_DATADIR)/$(corpus)/.info
 
 $(CWB_DATADIR)/$(corpus)/.info: $(root)annotations/sentencecount $(saldo_revision) $(root)annotations/datefirst $(root)annotations/datelast
-	$(python) -m sb.info --edit --infofile $@ --key "Sentences" --valuefile $(1)
-	$(python) -m sb.info --edit --infofile $@ --key "Saldo" --valuefile $(2)
-	$(python) -m sb.info --edit --infofile $@ --key "FirstDate" --valuefile $(3)
-	$(python) -m sb.info --edit --infofile $@ --key "LastDate" --valuefile $(4)
-	$(python) -m sb.info --edit --infofile $@ --key "Updated" --value "%DATE%"
-	$(python) -m sb.info --edit --infofile $@ --key "Protected" --value "$(protected)"
+	$(python) -m sparv.info --edit --infofile $@ --key "Sentences" --valuefile $(1)
+	$(python) -m sparv.info --edit --infofile $@ --key "Saldo" --valuefile $(2)
+	$(python) -m sparv.info --edit --infofile $@ --key "FirstDate" --valuefile $(3)
+	$(python) -m sparv.info --edit --infofile $@ --key "LastDate" --valuefile $(4)
+	$(python) -m sparv.info --edit --infofile $@ --key "Updated" --value "%DATE%"
+	$(python) -m sparv.info --edit --infofile $@ --key "Protected" --value "$(protected)"
 
 ################################################################################
 
@@ -830,22 +830,22 @@ $(root)annotations/_list_files_:
 
 ifeq ($(filter fileids,$(custom_rules)),)
 $(root)annotations/fileids: $(root)annotations/_list_files_
-	$(python) -m sb.fileid --out $@ --filelist "$(1)" --prefix "$(lang)"
+	$(python) -m sparv.fileid --out $@ --filelist "$(1)" --prefix "$(lang)"
 endif
 
 add: $(root)annotations/fileids
 	$(call write-to-file,$(root)annotations/_list_files_add_,$(files))
-	$(python) -m sb.fileid --add --out $(root)annotations/fileids.new --filelist "$(root)annotations/_list_files_add_" --fileids $(1) --prefix "$(lang)"
+	$(python) -m sparv.fileid --add --out $(root)annotations/fileids.new --filelist "$(root)annotations/_list_files_add_" --fileids $(1) --prefix "$(lang)"
 	@touch -r $(1) $(root)annotations/fileids.new
 	@rm $(1)
 	@rm $(root)annotations/_list_files_add_
 	@mv $(root)annotations/fileids.new $(1)
 
 $(root)annotations/_lemgram_index_.sql: $(CORPUS_REGISTRY)/$(corpus)
-	$(python) -m sb.lemgram_index --corpus $(corpus) --out $@ --db_name lemgram_index
+	$(python) -m sparv.lemgram_index --corpus $(corpus) --out $@ --db_name lemgram_index
 
 $(root)annotations/_timespan_.sql: $(CORPUS_REGISTRY)/$(corpus)
-	$(python) -m sb.timespan --corpus $(corpus) --out $@ --db_name timespan
+	$(python) -m sparv.timespan --corpus $(corpus) --out $@ --db_name timespan
 
 ################################################################################
 #                                XML EXPORT                                    #
@@ -916,7 +916,7 @@ $(root)export$(export_suffix)/%.xml: $(root)annotations/fileids \
 		$(addprefix $(root)annotations/%., $(export_structs_annotations)) \
 		$(addprefix $(root)annotations/%.token., $(export_columns_annotations) $(export_order_annotation))
 	mkdir -p $(dir $@) -m $(dir_chmod)
-	$(python) -m sb.cwb --export --format xml --out $@ \
+	$(python) -m sparv.cwb --export --format xml --out $@ \
 		--order $(root)annotations/$*.token.$(export_order_annotation) \
 		--annotations_columns "$(addprefix $(root)annotations/$*.token., $(export_columns_annotations))" \
 		--annotations_structs "$(foreach struct,$(export_structs_annotations),$(addprefix $(root)annotations/$*.$(struct):$(root)annotations/$*.parents.token., $(firstword $(subst ., ,$(struct)))))" \
@@ -931,7 +931,7 @@ $(root)export$(export_suffix)/%.txt: $(root)annotations/fileids \
 		$(root)annotations/%.parents.token.$(firstword $(subst ., ,$(txt_export_struct))) \
 		$(addprefix $(root)annotations/%.token., $(txt_export_column))
 	mkdir -p $(dir $@) -m $(dir_chmod)
-	$(python) -m sb.cwb --export --format txt --out $@ \
+	$(python) -m sparv.cwb --export --format txt --out $@ \
 		--fileid "$*" --fileids $(1) \
 		--order $(2) \
 		--annotations_structs "$(3):$(4)" \
@@ -950,14 +950,14 @@ $(root)models/file_list_$(extra_model_name): \
 
 train: $(root)models/file_list_$(extra_model_name)
 	mkdir -p $(root)models
-	$(python) -m sb.vw --train --file_list $< --outprefix "$(root)models/$(train)$(extra_model_name)" --dry_run_labels "$(dry_run_labels)" --label_map "$(label_map)" --bound "$(bound)" --min_word_length "$(min_word_length)" --banned_pos "$(banned_pos)"
+	$(python) -m sparv.vw --train --file_list $< --outprefix "$(root)models/$(train)$(extra_model_name)" --dry_run_labels "$(dry_run_labels)" --label_map "$(label_map)" --bound "$(bound)" --min_word_length "$(min_word_length)" --banned_pos "$(banned_pos)"
 
 ifdef predict
 %.$(predict): %.token.n \
 		%.$(firstword $(subst ., ,$(predict))) \
 		%.parents.token.$(firstword $(subst ., ,$(predict))) \
 		%.token.word
-	$(python) -m sb.vw --predict --model $(predict_model) \
+	$(python) -m sparv.vw --predict --model $(predict_model) \
 		--order "$(1)" --struct "$(2)" --parent "$(3)" --word "$(4)" --pos "" --out "$@"
 endif
 
@@ -966,14 +966,14 @@ ifdef predict_raw
 		%.$(firstword $(subst ., ,$(predict_raw))) \
 		%.parents.token.$(firstword $(subst ., ,$(predict_raw))) \
 		%.token.word
-	$(python) -m sb.vw --predict --model $(predict_raw_model) \
+	$(python) -m sparv.vw --predict --model $(predict_raw_model) \
 		--order "$(1)" --struct "$(2)" --parent "$(3)" --word "$(4)" --pos "" --out "$@" --raw true
 endif
 
 
 ifdef word_weights
 %.$(word_weights): %.token.word
-	$(python) -m sb.vw --word_weights --model $(word_weights_model) --word "$(1)" --pos "" --out "$@"
+	$(python) -m sparv.vw --word_weights --model $(word_weights_model) --word "$(1)" --pos "" --out "$@"
 endif
 
 
@@ -981,7 +981,7 @@ export_combined: $(root)$(corpus)_export$(export_suffix).xml
 $(root)annotations/_list_export$(export_suffix)_: $(files:%=$(root)export$(export_suffix)/%.xml)
 	$(call write-to-file,$@,$+)
 $(root)$(corpus)_export$(export_suffix).xml: $(root)annotations/_list_export$(export_suffix)_ $(files:%=$(root)export$(export_suffix)/%.xml)
-	$(python) -m sb.cwb --combine_xml --out "$@" --xmlfiles_list "$(1)" --master $(corpus)
+	$(python) -m sparv.cwb --combine_xml --out "$@" --xmlfiles_list "$(1)" --master $(corpus)
 
 export_compressed: $(root)$(corpus)$(export_suffix).xml.bz2
 $(root)$(corpus)$(export_suffix).xml.bz2: $(root)$(corpus)_export$(export_suffix).xml
@@ -995,7 +995,7 @@ export_compressed_original: export_compressed
 export_formatted: $(files:%=$(root)export.formatted/%.xml)
 $(root)export.formatted/%.xml: $(root)annotations/fileids $(root)annotations/%.@TEXT $(foreach struct,$(export_structs_annotations),$(addprefix $(root)annotations/%.parents.token., $(firstword $(subst ., ,$(struct)))))   $(addprefix $(root)annotations/%., $(export_structs_annotations))   $(addprefix $(root)annotations/%.token., $(export_columns_annotations) $(export_order_annotation))
 	mkdir -p $(dir $@) -m $(dir_chmod)
-	$(python) -m sb.cwb --export --format formatted --out $@ \
+	$(python) -m sparv.cwb --export --format formatted --out $@ \
 		--order $(root)annotations/$*.token.$(export_order_annotation) \
 		--annotations_columns "$(addprefix $(root)annotations/$*.token., $(export_columns_annotations))" \
 		--annotations_structs "$(foreach struct,$(export_structs_annotations),$(addprefix $(root)annotations/$*.$(struct):$(root)annotations/$*.parents.token., $(firstword $(subst ., ,$(struct)))))" \
@@ -1012,12 +1012,12 @@ $(root)export.formatted/%.xml: $(root)annotations/fileids $(root)annotations/%.@
 
 define parent_rule_manual
 %.parents.$(1).$$(word 1,$$(subst ., ,$(2))): %.@TEXT %.$(1) %.$(2)
-	$(python) -m sb.parent --parents --out $$@ --text $$(1) --parent $$(3) --child $$(2) --ignore_missing_parent "$$(ignore_missing_parents)"
+	$(python) -m sparv.parent --parents --out $$@ --text $$(1) --parent $$(3) --child $$(2) --ignore_missing_parent "$$(ignore_missing_parents)"
 endef
 
 define child_rule_manual
 %.children.$$(word 1,$$(subst ., ,$(1))).$(2): %.@TEXT %.$(1) %.$(2)
-	$(python) -m sb.parent --children --out $$@ --text $$(1) --parent $$(2) --child $$(3) --ignore_missing_parent "$$(ignore_missing_parents)"
+	$(python) -m sparv.parent --children --out $$@ --text $$(1) --parent $$(2) --child $$(3) --ignore_missing_parent "$$(ignore_missing_parents)"
 endef
 
 
@@ -1025,12 +1025,12 @@ endef
 
 define parent_rule_automatic
 %.parents.token.$(1): %.@TEXT %.token %.$(1)
-	$(python) -m sb.parent --parents --out $$@ --text $$(1) --parent $$(3) --child $$(2) --ignore_missing_parent "$$(ignore_missing_parents)"
+	$(python) -m sparv.parent --parents --out $$@ --text $$(1) --parent $$(3) --child $$(2) --ignore_missing_parent "$$(ignore_missing_parents)"
 endef
 
 define child_rule_automatic
 %.children.$(1).token: %.@TEXT %.$(1) %.token
-	$(python) -m sb.parent --children --out $$@ --text $$(1) --parent $$(2) --child $$(3) --ignore_missing_parent "$$(ignore_missing_parents)"
+	$(python) -m sparv.parent --children --out $$@ --text $$(1) --parent $$(2) --child $$(3) --ignore_missing_parent "$$(ignore_missing_parents)"
 endef
 
 
@@ -1057,7 +1057,7 @@ endif
 
 define chain_rule
 %.$(1).$(2).$(3): %.parents.$(1).$(2) %.$(2).$(3)
-	$(python) -m sb.annotate --chain --out $$@ --annotations "$$+"
+	$(python) -m sparv.annotate --chain --out $$@ --annotations "$$+"
 endef
 
 $(foreach chain,$(chains),$(eval $(call chain_rule,$(word 1,$(subst ., ,$(chain))),$(word 2,$(subst ., ,$(chain))),$(word 3,$(subst ., ,$(chain))))))
@@ -1079,7 +1079,7 @@ $(parallel_base)-$(1)/annotations/%:
 
 ifeq ($(findstring sentlink.random, $(vrt_structs_annotations)), sentlink.random)
 %.sentlink: %.children.sentence.token $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).children.sentence.token %.link.n $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).link.n %.children.link.sentence $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).children.link.sentence
-	$(python) -m sb.sent_align --sentence1 $$(1) --sentence2 $$(2) --link1 $$(3) --link2 $$(4) --sent_parents1 $$(5) --sent_parents2 $$(6) \
+	$(python) -m sparv.sent_align --sentence1 $$(1) --sentence2 $$(2) --link1 $$(3) --link2 $$(4) --sent_parents1 $$(5) --sent_parents2 $$(6) \
 	--out_sentlink1 $$@  --out_sentlink2 $$(parallel_base)-$(1)/annotations/$$(subst $$(root)annotations/,,$$*).sentlink
 else
 %.sentlink: %.link.n
@@ -1087,7 +1087,7 @@ else
 endif
 
 %.token.wordlink-$(1): %.token.word $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).token.word %.children.sentlink.token $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).children.sentlink.token %.sentlink $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).sentlink $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).token.linkref
-	$(python) -m sb.word_align --word1 $$(1) --word2 $$(2) --linktok1 $$(3) --linktok2 $$(4) --link1 $$(5) --link2 $$(6) --linkref2 $$(7) \
+	$(python) -m sparv.word_align --word1 $$(1) --word2 $$(2) --linktok1 $$(3) --linktok2 $$(4) --link1 $$(5) --link2 $$(6) --linkref2 $$(7) \
 	--out_wordlink $$@ --out_sentences $$*.linked_sent --outindex1 $$*.ind1 --outindex2 $$*.ind2
 endif
 endef
@@ -1096,13 +1096,13 @@ endif
 $(foreach otherlang,$(aligned_languages),$(eval $(call run_other_language,$(otherlang))))
 
 %.token.linkref: %.children.sentlink.token
-	$(python) -m sb.number --relative --out $@ --parent_children $(1)
+	$(python) -m sparv.number --relative --out $@ --parent_children $(1)
 
 %.link.n.random: %.link.n $(foreach l,$(aligned_languages),$(parallel_base)-$(l)/annotations/$$(subst $(root)annotations/,,$$*).link.n)
-	$(python) -m sb.number --shuffle --out $@ --chunks "$+" --prefix $(subst $(root)annotations/,,$*.)
+	$(python) -m sparv.number --shuffle --out $@ --chunks "$+" --prefix $(subst $(root)annotations/,,$*.)
 
 %.sentlink.random: %.sentlink $(foreach l,$(aligned_languages),$(parallel_base)-$(l)/annotations/$$(subst $(root)annotations/,,$$*).sentlink)
-	$(python) -m sb.number --shuffle --out $@ --chunks "$+" --prefix $(subst $(root)annotations/,,$*.)
+	$(python) -m sparv.number --shuffle --out $@ --chunks "$+" --prefix $(subst $(root)annotations/,,$*.)
 
 
 ################################################################################
@@ -1198,12 +1198,12 @@ ifeq ($(filter cwb,$(custom_rules)),)
 cwb: $(CORPUS_REGISTRY)/$(corpus)
 
 $(CORPUS_REGISTRY)/$(corpus): $(root)annotations/_list_vrt_
-	$(python) -m sb.cwb --encode --master $(corpus) --columns "$(vrt_columns)" --structs "$(vrt_structs)" --vrtlist "$(1)" --skip_compression "$(skip_cwb_compression)" --skip_validation "$(skip_cwb_validation)"
+	$(python) -m sparv.cwb --encode --master $(corpus) --columns "$(vrt_columns)" --structs "$(vrt_structs)" --vrtlist "$(1)" --skip_compression "$(skip_cwb_compression)" --skip_validation "$(skip_cwb_validation)"
 endif
 
 # ALIGN
 define align
-$(python) -m sb.cwb --align  --master $(corpus) --other $(1) --link "$(2)" --aligndir "$(root)annotations/align"
+$(python) -m sparv.cwb --align  --master $(corpus) --other $(1) --link "$(2)" --aligndir "$(root)annotations/align"
 endef
 
 ifneq ($(aligned_corpora),)
@@ -1253,7 +1253,7 @@ endif
 
 ifeq ($(allow_install),true)
 $(root)time_installcorpus: $(CORPUS_REGISTRY)/$(corpus) $(CWB_DATADIR)/$(corpus)/.info
-	$(python) -m sb.install --corpus --master $(corpus) --host $(remote_host) --target_datadir $(remote_cwb_datadir) --target_registry $(remote_cwb_registry)
+	$(python) -m sparv.install --corpus --master $(corpus) --host $(remote_host) --target_datadir $(remote_cwb_datadir) --target_registry $(remote_cwb_registry)
 	@touch $@
 else
 $(root)time_installcorpus:
@@ -1263,7 +1263,7 @@ endif
 # INFO
 
 install_info: $(CWB_DATADIR)/$(corpus)/.info
-	$(python) -m sb.install --file --host $(remote_host) --local_file "$(CWB_DATADIR)/$(corpus)/.info" --remote_file "$(remote_cwb_datadir)/$(corpus)/.info"
+	$(python) -m sparv.install --file --host $(remote_host) --local_file "$(CWB_DATADIR)/$(corpus)/.info" --remote_file "$(remote_cwb_datadir)/$(corpus)/.info"
 endif
 
 # RELATIONS
@@ -1271,7 +1271,7 @@ endif
 install_relations: $(root)time_installrelations
 
 $(root)time_installrelations: $(root)annotations/_relations_.sql
-	$(python) -m sb.install --mysql  --host $(remote_host)  --db_name $(mysql_dbname)  --sqlfile "$(1)"
+	$(python) -m sparv.install --mysql  --host $(remote_host)  --db_name $(mysql_dbname)  --sqlfile "$(1)"
 	@touch $@
 
 # LEMGRAM INDEX
@@ -1279,7 +1279,7 @@ $(root)time_installrelations: $(root)annotations/_relations_.sql
 install_lemgrams: $(root)time_installlemgrams
 
 $(root)time_installlemgrams: $(root)annotations/_lemgram_index_.sql
-	$(python) -m sb.install --mysql  --host $(remote_host)  --db_name $(mysql_dbname)  --sqlfile "$(1)"
+	$(python) -m sparv.install --mysql  --host $(remote_host)  --db_name $(mysql_dbname)  --sqlfile "$(1)"
 	@touch $@
 
 # TIMESPAN
@@ -1287,7 +1287,7 @@ $(root)time_installlemgrams: $(root)annotations/_lemgram_index_.sql
 install_timespan: $(root)time_installtimespan
 
 $(root)time_installtimespan: $(root)annotations/_timespan_.sql
-	$(python) -m sb.install --mysql  --host $(remote_host)  --db_name $(mysql_dbname)  --sqlfile "$(1)"
+	$(python) -m sparv.install --mysql  --host $(remote_host)  --db_name $(mysql_dbname)  --sqlfile "$(1)"
 	@touch $@
 
 # EXPORT
@@ -1303,7 +1303,7 @@ install_export_original: $(root)time_installexportoriginal
 ifneq ($(strip $(export_host)),)
   ifneq ($(strip $(export_path)),)
 $(root)time_installexport: $(root)$(corpus)$(export_suffix).xml.bz2
-	$(python) -m sb.install --file --host $(export_host) --local_file $(1) --remote_file $(export_path)/$(corpus).xml.bz2
+	$(python) -m sparv.install --file --host $(export_host) --local_file $(1) --remote_file $(export_path)/$(corpus).xml.bz2
 	@touch $@
   else
 $(root)time_installexport:
@@ -1317,7 +1317,7 @@ endif
 ifneq ($(strip $(export_original_host)),)
   ifneq ($(strip $(export_original_path)),)
 $(root)time_installexportoriginal: $(root)$(corpus)$(export_suffix).xml.bz2
-	$(python) -m sb.install --file --host $(export_original_host) --local_file $(1) --remote_file $(export_original_path)/$(corpus).xml.bz2
+	$(python) -m sparv.install --file --host $(export_original_host) --local_file $(1) --remote_file $(export_original_path)/$(corpus).xml.bz2
 	@touch $@
   else
 $(root)time_installexportoriginal:
