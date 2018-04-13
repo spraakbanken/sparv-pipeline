@@ -43,6 +43,12 @@ ifneq ($(filter export export_combined export_compressed install_export,$(MAKECM
   endif
 endif
 
+ifeq ($(filter wordlink,$(vrt_columns)),wordlink)
+  ifeq ($(sent_align_chunk),)
+    $(error Variable 'sent_align_chunk' is not set)
+  endif
+endif
+
 ################################################################################
 #                             DEPRECATED CHECKS                                #
 ################################################################################
@@ -251,6 +257,10 @@ ifeq ($(original_dir),)
   original_dir = $(root)original/xml
 endif
 
+ifeq ($(analysis),fl)
+  custom_rules += xml
+endif
+
 ifeq ($(filter xml,$(custom_rules)),)
   ifeq ($(source_encoding),)
 src := $(original_dir)
@@ -341,7 +351,6 @@ $(root)src/%.xml: $(original_dir)/%.xml
 endif
 
 ifeq ($(analysis),fl) # FreeLing
-  custom_rules += xml # FreeLing
   ifeq ($(filter freeling,$(custom_rules)),) # FreeLing
 $(root)src/%.xml: $(original_dir)/%.xml # FreeLing
 	mkdir -p $(root)src/ -m $(dir_chmod) # FreeLing
@@ -1077,12 +1086,12 @@ $(parallel_base)-$(1)/annotations/%:
 	@echo "Executing makefile for other language: $(1)"
 	$(MAKE) lang=$(1) other_lang=$(lang) $$@
 
-ifeq ($(findstring sentlink.random, $(vrt_structs_annotations)), sentlink.random)
-%.sentlink: %.children.sentence.token $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).children.sentence.token %.link.n $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).link.n %.children.link.sentence $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).children.link.sentence
+ifeq ($(align_sentences),true)
+%.sentlink: %.children.sentence.token $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).children.sentence.token %.$(sent_align_chunk) $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).$(sent_align_chunk) %.children.link.sentence $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).children.link.sentence
 	$(python) -m sparv.sent_align --sentence1 $$(1) --sentence2 $$(2) --link1 $$(3) --link2 $$(4) --sent_parents1 $$(5) --sent_parents2 $$(6) \
 	--out_sentlink1 $$@  --out_sentlink2 $$(parallel_base)-$(1)/annotations/$$(subst $$(root)annotations/,,$$*).sentlink
 else
-%.sentlink: %.link.n
+%.sentlink: %.$(sent_align_chunk)
 	cp -p $$(1) $$@
 endif
 
