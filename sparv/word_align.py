@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import codecs
-import sparv.util as util
+import sb.util as util
 
 
 def align_texts(word1, word2, linktok1, linktok2, link1, link2, linkref2, out_wordlink, out_sentences, outindex1, outindex2, delimiter="|", affix="|"):
@@ -22,9 +22,9 @@ def align_texts(word1, word2, linktok1, linktok2, link1, link2, linkref2, out_wo
 
     # collect existing word links in a temporary dictionary
     TMP_WORDLINK = {}
-    for indices, sent1, sent2 in zip(indices.split("\n"), text1, text2):
+    for indices, sent1, sent2 in zip(indices.split(b"\n"), text1, text2):
         for index_pair in indices.split():
-            i, j = index_pair.split("-")
+            i, j = index_pair.split(b"-")
             tokid1 = sent1[int(i)]
             linklist = TMP_WORDLINK.get(tokid1, [])
             linklist.append(LINKREF2[sent2[int(j)]])
