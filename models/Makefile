@@ -1,7 +1,7 @@
 include $(SPARV_MAKEFILES)/Makefile.config
 
-TARGETS = help info clean space all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable bettertokenizer.sv.saldo-tokens stats_all.txt stats.pickle dalinm.xml dalin.pickle diapivot.xml diapivot.pickle swedbergm.xml swedberg.pickle geo.pickle nst_utf8.txt nst.comp.pos.pickle blingbring.xml blingbring.pickle sensaldo.pickle swefn.xml swefn.pickle
-.PHONY: help info clean all
+TARGETS = help info clean space all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable bettertokenizer.sv.saldo-tokens stats_all.txt stats.pickle dalinm.xml dalin.pickle diapivot.xml diapivot.pickle swedbergm.xml swedberg.pickle geo.pickle nst_utf8.txt nst.comp.pos.pickle blingbring.xml blingbring.pickle sensaldo.pickle swefn.xml swefn.pickle wsd
+.PHONY: help info clean all wsd
 
 ifndef python
 python = python
@@ -11,12 +11,12 @@ help:
 	@echo "make ($(TARGETS))"
 
 clean:
-	rm -f saldom.xml saldo.pickle saldo.compound.pickle stats.pickle stats_all.txt blingbring.pickle swefn.pickle
+	rm -rf saldom.xml saldo.pickle saldo.compound.pickle stats.pickle stats_all.txt blingbring.pickle swefn.pickle wsd
 
 space:
 	rm -f stats_all.txt saldom.xml nst_utf8.txt dalinm.xml diapivot.xml swedbergm.xml blingbring.txt swefn.xml
 
-all: saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable stats.pickle bettertokenizer.sv.saldo-tokens diapivot.pickle dalin.pickle swedberg.pickle nst.comp.pos.pickle geo.pickle blingbring.pickle sensaldo.pickle swefn.pickle
+all: saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable stats.pickle bettertokenizer.sv.saldo-tokens diapivot.pickle dalin.pickle swedberg.pickle nst.comp.pos.pickle geo.pickle blingbring.pickle sensaldo.pickle swefn.pickle wsd
 
 info:
 	@echo "Subversion revision:"
@@ -121,3 +121,12 @@ swefn.pickle: swefn.xml
 
 sensaldo.pickle: sensaldo.txt
 	$(python) -m sb.sentiment --sensaldo_to_pickle --tsv "sensaldo.txt" --filename "$@"
+
+wsd: wsd/ALL_512_128_w10_A2_140403_ctx1.bin wsd/lem_cbow0_s512_w10_NEW2_ctx.bin
+
+wsd/ALL_512_128_w10_A2_140403_ctx1.bin wsd/lem_cbow0_s512_w10_NEW2_ctx.bin:
+	@mkdir -p wsd -m 775
+	@echo "Downloading wsd models from GitHub..."
+	@wget -N https://github.com/spraakbanken/sparv-wsd/raw/master/models/scouse/ALL_512_128_w10_A2_140403_ctx1.bin -P wsd/
+	@wget -N https://github.com/spraakbanken/sparv-wsd/raw/master/models/scouse/lem_cbow0_s512_w10_NEW2_ctx.bin -P wsd/
+	@echo "Done."
