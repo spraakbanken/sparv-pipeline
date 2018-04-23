@@ -25,8 +25,8 @@ info:
 	@head saldom.xml | grep -o 'saldom.xml [0-9]*' | grep -o '[0-9]*'
 
 saldom.xml:
-	@echo "Exporting saldom.xml from Subversion..."
-	@svn export https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/saldom/saldom.xml --force
+	@echo "Downloading saldom.xml..."
+	@wget -N https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/saldom/saldom.xml
 	@head saldom.xml | grep -o 'saldom.xml [0-9]*' | grep -o '[0-9]*' > saldo.rev
 	@echo "Done."
 
@@ -46,8 +46,8 @@ bettertokenizer.sv.saldo-tokens:
 	$(python) -m sparv.segment --build_token_wordlist --out "$@" --saldo_model "saldo.pickle" --segmenter better_word --model "bettertokenizer.sv" --no_pickled_model=True
 
 stats_all.txt:
-	@echo "Exporting stats_all.txt from Subversion..."
-	@svn export https://svn.spraakdata.gu.se/sb-arkiv/pub/frekvens/stats_all.txt --force
+	@echo "Downloading stats_all.txt..."
+	@wget -N https://svn.spraakdata.gu.se/sb-arkiv/pub/frekvens/stats_all.txt
 	@echo "Done."
 
 stats.pickle: stats_all.txt
@@ -61,24 +61,24 @@ nst.comp.pos.pickle: nst_utf8.txt
 	$(python) -m sparv.train_nst_comp_model --nst_infile nst_utf8.txt --picklefile nst.comp.pos.pickle
 
 dalinm.xml:
-	@echo "Exporting dalinm.xml from Subversion..."
-	@svn export https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/dalinm/dalinm.xml --force
+	@echo "Downloading dalinm.xml..."
+	@wget -N https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/dalinm/dalinm.xml
 	@echo "Done."
 
 dalin.pickle: dalinm.xml
 	$(python) -m sparv.lmflexicon --xml_to_pickle --xml "dalinm.xml" --filename "dalin.pickle"
 
 diapivot.xml:
-	@echo "Exporting diapivot.xml from Subversion..."
-	@svn export https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/diapivot/diapivot.xml --force
+	@echo "Downloading diapivot.xml..."
+	@wget -N https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/diapivot/diapivot.xml
 	@echo "Done."
 
 diapivot.pickle: diapivot.xml
 	$(python) -m sparv.diapivot --xml_to_pickle  --xml "diapivot.xml"  --filename "$@"
 
 swedbergm.xml:
-	@echo "Exporting swedbergm.xml from Subversion..."
-	@svn export https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/swedbergm/swedbergm.xml --force
+	@echo "Downloading swedbergm.xml..."
+	@wget -N https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/swedbergm/swedbergm.xml
 	@echo "Done."
 
 swedberg.pickle: swedbergm.xml
@@ -86,7 +86,7 @@ swedberg.pickle: swedbergm.xml
 
 geo_cities1000.txt:
 	@echo "Downloading and extracting cities1000..."
-	@wget http://download.geonames.org/export/dump/cities1000.zip
+	@wget -N http://download.geonames.org/export/dump/cities1000.zip
 	@unzip cities1000.zip
 	@mv cities1000.txt geo_cities1000.txt
 	@rm cities1000.zip
@@ -94,7 +94,7 @@ geo_cities1000.txt:
 
 geo_alternateNames.txt:
 	@echo "Downloading and extracting alternateNames..."
-	@wget http://download.geonames.org/export/dump/alternateNames.zip
+	@wget -N http://download.geonames.org/export/dump/alternateNames.zip
 	@unzip alternateNames.zip
 	@mv alternateNames.txt geo_alternateNames.txt
 	@rm alternateNames.zip
