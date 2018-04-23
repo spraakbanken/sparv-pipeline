@@ -63,9 +63,9 @@ def sentiment_class(out, sent, classes):
     util.write_annotation(out, result)
 
 
-def read_sensaldo(tsv="sensaldo.txt", verbose=True):
+def read_sensaldo(tsv="sensaldo-base.txt", verbose=True):
     """
-    Read the TSV version of the sensaldo lexicon (sensaldo.txt).
+    Read the TSV version of the sensaldo lexicon (sensaldo-base.txt).
     Return a lexicon dictionary: {senseid: (class, ranking)}
     """
 
