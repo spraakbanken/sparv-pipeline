@@ -127,10 +127,7 @@ sensaldo-base.txt:
 	@echo "Done."
 
 sensaldo.pickle: sensaldo-base.txt
-	$(python) -m sb.sentiment --sensaldo_to_pickle --tsv "sensaldo-base.txt" --filename "$@"
-
-sensaldo.pickle: sensaldo.txt
-	$(python) -m sparv.sentiment --sensaldo_to_pickle --tsv "sensaldo.txt" --filename "$@"
+	$(python) -m sparv.sentiment --sensaldo_to_pickle --tsv "sensaldo-base.txt" --filename "$@"
 
 wsd: wsd/ALL_512_128_w10_A2_140403_ctx1.bin wsd/lem_cbow0_s512_w10_NEW2_ctx.bin
 
