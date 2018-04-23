@@ -1,6 +1,6 @@
 include $(SPARV_MAKEFILES)/Makefile.config
 
-TARGETS = help info clean space all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable bettertokenizer.sv.saldo-tokens stats_all.txt stats.pickle dalinm.xml dalin.pickle diapivot.xml diapivot.pickle swedbergm.xml swedberg.pickle geo.pickle nst_utf8.txt nst.comp.pos.pickle blingbring.xml blingbring.pickle sensaldo.pickle swefn.xml swefn.pickle wsd
+TARGETS = help info clean space all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable bettertokenizer.sv.saldo-tokens stats_all.txt stats.pickle dalinm.xml dalin.pickle diapivot.xml diapivot.pickle swedbergm.xml swedberg.pickle geo.pickle nst_utf8.txt nst.comp.pos.pickle blingbring.xml blingbring.pickle sensaldo-base.txt sensaldo.pickle swefn.xml swefn.pickle wsd
 .PHONY: help info clean all wsd
 
 ifndef python
@@ -14,7 +14,7 @@ clean:
 	rm -rf saldom.xml saldo.pickle saldo.compound.pickle stats.pickle stats_all.txt blingbring.pickle swefn.pickle wsd
 
 space:
-	rm -f stats_all.txt saldom.xml nst_utf8.txt dalinm.xml diapivot.xml swedbergm.xml blingbring.txt swefn.xml
+	rm -f stats_all.txt saldom.xml nst_utf8.txt dalinm.xml diapivot.xml swedbergm.xml blingbring.txt swefn.xml sensaldo-base.txt
 
 all: saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable stats.pickle bettertokenizer.sv.saldo-tokens diapivot.pickle dalin.pickle swedberg.pickle nst.comp.pos.pickle geo.pickle blingbring.pickle sensaldo.pickle swefn.pickle wsd
 
@@ -104,20 +104,30 @@ geo.pickle: geo_cities1000.txt geo_alternateNames.txt
 	$(python) -m sparv.geo --build_model --geonames "geo_cities1000.txt" --alternate_names "geo_alternateNames.txt" --out "$@"
 
 blingbring.txt:
-	@echo "Exporting blingbring.txt from Subversion..."
-	@svn export https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/bring/blingbring.txt --force
+	@echo "Downloading blingbring.txt..."
+	@wget -N https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/bring/blingbring.txt
 	@echo "Done."
 
 blingbring.pickle: blingbring.txt roget_hierarchy.xml
 	$(python) -m sparv.lexical_classes --blingbring_to_pickle --tsv "blingbring.txt" --classmap "roget_hierarchy.xml" --filename "$@"
 
 swefn.xml:
-	@echo "Exporting swefn.xml from Subversion..."
-	@svn export https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/swefn/swefn.xml --force
+	@echo "Downloading swefn.xml..."
+	@wget -N https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/swefn/swefn.xml
 	@echo "Done."
 
 swefn.pickle: swefn.xml
 	$(python) -m sparv.lexical_classes --swefn_to_pickle --xml "swefn.xml" --filename "$@"
+
+sensaldo-base.txt:
+	@echo "Downloading and extracting sensaldo-base.txt..."
+	@wget -N https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/sensaldo/sensaldo.zip
+	@unzip sensaldo.zip
+	@rm sensaldo-fullform.txt sensaldo.zip
+	@echo "Done."
+
+sensaldo.pickle: sensaldo-base.txt
+	$(python) -m sb.sentiment --sensaldo_to_pickle --tsv "sensaldo-base.txt" --filename "$@"
 
 sensaldo.pickle: sensaldo.txt
 	$(python) -m sparv.sentiment --sensaldo_to_pickle --tsv "sensaldo.txt" --filename "$@"
