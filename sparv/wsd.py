@@ -46,7 +46,7 @@ def run_wsd(wsdjar, sense_model, context_model, out, sentence, word, ref, lemgra
     # Problem is that regular messages "Reading sense vectors.." are also piped to stderr.
     if len(stderr) > 52:
         util.system.kill_process(process)
-        util.log.error(stderr)
+        util.log.error(str(stderr))
         return
 
     if encoding:
