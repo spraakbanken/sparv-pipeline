@@ -81,7 +81,7 @@ def read_sensaldo(tsv="sensaldo-base.txt", verbose=True):
             lexicon[saldoid] = (manual_label, polarity_score)
 
     testwords = ["förskräcklig..1",
-                 "griskulting..1",
+                 "ödmjukhet..1",
                  "festlig..1"
                  ]
     util.test_annotations(lexicon, testwords)
