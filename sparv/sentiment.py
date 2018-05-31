@@ -77,9 +77,8 @@ def read_sensaldo(tsv="sensaldo-base.txt", verbose=True):
         for line in f:
             if line.lstrip().startswith("#"):
                 continue
-
-            saldoid, _, cls, value = line.split()
-            lexicon[saldoid] = (cls, value)
+            saldoid, manual_label, automatic_label, polarity_score, _freq = line.split()
+            lexicon[saldoid] = (manual_label, polarity_score)
 
     testwords = ["förskräcklig..1",
                  "griskulting..1",
