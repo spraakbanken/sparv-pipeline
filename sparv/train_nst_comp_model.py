@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import codecs
 import pickle
 import re
 import sparv.util as util
@@ -12,7 +11,7 @@ def make_model(nst_infile, picklefile, protocol=-1):
     and smoothed probabilities as values."""
     # Collect all compounds from nst data
     nst_full_compounds = set()
-    with codecs.open(nst_infile, encoding='UTF-8') as f:
+    with open(nst_infile, encoding='UTF-8') as f:
         for line in f:
             fields = line[:-1].split('\t')
             word = fields[0]

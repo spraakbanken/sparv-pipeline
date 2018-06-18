@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import sparv.util as util
 import sparv.saldo as saldo
-import codecs
 from collections import defaultdict
 
 
@@ -43,7 +42,7 @@ def make_morphtable(out, saldo_model, suc, morphtable_base="", morphtable_patter
                                 tags[lower].add(msd)
 
     # Read SUC words
-    with codecs.open(suc, encoding="UTF-8") as suctags:
+    with open(suc, encoding="UTF-8") as suctags:
         for line in suctags:
             _, word, msd = line.strip("\n").split("\t")
 
@@ -57,15 +56,15 @@ def make_morphtable(out, saldo_model, suc, morphtable_base="", morphtable_patter
     # Read regular expressions from pattern file
     pattern_list = []
     if morphtable_patterns:
-        with codecs.open(morphtable_patterns, mode="r", encoding="UTF-8") as pat:
+        with open(morphtable_patterns, mode="r", encoding="UTF-8") as pat:
             for line in pat:
                 if line.strip() and not line.startswith("#"):
                     pattern_name, _, pattern_tags = line.strip().split("\t", 2)
                     pattern_list.append("[[%s]]\t%s\n" % (pattern_name, pattern_tags))
 
-    with codecs.open(out, encoding="UTF-8", mode="w") as out:
+    with open(out, encoding="UTF-8", mode="w") as out:
         if morphtable_base:
-            with codecs.open(morphtable_base, encoding="UTF-8") as base:
+            with open(morphtable_base, encoding="UTF-8") as base:
                 for line in base:
                     out.write(line)
 

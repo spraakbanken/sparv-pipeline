@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import codecs
 import pickle
 from nltk import FreqDist, LidstoneProbDist
 import sparv.util as util
@@ -10,7 +9,7 @@ def make_model(stats_infile, picklefile, smoothingparam=0.001, min_freq=3, proto
     The model is a LidstoneProbDist (NLTK) which has tuples (wordform, MSD-tag) as keys
     and smoothed probabilities as values."""
     fdist = FreqDist()
-    with codecs.open(stats_infile, encoding='utf-8') as f:
+    with open(stats_infile, encoding='utf-8') as f:
         for line in f:
             fields = line[:-1].split('\t')
             word = fields[0]

@@ -2,7 +2,6 @@
 import sparv.saldo as saldo
 import sparv.util as util
 import sparv.diapivot as diapivot
-import codecs
 import re
 import itertools
 import os
@@ -27,7 +26,7 @@ def annotate_variants(word, out, spellmodel, delimiter="|", affix="|", model=Non
                     xs = part.split(',')
                     res.setdefault(word, []).append((xs[0], float(xs[1])))
 
-        with codecs.open(modelfile, encoding='utf8') as f:
+        with open(modelfile, encoding='utf8') as f:
             for line in f:
                 wd, info = line.split(':::')
                 addword(d, wd, info)

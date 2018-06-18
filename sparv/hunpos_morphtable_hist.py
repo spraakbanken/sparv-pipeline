@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import codecs
 import sparv.util as util
 import re
 
@@ -22,7 +21,7 @@ def make_table(out, files, saldosuc_morphtable):
     words = {}
     read_saldosuc(words, saldosuc_morphtable)
     for fil in files:
-        for line in codecs.open(fil, 'r', encoding='utf-8').readlines():
+        for line in open(fil, 'r', encoding='utf-8').readlines():
             if not line.strip():
                 continue
             xs = line.split('\t')
@@ -40,14 +39,14 @@ def make_table(out, files, saldosuc_morphtable):
             if suc:
                 words.setdefault(word.lower(), set()).update(suc)
                 words.setdefault(word.title(), set()).update(suc)
-    with codecs.open(out, encoding="UTF-8", mode="w") as out:
+    with open(out, encoding="UTF-8", mode="w") as out:
         for w, ts in list(words.items()):
             line = ('\t'.join([w] + list(ts)) + "\n")
             out.write(line)
 
 
 def read_saldosuc(words, saldosuc_morphtable):
-    for line in codecs.open(saldosuc_morphtable, 'r', encoding='utf-8').readlines():
+    for line in open(saldosuc_morphtable, 'r', encoding='utf-8').readlines():
         xs = line.strip().split('\t')
         words.setdefault(xs[0], set()).update(set(xs[1:]))
 

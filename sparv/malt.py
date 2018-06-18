@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import re
 import os
-import codecs
 import sparv.util as util
 
 """
@@ -138,7 +137,7 @@ def maltstart(maltjar, model, encoding, send_empty_sentence=False):
 ################################################################################
 
 def read_conll_file(filename, encoding=util.UTF8):
-    with codecs.open(filename, encoding=encoding) as F:
+    with open(filename, encoding=encoding) as F:
         sentence = []
         for line in F:
             line = line.strip()
@@ -164,7 +163,7 @@ def read_conll_file(filename, encoding=util.UTF8):
 
 
 def write_conll_file(sentences, filename, encoding=util.UTF8):
-    with codecs.open(filename, "w", encoding=encoding) as F:
+    with open(filename, "w", encoding=encoding) as F:
         for sent in sentences:
             nr = 1
             for token in sent:

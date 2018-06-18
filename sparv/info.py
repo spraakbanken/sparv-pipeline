@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import sparv.util as util
-import codecs
 import os
 import time
 
@@ -15,14 +14,14 @@ def edit_info(infofile, key, value="", valuefile=""):
     existing = False
 
     if valuefile:
-        with codecs.open(valuefile, mode="r", encoding="UTF-8") as V:
+        with open(valuefile, mode="r", encoding="UTF-8") as V:
             value = V.read().strip()
 
     if value == "%DATE%":
         value = time.strftime("%Y-%m-%d")
 
     if os.path.exists(infofile):
-        with codecs.open(infofile, mode="r", encoding="UTF-8") as F:
+        with open(infofile, mode="r", encoding="UTF-8") as F:
             content = F.readlines()
 
         for i in range(len(content)):
@@ -34,7 +33,7 @@ def edit_info(infofile, key, value="", valuefile=""):
     if not existing:
         content.append("%s: %s\n" % (key, value))
 
-    with codecs.open(infofile, mode="w", encoding="UTF-8") as O:
+    with open(infofile, mode="w", encoding="UTF-8") as O:
         O.writelines(content)
 
 if __name__ == '__main__':

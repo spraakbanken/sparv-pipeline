@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import codecs
 import re
 import sparv.util as util
 
@@ -20,7 +19,7 @@ def msdtag(model, out, word, sentence, tag_mapping=None, morphtable=None, patter
     pattern_list = []
 
     if patterns:
-        with codecs.open(patterns, mode="r", encoding="utf-8") as pat:
+        with open(patterns, mode="r", encoding="utf-8") as pat:
             for line in pat:
                 if line.strip() and not line.startswith("#"):
                     name, pattern, tags = line.strip().split("\t", 2)

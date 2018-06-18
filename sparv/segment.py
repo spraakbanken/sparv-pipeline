@@ -3,7 +3,6 @@
 import os.path
 import re
 import nltk
-import codecs
 import pickle
 import sparv.util as util
 import sparv.saldo as saldo
@@ -107,7 +106,7 @@ def build_token_wordlist(saldo_model, out, segmenter, model=None, no_pickled_mod
                 if len(spans) > 1 and not wf.endswith(","):
                     wordforms.add(wf)
 
-    with codecs.open(out, mode="w", encoding="utf-8") as outfile:
+    with open(out, mode="w", encoding="utf-8") as outfile:
         outfile.write("\n".join(sorted(wordforms)))
 
 
@@ -272,7 +271,7 @@ class BetterWordTokenizer(object):
         self.patterns = {"misc": [], "tokens": []}
         self.abbreviations = set()
         in_abbr = False
-        with codecs.open(configuration_file, encoding="UTF-8") as conf:
+        with open(configuration_file, encoding="UTF-8") as conf:
             for line in conf:
                 if line.startswith("#") or not line.strip():
                     continue
@@ -293,7 +292,7 @@ class BetterWordTokenizer(object):
                                 continue
                             if not val.startswith("/"):
                                 val = os.path.join(os.path.dirname(configuration_file), val)
-                            with codecs.open(val, encoding="UTF-8") as saldotokens:
+                            with open(val, encoding="UTF-8") as saldotokens:
                                 self.patterns["tokens"] = [re.escape(t.strip()) for t in saldotokens.readlines()]
                         elif key == "case_sensitive":
                             self.case_sensitive = (val.lower() == "true")

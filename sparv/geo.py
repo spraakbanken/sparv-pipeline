@@ -7,7 +7,6 @@ Annotates geographical features.
 import sparv.util as util
 import sparv.parent as parent
 import sparv.annotate as annotate
-import codecs
 import pickle
 from collections import defaultdict
 
@@ -18,7 +17,7 @@ def build_model(geonames, alternate_names, out, protocol=-1):
 
     util.log.info("Reading geonames: %s", geonames)
     result = {}
-    with codecs.open(geonames, encoding="UTF-8") as model_file:
+    with open(geonames, encoding="UTF-8") as model_file:
         for line in model_file:
             geonameid, name, _, _, latitude, longitude, feature_class, feature_code, country, _, admin1, admin2, admin3, admin4, population, _, _, _, _ = line.split("\t")
 
@@ -34,7 +33,7 @@ def build_model(geonames, alternate_names, out, protocol=-1):
     # Parse file with alternate names of locations, paired with language codes
     util.log.info("Reading alternate names: %s", alternate_names)
 
-    with codecs.open(alternate_names, encoding="UTF-8") as model_file:
+    with open(alternate_names, encoding="UTF-8") as model_file:
         for line in model_file:
             altid, geonameid, isolanguage, altname, is_preferred_name, is_short_name, is_colloquial, is_historic = line.split("\t")
             if geonameid in result:
