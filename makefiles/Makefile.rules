@@ -823,11 +823,10 @@ endif
 
 info: $(CWB_DATADIR)/$(corpus)/.info
 
-$(CWB_DATADIR)/$(corpus)/.info: $(root)annotations/sentencecount $(saldo_revision) $(root)annotations/datefirst $(root)annotations/datelast
+$(CWB_DATADIR)/$(corpus)/.info: $(root)annotations/sentencecount $(root)annotations/datefirst $(root)annotations/datelast
 	$(python) -m sparv.info --edit --infofile $@ --key "Sentences" --valuefile $(1)
-	$(python) -m sparv.info --edit --infofile $@ --key "Saldo" --valuefile $(2)
-	$(python) -m sparv.info --edit --infofile $@ --key "FirstDate" --valuefile $(3)
-	$(python) -m sparv.info --edit --infofile $@ --key "LastDate" --valuefile $(4)
+	$(python) -m sparv.info --edit --infofile $@ --key "FirstDate" --valuefile $(2)
+	$(python) -m sparv.info --edit --infofile $@ --key "LastDate" --valuefile $(3)
 	$(python) -m sparv.info --edit --infofile $@ --key "Updated" --value "%DATE%"
 	$(python) -m sparv.info --edit --infofile $@ --key "Protected" --value "$(protected)"
 
