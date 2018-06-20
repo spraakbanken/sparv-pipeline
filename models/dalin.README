@@ -3,11 +3,10 @@
 
 - dalin.pickle
 
-Modell: Dalin-lexikon, innehåller lemgram, written form, 
-	SUC-msd-taggar, multiword-expression-information
-Baserad på: dalinm.xml, hämtad från:
+Model: Dalin-lexikon, contains lemgram, written form,
+	SUC-msd-tags, multiword-expression-information
+Based on: dalinm.xml, retrieved from:
 		https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/dalinm/dalinm.xml
-Skapas med make dalin.pickle
+Create with make dalin.pickle
 Format: Python pickle
-Kodning: UTF8
-
+Encoding: UTF8

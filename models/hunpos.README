@@ -1,34 +1,34 @@
 ######################################################################
-# Hunpos-modeller
+# Hunpos-models
 
 - hunpos.suc3.suc-tags.default-setting.utf8.model
 
-Tränad av: Martin Hammarstedt
-Tränad på: SUC3
-Taggar: SUC3
-Kodning: UTF8
-Hunpos-inställningar: default
+Trained by: Martin Hammarstedt
+Trained on: SUC3
+Tags: SUC3
+Encoding: UTF8
+Hunpos-settings: default
 
 
 - hunpos.suc2.parole-tags.default-setting.utf8.model
 
-Tränad av: Martin Hammarstedt
-Tränad på: SUC2
-Taggar: Parole
-Kodning: UTF8
-Hunpos-inställningar: default
+Trained by: Martin Hammarstedt
+Trained on: SUC2
+Tags: Parole
+Encoding: UTF8
+Hunpos-settings: default
 
 
 - hunpos.suc2+parole-bootstrap.granskaish-tags.e3t3-setting.model
 - hunpos.suc2+parole-bootstrap.granskaish-tags.e3t4-setting.model
 - hunpos.suc2+parole-bootstrap.granskaish-tags.e4t4-setting.model
 
-Tränad av: Eva Forsbom
-Tränad på: SUC2, samt bootstrappad på Parole
-Taggar: Granskaish
-Kodning: Latin1
-Hunpos-inställningar: -e3 -t3 / -e3 -t4 / -e4 -t4
-Mer info: http://stp.lingfil.uu.se/~evafo/resources/taggermodels/HunPosmodels.html
+Trained by: Eva Forsbom
+Trained on: SUC2, and bootstrapped on Parole
+Tags: Granskaish
+Encoding: Latin1
+Hunpos-settings: -e3 -t3 / -e3 -t4 / -e4 -t4
+More info: http://stp.lingfil.uu.se/~evafo/resources/taggermodels/HunPosmodels.html
 
 
 ######################################################################
@@ -36,14 +36,14 @@ Mer info: http://stp.lingfil.uu.se/~evafo/resources/taggermodels/HunPosmodels.ht
 
 - hunpos.saldo.suc-tags.morphtable
 
-Skapad av: Martin Hammarstedt
-Taggar: SUC3
-Kodning: UTF-8
-Skapad med: sb.hunpos_morphtable
+Created by: Martin Hammarstedt
+Tags: SUC3
+Encoding: UTF-8
+Created with: sb.hunpos_morphtable
 
 
 - hunpos.dalinm-swedberg.saldo.suc-tags.morphtable
 
-Skapad av: Malin Ålberg
-Taggar: SUC3
-Skapad med: sb.hunpos_morphtable_hist
+Created by: Malin Ahlberg
+Tags: SUC3
+Created with: sb.hunpos_morphtable_hist

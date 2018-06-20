@@ -1,12 +1,12 @@
 
 ######################################################################
-# MALT-parsning
+# MALT-parsing
 
 - swemalt.mco
 
-Tränad av: Joakim Nivre
-Tränad på: Talbanken-05, med SUC-taggar
-Modell: Maltparser-modell
+Trained by: Joakim Nivre
+Trained on: Talbanken-05, with SUC-tags
+Model: Maltparser-model
 Format: Maltparser-format
-Hämtad från: http://maltparser.org/mco/swedish_parser/swemalt.html
+Retrieved from: http://maltparser.org/mco/swedish_parser/swemalt.html
 Version: March 12 2012

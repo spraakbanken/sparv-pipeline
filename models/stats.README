@@ -1,12 +1,12 @@
 
 ######################################################################
-# Frekvensmodell
+# Frequency model
 
 - stats.pickle
 
-Modell: sannolikheter av ordformer och deras ordklasser
-Tränad på: stats_all.txt, hämtad från:
+Model: Probabilities of word forms and their parts of speech
+Trained on: stats_all.txt, retrieved from:
 		https://svn.spraakdata.gu.se/sb-arkiv/pub/frekvens/stats_all.txt
-Skapas med make stats.pickle
+Created with make stats.pickle
 Format: Python pickle
-Kodning: UTF8
+Encoding: UTF8

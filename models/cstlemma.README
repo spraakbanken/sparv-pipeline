@@ -1,16 +1,14 @@
 
 ######################################################################
-# Filer för cstlemma
+# Files for cstlemma
 
 - cstlemma.suc.{dict,flex}
 - cstlemma.saldo.{dict,flex}
 
-Lexikon: SUC/Saldo, i format som passar till CST-lemmatizer
-Format: speciella cstlemma-filer
-Kodning: Latin1
-Skapad av: cstlemma-train.sh
+Lexicon: SUC/Saldo, in format that fits CST-lemmatizer
+Format: special cstlemma-files
+Encoding: Latin1
+Created by: cstlemma-train.sh
 
 $ ./cstlemma-train.sh suc.cstlemma.lemmas cstlemma.suc.dict cstlemma.suc.flex
 $ ./cstlemma-train.sh saldo.cstlemma.lemmas cstlemma.saldo.dict cstlemma.saldo.flex
-
-

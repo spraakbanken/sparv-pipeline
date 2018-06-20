@@ -1,11 +1,10 @@
 
 
 ######################################################################
-# Meningssegmentering
+# Sentence segmentation
 
 - punkt-nltk-svenska.pickle
 
-Tränad på: Storsuc av NLTK Punkt (sb.segment.train_punkt_segmenter)
-Modell: parameters-modell för NLTK Punkt
-Format: Python-picklad
-
+Trained on: Storsuc by NLTK Punkt (sb.segment.train_punkt_segmenter)
+Model: parameters-model for NLTK Punkt
+Format: Python-pickled
