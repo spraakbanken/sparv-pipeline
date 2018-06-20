@@ -87,7 +87,10 @@ def vrt_table(annotations_structs, annotations_columns):
             if n > structs_count:  # Any column except the first (the word)
                 value = "|" if value == "|/|" else value
             vrt[tok].append(value.replace("\n", " "))
-
+        # Empty annotation file should generate UNDEF values
+        if not util.read_annotation(annot):
+            for k in vrt.keys():
+                vrt[k].append(UNDEF)
     return vrt
 
 
