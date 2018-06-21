@@ -12,9 +12,9 @@ sb-sparv@svenska.gu.se
 ## Prerequisites
 
 * A Unix-like environment (e.g. Linux, OS X)
-* Python 3.4 or newer
-* GNU Make
-* Java
+* [Python 3.4](http://python.org/) or newer
+* [GNU Make](https://www.gnu.org/software/make/)
+* [Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
 
 ## Installation
 
@@ -40,4 +40,4 @@ sb-sparv@svenska.gu.se
 
 ## Installation of additional software
 
-Please check https://spraakbanken.gu.se/eng/research/infrastructure/sparv/distribution/pipeline for more information!
+The Sparv Pipeline can be used together with several plugins and third-party software. Please check https://spraakbanken.gu.se/eng/research/infrastructure/sparv/distribution/pipeline for more details!
