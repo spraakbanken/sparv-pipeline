@@ -1,6 +1,6 @@
-# Språkbanken's Sparv-Pipeline
+# Språkbanken's Sparv Pipeline
 
-The Sparv-Pipeline is a corpus annotation pipeline created by [Språkbanken](https://spraakbanken.gu.se/).
+The Sparv Pipeline is a corpus annotation pipeline created by [Språkbanken](https://spraakbanken.gu.se/).
 The source code is made available under the [MIT license](https://opensource.org/licenses/MIT).
 
 Additional documentation can be found here:
