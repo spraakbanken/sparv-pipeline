@@ -2,12 +2,18 @@
 
 import sparv.util as util
 
+SENTIMENT_LABLES = {
+    -1: "negative",
+    0: "neutral",
+    1: "positive"
+}
 
-def sentiment(sense, out, model, max_decimals=6, lexicon=None):
+
+def sentiment(sense, out_scores, out_labels, model, max_decimals=6, lexicon=None):
     """Assign sentiment values to tokens based on their sense annotation.
     When more than one sense is possible, calulate a weighted mean.
     - sense: existing annotation with saldoIDs.
-    - out: resulting annotation file.
+    - out_scores, out_labels: resulting annotation file.
     - model: pickled lexicon with saldoIDs as keys.
     - max_decimals: int stating the amount of decimals the result is rounded to.
     - lexicon: this argument cannot be set from the command line,
@@ -19,25 +25,40 @@ def sentiment(sense, out, model, max_decimals=6, lexicon=None):
     # Otherwise use pre-loaded lexicon (from catapult)
 
     sense = util.read_annotation(sense)
-    result = {}
+    result_scores = {}
+    result_labels = {}
 
     for token in sense:
+        # Get set of senses for each token
         token_senses = dict([s.rsplit(util.SCORESEP, 1) if util.SCORESEP in s else (s, -1.0)
                              for s in sense[token].split(util.DELIM) if s])
 
-        if token_senses:
-            sum = 0.0
+        # Check for sense annotations and if any of the senses occur in the sentiment lexicon
+        if token_senses and any(lexicon.lookup(s, (None, None))[1] for s in token_senses):
+            sent_sum = 0.0
+            labels_set = set()
             for s in token_senses:
                 p = float(token_senses[s])
                 if p < 0:
                     p = 1.0 / len(token_senses)
-                sentval = float(lexicon.lookup(s, (None, 0.5))[1])
-                sum += sentval * p
-            result[token] = str(round(sum, max_decimals))
-        else:
-            result[token] = None
+                sent_label, sent_score = lexicon.lookup(s, (None, None))
+                if sent_label is not None:
+                    labels_set.add(sent_label)
+                    # Calculate weighted mean value
+                    sent_sum += float(sent_score) * p
+            result_scores[token] = str(round(sent_sum, max_decimals))
+            # If there are multiple labels, derive label from polarity_score
+            if len(labels_set) > 1:
+                result_labels[token] = SENTIMENT_LABLES.get(round(sent_sum))
+            else:
+                result_labels[token] = SENTIMENT_LABLES.get(int(list(labels_set)[0]))
 
-    util.write_annotation(out, result)
+        else:
+            result_scores[token] = None
+            result_labels[token] = None
+
+    util.write_annotation(out_scores, result_scores)
+    util.write_annotation(out_labels, result_labels)
 
 
 def sentiment_class(out, sent, classes):

@@ -671,14 +671,9 @@ ifeq ($(filter_annotations), true)
   endif
 endif
 
-ifeq ($(filter token.sentiment,$(custom_rules)),)
-%.token.sentiment: %.token.$(saldo_ids) $(sentiment_model)
-	$(python) -m sparv.sentiment --out $@ --sense $(1) --model $(2)
-endif
-
-ifeq ($(filter token.sentimentclass,$(custom_rules)),)
-%.token.sentimentclass: %.token.sentiment
-	$(python) -m sparv.sentiment --sentiment_class --out $@ --sent $(1) --classes "-1.0:-0.5:negative|-0.5:0.5:neutral|0.5:1.0:positive"
+ifeq ($(filter token.sentiment token.sentimentclass,$(custom_rules)),)
+%.token.sentiment %.token.sentimentclass: %.token.$(saldo_ids) $(sentiment_model)
+	$(python) -m sparv.sentiment --out_scores $*.token.sentiment --out_labels $*.token.sentimentclass --sense $(1) --model $(2)
 endif
 
 ifeq ($(filter token.malt,$(custom_rules)),)
