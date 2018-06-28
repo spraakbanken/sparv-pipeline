@@ -399,7 +399,9 @@ def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fil
 
         # Add word annotations
         word = cols.get(structs_count, UNDEF).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        attrstring = "".join(' %s="%s"' % (columns[n - structs_count], cols.get(n, UNDEF).replace("&", "&amp;").replace('"', '&quot;').replace("<", "&lt;").replace(">", "&gt;")) for n in column_nrs[1:] if cols.get(n))
+
+        attrstring = "".join(' %s="%s"' % (columns[n - structs_count], cols.get(n, UNDEF).replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")) for n in column_nrs[1:] if cols.get(n, UNDEF) != UNDEF)
+
         line = "<w%s>%s</w>" % (attrstring, word)
         str_buffer.append(remove_control_characters(line))
         if not valid_xml:

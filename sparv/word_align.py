@@ -41,7 +41,7 @@ def align_texts(word1, word2, linktok1, linktok2, link1, link2, linkref2, out_wo
 
 def make_sent_aligned_text(WORD1, WORD2, linktok1, linktok2, link1, link2, out_sentences):
     """ Make a sentence aligned text file (serves as input for fast_align)."""
-    out_sent_linked = open(out_sentences, 'wb', encoding='utf-8')
+    out_sent_linked = open(out_sentences, 'w', encoding='utf-8')
     LINKTOK1 = util.read_annotation(linktok1)
     LINKTOK2 = util.read_annotation(linktok2)
     REVERSED_LINK2 = {v: k for k, v in list(util.read_annotation(link2).items())}
