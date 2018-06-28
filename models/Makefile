@@ -96,7 +96,7 @@ geo_alternateNames.txt:
 	@wget -N http://download.geonames.org/export/dump/alternateNames.zip
 	@unzip alternateNames.zip
 	@mv alternateNames.txt geo_alternateNames.txt
-	@rm alternateNames.zip
+	@rm alternateNames.zip iso-languagecodes.txt
 	@echo "Done."
 
 geo.pickle: geo_cities1000.txt geo_alternateNames.txt
