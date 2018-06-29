@@ -1107,6 +1107,8 @@ $(foreach otherlang,$(aligned_languages),$(eval $(call run_other_language,$(othe
 %.sentlink.random: %.sentlink $(foreach l,$(aligned_languages),$(parallel_base)-$(l)/annotations/$$(subst $(root)annotations/,,$$*).sentlink)
 	$(python) -m sparv.number --shuffle --out $@ --chunks "$+" --prefix $(subst $(root)annotations/,,$*.)
 
+%.sentlink.n: %.@TEXT %.sentlink $(foreach l,$(aligned_languages),$(parallel_base)-$(l)/annotations/$$(subst $(root)annotations/,,$$*).@TEXT) $(foreach l,$(aligned_languages),$(parallel_base)-$(l)/annotations/$$(subst $(root)annotations/,,$$*).sentlink)
+	$(python) -m sparv.number --position --out $@ --texts "$(filter-out %.sentlink,$+)" --chunks "$(filter-out %.@TEXT,$+)" --prefix $(subst $(root)annotations/,,$*.)
 
 ################################################################################
 #                                  HELP                                        #
