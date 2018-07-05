@@ -18,7 +18,10 @@ sb-sparv@svenska.gu.se
 
 ## Installation
 
-* Set variables in Makefile.config (especially SPARV_PIPELINE_PATH).
+* Before cloning the git repository make sure you have
+  [Git Large File Storage](https://git-lfs.github.com/)
+  installed (`git lfs install`). Some files will not be downloaded correctly otherwise.
+* After cloning, set variables in `makefiles/Makefile.config` (especially `SPARV_PIPELINE_PATH`).
 * Add `SPARV_MAKEFILES` to your environment variables and point its path
   to the `makefiles` directory.
 * Create a Python 3 virtual environment and install the requirements:
