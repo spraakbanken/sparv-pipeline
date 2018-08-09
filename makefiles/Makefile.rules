@@ -1081,15 +1081,19 @@ $(parallel_base)-$(1)/annotations/%:
 	$(MAKE) lang=$(1) other_lang=$(lang) $$@
 
 ifeq ($(align_sentences),true)
-%.sentlink: %.children.sentence.token $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).children.sentence.token %.$(sent_align_chunk) $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).$(sent_align_chunk) %.children.link.sentence $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).children.link.sentence
+%.sentlink.n: %.children.sentence.token $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).children.sentence.token %.$(sent_align_chunk) $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).$(sent_align_chunk) %.children.link.sentence $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).children.link.sentence
 	$(python) -m sparv.sent_align --sentence1 $$(1) --sentence2 $$(2) --link1 $$(3) --link2 $$(4) --sent_parents1 $$(5) --sent_parents2 $$(6) \
-	--out_sentlink1 $$@  --out_sentlink2 $$(parallel_base)-$(1)/annotations/$$(subst $$(root)annotations/,,$$*).sentlink
+	--out_sentlink1 $$@  --out_sentlink2 $$(parallel_base)-$(1)/annotations/$$(subst $$(root)annotations/,,$$*).sentlink.n
+%.sentlink: %.sentlink.n
+	cp -p $$(1) $$@
 else
 %.sentlink: %.$(sent_align_chunk)
 	cp -p $$(1) $$@
+%.sentlink.n: %.@TEXT %.sentlink $(foreach l,$(aligned_languages),$(parallel_base)-$(l)/annotations/$$(subst $(root)annotations/,,$$*).@TEXT) $(foreach l,$(aligned_languages),$(parallel_base)-$(l)/annotations/$$(subst $(root)annotations/,,$$*).sentlink)
+	$(python) -m sparv.number --position --out $@ --texts "$(filter-out %.sentlink,$+)" --chunks "$(filter-out %.@TEXT,$+)" --prefix $(subst $(root)annotations/,,$*.)
 endif
 
-%.token.wordlink-$(1): %.token.word $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).token.word %.children.sentlink.token $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).children.sentlink.token %.sentlink $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).sentlink $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).token.linkref
+%.token.wordlink-$(1): %.token.word $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).token.word %.children.sentlink.token $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).children.sentlink.token %.sentlink.n $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).sentlink.n $$(parallel_base)-$(1)/annotations/$$$$(subst $$(root)annotations/,,$$$$*).token.linkref
 	$(python) -m sparv.word_align --word1 $$(1) --word2 $$(2) --linktok1 $$(3) --linktok2 $$(4) --link1 $$(5) --link2 $$(6) --linkref2 $$(7) \
 	--out_wordlink $$@ --out_sentences $$*.linked_sent --outindex1 $$*.ind1 --outindex2 $$*.ind2
 endif
@@ -1106,9 +1110,6 @@ $(foreach otherlang,$(aligned_languages),$(eval $(call run_other_language,$(othe
 
 %.sentlink.random: %.sentlink $(foreach l,$(aligned_languages),$(parallel_base)-$(l)/annotations/$$(subst $(root)annotations/,,$$*).sentlink)
 	$(python) -m sparv.number --shuffle --out $@ --chunks "$+" --prefix $(subst $(root)annotations/,,$*.)
-
-%.sentlink.n: %.@TEXT %.sentlink $(foreach l,$(aligned_languages),$(parallel_base)-$(l)/annotations/$$(subst $(root)annotations/,,$$*).@TEXT) $(foreach l,$(aligned_languages),$(parallel_base)-$(l)/annotations/$$(subst $(root)annotations/,,$$*).sentlink)
-	$(python) -m sparv.number --position --out $@ --texts "$(filter-out %.sentlink,$+)" --chunks "$(filter-out %.@TEXT,$+)" --prefix $(subst $(root)annotations/,,$*.)
 
 ################################################################################
 #                                  HELP                                        #
