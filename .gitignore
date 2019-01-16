@@ -34,4 +34,5 @@ models/swemalt-1.7.2.mco
 
 bin/maltparser-1.7.2/
 bin/wsd/
-bin/word_alignment
+bin/word-alignment/
+bin/treetagger/
