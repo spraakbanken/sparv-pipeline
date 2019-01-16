@@ -12,19 +12,21 @@ timeformat = "%H.%M.%S"
 process_id_prefix = ""
 lastmessage = []
 logfile = "/warnings.log"
+sparv_debug = False
 
 
 def init(level=None, format=None, timefmt=None, showpid=False):
     """Initialise logging to <stderr>.
     Resets the warning and error counters.
     """
-    global totalwarnings, totalerrors, starttime, timeformat, process_id_prefix
+    global totalwarnings, totalerrors, starttime, timeformat, process_id_prefix, sparv_debug
     if timefmt:
         timeformat = timefmt
     totalwarnings = 0
     totalerrors = 0
     starttime = time.time()
     process_id_prefix = "%06d " % os.getpid() if showpid else ""
+    sparv_debug = os.environ.get('sparv_debug', "false").lower() == "true"
 
 
 def strtime():
@@ -80,6 +82,16 @@ def error(msg, *args):
     global totalerrors
     totalerrors += 1
     output(constants.COLORS["red"] + "-ERROR- : " + msg + constants.COLORS["default"], *args)
+
+
+def debug(msg, *args):
+    """Prints/logs a debug message.
+    Requires environment variable sparv_debug=true when running make."""
+    if not starttime:
+        init()
+    global sparv_debug
+    if sparv_debug:
+        output(constants.COLORS["cyan"] + "-DEBUG- : " + msg + constants.COLORS["default"], *args)
 
 
 def statistics():

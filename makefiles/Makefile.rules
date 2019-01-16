@@ -1158,6 +1158,11 @@ help:
 	@echo "Options:"
 	@echo "  -jN  Run up to N jobs in parallel."
 	@echo "  -n   Don't actually run any commands; just print them."
+	@echo
+	@echo "Debug mode:"
+	@echo "  By setting sparv_debug=true before the make command you can get additional debug output from some sparv modules."
+	@echo "  Example:"
+	@echo "  sparv_debug=true make cwb"
 
 files:
 	@echo "Files: $(sort $(files))"
