@@ -7,13 +7,13 @@ case_sensitive:	false
 token_list:	./bettertokenizer.sv.saldo-tokens
 
 # Characters that cannot start word tokens (no regex escaping needed)
-start:	({[]})"“”'‘’`»;:–—\/&#*@-,…
+start:	({[]})"“”'‘’`»;:–—\/&#*@-,…|_¨
 
 # Characters that cannot appear within words (no regex escaping needed)
-within:	({[]})"“”'‘’»;–—\/*%…?!,
+within:	({[]})"“”'‘’»;–—\/*%…?!,|_¨
 
 # Characters that cannot end word tokens (in addition to the characters defined above) (no regex escaping needed)
-end:	`:&#@,.
+end:	`:&#@,.|_¨
 
 # Multi-character punctuation (Python regular expression)
 multi:	(?:\-{2,}|\.{2,}|(?:\.\s){2,}\.)
