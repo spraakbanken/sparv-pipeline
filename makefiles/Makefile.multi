@@ -3,7 +3,7 @@ ifeq ($(origin corpus), undefined)
 endif
 
 # Split corpus argument into parts
-parts = $(subst /, ,$(corpus))
+parts := $(subst /, ,$(corpus))
 
 # Set corpus name to last part of path
 override corpus := $(lastword $(parts))
