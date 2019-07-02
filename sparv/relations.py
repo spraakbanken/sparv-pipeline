@@ -355,11 +355,9 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
     for string, index in list(strings.items()):
         if len(string) == 3:
             string, pos, stringextra = string
-            if stringextra == "":
-                stringextra = None
         else:
             string, pos = string
-            stringextra = None
+            stringextra = ""
         row = {
             "id": index,
             "string": string,
