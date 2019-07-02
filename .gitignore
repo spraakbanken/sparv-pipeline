@@ -2,6 +2,7 @@ sparv/__pycache__
 sparv/freeling.py
 sparv/util/__pycache__/
 venv/
+*.pyc
 
 models/freeling
 models/treetagger
@@ -34,5 +35,5 @@ models/swemalt-1.7.2.mco
 
 bin/maltparser-1.7.2/
 bin/wsd/
-bin/word-alignment/
+bin/word-alignment/*
 bin/treetagger/
