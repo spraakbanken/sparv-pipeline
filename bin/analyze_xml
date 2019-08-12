@@ -1,6 +1,6 @@
 #!/bin/bash
 
-usage() { 
+usage() {
     echo
     echo "Usage: $0 [-h header-element] [-e encoding] [-m maxcount] sgml-files..."
     echo
@@ -25,5 +25,4 @@ if [ $# == 0 ] ; then usage ; fi
 
 SOURCES=$@
 
-python -m sb.xmlanalyzer --header "$HDR" --encoding "$ENC" --maxcount "$MAX" --sources "$SOURCES"
-
+python -m sparv.xmlanalyzer --header "$HDR" --encoding "$ENC" --maxcount "$MAX" --sources "$SOURCES"

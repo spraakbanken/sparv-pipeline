@@ -7,7 +7,7 @@ Extracts all content of a given XML element from an XML file - one on each line.
 The optional marker is printed before and after each content line.
 """
 
-from sb.xmlanalyzer import html_entities, problematic_entity
+from sparv.xmlanalyzer import html_entities, problematic_entity
 from HTMLParser import HTMLParser
 import sys
 
@@ -32,7 +32,7 @@ class Extractor(HTMLParser):
         self.stack -= 1
         if not self.stack:
             print
-    
+
     def handle_data(self, content):
         if not self.stack: return
         if "&" in content: raise TypeError("XML special character: &")
@@ -75,4 +75,3 @@ if __name__ == '__main__':
         sgml_extract(*sys.argv[1:])
     else:
         exit(__doc__)
-
