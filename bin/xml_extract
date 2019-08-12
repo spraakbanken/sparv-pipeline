@@ -8,11 +8,11 @@ The optional marker is printed before and after each content line.
 """
 
 from sparv.xmlanalyzer import html_entities, problematic_entity
-from HTMLParser import HTMLParser
+from html.parser import HTMLParser
 import sys
 
 def out(string):
-    sys.stdout.write(string.encode('UTF-8'))
+    sys.stdout.write(string)
 
 class Extractor(HTMLParser):
     def __init__(self, element, marker=""):
@@ -31,7 +31,7 @@ class Extractor(HTMLParser):
         out(self.marker)
         self.stack -= 1
         if not self.stack:
-            print
+            print()
 
     def handle_data(self, content):
         if not self.stack: return
@@ -62,7 +62,7 @@ def sgml_extract(sgmlfile, *args):
     extract = Extractor(*args)
     with open(sgmlfile) as stream:
         for line in stream:
-            extract.feed(line.decode('UTF-8'))
+            extract.feed(line)
     extract.close()
 
 
