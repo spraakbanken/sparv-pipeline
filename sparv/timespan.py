@@ -51,17 +51,13 @@ def timespan(corpus, db_name, out):
             if usetime:
                 dfrom = line[1] + line[2]
                 dto = line[3] + line[4]
-                if dfrom:
-                    dfrom = dfrom.zfill(14)  # Pad years < 1000 with zeroes
-                if dto:
-                    dto = dto.zfill(14)
+                dfrom = dfrom.zfill(14)  # Pad years < 1000 with zeroes
+                dto = dto.zfill(14)
             else:
                 dfrom = line[1]
                 dto = line[2]
-                if dfrom:
-                    dfrom = dfrom.zfill(8)
-                if dto:
-                    dto = dto.zfill(8)
+                dfrom = dfrom.zfill(8)
+                dto = dto.zfill(8)
 
             span = (dfrom, dto)
             spans[span] = spans.get(span, 0) + tokens  # Sometimes we get more than one row for tokens without date information
