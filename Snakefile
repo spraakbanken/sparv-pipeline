@@ -1,6 +1,4 @@
-"""Example Snakefiles. This should be replaced by corpus specifik snakefiles later on."""
-
-import os
+"""Example Snakefile. This should be replaced by corpus specifik snakefiles later on."""
 
 source_dir = "../testkorpus/original/xml"
 annotation_dir = "../testkorpus/annotations"
