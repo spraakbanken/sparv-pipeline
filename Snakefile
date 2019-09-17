@@ -1,4 +1,4 @@
-"""Set variable input_files. Not really a snake-file..."""
+"""Example Snakefiles. This should be replaced by corpus specifik snakefiles later on."""
 
 import os
 

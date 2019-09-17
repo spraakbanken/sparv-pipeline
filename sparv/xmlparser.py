@@ -2,7 +2,7 @@
 
 """
 A parser for pseudo-XML documents.
-Pseudo-XML is almost like XML, but admits overlapping elements.
+Pseudo-XML is almost like XML, but permits overlapping elements.
 """
 import re
 import sparv.util as util
