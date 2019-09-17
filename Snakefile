@@ -5,7 +5,7 @@ import os
 source_dir = "../testkorpus/original/xml"
 annotation_dir = "../testkorpus/annotations"
 
-input_files = [val for sublist in [[os.path.relpath(os.path.join(i[0], j.rsplit(".", 1)[0]), source_dir) for j in i[2]] for i in os.walk(source_dir)] for val in sublist]
+input_files = [f[1][0] for f in snakemake.utils.listfiles("%s/{file}.xml" % source_dir)]
 
 
 include: "snakefiles/parse_xml.snake"
