@@ -1,0 +1,22 @@
+from sparv import segment
+
+rule paragraph:
+    """Segment paragraphs."""
+    input:
+        TEXT = "{file}.@TEXT",
+        text = "{file}.text"
+    output:
+        "{file}.paragraph"
+    run:
+        segment.do_segmentation(
+            element="p",
+            out=output[0],
+            text=input.TEXT,
+            chunk=input.text,
+            segmenter="blanklines"
+        )
+
+rule paragraphs:
+    """Expand paragraph rule to process all files."""
+    input:
+        expand("%s/{file}.paragraph" % annotation_dir, file=input_files)

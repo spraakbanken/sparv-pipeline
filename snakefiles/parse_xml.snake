@@ -1,0 +1,22 @@
+from sparv import xmlparser
+
+rule TEXT:
+    """Parse Sparv input (usually XML)."""
+    input:
+        "%s/{corpus}.xml" % source_dir
+    output:
+        TEXT = "%s/{corpus}.@TEXT" % annotation_dir,
+        text = "%s/{corpus}.text" % annotation_dir
+    run:
+        xmlparser.parse(
+            source=input[0],
+            text=output.TEXT,
+            prefix="001",
+            elements="text",
+            annotations=output.text
+        )
+
+rule TEXTS:
+    """Expand TEXT rule to process all files."""
+    input:
+        expand("%s/{file}.@TEXT" % annotation_dir, file=input_files)
