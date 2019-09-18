@@ -5,6 +5,19 @@ annotation_dir = "../testkorpus/annotations"
 
 input_files = [f[1][0] for f in snakemake.utils.listfiles("%s/{file}.xml" % source_dir)]
 
+existing_structural_elements = ["text"]
 
-include: "snakefiles/parse_xml.snake"
-include: "snakefiles/segment_paragraphs.snake"
+paragraph_chunk = "text"
+paragraph_segmenter = "blanklines"
+
+sentence_chunk = "paragraph"
+sentence_segmenter = "punkt_sentence"
+
+token_chunk = "sentence"
+token_segmenter = "better_word"
+tokenizer_config = "./models/bettertokenizer.sv"
+
+
+include: "snakefiles/utils.snake"
+include: "snakefiles/xmlparser.snake"
+include: "snakefiles/segment.snake"

@@ -1,0 +1,14 @@
+"""Some utility rules."""
+
+rule list_files:
+    run:
+        input_filenames = [f[1][0] for f in snakemake.utils.listfiles("%s/{file}" % source_dir)]
+        print("\nInput files:\n")
+        for f in input_filenames:
+            print(f)
+        print()
+
+
+rule clean:
+    run:
+        shell("rm -rf %s" % annotation_dir)

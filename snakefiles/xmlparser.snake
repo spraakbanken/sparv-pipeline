@@ -3,16 +3,17 @@ from sparv import xmlparser
 rule TEXT:
     """Parse Sparv input (usually XML)."""
     input:
-        "%s/{corpus}.xml" % source_dir
+        "%s/{corpus}.xml" % source_dir,
     output:
         TEXT = "%s/{corpus}.@TEXT" % annotation_dir,
         text = "%s/{corpus}.text" % annotation_dir
     run:
+        shell("mkdir -p %s -m 775" % annotation_dir),
         xmlparser.parse(
             source=input[0],
             text=output.TEXT,
             prefix="001",
-            elements="text",
+            elements=existing_structural_elements,
             annotations=output.text
         )
 
