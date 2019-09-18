@@ -3,18 +3,20 @@ from sparv import xmlparser
 rule TEXT:
     """Parse Sparv input (usually XML)."""
     input:
-        "%s/{corpus}.xml" % source_dir,
+        "%s/{file}.xml" % source_dir
     output:
-        TEXT = "%s/{corpus}.@TEXT" % annotation_dir,
-        text = "%s/{corpus}.text" % annotation_dir
+        annotations = ["%s/{file}.%s" % (annotation_dir, annotation) for annotation in expand("{annotation}", annotation=[annotation for _element, annotation in existing_structural_elements])],
+        TEXT = "%s/{file}.@TEXT" % annotation_dir,
     run:
+        existing_elements = [element for element, _annotation in existing_structural_elements]
+
         shell("mkdir -p %s -m 775" % annotation_dir),
         xmlparser.parse(
             source=input[0],
             text=output.TEXT,
             prefix="001",
-            elements=existing_structural_elements,
-            annotations=output.text
+            elements=existing_elements,
+            annotations=output.annotations
         )
 
 rule TEXTS:

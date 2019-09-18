@@ -5,7 +5,7 @@ annotation_dir = "../testkorpus/annotations"
 
 input_files = [f[1][0] for f in snakemake.utils.listfiles("%s/{file}.xml" % source_dir)]
 
-existing_structural_elements = ["text"]
+existing_structural_elements = [("text", "text")]
 
 paragraph_chunk = "text"
 paragraph_segmenter = "blanklines"
