@@ -479,6 +479,9 @@ ifeq ($(filter sentence.n,$(custom_rules)),)
 
 endif
 
+%.token._head %.token._tail: %.@TEXT %.token %.token.n
+	$(python) -m sparv.annotate --text_headtail --out_head $*.token._head --out_tail $*.token._tail --text $(1) --chunk $(2) --order $(3)
+
 # token.word
 ifeq ($(filter token.word,$(custom_rules)),)
 %.token.word: %.@TEXT %.token
