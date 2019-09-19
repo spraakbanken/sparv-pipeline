@@ -15,7 +15,9 @@ sentence_segmenter = "punkt_sentence"
 
 token_chunk = "sentence"
 token_segmenter = "better_word"
-tokenizer_config = "./models/bettertokenizer.sv"
+
+
+sparv_model_dir = "./models"
 
 
 include: "snakefiles/utils.snake"

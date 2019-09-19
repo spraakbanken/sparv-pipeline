@@ -1,4 +1,6 @@
-from sparv import segment
+from sparv import segment, annotate
+
+tokenizer_config = "%s/bettertokenizer.sv" % sparv_model_dir
 
 rule paragraph:
     """Segment paragraphs."""
@@ -73,3 +75,23 @@ rule tokens:
     """Expand token rule to process all files."""
     input:
         expand("%s/{file}.token" % annotation_dir, file=input_files)
+
+
+rule word:
+    """Make word annotation."""
+    input:
+        TEXT = "{file}.@TEXT",
+        token = "{file}.token"
+    output:
+        "{file}.word"
+    run:
+        annotate.text_spans(
+            out=output[0],
+            text=input.TEXT,
+            chunk=input.token
+        )
+
+rule words:
+    """Expand word rule to process all files."""
+    input:
+        expand("%s/{file}.word" % annotation_dir, file=input_files)

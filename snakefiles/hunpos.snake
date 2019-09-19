@@ -1,0 +1,51 @@
+from sparv import hunpos, annotate
+
+
+hunpos_model = "%s/hunpos.suc3.suc-tags.default-setting.utf8.model" % sparv_model_dir
+hunpos_morphtable = "%s/hunpos.saldo.suc-tags.morphtable" % sparv_model_dir
+hunpos_morphtable_patterns = "%s/hunpos.suc.patterns" % sparv_model_dir
+
+
+rule hunpos_msd:
+    """Do part-of-speech tagging with hunpos."""
+    input:
+        TEXT = "{file}.@TEXT",
+        word = "{file}.word",
+        sentence = "{file}.sentence"
+    output:
+        "{file}.msd"
+    run:
+        hunpos.msdtag(
+            out=output[0],
+            text=input.TEXT,
+            word=input.word,
+            sentence=input.sentence,
+            model=hunpos_model,
+            morphtable=hunpos_morphtable,
+            patterns=hunpos_morphtable_patterns
+        )
+
+rule hunpos_msds:
+    """Expand hunpos_msd rule to process all files."""
+    input:
+        expand("%s/{file}.msd" % annotation_dir, file=input_files)
+
+
+rule pos_from_msd:
+    """Extract part-of-speech from MSD."""
+    input:
+        "{file}.msd"
+    output:
+        "{file}.pos"
+    run:
+        annotate.select(
+            out=output[0],
+            annotation=input[0],
+            index=0,
+            separator="."
+        )
+
+rule pos_from_msds:
+    """Expand pos_from_msd rule to process all files."""
+    input:
+        expand("%s/{file}.pos" % annotation_dir, file=input_files)
