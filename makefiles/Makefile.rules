@@ -572,8 +572,8 @@ ifeq ($(analysis),tt)
 else
   ifeq ($(analysis),sv-1800)
     ifeq ($(filter token.msd,$(custom_rules)),)
-%.token.msd: %.token.word %.children.sentence.token $(hunpos_model) $(hunpos_morphtable_swedalin)
-	$(python) -m sparv.hunpos --out $@ --word $(1) --sentence $(2) --model $(3) --tag_mapping "$(tag_mapping)" --morphtable $(4)
+%.token.msd: %.@TEXT %.token.word %.sentence $(hunpos_model) $(hunpos_morphtable_swedalin)
+	$(python) -m sparv.hunpos --out $@ ---text $(1) --word $(2) --sentence $(3) --model $(4) --tag_mapping "$(tag_mapping)" --morphtable $(5)
     endif
     ifeq ($(filter token.pos,$(custom_rules)),)
 %.token.pos: %.token.msd
@@ -583,8 +583,8 @@ else
   else
 
     ifeq ($(filter token.msd,$(custom_rules)),)
-%.token.msd: %.token.word %.children.sentence.token $(hunpos_model) $(hunpos_morphtable) $(hunpos_morphtable_patterns)
-	$(python) -m sparv.hunpos --out $@ --word $(1) --sentence $(2) --model $(3) --tag_mapping "$(tag_mapping)" --morphtable "$(4)" --patterns "$(5)"
+%.token.msd: %.@TEXT %.token.word %.sentence $(hunpos_model) $(hunpos_morphtable) $(hunpos_morphtable_patterns)
+	$(python) -m sparv.hunpos --out $@ --text $(1) --word $(2) --sentence $(3) --model $(4) --tag_mapping "$(tag_mapping)" --morphtable "$(5)" --patterns "$(6)"
     endif
 
     ifeq ($(filter token.pos,$(custom_rules)),)

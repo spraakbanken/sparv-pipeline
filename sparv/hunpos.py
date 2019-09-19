@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
 import re
 import sparv.util as util
+from sparv import parent
 
 SENT_SEP = "\n\n"
 TOK_SEP = "\n"
@@ -8,9 +8,8 @@ TAG_SEP = "\t"
 TAG_COLUMN = 1
 
 
-def msdtag(model, out, word, sentence, tag_mapping=None, morphtable=None, patterns=None, encoding=util.UTF8):
-    """POS/MSD tag using the Hunpos tagger.
-    """
+def msdtag(model, out, text, word, sentence, tag_mapping=None, morphtable=None, patterns=None, encoding=util.UTF8):
+    """POS/MSD tag using the Hunpos tagger."""
     if isinstance(tag_mapping, str) and tag_mapping:
         tag_mapping = util.tagsets.__dict__[tag_mapping]
     elif tag_mapping is None or tag_mapping == "":
@@ -26,13 +25,14 @@ def msdtag(model, out, word, sentence, tag_mapping=None, morphtable=None, patter
                     pattern_list.append((name, re.compile("^%s$" % pattern), tags))
 
     def replace_word(w):
-        """ Replace word with alias if word matches a regex pattern. """
+        """Replace word with alias if word matches a regex pattern."""
         for p in pattern_list:
             if re.match(p[1], w):
                 return "[[%s]]" % p[0]
         return w
 
-    sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
+    sentence_children = parent.annotate_children(text, None, sentence, word)
+    sentences = [sent for _, sent in sentence_children.items()]
     WORD = util.read_annotation(word)
     stdin = SENT_SEP.join(TOK_SEP.join(replace_word(WORD[tokid]) for tokid in sent)
                           for sent in sentences)
