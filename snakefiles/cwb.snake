@@ -1,0 +1,51 @@
+from sparv import cwb, number
+
+
+rule token_n:
+    input:
+        TEXT = "{file}.@TEXT",
+        token = "{file}.token",
+    output:
+        "{file}.token.n"
+    run:
+        number.number_by_position(
+            out=output[0],
+            texts=input.TEXT,
+            chunks=input.token
+        )
+
+rule token_ns:
+    """Expand token_n rule to process all files."""
+    input:
+        expand("%s/{file}.token.n" % annotation_dir, file=input_files)
+
+
+rule vrt:
+    """Export to vrt."""
+    params:
+        positional_annotations_files = ["%s/{file}.%s" % (annotation_dir, annotation) for annotation in positional_annotations],
+        structural_annotations_files = ["{file}.%s" % annotation for annotation in structural_annotations]
+    input:
+        TEXT = "{file}.@TEXT",
+        token = "{file}.token",
+        token_order = "{file}.token.n",
+    output:
+        "{file}.vrt"
+    run:
+        cwb.export(
+            format="vrt",
+            out=output[0],
+            order=input.token_order,
+            annotations_columns=params.positional_annotations_files,
+            annotations_structs=params.structural_annotations_files,
+            columns=positional_annotations,
+            structs=structural_annotations,
+            text=input.TEXT,
+            token=input.token
+        )
+
+
+rule vrts:
+    """Expand vrt rule to process all files."""
+    input:
+        expand("%s/{file}.vrt" % annotation_dir, file=input_files)
