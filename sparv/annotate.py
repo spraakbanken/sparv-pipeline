@@ -26,6 +26,52 @@ def text_spans(text, chunk, out):
         return OUT
 
 
+def text_headtail(text, chunk, order, out_head, out_tail):
+    """Extract "head" and "tail" whitespace characters for tokens."""
+
+    def escape(t):
+        return t.replace(" ", "\\s").replace("\n", "\\n").replace("\t", "\\t")
+
+    if isinstance(text, str):
+        text = util.corpus.read_corpus_text(text)
+    if isinstance(chunk, str):
+        chunk = util.read_annotation_iterkeys(chunk)
+    if isinstance(order, str):
+        order = util.read_annotation(order)
+    corpus_text, anchor2pos, _pos2anchor = text
+    OUT_HEAD = {}
+    OUT_TAIL = {}
+    head_text = None
+    sorted_chunk = sorted(chunk, key=lambda x: order[x])
+
+    for i, edge in enumerate(sorted_chunk):
+        if head_text:
+            OUT_HEAD[edge] = escape(head_text)
+            head_text = None
+
+        if i < len(sorted_chunk) - 1:
+            tail_start = anchor2pos[util.edgeEnd(edge)]
+            tail_end = anchor2pos[util.edgeStart(sorted_chunk[i + 1])]
+            tail_text = corpus_text[tail_start:tail_end]
+
+            try:
+                n_pos = tail_text.rindex("\n")
+            except ValueError:
+                n_pos = None
+            if n_pos is not None and n_pos + 1 < len(tail_text):
+                head_text = tail_text[n_pos + 1:]
+                tail_text = tail_text[:n_pos + 1]
+
+            if tail_text:
+                OUT_TAIL[edge] = escape(tail_text)
+
+    if out_head and out_tail:
+        util.write_annotation(out_head, OUT_HEAD)
+        util.write_annotation(out_tail, OUT_TAIL)
+    else:
+        return OUT_HEAD, OUT_TAIL
+
+
 def translate_tag(tag, out, mapping):
     """Convert part-of-speech tags, specified by the mapping.
     Example mappings: parole_to_suc, suc_to_simple, ...
@@ -135,6 +181,7 @@ def roundfloat(chunk, out, decimals):
 
 if __name__ == '__main__':
     util.run.main(text_spans=text_spans,
+                  text_headtail=text_headtail,
                   translate_tag=translate_tag,
                   chain=chain,
                   select=select,
