@@ -4,8 +4,7 @@
 #
 #    pip-compile requirements.in
 #
-nltk==3.4
+nltk==3.4.5
 python-dateutil==2.8.0
 pyyaml==5.1
-singledispatch==3.4.0.3   # via nltk
 six==1.12.0
