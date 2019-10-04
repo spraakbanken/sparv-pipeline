@@ -23,7 +23,7 @@ models/nst_utf8.txt
 models/saldo.compound.pickle
 models/saldo.pickle
 models/saldom.xml
-models/sensaldo-base.txt
+models/sensaldo-base*
 models/sensaldo.pickle
 models/stats.pickle
 models/stats_all.txt
