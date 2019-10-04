@@ -9,9 +9,9 @@ from glob import glob
 from collections import defaultdict
 import xml.etree.cElementTree as etree
 import itertools as it
-import tempfile
 
 import sparv.util as util
+from sparv import parent
 
 ALIGNDIR = "annotations/align"
 UNDEF = "__UNDEF__"
@@ -44,7 +44,7 @@ class ListWithGet(list):
             return default
 
 
-def vrt_table(annotations_structs, annotations_columns):
+def vrt_table(annotations_structs, annotations_columns, text, token):
     """
     Return a table suitable for printing as a vrt file from annotations.
 
@@ -52,13 +52,17 @@ def vrt_table(annotations_structs, annotations_columns):
     """
     structs_count = len(annotations_structs)
     parents = {}
-    for annot, parent_annotation in annotations_structs:
-        if parent_annotation not in parents:
-            parents[parent_annotation] = util.read_annotation(parent_annotation)
+
+    text = util.corpus.read_corpus_text(text)
+    token = list(util.read_annotation_iterkeys(token))
+
+    for annot in annotations_structs:
+        if annot not in parents:
+            parents[annot] = parent.annotate_parents(text, None, annot, token, ignore_missing_parent=True)
 
     vrt = defaultdict(ListWithGet)
 
-    for n, (annot, parent_annotation) in enumerate(annotations_structs):
+    for annot in annotations_structs:
         # Enumerate structural attributes, to handle attributes without values
         enumerated_struct = {
             span: [index, value, span]
@@ -69,7 +73,7 @@ def vrt_table(annotations_structs, annotations_columns):
         token_annotations = (
             (word_tok, enumerated_struct.get(tok_span))
             for word_tok, tok_span
-            in list(parents[parent_annotation].items())
+            in list(parents[annot].items())
         )
         for tok, value in token_annotations:
             if not value:
@@ -93,17 +97,17 @@ def vrt_table(annotations_structs, annotations_columns):
     return vrt
 
 
-def tokens_and_vrt(order, annotations_structs, annotations_columns):
+def tokens_and_vrt(order, annotations_structs, annotations_columns, text, token):
     """
     Returns the tokens in order and the vrt table.
     """
-    vrt = vrt_table(annotations_structs, annotations_columns)
+    vrt = vrt_table(annotations_structs, annotations_columns, text, token)
     sortkey = util.read_annotation(order).get
     tokens = sorted(vrt, key=sortkey)
     return tokens, vrt
 
 
-def export(format, out, order, annotations_columns, annotations_structs, text=None, fileid=None, fileids=None, valid_xml=True, columns=(), structs=(), encoding=CWB_ENCODING):
+def export(format, out, order, annotations_columns, annotations_structs, text=None, token=None, fileid=None, fileids=None, valid_xml=True, columns=(), structs=(), encoding=CWB_ENCODING):
     """
     Export 'annotations' to the VRT or XML file 'out'.
     The order of the annotation keys is decided by the annotation 'order'.
@@ -122,7 +126,7 @@ def export(format, out, order, annotations_columns, annotations_structs, text=No
     if isinstance(annotations_columns, str):
         annotations_columns = annotations_columns.split()
     if isinstance(annotations_structs, str):
-        annotations_structs = [x.split(":") for x in annotations_structs.split()]
+        annotations_structs = [x for x in annotations_structs.split()]
 
     if isinstance(columns, str):
         columns = columns.split()
@@ -137,7 +141,7 @@ def export(format, out, order, annotations_columns, annotations_structs, text=No
     if format == "formatted":
         write_formatted(out, annotations_columns, annotations_structs, columns, structs, structs_count, text)
     else:
-        tokens, vrt = tokens_and_vrt(order, annotations_structs, annotations_columns)
+        tokens, vrt = tokens_and_vrt(order, annotations_structs, annotations_columns, text, token)
         column_nrs = [n + structs_count for (n, col) in enumerate(columns) if col and col != "-"]
 
         if format == "vrt":

@@ -358,13 +358,15 @@ $(root)src/%.xml: $(original_dir)/%.xml # FreeLing
   endif # FreeLing
 endif # FreeLing
 
-%.vrt: $(foreach struct,$(vrt_structs_annotations),$(addprefix %.parents.token., $(firstword $(subst ., ,$(struct))))) $(addprefix %., $(vrt_structs_annotations)) $(addprefix %.token., $(vrt_columns_annotations) n$(token_n_suffix))
+%.vrt: %.@TEXT %.token $(foreach struct,$(vrt_structs_annotations),$(addprefix %.parents.token., $(firstword $(subst ., ,$(struct))))) $(addprefix %., $(vrt_structs_annotations)) $(addprefix %.token., $(vrt_columns_annotations) n$(token_n_suffix))
 	$(python) -m sparv.cwb --export --format vrt --out $@ \
 		--order $*.token.n$(token_n_suffix) \
 		--annotations_columns "$(addprefix $*.token., $(vrt_columns_annotations))" \
-		--annotations_structs "$(foreach struct,$(vrt_structs_annotations),$(addprefix $*.$(struct):$*.parents.token., $(firstword $(subst ., ,$(struct)))))" \
+		--annotations_structs "$(foreach struct,$(vrt_structs_annotations),$*.$(struct))" \
 		--columns "$(vrt_columns)" \
-		--structs "$(vrt_structs)"
+		--structs "$(vrt_structs)" \
+		--text $(1) \
+		--token $(2)
 
 define xml_parse
 $(root)annotations/$(1)%.@TEXT $(addprefix $(root)annotations/$(1)%.,$($(2)xml_annotations)) $(addprefix $(root)annotations/$(1)%.,$($(2)xml_header_annotations)): $(src)/$(1)%.xml $(root)annotations/fileids
