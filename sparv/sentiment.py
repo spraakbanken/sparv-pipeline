@@ -29,30 +29,21 @@ def sentiment(sense, out_scores, out_labels, model, max_decimals=6, lexicon=None
     result_labels = {}
 
     for token in sense:
-        # Get set of senses for each token
-        token_senses = dict([s.rsplit(util.SCORESEP, 1) if util.SCORESEP in s else (s, -1.0)
-                             for s in sense[token].split(util.DELIM) if s])
+        # Get set of senses for each token and sort them according to their probabilities
+        token_senses = [tuple(s.rsplit(util.SCORESEP, 1)) if util.SCORESEP in s else (s, -1.0)
+                        for s in sense[token].split(util.DELIM) if s]
+        token_senses.sort(key=lambda x: x[1], reverse=True)
 
-        # Check for sense annotations and if any of the senses occur in the sentiment lexicon
-        if token_senses and any(lexicon.lookup(s, (None, None))[1] for s in token_senses):
-            sent_sum = 0.0
-            labels_set = set()
-            for s in token_senses:
-                p = float(token_senses[s])
-                if p < 0:
-                    p = 1.0 / len(token_senses)
-                sent_label, sent_score = lexicon.lookup(s, (None, None))
-                if sent_label is not None:
-                    labels_set.add(sent_label)
-                    # Calculate weighted mean value
-                    sent_sum += float(sent_score) * p
-            result_scores[token] = str(round(sent_sum, max_decimals))
-            # If there are multiple labels, derive label from polarity_score
-            if len(labels_set) > 1:
-                result_labels[token] = SENTIMENT_LABLES.get(round(sent_sum))
-            else:
-                result_labels[token] = SENTIMENT_LABLES.get(int(list(labels_set)[0]))
+        # Lookup the sentiment score for the most probable sense and assign a sentiment label
+        if token_senses:
+            best_sense = token_senses[0][0]
+            score = lexicon.lookup(best_sense, None)
+        else:
+            score = None
 
+        if score:
+            result_scores[token] = score
+            result_labels[token] = SENTIMENT_LABLES.get(int(score))
         else:
             result_scores[token] = None
             result_labels[token] = None
@@ -61,30 +52,7 @@ def sentiment(sense, out_scores, out_labels, model, max_decimals=6, lexicon=None
     util.write_annotation(out_labels, result_labels)
 
 
-def sentiment_class(out, sent, classes):
-    """Translate numeric sentiment values into classes.
-    - out: resulting annotation file.
-    - sent: existing sentiment annotation.
-    - classes: numeric spans and classes, on the format '0:0.33:negative|0.33:0.66:neutral|0.66:1:positive'."""
-
-    classes = dict((tuple(float(n) for n in c.split(":")[:2]), c.split(":")[2]) for c in classes.split("|"))
-    sent = util.read_annotation(sent)
-    result = {}
-
-    for token in sent:
-        if not sent[token]:
-            result[token] = None
-            continue
-        sent_value = float(sent[token])
-        for c in classes:
-            if c[0] <= sent_value <= c[1]:
-                result[token] = classes[c]
-                break
-
-    util.write_annotation(out, result)
-
-
-def read_sensaldo(tsv="sensaldo-base.txt", verbose=True):
+def read_sensaldo(tsv="sensaldo-base-v02.txt", verbose=True):
     """
     Read the TSV version of the sensaldo lexicon (sensaldo-base.txt).
     Return a lexicon dictionary: {senseid: (class, ranking)}
@@ -98,12 +66,12 @@ def read_sensaldo(tsv="sensaldo-base.txt", verbose=True):
         for line in f:
             if line.lstrip().startswith("#"):
                 continue
-            saldoid, manual_label, automatic_label, polarity_score, _freq = line.split()
-            lexicon[saldoid] = (manual_label, polarity_score)
+            saldoid, label = line.split()
+            lexicon[saldoid] = label
 
     testwords = ["förskräcklig..1",
                  "ödmjukhet..1",
-                 "festlig..1"
+                 "handla..1"
                  ]
     util.test_annotations(lexicon, testwords)
 
@@ -120,6 +88,5 @@ def sensaldo_to_pickle(tsv, filename, protocol=-1, verbose=True):
 
 if __name__ == '__main__':
     util.run.main(sentiment,
-                  sentiment_class=sentiment_class,
                   sensaldo_to_pickle=sensaldo_to_pickle
                   )

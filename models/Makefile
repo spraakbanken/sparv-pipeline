@@ -1,6 +1,6 @@
 include $(SPARV_MAKEFILES)/Makefile.config
 
-TARGETS = help info clean space all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable bettertokenizer.sv.saldo-tokens stats_all.txt stats.pickle dalinm.xml dalin.pickle diapivot.xml diapivot.pickle swedbergm.xml swedberg.pickle geo.pickle nst_utf8.txt nst.comp.pos.pickle blingbring.xml blingbring.pickle sensaldo-base.txt sensaldo.pickle swefn.xml swefn.pickle wsd
+TARGETS = help info clean space all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable bettertokenizer.sv.saldo-tokens stats_all.txt stats.pickle dalinm.xml dalin.pickle diapivot.xml diapivot.pickle swedbergm.xml swedberg.pickle geo.pickle nst_utf8.txt nst.comp.pos.pickle blingbring.xml blingbring.pickle sensaldo-base-v02.txt sensaldo.pickle swefn.xml swefn.pickle wsd
 .PHONY: help info clean all wsd
 
 ifndef python
@@ -14,7 +14,7 @@ clean:
 	rm -rf saldom.xml saldo.pickle saldo.compound.pickle stats.pickle stats_all.txt blingbring.pickle swefn.pickle wsd
 
 space:
-	rm -f stats_all.txt saldom.xml nst_utf8.txt dalinm.xml diapivot.xml swedbergm.xml blingbring.txt swefn.xml sensaldo-base.txt
+	rm -f stats_all.txt saldom.xml nst_utf8.txt dalinm.xml diapivot.xml swedbergm.xml blingbring.txt swefn.xml sensaldo-base-v02.txt
 
 all: saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable stats.pickle bettertokenizer.sv.saldo-tokens diapivot.pickle dalin.pickle swedberg.pickle geo.pickle blingbring.pickle sensaldo.pickle swefn.pickle wsd
 
@@ -118,15 +118,15 @@ swefn.xml:
 swefn.pickle: swefn.xml
 	$(python) -m sparv.lexical_classes --swefn_to_pickle --xml "swefn.xml" --filename "$@"
 
-sensaldo-base.txt:
-	@echo "Downloading and extracting sensaldo-base.txt..."
-	@wget -N https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/sensaldo/sensaldo.zip
-	@unzip sensaldo.zip
-	@rm sensaldo-fullform.txt sensaldo.zip
+sensaldo-base-v02.txt:
+	@echo "Downloading and extracting sensaldo-base-v02.txt..."
+	@wget -N https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/sensaldo/sensaldo-v02.zip
+	@unzip sensaldo-v02.zip
+	@rm sensaldo-fullform-v02.txt sensaldo-v02.zip
 	@echo "Done."
 
-sensaldo.pickle: sensaldo-base.txt
-	$(python) -m sparv.sentiment --sensaldo_to_pickle --tsv "sensaldo-base.txt" --filename "$@"
+sensaldo.pickle: sensaldo-base-v02.txt
+	$(python) -m sparv.sentiment --sensaldo_to_pickle --tsv "sensaldo-base-v02.txt" --filename "$@"
 
 wsd: wsd/ALL_512_128_w10_A2_140403_ctx1.bin wsd/lem_cbow0_s512_w10_NEW2_ctx.bin
 
