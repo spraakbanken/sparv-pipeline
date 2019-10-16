@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os.path
+import os
 from . import log
 from . import system
 from .constants import *
@@ -42,6 +42,8 @@ def write_annotation(file, annotation, transform=None, append=False):
             value = value.replace("\n", "").replace("\r", "")  # Don't allow linebreaks in tokens
             print((key + ANNOTATION_DELIM + value), file=DB)
             ctr += 1
+    # Update file modification time even if nothing was written
+    os.utime(file, None)
     log.info("Wrote %d items: %s", ctr, file)
 
 
