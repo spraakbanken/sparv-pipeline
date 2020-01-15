@@ -441,7 +441,11 @@ def make_new_baseforms(OUT_baseform, tokid, msd_tag, compounds, stats_lexicon, a
     msd_tag = msd_tag[:msd_tag.find('.')]
     for comp in compounds:
         comp = comp[1]
-        base_suffix = comp[-1][1][:comp[-1][1].find('.')]
+
+        if comp[-1][1] == "0":
+            base_suffix = comp[-1][0]
+        else:
+            base_suffix = comp[-1][1][:comp[-1][1].find(".")]
         prefix = comp[0][0]
         # If first letter has upper case, check if one of the affixes is a name:
         if prefix[0] == prefix[0].upper():
