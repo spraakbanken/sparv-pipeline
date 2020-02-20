@@ -1,3 +1,5 @@
+.snakemake
+
 sparv/__pycache__
 sparv/freeling.py
 sparv/util/__pycache__/

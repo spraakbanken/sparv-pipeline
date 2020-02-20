@@ -2,7 +2,7 @@ from sparv import segment, annotate
 
 tokenizer_config = "%s/bettertokenizer.sv" % sparv_model_dir
 
-rule paragraph:
+rule _paragraph:
     """Segment paragraphs."""
     input:
         TEXT = "{file}.@TEXT",
@@ -18,13 +18,13 @@ rule paragraph:
             segmenter=paragraph_segmenter
         )
 
-rule paragraphs:
-    """Expand paragraph rule to process all files."""
+rule paragraph:
+    """Expand _paragraph rule to process all files."""
     input:
         expand("%s/{file}.paragraph" % annotation_dir, file=input_files)
 
 
-rule sentence:
+rule _sentence:
     """Segment sentences."""
     input:
         TEXT = "{file}.@TEXT",
@@ -41,13 +41,13 @@ rule sentence:
             # model="$(sentence_model)"  $(pickled_model)
         )
 
-rule sentences:
-    """Expand sentence rule to process all files."""
+rule sentence:
+    """Expand _sentence rule to process all files."""
     input:
         expand("%s/{file}.sentence" % annotation_dir, file=input_files)
 
 
-rule token:
+rule _token:
     """Tokenise input."""
     input:
         TEXT = "{file}.@TEXT",
@@ -71,13 +71,13 @@ rule token:
             no_pickled_model=no_pickle
         )
 
-rule tokens:
-    """Expand token rule to process all files."""
+rule token:
+    """Expand _token rule to process all files."""
     input:
         expand("%s/{file}.token" % annotation_dir, file=input_files)
 
 
-rule word:
+rule _word:
     """Make word annotation."""
     input:
         TEXT = "{file}.@TEXT",
@@ -91,7 +91,7 @@ rule word:
             chunk=input.token
         )
 
-rule words:
-    """Expand word rule to process all files."""
+rule word:
+    """Expand _word rule to process all files."""
     input:
         expand("%s/{file}.word" % annotation_dir, file=input_files)

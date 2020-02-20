@@ -1,6 +1,6 @@
 from sparv import xmlparser
 
-rule TEXT:
+rule _TEXT:
     """Parse Sparv input (usually XML)."""
     params:
         existing_elements = [element for element, _annotation in existing_structural_elements]
@@ -19,7 +19,7 @@ rule TEXT:
             annotations=output.annotations
         )
 
-rule TEXTS:
-    """Expand TEXT rule to process all files."""
+rule TEXT:
+    """Expand _TEXT rule to process all files."""
     input:
         expand("%s/{file}.@TEXT" % annotation_dir, file=input_files)

@@ -1,7 +1,7 @@
 from sparv import cwb, number
 
 
-rule token_n:
+rule _token_n:
     input:
         TEXT = "{file}.@TEXT",
         token = "{file}.token",
@@ -14,13 +14,13 @@ rule token_n:
             chunks=input.token
         )
 
-rule token_ns:
-    """Expand token_n rule to process all files."""
+rule token_n:
+    """Expand _token_n rule to process all files."""
     input:
         expand("%s/{file}.token.n" % annotation_dir, file=input_files)
 
 
-rule vrt:
+rule _vrt:
     """Export to vrt."""
     params:
         positional_annotations_files = ["%s/{file}.%s" % (annotation_dir, annotation) for annotation in positional_annotations],
@@ -45,7 +45,7 @@ rule vrt:
         )
 
 
-rule vrts:
-    """Expand vrt rule to process all files."""
+rule vrt:
+    """Expand _vrt rule to process all files."""
     input:
         expand("%s/{file}.vrt" % annotation_dir, file=input_files)

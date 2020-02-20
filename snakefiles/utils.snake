@@ -1,6 +1,7 @@
 """Some utility rules."""
 
-rule list_files:
+rule files:
+    """List all input files."""
     run:
         input_filenames = [f[1][0] for f in snakemake.utils.listfiles("%s/{file}" % source_dir)]
         print("\nInput files:\n")
