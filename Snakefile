@@ -1,27 +1,29 @@
-"""Example Snakefile. This should be replaced by corpus specifik snakefiles later on."""
+"""
+Example Snakefile. This should be replaced by corpus specifik snakefiles later on.
 
+Run with e.g. `snakemake vrt`
+"""
+
+# Import default values
+include: "snakefiles/defaults.snake"
+
+# Copus location
 source_dir = "../testkorpus/original/xml"
 annotation_dir = "../testkorpus/annotations"
 
-input_files = [f[1][0] for f in snakemake.utils.listfiles("%s/{file}.xml" % source_dir)]
+# Info about input and resulting annotations
+positional_annotations = ["word", "pos", "msd"]
 
 existing_structural_elements = [("text", "text")]
-
-paragraph_chunk = "text"
-paragraph_segmenter = "blanklines"
-
-sentence_chunk = "paragraph"
-sentence_segmenter = "punkt_sentence"
-
-token_chunk = "sentence"
-token_segmenter = "better_word"
+structural_annotations = ["sentence", "paragraph", "text"]
 
 
-sparv_model_dir = "./models"
+sparv_model_dir = "./models"  # TODO: move this to defaults.snake! Use environment variable?
 
-
+# Import rule files
+# TODO: Build a mechanism that figures out automatically what files to import
 include: "snakefiles/utils.snake"
 include: "snakefiles/xmlparser.snake"
 include: "snakefiles/segment.snake"
 include: "snakefiles/hunpos.snake"
-# include: "snakefiles/cwb.snake"
+include: "snakefiles/cwb.snake"

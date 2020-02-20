@@ -1,0 +1,13 @@
+"""This file defines default values. They can be overwritten in the corpus specifig Snakefile."""
+
+# Default paragraph segmentation
+paragraph_chunk = "text"
+paragraph_segmenter = "blanklines"
+
+# Default sentence segmentation
+sentence_chunk = "paragraph"
+sentence_segmenter = "punkt_sentence"
+
+# Default tokenisation
+token_chunk = "sentence"
+token_segmenter = "better_word"

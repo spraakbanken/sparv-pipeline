@@ -130,7 +130,10 @@ def export(format, out, order, annotations_columns, annotations_structs, text=No
 
     if isinstance(columns, str):
         columns = columns.split()
-    structs_count = len(structs.split())
+    if isinstance(columns, str):
+        structs_count = len(structs.split())
+    else:
+        structs_count = len(structs)
     structs = parse_structural_attributes(structs)
 
     assert len(annotations_columns) == len(columns), "columns and annotations_columns must contain same number of values"

@@ -23,9 +23,11 @@ rule token_n:
 rule _vrt:
     """Export to vrt."""
     params:
-        positional_annotations_files = ["%s/{file}.%s" % (annotation_dir, annotation) for annotation in positional_annotations],
-        structural_annotations_files = ["{file}.%s" % annotation for annotation in structural_annotations]
+        positional_annotations_files = ["{file}.%s" % annotation for annotation in positional_annotations],
+        structural_annotations_files = ["{file}.%s" % annotation for annotation in structural_annotations],
     input:
+        ["{file}.%s" % i for i in positional_annotations],
+        ["{file}.%s" % i for i in structural_annotations],
         TEXT = "{file}.@TEXT",
         token = "{file}.token",
         token_order = "{file}.token.n",

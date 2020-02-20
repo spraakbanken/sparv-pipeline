@@ -1,5 +1,8 @@
 """Some utility rules."""
 
+# Input file pattern
+input_files = [f[1][0] for f in snakemake.utils.listfiles("%s/{file}.xml" % source_dir)]
+
 rule files:
     """List all input files."""
     run:
