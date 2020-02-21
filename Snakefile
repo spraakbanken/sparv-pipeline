@@ -8,8 +8,11 @@ import os
 include: os.path.join(os.getenv('SPARV_PIPELINE_PATH'), "config.snake")
 
 # Copus location
-source_dir = "../testkorpus/original/xml"
-annotation_dir = "../testkorpus/annotations"
+corpus_dir = "../testkorpus"
+source_dir = os.path.join(corpus_dir, "original", "xml")
+# TODO: move these somewhere else?
+annotation_dir = os.path.join(corpus_dir, "annotations")
+export_dir = os.path.join(corpus_dir, "export.original")
 
 # Info about input and resulting annotations
 positional_annotations = ["word", "pos", "msd"]

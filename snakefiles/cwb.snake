@@ -1,4 +1,5 @@
 from sparv import cwb, number
+import os
 
 
 rule _token_n:
@@ -17,7 +18,7 @@ rule _token_n:
 rule token_n:
     """Expand _token_n rule to process all files."""
     input:
-        expand("%s/{file}.token.n" % annotation_dir, file=input_files)
+        expand(os.path.join(annotation_dir, "{file}.token.n"), file=input_files)
 
 
 rule _vrt:
@@ -50,4 +51,41 @@ rule _vrt:
 rule vrt:
     """Expand _vrt rule to process all files."""
     input:
-        expand("%s/{file}.vrt" % annotation_dir, file=input_files)
+        expand(os.path.join(annotation_dir, "{file}.vrt"), file=input_files)
+
+
+rule _export:
+    """Export to xml."""
+    params:
+        positional_annotations_files = ["%s/{filename}.%s" % (annotation_dir, annotation) for annotation in positional_annotations],
+        structural_annotations_files = ["%s/{filename}.%s" % (annotation_dir, annotation) for annotation in structural_annotations],
+        fileid = "{filename}"
+    input:
+        ["%s/{filename}.%s" % (annotation_dir, i) for i in positional_annotations],
+        ["%s/{filename}.%s" % (annotation_dir, i) for i in structural_annotations],
+        TEXT = os.path.join(annotation_dir, "{filename}.@TEXT"),
+        token = os.path.join(annotation_dir, "{filename}.token"),
+        token_order = os.path.join(annotation_dir, "{filename}.token.n"),
+        fileids = os.path.join(annotation_dir, "fileids")
+    output:
+        os.path.join(export_dir, "{filename}.xml")
+    run:
+        cwb.export(
+            format="xml",
+            out=output[0],
+            order=input.token_order,
+            annotations_columns=params.positional_annotations_files,
+            annotations_structs=params.structural_annotations_files,
+            columns=positional_annotations,
+            structs=structural_annotations,
+            text=input.TEXT,
+            token=input.token,
+            fileid=params.fileid,
+            fileids=input.fileids
+        )
+
+
+rule export:
+    """Expand _export rule to process all files."""
+    input:
+        expand(os.path.join(export_dir, "{file}.xml"), file=input_files)

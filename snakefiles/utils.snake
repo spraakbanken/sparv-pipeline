@@ -1,18 +1,41 @@
 """Some utility rules."""
+import os
+
+from sparv import fileid
 
 # Input file pattern
-input_files = [f[1][0] for f in snakemake.utils.listfiles("%s/{file}.xml" % source_dir)]
+input_files = [f[1][0] for f in snakemake.utils.listfiles(os.path.join(source_dir, "{file}.xml"))]
+input_filepaths = [f[0] for f in snakemake.utils.listfiles(os.path.join(source_dir, "{file}.xml"))]
+
 
 rule files:
     """List all input files."""
     run:
-        input_filenames = [f[1][0] for f in snakemake.utils.listfiles("%s/{file}" % source_dir)]
         print("\nInput files:\n")
-        for f in input_filenames:
-            print(f)
+        for f in input_files:
+            print("  " + f)
         print()
 
 
 rule clean:
+    """Remove annotations and export files."""
     run:
         shell("rm -rf %s" % annotation_dir)
+        shell("rm -rf %s" % export_dir)
+
+
+rule fileids:
+    """Make file ID dictionary."""
+    params:
+        input_filenames = " ".join(input_files),
+    input:
+        # Rebuild fileids when a new file is added to original dir
+        input_filepaths
+    output:
+        os.path.join(annotation_dir, "fileids")
+    run:
+        snakemake.utils.makedirs(annotation_dir)
+        fileid.fileid(
+            out=output[0],
+            files=params.input_filenames
+        )
