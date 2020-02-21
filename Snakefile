@@ -3,9 +3,9 @@ Example Snakefile. This should be replaced by corpus specifik snakefiles later o
 
 Run with e.g. `snakemake vrt`
 """
-
-# Import default values
-include: "snakefiles/defaults.snake"
+# Import default configuration
+import os
+include: os.path.join(os.getenv('SPARV_PIPELINE_PATH'), "config.snake")
 
 # Copus location
 source_dir = "../testkorpus/original/xml"

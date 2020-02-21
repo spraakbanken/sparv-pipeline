@@ -1,8 +1,5 @@
 """This file defines default values. They can be overwritten in the corpus specifig Snakefile."""
 
-# TODO: Does this need to be a snakefile? Should this be placed somewhere else?
-# It fills a different purpose form the other snakefiles and needs to be imported first.
-
 import os
 
 # Default paths
