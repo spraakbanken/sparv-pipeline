@@ -17,9 +17,6 @@ positional_annotations = ["word", "pos", "msd"]
 existing_structural_elements = [("text", "text")]
 structural_annotations = ["sentence", "paragraph", "text"]
 
-
-sparv_model_dir = "./models"  # TODO: move this to defaults.snake! Use environment variable?
-
 # Import rule files
 # TODO: Build a mechanism that figures out automatically what files to import
 include: "snakefiles/utils.snake"

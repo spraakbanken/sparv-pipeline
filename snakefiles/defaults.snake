@@ -1,5 +1,14 @@
 """This file defines default values. They can be overwritten in the corpus specifig Snakefile."""
 
+# TODO: Does this need to be a snakefile? Should this be placed somewhere else?
+# It fills a different purpose form the other snakefiles and needs to be imported first.
+
+import os
+
+# Default paths
+sparv_pipeline_path = os.getenv('SPARV_PIPELINE_PATH')
+sparv_model_dir = os.path.join(sparv_pipeline_path, "models")
+
 # Default paragraph segmentation
 paragraph_chunk = "text"
 paragraph_segmenter = "blanklines"
