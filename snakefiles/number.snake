@@ -1,0 +1,39 @@
+from sparv import number, annotate
+import os
+
+rule _token_n:
+    "Make annotation with numbered tokens."
+    input:
+        TEXT = "{file}.@TEXT",
+        token = "{file}.token",
+    output:
+        "{file}.token.n"
+    run:
+        number.number_by_position(
+            out=output[0],
+            texts=input.TEXT,
+            chunks=input.token
+        )
+
+rule token_n:
+    """Expand _token_n rule to process all files."""
+    input:
+        expand(os.path.join(annotation_dir, "{file}.token.n"), file=input_files)
+
+
+rule _sentence_id:
+    "Make annotation with randomised sentence IDs."
+    input:
+        "{file}.sentence"
+    output:
+        "{file}.sentence.id"
+    run:
+        annotate.span_as_value(
+            out=output[0],
+            keys=input[0]
+        )
+
+rule sentence_id:
+    """Expand _sentence_id rule to process all files."""
+    input:
+        expand(os.path.join(annotation_dir, "{file}.sentence.id"), file=input_files)

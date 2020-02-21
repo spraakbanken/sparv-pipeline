@@ -2,25 +2,6 @@ from sparv import cwb, number
 import os
 
 
-rule _token_n:
-    input:
-        TEXT = "{file}.@TEXT",
-        token = "{file}.token",
-    output:
-        "{file}.token.n"
-    run:
-        number.number_by_position(
-            out=output[0],
-            texts=input.TEXT,
-            chunks=input.token
-        )
-
-rule token_n:
-    """Expand _token_n rule to process all files."""
-    input:
-        expand(os.path.join(annotation_dir, "{file}.token.n"), file=input_files)
-
-
 rule _vrt:
     """Export to vrt."""
     params:
@@ -42,7 +23,7 @@ rule _vrt:
             annotations_columns=params.positional_annotations_files,
             annotations_structs=params.structural_annotations_files,
             columns=positional_annotations,
-            structs=structural_annotations,
+            structs=[a.replace(".", ":") for a in structural_annotations],
             text=input.TEXT,
             token=input.token
         )

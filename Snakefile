@@ -16,13 +16,14 @@ export_dir = os.path.join(corpus_dir, "export.original")
 
 # Info about input and resulting annotations
 positional_annotations = ["word", "pos", "msd"]
-
-existing_structural_elements = [("text", "text")]
-structural_annotations = ["sentence", "paragraph", "text"]
+# Format: (input_elem:attribute, output_elem:attribute)
+existing_structural_elements = [("text", "text"), ("text:author", "text.author")]
+structural_annotations = ["sentence", "sentence.id", "paragraph", "text", "text.author"]
 
 # Import rule files
 # TODO: Build a mechanism that figures out automatically what files to import
 include: "snakefiles/utils.snake"
+include: "snakefiles/number.snake"
 include: "snakefiles/xmlparser.snake"
 include: "snakefiles/segment.snake"
 include: "snakefiles/hunpos.snake"
