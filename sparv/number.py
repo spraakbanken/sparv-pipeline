@@ -2,6 +2,7 @@
 from collections import defaultdict
 import random
 import sparv.util as util
+import sparv.parent
 import re
 from binascii import hexlify
 
@@ -68,13 +69,13 @@ def number_by_parent(out, chunks, parent_order, parent_children, prefix="", star
     read_chunks_and_write_new_ordering(out, chunks, order, prefix, start)
 
 
-def number_relative(out, parent_children, prefix="", start=START_DEFAULT):
+def number_relative(out, text, parent, child, prefix="", start=START_DEFAULT):
     """ Number chunks by their relative position within a parent. """
-    PARENT_CHILDREN = util.read_annotation(parent_children)
+    PARENT_CHILDREN = sparv.parent.annotate_children(text, out=None, parent=parent, child=child)
 
-    util.write_annotation(out, ((child, "%s%0*d" % (prefix, len(str(len(PARENT_CHILDREN[parent].split()) - 1 + start)), cnr))
+    util.write_annotation(out, ((child, "%s%0*d" % (prefix, len(str(len(PARENT_CHILDREN[parent]) - 1 + start)), cnr))
                                 for parent in PARENT_CHILDREN
-                                for cnr, child in enumerate(PARENT_CHILDREN[parent].split(), start)))
+                                for cnr, child in enumerate(PARENT_CHILDREN[parent], start)))
 
 
 def read_chunks_and_write_new_ordering(out, chunks, order, prefix="", start=START_DEFAULT):

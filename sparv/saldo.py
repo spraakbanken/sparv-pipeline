@@ -5,6 +5,7 @@ Adds annotations from Saldo.
 """
 
 import sparv.util as util
+import sparv.parent
 import itertools
 import pickle
 import re
@@ -14,7 +15,7 @@ import os
 # Annotate.
 
 
-def annotate(word, sentence, reference, out, annotations, models, msd="",
+def annotate(text, token, word, sentence, reference, out, annotations, models, msd="",
              delimiter="|", affix="|", precision=":%.3f", precision_filter=None, min_precision=0.0,
              skip_multiword=False, allow_multiword_overlap=False, word_separator="", lexicons=None):
     """Use the Saldo lexicon model (and optionally other older lexicons) to annotate pos-tagged words.
@@ -82,7 +83,8 @@ def annotate(word, sentence, reference, out, annotations, models, msd="",
     for out_file in out:
         util.clear_annotation(out_file)
 
-    sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
+    # sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
+    sentences = [sent for _, sent in sparv.parent.annotate_children(text, out=None, parent=sentence, child=token).items()]
     OUT = {}
 
     for sent in sentences:

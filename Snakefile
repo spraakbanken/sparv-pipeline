@@ -15,7 +15,7 @@ annotation_dir = os.path.join(corpus_dir, "annotations")
 export_dir = os.path.join(corpus_dir, "export.original")
 
 # Info about input and resulting annotations
-positional_annotations = ["word", "pos", "msd"]
+positional_annotations = ["word", "pos", "msd", "baseform", "saldo", "lemgram", "token.ref"]
 # Format: (input_elem:attribute, output_elem:attribute)
 existing_structural_elements = [("text", "text"), ("text:author", "text.author")]
 structural_annotations = ["sentence", "sentence.id", "paragraph", "text", "text.author"]
@@ -27,4 +27,5 @@ include: "snakefiles/number.snake"
 include: "snakefiles/xmlparser.snake"
 include: "snakefiles/segment.snake"
 include: "snakefiles/hunpos.snake"
+include: "snakefiles/saldo.snake"
 include: "snakefiles/cwb.snake"

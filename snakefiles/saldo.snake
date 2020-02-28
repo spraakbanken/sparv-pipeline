@@ -1,0 +1,50 @@
+from sparv import saldo
+
+
+saldo_model = "%s/saldo.pickle" % sparv_model_dir
+saldo_min_precision = 0.66
+saldo_precision_filter = "max"
+saldo_skip_multiword = False
+saldo_delimiter = "|"
+saldo_affix = "|"
+saldo_precision = ""
+
+
+rule _saldo_annotations:
+    """Do part-of-speech tagging with hunpos."""
+    input:
+        TEXT = "{file}.@TEXT",
+        token = "{file}.token",
+        word = "{file}.word",
+        msd = "{file}.msd",
+        ref = "{file}.token.ref",
+        sentence = "{file}.sentence"
+    output:
+        "{file}.baseform",
+        "{file}.saldo",
+        "{file}.lemgram"
+    run:
+        saldo.annotate(
+            out=" ".join(output),
+            annotations="gf lem saldo",
+            text=input.TEXT,
+            token=input.token,
+            word=input.word,
+            sentence=input.sentence,
+            msd=input.msd,
+            reference=input.ref,
+            models=saldo_model,
+            min_precision=saldo_min_precision,
+            precision_filter=saldo_precision_filter,
+            skip_multiword=saldo_skip_multiword,
+            delimiter=saldo_delimiter,
+            affix=saldo_affix,
+            precision=saldo_precision
+        )
+
+rule saldo_annotations:
+    """Expand _saldo_annotations rule to process all files."""
+    input:
+        expand("%s/{file}.saldo" % annotation_dir, file=input_files),
+        expand("%s/{file}.lemgram" % annotation_dir, file=input_files),
+        expand("%s/{file}.baseform" % annotation_dir, file=input_files)
