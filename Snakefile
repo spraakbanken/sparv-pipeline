@@ -15,10 +15,12 @@ annotation_dir = os.path.join(corpus_dir, "annotations")
 export_dir = os.path.join(corpus_dir, "export.original")
 
 # Info about input and resulting annotations
-positional_annotations = ["word", "pos", "msd", "baseform", "saldo", "lemgram", "token.ref"]
-# Format: (input_elem:attribute, output_elem:attribute)
-existing_structural_elements = [("text", "text"), ("text:author", "text.author")]
-structural_annotations = ["sentence", "sentence.id", "paragraph", "text", "text.author"]
+# Format: (input_elem.attribute, output_file)
+existing_structural_elements = ["text", "text:forfattare"]
+
+# Format: (input_file, output_attribute)
+positional_annotations = ["word", "pos", "msd", "baseform", "saldo", "lemgram", ("token.ref", "ref")]
+structural_annotations = ["sentence", "sentence.id", "paragraph", "text", ("text.forfattare", "text:author")]
 
 # Import rule files
 # TODO: Build a mechanism that figures out automatically what files to import

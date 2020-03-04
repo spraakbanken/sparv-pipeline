@@ -5,14 +5,14 @@ import os
 rule _vrt:
     """Export to vrt."""
     params:
-        positional_annotations_files = ["{file}.%s" % annotation for annotation in positional_annotations],
-        structural_annotations_files = ["{file}.%s" % annotation for annotation in structural_annotations],
+        annotations_columns = ["{file}.%s" % i[0] for i in _positional_annotations],
+        annotations_structs = ["{file}.%s" % i[0] for i in _structural_annotations]
     input:
-        ["{file}.%s" % i for i in positional_annotations],
-        ["{file}.%s" % i for i in structural_annotations],
+        ["{file}.%s" % i[0] for i in _positional_annotations],
+        ["{file}.%s" % i[0] for i in _structural_annotations],
         TEXT = "{file}.@TEXT",
         token = "{file}.token",
-        token_order = "{file}.token.n",
+        token_order = "{file}.token.n"
     output:
         "{file}.vrt"
     run:
@@ -20,10 +20,10 @@ rule _vrt:
             format="vrt",
             out=output[0],
             order=input.token_order,
-            annotations_columns=params.positional_annotations_files,
-            annotations_structs=params.structural_annotations_files,
-            columns=positional_annotations,
-            structs=[a.replace(".", ":") for a in structural_annotations],
+            annotations_columns=params.annotations_columns,
+            annotations_structs=params.annotations_structs,
+            columns=[i[1] for i in _positional_annotations],
+            structs=[i[1] for i in _structural_annotations],
             text=input.TEXT,
             token=input.token
         )
@@ -38,12 +38,12 @@ rule vrt:
 rule _export:
     """Export to xml."""
     params:
-        positional_annotations_files = ["%s/{filename}.%s" % (annotation_dir, annotation) for annotation in positional_annotations],
-        structural_annotations_files = ["%s/{filename}.%s" % (annotation_dir, annotation) for annotation in structural_annotations],
+        annotations_columns = ["%s/{filename}.%s" % (annotation_dir, i[0]) for i in _positional_annotations],
+        annotations_structs = ["%s/{filename}.%s" % (annotation_dir, i[0]) for i in _structural_annotations],
         fileid = "{filename}"
     input:
-        ["%s/{filename}.%s" % (annotation_dir, i) for i in positional_annotations],
-        ["%s/{filename}.%s" % (annotation_dir, i) for i in structural_annotations],
+        ["%s/{filename}.%s" % (annotation_dir, i[0]) for i in _positional_annotations],
+        ["%s/{filename}.%s" % (annotation_dir, i[0]) for i in _structural_annotations],
         TEXT = os.path.join(annotation_dir, "{filename}.@TEXT"),
         token = os.path.join(annotation_dir, "{filename}.token"),
         token_order = os.path.join(annotation_dir, "{filename}.token.n"),
@@ -55,10 +55,10 @@ rule _export:
             format="xml",
             out=output[0],
             order=input.token_order,
-            annotations_columns=params.positional_annotations_files,
-            annotations_structs=params.structural_annotations_files,
-            columns=positional_annotations,
-            structs=structural_annotations,
+            annotations_columns=params.annotations_columns,
+            annotations_structs=params.annotations_structs,
+            columns=[i[1] for i in _positional_annotations],
+            structs=[i[1] for i in _structural_annotations],
             text=input.TEXT,
             token=input.token,
             fileid=params.fileid,

@@ -2,12 +2,10 @@ from sparv import xmlparser
 
 rule _TEXT:
     """Parse Sparv input (usually XML)."""
-    params:
-        existing_elements = [element for element, _annotation in existing_structural_elements]
     input:
         "%s/{file}.xml" % source_dir
     output:
-        annotations = ["%s/{file}.%s" % (annotation_dir, annotation) for _element, annotation in existing_structural_elements],
+        annotations = ["%s/{file}.%s" % (annotation_dir, i[1]) for i in _existing_structural_elements],
         TEXT = "%s/{file}.@TEXT" % annotation_dir
     run:
         shell("mkdir -p %s -m 775" % annotation_dir),
@@ -15,7 +13,7 @@ rule _TEXT:
             source=input[0],
             text=output.TEXT,
             prefix="001",
-            elements=params.existing_elements,
+            elements=[i[0] for i in _existing_structural_elements],
             annotations=output.annotations
         )
 
