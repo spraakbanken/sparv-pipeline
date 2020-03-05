@@ -32,7 +32,7 @@ def sentiment(sense, out_scores, out_labels, model, max_decimals=6, lexicon=None
         # Get set of senses for each token and sort them according to their probabilities
         token_senses = [tuple(s.rsplit(util.SCORESEP, 1)) if util.SCORESEP in s else (s, -1.0)
                         for s in sense[token].split(util.DELIM) if s]
-        token_senses.sort(key=lambda x: x[1], reverse=True)
+        token_senses.sort(key=lambda x: float(x[1]), reverse=True)
 
         # Lookup the sentiment score for the most probable sense and assign a sentiment label
         if token_senses:
