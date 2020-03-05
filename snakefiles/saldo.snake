@@ -21,8 +21,8 @@ rule _saldo_annotations:
         sentence = "{file}.sentence"
     output:
         "{file}.baseform",
-        "{file}.saldo",
-        "{file}.lemgram"
+        "{file}.lemgram",
+        "{file}.%s" % _sense
     run:
         saldo.annotate(
             out=" ".join(output),
@@ -45,6 +45,6 @@ rule _saldo_annotations:
 rule saldo_annotations:
     """Expand _saldo_annotations rule to process all files."""
     input:
-        expand("%s/{file}.saldo" % annotation_dir, file=input_files),
+        expand("%s/{file}.%s" % (annotation_dir, _sense), file=input_files),
         expand("%s/{file}.lemgram" % annotation_dir, file=input_files),
         expand("%s/{file}.baseform" % annotation_dir, file=input_files)

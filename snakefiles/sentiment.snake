@@ -1,0 +1,25 @@
+from sparv import sentiment
+
+sentiment_model = "%s/sensaldo.pickle" % sparv_model_dir
+
+
+rule _sentiment:
+    input:
+        saldo = "{file}.%s" % _saldo_ids,
+        model = sentiment_model
+    output:
+        sentiment = "{file}.sentiment",
+        sentimentclass = "{file}.sentimentclass"
+    run:
+        sentiment.sentiment(
+            out_scores=output.sentiment,
+            out_labels=output.sentimentclass,
+            sense=input.saldo,
+            model=input.model
+        )
+
+rule sentiment:
+    """Expand _sentiment rule to process all files."""
+    input:
+        expand("%s/{file}.sentiment" % annotation_dir, file=input_files),
+        expand("%s/{file}.sentimentclass" % annotation_dir, file=input_files)

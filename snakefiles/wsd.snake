@@ -1,0 +1,40 @@
+from sparv import wsd
+
+wsd_jar = "%s/wsd/saldowsd.jar" % sparv_bin_dir
+wsd_sense_model = "%s/wsd/ALL_512_128_w10_A2_140403_ctx1.bin" % sparv_model_dir
+wsd_context_model = "%s/wsd/lem_cbow0_s512_w10_NEW2_ctx.bin" % sparv_model_dir
+
+rule _sense:
+    """Do part-of-speech tagging with hunpos."""
+    input:
+        TEXT = "{file}.@TEXT",
+        token = "{file}.token",
+        lemgram = "{file}.lemgram",
+        saldo = "{file}.sense_tmp",
+        word = "{file}.word",
+        ref = "{file}.token.ref",
+        sentence = "{file}.sentence",
+        pos = "{file}.pos"
+    output:
+        "{file}.sense"
+    run:
+        print(input.saldo)
+        wsd.run_wsd(
+            wsdjar=wsd_jar,
+            sense_model=wsd_sense_model,
+            context_model=wsd_context_model,
+            out=output[0],
+            sentence=input.sentence,
+            word=input.word,
+            ref=input.ref,
+            lemgram=input.lemgram,
+            saldo=input.saldo,
+            text=input.TEXT,
+            token=input.token,
+            pos=input.pos
+        )
+
+rule sense:
+    """Expand _sense rule to process all files."""
+    input:
+        expand("%s/{file}.sense" % annotation_dir, file=input_files)
