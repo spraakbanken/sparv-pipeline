@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import sparv.util as util
+import sparv.parent
 
 SENT_SEP = "$SENT$"
 
 
-def run_wsd(wsdjar, sense_model, context_model, out, sentence, word, ref, lemgram, saldo, pos, text,
+def run_wsd(wsdjar, sense_model, context_model, out, sentence, word, ref, lemgram, saldo, pos, text, token,
             sensefmt=util.SCORESEP + "%.3f", default_prob="-1", encoding=util.UTF8):
     """
     Runs the word sense disambiguation tool (saldowsd.jar) to add probabilities to the saldo annotation.
@@ -29,9 +30,10 @@ def run_wsd(wsdjar, sense_model, context_model, out, sentence, word, ref, lemgra
     POS = util.read_annotation(pos)
     textpos = util.read_corpus_text(text)[1]
 
+    sentences = sparv.parent.annotate_children(text, None, sentence, token, ignore_missing_parent=True)
     # Sort sentences according to their text position because WSD is context dependent.
-    sentences = sorted(util.read_annotation_iteritems(sentence), key=lambda x: textpos[util.edgeStart(x[0])])
-    sentences = [sent.split() for _, sent in sentences]
+    sentences = sorted(list(sentences.items()), key=lambda x: textpos[util.edgeStart(x[0])])
+    sentences = [sent for _, sent in sentences]
 
     # Start WSD process
     process = wsd_start(wsdjar, sense_model, context_model, encoding)
@@ -100,7 +102,6 @@ def build_input(sentences, WORD, REF, LEMGRAM, SALDO, POS):
             rows.append(row)
         # Append empty row as sentence seperator
         rows.append("\t".join(["_", "_", "_", "_", SENT_SEP, "_"]))
-
     return "\n".join(rows)
 
 
