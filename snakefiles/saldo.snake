@@ -11,7 +11,7 @@ saldo_precision = ""
 
 
 rule _saldo_annotations:
-    """Do part-of-speech tagging with hunpos."""
+    "Do SALDO annotations (baseform, lemgram, saldo) for {file}."
     input:
         TEXT = "{file}.@TEXT",
         token = "{file}.token",
@@ -43,7 +43,7 @@ rule _saldo_annotations:
         )
 
 rule saldo_annotations:
-    """Expand _saldo_annotations rule to process all files."""
+    "Do SALDO annotations (baseform, lemgram, saldo) for all files."
     input:
         expand("%s/{file}.%s" % (annotation_dir, _sense), file=input_files),
         expand("%s/{file}.lemgram" % annotation_dir, file=input_files),

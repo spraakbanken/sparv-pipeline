@@ -1,9 +1,9 @@
 from sparv import segment, annotate
 
-tokenizer_config = "%s/bettertokenizer.sv" % sparv_model_dir
+_tokenizer_config = "%s/bettertokenizer.sv" % sparv_model_dir
 
 rule _paragraph:
-    """Segment paragraphs."""
+    "Segment paragraphs in {file}."
     input:
         TEXT = "{file}.@TEXT",
         chunk = "{file}.%s" % paragraph_chunk
@@ -19,13 +19,13 @@ rule _paragraph:
         )
 
 rule paragraph:
-    """Expand _paragraph rule to process all files."""
+    "Segment paragraphs in all files."
     input:
         expand("%s/{file}.paragraph" % annotation_dir, file=input_files)
 
 
 rule _sentence:
-    """Segment sentences."""
+    "Segment sentences in {file}."
     input:
         TEXT = "{file}.@TEXT",
         chunk = "{file}.%s" % sentence_chunk
@@ -42,13 +42,13 @@ rule _sentence:
         )
 
 rule sentence:
-    """Expand _sentence rule to process all files."""
+    "Segment sentences in all files."
     input:
         expand("%s/{file}.sentence" % annotation_dir, file=input_files)
 
 
 rule _token:
-    """Tokenise input."""
+    "Tokenise text in {file}."
     input:
         TEXT = "{file}.@TEXT",
         chunk = "{file}.%s" % token_chunk
@@ -56,7 +56,7 @@ rule _token:
         "{file}.token"
     run:
         # Set no_pickled_model to false if default tokenizer is used
-        if tokenizer_config.endswith("bettertokenizer.sv"):
+        if _tokenizer_config.endswith("bettertokenizer.sv"):
             no_pickle = True
         else:
             no_pickle = False
@@ -67,18 +67,18 @@ rule _token:
             text=input.TEXT,
             chunk=input.chunk,
             segmenter=token_segmenter,
-            model=tokenizer_config,
+            model=_tokenizer_config,
             no_pickled_model=no_pickle
         )
 
 rule token:
-    """Expand _token rule to process all files."""
+    "Tokenise text in all files."
     input:
         expand("%s/{file}.token" % annotation_dir, file=input_files)
 
 
 rule _word:
-    """Make word annotation."""
+    "Make word annotation for {file}."
     input:
         TEXT = "{file}.@TEXT",
         token = "{file}.token"
@@ -92,6 +92,6 @@ rule _word:
         )
 
 rule word:
-    """Expand _word rule to process all files."""
+    "Make word annotation for all files."
     input:
         expand("%s/{file}.word" % annotation_dir, file=input_files)

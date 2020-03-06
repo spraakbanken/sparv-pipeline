@@ -27,7 +27,7 @@ else:
 # Auxiliary rules
 
 rule files:
-    """List all input files."""
+    "List all input files."
     run:
         print("\nInput files:\n")
         for f in input_files:
@@ -36,14 +36,14 @@ rule files:
 
 
 rule clean:
-    """Remove annotations and export files."""
+    "Remove annotations and export files."
     run:
         shell("rm -rf %s" % annotation_dir)
         shell("rm -rf %s" % export_dir)
 
 
 rule fileids:
-    """Make file ID dictionary."""
+    "Make file ID dictionary."
     params:
         input_filenames = " ".join(input_files),
     input:

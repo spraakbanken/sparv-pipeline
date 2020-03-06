@@ -7,7 +7,7 @@ hunpos_morphtable_patterns = "%s/hunpos.suc.patterns" % sparv_model_dir
 
 
 rule _hunpos_msd:
-    """Do part-of-speech tagging with hunpos."""
+    "Do part-of-speech tagging with hunpos on {file}."
     input:
         TEXT = "{file}.@TEXT",
         word = "{file}.word",
@@ -26,13 +26,13 @@ rule _hunpos_msd:
         )
 
 rule hunpos_msd:
-    """Expand _hunpos_msd rule to process all files."""
+    "Do part-of-speech tagging with hunpos on all files."
     input:
         expand("%s/{file}.msd" % annotation_dir, file=input_files)
 
 
 rule _pos_from_msd:
-    """Extract part-of-speech from MSD."""
+    """Extract part-of-speech from MSD for {file}."""
     input:
         "{file}.msd"
     output:
@@ -46,6 +46,6 @@ rule _pos_from_msd:
         )
 
 rule pos_from_msd:
-    """Expand _pos_from_msd rule to process all files."""
+    "Extract part-of-speech from MSD for all files."
     input:
         expand("%s/{file}.pos" % annotation_dir, file=input_files)

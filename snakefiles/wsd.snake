@@ -5,7 +5,7 @@ wsd_sense_model = "%s/wsd/ALL_512_128_w10_A2_140403_ctx1.bin" % sparv_model_dir
 wsd_context_model = "%s/wsd/lem_cbow0_s512_w10_NEW2_ctx.bin" % sparv_model_dir
 
 rule _sense:
-    """Do part-of-speech tagging with hunpos."""
+    "Do word sense disambiguation."
     input:
         TEXT = "{file}.@TEXT",
         token = "{file}.token",
@@ -35,6 +35,6 @@ rule _sense:
         )
 
 rule sense:
-    """Expand _sense rule to process all files."""
+    "Expand _sense rule to process all files."
     input:
         expand("%s/{file}.sense" % annotation_dir, file=input_files)

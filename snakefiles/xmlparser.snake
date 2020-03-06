@@ -1,7 +1,7 @@
 from sparv import xmlparser
 
 rule _TEXT:
-    """Parse Sparv input (usually XML)."""
+    "Parse Sparv input (usually XML)."
     input:
         "%s/{file}.xml" % source_dir
     output:
@@ -18,6 +18,6 @@ rule _TEXT:
         )
 
 rule TEXT:
-    """Expand _TEXT rule to process all files."""
+    "Expand _TEXT rule to process all files."
     input:
         expand("%s/{file}.@TEXT" % annotation_dir, file=input_files)

@@ -2,7 +2,7 @@ from sparv import number, annotate
 import os
 
 rule _token_n:
-    "Make annotation with numbered tokens."
+    "Make annotation with numbered tokens for {file}."
     input:
         TEXT = "{file}.@TEXT",
         token = "{file}.token",
@@ -16,12 +16,13 @@ rule _token_n:
         )
 
 rule token_n:
-    """Expand _token_n rule to process all files."""
+    "Make annotation with numbered tokens for all files."
     input:
         expand(os.path.join(annotation_dir, "{file}.token.n"), file=input_files)
 
 
 rule _token_ref:
+    "Number tokens according to their position in sentence for {file}."
     input:
         TEXT = "{file}.@TEXT",
         token = "{file}.token",
@@ -37,13 +38,13 @@ rule _token_ref:
         )
 
 rule token_ref:
-    """Expand _token_ref rule to process all files."""
+    "Number tokens according to their position in sentence for all files."
     input:
         expand(os.path.join(annotation_dir, "{file}.token.ref"), file=input_files)
 
 
 rule _sentence_id:
-    "Make annotation with randomised sentence IDs."
+    "Make annotation with randomised sentence IDs for {file}."
     input:
         "{file}.sentence"
     output:
@@ -55,6 +56,6 @@ rule _sentence_id:
         )
 
 rule sentence_id:
-    """Expand _sentence_id rule to process all files."""
+    "Make annotation with randomised sentence IDs for all files."
     input:
         expand(os.path.join(annotation_dir, "{file}.sentence.id"), file=input_files)

@@ -3,7 +3,7 @@ import os
 
 
 rule _vrt:
-    """Export to vrt."""
+    "Export {file} to vrt format."
     params:
         annotations_columns = ["{file}.%s" % i[0] for i in _positional_annotations],
         annotations_structs = ["{file}.%s" % i[0] for i in _structural_annotations]
@@ -30,13 +30,13 @@ rule _vrt:
 
 
 rule vrt:
-    """Expand _vrt rule to process all files."""
+    "Export all input files to vrt format."
     input:
         expand(os.path.join(annotation_dir, "{file}.vrt"), file=input_files)
 
 
 rule _export:
-    """Export to xml."""
+    "Export {file} to xml."
     params:
         annotations_columns = ["%s/{filename}.%s" % (annotation_dir, i[0]) for i in _positional_annotations],
         annotations_structs = ["%s/{filename}.%s" % (annotation_dir, i[0]) for i in _structural_annotations],
@@ -67,6 +67,6 @@ rule _export:
 
 
 rule export:
-    """Expand _export rule to process all files."""
+    "Export all input files to xml."
     input:
         expand(os.path.join(export_dir, "{file}.xml"), file=input_files)

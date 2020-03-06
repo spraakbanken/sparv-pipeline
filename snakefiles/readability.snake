@@ -6,7 +6,7 @@ _readability_verb_pos = "PN PRON AB ADV VB VERB" # pronouns, adverbs, verbs
 
 
 rule _lix:
-    """Calculate the readability index for a text."""
+    "Calculate the readability index for a text."
     input:
         token_n = "{file}.token.n",
         text = "{file}.text",
@@ -31,7 +31,7 @@ rule _lix:
         )
 
 rule _ovix:
-    """Calculate the word variation index for a text."""
+    "Calculate the word variation index for a text."
     input:
         token_n = "{file}.token.n",
         text = "{file}.text",
@@ -54,7 +54,7 @@ rule _ovix:
         )
 
 rule _nk:
-    """Calculate the nominal ratio of a text."""
+    "Calculate the nominal ratio of a text."
     input:
         token_n = "{file}.token.n",
         text = "{file}.text",
@@ -76,7 +76,7 @@ rule _nk:
         )
 
 rule readability:
-    """Build readability targets for all input files."""
+    "Build readability targets for all input files."
     input:
         expand("%s/{file}.text.lix" % annotation_dir, file=input_files),
         expand("%s/{file}.text.ovix" % annotation_dir, file=input_files),
