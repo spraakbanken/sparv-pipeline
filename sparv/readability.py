@@ -5,6 +5,7 @@ Readability measures (läsbarhetsmått).
 """
 import sparv.util as util
 import sparv.cwb as cwb
+import sparv.parent as parent
 from math import log
 
 
@@ -27,10 +28,11 @@ def actual_words(cols, skip_pos):
             yield word
 
 
-def lix_annot(order, text, parent_text, sentence, parent_sentence, words, pos, out, skip_pos="MAD MID PAD", fmt="%.2f"):
-    structs = [(text, parent_text), (sentence, parent_sentence)]
+def lix_annot(order, text, TEXT, token, sentence, words, pos, out, skip_pos="MAD MID PAD", fmt="%.2f"):
+    structs = [text, sentence]
     columns = [words, pos]
-    texts = cwb.vrt_iterate(*cwb.tokens_and_vrt(order, structs, columns),
+
+    texts = cwb.vrt_iterate(*cwb.tokens_and_vrt(order, structs, columns, TEXT, token),
                             trail=[0, 1])
 
     util.write_annotation(out, (
@@ -64,10 +66,10 @@ def lix(sentences):
         return w / s + 100 * l / w
 
 
-def ovix_annot(order, text, parent_text, words, pos, out, skip_pos="MAD MID PAD", fmt="%.2f"):
-    structs = [(text, parent_text)]
+def ovix_annot(order, text, TEXT, token, words, pos, out, skip_pos="MAD MID PAD", fmt="%.2f"):
+    structs = [text]
     columns = [words, pos]
-    texts = cwb.vrt_iterate(*cwb.tokens_and_vrt(order, structs, columns))
+    texts = cwb.vrt_iterate(*cwb.tokens_and_vrt(order, structs, columns, TEXT, token))
     util.write_annotation(out, (
         (span, fmt % ovix(actual_words(cols, skip_pos)))
         for (_, span), cols in texts
@@ -107,10 +109,10 @@ def ovix(words):
         return log(w) / log(2 - log(uw) / log(w))
 
 
-def nominal_ratio_annot(order, text, parent_text, pos, out, noun_pos="NN PP PC", verb_pos="PN AB VB", fmt="%.2f"):
-    structs = [(text, parent_text)]
+def nominal_ratio_annot(order, text, TEXT, token, pos, out, noun_pos="NN PP PC", verb_pos="PN AB VB", fmt="%.2f"):
+    structs = [text]
     columns = [pos]
-    texts = cwb.vrt_iterate(*cwb.tokens_and_vrt(order, structs, columns))
+    texts = cwb.vrt_iterate(*cwb.tokens_and_vrt(order, structs, columns, TEXT, token))
     util.write_annotation(out, (
         (span, fmt % nominal_ratio([col[0] for col in cols], noun_pos, verb_pos))
         for (_, span), cols in texts
