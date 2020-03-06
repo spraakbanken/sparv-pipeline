@@ -20,7 +20,7 @@ existing_structural_elements = ["text", "text:forfattare"]
 
 # Format: (input_file, output_attribute)
 positional_annotations = ["word", "pos", "msd", "baseform", "sense", "lemgram", "sentiment", "sentimentclass", ("token.ref", "ref")]
-structural_annotations = ["sentence", "sentence.id", "paragraph", "text", ("text.forfattare", "text:author")]
+structural_annotations = ["sentence", "sentence.id", "paragraph", "text", ("text.forfattare", "text:author"), "text.lix", "text.ovix", "text.nk"]
 
 # Import rule files
 # TODO: Build a mechanism that figures out automatically what files to import
@@ -33,3 +33,4 @@ include: "snakefiles/saldo.snake"
 include: "snakefiles/wsd.snake"
 include: "snakefiles/sentiment.snake"
 include: "snakefiles/cwb.snake"
+include: "snakefiles/readability.snake"

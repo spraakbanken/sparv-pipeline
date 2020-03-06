@@ -1,0 +1,83 @@
+from sparv import readability
+
+_readability_non_word_pos = "MAD MID PAD PUNCT SYM"
+_readability_noun_pos = "NN NOUN PP ADP PC" # nouns, prepositions, participles
+_readability_verb_pos = "PN PRON AB ADV VB VERB" # pronouns, adverbs, verbs
+
+
+rule _lix:
+    """Calculate the readability index for a text."""
+    input:
+        token_n = "{file}.token.n",
+        text = "{file}.text",
+        TEXT = "{file}.@TEXT",
+        token = "{file}.token",
+        pos = "{file}.pos",
+        word = "{file}.word",
+        sentence = "{file}.sentence",
+    output:
+        "{file}.text.lix"
+    run:
+        readability.lix_annot(
+            order=input.token_n,
+            text=input.text,
+            TEXT=input.TEXT,
+            token=input.token,
+            words=input.word,
+            pos=input.pos,
+            out=output[0],
+            sentence=input.sentence,
+            skip_pos=_readability_non_word_pos
+        )
+
+rule _ovix:
+    """Calculate the word variation index for a text."""
+    input:
+        token_n = "{file}.token.n",
+        text = "{file}.text",
+        TEXT = "{file}.@TEXT",
+        token = "{file}.token",
+        word = "{file}.word",
+        pos = "{file}.pos"
+    output:
+        "{file}.text.ovix"
+    run:
+        readability.ovix_annot(
+            order=input.token_n,
+            text=input.text,
+            TEXT=input.TEXT,
+            token=input.token,
+            words=input.word,
+            pos=input.pos,
+            out=output[0],
+            skip_pos=_readability_non_word_pos
+        )
+
+rule _nk:
+    """Calculate the nominal ratio of a text."""
+    input:
+        token_n = "{file}.token.n",
+        text = "{file}.text",
+        TEXT = "{file}.@TEXT",
+        token = "{file}.token",
+        pos = "{file}.pos"
+    output:
+        "{file}.text.nk"
+    run:
+        readability.nominal_ratio_annot(
+            order=input.token_n,
+            text=input.text,
+            TEXT=input.TEXT,
+            token=input.token,
+            pos=input.pos,
+            out=output[0],
+            noun_pos=_readability_noun_pos,
+            verb_pos=_readability_verb_pos
+        )
+
+rule readability:
+    """Build readability targets for all input files."""
+    input:
+        expand("%s/{file}.text.lix" % annotation_dir, file=input_files),
+        expand("%s/{file}.text.ovix" % annotation_dir, file=input_files),
+        expand("%s/{file}.text.nk" % annotation_dir, file=input_files)
