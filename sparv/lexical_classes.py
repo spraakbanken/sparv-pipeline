@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sparv.util as util
+import sparv.parent as parent
 import os
 import sys
 import subprocess
@@ -138,13 +139,13 @@ def pos_ok(token_pos, tokid, pos_limit):
         return True
 
 
-def annotate_doc(out, in_token_annotation, text_children, saldoids=None, cutoff=10, types=False,
+def annotate_doc(out, in_token_annotation, TEXT, text, token, saldoids=None, cutoff=10, types=False,
                  delimiter=util.DELIM, affix=util.AFFIX, freq_model=None, decimals=3):
     """
     Annotate documents with lexical classes.
     - out: resulting annotation file
     - in_token_annotation: existing annotation with lexical classes on token level.
-    - text_children: existing annotation for text-IDs and their word children.
+    - TEXT, text, token: existing annotations for the text, text-IDs and the tokens.
     - saldoids: existing annotation with saldoIDs, needed when types=True.
     - cutoff: value for limiting the resulting bring classes.
               The result will contain all words with the top x frequencies.
@@ -157,7 +158,7 @@ def annotate_doc(out, in_token_annotation, text_children, saldoids=None, cutoff=
     """
     cutoff = int(cutoff)
     types = util.strtobool(types)
-    text_children = util.read_annotation(text_children)
+    text_children = parent.annotate_children(TEXT, None, text, token)
     classes = util.read_annotation(in_token_annotation)
     sense = util.read_annotation(saldoids) if types else None
 
@@ -169,7 +170,6 @@ def annotate_doc(out, in_token_annotation, text_children, saldoids=None, cutoff=
     for textid, words in text_children.items():
         seen_types = set()
         class_freqs = defaultdict(int)
-        words = words.split()
 
         for tokid in words:
             # Count only sense types

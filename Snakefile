@@ -19,8 +19,8 @@ export_dir = os.path.join(corpus_dir, "export.original")
 existing_structural_elements = ["text", "text:forfattare"]
 
 # Format: (input_file, output_attribute)
-positional_annotations = ["word", "pos", "msd", "baseform", "sense", "lemgram", "compwf", "complemgram", "sentiment", "sentimentclass", ("token.ref", "ref")]
-structural_annotations = ["ne.ex", "ne.type", "ne.subtype", "ne.name", "sentence", "sentence.id", "paragraph", "text", ("text.forfattare", "text:author"), "text.lix", "text.ovix", "text.nk"]
+positional_annotations = ["word", "pos", "msd", "baseform", "sense", "lemgram", "compwf", "complemgram", "sentiment", "sentimentclass", ("token.ref", "ref"), ("token.blingbring", "blingbring"), ("token.swefn", "swefn")]
+structural_annotations = ["ne.ex", "ne.type", "ne.subtype", "ne.name", "sentence", "sentence.id", "paragraph", "text", ("text.forfattare", "text:author"), "text.lix", "text.ovix", "text.nk", "text.blingbring", "text.swefn"]
 
 # Import rule files
 # TODO: Build a mechanism that figures out automatically what files to import
@@ -36,3 +36,4 @@ include: "snakefiles/sentiment.snake"
 include: "snakefiles/swener.snake"
 include: "snakefiles/cwb.snake"
 include: "snakefiles/readability.snake"
+include: "snakefiles/lexical_classes.snake"
