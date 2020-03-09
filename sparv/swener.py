@@ -3,13 +3,14 @@ import re
 import xml.sax.saxutils
 import xml.etree.cElementTree as etree
 import sparv.util as util
+import sparv.parent as parent
 
 RESTART_THRESHOLD_LENGTH = 64000
 SENT_SEP = "\n"
 TOK_SEP = " "
 
 
-def tag_ne(out_ne_ex, out_ne_type, out_ne_subtype, out_ne_name, word, sentence, encoding=util.UTF8, process_dict=None):
+def tag_ne(out_ne_ex, out_ne_type, out_ne_subtype, out_ne_name, word, sentence, text, token, encoding=util.UTF8, process_dict=None):
     """
     Tag named entities using HFST-SweNER.
     SweNER is either run in an already started process defined in
@@ -29,8 +30,11 @@ def tag_ne(out_ne_ex, out_ne_type, out_ne_subtype, out_ne_name, word, sentence, 
     #         process = swenerstart("", encoding, verbose=False)
     #         process_dict['process'] = process
 
+    # Get sentence annotation
+    sentence = parent.annotate_children(text, None, sentence, token, ignore_missing_parent=True)
+
     # Collect all text
-    sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
+    sentences = [sent for _, sent in sentence.items()]
     word_file = util.read_annotation(word)
     stdin = SENT_SEP.join(TOK_SEP.join(word_file[tokid] for tokid in sent)
                           for sent in sentences)
