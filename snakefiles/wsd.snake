@@ -5,7 +5,7 @@ wsd_sense_model = "%s/wsd/ALL_512_128_w10_A2_140403_ctx1.bin" % sparv_model_dir
 wsd_context_model = "%s/wsd/lem_cbow0_s512_w10_NEW2_ctx.bin" % sparv_model_dir
 
 rule _sense:
-    "Do word sense disambiguation."
+    "Do word sense disambiguation for {file}."
     input:
         TEXT = "{file}.@TEXT",
         token = "{file}.token",
@@ -18,7 +18,6 @@ rule _sense:
     output:
         "{file}.sense"
     run:
-        print(input.saldo)
         wsd.run_wsd(
             wsdjar=wsd_jar,
             sense_model=wsd_sense_model,
@@ -35,6 +34,6 @@ rule _sense:
         )
 
 rule sense:
-    "Expand _sense rule to process all files."
+    "Do word sense disambiguation for all files."
     input:
         expand("%s/{file}.sense" % annotation_dir, file=input_files)
