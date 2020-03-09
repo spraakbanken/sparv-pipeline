@@ -19,7 +19,7 @@ export_dir = os.path.join(corpus_dir, "export.original")
 existing_structural_elements = ["text", "text:forfattare"]
 
 # Format: (input_file, output_attribute)
-positional_annotations = ["word", "pos", "msd", "baseform", "sense", "lemgram", "sentiment", "sentimentclass", ("token.ref", "ref")]
+positional_annotations = ["word", "pos", "msd", "baseform", "sense", "lemgram", "compwf", "complemgram", "sentiment", "sentimentclass", ("token.ref", "ref")]
 structural_annotations = ["ne.ex", "ne.type", "ne.subtype", "ne.name", "sentence", "sentence.id", "paragraph", "text", ("text.forfattare", "text:author"), "text.lix", "text.ovix", "text.nk"]
 
 # Import rule files
@@ -30,6 +30,7 @@ include: "snakefiles/xmlparser.snake"
 include: "snakefiles/segment.snake"
 include: "snakefiles/hunpos.snake"
 include: "snakefiles/saldo.snake"
+include: "snakefiles/compound.snake"
 include: "snakefiles/wsd.snake"
 include: "snakefiles/sentiment.snake"
 include: "snakefiles/swener.snake"

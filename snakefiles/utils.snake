@@ -23,6 +23,13 @@ else:
     _sense = "sense_tmp"
     _saldo_ids = "sense"
 
+# If compound analysis is omitted, do not create baseform_tmp
+if any(x in [i[0] for i in _positional_annotations] for x in ["compwf", "complemgram"]):
+    _baseform = "baseform_tmp"
+else:
+    _baseform = "baseform"
+
+
 ################################################################################
 # Auxiliary rules
 

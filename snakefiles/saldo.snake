@@ -20,7 +20,7 @@ rule _saldo_annotations:
         ref = "{file}.token.ref",
         sentence = "{file}.sentence"
     output:
-        "{file}.baseform",
+        "{file}.%s" % _baseform,
         "{file}.lemgram",
         "{file}.%s" % _sense
     run:
