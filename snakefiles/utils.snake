@@ -1,5 +1,6 @@
 """Some utility rules."""
 import os
+from pprint import pprint
 
 from sparv import fileid
 
@@ -63,3 +64,13 @@ rule fileids:
             out=output[0],
             files=params.input_filenames
         )
+
+rule debug:
+    "Print some variables for debugging."
+    run:
+        print("_existing_structural_elements:")
+        pprint(_existing_structural_elements)
+        print("\n_positional_annotations:")
+        pprint(_positional_annotations)
+        print("\n_structural_annotations:")
+        pprint(_structural_annotations)
