@@ -2,6 +2,7 @@
 import re
 import os
 import sparv.util as util
+import sparv.parent as parent
 
 """
 Running malt processes are only kept if the input is small: otherwise
@@ -20,7 +21,7 @@ DEPREL_COLUMN = 7
 UNDEF = "_"
 
 
-def maltparse(maltjar, model, out, word, pos, msd, sentence, encoding=util.UTF8, process_dict=None):
+def maltparse(maltjar, model, out, word, pos, msd, sentence, text, token, encoding=util.UTF8, process_dict=None):
     """
     Runs the malt parser, in an already started process defined in
     process_dict, or starts a new process (default)
@@ -37,7 +38,7 @@ def maltparse(maltjar, model, out, word, pos, msd, sentence, encoding=util.UTF8,
             process = maltstart(maltjar, model, encoding, send_empty_sentence=True)
             process_dict['process'] = process
 
-    sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
+    sentences = [sent for _, sent in parent.annotate_children(text, None, sentence, token).items()]
 
     WORD = util.read_annotation(word)
     POS = util.read_annotation(pos)

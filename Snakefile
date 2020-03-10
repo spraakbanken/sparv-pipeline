@@ -19,8 +19,11 @@ export_dir = os.path.join(corpus_dir, "export.original")
 existing_structural_elements = ["text", "text:forfattare"]
 
 # Format: (input_file, output_attribute)
-positional_annotations = ["word", "pos", "msd", "baseform", "sense", "lemgram", "compwf", "complemgram", "sentiment", "sentimentclass", ("token.ref", "ref"), ("token.blingbring", "blingbring"), ("token.swefn", "swefn")]
-structural_annotations = ["ne.ex", "ne.type", "ne.subtype", "ne.name", "sentence", "sentence.id", "paragraph", "text", ("text.forfattare", "text:author"), "text.lix", "text.ovix", "text.nk", "text.blingbring", "text.swefn"]
+positional_annotations = ["word", "pos", "msd", "baseform", "sense", "lemgram", "compwf", "complemgram", "sentiment", "sentimentclass",
+                          ("token.deprel", "deprel"), ("token.dephead", "dephead"), ("token.ref", "ref"),
+                          ("token.blingbring", "blingbring"), ("token.swefn", "swefn")]
+structural_annotations = ["ne.ex", "ne.type", "ne.subtype", "ne.name", "sentence", "sentence.id", "paragraph", "text", ("text.forfattare", "text:author"),
+                          "text.lix", "text.ovix", "text.nk", "text.blingbring", "text.swefn"]
 
 # Import rule files
 # TODO: Build a mechanism that figures out automatically what files to import
@@ -29,6 +32,7 @@ include: "snakefiles/number.snake"
 include: "snakefiles/xmlparser.snake"
 include: "snakefiles/segment.snake"
 include: "snakefiles/hunpos.snake"
+include: "snakefiles/malt.snake"
 include: "snakefiles/saldo.snake"
 include: "snakefiles/compound.snake"
 include: "snakefiles/wsd.snake"
