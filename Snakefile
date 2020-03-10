@@ -19,11 +19,20 @@ export_dir = os.path.join(corpus_dir, "export.original")
 existing_structural_elements = ["text", "text:forfattare"]
 
 # Format: (input_file, output_attribute)
-positional_annotations = ["word", "pos", "msd", "baseform", "sense", "lemgram", "compwf", "complemgram", "sentiment", "sentimentclass",
-                          ("token.deprel", "deprel"), ("token.dephead", "dephead"), ("token.ref", "ref"),
-                          ("token.blingbring", "blingbring"), ("token.swefn", "swefn")]
-structural_annotations = ["ne.ex", "ne.type", "ne.subtype", "ne.name", "sentence", "sentence.id", "paragraph", "text", ("text.forfattare", "text:author"),
-                          "text.lix", "text.ovix", "text.nk", "text.blingbring", "text.swefn"]
+positional_annotations = ["word", "pos", "msd",
+                          "baseform", "sense", "lemgram",
+                          "compwf", "complemgram",
+                          "sentiment", "sentimentclass",
+                          "deprel", "dephead", "ref",
+                          "blingbring", "swefn"]
+
+structural_annotations = [
+                          "ne.ex", "ne.type", "ne.subtype", "ne.name",
+                          "sentence", "sentence.id", "paragraph",
+                          "text", ("text.forfattare", "text:author"),
+                          "text.blingbring", "text.swefn",
+                          "text.lix", "text.ovix", "text.nk",
+                          ]
 
 # Import rule files
 # TODO: Build a mechanism that figures out automatically what files to import

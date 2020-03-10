@@ -15,14 +15,14 @@ rule _saldo_annotations:
     input:
         TEXT = "{file}.@TEXT",
         token = "{file}.token",
-        word = "{file}.word",
-        msd = "{file}.msd",
+        word = "{file}.token.word",
+        msd = "{file}.token.msd",
         ref = "{file}.token.ref",
         sentence = "{file}.sentence"
     output:
-        "{file}.%s" % _baseform,
-        "{file}.lemgram",
-        "{file}.%s" % _sense
+        "{file}.token.%s" % _baseform,
+        "{file}.token.lemgram",
+        "{file}.token.%s" % _sense
     run:
         saldo.annotate(
             out=" ".join(output),
@@ -45,6 +45,6 @@ rule _saldo_annotations:
 rule saldo_annotations:
     "Do SALDO annotations (baseform, lemgram, saldo) for all files."
     input:
-        expand("%s/{file}.%s" % (annotation_dir, _sense), file=input_files),
-        expand("%s/{file}.lemgram" % annotation_dir, file=input_files),
-        expand("%s/{file}.baseform" % annotation_dir, file=input_files)
+        expand("%s/{file}.token.%s" % (annotation_dir, _sense), file=input_files),
+        expand("%s/{file}.token.lemgram" % annotation_dir, file=input_files),
+        expand("%s/{file}.token.baseform" % annotation_dir, file=input_files)

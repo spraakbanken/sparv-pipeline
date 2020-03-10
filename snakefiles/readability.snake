@@ -12,8 +12,8 @@ rule _lix:
         text = "{file}.text",
         TEXT = "{file}.@TEXT",
         token = "{file}.token",
-        pos = "{file}.pos",
-        word = "{file}.word",
+        pos = "{file}.token.pos",
+        word = "{file}.token.word",
         sentence = "{file}.sentence",
     output:
         "{file}.text.lix"
@@ -37,8 +37,8 @@ rule _ovix:
         text = "{file}.text",
         TEXT = "{file}.@TEXT",
         token = "{file}.token",
-        word = "{file}.word",
-        pos = "{file}.pos"
+        word = "{file}.token.word",
+        pos = "{file}.token.pos"
     output:
         "{file}.text.ovix"
     run:
@@ -60,7 +60,7 @@ rule _nk:
         text = "{file}.text",
         TEXT = "{file}.@TEXT",
         token = "{file}.token",
-        pos = "{file}.pos"
+        pos = "{file}.token.pos"
     output:
         "{file}.text.nk"
     run:

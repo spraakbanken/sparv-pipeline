@@ -3,7 +3,7 @@ from sparv import swener
 rule _swener:
     "Do named entity recognition with sweNER for {file}."
     input:
-        word = "{file}.word",
+        word = "{file}.token.word",
         sentence = "{file}.sentence",
         TEXT = "{file}.@TEXT",
         token = "{file}.token"

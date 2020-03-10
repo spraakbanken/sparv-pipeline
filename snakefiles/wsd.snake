@@ -9,14 +9,14 @@ rule _sense:
     input:
         TEXT = "{file}.@TEXT",
         token = "{file}.token",
-        lemgram = "{file}.lemgram",
-        saldo = "{file}.sense_tmp",
-        word = "{file}.word",
+        lemgram = "{file}.token.lemgram",
+        saldo = "{file}.token.sense_tmp",
+        word = "{file}.token.word",
         ref = "{file}.token.ref",
         sentence = "{file}.sentence",
-        pos = "{file}.pos"
+        pos = "{file}.token.pos"
     output:
-        "{file}.sense"
+        "{file}.token.sense"
     run:
         wsd.run_wsd(
             wsdjar=wsd_jar,
@@ -36,4 +36,4 @@ rule _sense:
 rule sense:
     "Do word sense disambiguation for all files."
     input:
-        expand("%s/{file}.sense" % annotation_dir, file=input_files)
+        expand("%s/{file}.token.sense" % annotation_dir, file=input_files)

@@ -7,16 +7,16 @@ compound_stats_model = "%s/stats.pickle" % sparv_model_dir
 rule _compound_annotations:
     "Do SALDO compound annotations (complemgram, compwf, baseform) for {file}."
     input:
-        word = "{file}.word",
-        msd = "{file}.msd",
-        baseform_tmp = "{file}.baseform_tmp",
+        word = "{file}.token.word",
+        msd = "{file}.token.msd",
+        baseform_tmp = "{file}.token.baseform_tmp",
         saldo_compound_model = saldo_compound_model,
         nst_compound_model = nst_compound_model,
         compound_stats_model = compound_stats_model
     output:
-        complemgram = "{file}.complemgram",
-        compwf = "{file}.compwf",
-        baseform = "{file}.baseform"
+        complemgram = "{file}.token.complemgram",
+        compwf = "{file}.token.compwf",
+        baseform = "{file}.token.baseform"
     run:
         compound.annotate(
             out_complemgrams=output.complemgram,
@@ -33,6 +33,6 @@ rule _compound_annotations:
 rule compound_annotations:
     "Do SALDO compound annotations (complemgram, compwf, baseform) for all files."
     input:
-        expand("%s/{file}.complemgram" % annotation_dir, file=input_files),
-        expand("%s/{file}.compwf" % annotation_dir, file=input_files),
-        expand("%s/{file}.baseform" % annotation_dir, file=input_files)
+        expand("%s/{file}.token.complemgram" % annotation_dir, file=input_files),
+        expand("%s/{file}.token.compwf" % annotation_dir, file=input_files),
+        expand("%s/{file}.token.baseform" % annotation_dir, file=input_files)

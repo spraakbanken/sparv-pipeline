@@ -83,7 +83,7 @@ rule _word:
         TEXT = "{file}.@TEXT",
         token = "{file}.token"
     output:
-        "{file}.word"
+        "{file}.token.word"
     run:
         annotate.text_spans(
             out=output[0],
@@ -94,4 +94,4 @@ rule _word:
 rule word:
     "Make word annotation for all files."
     input:
-        expand("%s/{file}.word" % annotation_dir, file=input_files)
+        expand("%s/{file}.token.word" % annotation_dir, file=input_files)

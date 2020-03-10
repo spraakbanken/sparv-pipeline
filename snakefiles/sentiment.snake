@@ -6,11 +6,11 @@ sentiment_model = "%s/sensaldo.pickle" % sparv_model_dir
 rule _sentiment:
     "Do sentiment analysis for {file}."
     input:
-        saldo = "{file}.%s" % _saldo_ids,
+        saldo = "{file}.token.%s" % _saldo_ids,
         model = sentiment_model
     output:
-        sentiment = "{file}.sentiment",
-        sentimentclass = "{file}.sentimentclass"
+        sentiment = "{file}.token.sentiment",
+        sentimentclass = "{file}.token.sentimentclass"
     run:
         sentiment.sentiment(
             out_scores=output.sentiment,
@@ -22,5 +22,5 @@ rule _sentiment:
 rule sentiment:
     "Do sentiment analysis for all files."
     input:
-        expand("%s/{file}.sentiment" % annotation_dir, file=input_files),
-        expand("%s/{file}.sentimentclass" % annotation_dir, file=input_files)
+        expand("%s/{file}.token.sentiment" % annotation_dir, file=input_files),
+        expand("%s/{file}.token.sentimentclass" % annotation_dir, file=input_files)

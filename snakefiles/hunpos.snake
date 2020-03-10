@@ -10,10 +10,10 @@ rule _hunpos_msd:
     "Do part-of-speech tagging with hunpos on {file}."
     input:
         TEXT = "{file}.@TEXT",
-        word = "{file}.word",
+        word = "{file}.token.word",
         sentence = "{file}.sentence"
     output:
-        "{file}.msd"
+        "{file}.token.msd"
     run:
         hunpos.msdtag(
             out=output[0],
@@ -28,15 +28,15 @@ rule _hunpos_msd:
 rule hunpos_msd:
     "Do part-of-speech tagging with hunpos on all files."
     input:
-        expand("%s/{file}.msd" % annotation_dir, file=input_files)
+        expand("%s/{file}.token.msd" % annotation_dir, file=input_files)
 
 
 rule _pos_from_msd:
     """Extract part-of-speech from MSD for {file}."""
     input:
-        "{file}.msd"
+        "{file}.token.msd"
     output:
-        "{file}.pos"
+        "{file}.token.pos"
     run:
         annotate.select(
             out=output[0],
@@ -48,4 +48,4 @@ rule _pos_from_msd:
 rule pos_from_msd:
     "Extract part-of-speech from MSD for all files."
     input:
-        expand("%s/{file}.pos" % annotation_dir, file=input_files)
+        expand("%s/{file}.token.pos" % annotation_dir, file=input_files)

@@ -12,8 +12,8 @@ _swefn_cutoff = 3
 rule _token_blingbring:
     "Do blingbring lexical class annotation per token for {file}."
     input:
-        saldo = "{file}.%s" % _saldo_ids,
-        pos = "{file}.pos",
+        saldo = "{file}.token.%s" % _saldo_ids,
+        pos = "{file}.token.pos",
         model = _blingbring_model
     output:
         "{file}.token.blingbring"
@@ -36,8 +36,8 @@ rule token_blingbring:
 rule _token_swefn:
     "Do sweFN lexical class annotation per token for {file}."
     input:
-        saldo = "{file}.%s" % _saldo_ids,
-        pos = "{file}.pos",
+        saldo = "{file}.token.%s" % _saldo_ids,
+        pos = "{file}.token.pos",
         model = _swefn_model
     output:
         "{file}.token.swefn"
@@ -59,7 +59,7 @@ rule token_swefn:
 rule _text_blingbring:
     "Do blingbring annotation per text for {file}."
     input:
-        saldo = "{file}.%s" % _saldo_ids,
+        saldo = "{file}.token.%s" % _saldo_ids,
         model = _blingbring_freq_model,
         token_annotation = "{file}.token.blingbring",
         TEXT = "{file}.@TEXT",
@@ -88,7 +88,7 @@ rule text_blingbring:
 rule _text_swefn:
     "Do sweFN lexical class annotation per text for {file}."
     input:
-        saldo = "{file}.%s" % _saldo_ids,
+        saldo = "{file}.token.%s" % _saldo_ids,
         model = _swefn_freq_model,
         token_annotation = "{file}.token.swefn",
         TEXT = "{file}.@TEXT",
