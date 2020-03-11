@@ -4,7 +4,7 @@ The Sparv Pipeline is a corpus annotation pipeline created by [Språkbanken](htt
 The source code is made available under the [MIT license](https://opensource.org/licenses/MIT).
 
 Additional documentation can be found here:
-https://spraakbanken.gu.se/eng/research/infrastructure/sparv
+https://spraakbanken.gu.se/en/tools/sparv/pipeline
 
 For questions, problems or suggestions contact:
 sb-sparv@svenska.gu.se
@@ -20,7 +20,7 @@ sb-sparv@svenska.gu.se
 
 * Before cloning the git repository make sure you have
   [Git Large File Storage](https://git-lfs.github.com/)
-  installed (`git lfs install`). Some files will not be downloaded correctly otherwise.
+  installed (`apt install git-lfs`). Some files will not be downloaded correctly otherwise.
 * After cloning, set variables in `makefiles/Makefile.config` (especially `SPARV_PIPELINE_PATH`).
 * Add `SPARV_MAKEFILES` to your environment variables and point its path
   to the `makefiles` directory.
@@ -43,4 +43,4 @@ sb-sparv@svenska.gu.se
 
 ## Installation of additional software
 
-The Sparv Pipeline can be used together with several plugins and third-party software. Please check https://spraakbanken.gu.se/eng/research/infrastructure/sparv/distribution/pipeline for more details!
+The Sparv Pipeline can be used together with several plugins and third-party software. Please check https://spraakbanken.gu.se/en/tools/sparv/pipeline/installation for more details!

@@ -5,6 +5,10 @@ from sparv.util.mysql_wrapper import MySQL
 import re
 import math
 
+MAX_STRING_LENGTH = 100
+MAX_STRINGEXTRA_LENGTH = 32
+MAX_POS_LENGTH = 5
+
 
 def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, ref, baseform, encoding=util.UTF8):
     """ Find certain dependencies between words. """
@@ -360,8 +364,8 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
             stringextra = ""
         row = {
             "id": index,
-            "string": string,
-            "stringextra": stringextra,
+            "string": string[:MAX_STRING_LENGTH],
+            "stringextra": stringextra[:MAX_STRINGEXTRA_LENGTH],
             "pos": pos}
         rows.append(row)
 
@@ -448,6 +452,7 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
 
     util.log.info("%s written", sql_file)
 
+
 ################################################################################
 
 # Names of every possible relation in the resulting database
@@ -478,9 +483,9 @@ MYSQL_RELATIONS = {'columns': [
 
 MYSQL_STRINGS = {'columns': [
                              ("id",          int, 0, "NOT NULL"),
-                             ("string",      "varchar(100)", "", "NOT NULL"),
-                             ("stringextra", "varchar(32)", "", "NOT NULL"),
-                             ("pos",         "varchar(5)", "", "NOT NULL")],
+                             ("string",      "varchar(%d)" % MAX_STRING_LENGTH, "", "NOT NULL"),
+                             ("stringextra", "varchar(%d)" % MAX_STRINGEXTRA_LENGTH, "", "NOT NULL"),
+                             ("pos",         "varchar(%d)" % MAX_POS_LENGTH, "", "NOT NULL")],
                  'primary': "string id pos stringextra",
                  'indexes': ["id string pos stringextra"],
                  'default charset': 'utf8',

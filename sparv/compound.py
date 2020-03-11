@@ -170,10 +170,10 @@ class InFileLexicon(object):
         return list(self.lexicon.get(word, []))
 
     def get_prefixes(self, prefix):
-        return [(prefix, '0', (s[1],)) for s in self.lookup(prefix.lower())]
+        return [(prefix, "0", (s[1],)) for s in self.lookup(prefix.lower())]
 
     def get_suffixes(self, suffix, msd=None):
-        return [(suffix, '0', (s[1],)) for s in self.lookup(suffix.lower())
+        return [(suffix, "0", (s[1],)) for s in self.lookup(suffix.lower())
                 if (s[1][0:2] in ("NN", "VB", "AV")) and
                 (not msd or msd in s[1] or s[1].startswith(msd[:msd.find(".")]))
                 ]
@@ -332,7 +332,7 @@ def rank_compounds(compounds, nst_model, stats_lexicon):
             tags = list(itertools.product(*[affix[2] for affix in c]))
             # Calculate probability score
             word_probs = max(reduce(lambda x, y: x * y, [(stats_lexicon.lookup_prob(i)) for i in zip(affixes, t)]) for t in tags)
-            tag_prob = max(nst_model.prob('+'.join(t)) for t in tags)
+            tag_prob = max(nst_model.prob("+".join(t)) for t in tags)
             score = word_probs * tag_prob
             ranklist.append((score, c))
     ranklist = sorted(ranklist, key=lambda x: x[0], reverse=True)
@@ -341,6 +341,7 @@ def rank_compounds(compounds, nst_model, stats_lexicon):
     # for s, c in ranklist:
     #     print "%.3e, %s" % (s, c)
     return ranklist
+
 
 def deep_len(lst):
     """Return the deep length of a list."""
@@ -408,7 +409,7 @@ def make_complem_and_compwf(OUT_complem, OUT_compwf, complemgramfmt, tokid, comp
         comp = comp[1]
         complems = True
         for a in comp:
-            if a[1] == '0':
+            if a[1] == "0":
                 complems = False
                 break
         if complems:
@@ -420,7 +421,7 @@ def make_complem_and_compwf(OUT_complem, OUT_compwf, complemgramfmt, tokid, comp
 
         # If first letter has upper case, check if one of the affixes may be a name:
         if comp[0][0][0] == comp[0][0][0].upper():
-            if not any([True for a in comp if "pm" in a[1][a[1].find('.'):]] + [True for a in comp if "PM" in a[2]]):
+            if not any([True for a in comp if "pm" in a[1][a[1].find("."):]] + [True for a in comp if "PM" in a[2]]):
                 wf = compdelim.join(affix[0].lower() for affix in comp)
             else:
                 wf = compdelim.join(affix[0] for affix in comp)
@@ -438,19 +439,23 @@ def make_complem_and_compwf(OUT_complem, OUT_compwf, complemgramfmt, tokid, comp
 def make_new_baseforms(OUT_baseform, tokid, msd_tag, compounds, stats_lexicon, altlexicon, delimiter, affix):
     """Add a list of baseforms to the dictionary OUT_baseform[tokid]."""
     baseform_list = []
-    msd_tag = msd_tag[:msd_tag.find('.')]
+    msd_tag = msd_tag[:msd_tag.find(".")]
     for comp in compounds:
         comp = comp[1]
-        base_suffix = comp[-1][1][:comp[-1][1].find('.')]
+
+        if comp[-1][1] == "0":
+            base_suffix = comp[-1][0]
+        else:
+            base_suffix = comp[-1][1][:comp[-1][1].find(".")]
         prefix = comp[0][0]
         # If first letter has upper case, check if one of the affixes is a name:
         if prefix[0] == prefix[0].upper():
-            if not any(True for a in comp if "pm" in a[1][a[1].find('.'):]):
-                baseform = ''.join(affix[0].lower() for affix in comp[:-1]) + base_suffix
+            if not any(True for a in comp if "pm" in a[1][a[1].find("."):]):
+                baseform = "".join(affix[0].lower() for affix in comp[:-1]) + base_suffix
             else:
-                baseform = ''.join(affix[0] for affix in comp[:-1]) + base_suffix
+                baseform = "".join(affix[0] for affix in comp[:-1]) + base_suffix
         else:
-            baseform = ''.join(affix[0] for affix in comp[:-1]) + base_suffix
+            baseform = "".join(affix[0] for affix in comp[:-1]) + base_suffix
 
         # Check if this baseform with the MSD tag occurs in stats_lexicon
         if baseform not in baseform_list:
@@ -461,7 +466,7 @@ def make_new_baseforms(OUT_baseform, tokid, msd_tag, compounds, stats_lexicon, a
     OUT_baseform[tokid] = util.cwbset(baseform_list, delimiter, affix) if (compounds and baseform_list) else affix
 
 
-def read_xml(xml='saldom.xml', tagset="SUC"):
+def read_xml(xml="saldom.xml", tagset="SUC"):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml).
     """
     import xml.etree.cElementTree as cet
@@ -475,7 +480,7 @@ def read_xml(xml='saldom.xml', tagset="SUC"):
 
     for event, elem in context:
         if event == "end":
-            if elem.tag == 'LexicalEntry':
+            if elem.tag == "LexicalEntry":
 
                 pos = elem.findtext("pos")
                 lem = elem.findtext("lem")
@@ -499,7 +504,7 @@ def read_xml(xml='saldom.xml', tagset="SUC"):
                             lexicon[word][lem].setdefault("tags", set()).update(tags)
 
             # Done parsing section. Clear tree to save memory
-            if elem.tag in ['LexicalEntry', 'frame', 'resFrame']:
+            if elem.tag in ["LexicalEntry", "frame", "resFrame"]:
                 root.clear()
 
     util.log.info("OK, read")
@@ -551,5 +556,5 @@ def xml_to_pickle(xml, filename):
 
 ######################################################################
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     util.run.main(annotate, xml_to_pickle=xml_to_pickle)

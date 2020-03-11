@@ -555,7 +555,7 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None, vrtlist=
         util.log.info("Compression done.")
 
 
-def cwb_align(master, other, link, aligndir=ALIGNDIR):
+def cwb_align(master, other, link, aligndir=ALIGNDIR, encoding=CWB_ENCODING):
     """
     Align 'master' corpus with 'other' corpus, using the 'link' annotation for alignment.
     """
@@ -572,7 +572,7 @@ def cwb_align(master, other, link, aligndir=ALIGNDIR):
 
     # Align linked chunks
     args = ["-v", "-o", alignfile, "-V", link_attr, master, other, link_name]
-    result, _ = util.system.call_binary("cwb-align", args, verbose=True)
+    result, _ = util.system.call_binary("cwb-align", args, encoding=encoding, verbose=True)
     with open(alignfile + ".result", "w") as F:
         print(result, file=F)
     _, lastline = result.rsplit("Alignment complete.", 1)
@@ -599,7 +599,7 @@ def cwb_align(master, other, link, aligndir=ALIGNDIR):
 
     # Encode the alignments into CWB
     args = ["-v", "-D", alignfile]
-    result, _ = util.system.call_binary("cwb-align-encode", args, verbose=True)
+    result, _ = util.system.call_binary("cwb-align-encode", args, encoding=encoding, verbose=True)
     util.log.info("%s", result.strip())
 
 
