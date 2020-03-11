@@ -39,6 +39,8 @@ datefrom = "text.date"
 dateto = "text.date"
 dateformat = "%Y-%m-%d"
 
+# analysis = "sv-1800"
+
 # Import rule files
 # TODO: Build a mechanism that figures out automatically what files to import
 include: "snakefiles/utils.snake"

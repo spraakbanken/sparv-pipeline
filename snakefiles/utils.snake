@@ -30,6 +30,14 @@ if any(x in [i[1] for i in _positional_annotations] for x in ["compwf", "complem
 else:
     _baseform = "baseform"
 
+# Set analysis variable if not defined by user
+allowed_analysis_modes = ["", "sv-1800", "fl", "tt"]
+try:
+    analysis
+except NameError:
+    analysis = ""
+else:
+    assert analysis in allowed_analysis_modes, "\n'%s' is not a valid analysis mode. \nPossible values: '%s' \n" % (analysis, "', '".join(allowed_analysis_modes))
 ################################################################################
 # Auxiliary rules
 

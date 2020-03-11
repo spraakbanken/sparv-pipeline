@@ -1,7 +1,10 @@
 from sparv import saldo
 
 
-saldo_model = "%s/saldo.pickle" % sparv_model_dir
+_saldo_model = "%s/saldo.pickle" % sparv_model_dir
+_dalin_model = "%s/dalin.pickle" % sparv_model_dir
+_swedberg_model = "%s/swedberg.pickle" % sparv_model_dir
+
 saldo_min_precision = 0.66
 saldo_precision_filter = "max"
 saldo_skip_multiword = False
@@ -18,7 +21,8 @@ rule _saldo_annotations:
         word = "{file}.token.word",
         msd = "{file}.token.msd",
         ref = "{file}.token.ref",
-        sentence = "{file}.sentence"
+        sentence = "{file}.sentence",
+        models = [_saldo_model, _dalin_model, _swedberg_model] if analysis == "sv-1800" else [_saldo_model]
     output:
         "{file}.token.%s" % _baseform,
         "{file}.token.lemgram",
@@ -33,7 +37,7 @@ rule _saldo_annotations:
             sentence=input.sentence,
             msd=input.msd,
             reference=input.ref,
-            models=saldo_model,
+            models=" ".join(input.models),
             min_precision=saldo_min_precision,
             precision_filter=saldo_precision_filter,
             skip_multiword=saldo_skip_multiword,
@@ -47,4 +51,4 @@ rule saldo_annotations:
     input:
         expand("%s/{file}.token.%s" % (annotation_dir, _sense), file=input_files),
         expand("%s/{file}.token.lemgram" % annotation_dir, file=input_files),
-        expand("%s/{file}.token.baseform" % annotation_dir, file=input_files)
+        expand("%s/{file}.token.%s" % (annotation_dir, _baseform), file=input_files)
