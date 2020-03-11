@@ -15,8 +15,8 @@ annotation_dir = os.path.join(corpus_dir, "annotations")
 export_dir = os.path.join(corpus_dir, "export.original")
 
 # Info about input and resulting annotations
-# Format: (input_elem.attribute, output_file)
-existing_structural_elements = ["text", "text:forfattare"]
+# Format: (input_elem:attribute, [output_file])
+existing_structural_elements = ["text", "text:forfattare", "text:date"]
 
 # Format: (input_file, output_attribute)
 positional_annotations = ["word", "pos", "msd",
@@ -32,7 +32,12 @@ structural_annotations = ["ne.ex", "ne.type", "ne.subtype", "ne.name",
                           "text", ("text.forfattare", "text:author"),
                           "text.blingbring", "text.swefn",
                           "text.lix", "text.ovix", "text.nk",
+                          "text.datefrom", "text.dateto", "text.timefrom", "text.timeto"
                           ]
+
+datefrom = "text.date"
+dateto = "text.date"
+dateformat = "%Y-%m-%d"
 
 # Import rule files
 # TODO: Build a mechanism that figures out automatically what files to import
@@ -50,4 +55,5 @@ include: "snakefiles/swener.snake"
 include: "snakefiles/geo.snake"
 include: "snakefiles/readability.snake"
 include: "snakefiles/lexical_classes.snake"
+include: "snakefiles/dateformat.snake"
 include: "snakefiles/cwb.snake"

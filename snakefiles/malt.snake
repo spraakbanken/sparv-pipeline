@@ -27,7 +27,7 @@ rule _malt1:
             token=input.token,
             model=input.model,
             maltjar=input.maltjar
-        ),
+        )
 
 rule _malt2:
     "Make annotations for 'dependency relation' and 'dependency head' from token.malt on {file}."
