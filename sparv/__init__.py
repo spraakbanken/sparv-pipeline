@@ -2,7 +2,6 @@
 
 __all__ = [
     'annotate',
-    'compound_simple',
     'compound',
     'cwb',
     'dateformat',
@@ -23,6 +22,5 @@ __all__ = [
     'segment',
     'swener',
     'timespan',
-    'xmlanalyzer',
     'xmlparser'
 ]

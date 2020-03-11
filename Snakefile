@@ -26,9 +26,9 @@ positional_annotations = ["word", "pos", "msd",
                           "deprel", "dephead", "ref",
                           "blingbring", "swefn"]
 
-structural_annotations = [
-                          "ne.ex", "ne.type", "ne.subtype", "ne.name",
-                          "sentence", "sentence.id", "paragraph",
+structural_annotations = ["ne.ex", "ne.type", "ne.subtype", "ne.name",
+                          "sentence", "sentence.id", ("sentence.geocontext", "sentence:_geocontext"),
+                          "paragraph", ("paragraph.geocontext", "paragraph:_geocontext"),
                           "text", ("text.forfattare", "text:author"),
                           "text.blingbring", "text.swefn",
                           "text.lix", "text.ovix", "text.nk",
@@ -47,6 +47,7 @@ include: "snakefiles/compound.snake"
 include: "snakefiles/wsd.snake"
 include: "snakefiles/sentiment.snake"
 include: "snakefiles/swener.snake"
-include: "snakefiles/cwb.snake"
+include: "snakefiles/geo.snake"
 include: "snakefiles/readability.snake"
 include: "snakefiles/lexical_classes.snake"
+include: "snakefiles/cwb.snake"
