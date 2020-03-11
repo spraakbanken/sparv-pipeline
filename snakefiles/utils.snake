@@ -48,6 +48,10 @@ rule clean:
         shell("rm -rf %s" % annotation_dir)
         shell("rm -rf %s" % export_dir)
 
+rule clean_export:
+    "Remove export files."
+    run:
+        shell("rm -rf %s" % export_dir)
 
 rule fileids:
     "Make file ID dictionary."
