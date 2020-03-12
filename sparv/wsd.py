@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import sparv.util as util
-import sparv.parent
 
 SENT_SEP = "$SENT$"
 
@@ -30,7 +29,7 @@ def run_wsd(wsdjar, sense_model, context_model, out, sentence, word, ref, lemgra
     POS = util.read_annotation(pos)
     textpos = util.read_corpus_text(text)[1]
 
-    sentences = sparv.parent.annotate_children(text, None, sentence, token, orphan_alert=True)
+    sentences = util.get_children(text, None, sentence, token, orphan_alert=True)
     # Sort sentences according to their text position because WSD is context dependent.
     sentences = sorted(list(sentences.items()), key=lambda x: textpos[util.edgeStart(x[0])])
     sentences = [sent for _, sent in sentences]

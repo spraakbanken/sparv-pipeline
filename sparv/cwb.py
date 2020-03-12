@@ -11,7 +11,6 @@ import xml.etree.cElementTree as etree
 import itertools as it
 
 import sparv.util as util
-from sparv import parent
 
 ALIGNDIR = "annotations/align"
 UNDEF = "__UNDEF__"
@@ -58,7 +57,7 @@ def vrt_table(annotations_structs, annotations_columns, text, token):
 
     for annot in annotations_structs:
         if annot not in parents:
-            parents[annot] = parent.annotate_parents(text, None, annot, token, orphan_alert=True)
+            parents[annot] = util.get_parents(text, None, annot, token, orphan_alert=True)
 
     vrt = defaultdict(ListWithGet)
 

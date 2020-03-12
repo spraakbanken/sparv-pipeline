@@ -3,7 +3,6 @@ import re
 import xml.sax.saxutils
 import xml.etree.cElementTree as etree
 import sparv.util as util
-import sparv.parent as parent
 
 RESTART_THRESHOLD_LENGTH = 64000
 SENT_SEP = "\n"
@@ -31,7 +30,7 @@ def tag_ne(out_ne_ex, out_ne_type, out_ne_subtype, out_ne_name, word, sentence, 
     #         process_dict['process'] = process
 
     # Get sentence annotation
-    sentence = parent.annotate_children(text, None, sentence, token, orphan_alert=True)
+    sentence = util.get_children(text, None, sentence, token, orphan_alert=True)
 
     # Collect all text
     sentences = [sent for _, sent in sentence.items()]

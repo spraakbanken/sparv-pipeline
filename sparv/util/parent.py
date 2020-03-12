@@ -1,12 +1,12 @@
 """
 Add annotations for parent links and/or children links.
 """
-from collections import defaultdict
 import sparv.util as util
 
 
-def annotate_parents(doc, parent, child, orphan_alert=False):
-    """Create parent links; parent, child are existing annotations."""
+def get_parents(doc, parent, child, orphan_alert=False):
+    """Return a list with n (= total number of children) elements where every element is an index in the parent
+    annotation, or None when no parent is found."""
     orphan_alert = util.strtobool(orphan_alert)
     parent_spans, child_spans = read_parents_and_children(doc, parent, child)
     child_parents = []
@@ -38,8 +38,10 @@ def annotate_parents(doc, parent, child, orphan_alert=False):
     return child_parents
 
 
-def annotate_children(doc, parent, child, orphan_alert=False):
-    """Create links to children; parent, child are existing annotations."""
+def get_children(doc, parent, child, orphan_alert=False):
+    """Return two lists. The first is a list with n (= total number of parents) elements where every element is a list
+    of indices in the child annotation. The second is a list of orphans, i.e. containing indices in the child annotation
+    that have no parent."""
     orphan_alert = util.strtobool(orphan_alert)
     parent_spans, child_spans = read_parents_and_children(doc, parent, child)
     parent_children = []
@@ -69,6 +71,11 @@ def annotate_children(doc, parent, child, orphan_alert=False):
         else:
             parent_children[-1][1].append(child_i)
 
+    # Add rest of parents
+    if parent_span is not None:
+        for parent_i, parent_span in parent_spans:
+            parent_children.append((parent_i, []))
+
     # Restore parent order
     parent_children = [p for _, p in sorted(parent_children)]
 
@@ -84,8 +91,3 @@ def read_parents_and_children(doc, parent, child):
         child = iter(sorted(enumerate(util.read_annotation_spans(doc, child, decimals=True)), key=lambda x: x[1]))
 
     return parent, child
-
-
-if __name__ == "__main__":
-    util.run.main(parents=annotate_parents,
-                  children=annotate_children)

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import sparv.util as util
-import sparv.parent as parent
 import os
 import sys
 import subprocess
@@ -158,7 +157,7 @@ def annotate_doc(out, in_token_annotation, TEXT, text, token, saldoids=None, cut
     """
     cutoff = int(cutoff)
     types = util.strtobool(types)
-    text_children = parent.annotate_children(TEXT, None, text, token)
+    text_children = util.get_children(TEXT, None, text, token)
     classes = util.read_annotation(in_token_annotation)
     sense = util.read_annotation(saldoids) if types else None
 

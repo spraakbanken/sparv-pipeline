@@ -5,7 +5,6 @@ Adds annotations from Saldo.
 """
 
 import sparv.util as util
-import sparv.parent
 import itertools
 import pickle
 import re
@@ -84,7 +83,7 @@ def annotate(text, token, word, sentence, reference, out, annotations, models, m
         util.clear_annotation(out_file)
 
     # sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
-    sentences = [sent for _, sent in sparv.parent.annotate_children(text, out=None, parent=sentence, child=token).items()]
+    sentences = [sent for _, sent in util.get_children(text, out=None, parent=sentence, child=token).items()]
     OUT = {}
 
     for sent in sentences:

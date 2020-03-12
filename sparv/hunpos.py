@@ -1,6 +1,5 @@
 import re
 import sparv.util as util
-from sparv import parent
 
 SENT_SEP = "\n\n"
 TOK_SEP = "\n"
@@ -31,7 +30,7 @@ def msdtag(doc, model, out, word, sentence, tag_mapping=None, morphtable=None, p
                 return "[[%s]]" % p[0]
         return w
 
-    sentences, orphans = parent.annotate_children(doc, sentence, word)
+    sentences, orphans = util.parent.get_children(doc, sentence, word)
     token_word = list(util.read_annotation(doc, word))
     stdin = SENT_SEP.join(TOK_SEP.join(replace_word(token_word[token_index]) for token_index in sent)
                           for sent in sentences)
