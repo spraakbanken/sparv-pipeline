@@ -8,7 +8,7 @@ TAG_SEP = "\t"
 TAG_COLUMN = 1
 
 
-def msdtag(model, out, text, word, sentence, tag_mapping=None, morphtable=None, patterns=None, encoding=util.UTF8):
+def msdtag(doc, model, out, word, sentence, tag_mapping=None, morphtable=None, patterns=None, encoding=util.UTF8):
     """POS/MSD tag using the Hunpos tagger."""
     if isinstance(tag_mapping, str) and tag_mapping:
         tag_mapping = util.tagsets.__dict__[tag_mapping]
@@ -31,23 +31,23 @@ def msdtag(model, out, text, word, sentence, tag_mapping=None, morphtable=None, 
                 return "[[%s]]" % p[0]
         return w
 
-    sentence_children = parent.annotate_children(text, None, sentence, word)
-    sentences = [sent for _, sent in sentence_children.items()]
-    WORD = util.read_annotation(word)
-    stdin = SENT_SEP.join(TOK_SEP.join(replace_word(WORD[tokid]) for tokid in sent)
+    sentences, orphans = parent.annotate_children(doc, sentence, word)
+    token_word = list(util.read_annotation(doc, word))
+    stdin = SENT_SEP.join(TOK_SEP.join(replace_word(token_word[token_index]) for token_index in sent)
                           for sent in sentences)
     args = [model]
     if morphtable:
         args.extend(["-m", morphtable])
     stdout, _ = util.system.call_binary("hunpos-tag", args, stdin, encoding=encoding, verbose=True)
 
-    OUT = {}
+    out_annotation = util.create_empty_attribute(doc, word)
     for sent, tagged_sent in zip(sentences, stdout.strip().split(SENT_SEP)):
-        for token_id, tagged_token in zip(sent, tagged_sent.strip().split(TOK_SEP)):
+        for token_index, tagged_token in zip(sent, tagged_sent.strip().split(TOK_SEP)):
             tag = tagged_token.strip().split(TAG_SEP)[TAG_COLUMN]
             tag = tag_mapping.get(tag, tag)
-            OUT[token_id] = tag
-    util.write_annotation(out, OUT)
+            out_annotation[token_index] = tag
+
+    util.write_annotation(doc, out, out_annotation)
 
 
 # TODO: använd sockets

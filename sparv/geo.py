@@ -102,8 +102,8 @@ def contextual(out, chunk, context, ne, ne_subtype, text, model, method="populou
     ne_text = annotate.text_spans(text, ne, None)
     ne_subtype = util.read_annotation(ne_subtype)
 
-    children_context_chunk = parent.annotate_children(text, None, context, chunk, ignore_missing_parent=True)
-    children_chunk_ne = parent.annotate_children(text, None, chunk, ne, ignore_missing_parent=True)
+    children_context_chunk = parent.annotate_children(text, None, context, chunk, orphan_alert=False)
+    children_chunk_ne = parent.annotate_children(text, None, chunk, ne, orphan_alert=False)
 
     result = {}
 
@@ -150,7 +150,7 @@ def metadata(out, chunk, source, model, text=None, method="populous", language=[
     # to find the parent/child relations between them.
     if not same_target_source and text:
         text = util.read_corpus_text(text)
-        target_source_parents = parent.annotate_parents(text, None, source, chunk, ignore_missing_parent=True)
+        target_source_parents = parent.annotate_parents(text, None, source, chunk, orphan_alert=False)
 
     result = {}
     chunk_locations = {}

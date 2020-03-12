@@ -15,18 +15,6 @@ def dirname(file):
     return os.path.dirname(file)
 
 
-def make_directory(*path):
-    dir = os.path.join(*path)
-    if dir:
-        try:
-            os.makedirs(dir)
-        except OSError as exc:
-            if exc.errno == errno.EEXIST:
-                pass
-            else:
-                raise
-
-
 def kill_process(process):
     """Kills a process, and ignores the error if it is already dead"""
     try:
@@ -40,7 +28,7 @@ def kill_process(process):
 
 def clear_directory(dir):
     shutil.rmtree(dir, ignore_errors=True)
-    make_directory(dir)
+    os.makedirs(dir, exist_ok=True)
 
 
 def call_java(jar, arguments, options=[], stdin="", search_paths=(),

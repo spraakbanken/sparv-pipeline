@@ -22,7 +22,7 @@ def suc2hunpos(out, msd, sentences, word):
 
 
 def write_hunsource(file, annotation):
-    util.system.make_directory(os.path.dirname(file))
+    os.makedirs(os.path.dirname(file), exist_ok=True)
     with open(file, "w") as DB:
         ctr = 0
         for key, value in annotation:
@@ -36,5 +36,5 @@ def write_hunsource(file, annotation):
             ctr += 1
     util.log.info("Wrote %d items: %s", ctr, file)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     util.run.main(suc2hunpos)

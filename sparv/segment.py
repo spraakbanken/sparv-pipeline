@@ -12,7 +12,7 @@ except ImportError:
     pass
 
 
-def do_segmentation(text, element, out, chunk, segmenter, existing_segments=None, model=None, no_pickled_model=False):
+def do_segmentation(doc, out, chunk, segmenter, existing_segments=None, model=None, no_pickled_model=False, path=None):
     """Segment all "chunks" (e.g. sentences) into smaller "tokens" (e.g. words),
     and annotate them as "element" (e.g. w).
     Segmentation is done by the given "segmenter"; some segmenters take
@@ -21,7 +21,7 @@ def do_segmentation(text, element, out, chunk, segmenter, existing_segments=None
     if model:
         if not no_pickled_model:
             with open(model, "rb") as M:
-                model = pickle.load(M, encoding='UTF-8')
+                model = pickle.load(M, encoding="UTF-8")
         segmenter_args = (model,)
     else:
         segmenter_args = ()
@@ -30,7 +30,7 @@ def do_segmentation(text, element, out, chunk, segmenter, existing_segments=None
     segmenter = segmenter(*segmenter_args)
     assert hasattr(segmenter, "span_tokenize"), "Segmenter needs a 'span_tokenize' method: %r" % segmenter
 
-    corpus_text, anchor2pos, pos2anchor = util.read_corpus_text(text)
+    corpus_text = util.read_corpus_text(doc)
 
     # First we read the chunks and partition the text into spans
     # E.g., "one two <s>three four</s> five <s>six</s>"
@@ -39,30 +39,27 @@ def do_segmentation(text, element, out, chunk, segmenter, existing_segments=None
 
     positions = set()
     for c in chunk.split():
-        CHUNK = util.read_annotation(c)
-        positions = positions.union(set(anchor2pos[anchor] for edge in CHUNK
-                                    for span in util.edgeSpans(edge) for anchor in span))
+        chunk_spans = util.read_annotation_spans(doc, c)
+        positions = positions.union(set(pos for span in chunk_spans for pos in span))
     positions = sorted(set([0, len(corpus_text)]) | positions)
     chunk_spans = list(zip(positions, positions[1:]))
 
     if existing_segments:
-        OUT = util.read_annotation(existing_segments)
-        token_spans = sorted((anchor2pos[start], anchor2pos[end]) for edge in OUT
-                             for (start, end) in util.edgeSpans(edge))
-        for n, (chunkstart, chunkend) in enumerate(chunk_spans[:]):
-            for tokenstart, tokenend in token_spans:
-                if tokenend <= chunkstart:
+        segments = list(util.read_annotation_spans(doc, existing_segments))
+        for n, (chunk_start, chunk_end) in enumerate(chunk_spans[:]):
+            for segment_start, segment_end in segments:
+                if segment_end <= chunk_start:
                     continue
-                if tokenstart >= chunkend:
+                if segment_start >= chunk_end:
                     break
-                if chunkstart != tokenstart:
-                    chunk_spans.append((chunkstart, tokenstart))
-                chunkstart = tokenend
-                chunk_spans[n] = (chunkstart, chunkend)
+                if chunk_start != segment_start:
+                    chunk_spans.append((chunk_start, segment_start))
+                chunk_start = segment_end
+                chunk_spans[n] = (chunk_start, chunk_end)
         chunk_spans.sort()
         util.log.info("Reorganized into %d chunks" % len(chunk_spans))
     else:
-        OUT = {}
+        segments = []
 
     # Now we can segment each chunk span into tokens
     for start, end in chunk_spans:
@@ -70,11 +67,10 @@ def do_segmentation(text, element, out, chunk, segmenter, existing_segments=None
             spanstart += start
             spanend += start
             if corpus_text[spanstart:spanend].strip():
-                span = pos2anchor[spanstart], pos2anchor[spanend]
-                edge = util.mkEdge(element, span)
-                OUT[edge] = None
+                span = (spanstart, spanend)
+                segments.append(span)
 
-    util.write_annotation(out, OUT)
+    util.write_annotation(doc, out, segments)
 
 
 def build_token_wordlist(saldo_model, out, segmenter, model=None, no_pickled_model=False):
@@ -203,7 +199,7 @@ def train_punkt_segmenter(textfiles, modelfile, encoding=util.UTF8, protocol=-1)
 
 class LinebreakTokenizer(nltk.RegexpTokenizer):
     def __init__(self):
-        nltk.RegexpTokenizer.__init__(self, r'\s*\n\s*', gaps=True)
+        nltk.RegexpTokenizer.__init__(self, r"\s*\n\s*", gaps=True)
 
 
 class PunctuationTokenizer(nltk.RegexpTokenizer):
@@ -316,14 +312,14 @@ class BetterWordTokenizer(object):
             self._re_word_tokenizer = re.compile(
                 self._word_tokenize_fmt %
                 {
-                    'tokens':   ("(?:" + "|".join(self.patterns["tokens"]) + ")|") if self.patterns["tokens"] else "",
-                    'abbrevs':  ("(?:" + "|".join(re.escape(a + ".") for a in self.abbreviations) + ")|") if self.abbreviations else "",
-                    'misc':     "|".join(self.patterns["misc"]),
-                    'number':   self.patterns["number"],
-                    'within':   self.patterns["within"],
-                    'multi':    self.patterns["multi"],
-                    'start':    self.patterns["start"],
-                    'end':      self.patterns["end"]
+                    "tokens":   ("(?:" + "|".join(self.patterns["tokens"]) + ")|") if self.patterns["tokens"] else "",
+                    "abbrevs":  ("(?:" + "|".join(re.escape(a + ".") for a in self.abbreviations) + ")|") if self.abbreviations else "",
+                    "misc":     "|".join(self.patterns["misc"]),
+                    "number":   self.patterns["number"],
+                    "within":   self.patterns["within"],
+                    "multi":    self.patterns["multi"],
+                    "start":    self.patterns["start"],
+                    "end":      self.patterns["end"]
                 },
                 modifiers
             )
@@ -381,7 +377,7 @@ class FSVParagraphSplitter(object):
         first = True
         for i in range(len(s)):
             if not first:
-                new_para = re.search(u'^\.*§', s[i:])
+                new_para = re.search(u"^\.*§", s[i:])
                 if new_para:
                     spans.append((temp[0], i))
                     temp[0] = i
@@ -415,7 +411,7 @@ if not do_segmentation.__doc__:
 do_segmentation.__doc__ += "The following segmenters are available: %s" % ", ".join(sorted(SEGMENTERS))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     util.run.main(do_segmentation,
                   train_punkt_segmenter=train_punkt_segmenter,
                   build_token_wordlist=build_token_wordlist)

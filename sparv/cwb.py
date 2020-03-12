@@ -58,7 +58,7 @@ def vrt_table(annotations_structs, annotations_columns, text, token):
 
     for annot in annotations_structs:
         if annot not in parents:
-            parents[annot] = parent.annotate_parents(text, None, annot, token, ignore_missing_parent=True)
+            parents[annot] = parent.annotate_parents(text, None, annot, token, orphan_alert=True)
 
     vrt = defaultdict(ListWithGet)
 
@@ -560,7 +560,7 @@ def cwb_align(master, other, link, aligndir=ALIGNDIR, encoding=CWB_ENCODING):
     Align 'master' corpus with 'other' corpus, using the 'link' annotation for alignment.
     """
 
-    util.system.make_directory(aligndir)
+    os.makedirs(aligndir, exist_ok=True)
     alignfile = os.path.join(aligndir, master + ".align")
     util.log.info("Aligning %s <-> %s", master, other)
 

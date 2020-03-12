@@ -31,7 +31,7 @@ def tag_ne(out_ne_ex, out_ne_type, out_ne_subtype, out_ne_name, word, sentence, 
     #         process_dict['process'] = process
 
     # Get sentence annotation
-    sentence = parent.annotate_children(text, None, sentence, token, ignore_missing_parent=True)
+    sentence = parent.annotate_children(text, None, sentence, token, orphan_alert=True)
 
     # Collect all text
     sentences = [sent for _, sent in sentence.items()]

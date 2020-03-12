@@ -8,22 +8,18 @@ from . import util
 import re
 
 
-def text_spans(text, chunk, out):
+def text_spans(doc, chunk, out):
     """Add the text content for each edge as a new annotation."""
-    if isinstance(text, str):
-        text = util.corpus.read_corpus_text(text)
+    corpus_text = util.corpus.read_corpus_text(doc)
     if isinstance(chunk, str):
-        chunk = util.read_annotation_iterkeys(chunk)
-    corpus_text, anchor2pos, _pos2anchor = text
-    OUT = {}
-    for edge in chunk:
-        start = anchor2pos[util.edgeStart(edge)]
-        end = anchor2pos[util.edgeEnd(edge)]
-        OUT[edge] = corpus_text[start:end]
+        chunk = util.read_annotation_spans(doc, chunk)
+    out_annotation = []
+    for span in chunk:
+        out_annotation.append(corpus_text[span[0]:span[1]])
     if out:
-        util.write_annotation(out, OUT)
+        util.write_annotation(doc, out, out_annotation)
     else:
-        return OUT
+        return out_annotation
 
 
 def text_headtail(text, chunk, order, out_head, out_tail):

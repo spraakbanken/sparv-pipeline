@@ -122,38 +122,39 @@ def truncateset(string, maxlength=4095, delimiter="|", affix="|", encoding="UTF-
             if length > maxlength:
                 return cwbset(values[:i], delimiter, affix)
 
+
 # Encodings:
 
-UTF8 = 'UTF-8'
-LATIN1 = 'ISO-8859-1'
+UTF8 = "UTF-8"
+LATIN1 = "ISO-8859-1"
 
 # Corpus languages:
 
-SWE = 'swe'
-NLD = 'nld'
+SWE = "swe"
+NLD = "nld"
 
 # Keys used in the annotations:
 
-PARAGRAPH = 'paragraph'
-SENTENCE = 'sentence'
-TOKEN = 'token'
-LINK = 'link'
-MARKUP = 'markup'
-METADATA = 'metadata'
+PARAGRAPH = "paragraph"
+SENTENCE = "sentence"
+TOKEN = "token"
+LINK = "link"
+MARKUP = "markup"
+METADATA = "metadata"
 
-N = 'n'
-ID = 'id'
-EDGE = 'edge'
-ELEM = 'elem'
-TEXT = 'text'
-DIV = 'div'
-WORD = 'word'
-POS = 'pos'
-MSD = 'msd'
-STEM = 'stem'
-LEMMA = 'lemma'
-LEX = 'lex'
-PRECISION = 'precision'
+N = "n"
+ID = "id"
+EDGE = "edge"
+ELEM = "elem"
+TEXT = "text"
+DIV = "div"
+WORD = "word"
+POS = "pos"
+MSD = "msd"
+STEM = "stem"
+LEMMA = "lemma"
+LEX = "lex"
+PRECISION = "precision"
 
 COLORS = {
     "default":      "\033[m",
