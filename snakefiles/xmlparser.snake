@@ -1,4 +1,4 @@
-from sparv.annotators.xmlparser import xmlparser
+from sparv.modules.xmlparser import xmlparser
 from sparv.util import get_annotation_path
 
 

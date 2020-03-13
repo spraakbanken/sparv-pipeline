@@ -30,19 +30,19 @@ saldom.xml:
 	@echo "Done."
 
 saldo.pickle: saldom.xml
-	$(python) -m sparv.annotators.saldo.saldo --xml_to_pickle  --xml "saldom.xml"  --filename "$@"
+	$(python) -m sparv.modules.saldo.saldo --xml_to_pickle  --xml "saldom.xml"  --filename "$@"
 
 saldo.compound.pickle: saldom.xml
-	$(python) -m sparv.annotators.saldo.compound --xml_to_pickle  --xml "saldom.xml"  --filename "$@"
+	$(python) -m sparv.modules.saldo.compound --xml_to_pickle  --xml "saldom.xml"  --filename "$@"
 
 hunpos.saldo.suc-tags.morphtable: saldo.pickle hunpos.suc.morphtable hunpos.suc.patterns
-	$(python) -m sparv.annotators.hunpos.hunpos_morphtable --out "$@" --saldo_model "saldo.pickle" --suc "suc3.morphtable.words" --morphtable_base "hunpos.suc.morphtable" --morphtable_patterns "hunpos.suc.patterns"
+	$(python) -m sparv.modules.hunpos.hunpos_morphtable --out "$@" --saldo_model "saldo.pickle" --suc "suc3.morphtable.words" --morphtable_base "hunpos.suc.morphtable" --morphtable_patterns "hunpos.suc.patterns"
 
 hunpos.dalinm-swedberg.saldo.suc-tags.morphtable: hunpos.saldo.suc-tags.morphtable
-	$(python) -m sparv.annotators.hunpos.hunpos_morphtable_hist --out "$@" --files "hist_hunposfiles/swedberg-gender.hunpos hist_hunposfiles/dalinm.hunpos" --saldosuc_morphtable "$<"
+	$(python) -m sparv.modules.hunpos.hunpos_morphtable_hist --out "$@" --files "hist_hunposfiles/swedberg-gender.hunpos hist_hunposfiles/dalinm.hunpos" --saldosuc_morphtable "$<"
 
 bettertokenizer.sv.saldo-tokens:
-	$(python) -m sparv.annotators.segment.segment --build_token_wordlist --out "$@" --saldo_model "saldo.pickle" --segmenter better_word --model "bettertokenizer.sv" --no_pickled_model=True
+	$(python) -m sparv.modules.segment.segment --build_token_wordlist --out "$@" --saldo_model "saldo.pickle" --segmenter better_word --model "bettertokenizer.sv" --no_pickled_model=True
 
 stats_all.txt:
 	@echo "Downloading stats_all.txt..."
@@ -50,14 +50,14 @@ stats_all.txt:
 	@echo "Done."
 
 stats.pickle: stats_all.txt
-	$(python) -m sparv.annotators.saldo.train_stats_model --stats_infile "stats_all.txt" --picklefile "$@"
+	$(python) -m sparv.modules.saldo.train_stats_model --stats_infile "stats_all.txt" --picklefile "$@"
 
 nst_utf8.txt:
 	# Requires login
 	svn export https://svn.spraakdata.gu.se/sb-arkiv/lexikon/NST_svensk_leksikon/nst_utf8.txt
 
 nst.comp.pos.pickle: nst_utf8.txt
-	$(python) -m sparv.annotators.saldo.train_nst_comp_model --nst_infile nst_utf8.txt --picklefile nst.comp.pos.pickle
+	$(python) -m sparv.modules.saldo.train_nst_comp_model --nst_infile nst_utf8.txt --picklefile nst.comp.pos.pickle
 
 dalinm.xml:
 	@echo "Downloading dalinm.xml..."
@@ -73,7 +73,7 @@ diapivot.xml:
 	@echo "Done."
 
 diapivot.pickle: diapivot.xml
-	$(python) -m sparv.annotators.hist.diapivot --xml_to_pickle  --xml "diapivot.xml"  --filename "$@"
+	$(python) -m sparv.modules.hist.diapivot --xml_to_pickle  --xml "diapivot.xml"  --filename "$@"
 
 swedbergm.xml:
 	@echo "Downloading swedbergm.xml..."
@@ -100,7 +100,7 @@ geo_alternateNames.txt:
 	@echo "Done."
 
 geo.pickle: geo_cities1000.txt geo_alternateNames.txt
-	$(python) -m sparv.annotators.geo.geo --build_model --geonames "geo_cities1000.txt" --alternate_names "geo_alternateNames.txt" --out "$@"
+	$(python) -m sparv.modules.geo.geo --build_model --geonames "geo_cities1000.txt" --alternate_names "geo_alternateNames.txt" --out "$@"
 
 blingbring.txt:
 	@echo "Downloading blingbring.txt..."
@@ -108,7 +108,7 @@ blingbring.txt:
 	@echo "Done."
 
 blingbring.pickle: blingbring.txt roget_hierarchy.xml
-	$(python) -m sparv.annotators.lexical_classes.lexical_classes --blingbring_to_pickle --tsv "blingbring.txt" --classmap "roget_hierarchy.xml" --filename "$@"
+	$(python) -m sparv.modules.lexical_classes.lexical_classes --blingbring_to_pickle --tsv "blingbring.txt" --classmap "roget_hierarchy.xml" --filename "$@"
 
 swefn.xml:
 	@echo "Downloading swefn.xml..."
@@ -116,7 +116,7 @@ swefn.xml:
 	@echo "Done."
 
 swefn.pickle: swefn.xml
-	$(python) -m sparv.annotators.lexical_classes.lexical_classes --swefn_to_pickle --xml "swefn.xml" --filename "$@"
+	$(python) -m sparv.modules.lexical_classes.lexical_classes --swefn_to_pickle --xml "swefn.xml" --filename "$@"
 
 sensaldo-base-v02.txt:
 	@echo "Downloading and extracting sensaldo-base-v02.txt..."
@@ -126,7 +126,7 @@ sensaldo-base-v02.txt:
 	@echo "Done."
 
 sensaldo.pickle: sensaldo-base-v02.txt
-	$(python) -m sparv.annotators.sentiment.sentiment --sensaldo_to_pickle --tsv "sensaldo-base-v02.txt" --filename "$@"
+	$(python) -m sparv.modules.sentiment.sentiment --sensaldo_to_pickle --tsv "sensaldo-base-v02.txt" --filename "$@"
 
 wsd: wsd/ALL_512_128_w10_A2_140403_ctx1.bin wsd/lem_cbow0_s512_w10_NEW2_ctx.bin
 
