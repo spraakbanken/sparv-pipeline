@@ -2,7 +2,7 @@
 import os
 from pprint import pprint
 
-from sparv import fileid
+from sparv.modules.misc import fileid
 
 corpus_dir = os.environ.get("CORPUS_DIR", "")
 annotation_dir = os.path.join(corpus_dir, "annotations")
