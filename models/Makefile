@@ -65,7 +65,7 @@ dalinm.xml:
 	@echo "Done."
 
 dalin.pickle: dalinm.xml
-	$(python) -m sparv.lmflexicon --xml_to_pickle --xml "dalinm.xml" --filename "dalin.pickle"
+	$(python) -m sparv.util.lmflexicon --xml_to_pickle --xml "dalinm.xml" --filename "dalin.pickle"
 
 diapivot.xml:
 	@echo "Downloading diapivot.xml..."
@@ -81,7 +81,7 @@ swedbergm.xml:
 	@echo "Done."
 
 swedberg.pickle: swedbergm.xml
-	$(python) -m sparv.lmflexicon --xml_to_pickle --xml "swedbergm.xml" --filename "swedberg.pickle"
+	$(python) -m sparv.util.lmflexicon --xml_to_pickle --xml "swedbergm.xml" --filename "swedberg.pickle"
 
 geo_cities1000.txt:
 	@echo "Downloading and extracting cities1000..."
