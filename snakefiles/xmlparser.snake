@@ -1,4 +1,4 @@
-from sparv import xmlparser
+from sparv.annotators.xmlparser import xmlparser
 
 
 rule _TEXT:

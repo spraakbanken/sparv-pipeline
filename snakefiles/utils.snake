@@ -4,7 +4,7 @@ from pprint import pprint
 
 from sparv import fileid
 
-corpus_dir = os.environ.get("CORPUS_DIR", ".")
+corpus_dir = os.environ.get("CORPUS_DIR", "")
 annotation_dir = os.path.join(corpus_dir, "annotations")
 export_dir = os.path.join(corpus_dir, "export.original")
 
