@@ -1,11 +1,5 @@
 from sparv import xmlparser
 
-# Set variables if not defined by user
-try:
-    source_dir
-except NameError:
-    source_dir = "src"
-
 
 rule _TEXT:
     "Parse Sparv input (usually XML)."

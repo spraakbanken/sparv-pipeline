@@ -6,6 +6,7 @@ import os
 sparv_pipeline_path = os.getenv('SPARV_PIPELINE_PATH')
 sparv_model_dir = os.path.join(sparv_pipeline_path, "models")
 sparv_bin_dir = os.path.join(sparv_pipeline_path, "bin")
+sparv_snakefile_dir = os.path.join(sparv_pipeline_path, "snakefiles")
 
 # Default paragraph segmentation
 paragraph_chunk = "text"

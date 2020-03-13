@@ -8,6 +8,11 @@ corpus_dir = os.environ.get("CORPUS_DIR", ".")
 annotation_dir = os.path.join(corpus_dir, "annotations")
 export_dir = os.path.join(corpus_dir, "export.original")
 
+try:
+    source_dir
+except NameError:
+    source_dir = os.path.join(corpus_dir, "original", "xml")
+
 # Input file pattern
 input_files = [f[1][0] for f in snakemake.utils.listfiles(os.path.join(source_dir, "{file}.xml"))]
 input_filepaths = [f[0] for f in snakemake.utils.listfiles(os.path.join(source_dir, "{file}.xml"))]

@@ -1,22 +1,15 @@
 """
 Example Snakefile. This should be replaced by corpus specifik snakefiles later on.
 
-Run with e.g. `snakemake vrt`
+Run with e.g. `snakemake TEXT`
 """
 # Import default configuration
 import os
 include: os.path.join(os.getenv('SPARV_PIPELINE_PATH'), "config.snake")
 
-# Copus location
-corpus_dir = "../testkorpus"
-source_dir = os.path.join(corpus_dir, "original", "xml")
-# TODO: move these somewhere else?
-annotation_dir = os.path.join(corpus_dir, "annotations")
-export_dir = os.path.join(corpus_dir, "export.original")
-
-# Info about input and resulting annotations
+# Info about input and resulting annotations... not needed anymore?
 # Format: (input_elem:attribute, [output_file])
-existing_structural_elements = ["text", "text:forfattare", "text:date"]
+# existing_structural_elements = ["text", "text:forfattare", "text:date"]
 
 # Format: (input_file, output_attribute)
 positional_annotations = ["word", "pos", "msd",
@@ -43,19 +36,20 @@ dateformat = "%Y-%m-%d"
 
 # Import rule files
 # TODO: Build a mechanism that figures out automatically what files to import
-include: "snakefiles/utils.snake"
-include: "snakefiles/number.snake"
-include: "snakefiles/xmlparser.snake"
-include: "snakefiles/segment.snake"
-include: "snakefiles/hunpos.snake"
-include: "snakefiles/malt.snake"
-include: "snakefiles/saldo.snake"
-include: "snakefiles/compound.snake"
-include: "snakefiles/wsd.snake"
-include: "snakefiles/sentiment.snake"
-include: "snakefiles/swener.snake"
-include: "snakefiles/geo.snake"
-include: "snakefiles/readability.snake"
-include: "snakefiles/lexical_classes.snake"
-include: "snakefiles/dateformat.snake"
-include: "snakefiles/cwb.snake"
+include: os.path.join(sparv_snakefile_dir, "utils.snake")
+include: os.path.join(sparv_snakefile_dir, "xmlparser.snake")
+
+# include: os.path.join(sparv_snakefile_dir, "number.snake")
+# include: os.path.join(sparv_snakefile_dir, "segment.snake")
+# include: os.path.join(sparv_snakefile_dir, "hunpos.snake")
+# include: os.path.join(sparv_snakefile_dir, "malt.snake")
+# include: os.path.join(sparv_snakefile_dir, "saldo.snake")
+# include: os.path.join(sparv_snakefile_dir, "compound.snake")
+# include: os.path.join(sparv_snakefile_dir, "wsd.snake")
+# include: os.path.join(sparv_snakefile_dir, "sentiment.snake")
+# include: os.path.join(sparv_snakefile_dir, "swener.snake")
+# include: os.path.join(sparv_snakefile_dir, "geo.snake")
+# include: os.path.join(sparv_snakefile_dir, "readability.snake")
+# include: os.path.join(sparv_snakefile_dir, "lexical_classes.snake")
+# include: os.path.join(sparv_snakefile_dir, "dateformat.snake")
+# include: os.path.join(sparv_snakefile_dir, "cwb.snake")
