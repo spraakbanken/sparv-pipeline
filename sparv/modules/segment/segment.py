@@ -5,7 +5,7 @@ import re
 import nltk
 import pickle
 import sparv.util as util
-import sparv.saldo as saldo
+import sparv.modules.saldo.saldo as saldo
 try:
     from . import crf  # for CRF++ models
 except ImportError:

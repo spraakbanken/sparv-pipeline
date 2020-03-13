@@ -4,7 +4,7 @@
 Small annotations that don't fit as standalone python files.
 """
 
-from . import util
+from sparv import util
 import re
 
 
@@ -93,15 +93,15 @@ def span_as_value(out, keys):
     util.write_annotation(out, ((key, util.edgeStart(key) + "-" + util.edgeEnd(key)) for key in util.read_annotation(keys)))
 
 
-def select(out, annotation, index, separator=None):
+def select(doc, out, annotation, index, separator=None):
     """Select a specific index from the values of an annotation.
     The given annotation values are separated by 'separator',
     by default whitespace, with at least index + 1 elements.
     """
     if isinstance(index, str):
         index = int(index)
-    util.write_annotation(out, ((key, items.split(separator)[index])
-                                for (key, items) in util.read_annotation_iteritems(annotation)))
+    util.write_annotation(doc, out, (value.split(separator)[index]
+                                for value in util.read_annotation(doc, annotation)))
 
 
 def constant(chunk, out, value=None):

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import re
 import os
 import sparv.util as util
@@ -20,9 +19,9 @@ DEPREL_COLUMN = 7
 UNDEF = "_"
 
 
-def maltparse(maltjar, model, out, word, pos, msd, sentence, text, token, encoding=util.UTF8, process_dict=None):
+def maltparse(doc, maltjar, model, out, word, pos, msd, sentence, token, encoding=util.UTF8, process_dict=None):
     """
-    Runs the malt parser, in an already started process defined in
+    Run the malt parser, in an already started process defined in
     process_dict, or starts a new process (default)
 
     The process_dict argument should never be set from the command line.
@@ -30,27 +29,28 @@ def maltparse(maltjar, model, out, word, pos, msd, sentence, text, token, encodi
     if process_dict is None:
         process = maltstart(maltjar, model, encoding)
     else:
-        process = process_dict['process']
+        process = process_dict["process"]
         # If process seems dead, spawn a new
         if process.stdin.closed or process.stdout.closed or process.poll():
             util.system.kill_process(process)
             process = maltstart(maltjar, model, encoding, send_empty_sentence=True)
-            process_dict['process'] = process
+            process_dict["process"] = process
 
-    sentences = [sent for _, sent in util.get_children(text, None, sentence, token).items()]
+    sentences, orphans = util.get_children(doc, sentence, token)
+    sentences.append(orphans)
 
-    WORD = util.read_annotation(word)
-    POS = util.read_annotation(pos)
-    MSD = util.read_annotation(msd)
+    word_annotation = list(util.read_annotation(doc, word))
+    pos_annotation = list(util.read_annotation(doc, pos))
+    msd_annotation = list(util.read_annotation(doc, msd))
 
-    def conll_token(nr, tok):
-        form = WORD[tok]
+    def conll_token(nr, token_index):
+        form = word_annotation[token_index]
         lemma = UNDEF
-        pos = cpos = POS[tok]
-        feats = re.sub(r"[ ,.]", "|", MSD[tok]).replace("+", "/")
+        pos = cpos = pos_annotation[token_index]
+        feats = re.sub(r"[ ,.]", "|", msd_annotation[token_index]).replace("+", "/")
         return TAG_SEP.join((str(nr), form, lemma, cpos, pos, feats))
 
-    stdin = SENT_SEP.join(TOK_SEP.join(conll_token(n + 1, tok) for n, tok in enumerate(sent))
+    stdin = SENT_SEP.join(TOK_SEP.join(conll_token(n + 1, token_index) for n, token_index in enumerate(sent))
                           for sent in sentences)
 
     if encoding:
@@ -60,7 +60,7 @@ def maltparse(maltjar, model, out, word, pos, msd, sentence, text, token, encodi
     util.log.info("Stdin length: %s, keep process: %s", len(stdin), keep_process)
 
     if process_dict is not None:
-        process_dict['restart'] = not keep_process
+        process_dict["restart"] = not keep_process
 
     if keep_process:
         # Chatting with malt: send a SENT_SEP and read correct number of lines
@@ -77,7 +77,7 @@ def maltparse(maltjar, model, out, word, pos, msd, sentence, text, token, encodi
                     line = line.decode(encoding)
                 malt_sent.append(line)
             line = stdout_fd.readline()
-            assert line == b'\n'
+            assert line == b"\n"
             malt_sentences.append(malt_sent)
     else:
         # Otherwise use communicate which buffers properly
@@ -87,16 +87,16 @@ def maltparse(maltjar, model, out, word, pos, msd, sentence, text, token, encodi
         malt_sentences = (malt_sent.split(TOK_SEP)
                           for malt_sent in stdout.split(SENT_SEP))
 
-    OUT = {}
+    out_annotation = util.create_empty_attribute(doc, word)
     for (sent, malt_sent) in zip(sentences, malt_sentences):
-        for (tok, malt_tok) in zip(sent, malt_sent):
+        for (token_index, malt_tok) in zip(sent, malt_sent):
             cols = [(None if col == UNDEF else col) for col in malt_tok.split(TAG_SEP)]
             deprel = cols[DEPREL_COLUMN]
             head = int(cols[HEAD_COLUMN])
             headid = sent[head - 1] if head else "-"
-            OUT[tok] = (deprel, headid)
+            out_annotation[token_index] = "{} {}".format(deprel, headid)
 
-    util.write_annotation(out, OUT, transform=" ".join)
+    util.write_annotation(doc, out, out_annotation)
 
 
 def maltstart(maltjar, model, encoding, send_empty_sentence=False):
@@ -142,18 +142,18 @@ def read_conll_file(filename, encoding=util.UTF8):
         for line in F:
             line = line.strip()
             if line:
-                cols = [(None if col == '_' else col) for col in line.split('\t')]
+                cols = [(None if col == "_" else col) for col in line.split("\t")]
                 nr, wordform, lemma, cpos, pos, feats, head, deprel, phead, pdeprel = cols + [None] * (10 - len(cols))
-                sentence.append({'id': nr,
-                                 'form': wordform,
-                                 'lemma': lemma,
-                                 'cpos': cpos,
-                                 'pos': pos,
-                                 'feats': feats,
-                                 'head': head,
-                                 'deprel': deprel,
-                                 'phead': phead,
-                                 'pdeprel': pdeprel,
+                sentence.append({"id": nr,
+                                 "form": wordform,
+                                 "lemma": lemma,
+                                 "cpos": cpos,
+                                 "pos": pos,
+                                 "feats": feats,
+                                 "head": head,
+                                 "deprel": deprel,
+                                 "phead": phead,
+                                 "pdeprel": pdeprel,
                                  })
             elif sentence:
                 yield sentence
@@ -176,12 +176,12 @@ def write_conll_file(sentences, filename, encoding=util.UTF8):
                     else:
                         cols.insert(0, nr)
                 elif isinstance(token, dict):
-                    form = token.get('form', token.get('word', '_'))
-                    lemma = token.get('lemma', '_')
-                    pos = token.get('pos', '_')
-                    cpos = token.get('cpos', pos)
-                    feats = token.get('feats', token.get('msd', '_'))
-                    # feats = re.sub(r'[ ,.]', '|', feats)
+                    form = token.get("form", token.get("word", "_"))
+                    lemma = token.get("lemma", "_")
+                    pos = token.get("pos", "_")
+                    cpos = token.get("cpos", pos)
+                    feats = token.get("feats", token.get("msd", "_"))
+                    # feats = re.sub(r"[ ,.]", "|", feats)
                     cols = (nr, form, lemma, cpos, pos, feats)
                 else:
                     raise ValueError("Unknown token: %r" % token)
@@ -191,5 +191,5 @@ def write_conll_file(sentences, filename, encoding=util.UTF8):
 
 ################################################################################
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     util.run.main(maltparse)
