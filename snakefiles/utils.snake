@@ -25,13 +25,14 @@ _structural_annotations = [(i, i.replace(".", ":")) if not isinstance(i, tuple) 
 
 ################################################################################
 
-
-def get_annotation_file(doc, annot_suffix):
-    if ":" in annot_suffix:
-        annot, attr = annot_suffix.split(":")
-        return os.path.join(annotation_dir, doc, annot, attr)
-    else:
-        return os.path.join(annotation_dir, doc, annot_suffix)
+# get_annotation_path
+#
+# def get_annotation_file(doc, annot_suffix):
+#     if ":" in annot_suffix:
+#         annot, attr = annot_suffix.split(":")
+#         return os.path.join(annotation_dir, doc, annot, attr)
+#     else:
+#         return os.path.join(annotation_dir, doc, annot_suffix)
 
 ################################################################################
 # Set variables according to corpus specific config

@@ -5,12 +5,11 @@ from . import log
 ######################################################################
 # Annotations
 
-ANNOTATION_DELIM = " "
 DOC_CHUNK_DELIM = ":"
 ELEM_ATTR_DELIM = ":"
 SPAN_ANNOTATION = "@span"
 TEXT_FILE = "@text"
-DEFAULT_CORPUS_DIR = "."
+DEFAULT_CORPUS_DIR = ""
 
 
 def annotation_exists(doc, annotation):

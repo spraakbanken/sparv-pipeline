@@ -1,4 +1,5 @@
 from sparv.annotators.xmlparser import xmlparser
+from sparv.util import get_annotation_path
 
 
 rule _TEXT:
@@ -6,7 +7,7 @@ rule _TEXT:
     input:
         "%s/{file}.xml" % source_dir
     output:
-        get_annotation_file("{file}", "@text")
+        get_annotation_path("{file}", "@text")
     run:
         xmlparser.parse(
             doc=wildcards.file,
@@ -22,4 +23,4 @@ rule _TEXT:
 rule TEXT:
     "Expand _TEXT rule to process all files."
     input:
-        expand(get_annotation_file("{file}", "@text"), file=input_files)
+        expand(get_annotation_path("{file}", "@text"), file=input_files)
