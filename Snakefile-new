@@ -1,0 +1,34 @@
+import os
+
+"""Test setup with new file structure.
+
+CORPUS_DIR=../testkorpus snakemake -s Snakefile-new TEXT
+ """
+
+corpus_dir = "../testkorpus"
+source_dir = os.path.join(corpus_dir, "original", "xml")
+
+positional_annotations = ["word", "pos", "msd",
+                          "baseform", "sense", "lemgram",
+                          "compwf", "complemgram",
+                          "sentiment", "sentimentclass",
+                          "deprel", "dephead", "ref",
+                          "blingbring", "swefn"]
+
+structural_annotations = ["ne.ex", "ne.type", "ne.subtype", "ne.name",
+                          "sentence", "sentence.id", ("sentence.geocontext", "sentence:_geocontext"),
+                          "paragraph", ("paragraph.geocontext", "paragraph:_geocontext"),
+                          "text", ("text.forfattare", "text:author"),
+                          "text.blingbring", "text.swefn",
+                          "text.lix", "text.ovix", "text.nk",
+                          "text.datefrom", "text.dateto", "text.timefrom", "text.timeto"
+                          ]
+
+datefrom = "text.date"
+dateto = "text.date"
+dateformat = "%Y-%m-%d"
+
+
+
+include: "snakefiles/utils.snake"
+include: "snakefiles/xmlparser.snake"

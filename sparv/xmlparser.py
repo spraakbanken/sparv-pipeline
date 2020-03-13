@@ -5,7 +5,7 @@ import sparv.util as util
 
 
 def parse(doc, elements=[], skip=(), headers=[], header_elements=[], encoding=util.UTF8,
-          source_path="src", normalize="NFC"):
+          source_dir="src", normalize="NFC"):
     """Parse XML source file and create annotation files."""
     if isinstance(elements, str):
         elements = elements.split()
@@ -16,7 +16,7 @@ def parse(doc, elements=[], skip=(), headers=[], header_elements=[], encoding=ut
     if isinstance(header_elements, str):
         header_annotations = header_elements.split()
 
-    parser = SparvXMLParser(elements, skip, headers, header_elements, encoding, source_path,
+    parser = SparvXMLParser(elements, skip, headers, header_elements, encoding, source_dir,
                             normalize)
     parser.parse(doc)
     parser.save()
@@ -25,9 +25,9 @@ def parse(doc, elements=[], skip=(), headers=[], header_elements=[], encoding=ut
 class SparvXMLParser:
 
     def __init__(self, elements=[], skip=(), headers=[], header_elements=[], encoding=util.UTF8,
-                 source_path="src", normalize="NFC"):
+                 source_dir="src", normalize="NFC"):
 
-        self.source_path = source_path
+        self.source_dir = source_dir
         self.encoding = encoding
         self.normalize = normalize
         self.doc = None
@@ -81,9 +81,9 @@ class SparvXMLParser:
         # Source path
         if ":" in doc:
             doc, _, doc_chunk = doc.partition(":")
-            source_file = os.path.join(self.source_path, doc, doc_chunk + ".xml")
+            source_file = os.path.join(self.source_dir, doc, doc_chunk + ".xml")
         else:
-            source_file = os.path.join(self.source_path, doc + ".xml")
+            source_file = os.path.join(self.source_dir, doc + ".xml")
 
         def handle_element(element):
             start, start_subpos, end, end_subpos, name_orig, attrs = element

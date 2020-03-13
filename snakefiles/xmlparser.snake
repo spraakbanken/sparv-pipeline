@@ -1,23 +1,31 @@
 from sparv import xmlparser
 
+# Set variables if not defined by user
+try:
+    source_dir
+except NameError:
+    source_dir = "src"
+
+
 rule _TEXT:
     "Parse Sparv input (usually XML)."
     input:
         "%s/{file}.xml" % source_dir
     output:
-        annotations = ["%s/{file}.%s" % (annotation_dir, i[1]) for i in _existing_structural_elements],
-        TEXT = "%s/{file}.@TEXT" % annotation_dir
+        get_annotation_file("{file}", "@text")
     run:
-        shell("mkdir -p %s -m 775" % annotation_dir),
         xmlparser.parse(
-            source=input[0],
-            text=output.TEXT,
-            prefix="001",
-            elements=[i[0] for i in _existing_structural_elements],
-            annotations=output.annotations
+            doc=wildcards.file,
+            elements=[],
+            skip=(),
+            headers=[],
+            header_elements=[],
+            # encoding=util.UTF8,
+            source_dir=source_dir,
+            # normalize="NFC"
         )
 
 rule TEXT:
     "Expand _TEXT rule to process all files."
     input:
-        expand("%s/{file}.@TEXT" % annotation_dir, file=input_files)
+        expand(get_annotation_file("{file}", "@text"), file=input_files)

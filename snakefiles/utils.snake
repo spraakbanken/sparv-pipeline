@@ -4,15 +4,29 @@ from pprint import pprint
 
 from sparv import fileid
 
+corpus_dir = os.environ.get("CORPUS_DIR", ".")
+annotation_dir = os.path.join(corpus_dir, "annotations")
+export_dir = os.path.join(corpus_dir, "export.original")
+
 # Input file pattern
 input_files = [f[1][0] for f in snakemake.utils.listfiles(os.path.join(source_dir, "{file}.xml"))]
 input_filepaths = [f[0] for f in snakemake.utils.listfiles(os.path.join(source_dir, "{file}.xml"))]
 
 ################################################################################
 # Convert lists to tuple lists
-_existing_structural_elements = [(i, i.replace(":", ".")) if not isinstance(i, tuple) else i for i in existing_structural_elements]
+# _existing_structural_elements = [(i, i.replace(":", ".")) if not isinstance(i, tuple) else i for i in existing_structural_elements]
 _positional_annotations = [("token." + i, i) if not isinstance(i, tuple) else i for i in positional_annotations]
 _structural_annotations = [(i, i.replace(".", ":")) if not isinstance(i, tuple) else i for i in structural_annotations]
+
+################################################################################
+
+
+def get_annotation_file(doc, annot_suffix):
+    if ":" in annot_suffix:
+        annot, attr = annot_suffix.split(":")
+        return os.path.join(annotation_dir, doc, annot, attr)
+    else:
+        return os.path.join(annotation_dir, doc, annot_suffix)
 
 ################################################################################
 # Set variables according to corpus specific config

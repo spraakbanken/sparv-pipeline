@@ -10,7 +10,7 @@ DOC_CHUNK_DELIM = ":"
 ELEM_ATTR_DELIM = ":"
 SPAN_ANNOTATION = "@span"
 TEXT_FILE = "@text"
-DEFAULT_PATH = "annotations"
+DEFAULT_CORPUS_DIR = "."
 
 
 def annotation_exists(doc, annotation):
@@ -151,13 +151,14 @@ def get_annotation_path(doc, annotation):
     """Construct a path to an annotation file given a doc and annotation."""
     doc, _, chunk = doc.partition(DOC_CHUNK_DELIM)
     elem, attr = split_annotation(annotation)
-    base_path = os.environ.get("SPARV_ANNOTATION_PATH", DEFAULT_PATH)
+    corpus_dir = os.environ.get("CORPUS_DIR", DEFAULT_CORPUS_DIR)
+    annotation_dir = os.path.join(corpus_dir, "annotations")
 
     if elem == TEXT_FILE:
-        return os.path.join(base_path, doc, chunk, elem)
+        return os.path.join(annotation_dir, doc, chunk, elem)
     elif not attr:
         attr = SPAN_ANNOTATION
-    return os.path.join(base_path, doc, chunk, elem, attr)
+    return os.path.join(annotation_dir, doc, chunk, elem, attr)
 
 
 def chain(annotations, default=None):
