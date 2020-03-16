@@ -84,8 +84,18 @@ def _write_single_annotation(doc, annotation, values, append):
 
 
 def create_empty_attribute(doc, annotation):
-    """Return a list filled with None of the same size as 'annotation'."""
-    return [None] * len(list(read_annotation_spans(doc, annotation)))
+    """Return a list filled with None of the same size as 'annotation'. 'annotation' can be either of the following:
+    - the name of an annotation
+    - a list (i.e. an annotation that has already been loaded)
+    - an integer
+    """
+    if isinstance(annotation, str):
+        length = len(list(read_annotation_spans(doc, annotation)))
+    elif isinstance(annotation, list):
+        length = len(annotation)
+    elif isinstance(annotation, int):
+        length = annotation
+    return [None] * length
 
 
 def read_annotation_spans(doc, annotation, decimals=False, with_annotation_name=False):
