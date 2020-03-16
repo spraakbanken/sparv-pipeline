@@ -38,10 +38,14 @@ def get_parents(doc, parent, child, orphan_alert=False):
     return child_parents
 
 
-def get_children(doc, parent, child, orphan_alert=False):
+def get_children(doc, parent, child, orphan_alert=False, preserve_parent_annotation_order=False):
     """Return two lists. The first is a list with n (= total number of parents) elements where every element is a list
     of indices in the child annotation. The second is a list of orphans, i.e. containing indices in the child annotation
-    that have no parent."""
+    that have no parent.
+    Both parents and children are sorted according to their position in the source document, unless
+    preserve_parent_annotation_order is set to True, in which case the parents keep the order from the 'parent'
+    annotation.
+    """
     orphan_alert = util.strtobool(orphan_alert)
     parent_spans, child_spans = read_parents_and_children(doc, parent, child)
     parent_children = []
@@ -76,8 +80,11 @@ def get_children(doc, parent, child, orphan_alert=False):
         for parent_i, parent_span in parent_spans:
             parent_children.append((parent_i, []))
 
-    # Restore parent order
-    parent_children = [p for _, p in sorted(parent_children)]
+    if preserve_parent_annotation_order:
+        # Restore parent order
+        parent_children = [p for _, p in sorted(parent_children)]
+    else:
+        parent_children = [p for _, p in parent_children]
 
     return parent_children, orphans
 
