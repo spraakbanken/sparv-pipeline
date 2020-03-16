@@ -11,9 +11,8 @@ import os
 ######################################################################
 # Annotate.
 
-
 def annotate(doc, token, word, sentence, reference, out, annotations, models, msd="",
-             delimiter="|", affix="|", precision=":%.3f", precision_filter=None, min_precision=0.0,
+             delimiter="|", affix="|", precision=":%.3f", precision_filter="max", min_precision=0.66,
              skip_multiword=False, allow_multiword_overlap=False, word_separator="", lexicons=None):
     """Use the Saldo lexicon model (and optionally other older lexicons) to annotate pos-tagged words.
       - word, msd are existing annotations for wordforms and part-of-speech

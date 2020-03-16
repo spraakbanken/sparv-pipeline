@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 import sparv.util as util
 
 SENT_SEP = "$SENT$"
 
 
-def run_wsd(wsdjar, sense_model, context_model, out, sentence, word, ref, lemgram, saldo, pos, text, token,
+def run_wsd(doc, wsdjar, sense_model, context_model, out, sentence, word, ref, lemgram, saldo, pos, token,
             sensefmt=util.SCORESEP + "%.3f", default_prob="-1", encoding=util.UTF8):
     """
     Runs the word sense disambiguation tool (saldowsd.jar) to add probabilities to the saldo annotation.
@@ -17,28 +16,25 @@ def run_wsd(wsdjar, sense_model, context_model, out, sentence, word, ref, lemgra
       - ref is an existing annotation for word references
       - lemgram and saldo are existing annotations for inflection tables and meanings
       - pos is an existing annotations for part-of-speech
-      - text is an existing file with the input text and its anchors.
       - sensefmt is a format string for how to print the sense and its probability
       - default_prob is the default value for unanalyzed senses
     """
 
-    WORD = util.read_annotation(word)
-    REF = util.read_annotation(ref)
-    LEMGRAM = util.read_annotation(lemgram)
-    SALDO = util.read_annotation(saldo)
-    POS = util.read_annotation(pos)
-    textpos = util.read_corpus_text(text)[1]
+    word_annotation = list(util.read_annotation(doc, word))
+    ref_annotation = list(util.read_annotation(doc, ref))
+    lemgram_annotation = list(util.read_annotation(doc, lemgram))
+    saldo_annotation = list(util.read_annotation(doc, saldo))
+    pos_annotation = list(util.read_annotation(doc, pos))
 
-    sentences = util.get_children(text, None, sentence, token, orphan_alert=True)
-    # Sort sentences according to their text position because WSD is context dependent.
-    sentences = sorted(list(sentences.items()), key=lambda x: textpos[util.edgeStart(x[0])])
-    sentences = [sent for _, sent in sentences]
+    sentences, orphans = util.get_children(doc, sentence, token)
+    sentences.append(orphans)
 
     # Start WSD process
     process = wsd_start(wsdjar, sense_model, context_model, encoding)
 
     # Construct input and send to WSD
-    stdin = build_input(sentences, WORD, REF, LEMGRAM, SALDO, POS)
+    stdin = build_input(sentences, word_annotation, ref_annotation, lemgram_annotation, saldo_annotation, pos_annotation)
+
     if encoding:
         stdin = stdin.encode(encoding)
 
@@ -53,7 +49,7 @@ def run_wsd(wsdjar, sense_model, context_model, out, sentence, word, ref, lemgra
     if encoding:
         stdout = stdout.decode(encoding)
 
-    process_output(out, stdout, sentences, SALDO, sensefmt, default_prob)
+    process_output(doc, word, out, stdout, sentences, saldo_annotation, sensefmt, default_prob)
 
     # Kill running subprocess
     util.system.kill_process(process)
@@ -78,20 +74,20 @@ def wsd_start(wsdjar, sense_model, context_model, encoding):
     return process
 
 
-def build_input(sentences, WORD, REF, LEMGRAM, SALDO, POS):
+def build_input(sentences, word_annotation, ref_annotation, lemgram_annotation, saldo_annotation, pos_annotation):
     """Construct tab-separated input for WSD."""
     rows = []
     for sentence in sentences:
-        for tokid in sentence:
+        for token_index in sentence:
             mwe = False
-            word = WORD[tokid]
-            ref = REF[tokid]
-            pos = POS[tokid].lower()
-            saldo = SALDO[tokid].strip(util.AFFIX) if SALDO[tokid] != util.AFFIX else "_"
+            word = word_annotation[token_index]
+            ref = ref_annotation[token_index]
+            pos = pos_annotation[token_index].lower()
+            saldo = saldo_annotation[token_index].strip(util.AFFIX) if saldo_annotation[token_index] != util.AFFIX else "_"
             if "_" in saldo and len(saldo) > 1:
                 mwe = True
 
-            lemgram, simple_lemgram = make_lemgram(LEMGRAM[tokid], word, pos)
+            lemgram, simple_lemgram = make_lemgram(lemgram_annotation[token_index], word, pos)
 
             if mwe:
                 lemgram = remove_mwe(lemgram)
@@ -104,9 +100,9 @@ def build_input(sentences, WORD, REF, LEMGRAM, SALDO, POS):
     return "\n".join(rows)
 
 
-def process_output(out, stdout, in_sentences, SALDO, sensefmt, default_prob):
+def process_output(doc, word, out, stdout, in_sentences, saldo_annotation, sensefmt, default_prob):
     """Parse WSD output and write annotation."""
-    OUT = {}
+    out_annotation = util.create_empty_attribute(doc, word)
 
     # Split output into sentences
     out_sentences = stdout.strip()
@@ -120,7 +116,7 @@ def process_output(out, stdout, in_sentences, SALDO, sensefmt, default_prob):
             out_prob = out_tok.split("\t")[6]
             out_prob = [i for i in out_prob.split("|") if i != "_"]
             out_meanings = [i for i in out_tok.split("\t")[5].split("|") if i != "_"]
-            saldo = [i for i in SALDO[in_tok].strip(util.AFFIX).split(util.DELIM) if i]
+            saldo = [i for i in saldo_annotation[in_tok].strip(util.AFFIX).split(util.DELIM) if i]
 
             new_saldo = []
             if out_prob:
@@ -135,9 +131,9 @@ def process_output(out, stdout, in_sentences, SALDO, sensefmt, default_prob):
 
             # Sort by probability
             new_saldo = sorted(new_saldo, key=lambda x: float(x.split(":")[-1]), reverse=True)
-            OUT[in_tok] = util.cwbset(new_saldo)
+            out_annotation[in_tok] = util.cwbset(new_saldo)
 
-    util.write_annotation(out, OUT)
+    util.write_annotation(doc, out, out_annotation)
 
 
 def make_lemgram(lemgram, word, pos):
