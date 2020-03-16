@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pickle
 import itertools
 import re
@@ -10,9 +9,9 @@ SPLIT_LIMIT = 200
 COMP_LIMIT = 100
 
 
-def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp, saldo_comp_model, nst_model, stats_model,
-             complemgramfmt=util.SCORESEP + "%.3e", delimiter=util.DELIM, compdelim=util.COMPSEP, affix=util.AFFIX,
-             cutoff=True, saldo_comp_lexicon=None, stats_lexicon=None):
+def annotate(doc, out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp, saldo_comp_model, nst_model,
+             stats_model, complemgramfmt=util.SCORESEP + "%.3e", delimiter=util.DELIM, compdelim=util.COMPSEP,
+             affix=util.AFFIX, cutoff=True, saldo_comp_lexicon=None, stats_lexicon=None):
     """Divides compound words into prefix(es) and suffix.
     - out_complemgram is the resulting annotation file for compound lemgrams
       and their probabilities
@@ -41,28 +40,26 @@ def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp
     if not stats_lexicon:
         stats_lexicon = StatsLexicon(stats_model)
 
-    WORD = util.read_annotation(word)
-    MSD = util.read_annotation(msd)
+    word_msd_baseform_annotations = list(util.read_annotation_attributes(doc, (word, msd, baseform_tmp)))
 
     # Create alternative lexicon (for words within the file)
-    altlexicon = InFileLexicon(WORD, MSD)
+    altlexicon = InFileLexicon(word_msd_baseform_annotations)
 
     ##################
     # Do annotation
     ##################
-    OUT_complem = {}
-    OUT_compwf = {}
-    OUT_baseform = {}
-    IN_baseform = util.read_annotation(baseform_tmp)
+    complem_annotation = []
+    compwf_annotation = []
+    baseform_annotation = []
 
     previous_compounds = {}
 
-    for tokid in WORD:
-        key = (WORD[tokid], MSD[tokid])
+    for word, msd, baseform_orig in word_msd_baseform_annotations:
+        key = (word, msd)
         if key in previous_compounds:
             compounds = previous_compounds[key]
         else:
-            compounds = compound(saldo_comp_lexicon, altlexicon, WORD[tokid], MSD[tokid])
+            compounds = compound(saldo_comp_lexicon, altlexicon, word, msd)
 
             if compounds:
                 compounds = rank_compounds(compounds, nst_model, stats_lexicon)
@@ -81,17 +78,18 @@ def annotate(out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp
             previous_compounds[key] = compounds
 
         # Create complem and compwf annotations
-        make_complem_and_compwf(OUT_complem, OUT_compwf, complemgramfmt, tokid, compounds, compdelim, delimiter, affix)
+        make_complem_and_compwf(complem_annotation, compwf_annotation, complemgramfmt, compounds, compdelim, delimiter,
+                                affix)
 
         # Create new baseform annotation if necessary
-        if IN_baseform[tokid] != affix:
-            OUT_baseform[tokid] = IN_baseform[tokid]
+        if baseform_orig != affix:
+            baseform_annotation.append(baseform_orig)
         else:
-            make_new_baseforms(OUT_baseform, tokid, MSD[tokid], compounds, stats_lexicon, altlexicon, delimiter, affix)
+            make_new_baseforms(baseform_annotation, msd, compounds, stats_lexicon, altlexicon, delimiter, affix)
 
-    util.write_annotation(out_complemgrams, OUT_complem)
-    util.write_annotation(out_compwf, OUT_compwf)
-    util.write_annotation(out_baseform, OUT_baseform)
+    util.write_annotation(doc, out_complemgrams, complem_annotation)
+    util.write_annotation(doc, out_compwf, compwf_annotation)
+    util.write_annotation(doc, out_baseform, baseform_annotation)
 
 
 class StatsLexicon(object):
@@ -153,15 +151,15 @@ class InFileLexicon(object):
     """A dictionary of all words occuring in the input file.
     keys = words, values =  MSD tags
     """
-    def __init__(self, word, msd):
+    def __init__(self, annotations):
         lex = {}
-        for tokid in word:
-            w = word[tokid].lower()
+        for word, msd, _ in annotations:
+            w = word.lower()
             # Skip words consisting of a single letter (saldo should take care of these)
             # Also skip words consisting of two letters, to avoid an explosion of analyses
             if len(w) > 2:
                 lex[w] = lex.get(w, set())
-                pos = msd[tokid][:msd[tokid].find(".")] if msd[tokid][:msd[tokid].find(".")] != -1 else msd[tokid]
+                pos = msd.split(".")[0]
                 lex[w].add((w, pos))
         self.lexicon = lex
 
@@ -256,7 +254,8 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
                 # Have we analyzed this suffix yet?
                 if not spans[-1] in valid_spans:
                     # Is there a possible suffix analysis?
-                    if exception(comp[-1]) or not (saldo_lexicon.get_suffixes(comp[-1], msd) or altlexicon.get_suffixes(comp[-1], msd)):
+                    if exception(comp[-1]) or not (
+                            saldo_lexicon.get_suffixes(comp[-1], msd) or altlexicon.get_suffixes(comp[-1], msd)):
                         invalid_spans.add(spans[-1])
                         abort = True
                     else:
@@ -331,7 +330,8 @@ def rank_compounds(compounds, nst_model, stats_lexicon):
         for c in clist:
             tags = list(itertools.product(*[affix[2] for affix in c]))
             # Calculate probability score
-            word_probs = max(reduce(lambda x, y: x * y, [(stats_lexicon.lookup_prob(i)) for i in zip(affixes, t)]) for t in tags)
+            word_probs = max(
+                reduce(lambda x, y: x * y, [(stats_lexicon.lookup_prob(i)) for i in zip(affixes, t)]) for t in tags)
             tag_prob = max(nst_model.prob("+".join(t)) for t in tags)
             score = word_probs * tag_prob
             ranklist.append((score, c))
@@ -399,9 +399,8 @@ def compound(saldo_lexicon, altlexicon, w, msd=None):
     return out_compounds
 
 
-def make_complem_and_compwf(OUT_complem, OUT_compwf, complemgramfmt, tokid, compounds, compdelim, delimiter, affix):
-    """Add a list of compound lemgrams to the dictionary OUT_complem[tokid]
-    and a list of compound wordforms to OUT_compwf."""
+def make_complem_and_compwf(out_complem, out_compwf, complemgramfmt, compounds, compdelim, delimiter, affix):
+    """Add a list of compound lemgrams to out_complem and a list of compound wordforms to out_compwf."""
     complem_list = []
     compwf_list = []
     for comp in compounds:
@@ -431,13 +430,13 @@ def make_complem_and_compwf(OUT_complem, OUT_compwf, complemgramfmt, tokid, comp
         if wf not in compwf_list:
             compwf_list.append(wf)
 
-    # Update dictionaries
-    OUT_complem[tokid] = util.cwbset(complem_list, delimiter, affix) if compounds and complem_list else affix
-    OUT_compwf[tokid] = util.cwbset(compwf_list, delimiter, affix) if compounds else affix
+    # Add to annotations
+    out_complem.append(util.cwbset(complem_list, delimiter, affix) if compounds and complem_list else affix)
+    out_compwf.append(util.cwbset(compwf_list, delimiter, affix) if compounds else affix)
 
 
-def make_new_baseforms(OUT_baseform, tokid, msd_tag, compounds, stats_lexicon, altlexicon, delimiter, affix):
-    """Add a list of baseforms to the dictionary OUT_baseform[tokid]."""
+def make_new_baseforms(out_baseform, msd_tag, compounds, stats_lexicon, altlexicon, delimiter, affix):
+    """Add a list of baseforms to the out_baseform."""
     baseform_list = []
     msd_tag = msd_tag[:msd_tag.find(".")]
     for comp in compounds:
@@ -462,8 +461,8 @@ def make_new_baseforms(OUT_baseform, tokid, msd_tag, compounds, stats_lexicon, a
             if stats_lexicon.lookup_word_tag_freq(baseform, msd_tag) > 0 or altlexicon.lookup(baseform.lower()) != []:
                 baseform_list.append(baseform)
 
-    # Update dictionary
-    OUT_baseform[tokid] = util.cwbset(baseform_list, delimiter, affix) if (compounds and baseform_list) else affix
+    # Add to annotation
+    out_baseform.append(util.cwbset(baseform_list, delimiter, affix) if (compounds and baseform_list) else affix)
 
 
 def read_xml(xml="saldom.xml", tagset="SUC"):
@@ -555,6 +554,7 @@ def xml_to_pickle(xml, filename):
     save_to_picklefile(filename, xml_lexicon)
 
 ######################################################################
+
 
 if __name__ == "__main__":
     util.run.main(annotate, xml_to_pickle=xml_to_pickle)
