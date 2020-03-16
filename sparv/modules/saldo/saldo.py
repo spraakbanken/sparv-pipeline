@@ -60,13 +60,11 @@ def annotate(doc, token, word, sentence, reference, out, annotations, models, ms
     out = out.split()
     assert len(out) == len(annotations), "Number of target files and annotations must be the same"
 
-    if isinstance(skip_multiword, str):
-        skip_multiword = (skip_multiword.lower() == "true")
+    skip_multiword = util.strtobool(skip_multiword)
     if skip_multiword:
         util.log.info("Skipping multi word annotations")
 
-    if isinstance(allow_multiword_overlap, str):
-        allow_multiword_overlap = (allow_multiword_overlap.lower() == "true")
+    allow_multiword_overlap = util.strtobool(allow_multiword_overlap)
 
     min_precision = float(min_precision)
 
@@ -83,7 +81,7 @@ def annotate(doc, token, word, sentence, reference, out, annotations, models, ms
     sentences, orphans = util.get_children(doc, sentence, token)
     sentences.append(orphans)
 
-    out_annotation = {}
+    out_annotation = util.create_empty_attribute(doc, word_annotation)
 
     for sent in sentences:
         incomplete_multis = []  # [{annotation, words, [ref], is_particle, lastwordWasGap, numberofgaps}]
@@ -126,7 +124,7 @@ def annotate(doc, token, word, sentence, reference, out, annotations, models, ms
         # Loop to next sentence
 
     for out_file, annotation in zip(out, annotations):
-        util.write_annotation(doc, out_file, [v.get(annotation, delimiter) for k, v in out_annotation.items()])
+        util.write_annotation(doc, out_file, [v.get(annotation, delimiter) for v in out_annotation])
 
 
 def find_single_word(thewords, lexicon_list, msdtag, precision, min_precision, precision_filter, annotation_info):
