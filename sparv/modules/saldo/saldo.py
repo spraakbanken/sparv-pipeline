@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Adds annotations from Saldo.
 """
@@ -14,7 +12,7 @@ import os
 # Annotate.
 
 
-def annotate(text, token, word, sentence, reference, out, annotations, models, msd="",
+def annotate(doc, token, word, sentence, reference, out, annotations, models, msd="",
              delimiter="|", affix="|", precision=":%.3f", precision_filter=None, min_precision=0.0,
              skip_multiword=False, allow_multiword_overlap=False, word_separator="", lexicons=None):
     """Use the Saldo lexicon model (and optionally other older lexicons) to annotate pos-tagged words.
@@ -55,8 +53,9 @@ def annotate(text, token, word, sentence, reference, out, annotations, models, m
             assert lexicons.get(name, None) is not None, "Lexicon %s not found!" % name
             lexicon_list.append((name, lexicons[name]))
 
-    MAX_GAPS = 1  # Maximum number of gaps in multi-word units.
-                  # Set to 0 for hist-mode? since many (most?) multi-word in the old lexicons are unseparable (half öre etc)
+    # Maximum number of gaps in multi-word units.
+    # TODO: Set to 0 for hist-mode? since many (most?) multi-word in the old lexicons are unseparable (half öre etc)
+    MAX_GAPS = 1
 
     annotations = annotations.split()
     out = out.split()
@@ -75,29 +74,30 @@ def annotate(text, token, word, sentence, reference, out, annotations, models, m
     # If min_precision is 0, skip almost all part-of-speech checking (verb multi-word expressions still won't be allowed to span over other verbs)
     skip_pos_check = (min_precision == 0.0)
 
-    WORD = util.read_annotation(word)
-    REF = util.read_annotation(reference)
+    word_annotation = list(util.read_annotation(doc, word))
+    ref_annotation = list(util.read_annotation(doc, reference))
     if msd:
-        MSD = util.read_annotation(msd)
+        msd_annotation = list(util.read_annotation(doc, msd))
     for out_file in out:
-        util.clear_annotation(out_file)
+        util.clear_annotation(doc, out_file)
 
-    # sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
-    sentences = [sent for _, sent in util.get_children(text, out=None, parent=sentence, child=token).items()]
-    OUT = {}
+    sentences, orphans = util.get_children(doc, sentence, token)
+    sentences.append(orphans)
+
+    out_annotation = {}
 
     for sent in sentences:
         incomplete_multis = []  # [{annotation, words, [ref], is_particle, lastwordWasGap, numberofgaps}]
         complete_multis = []    # ([ref], annotation)
         sentence_tokens = {}
 
-        for tokid in sent:
-            theword = WORD[tokid]
-            ref = REF[tokid]
-            msdtag = MSD[tokid] if msd else ""
+        for token_index in sent:
+            theword = word_annotation[token_index]
+            ref = ref_annotation[token_index]
+            msdtag = msd_annotation[token_index] if msd else ""
 
             annotation_info = {}
-            sentence_tokens[ref] = {"tokid": tokid, "annotations": annotation_info}
+            sentence_tokens[ref] = {"token_index": token_index, "annotations": annotation_info}
 
             # Support for multiple values of word
             if word_separator:
@@ -110,7 +110,7 @@ def annotate(text, token, word, sentence, reference, out, annotations, models, m
 
             # Find multi-word expressions
             if not skip_multiword:
-                find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref, msdtag, MAX_GAPS, ann_tags_words, MSD, sent, skip_pos_check)
+                find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref, msdtag, MAX_GAPS, ann_tags_words, msd_annotation, sent, skip_pos_check)
 
             # Loop to next token
 
@@ -122,12 +122,12 @@ def annotate(text, token, word, sentence, reference, out, annotations, models, m
         save_multiwords(complete_multis, sentence_tokens)
 
         for token in list(sentence_tokens.values()):
-            OUT[token["tokid"]] = _join_annotation(token["annotations"], delimiter, affix)
+            out_annotation[token["token_index"]] = _join_annotation(token["annotations"], delimiter, affix)
 
         # Loop to next sentence
 
     for out_file, annotation in zip(out, annotations):
-        util.write_annotation(out_file, [(tok, OUT[tok].get(annotation, affix)) for tok in OUT], append=True)
+        util.write_annotation(doc, out_file, [v.get(annotation, delimiter) for k, v in out_annotation.items()])
 
 
 def find_single_word(thewords, lexicon_list, msdtag, precision, min_precision, precision_filter, annotation_info):
@@ -186,7 +186,7 @@ def find_single_word(thewords, lexicon_list, msdtag, precision, min_precision, p
     return ann_tags_words
 
 
-def find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref, msdtag, max_gaps, ann_tags_words, MSD, sent, skip_pos_check):
+def find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref, msdtag, max_gaps, ann_tags_words, msd_annotation, sent, skip_pos_check):
     todelfromincomplete = []  # list to keep track of which expressions that have been completed
 
     for i, x in enumerate(incomplete_multis):
@@ -213,7 +213,7 @@ def find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref
                 todelfromincomplete.append(i)
 
                 # Create a list of msdtags of words belonging to the completed multi-word expr.
-                msdtag_list = [MSD[sent[int(ref) - 1]] for ref in x[2]]
+                msdtag_list = [msd_annotation[sent[int(ref) - 1]] for ref in x[2]]
 
                 # For completed verb multis, check that at least one of the words is a verb:
                 if not skip_pos_check and "..vbm." in x[0]['lem'][0]:

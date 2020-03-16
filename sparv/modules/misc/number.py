@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from collections import defaultdict
 import random
 import sparv.util as util
@@ -68,13 +67,13 @@ def number_by_parent(out, chunks, parent_order, parent_children, prefix="", star
     read_chunks_and_write_new_ordering(out, chunks, order, prefix, start)
 
 
-def number_relative(out, text, parent, child, prefix="", start=START_DEFAULT):
-    """ Number chunks by their relative position within a parent. """
-    PARENT_CHILDREN = util.get_children(text, out=None, parent=parent, child=child)
+def number_relative(doc, out, parent, child, prefix="", start=START_DEFAULT):
+    """Number chunks by their relative position within a parent."""
+    parent_children, orphans = util.get_children(doc, parent, child)
 
-    util.write_annotation(out, ((child, "%s%0*d" % (prefix, len(str(len(PARENT_CHILDREN[parent]) - 1 + start)), cnr))
-                                for parent in PARENT_CHILDREN
-                                for cnr, child in enumerate(PARENT_CHILDREN[parent], start)))
+    util.write_annotation(doc, out, ("%s%0*d" % (prefix, len(str(len(parent) - 1 + start)), cnr)
+                                     for parent in parent_children
+                                     for cnr, _index in enumerate(parent, start)))
 
 
 def read_chunks_and_write_new_ordering(out, chunks, order, prefix="", start=START_DEFAULT):
@@ -104,6 +103,6 @@ if __name__ == '__main__':
                   random=number_by_random,
                   attribute=renumber_by_attribute,
                   shuffle=renumber_by_shuffle,
-                  parent=number_by_parent,
+                  parent_annotation=number_by_parent,
                   relative=number_relative,
                   )
