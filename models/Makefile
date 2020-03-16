@@ -100,7 +100,7 @@ geo_alternateNames.txt:
 	@echo "Done."
 
 geo.pickle: geo_cities1000.txt geo_alternateNames.txt
-	$(python) -m sparv.modules.geo.geo --build_model --geonames "geo_cities1000.txt" --alternate_names "geo_alternateNames.txt" --out "$@"
+	$(python) -m sparv.modules.geo.geo --build_model --geonames "geo_cities1000.txt" --alternative_names "geo_alternateNames.txt" --out "$@"
 
 blingbring.txt:
 	@echo "Downloading blingbring.txt..."

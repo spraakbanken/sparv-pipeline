@@ -1,18 +1,15 @@
-# -*- coding: utf-8 -*-
-
 """
-Annotates geographical features.
+Annotate geographical features.
 """
 
 import sparv.util as util
-import sparv.annotate as annotate
 import pickle
 from collections import defaultdict
 
 
-def build_model(geonames, alternate_names, out, protocol=-1):
+def build_model(geonames, alternative_names, out, protocol=-1):
     """Read list of cities from Geonames dump (http://download.geonames.org/export/dump/).
-    Add alternate names for each city."""
+    Add alternative names for each city."""
 
     util.log.info("Reading geonames: %s", geonames)
     result = {}
@@ -22,22 +19,22 @@ def build_model(geonames, alternate_names, out, protocol=-1):
 
             result[geonameid] = {
                 "name": name,
-                "alternate_names": {},
+                "alternative_names": {},
                 "latitude": latitude,
                 "longitude": longitude,
                 "country": country,
                 "population": population
             }
 
-    # Parse file with alternate names of locations, paired with language codes
-    util.log.info("Reading alternate names: %s", alternate_names)
+    # Parse file with alternative names of locations, paired with language codes
+    util.log.info("Reading alternative names: %s", alternative_names)
 
-    with open(alternate_names, encoding="UTF-8") as model_file:
+    with open(alternative_names, encoding="UTF-8") as model_file:
         for line in model_file:
             altid, geonameid, isolanguage, altname, is_preferred_name, is_short_name, is_colloquial, is_historic = line.split("\t")
             if geonameid in result:
-                result[geonameid]["alternate_names"].setdefault(isolanguage, [])
-                result[geonameid]["alternate_names"][isolanguage].append(altname)
+                result[geonameid]["alternative_names"].setdefault(isolanguage, [])
+                result[geonameid]["alternative_names"][isolanguage].append(altname)
 
     util.log.info("Saving geomodel in Pickle format")
 
@@ -55,9 +52,9 @@ def load_model(model, language=()):
     result = defaultdict(set)
     for geonameid, l in list(m.items()):
         result[l["name"].lower()].add((l["name"], l["latitude"], l["longitude"], l["country"], l["population"]))
-        for lang in l["alternate_names"]:
+        for lang in l["alternative_names"]:
             if lang in language or not language:
-                for altname in l["alternate_names"][lang]:
+                for altname in l["alternative_names"][lang]:
                     result[altname.lower()].add((l["name"], l["latitude"], l["longitude"], l["country"], l["population"]))
 
     util.log.info("Read %d geographical names", len(result))
@@ -79,42 +76,39 @@ def most_populous(locations):
 
 
 def _format_location(location_data):
-    """Format location as city;country;latitude;longitude"""
+    """Format location as city;country;latitude;longitude."""
     return util.cwbset(";".join((y[0], y[3], y[1], y[2])) for x, y in location_data)
 
 
-def contextual(out, chunk, context, ne, ne_subtype, text, model, method="populous", language=[], encoding="UTF-8"):
+def contextual(doc, out, chunk, context, ne_type, ne_subtype, ne_name, model, method="populous", language=[], encoding="UTF-8"):
     """Annotate chunks with location data, based on locations contained within the text.
+
     context = text chunk to use for disambiguating places (when applicable).
     chunk = text chunk to which the annotation will be added.
     """
-
     if isinstance(language, str):
         language = language.split()
 
     model = load_model(model, language=language)
 
-    text = util.read_corpus_text(text)
-    chunk = util.read_annotation(chunk)
-    context = util.read_annotation(context)
-    ne = util.read_annotation(ne)
-    ne_text = annotate.text_spans(text, ne, None)
-    ne_subtype = util.read_annotation(ne_subtype)
+    ne_type_annotation = list(util.read_annotation(doc, ne_type))
+    ne_subtype_annotation = list(util.read_annotation(doc, ne_subtype))
+    ne_name_annotation = list(util.read_annotation(doc, ne_name))
 
-    children_context_chunk = util.get_children(text, None, context, chunk, orphan_alert=False)
-    children_chunk_ne = util.get_children(text, None, chunk, ne, orphan_alert=False)
+    children_context_chunk, orphans = util.get_children(doc, context, chunk)
+    children_chunk_ne, orphans = util.get_children(doc, chunk, ne_type)
 
-    result = {}
+    out_annotation = util.create_empty_attribute(doc, chunk)
 
-    for cont, chunks in list(children_context_chunk.items()):
+    for chunks in children_context_chunk:
         all_locations = []  # TODO: Maybe not needed for anything?
         context_locations = []
         chunk_locations = defaultdict(list)
 
         for ch in chunks:
             for n in children_chunk_ne[ch]:
-                if ne[n] == "LOC" and "PPL" in ne_subtype[n]:
-                    location_text = ne_text[n].replace("\n", " ").replace("  ", " ")
+                if ne_type_annotation[n] == "LOC" and "PPL" in ne_subtype_annotation[n]:
+                    location_text = ne_name_annotation[n].replace("\n", " ").replace("  ", " ")
                     location_data = model.get(location_text.lower())
                     if location_data:
                         all_locations.append((location_text, list(location_data)))
@@ -122,20 +116,18 @@ def contextual(out, chunk, context, ne, ne_subtype, text, model, method="populou
                         chunk_locations[ch].append((location_text, list(location_data)))
                     else:
                         pass
-                        # util.log.info("No location found for %s" % ne_text[n].replace("%", "%%"))
+                        # util.log.info("No location found for %s" % ne_name_annotation[n].replace("%", "%%"))
 
         chunk_locations = most_populous(chunk_locations)
 
         for c in chunks:
-            result[c] = _format_location(chunk_locations.get(c, ()))
+            out_annotation[c] = _format_location(chunk_locations.get(c, ()))
 
-    util.write_annotation(out, result)
+    util.write_annotation(doc, out, out_annotation)
 
 
 def metadata(out, chunk, source, model, text=None, method="populous", language=[], encoding="UTF-8"):
-    """Get location data based on metadata containing location names.
-    """
-
+    """Get location data based on metadata containing location names."""
     if isinstance(language, str):
         language = language.split()
 
