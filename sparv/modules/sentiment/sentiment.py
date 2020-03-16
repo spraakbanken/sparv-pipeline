@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import sparv.util as util
 
 SENTIMENT_LABLES = {
@@ -9,9 +7,10 @@ SENTIMENT_LABLES = {
 }
 
 
-def sentiment(sense, out_scores, out_labels, model, max_decimals=6, lexicon=None):
+def sentiment(doc, sense, out_scores, out_labels, model, max_decimals=6, lexicon=None):
     """Assign sentiment values to tokens based on their sense annotation.
     When more than one sense is possible, calulate a weighted mean.
+    - doc: the corpus document.
     - sense: existing annotation with saldoIDs.
     - out_scores, out_labels: resulting annotation file.
     - model: pickled lexicon with saldoIDs as keys.
@@ -24,14 +23,14 @@ def sentiment(sense, out_scores, out_labels, model, max_decimals=6, lexicon=None
         lexicon = util.PickledLexicon(model)
     # Otherwise use pre-loaded lexicon (from catapult)
 
-    sense = util.read_annotation(sense)
-    result_scores = {}
-    result_labels = {}
+    sense = util.read_annotation(doc, sense)
+    result_scores = []
+    result_labels = []
 
     for token in sense:
         # Get set of senses for each token and sort them according to their probabilities
         token_senses = [tuple(s.rsplit(util.SCORESEP, 1)) if util.SCORESEP in s else (s, -1.0)
-                        for s in sense[token].split(util.DELIM) if s]
+                        for s in token.split(util.DELIM) if s]
         token_senses.sort(key=lambda x: float(x[1]), reverse=True)
 
         # Lookup the sentiment score for the most probable sense and assign a sentiment label
@@ -42,14 +41,14 @@ def sentiment(sense, out_scores, out_labels, model, max_decimals=6, lexicon=None
             score = None
 
         if score:
-            result_scores[token] = score
-            result_labels[token] = SENTIMENT_LABLES.get(int(score))
+            result_scores.append(score)
+            result_labels.append(SENTIMENT_LABLES.get(int(score)))
         else:
-            result_scores[token] = None
-            result_labels[token] = None
+            result_scores.append(None)
+            result_labels.append(None)
 
-    util.write_annotation(out_scores, result_scores)
-    util.write_annotation(out_labels, result_labels)
+    util.write_annotation(doc, out_scores, result_scores)
+    util.write_annotation(doc, out_labels, result_labels)
 
 
 def read_sensaldo(tsv="sensaldo-base-v02.txt", verbose=True):
