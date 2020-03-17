@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 Formats dates and times.
 """
@@ -9,9 +7,11 @@ from dateutil.relativedelta import relativedelta
 import sparv.util as util
 
 
-def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outformat="%Y%m%d%H%M%S", splitter=None, regex=None):
-    """Takes dates and input formats. Converts to specified format.
+def dateformat(doc, infrom, outfrom=None, into=None, outto=None, informat="", outformat="%Y%m%d%H%M%S", splitter=None,
+               regex=None):
+    """Take existing dates and input formats and convert to specified output format.
 
+    - doc, corpus document name
     - infrom, annotation containing from-dates
     - outfrom, annotation with from-dates to be written
     - into, annotation containing to-dates (optional)
@@ -77,15 +77,16 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
     if splitter:
         splitter = splitter
 
-    assert len(outformat) == 1 or (len(outformat) == len(informat)), "The number of out-formats must be equal to one or the number of in-formats."
+    assert len(outformat) == 1 or (len(outformat) == len(informat)), "The number of out-formats must be equal to one " \
+                                                                     "or the number of in-formats."
 
-    ifrom = util.read_annotation_iteritems(infrom)
-    ofrom = {}
+    ifrom = list(util.read_annotation(doc, infrom))
+    ofrom = util.create_empty_attribute(doc, ifrom)
 
-    for key, val in ifrom:
+    for index, val in enumerate(ifrom):
         val = val.strip()
         if not val:
-            ofrom[key] = None
+            ofrom[index] = None
             continue
 
         tries = 0
@@ -107,7 +108,7 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                         temp.append([x for x in matches.groups() if x][0])
                 if not temp:
                     # If the regex doesn't match, treat as no date
-                    ofrom[key] = None
+                    ofrom[index] = None
                     continue
                 vals = temp
 
@@ -128,10 +129,11 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                             raise ValueError
                     fromdates.append(datetime.datetime.strptime(v, inf[i]))
                 if len(fromdates) == 1 or outto:
-                    ofrom[key] = strftime(fromdates[0], outformat[0] if len(outformat) == 1 else outformat[tries - 1])
+                    ofrom[index] = fromdates[0].strftime(outformat[0] if len(outformat) == 1 else outformat[tries - 1])
                 else:
-                    outstrings = [strftime(fromdate, outformat[0] if len(outformat) == 1 else outformat[tries - 1]) for fromdate in fromdates]
-                    ofrom[key] = outstrings[0] + splitter + outstrings[1]
+                    outstrings = [fromdate.strftime(outformat[0] if len(outformat) == 1 else outformat[tries - 1])
+                                  for fromdate in fromdates]
+                    ofrom[index] = outstrings[0] + splitter + outstrings[1]
                 break
             except ValueError:
                 if tries == len(informat):
@@ -139,16 +141,16 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                     raise
                 continue
 
-    util.write_annotation(outfrom, ofrom)
+    util.write_annotation(doc, outfrom, ofrom)
     del ofrom
 
     if outto:
-        ito = util.read_annotation_iteritems(into)
-        oto = {}
+        ito = list(util.read_annotation(doc, into))
+        oto = util.create_empty_attribute(doc, into)
 
-        for key, val in ito:
+        for index, val in enumerate(ito):
             if not val:
-                oto[key] = None
+                oto[index] = None
                 continue
 
             tries = 0
@@ -170,7 +172,7 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                             temp.append([x for x in matches.groups() if x][0])
                     if not temp:
                         # If the regex doesn't match, treat as no date
-                        oto[key] = None
+                        oto[index] = None
                         continue
                     vals = temp
 
@@ -205,7 +207,7 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                         add = relativedelta(seconds=1)
 
                     todates = [todate + add - relativedelta(seconds=1) for todate in todates]
-                    oto[key] = strftime(todates[-1], outformat[0] if len(outformat) == 1 else outformat[tries - 1])
+                    oto[index] = todates[-1].strftime(outformat[0] if len(outformat) == 1 else outformat[tries - 1])
                     break
                 except ValueError:
                     if tries == len(informat):
@@ -213,46 +215,7 @@ def dateformat(infrom, outfrom=None, into=None, outto=None, informat="", outform
                         raise
                     continue
 
-        util.write_annotation(outto, oto)
-
-
-def strftime(dt, fmt):
-    """Python datetime.strftime < 1900 workaround, taken from https://gist.github.com/2000837"""
-
-    TEMPYEAR = 9996  # We need to use a leap year to support feb 29th
-
-    if dt.year < 1900:
-        # create a copy of this datetime, just in case, then set the year to
-        # something acceptable, then replace that year in the resulting string
-        tmp_dt = datetime.datetime(TEMPYEAR, dt.month, dt.day,
-                                   dt.hour, dt.minute,
-                                   dt.second, dt.microsecond,
-                                   dt.tzinfo)
-
-        if re.search('(?<!%)((?:%%)*)(%y)', fmt):
-            util.log.warning("Using %y time format with year prior to 1900 could produce unusual results!")
-
-        tmp_fmt = fmt
-        tmp_fmt = re.sub('(?<!%)((?:%%)*)(%y)', '\\1\x11\x11', tmp_fmt, re.U)
-        tmp_fmt = re.sub('(?<!%)((?:%%)*)(%Y)', '\\1\x12\x12\x12\x12', tmp_fmt, re.U)
-        tmp_fmt = tmp_fmt.replace(str(TEMPYEAR), '\x13\x13\x13\x13')
-        tmp_fmt = tmp_fmt.replace(str(TEMPYEAR)[-2:], '\x14\x14')
-
-        result = tmp_dt.strftime(tmp_fmt)
-
-        if '%c' in fmt:
-            # local datetime format - uses full year but hard for us to guess where.
-            result = result.replace(str(TEMPYEAR), str(dt.year))
-
-        result = result.replace('\x11\x11', str(dt.year)[-2:])
-        result = result.replace('\x12\x12\x12\x12', str(dt.year))
-        result = result.replace('\x13\x13\x13\x13', str(TEMPYEAR))
-        result = result.replace('\x14\x14', str(TEMPYEAR)[-2:])
-
-        return result
-
-    else:
-        return dt.strftime(fmt)
+        util.write_annotation(doc, outto, oto)
 
 
 if __name__ == '__main__':
