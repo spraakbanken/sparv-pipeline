@@ -80,7 +80,7 @@ def _format_location(location_data):
     return util.cwbset(";".join((y[0], y[3], y[1], y[2])) for x, y in location_data)
 
 
-def contextual(doc, out, chunk, context, ne_type, ne_subtype, ne_name, model, method="populous", language=[], encoding="UTF-8"):
+def contextual(doc, out, chunk, context, ne_type, ne_subtype, ne_name, model, method="populous", language=[]):
     """Annotate chunks with location data, based on locations contained within the text.
 
     context = text chunk to use for disambiguating places (when applicable).
@@ -126,45 +126,44 @@ def contextual(doc, out, chunk, context, ne_type, ne_subtype, ne_name, model, me
     util.write_annotation(doc, out, out_annotation)
 
 
-def metadata(out, chunk, source, model, text=None, method="populous", language=[], encoding="UTF-8"):
+def metadata(doc, out, chunk, source, model, method="populous", language=[], encoding="UTF-8"):
     """Get location data based on metadata containing location names."""
     if isinstance(language, str):
         language = language.split()
 
     model = load_model(model, language=language)
 
-    same_target_source = chunk == source
-    chunk = util.read_annotation(chunk)
-    source = util.read_annotation(source)
+    same_target_source = util.split_annotation(chunk)[0] == util.split_annotation(source)[0]
+    chunk_annotation = list(util.read_annotation(doc, chunk))
+    source_annotation = list(util.read_annotation(doc, source))
 
     # If location source and target chunk are not the same, we need
     # to find the parent/child relations between them.
-    if not same_target_source and text:
-        text = util.read_corpus_text(text)
-        target_source_parents = util.get_parents(text, None, source, chunk, orphan_alert=False)
+    if not same_target_source:
+        target_source_parents = list(util.get_parents(doc, source, chunk))
 
-    result = {}
     chunk_locations = {}
 
-    for c in chunk:
+    for i, _ in enumerate(chunk_annotation):
         if same_target_source:
-            location_source = source.get(c)
+            location_source = source_annotation[i]
         else:
-            location_source = source.get(target_source_parents.get(c))
+            location_source = source_annotation[target_source_parents[i]] if target_source_parents[i] is not None else None
 
         if location_source:
             location_data = model.get(location_source.strip().lower())
             if location_data:
-                chunk_locations[c] = [(location_source, list(location_data))]
+                chunk_locations[i] = [(location_source, list(location_data))]
         else:
-            chunk_locations[c] = []
+            chunk_locations[i] = []
 
     chunk_locations = most_populous(chunk_locations)
 
-    for c in chunk:
-        result[c] = _format_location(chunk_locations.get(c, ()))
+    out_annotation = util.create_empty_attribute(doc, chunk_annotation)
+    for c in chunk_locations:
+        out_annotation[c] = _format_location(chunk_locations.get(c, ()))
 
-    util.write_annotation(out, result)
+    util.write_annotation(doc, out, out_annotation)
 
 
 if __name__ == '__main__':
