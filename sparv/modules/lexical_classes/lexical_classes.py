@@ -155,7 +155,7 @@ def annotate_doc(doc, out, in_token_annotation, text, token, saldoids=None, cuto
     """
     cutoff = int(cutoff)
     types = util.strtobool(types)
-    text_children, orphans = util.get_children(doc, text, token)
+    text_children, orphans = util.get_children(doc, text, token, preserve_parent_annotation_order=True)
     classes = list(util.read_annotation(doc, in_token_annotation))
     sense = list(util.read_annotation(doc, saldoids)) if types else None
 
