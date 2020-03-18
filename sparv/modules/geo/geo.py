@@ -126,7 +126,7 @@ def contextual(doc, out, chunk, context, ne_type, ne_subtype, ne_name, model, me
     util.write_annotation(doc, out, out_annotation)
 
 
-def metadata(doc, out, chunk, source, model, method="populous", language=[], encoding="UTF-8"):
+def metadata(doc, out, chunk, source, model, method="populous", language=[]):
     """Get location data based on metadata containing location names."""
     if isinstance(language, str):
         language = language.split()

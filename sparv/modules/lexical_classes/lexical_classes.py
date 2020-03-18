@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+"""Annotate words or documents with lexical classes from Blingbring or SweFN."""
 
 import sparv.util as util
 import os
@@ -12,7 +12,7 @@ CWB_DESCRIBE_EXECUTABLE = "cwb-describe-corpus"
 CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 
-def annotate_bb_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", class_set="bring", connect_ids=False,
+def annotate_bb_words(doc, out, model, saldoids, pos, pos_limit="NN VB JJ AB", class_set="bring", connect_ids=False,
                       delimiter=util.DELIM, affix=util.AFFIX, scoresep=util.SCORESEP, lexicon=None):
     """Blingbring specific wrapper for annotate_words. See annotate_words for more info."""
     # pos_limit="NN VB JJ AB" | None
@@ -33,11 +33,11 @@ def annotate_bb_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", class_
                     rogetid = rogetid.union(lexicon.lookup(sid, default=dict()).get(class_set, set()))
         return sorted(rogetid)
 
-    annotate_words(out, model, saldoids, pos, annotate_bring, pos_limit=pos_limit, class_set=class_set,
+    annotate_words(doc, out, model, saldoids, pos, annotate_bring, pos_limit=pos_limit, class_set=class_set,
                    connect_ids=connect_ids, delimiter=delimiter, affix=affix, scoresep=scoresep, lexicon=lexicon)
 
 
-def annotate_swefn_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", disambiguate=True, connect_ids=False,
+def annotate_swefn_words(doc, out, model, saldoids, pos, pos_limit="NN VB JJ AB", disambiguate=True, connect_ids=False,
                          delimiter=util.DELIM, affix=util.AFFIX, scoresep=util.SCORESEP, lexicon=None):
     """SweFN specific wrapper for annotate_words. See annotate_words for more info."""
     disambiguate = util.strtobool(disambiguate)
@@ -54,19 +54,20 @@ def annotate_swefn_words(out, model, saldoids, pos, pos_limit="NN VB JJ AB", dis
                     swefnid = swefnid.union(lexicon.lookup(sid, default=set()))
         return sorted(swefnid)
 
-    annotate_words(out, model, saldoids, pos, annotate_swefn, pos_limit=pos_limit, disambiguate=disambiguate,
+    annotate_words(doc, out, model, saldoids, pos, annotate_swefn, pos_limit=pos_limit, disambiguate=disambiguate,
                    connect_ids=connect_ids, delimiter=delimiter, affix=affix, scoresep=scoresep, lexicon=lexicon)
 
 
-def annotate_words(out, model, saldoids, pos, annotate, pos_limit, class_set=None, disambiguate=True,
+def annotate_words(doc, out, model, saldoids, pos, annotate, pos_limit, class_set=None, disambiguate=True,
                    connect_ids=False, delimiter=util.DELIM, affix=util.AFFIX, scoresep=util.SCORESEP, lexicon=None):
     """
     Annotate words with blingbring classes (rogetID).
+
     - out_sent: resulting annotation file.
     - model: pickled lexicon with saldoIDs as keys.
     - saldoids, pos: existing annotation with saldoIDs/parts of speech.
     - annotate: annotation function, returns an iterable containing annotations
-        for one token ID. (annotate_bb() or annotate_swefn())
+        for one token ID. (annotate_bring() or annotate_swefn())
     - pos_limit: parts of speech that will be annotated.
         Set to None to annotate all pos.
     - class_set: output Bring classes or Roget IDs ("bring", "roget_head",
@@ -79,7 +80,6 @@ def annotate_words(out, model, saldoids, pos, annotate, pos_limit, class_set=Non
     - lexicon: this argument cannot be set from the command line,
       but is used in the catapult. This argument must be last.
     """
-
     if not lexicon:
         lexicon = util.PickledLexicon(model)
     # Otherwise use pre-loaded lexicon (from catapult)
@@ -87,21 +87,21 @@ def annotate_words(out, model, saldoids, pos, annotate, pos_limit, class_set=Non
     if pos_limit.lower() == "none":
         pos_limit = None
 
-    result_dict = {}
-    sense = util.read_annotation(saldoids)
-    token_pos = util.read_annotation(pos)
+    sense = util.read_annotation(doc, saldoids)
+    token_pos = list(util.read_annotation(doc, pos))
+    out_annotation = util.create_empty_attribute(doc, token_pos)
 
-    for tokid in sense:
+    for token_index, token_sense in enumerate(sense):
 
         # Check if part of speech of this token is allowed
-        if not pos_ok(token_pos, tokid, pos_limit):
+        if not pos_ok(token_pos, token_index, pos_limit):
             saldo_ids = None
-            result_dict[tokid] = affix
+            out_annotation[token_index] = affix
             continue
 
-        if util.SCORESEP in sense[tokid]:  # WSD
-            ranked_saldo = sense[tokid].strip(util.AFFIX).split(util.DELIM) \
-                if sense[tokid] != util.AFFIX else None
+        if util.SCORESEP in token_sense:  # WSD
+            ranked_saldo = token_sense.strip(util.AFFIX).split(util.DELIM) \
+                if token_sense != util.AFFIX else None
             saldo_tuples = [(i.split(util.SCORESEP)[0], i.split(util.SCORESEP)[1]) for i in ranked_saldo]
 
             if not disambiguate:
@@ -119,32 +119,30 @@ def annotate_words(out, model, saldoids, pos, annotate, pos_limit, class_set=Non
                 saldo_ids = [i[0] for i in saldo_ids]
 
         else:  # No WSD
-            saldo_ids = sense[tokid].strip(util.AFFIX).split(util.DELIM) \
-                if sense[tokid] != util.AFFIX else None
+            saldo_ids = token_sense.strip(util.AFFIX).split(util.DELIM) \
+                if token_sense != util.AFFIX else None
 
         result = annotate(saldo_ids, lexicon, connect_ids, scoresep)
-        result_dict[tokid] = util.cwbset(result, delimiter, affix) if result else affix
-    util.write_annotation(out, result_dict)
+        out_annotation[token_index] = util.cwbset(result, delimiter, affix) if result else affix
+    util.write_annotation(doc, out, out_annotation)
 
 
-def pos_ok(token_pos, tokid, pos_limit):
-    """
-    If there is a pos_limit, check if token has correct
-    part of speech. Pass all tokens otherwise.
-    """
+def pos_ok(token_pos, token_index, pos_limit):
+    """If there is a pos_limit, check if token has correct part of speech. Pass all tokens otherwise."""
     if pos_limit:
-        return token_pos[tokid] in pos_limit.split()
+        return token_pos[token_index] in pos_limit.split()
     else:
         return True
 
 
-def annotate_doc(out, in_token_annotation, TEXT, text, token, saldoids=None, cutoff=10, types=False,
+def annotate_doc(doc, out, in_token_annotation, text, token, saldoids=None, cutoff=3, types=False,
                  delimiter=util.DELIM, affix=util.AFFIX, freq_model=None, decimals=3):
     """
     Annotate documents with lexical classes.
+
     - out: resulting annotation file
     - in_token_annotation: existing annotation with lexical classes on token level.
-    - TEXT, text, token: existing annotations for the text, text-IDs and the tokens.
+    - text, token: existing annotations for the text-IDs and the tokens.
     - saldoids: existing annotation with saldoIDs, needed when types=True.
     - cutoff: value for limiting the resulting bring classes.
               The result will contain all words with the top x frequencies.
@@ -157,29 +155,29 @@ def annotate_doc(out, in_token_annotation, TEXT, text, token, saldoids=None, cut
     """
     cutoff = int(cutoff)
     types = util.strtobool(types)
-    text_children = util.get_children(TEXT, None, text, token)
-    classes = util.read_annotation(in_token_annotation)
-    sense = util.read_annotation(saldoids) if types else None
+    text_children, orphans = util.get_children(doc, text, token)
+    classes = list(util.read_annotation(doc, in_token_annotation))
+    sense = list(util.read_annotation(doc, saldoids)) if types else None
 
     if freq_model:
         freq_model = util.PickledLexicon(freq_model)
 
-    out_doc = {}
+    out_annotation = util.create_empty_attribute(doc, text)
 
-    for textid, words in text_children.items():
+    for text_index, words in enumerate(text_children):
         seen_types = set()
         class_freqs = defaultdict(int)
 
-        for tokid in words:
+        for token_index in words:
             # Count only sense types
             if types:
-                senses = str(sorted([s.split(util.SCORESEP)[0] for s in sense[tokid].strip(util.AFFIX).split(util.DELIM)]))
+                senses = str(sorted([s.split(util.SCORESEP)[0] for s in sense[token_index].strip(util.AFFIX).split(util.DELIM)]))
                 if senses in seen_types:
                     continue
                 else:
                     seen_types.add(senses)
 
-            rogwords = classes[tokid].strip(util.AFFIX).split(util.DELIM) if classes[tokid] != util.AFFIX else []
+            rogwords = classes[token_index].strip(util.AFFIX).split(util.DELIM) if classes[token_index] != util.AFFIX else []
             for w in rogwords:
                 class_freqs[w] += 1
 
@@ -208,9 +206,9 @@ def annotate_doc(out, in_token_annotation, TEXT, text, token, saldoids=None, cut
 
         # Join words and frequencies/dominances
         ordered_words = [util.SCORESEP.join([word, str(round(freq, decimals))]) for word, freq in ordered_words]
-        out_doc[textid] = util.cwbset(ordered_words, delimiter, affix) if ordered_words else affix
+        out_annotation[text_index] = util.cwbset(ordered_words, delimiter, affix) if ordered_words else affix
 
-    util.write_annotation(out, out_doc)
+    util.write_annotation(doc, out, out_annotation)
 
 
 def read_blingbring(tsv="blingbring.txt", classmap="rogetMap.xml", verbose=True):
