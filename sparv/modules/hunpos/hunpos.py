@@ -52,5 +52,9 @@ def msdtag(doc, model, out, word, sentence, tag_mapping=None, morphtable=None, p
 # TODO: använd sockets
 # - spara socket-id i en fil i tmp/
 
+def postag():
+    pass
+
+
 if __name__ == '__main__':
     util.run.main(msdtag)
