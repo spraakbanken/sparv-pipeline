@@ -56,10 +56,16 @@ python -m sparv.modules.lexical_classes.lexical_classes --annotate_doc --doc kor
 
 python -m sparv.modules.lexical_classes.lexical_classes --annotate_doc --doc korpus1 --out text:swefn --in_token_annotation token:swefn --text text --token token --saldoids token:sense --freq_model ../models/swefn.freq.gp2008+suc3+romi.pickle
 
+
+-------------------------------------------------------------
+# Readability measures
+
+python -m sparv.modules.readability.readability --lix --doc korpus1 --text text --sentence sentence --word token:word --pos token:pos --out text:lix
+
 -------------------------------------------------------------
 # Treetagger
 
-python -m sparv.modules.treetagger.treetagger --doc korpus1 --lang en --model ../models/treetagger/en.par --tt_binary ../bin/treetagger/tree-tagger --out_pos token:pos --out_msd token:msd --out_lemma token:lemma --word token:word --sentence sentence
+python -m sparv.modules.treetagger.treetagger --doc korpus_en --lang la --model ../models/treetagger/la.par --tt_binary ../bin/treetagger/tree-tagger --out_pos token:pos --out_msd token:msd --out_lemma token:lemma --word token:word --sentence sentence
 
 -------------------------------------------------------------
 # Freeling

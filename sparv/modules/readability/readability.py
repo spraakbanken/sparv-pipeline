@@ -1,11 +1,6 @@
-# -*- coding: utf-8 -*-
+"""Calculate readability measures (läsbarhetsmått)."""
 
-"""
-Readability measures (läsbarhetsmått).
-"""
 import sparv.util as util
-import sparv.cwb as cwb
-import sparv.parent as parent
 from math import log
 
 
@@ -28,45 +23,52 @@ def actual_words(cols, skip_pos):
             yield word
 
 
-def lix_annot(order, text, TEXT, token, sentence, words, pos, out, skip_pos="MAD MID PAD", fmt="%.2f"):
-    structs = [text, sentence]
-    columns = [words, pos]
+def lix_annot(doc, text, sentence, word, pos, out, skip_pos="MAD MID PAD", fmt="%.2f"):
+    """Create LIX annotation for text."""
+    # Read annotation files and get parent_children relations
+    text_children, _orphans = util.get_children(doc, text, sentence)
+    word_pos = list(util.read_annotation_attributes(doc, (word, pos)))
+    sentence_children, _orphans = util.get_children(doc, sentence, word)
+    sentence_children = list(sentence_children)
 
-    texts = cwb.vrt_iterate(*cwb.tokens_and_vrt(order, structs, columns, TEXT, token),
-                            trail=[0, 1])
+    lix_annotation = []
 
-    util.write_annotation(out, (
-        (span, fmt % lix((actual_words(cols, skip_pos) for _, cols in sentences)))
-        for (_, span), sentences in texts
-        if span is not None
-    ))
+    # Calculate LIX for every text element
+    for text in text_children:
+        in_sentences = []
+        for sentence_index in text:
+            s = sentence_children[sentence_index]
+            in_sentences.append(list(actual_words([word_pos[token_index] for token_index in s], skip_pos)))
+        lix_annotation.append(fmt % lix(in_sentences))
+
+    util.write_annotation(doc, out, lix_annotation)
 
 
 def lix(sentences):
     """
-    Calculate LIX, assuming that all tokens are actual words: not punctuation
-    nor delimiters.
+    Calculate LIX, assuming that all tokens are actual words, not punctuation or delimiters.
 
     >>> print("%.2f" % lix(4*["a bc def ghij klmno pqrstu vxyzåäö".split()]))
     21.29
     """
-    s = 0.0
-    w = 0.0
-    l = 0.0
+    sentence_counter = 0.0
+    word_counter = 0.0
+    lix_value = 0.0
     for words in sentences:
-        s += 1
+        sentence_counter += 1
         for word in words:
-            w += 1
-            l += int(len(word) > 6)
-    if w == 0 and s == 0:
+            word_counter += 1
+            lix_value += int(len(word) > 6)
+    if word_counter == 0 and sentence_counter == 0:
         return float('NaN')
-    elif w == 0 or s == 0:
+    elif word_counter == 0 or sentence_counter == 0:
         return float('inf')
     else:
-        return w / s + 100 * l / w
+        return word_counter / sentence_counter + 100 * lix_value / word_counter
 
 
 def ovix_annot(order, text, TEXT, token, words, pos, out, skip_pos="MAD MID PAD", fmt="%.2f"):
+    """Create OVIX annotation for text."""
     structs = [text]
     columns = [words, pos]
     texts = cwb.vrt_iterate(*cwb.tokens_and_vrt(order, structs, columns, TEXT, token))
@@ -79,8 +81,7 @@ def ovix_annot(order, text, TEXT, token, words, pos, out, skip_pos="MAD MID PAD"
 
 def ovix(words):
     """
-    Calculate OVIX, assuming that all tokens are actual words: not punctuation
-    nor delimiters.
+    Calculate OVIX, assuming that all tokens are actual words, not punctuation or delimiters.
 
     Words are compared ignoring case.
 
@@ -110,6 +111,7 @@ def ovix(words):
 
 
 def nominal_ratio_annot(order, text, TEXT, token, pos, out, noun_pos="NN PP PC", verb_pos="PN AB VB", fmt="%.2f"):
+    """Creata nominal ratio annotation for text."""
     structs = [text]
     columns = [pos]
     texts = cwb.vrt_iterate(*cwb.tokens_and_vrt(order, structs, columns, TEXT, token))
