@@ -76,6 +76,13 @@ def strtobool(value):
     return value
 
 
+def split(value):
+    """If 'value' is a string, split and return a list, otherwise return as is."""
+    if isinstance(value, str):
+        value = value.split()
+    return value
+
+
 def single_true(iterable):
     """Return True if one and only one element in iterable evaluates to True."""
     i = iter(iterable)
