@@ -21,9 +21,9 @@ python -m sparv.modules.hunpos.hunpos --doc korpus1 --out token:msd --word token
 
 python -m sparv.modules.misc.misc --select --doc korpus1 --out token:pos --annotation token:msd --index 0 --separator .
 
-python -m sparv.modules.malt.malt --doc korpus1 --maltjar ../bin/maltparser-1.7.2/maltparser-1.7.2.jar --model ../models/swemalt-1.7.2.mco --out token:malt --word token:word --pos token:pos --msd token:msd --sentence sentence --token token
-
 python -m sparv.modules.misc.number --relative --doc korpus1 --out token:ref --parent sentence --child token
+
+python -m sparv.modules.malt.malt --doc korpus1 --maltjar ../bin/maltparser-1.7.2/maltparser-1.7.2.jar --model ../models/swemalt-1.7.2.mco --out_dephead token:dephead --out_dephead_ref token:dephead.ref --out_deprel token:deprel --word token:word --pos token:pos --msd token:msd --ref token:ref --sentence sentence --token token
 
 -------------------------------------------------------------
 # Saldo

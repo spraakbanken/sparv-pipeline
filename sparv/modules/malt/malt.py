@@ -19,7 +19,8 @@ DEPREL_COLUMN = 7
 UNDEF = "_"
 
 
-def maltparse(doc, maltjar, model, out, word, pos, msd, sentence, token, encoding=util.UTF8, process_dict=None):
+def maltparse(doc, maltjar, model, out_dephead, out_dephead_ref, out_deprel, word, pos, msd, ref, sentence, token,
+              encoding=util.UTF8, process_dict=None):
     """
     Run the malt parser, in an already started process defined in
     process_dict, or starts a new process (default)
@@ -42,6 +43,7 @@ def maltparse(doc, maltjar, model, out, word, pos, msd, sentence, token, encodin
     word_annotation = list(util.read_annotation(doc, word))
     pos_annotation = list(util.read_annotation(doc, pos))
     msd_annotation = list(util.read_annotation(doc, msd))
+    ref_annotation = list(util.read_annotation(doc, ref))
 
     def conll_token(nr, token_index):
         form = word_annotation[token_index]
@@ -71,7 +73,7 @@ def maltparse(doc, maltjar, model, out, word, pos, msd, sentence, token, encodin
         malt_sentences = []
         for sent in sentences:
             malt_sent = []
-            for tok in sent:
+            for _tok in sent:
                 line = stdout_fd.readline()
                 if encoding:
                     line = line.decode(encoding)
@@ -87,16 +89,20 @@ def maltparse(doc, maltjar, model, out, word, pos, msd, sentence, token, encodin
         malt_sentences = (malt_sent.split(TOK_SEP)
                           for malt_sent in stdout.split(SENT_SEP))
 
-    out_annotation = util.create_empty_attribute(doc, word)
+    out_dephead_annotation = util.create_empty_attribute(doc, word)
+    out_dephead_ref_annotation = util.create_empty_attribute(doc, word)
+    out_deprel_annotation = util.create_empty_attribute(doc, word)
     for (sent, malt_sent) in zip(sentences, malt_sentences):
         for (token_index, malt_tok) in zip(sent, malt_sent):
             cols = [(None if col == UNDEF else col) for col in malt_tok.split(TAG_SEP)]
-            deprel = cols[DEPREL_COLUMN]
+            out_deprel_annotation[token_index] = cols[DEPREL_COLUMN]
             head = int(cols[HEAD_COLUMN])
-            headid = sent[head - 1] if head else "-"
-            out_annotation[token_index] = "{} {}".format(deprel, headid)
+            out_dephead_annotation[token_index] = str(sent[head - 1]) if head else "-"
+            out_dephead_ref_annotation[token_index] = str(ref_annotation[sent[head - 1]]) if head else ""
 
-    util.write_annotation(doc, out, out_annotation)
+    util.write_annotation(doc, out_dephead, out_dephead_annotation)
+    util.write_annotation(doc, out_dephead_ref, out_dephead_ref_annotation)
+    util.write_annotation(doc, out_deprel, out_deprel_annotation)
 
 
 def maltstart(maltjar, model, encoding, send_empty_sentence=False):
@@ -188,6 +194,7 @@ def write_conll_file(sentences, filename, encoding=util.UTF8):
                 print("\t".join(str(col) for col in cols), file=F)
                 nr += 1
             print(file=F)
+
 
 ################################################################################
 
