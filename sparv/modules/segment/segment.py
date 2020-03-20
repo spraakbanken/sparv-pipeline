@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import os.path
 import re
 import nltk
@@ -12,7 +10,7 @@ except ImportError:
     pass
 
 
-def do_segmentation(doc, out, chunk, segmenter, existing_segments=None, model=None, no_pickled_model=False, path=None):
+def do_segmentation(doc, out, chunk, segmenter, existing_segments=None, model=None, no_pickled_model=False):
     """Segment all "chunks" (e.g. sentences) into smaller "tokens" (e.g. words),
     and annotate them as "element" (e.g. w).
     Segmentation is done by the given "segmenter"; some segmenters take
@@ -70,6 +68,7 @@ def do_segmentation(doc, out, chunk, segmenter, existing_segments=None, model=No
                 span = (spanstart, spanend)
                 segments.append(span)
 
+    segments.sort()
     util.write_annotation(doc, out, segments)
 
 
