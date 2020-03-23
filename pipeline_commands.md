@@ -15,6 +15,13 @@ python -m sparv.modules.segment.segment --doc korpus1 --out token --chunk senten
 python -m sparv.modules.misc.misc --doc korpus1 --text_spans --out token:word --chunk token
 
 -------------------------------------------------------------
+# IDs
+
+python -m sparv.modules.misc.ids --doc_id --out docid --docs "korpus1 korpus2"
+
+python -m sparv.modules.misc.ids --id --doc korpus1 --annotation sentence --out sentence:id --docid docid
+
+-------------------------------------------------------------
 # Hunpos & Malt
 
 python -m sparv.modules.hunpos.hunpos --doc korpus1 --out token:msd --word token:word --sentence sentence --model ../models/hunpos.suc3.suc-tags.default-setting.utf8.model --tag_mapping "" --morphtable "../models/hunpos.saldo.suc-tags.morphtable" --patterns "../models/hunpos.suc.patterns"
