@@ -176,6 +176,8 @@ def write_data(doc, name, value, append=False):
 
     with open(file_path, mode) as f:
         f.write(value)
+    # Update file modification time even if nothing was written
+    os.utime(file_path, None)
     log.info("Wrote %d bytes: %s/%s", len(value), doc, name)
 
 
