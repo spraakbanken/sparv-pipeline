@@ -42,6 +42,13 @@ python -m sparv.modules.wsd.wsd --doc korpus1 --wsdjar ../bin/wsd/saldowsd.jar -
 ## compound??
 
 -------------------------------------------------------------
+# Word Picture
+
+python -m sparv.modules.korp.relations --doc korpus1 --out relations --word token:word --pos token:pos --lemgram token:lemgram --dephead token:dephead --deprel token:deprel --sentence_id sentence:id --ref token:ref --baseform token:baseform
+
+python -m sparv.modules.korp.relations --sql --corpus KORPUS --db_name TEST_DB --out relations.sql --relations relations --docs "korpus1"
+
+-------------------------------------------------------------
 # Sentiment
 python -m sparv.modules.sentiment.sentiment --doc korpus1 --sense token:sense --out_scores token:sentiment --out_labels token:sentimentclass --model ../models/sensaldo.pickle
 

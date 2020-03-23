@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import sparv.util as util
 from collections import defaultdict
 from sparv.util.mysql_wrapper import MySQL
@@ -10,22 +9,17 @@ MAX_STRINGEXTRA_LENGTH = 32
 MAX_POS_LENGTH = 5
 
 
-def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, ref, baseform, encoding=util.UTF8):
-    """ Find certain dependencies between words. """
+def relations(doc, out, word, pos, lemgram, dephead, deprel, sentence_id, ref, baseform):
+    """Find certain dependencies between words, to be used by the Word Picture feature in Korp."""
 
-    SENTID = util.read_annotation(sentence_id)
-    sentences = [(SENTID[key], sent.split()) for key, sent in util.read_annotation_iteritems(sentence) if key]
-    # sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
-    WORD = util.read_annotation(word)
-    POS = util.read_annotation(pos)
-    LEM = util.read_annotation(lemgram)
-    DEPHEAD = util.read_annotation(dephead)
-    DEPREL = util.read_annotation(deprel)
-    REF = util.read_annotation(ref)
-    BF = util.read_annotation(baseform)  # Used for "depextra"
+    sentence_ids = util.read_annotation(doc, sentence_id)
+    sentence_tokens, _ = util.get_children(doc, sentence_id, word)
+
+    annotations = list(util.read_annotation_attributes(doc, (word, pos, lemgram, dephead, deprel, ref, baseform)))
 
     # http://stp.ling.uu.se/~nivre/swedish_treebank/dep.html
-    # Tuples with relations (head, rel, dep) to be found (with indexes) and an optional tuple specifying which info should be stored and how
+    # Tuples with relations (head, rel, dep) to be found (with indexes) and an optional tuple specifying which info
+    # should be stored and how
     rels = [
         ({1: "VB", 2: "SS", 3: "NN"}, {1: "VB", 4: "VG", 5: "VB"}, (5, 2, 3, "")),  # "han har sprungit"
         ({1: "VB", 2: "(SS|OO|IO|OA)", 3: "NN"},),
@@ -44,28 +38,25 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
 
     triples = []
 
-    for sentid, sent in sentences:
+    for sentid, sent in zip(sentence_ids, sentence_tokens):
         incomplete = {}  # Tokens looking for heads, with head as key
-        tokens = {}   # Tokens in same sentence, with token_id as key
+        tokens = {}   # Tokens in same sentence, with token_index as key
 
         # Link the tokens together
-        for token_id in sent:
-            token_pos = POS[token_id]
-            token_lem = LEM[token_id]
-            token_dh = DEPHEAD[token_id]
-            token_dr = DEPREL[token_id]
-            token_ref = REF[token_id]
-            token_bf = BF[token_id]
-            token_word = WORD[token_id].lower()
+        for token_index in sent:
+            token_word, token_pos, token_lem, token_dh, token_dr, token_ref, token_bf = annotations[token_index]
+            token_word = token_word.lower()
 
             if token_lem == "|":
                 token_lem = token_word
 
-            this = {"pos": token_pos, "lemgram": token_lem, "word": token_word, "head": None, "dep": [], "ref": token_ref, "bf": token_bf}
+            this = {"pos": token_pos, "lemgram": token_lem, "word": token_word, "head": None, "dep": [],
+                    "ref": token_ref, "bf": token_bf}
 
-            tokens[token_id] = this
+            tokens[token_index] = this
 
             if not token_dh == "-":
+                token_dh = int(token_dh)
                 # This token is looking for a head (token is not root)
                 dep_triple = (token_dr, this)
                 if token_dh in tokens:
@@ -73,14 +64,14 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
                     this["head"] = (token_dr, tokens[token_dh])
                     tokens[token_dh]["dep"].append(dep_triple)
                 else:
-                    incomplete.setdefault(token_dh, []).append((token_id, dep_triple))
+                    incomplete.setdefault(token_dh, []).append((token_index, dep_triple))
 
             # Is someone else looking for the current token as head?
-            if token_id in incomplete:
-                for t in incomplete[token_id]:
+            if token_index in incomplete:
+                for t in incomplete[token_index]:
                     tokens[t[0]]["head"] = this
                     this["dep"].append(t[1])
-                del incomplete[token_id]
+                del incomplete[token_index]
 
         assert not incomplete, "incomplete is not empty"
 
@@ -107,7 +98,9 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
                     if _match(";".join([x[1] for x in sorted(r.items())]), ";".join([v["pos"], d[0], d[1]["pos"]])):
                         triple = None
                         if len(rel) == 1:
-                            triple = ((v["lemgram"], v["word"], v["pos"], v["ref"]), d[0], (d[1]["lemgram"], d[1]["word"], d[1]["pos"], d[1]["ref"]), ("", None), sentid, v["ref"], d[1]["ref"])
+                            triple = ((v["lemgram"], v["word"], v["pos"], v["ref"]), d[0],
+                                      (d[1]["lemgram"], d[1]["word"], d[1]["pos"], d[1]["ref"]), ("", None), sentid,
+                                      v["ref"], d[1]["ref"])
                         else:
                             lookup = dict(list(zip(list(map(str, sorted(r.keys()))), (v, d[0], d[1]))))
                             i = set(rel[0].keys()).intersection(set(rel[1].keys())).pop()
@@ -117,20 +110,24 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
                             if index1 == 2 and index2 == 0:
                                 result = _findrel(d[1], rel2[1], rel2[2])
                                 if result:
-                                    lookup.update(dict(list(zip(list(map(str, sorted(rel[1].keys()))), (d[1], rel2[1], result[0])))))
+                                    lookup.update(dict(
+                                        list(zip(list(map(str, sorted(rel[1].keys()))), (d[1], rel2[1], result[0])))))
                             elif index1 == 0 and index2 == 0:
                                 result = _findrel(v, rel2[1], rel2[2])
                                 if result:
-                                    lookup.update(dict(list(zip(list(map(str, sorted(rel[1].keys()))), (v, rel2[1], result[0])))))
+                                    lookup.update(
+                                        dict(list(zip(list(map(str, sorted(rel[1].keys()))), (v, rel2[1], result[0])))))
 
                             pp = rel[-1]
                             if len(list(lookup.keys())) > 3:
                                 lookup_bf = dict((key, val["bf"]) for key, val in list(lookup.items()) if isinstance(val, dict))
                                 lookup_ref = dict((key, val["ref"]) for key, val in list(lookup.items()) if isinstance(val, dict))
                                 triple = (
-                                    (lookup[str(pp[0])]["lemgram"], lookup[str(pp[0])]["word"], lookup[str(pp[0])]["pos"], lookup[str(pp[0])]["ref"]),
+                                    (lookup[str(pp[0])]["lemgram"], lookup[str(pp[0])]["word"],
+                                     lookup[str(pp[0])]["pos"], lookup[str(pp[0])]["ref"]),
                                     lookup[str(pp[1])],
-                                    (lookup[str(pp[2])]["lemgram"], lookup[str(pp[2])]["word"], lookup[str(pp[2])]["pos"], lookup[str(pp[2])]["ref"]),
+                                    (lookup[str(pp[2])]["lemgram"], lookup[str(pp[2])]["word"],
+                                     lookup[str(pp[2])]["pos"], lookup[str(pp[2])]["ref"]),
                                     (pp[3] % lookup_bf, pp[3] % lookup_ref),
                                     sentid, lookup[str(pp[0])]["ref"], lookup[str(pp[2])]["ref"])
                         if triple:
@@ -141,13 +138,18 @@ def relations(out, word, pos, lemgram, dephead, deprel, sentence, sentence_id, r
                 if nrel[0] == v["pos"]:
                     missing_rels = [x for x in nrel[1] if x not in token_rels]
                     for mrel in missing_rels:
-                        triple = ((v["lemgram"], v["word"], v["pos"], v["ref"]), mrel, ("", "", "", v["ref"]), ("", None), sentid, v["ref"], v["ref"])
+                        triple = (
+                        (v["lemgram"], v["word"], v["pos"], v["ref"]), mrel, ("", "", "", v["ref"]), ("", None), sentid,
+                        v["ref"], v["ref"])
                         triples.extend(_mutate_triple(triple))
 
     triples = set(triples)
 
-    OUT = [(str(i), "\t".join((head, headpos, rel, dep, deppos, extra, sentid, refhead, refdep, str(bfhead), str(bfdep), str(wfhead), str(wfdep)))) for (i, (head, headpos, rel, dep, deppos, extra, sentid, refhead, refdep, bfhead, bfdep, wfhead, wfdep)) in enumerate(triples)]
-    util.write_annotation(out, OUT)
+    out_data = "\n".join(["\t".join((head, headpos, rel, dep, deppos, extra, sentid, refhead, refdep, str(bfhead),
+                                     str(bfdep), str(wfhead), str(wfdep))) for (
+                          head, headpos, rel, dep, deppos, extra, sentid, refhead, refdep, bfhead, bfdep, wfhead, wfdep)
+                          in triples])
+    util.write_data(doc, out, out_data)
 
 
 def _mutate_triple(triple):
@@ -218,21 +220,20 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
     return x_rel_y * math.log((rel * x_rel_y) / (x_rel * rel_y * 1.0), 2)
 
 
-def frequency(corpus, db_name, out, source="", source_list="", split=False):
-    """Calculates statistics of the dependencies and saves to SQL files.
+def create_sql(corpus, db_name, out, relations, docs="", doclist="", split=False):
+    """Calculate statistics of the dependencies and saves to SQL files.
        - corpus is the corpus name.
        - db_name is the name of the database.
-       - out is the filename for the SQL file which will contain the resulting SQL statements.
-       - source is a space separated string with relations files.
-       - source_list can be used instead of source, and should be a file containing the name of relations files, one per row.
+       - out is the name for the SQL file which will contain the resulting SQL statements.
+       - relations is the name of the relations annotation.
+       - docs is a list of documents.
+       - doclist can be used instead of docs, and should be a file containing the name of docs, one per row.
        - split set to true leads to SQL commands being split into several parts, requiring less memory during creation,
          but installing the data will take much longer.
     """
-
-    if isinstance(split, str):
-        split = (split.lower() == "true")
-
+    split = util.strtobool(split)
     db_table = MYSQL_TABLE + "_" + corpus.upper()
+    out = util.get_annotation_path(None, out, data=True)
 
     # Relations that will be grouped together
     rel_grouping = {
@@ -250,32 +251,32 @@ def frequency(corpus, db_name, out, source="", source_list="", split=False):
     strings = {}  # ID -> string table
     freq_index = {}
     sentence_count = defaultdict(int)
-    file_count = 0
+    doc_count = 0
 
-    assert (source or source_list), "Missing source"
+    assert (docs or doclist), "Missing source"
 
-    if source:
-        source_files = source.split()
-    elif source_list:
-        with open(source_list) as insource:
-            source_files = [line.strip() for line in insource]
+    if docs:
+        docs = util.split(docs)
+    elif doclist:
+        with open(doclist) as insource:
+            docs = [line.strip() for line in insource]
 
-    if len(source_files) == 1:
+    if len(docs) == 1:
         split = False
 
-    for s in source_files:
-        file_count += 1
+    for doc in docs:
+        doc_count += 1
         sentences = {}
-        if file_count == 1 or split:
+        if doc_count == 1 or split:
             freq = {}                           # Frequency of (head, rel, dep)
             rel_count = defaultdict(int)        # Frequency of (rel)
             head_rel_count = defaultdict(int)   # Frequency of (head, rel)
             dep_rel_count = defaultdict(int)    # Frequency of (rel, dep)
 
-        REL = util.read_annotation(s)
+        relations_data = util.read_data(doc, relations)
         # basename = s.rsplit(".", 1)[0]
 
-        for _, triple in list(REL.items()):
+        for triple in relations_data.splitlines():
             head, headpos, rel, dep, deppos, extra, sid, refh, refd, bfhead, bfdep, wfhead, wfdep = triple.split(u"\t")
             bfhead, bfdep, wfhead, wfdep = int(bfhead), int(bfdep), int(wfhead), int(wfdep)
 
@@ -317,21 +318,24 @@ def frequency(corpus, db_name, out, source="", source_list="", split=False):
                 dep_rel_count[(dep, rel)] += 1
 
         # If not the last file
-        if not file_count == len(source_files):
+        if not doc_count == len(docs):
             if split:
                 # Don't print string table until the last file
-                write_sql({}, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_name, db_table, split, first=(file_count == 1))
+                _write_sql({}, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_name, db_table, split,
+                           first=(doc_count == 1))
             else:
                 # Only save sentences data, save the rest for the last file
-                write_sql({}, sentences, {}, {}, {}, {}, out, db_name, db_table, split, first=(file_count == 1))
+                _write_sql({}, sentences, {}, {}, {}, {}, out, db_name, db_table, split, first=(doc_count == 1))
 
     # Create the final file, including the string table
-    write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_name, db_table, split, first=(file_count == 1), last=True)
+    _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_name, db_table, split,
+               first=(doc_count == 1), last=True)
 
     util.log.info("Done creating SQL files")
 
 
-def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, sql_file, db_name, db_table, split=False, first=False, last=False):
+def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, sql_file, db_name, db_table,
+               split=False, first=False, last=False):
 
     temp_db_table = "temp_" + db_table
     update_freq = "ON DUPLICATE KEY UPDATE freq = freq + VALUES(freq)" if split else ""
@@ -350,7 +354,8 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
         mysql.create_table(temp_db_table + "_head_rel", drop=True, **MYSQL_HEAD_REL)
         mysql.create_table(temp_db_table + "_dep_rel", drop=True, **MYSQL_DEP_REL)
         mysql.create_table(temp_db_table + "_sentences", drop=True, **MYSQL_SENTENCES)
-        mysql.disable_keys(temp_db_table, temp_db_table + "_strings", temp_db_table + "_rel", temp_db_table + "_head_rel", temp_db_table + "_dep_rel", temp_db_table + "_sentences")
+        mysql.disable_keys(temp_db_table, temp_db_table + "_strings", temp_db_table + "_rel",
+                           temp_db_table + "_head_rel", temp_db_table + "_dep_rel", temp_db_table + "_sentences")
         mysql.disable_checks()
         mysql.set_names()
 
@@ -437,8 +442,10 @@ def write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count
     mysql.add_row(temp_db_table + "_sentences", sentence_rows)
 
     if last:
-        mysql.enable_keys(temp_db_table, temp_db_table + "_strings", temp_db_table + "_rel", temp_db_table + "_head_rel", temp_db_table + "_dep_rel", temp_db_table + "_sentences")
-        mysql.drop_table(db_table, db_table + "_strings", db_table + "_rel", db_table + "_head_rel", db_table + "_dep_rel", db_table + "_sentences")
+        mysql.enable_keys(temp_db_table, temp_db_table + "_strings", temp_db_table + "_rel",
+                          temp_db_table + "_head_rel", temp_db_table + "_dep_rel", temp_db_table + "_sentences")
+        mysql.drop_table(db_table, db_table + "_strings", db_table + "_rel", db_table + "_head_rel",
+                         db_table + "_dep_rel", db_table + "_sentences")
         mysql.rename_table({
             temp_db_table: db_table,
             temp_db_table + "_strings": db_table + "_strings",
@@ -461,7 +468,7 @@ rel_enum = "ENUM(%s)" % ", ".join("'%s'" % r for r in RELNAMES)
 
 MYSQL_TABLE = "relations"
 
-MYSQL_RELATIONS = {'columns': [
+MYSQL_RELATIONS = {"columns": [
                                ("id",     int, 0, "NOT NULL"),
                                ("head",   int, 0, "NOT NULL"),
                                ("rel",    rel_enum, RELNAMES[0], "NOT NULL"),
@@ -471,74 +478,74 @@ MYSQL_RELATIONS = {'columns': [
                                ("bfdep",  "BOOL", None, ""),
                                ("wfhead", "BOOL", None, ""),
                                ("wfdep",  "BOOL", None, "")],
-                   'primary': "head wfhead dep rel freq id",
-                   'indexes': ["dep wfdep head rel freq id",
+                   "primary": "head wfhead dep rel freq id",
+                   "indexes": ["dep wfdep head rel freq id",
                                "head dep bfhead bfdep rel freq id",
                                "dep head bfhead bfdep rel freq id"],
-                   'constraints': [("UNIQUE INDEX", "relation", ("head", "rel", "dep"))],
-                   'default charset': 'utf8',
-                   'row_format': 'compressed'
-                   # 'collate': 'utf8_bin'
+                   "constraints": [("UNIQUE INDEX", "relation", ("head", "rel", "dep"))],
+                   "default charset": "utf8",
+                   "row_format": "compressed"
+                   # "collate": "utf8_bin"
                    }
 
-MYSQL_STRINGS = {'columns': [
+MYSQL_STRINGS = {"columns": [
                              ("id",          int, 0, "NOT NULL"),
                              ("string",      "varchar(%d)" % MAX_STRING_LENGTH, "", "NOT NULL"),
                              ("stringextra", "varchar(%d)" % MAX_STRINGEXTRA_LENGTH, "", "NOT NULL"),
                              ("pos",         "varchar(%d)" % MAX_POS_LENGTH, "", "NOT NULL")],
-                 'primary': "string id pos stringextra",
-                 'indexes': ["id string pos stringextra"],
-                 'default charset': 'utf8',
-                 'collate': 'utf8_bin',
-                 'row_format': 'compressed'
+                 "primary": "string id pos stringextra",
+                 "indexes": ["id string pos stringextra"],
+                 "default charset": "utf8",
+                 "collate": "utf8_bin",
+                 "row_format": "compressed"
                  }
 
-MYSQL_REL = {'columns': [
+MYSQL_REL = {"columns": [
                           ("rel",    rel_enum, RELNAMES[0], "NOT NULL"),
                           ("freq", int, 0, "NOT NULL")],
-             'primary': "rel freq",
-             'indexes': [],
-             'constraints': [("UNIQUE INDEX", "relation", ("rel",))],
-             'default charset': 'utf8',
-             'collate': 'utf8_bin',
-             'row_format': 'compressed'
+             "primary": "rel freq",
+             "indexes": [],
+             "constraints": [("UNIQUE INDEX", "relation", ("rel",))],
+             "default charset": "utf8",
+             "collate": "utf8_bin",
+             "row_format": "compressed"
              }
 
-MYSQL_HEAD_REL = {'columns': [
+MYSQL_HEAD_REL = {"columns": [
                               ("head",   int, 0, "NOT NULL"),
                               ("rel",    rel_enum, RELNAMES[0], "NOT NULL"),
                               ("freq", int, 0, "NOT NULL")],
-                  'primary': "head rel freq",
-                  'indexes': [],
-                  'constraints': [("UNIQUE INDEX", "relation", ("head", "rel"))],
-                  'default charset': 'utf8',
-                  'collate': 'utf8_bin',
-                  'row_format': 'compressed'
-                   }
+                  "primary": "head rel freq",
+                  "indexes": [],
+                  "constraints": [("UNIQUE INDEX", "relation", ("head", "rel"))],
+                  "default charset": "utf8",
+                  "collate": "utf8_bin",
+                  "row_format": "compressed"
+                  }
 
-MYSQL_DEP_REL = {'columns': [
+MYSQL_DEP_REL = {"columns": [
                               ("dep",   int, 0, "NOT NULL"),
                               ("rel",    rel_enum, RELNAMES[0], "NOT NULL"),
                               ("freq", int, 0, "NOT NULL")],
-                 'primary': "dep rel freq",
-                 'indexes': [],
-                 'constraints': [("UNIQUE INDEX", "relation", ("dep", "rel"))],
-                 'default charset': 'utf8',
-                 'collate': 'utf8_bin',
-                 'row_format': 'compressed'
+                 "primary": "dep rel freq",
+                 "indexes": [],
+                 "constraints": [("UNIQUE INDEX", "relation", ("dep", "rel"))],
+                 "default charset": "utf8",
+                 "collate": "utf8_bin",
+                 "row_format": "compressed"
                  }
 
-MYSQL_SENTENCES = {'columns': [
+MYSQL_SENTENCES = {"columns": [
                                ("id", int, None, ""),
                                ("sentence",   "varchar(64)", "", "NOT NULL"),
                                ("start",    int, None, ""),
                                ("end", int, None, "")],
-                   'indexes': ["id"],
-                   'default charset': 'utf8',
-                   'collate': 'utf8_bin',
-                   'row_format': 'compressed'
+                   "indexes": ["id"],
+                   "default charset": "utf8",
+                   "collate": "utf8_bin",
+                   "row_format": "compressed"
                    }
 ################################################################################
 
-if __name__ == '__main__':
-    util.run.main(relations, frequency=frequency)
+if __name__ == "__main__":
+    util.run.main(relations, sql=create_sql)
