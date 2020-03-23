@@ -1,6 +1,4 @@
-"""
-Adds annotations from Saldo.
-"""
+"""Create annotations from Saldo."""
 
 import sparv.util as util
 import itertools
@@ -8,39 +6,43 @@ import pickle
 import re
 import os
 
+# The minimun precision difference for two annotations to be considered equal
+PRECISION_DIFF = 0.01
+
 ######################################################################
 # Annotate.
+
 
 def annotate(doc, token, word, sentence, reference, out, annotations, models, msd="",
              delimiter="|", affix="|", precision=":%.3f", precision_filter="max", min_precision=0.66,
              skip_multiword=False, allow_multiword_overlap=False, word_separator="", lexicons=None):
     """Use the Saldo lexicon model (and optionally other older lexicons) to annotate pos-tagged words.
-      - word, msd are existing annotations for wordforms and part-of-speech
-      - sentence is an existing annotation for sentences and their children (words)
-      - reference is an existing annotation for word references, to be used when
-        annotating multi-word units
-      - out is a string containing a whitespace separated list of the resulting annotation files
-      - annotations is a string containing a whitespace separated list of annotations to be written.
-        Currently: gf (=baseform), lem (=lemgram), saldo
-        Number of annotations and their order must correspond to the list in the 'out' argument.
-      - models is a list of pickled lexica, typically the Saldo model (saldo.pickle) and optional old lexicons
-      - delimiter is the delimiter character to put between ambiguous results
-      - affix is an optional character to put before and after results
-      - precision is a format string for how to print the precision for each annotation
-        (use empty string for no precision)
-      - precision_filter is an optional filter, currently there are the following values:
-        max: only use the annotations that are most probable
-        first: only use the most probable annotation (or one of the most probable if more than one)
-        none: use all annotations
-      - min_precision: only use annotations with a probability score higher than this
-      - skip_multiword can be set to True to disable multi word annotations
-      - allow_multiword_overlap: by default we do some cleanup among overlapping multi word annotations.
-        By setting this to True, all overlaps will be allowed.
-      - word_separator is an optional character used to split the values of "word" into several word variations.
-      - lexicons: this argument cannot be set from the command line,
-        but is used in the catapult. This argument must be last.
-    """
 
+    - word, msd are existing annotations for wordforms and part-of-speech
+    - sentence is an existing annotation for sentences and their children (words)
+    - reference is an existing annotation for word references, to be used when
+      annotating multi-word units
+    - out is a string containing a whitespace separated list of the resulting annotation files
+    - annotations is a string containing a whitespace separated list of annotations to be written.
+      Currently: gf (=baseform), lem (=lemgram), saldo
+      Number of annotations and their order must correspond to the list in the 'out' argument.
+    - models is a list of pickled lexica, typically the Saldo model (saldo.pickle) and optional old lexicons
+    - delimiter is the delimiter character to put between ambiguous results
+    - affix is an optional character to put before and after results
+    - precision is a format string for how to print the precision for each annotation
+      (use empty string for no precision)
+    - precision_filter is an optional filter, currently there are the following values:
+      max: only use the annotations that are most probable
+      first: only use the most probable annotation (or one of the most probable if more than one)
+      none: use all annotations
+    - min_precision: only use annotations with a probability score higher than this
+    - skip_multiword can be set to True to disable multi word annotations
+    - allow_multiword_overlap: by default we do some cleanup among overlapping multi word annotations.
+      By setting this to True, all overlaps will be allowed.
+    - word_separator is an optional character used to split the values of "word" into several word variations.
+    - lexicons: this argument cannot be set from the command line,
+      but is used in the catapult. This argument must be last.
+    """
     # Allow use of multiple lexicons
     models = [(os.path.basename(m).rstrip(".pickle"), m) for m in models.split()]
     if not lexicons:
@@ -54,7 +56,7 @@ def annotate(doc, token, word, sentence, reference, out, annotations, models, ms
 
     # Maximum number of gaps in multi-word units.
     # TODO: Set to 0 for hist-mode? since many (most?) multi-word in the old lexicons are unseparable (half öre etc)
-    MAX_GAPS = 1
+    max_gaps = 1
 
     annotations = annotations.split()
     out = out.split()
@@ -107,7 +109,7 @@ def annotate(doc, token, word, sentence, reference, out, annotations, models, ms
 
             # Find multi-word expressions
             if not skip_multiword:
-                find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref, msdtag, MAX_GAPS, ann_tags_words, msd_annotation, sent, skip_pos_check)
+                find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref, msdtag, max_gaps, ann_tags_words, msd_annotation, sent, skip_pos_check)
 
             # Loop to next token
 
@@ -196,7 +198,7 @@ def find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref
                 seeking_word = x[1][1]
                 del x[1][0]
 
-        # If current gap is greater than MAX_GAPS, stop searching
+        # If current gap is greater than max_gaps, stop searching
         if x[5][1] > max_gaps:
             todelfromincomplete.append(i)
         #                                                         |  Last word may not be PP if this is a particle-multi-word                      |
@@ -213,16 +215,16 @@ def find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref
                 msdtag_list = [msd_annotation[sent[int(ref) - 1]] for ref in x[2]]
 
                 # For completed verb multis, check that at least one of the words is a verb:
-                if not skip_pos_check and "..vbm." in x[0]['lem'][0]:
+                if not skip_pos_check and "..vbm." in x[0]["lem"][0]:
                     for tag in msdtag_list:
-                        if tag.startswith('VB'):
+                        if tag.startswith("VB"):
                             complete_multis.append((x[2], x[0]))
                             break
 
                 # For completed noun multis, check that at least one of the words is a noun:
-                elif not skip_pos_check and "..nnm." in x[0]['lem'][0]:
+                elif not skip_pos_check and "..nnm." in x[0]["lem"][0]:
                     for tag in msdtag_list:
-                        if tag[:2] in ('NN', 'PM', 'UO'):
+                        if tag[:2] in ("NN", "PM", "UO"):
                             complete_multis.append((x[2], x[0]))
                             break
 
@@ -240,7 +242,7 @@ def find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref
 
                 # Avoid having another verb within a verb multi-word expression:
                 # delete current incomplete multi-word expr. if it starts with a verb and if current word has POS tag VB
-                if "..vbm." in x[0]['lem'][0] and msdtag.startswith("VB"):
+                if "..vbm." in x[0]["lem"][0] and msdtag.startswith("VB"):
                     todelfromincomplete.append(i)
 
             else:
@@ -300,7 +302,7 @@ class SaldoLexicon(object):
     def __init__(self, saldofile, verbose=True):
         if verbose:
             util.log.info("Reading Saldo lexicon: %s", saldofile)
-        if saldofile.endswith('.pickle'):
+        if saldofile.endswith(".pickle"):
             with open(saldofile, "rb") as F:
                 self.lexicon = pickle.load(F)
         else:
@@ -373,9 +375,6 @@ def _join_annotation(annotation, delimiter, affix):
     seen = set()
     return dict([(a, affix + delimiter.join(b for b in annotation[a] if b not in seen and not seen.add(b)) + affix) for a in annotation])
 
-# The minimun precision difference for two annotations to be considered equal
-PRECISION_DIFF = 0.01
-
 
 def get_precision(msd, msdtags):
     """
@@ -431,7 +430,7 @@ class HashableDict(dict):
         return self.__key() == other.__key()
 
 
-def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC', verbose=True):
+def read_xml(xml="saldom.xml", annotation_elements="gf lem saldo", tagset="SUC", verbose=True):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml).
     Return a lexicon dictionary, {wordform: {{annotation-type: annotation}: ( set(possible tags), set(tuples with following words) )}}
      - annotation_element is the XML element for the annotation value (currently: 'gf' for baseform, 'lem' for lemgram or 'saldo' for SALDO id)
@@ -451,7 +450,7 @@ def read_xml(xml='saldom.xml', annotation_elements='gf lem saldo', tagset='SUC',
 
     for event, elem in context:
         if event == "end":
-            if elem.tag == 'LexicalEntry':
+            if elem.tag == "LexicalEntry":
                 annotations = HashableDict()
 
                 for a in annotation_elements:
@@ -566,5 +565,5 @@ def xml_to_pickle(xml, filename, annotation_elements="gf lem saldo"):
 
 ######################################################################
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     util.run.main(annotate, xml_to_pickle=xml_to_pickle)
