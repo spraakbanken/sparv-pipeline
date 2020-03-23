@@ -200,16 +200,22 @@ def join_annotation(name, attribute):
 
 def get_annotation_path(doc, annotation, data=False):
     """Construct a path to an annotation file given a doc and annotation."""
-    doc, _, chunk = doc.partition(DOC_CHUNK_DELIM)
+    if doc:
+        doc, _, chunk = doc.partition(DOC_CHUNK_DELIM)
     elem, attr = split_annotation(annotation)
     corpus_dir = os.environ.get("CORPUS_DIR", DEFAULT_CORPUS_DIR)
     annotation_dir = os.path.join(corpus_dir, "annotations")
 
     if data:
-        return os.path.join(annotation_dir, doc, chunk, elem)
-    elif not attr:
-        attr = SPAN_ANNOTATION
-    return os.path.join(annotation_dir, doc, chunk, elem, attr)
+        if doc:
+            path = os.path.join(annotation_dir, doc, chunk, elem)
+        else:
+            path = os.path.join(annotation_dir, elem)
+    else:
+        if not attr:
+            attr = SPAN_ANNOTATION
+        path = os.path.join(annotation_dir, doc, chunk, elem, attr)
+    return path
 
 
 def chain(annotations, default=None):
