@@ -149,23 +149,28 @@ class SparvXMLParser:
         """Save text data and annotation files to disk."""
         text = unicodedata.normalize("NFC", "".join(self.text))
         util.write_corpus_text(self.doc, text)
+        structure = []
 
         for element in self.data:
+            structure.append(element)
             spans = []
             original_elements = []
-            annotations = {ann: [] for ann in self.data[element]["attrs"]}
+            attributes = {attr: [] for attr in self.data[element]["attrs"]}
             for instance in self.data[element]["elements"]:
                 start, start_subpos, end, end_subpos, original_element, attrs = instance
                 spans.append(((start, start_subpos), (end, end_subpos)))
                 original_elements.append(original_element)
-                for ann in annotations:
-                    annotations[ann].append(attrs.get(ann, ""))
+                for attr in attributes:
+                    attributes[attr].append(attrs.get(attr, ""))
 
             util.write_annotation(self.doc, element, spans)
             # util.write_annotation(self.doc, "{}:@original".format(element), original_elements)
 
-            for ann in annotations:
-                util.write_annotation(self.doc, "{}:{}".format(element, ann), annotations[ann])
+            for attr in attributes:
+                util.write_annotation(self.doc, "{}:{}".format(element, attr), attributes[attr])
+                structure.append("{}:{}".format(element, attr))
+
+        util.write_data(self.doc, "@structure", "\n".join(structure))
 
 
 if __name__ == "__main__":
