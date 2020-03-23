@@ -31,9 +31,8 @@ def lix_annot(doc, text, sentence, word, pos, out, skip_pos="MAD MID PAD", fmt="
     sentence_children, _orphans = util.get_children(doc, sentence, word)
     sentence_children = list(sentence_children)
 
-    lix_annotation = []
-
     # Calculate LIX for every text element
+    lix_annotation = []
     for text in text_children:
         in_sentences = []
         for sentence_index in text:
@@ -53,30 +52,32 @@ def lix(sentences):
     """
     sentence_counter = 0.0
     word_counter = 0.0
-    lix_value = 0.0
+    length_counter = 0.0
     for words in sentences:
         sentence_counter += 1
         for word in words:
             word_counter += 1
-            lix_value += int(len(word) > 6)
+            length_counter += int(len(word) > 6)
     if word_counter == 0 and sentence_counter == 0:
         return float('NaN')
     elif word_counter == 0 or sentence_counter == 0:
         return float('inf')
     else:
-        return word_counter / sentence_counter + 100 * lix_value / word_counter
+        return word_counter / sentence_counter + 100 * length_counter / word_counter
 
 
-def ovix_annot(order, text, TEXT, token, words, pos, out, skip_pos="MAD MID PAD", fmt="%.2f"):
+def ovix_annot(doc, text, word, pos, out, skip_pos="MAD MID PAD", fmt="%.2f"):
     """Create OVIX annotation for text."""
-    structs = [text]
-    columns = [words, pos]
-    texts = cwb.vrt_iterate(*cwb.tokens_and_vrt(order, structs, columns, TEXT, token))
-    util.write_annotation(out, (
-        (span, fmt % ovix(actual_words(cols, skip_pos)))
-        for (_, span), cols in texts
-        if span is not None
-    ))
+    text_children, _orphans = util.get_children(doc, text, word)
+    word_pos = list(util.read_annotation_attributes(doc, (word, pos)))
+
+    # Calculate OVIX for every text element
+    ovix_annotation = []
+    for text in text_children:
+        in_words = list(actual_words([word_pos[token_index] for token_index in text], skip_pos))
+        ovix_annotation.append(fmt % lix(in_words))
+
+    util.write_annotation(doc, out, ovix_annotation)
 
 
 def ovix(words):
@@ -110,16 +111,17 @@ def ovix(words):
         return log(w) / log(2 - log(uw) / log(w))
 
 
-def nominal_ratio_annot(order, text, TEXT, token, pos, out, noun_pos="NN PP PC", verb_pos="PN AB VB", fmt="%.2f"):
+def nominal_ratio_annot(doc, text, pos, out, noun_pos="NN PP PC", verb_pos="PN AB VB", fmt="%.2f"):
     """Creata nominal ratio annotation for text."""
-    structs = [text]
-    columns = [pos]
-    texts = cwb.vrt_iterate(*cwb.tokens_and_vrt(order, structs, columns, TEXT, token))
-    util.write_annotation(out, (
-        (span, fmt % nominal_ratio([col[0] for col in cols], noun_pos, verb_pos))
-        for (_, span), cols in texts
-        if span is not None
-    ))
+    text_children, _orphans = util.get_children(doc, text, pos)
+    pos_annotation = list(util.read_annotation(doc, pos))
+
+    # Calculate OVIX for every text element
+    nk_annotation = []
+    for text in text_children:
+        in_pos = [pos_annotation[token_index] for token_index in text]
+        nk_annotation.append(fmt % nominal_ratio(in_pos, noun_pos, verb_pos))
+    util.write_annotation(doc, out, nk_annotation)
 
 
 def nominal_ratio(pos, noun_pos, verb_pos):

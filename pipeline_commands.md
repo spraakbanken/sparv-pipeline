@@ -62,6 +62,10 @@ python -m sparv.modules.lexical_classes.lexical_classes --annotate_doc --doc kor
 
 python -m sparv.modules.readability.readability --lix --doc korpus1 --text text --sentence sentence --word token:word --pos token:pos --out text:lix
 
+python -m sparv.modules.readability.readability --ovix --doc korpus1 --text text --word token:word --pos token:pos --out text:ovix
+
+python -m sparv.modules.readability.readability --nominal_ratio --doc korpus1 --text text --pos token:pos --out text:nk
+
 -------------------------------------------------------------
 # Treetagger
 
