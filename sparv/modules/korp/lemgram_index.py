@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import os
 import subprocess
 import sparv.util as util
@@ -10,10 +9,8 @@ CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 
 def make_index(corpus, out, db_name, attributes=["lex", "prefix", "suffix"]):
-
-    if isinstance(attributes, str):
-        attributes = attributes.split()
-
+    """Create lemgram index SQL file."""
+    attributes = util.split(attributes)
     attribute_fields = {"lex": "freq", "prefix": "freq_prefix", "suffix": "freq_suffix"}
 
     corpus = corpus.upper()
@@ -44,16 +41,16 @@ def make_index(corpus, out, db_name, attributes=["lex", "prefix", "suffix"]):
 
 
 def count_lemgrams(corpus, attributes):
-
+    """Count lemgrams using cwb-scan."""
     util.log.info("Reading corpus")
     result = {}
-    process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-r", CORPUS_REGISTRY, corpus] + attributes, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-q", "-r", CORPUS_REGISTRY, corpus] + attributes,
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     reply, error = process.communicate()
-    if error and "Error:" in error.decode():  # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
+    if error:
         print(error.decode())
         raise Exception
-    for line in reply.splitlines():
-        line = line.decode("UTF-8")
+    for line in reply.decode("UTF-8").splitlines():
         if not line:
             continue
         temp = line.split("\t")
@@ -66,20 +63,21 @@ def count_lemgrams(corpus, attributes):
 
     return result
 
+
 ################################################################################
 
 MYSQL_TABLE = "lemgram_index"
 
-MYSQL_INDEX = {'columns': [("lemgram", "varchar(64)", "", "NOT NULL"),
+MYSQL_INDEX = {"columns": [("lemgram", "varchar(64)", "", "NOT NULL"),
                            ("freq", int, 0, "NOT NULL"),
                            ("freq_prefix", int, 0, "NOT NULL"),
                            ("freq_suffix", int, 0, "NOT NULL"),
                            ("corpus", "varchar(64)", "", "NOT NULL")],
-               'indexes': ["lemgram corpus freq freq_prefix freq_suffix"],  # Can't make this primary due to collation
-               'default charset': 'utf8',
+               "indexes": ["lemgram corpus freq freq_prefix freq_suffix"],  # Can't make this primary due to collation
+               "default charset": "utf8",
                }
 
 ################################################################################
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     util.run.main(make_index)

@@ -10,6 +10,7 @@ CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 
 def timespan(corpus, db_name, out):
+    """Create timespan SQL data for use in Korp."""
 
     def calculate(usetime=True):
         rows = []
