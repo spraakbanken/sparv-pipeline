@@ -55,3 +55,8 @@ def truncateset(string, maxlength=4095, delimiter="|", affix="|", encoding="UTF-
             length += len(value.encode(encoding)) + 1
             if length > maxlength:
                 return cwbset(values[:i], delimiter, affix)
+
+
+def remove_control_characters(text):
+    """Remove control characters from text."""
+    return text.translate(dict((ord(c), None) for c in [chr(i) for i in list(range(9)) + list(range(11, 13)) + list(range(14, 32)) + [127]]))

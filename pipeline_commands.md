@@ -70,7 +70,6 @@ python -m sparv.modules.lexical_classes.lexical_classes --annotate_doc --doc kor
 
 python -m sparv.modules.lexical_classes.lexical_classes --annotate_doc --doc korpus1 --out text:swefn --in_token_annotation token:swefn --text text --token token --saldoids token:sense --freq_model ../models/swefn.freq.gp2008+suc3+romi.pickle
 
-
 -------------------------------------------------------------
 # Readability measures
 
@@ -90,12 +89,17 @@ python -m sparv.modules.treetagger.treetagger --doc korpus_en --lang la --model 
 
 python -m sparv.modules.xmlparser.xmlparser --doc korpus_en --source_dir "original/xml/"
 
-## FreeLing with s-level
+## FreeLing without s-level
 
 python -m sparv.freeling --doc korpus_en --text text --sentence sentence --token token --word token:word --lemma token:lemma --pos token:pos --msd token:msd --conf_file ../models/freeling/en.cfg --lang en
 
-## FreeLing without s-level
+## FreeLing with s-level
 
 python -m sparv.freeling --doc korpus_en --text text --token token --word token:word --lemma token:lemma --pos token:pos --msd token:msd --conf_file ../models/freeling/en.cfg --lang en --slevel s
+
+-------------------------------------------------------------
+# XML export
+
+python -m sparv.modules.xml_export.xml_export --doc korpus1 --export_dir "export/xml/" --token token --word token:word --annotations "token:pos token:baseform token:ref"
 
 -------------------------------------------------------------
