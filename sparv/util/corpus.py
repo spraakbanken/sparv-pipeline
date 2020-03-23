@@ -18,6 +18,12 @@ def annotation_exists(doc, annotation):
     return os.path.exists(annotation_path)
 
 
+def data_exists(doc, name):
+    """Check if an annotation data file exists."""
+    annotation_path = get_annotation_path(doc, name, data=True)
+    return os.path.isfile(annotation_path)
+
+
 def clear_annotation(doc, annotation):
     """Remove an annotation file if it exists."""
     annotation_path = get_annotation_path(doc, annotation)
@@ -162,6 +168,27 @@ def _read_single_annotation(doc, annotation, with_annotation_name):
     log.info("Read %d items: %s/%s", ctr, doc, annotation)
 
 
+def write_data(doc, name, value, append=False):
+    """Write arbitrary string data to file in annotations directory."""
+    file_path = get_annotation_path(doc, name, data=True)
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    mode = "a" if append else "w"
+
+    with open(file_path, mode) as f:
+        f.write(value)
+    log.info("Wrote %d bytes: %s/%s", len(value), doc, name)
+
+
+def read_data(doc, name):
+    """Read arbitrary string data from file in annotations directory."""
+    file_path = get_annotation_path(doc, name, data=True)
+
+    with open(file_path, "r") as f:
+        data = f.read()
+    log.info("Read %d bytes: %s/%s", len(data), doc, name)
+    return data
+
+
 def split_annotation(annotation):
     elem, _, attr = annotation.partition(ELEM_ATTR_DELIM)
     return elem, attr
@@ -171,14 +198,14 @@ def join_annotation(name, attribute):
     return ELEM_ATTR_DELIM.join((name, attribute))
 
 
-def get_annotation_path(doc, annotation):
+def get_annotation_path(doc, annotation, data=False):
     """Construct a path to an annotation file given a doc and annotation."""
     doc, _, chunk = doc.partition(DOC_CHUNK_DELIM)
     elem, attr = split_annotation(annotation)
     corpus_dir = os.environ.get("CORPUS_DIR", DEFAULT_CORPUS_DIR)
     annotation_dir = os.path.join(corpus_dir, "annotations")
 
-    if elem == TEXT_FILE:
+    if data:
         return os.path.join(annotation_dir, doc, chunk, elem)
     elif not attr:
         attr = SPAN_ANNOTATION
@@ -261,7 +288,7 @@ class PickledLexicon(object):
 
 def read_corpus_text(doc):
     """Read the text contents of a corpus and return as a string."""
-    text_file = get_annotation_path(doc, TEXT_FILE)
+    text_file = get_annotation_path(doc, TEXT_FILE, data=True)
     with open(text_file, "r") as f:
         text = f.read()
     log.info("Read %d chars: %s", len(text), text_file)
@@ -273,7 +300,7 @@ def write_corpus_text(doc, text):
     text is a unicode string.
     """
     doc, _, chunk = doc.partition(DOC_CHUNK_DELIM)
-    text_file = get_annotation_path(doc, TEXT_FILE)
+    text_file = get_annotation_path(doc, TEXT_FILE, data=True)
     print(doc, text_file)
     os.makedirs(os.path.dirname(text_file), exist_ok=True)
     with open(text_file, "w") as f:
