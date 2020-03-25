@@ -79,8 +79,8 @@ def _write_single_annotation(doc, annotation, values, append):
                     start, start_subpos = start
                 if isinstance(end, tuple):
                     end, end_subpos = end
-                start_subpos = ".{}".format(start_subpos) if start_subpos else ""
-                end_subpos = ".{}".format(end_subpos) if end_subpos else ""
+                start_subpos = ".{}".format(start_subpos) if start_subpos is not None else ""
+                end_subpos = ".{}".format(end_subpos) if end_subpos is not None else ""
                 value = "{}{}-{}{}".format(start, start_subpos, end, end_subpos)
             else:
                 # value = value.replace("\\", r"\\").replace("\n", r"\n").replace("\r", "")  # Use if we allow linebreaks in values

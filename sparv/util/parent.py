@@ -93,8 +93,14 @@ def read_parents_and_children(doc, parent, child):
     """Read parent and child annotations. Reorder them according to span position, but keep original index
     information."""
     if isinstance(parent, str):
-        parent = iter(sorted(enumerate(util.read_annotation_spans(doc, parent, decimals=True)), key=lambda x: x[1]))
+        parent = sorted(enumerate(util.read_annotation_spans(doc, parent, decimals=True)), key=lambda x: x[1])
     if isinstance(child, str):
-        child = iter(sorted(enumerate(util.read_annotation_spans(doc, child, decimals=True)), key=lambda x: x[1]))
+        child = sorted(enumerate(util.read_annotation_spans(doc, child, decimals=True)), key=lambda x: x[1])
 
-    return parent, child
+    # Only use sub-positions if both parent and child have them
+    if parent and child:
+        if len(parent[0][1][0]) == 1 or len(child[0][1][0]) == 1:
+            parent = [(p[0], (p[1][0][0], p[1][1][0])) for p in parent]
+            child = [(c[0], (c[1][0][0], c[1][1][0])) for c in child]
+
+    return iter(parent), iter(child)
