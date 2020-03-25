@@ -69,7 +69,7 @@ def calculate_element_hierarchy(doc, spans_list):
     while unclear_spans:
         for span in unclear_spans.copy():
             # Span is never a child in ordered_pairs, then it is first in the hierarchy
-            if not any([True for a, b in ordered_pairs if b == span]):
+            if not any([b == span for _a, b in ordered_pairs]):
                 hierarchy.append(span)
                 unclear_spans.remove(span)
                 # Remove pairs from ordered_pairs where span is the parent

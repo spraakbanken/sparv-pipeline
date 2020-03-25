@@ -1,5 +1,7 @@
 """Export annotated corpus data to xml."""
 
+# from pprint import pprint
+
 from collections import defaultdict
 import xml.etree.cElementTree as etree
 import os
@@ -31,26 +33,36 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
     annotations.extend(original_annotations)
 
     sorted_spans, annotation_dict = util.gather_annotations(doc, annotations)
-    # print(sorted_spans)
+    # pprint(sorted_spans)
+    # pprint(annotation_dict)
 
-    # Loop through spans and figure out which one is largest?
-    xml_export = etree.Element("text")  # This must not be hard-coded!
-    for word_index, word in enumerate(word_annotation):
-        word_node = etree.SubElement(xml_export, WORD_ELEM)
-        word_node.text = word
-        for name, annotation in annotation_dict[token].items():
-            if name != "@span":
-                word_node.set(name, annotation[word_index])
+    # Create root node
+    root_tag = sorted_spans[0][1]
+    root_node = etree.Element(root_tag)
+    add_attrs(root_node, root_tag, annotation_dict, 0)
+    # current_node = root_node
+
+    for word_index, the_word in enumerate(word_annotation):
+        word_node = etree.SubElement(root_node, WORD_ELEM)
+        word_node.text = the_word
+        add_attrs(word_node, token, annotation_dict, word_index)
 
     # Write xml to file
     out_file = os.path.join(export_dir, "%s_export.xml" % doc)
-    etree.ElementTree(xml_export).write(out_file, xml_declaration=False, method="xml", encoding=util.UTF8)
+    etree.ElementTree(root_node).write(out_file, xml_declaration=False, method="xml", encoding=util.UTF8)
 
 
 def export_formatted(doc, export_dir, word, annotations=None):
     """Export annotations to XML in export_dir and keep whitespaces and indentation from original file."""
     # Will be similar to export(). Some abstraction is needed here.
     pass
+
+
+def add_attrs(node, annotation, annotation_dict, index):
+    """Att attributes from annotation_dict to node."""
+    for name, annotation in annotation_dict[annotation].items():
+        if name != "@span":
+            node.set(name, annotation[index])
 
 
 ########################################################################################################
