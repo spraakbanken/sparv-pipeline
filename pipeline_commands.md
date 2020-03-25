@@ -100,6 +100,6 @@ python -m sparv.freeling --doc korpus_en --text text --token token --word token:
 -------------------------------------------------------------
 # XML export
 
-python -m sparv.modules.xml_export.xml_export --doc korpus1 --export_dir "export/xml/" --token token --word token:word --annotations "token:pos token:baseform token:ref"
+python -m sparv.modules.xml_export.xml_export --doc korpus1 --export_dir "export/xml/" --token token --word token:word --annotations "text sentence token token:pos token:baseform token:ref"
 
 -------------------------------------------------------------

@@ -30,20 +30,17 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
         original_annotations = util.split(util.read_data(doc, "@structure"))
     annotations.extend(original_annotations)
 
-    # Read all annotations in memory. Too much data?
-    annotation_dict = defaultdict(dict)
-    for annotation_pointer in annotations:
-        print(annotation_pointer)
-        a = list(util.read_annotation(doc, annotation_pointer))
-        span, attr = util.split_annotation(annotation_pointer)
-        annotation_dict[span][attr] = a
+    sorted_spans, annotation_dict = util.gather_annotations(doc, annotations)
+    # print(sorted_spans)
 
+    # Loop through spans and figure out which one is largest?
     xml_export = etree.Element("text")  # This must not be hard-coded!
     for word_index, word in enumerate(word_annotation):
         word_node = etree.SubElement(xml_export, WORD_ELEM)
         word_node.text = word
         for name, annotation in annotation_dict[token].items():
-            word_node.set(name, annotation[word_index])
+            if name != "@span":
+                word_node.set(name, annotation[word_index])
 
     # Write xml to file
     out_file = os.path.join(export_dir, "%s_export.xml" % doc)
@@ -54,6 +51,11 @@ def export_formatted(doc, export_dir, word, annotations=None):
     """Export annotations to XML in export_dir and keep whitespaces and indentation from original file."""
     # Will be similar to export(). Some abstraction is needed here.
     pass
+
+
+########################################################################################################
+# OLD STUFF NOT UPDATED
+########################################################################################################
 
 
 def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fileid, fileids, valid_xml):
@@ -318,3 +320,10 @@ if __name__ == "__main__":
     util.run.main(export,
                   export_formatted=export_formatted,
                   combine_xml=combine_xml)
+    # sorted_spans = [
+    #     (0, 100, "corpus", 0),
+    #     (0, 50, "text", 0),
+    #     (51, 100, "text", 1),
+    #     (51, 100, "text", 1),
+    #     (0, 100, "sentence", 1),
+    # ]
