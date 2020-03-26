@@ -1,7 +1,5 @@
 """Export annotated corpus data to xml."""
 
-# from pprint import pprint
-
 from collections import defaultdict
 import xml.etree.cElementTree as etree
 import os
@@ -9,7 +7,6 @@ import os
 import sparv.util as util
 
 UNDEF = "__UNDEF__"
-WORD_ELEM = "w"
 
 
 def export(doc, export_dir, token, word, annotations, original_annotations=None):
@@ -18,12 +15,15 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
     - doc: name of the original document
     - token: name of the token level annotation span
     - word: annotation containing the token strings.
-    - original_annotations: list of elements:attributes from the original document
-      to include. If none are specified, all original_annotations will be included.
+    - annotations: list of elements:attributes (annotations) to include.
+      All elements and attributes from the original document will be kept.
     """
+    # TODO: make option for excluding original annotations
+    # TODO: make option for renaming elements/attributes
+
     os.makedirs(os.path.dirname(export_dir), exist_ok=True)
 
-    word_annotation = util.read_annotation(doc, word)
+    word_annotation = list(util.read_annotation(doc, word))
     annotations = util.split(annotations)
 
     # Add original_annotations to annotations
@@ -33,19 +33,24 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
     annotations.extend(original_annotations)
 
     sorted_spans, annotation_dict = util.gather_annotations(doc, annotations)
-    # pprint(sorted_spans)
-    # pprint(annotation_dict)
 
     # Create root node
     root_tag = sorted_spans[0][1]
     root_node = etree.Element(root_tag)
     add_attrs(root_node, root_tag, annotation_dict, 0)
-    # current_node = root_node
+    node_stack = [(root_node, sorted_spans[0])]
 
-    for word_index, the_word in enumerate(word_annotation):
-        word_node = etree.SubElement(root_node, WORD_ELEM)
-        word_node.text = the_word
-        add_attrs(word_node, token, annotation_dict, word_index)
+    # Go through sorted_spans and build xml tree
+    for span in sorted_spans[1:]:
+        # Pop stack if end position of top stack element < end position of current element
+        while node_stack[-1][1][0][1] < span[0][1]:
+            node_stack.pop()
+        # Create child node to top stack node
+        new_node = etree.SubElement(node_stack[-1][0], span[1])
+        node_stack.append((new_node, span))
+        add_attrs(new_node, span[1], annotation_dict, span[2])
+        if span[1] == token:
+            new_node.text = word_annotation[span[2]]
 
     # Write xml to file
     out_file = os.path.join(export_dir, "%s_export.xml" % doc)
@@ -332,10 +337,3 @@ if __name__ == "__main__":
     util.run.main(export,
                   export_formatted=export_formatted,
                   combine_xml=combine_xml)
-    # sorted_spans = [
-    #     (0, 100, "corpus", 0),
-    #     (0, 50, "text", 0),
-    #     (51, 100, "text", 1),
-    #     (51, 100, "text", 1),
-    #     (0, 100, "sentence", 1),
-    # ]
