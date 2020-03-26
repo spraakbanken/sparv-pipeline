@@ -1,7 +1,9 @@
 """Util functions for corpus export."""
 
 from collections import defaultdict
+from functools import cmp_to_key
 from itertools import combinations
+
 from sparv.util import corpus, parent
 
 
@@ -14,12 +16,7 @@ def gather_annotations(doc, annotations):
         if span_name not in annotation_dict:
             # This is necessary, span_name needs to be in the dictionary
             annotation_dict[span_name]["@span"] = None
-            for i, s in enumerate(corpus.read_annotation_spans(doc, span_name, decimals=False)):
-                # TODO: sub positions need to be considered...
-                # start_pos, end_pos = s
-                # start_pos = float(".".join(str(ele) for ele in s[0]))
-                # end_pos = float(".".join(str(ele) for ele in s[1]))
-                # spans_list.append(((start_pos, end_pos), span_name, i))
+            for i, s in enumerate(corpus.read_annotation_spans(doc, span_name, decimals=True)):
                 spans_list.append((s, span_name, i))
         if attr and not annotation_dict[span_name].get(attr):
             a = list(corpus.read_annotation(doc, annotation_pointer))
@@ -27,19 +24,40 @@ def gather_annotations(doc, annotations):
 
     elem_hierarchy = calculate_element_hierarchy(doc, spans_list)
 
-    def sort_spans(span):
-        """Create a sorting key from a span.
+    def sort_spans(span1, span2):
+        """Compare span1 and span2.
 
         Sort spans according to their position and hierarchy. Sort by:
         1. start position (smaller indices first)
         2. end position (larger indices first)
         3. the calculated element hierarchy
         """
-        pos, name, _i = span
-        hierarchy_index = elem_hierarchy.index(name) if name in elem_hierarchy else -1
-        return (pos[0], - pos[1], hierarchy_index)
+        def get_sort_key(span, sub_positions=False):
+            """Return a sort key for span which makes span comparison possible."""
+            (start_pos, end_pos), name, _ = span
+            hierarchy_index = elem_hierarchy.index(name) if name in elem_hierarchy else -1
+            if sub_positions:
+                return ((start_pos[0], start_pos[1]), (- end_pos[0], - end_pos[1]), hierarchy_index)
+            else:
+                return (start_pos[0], - end_pos[0], hierarchy_index)
 
-    sorted_spans = sorted(spans_list, key=sort_spans)
+        # At least one of the spans does not have sub positions
+        if len(span1[0][0]) == 1 or len(span2[0][0]) == 1:
+            sort_key1 = get_sort_key(span1)
+            sort_key2 = get_sort_key(span2)
+        # Both spans have sub positions
+        else:
+            sort_key1 = get_sort_key(span1, sub_positions=True)
+            sort_key2 = get_sort_key(span2, sub_positions=True)
+
+        # cmp(span1, span2) => 1 if span1>span2, -1 if span1<span2, 0 if span1=span2
+        if sort_key1 > sort_key2:
+            return 1
+        if sort_key1 < sort_key2:
+            return -1
+        return 0
+
+    sorted_spans = sorted(spans_list, key=cmp_to_key(sort_spans))
     return sorted_spans, annotation_dict
 
 
@@ -52,7 +70,8 @@ def calculate_element_hierarchy(doc, spans_list):
     # Find elements with identical spans
     span_duplicates = defaultdict(set)
     for span in spans_list:
-        span_duplicates[span[0]].add(span[1])
+        plain_span = (span[0][0][0], span[0][1][0])
+        span_duplicates[plain_span].add(span[1])
     span_duplicates = [v for k, v in span_duplicates.items() if len(v) > 1]
 
     # Flatten structure
@@ -76,7 +95,7 @@ def calculate_element_hierarchy(doc, spans_list):
             ordered_pairs.add((b, a))
 
     hierarchy = []
-    error_msg = "Something seems to go wrong when sorting annotation elements. Could there be circular relations?"
+    error_msg = "Something went wrong while sorting annotation elements. Could there be circular relations?"
     # Loop until all unclear_spans are processed
     while unclear_spans:
         size = len(unclear_spans)
@@ -90,5 +109,5 @@ def calculate_element_hierarchy(doc, spans_list):
                     if pair[0] == span:
                         ordered_pairs.remove(pair)
         # Check that unclear_spans is getting smaller, otherwise there might be circularity
-        assert len(unclear_spans) == size - 1, error_msg
+        assert len(unclear_spans) < size, error_msg
     return hierarchy
