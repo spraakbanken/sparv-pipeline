@@ -39,7 +39,9 @@ python -m sparv.modules.saldo.saldo --doc korpus1 --models ../models/saldo.pickl
 
 python -m sparv.modules.wsd.wsd --doc korpus1 --wsdjar ../bin/wsd/saldowsd.jar --sense_model ../models/wsd/ALL_512_128_w10_A2_140403_ctx1.bin --context_model ../models/wsd/lem_cbow0_s512_w10_NEW2_ctx.bin --out token:sense --sentence sentence --word token:word --ref token:ref --lemgram token:lemgram --saldo token:sense_tmp --pos token:pos --token token
 
-## compound??
+## compound analysis
+
+python -m sparv.modules.saldo.compound --doc korpus1 --out_complemgrams token:complemgram --out_compwf token:compwf --out_baseform token:baseform2 --word token:word --msd token:msd --baseform_tmp token:baseform  --saldo_comp_model ../models/saldo.compound.pickle --nst_model ../models/nst.comp.pos.pickle --stats_model ../models/stats.pickle
 
 -------------------------------------------------------------
 # Word Picture
@@ -50,6 +52,7 @@ python -m sparv.modules.korp.relations --sql --corpus KORPUS --db_name TEST_DB -
 
 -------------------------------------------------------------
 # Sentiment
+
 python -m sparv.modules.sentiment.sentiment --doc korpus1 --sense token:sense --out_scores token:sentiment --out_labels token:sentimentclass --model ../models/sensaldo.pickle
 
 -------------------------------------------------------------
@@ -58,6 +61,11 @@ python -m sparv.modules.sentiment.sentiment --doc korpus1 --sense token:sense --
 python -m sparv.modules.geo.geo --doc korpus1 --out sentence:geo --chunk sentence --context sentence --ne_type ne:type --ne_subtype ne:subtype --ne_name ne:name --model ../models/geo.pickle
 
 python -m sparv.modules.geo.geo --metadata --doc korpus1 --out text:geo --chunk text --source text:source --model ../models/geo.pickle
+
+-------------------------------------------------------------
+# Named entity recognition
+
+python -m sparv.modules.swener.swener --doc korpus1 --out_ne ne --out_ne_ex ne:ex --out_ne_type ne:type --out_ne_subtype ne:subtype --out_ne_name ne:name --word token:word --sentence sentence --token token
 
 -------------------------------------------------------------
 # Lexical classes
