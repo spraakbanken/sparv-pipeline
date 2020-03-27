@@ -9,23 +9,21 @@ import sparv.util as util
 UNDEF = "__UNDEF__"  # Do we need this for xml exports?
 
 
-def export(doc, export_dir, token, word, annotations, skip_annotations=None, original_annotations=None):
+def export(doc, export_dir, token, word, annotations, original_annotations=None):
     """Export annotations to XML in export_dir.
 
     - doc: name of the original document
     - token: name of the token level annotation span
     - word: annotation containing the token strings.
     - annotations: list of elements:attributes (annotations) to include.
-      All elements and attributes from the original document will be kept.
-    - skip_annotations: list of elements:attributes from the original document
-      to exclude from the export.
+    - original_annotations: list of elements:attributes from the original document
+      to be kept. If not specified, everything will be kep.
     """
     # TODO: make option for renaming elements/attributes
 
     # Prepare xml export
     word_annotation, sorted_spans, annotation_dict = prepare_xml_export(
-        doc, export_dir, token, word, annotations, skip_annotations=skip_annotations,
-        original_annotations=original_annotations)
+        doc, export_dir, token, word, annotations, original_annotations=original_annotations)
 
     # Create root node
     root_tag = sorted_spans[0][1]
@@ -52,12 +50,11 @@ def export(doc, export_dir, token, word, annotations, skip_annotations=None, ori
     util.log.info("Exported: %s", out_file)
 
 
-def export_formatted(doc, export_dir, token, word, annotations, skip_annotations=None, original_annotations=None):
+def export_formatted(doc, export_dir, token, word, annotations, original_annotations=None):
     """Export annotations to XML in export_dir and keep whitespaces and indentation from original file."""
     # Prepare xml export
     word_annotation, sorted_spans, annotation_dict = prepare_xml_export(
-        doc, export_dir, token, word, annotations, skip_annotations=skip_annotations,
-        original_annotations=original_annotations)
+        doc, export_dir, token, word, annotations, original_annotations=original_annotations)
     pass
 
 
@@ -66,7 +63,7 @@ def export_formatted(doc, export_dir, token, word, annotations, skip_annotations
 ########################################################################################################
 
 
-def prepare_xml_export(doc, export_dir, token, word, annotations, skip_annotations, original_annotations):
+def prepare_xml_export(doc, export_dir, token, word, annotations, original_annotations):
     """Prepare xml export (abstraction for export and export_formatted).
 
     Create export dir, figure out what annotations to include and order the spans.
@@ -83,11 +80,6 @@ def prepare_xml_export(doc, export_dir, token, word, annotations, skip_annotatio
     if not original_annotations:
         original_annotations = util.split(util.read_data(doc, "@structure"))
     annotations.extend(original_annotations)
-
-    # Remove skipped annotations
-    skip_annotations = util.split(skip_annotations)
-    if skip_annotations:
-        annotations = list(set(annotations).difference(set(skip_annotations)))
 
     sorted_spans, annotation_dict = util.gather_annotations(doc, annotations)
 
