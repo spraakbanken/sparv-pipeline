@@ -116,4 +116,8 @@ python -m sparv.modules.xml_export.xml_export --doc korpus1 --export_dir "export
 
 python -m sparv.modules.cwb.cwb --export --doc korpus1 --export_dir "export/vrt/" --token token --word token:word --annotations "text text:lix text:blingbring sentence token token:pos token:baseform token:sentimentclass token:ref"
 
+## CWB encode
+
+python -m sparv.modules.cwb.cwb --encode --corpus mycorpus --columns "word pos baseform sentimentclass ref" --structs "corpus text text:id text:forfattare text:lix sentence" --vrtdir "export/vrt/"
+
 -------------------------------------------------------------

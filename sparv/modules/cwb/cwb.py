@@ -127,32 +127,25 @@ def write_vrt(out, structs, structs_count, column_nrs, tokens, vrt):
     util.log.info("Exported %d tokens, %d columns, %d structs: %s", len(tokens), len(column_nrs), len(structs), out)
 
 
-######################################################################
-# Saving as Corpus Workbench data file
-
-
-def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None, vrtlist=None,
+def cwb_encode(corpus, columns, structs=(), vrtdir=None, vrtfiles=None, vrtlist=None,
                encoding=CWB_ENCODING, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY, skip_compression=False, skip_validation=False):
-    """Encode a number of VRT files, by calling cwb-encode.
+    """Encode a number of vrt files, by calling cwb-encode.
 
-    params, structs describe the attributes that are exported in the VRT files.
+    params, structs describe the attributes that are exported in the vrt files.
     """
-    assert master != "", "Master not specified"
-    assert util.single_true((vrtdir, vrtfiles, vrtlist)), "Either VRTDIR, VRTFILES or VRTLIST must be specified"
+    assert corpus != "", "Corpus not specified"
+    assert util.single_true((vrtdir, vrtfiles, vrtlist)), "One of the following must be specified: vrtdir, vrtfiles, vrtlist"
     assert datadir, "CWB_DATADIR not specified"
     assert registry, "CORPUS_REGISTRY not specified"
-    if isinstance(skip_validation, str):
-        skip_validation = (skip_validation.lower() == "true")
-    if isinstance(skip_compression, str):
-        skip_compression = (skip_compression.lower() == "true")
-    if isinstance(vrtfiles, str):
-        vrtfiles = vrtfiles.split()
-    if isinstance(columns, str):
-        columns = columns.split()
+
+    skip_validation = util.strtobool(skip_validation)
+    skip_compression = util.strtobool(skip_compression)
+    vrtfiles = util.split(vrtfiles)
+    columns = util.split(columns)
     structs = parse_structural_attributes(structs)
 
-    corpus_registry = os.path.join(registry, master)
-    corpus_datadir = os.path.join(datadir, master)
+    corpus_registry = os.path.join(registry, corpus)
+    corpus_datadir = os.path.join(datadir, corpus)
     util.system.clear_directory(corpus_datadir)
 
     encode_args = ["-s", "-p", "-",
@@ -182,13 +175,13 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None, vrtlist=
     else:
         util.system.call_binary("cwb-encode", encode_args, verbose=True)
 
-    index_args = ["-V", "-r", registry, master.upper()]
+    index_args = ["-V", "-r", registry, corpus.upper()]
     util.system.call_binary("cwb-makeall", index_args, verbose=True)
     util.log.info("Encoded and indexed %d columns, %d structs", len(columns), len(structs))
 
     if not skip_compression:
         util.log.info("Compressing corpus files...")
-        compress_args = ["-A", master.upper()]
+        compress_args = ["-A", corpus.upper()]
         if skip_validation:
             compress_args.insert(0, "-T")
             util.log.info("Skipping validation")
@@ -207,11 +200,11 @@ def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None, vrtlist=
         util.log.info("Compression done.")
 
 
-def cwb_align(master, other, link, aligndir=ALIGNDIR, encoding=CWB_ENCODING):
-    """Align 'master' corpus with 'other' corpus, using the 'link' annotation for alignment."""
+def cwb_align(corpus, other, link, aligndir=ALIGNDIR, encoding=CWB_ENCODING):
+    """Align 'corpus' with 'other' corpus, using the 'link' annotation for alignment."""
     os.makedirs(aligndir, exist_ok=True)
-    alignfile = os.path.join(aligndir, master + ".align")
-    util.log.info("Aligning %s <-> %s", master, other)
+    alignfile = os.path.join(aligndir, corpus + ".align")
+    util.log.info("Aligning %s <-> %s", corpus, other)
 
     try:
         [(link_name, [(link_attr, _path)])] = parse_structural_attributes(link)
@@ -220,7 +213,7 @@ def cwb_align(master, other, link, aligndir=ALIGNDIR, encoding=CWB_ENCODING):
     link_attr = link_name + "_" + link_attr
 
     # Align linked chunks
-    args = ["-v", "-o", alignfile, "-V", link_attr, master, other, link_name]
+    args = ["-v", "-o", alignfile, "-V", link_attr, corpus, other, link_name]
     result, _ = util.system.call_binary("cwb-align", args, encoding=encoding, verbose=True)
     with open(alignfile + ".result", "w") as F:
         print(result, file=F)
@@ -232,7 +225,7 @@ def cwb_align(master, other, link, aligndir=ALIGNDIR, encoding=CWB_ENCODING):
 
     # Add alignment parameter to registry
     # cwb-regedit is not installed by default, so we skip it and modify the regfile directly instead:
-    regfile = os.path.join(os.environ["CORPUS_REGISTRY"], master)
+    regfile = os.path.join(os.environ["CORPUS_REGISTRY"], corpus)
     with open(regfile, "r") as F:
         skip_align = ("ALIGNED %s" % other) in F.read()
 
@@ -242,7 +235,7 @@ def cwb_align(master, other, link, aligndir=ALIGNDIR, encoding=CWB_ENCODING):
             print("# Added by cwb.py", file=F)
             print("ALIGNED", other, file=F)
         util.log.info("Added alignment to registry: %s", regfile)
-    # args = [master, ":add", ":a", other]
+    # args = [corpus, ":add", ":a", other]
     # result, _ = util.system.call_binary("cwb-regedit", args, verbose=True)
     # util.log.info("%s", result.strip())
 
@@ -253,7 +246,8 @@ def cwb_align(master, other, link, aligndir=ALIGNDIR, encoding=CWB_ENCODING):
 
 
 def parse_structural_attributes(structural_atts):
-    """
+    """Parse a list of annotations (element:attribute) into a list of tuples.
+
     >>> parse_structural_attributes("s - text:title text:author")
     [('s', [('__UNDEF__', 0)]), ('text', [('title', 2), ('author', 3)])]
     """
