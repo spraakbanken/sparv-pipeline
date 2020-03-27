@@ -2,8 +2,6 @@
 
 import os
 from glob import glob
-from collections import defaultdict
-import itertools as it
 
 import sparv.util as util
 
@@ -15,165 +13,91 @@ CWB_DATADIR = os.environ.get("CWB_DATADIR")
 CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 
-######################################################################
-# Saving as Corpus Workbench data file
+def export(doc, export_dir, token, word, annotations, original_annotations=None):
+    """Export annotations to vrt in export_dir.
 
-class ListWithGet(list):
-    """Lists with a get function just like dict's."""
+    - doc: name of the original document
+    - token: name of the token level annotation span
+    - word: annotation containing the token strings.
+    - annotations: list of elements:attributes (annotations) to include.
+    - original_annotations: list of elements:attributes from the original document
+      to be kept. If not specified, everything will be kep.
+    """
+    # TODO: cwb needs a fixed order of attributes... how do we guarantee this?
+    # TODO: certain characters need to be escaped in order to make cwb happy:
 
-    def get(self, n, default=None):
-        """
-        Lookup and if the index is out of bounds return the default value.
+    # # Whitespace and / needs to be replaced for CQP parsing to work. / is only allowed in the word itself.
+    # line = "\t".join(cols.get(n, UNDEF).replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") if n > structs_count else cols.get(n, UNDEF).replace(" ", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") for n in column_nrs)
+    # print(util.remove_control_characters(line), file=OUT)
 
-        >>> xs = ListWithGet("abc")
-        >>> xs
-        ['a', 'b', 'c']
-        >>> [xs.get(i, 'default_' + str(i)) for i in range(-1, 5)]
-        ['default_-1', 'a', 'b', 'c', 'default_3', 'default_4']
-        """
-        if 0 <= n < len(self):
-            return self[n]
+    # Create export dir
+    os.makedirs(os.path.dirname(export_dir), exist_ok=True)
+
+    # Read words
+    word_annotation = list(util.read_annotation(doc, word))
+
+    # Add original_annotations to annotations
+    annotations = util.split(annotations)
+    original_annotations = util.split(original_annotations)
+    if not original_annotations:
+        original_annotations = util.split(util.read_data(doc, "@structure"))
+    annotations.extend(original_annotations)
+
+    sorted_spans, annotation_dict = util.gather_annotations(doc, annotations)
+
+    vrt = []
+    open_elements = []
+
+    # Go through sorted_spans and add to vrt, line by line
+    for span in sorted_spans:
+        # Close element and pop stack if top stack element is no parent to current span
+        while len(open_elements) and not util.is_child(span[0], open_elements[-1][0]):
+            vrt.append("</%s>" % open_elements[-1][1])
+            open_elements.pop()
+        # Create token line
+        if span[1] == token:
+            tline = [word_annotation[span[2]]]
+            tline.extend(token_annotations(token, annotation_dict, span[2]))
+            vrt.append("\t".join(tline))
+        # Create line with structural info
         else:
-            return default
+            open_elements.append(span)
+            attrs = make_attr_str(span[1], annotation_dict, span[2])
+            vrt.append("<%s %s>" % (span[1], attrs))
+
+    # Close remaining open elements
+    while len(open_elements):
+        vrt.append("</%s>" % open_elements[-1][1])
+        open_elements.pop()
+
+    # Write result to file
+    vrt = "\n".join(vrt)
+    out_file = os.path.join(export_dir, "%s_export.vrt" % doc)
+    with open(out_file, "w") as f:
+        f.write(vrt)
+    util.log.info("Exported: %s", out_file)
 
 
-def vrt_table(annotations_structs, annotations_columns, text, token):
-    """
-    Return a table suitable for printing as a vrt file from annotations.
-
-    The structs are a pair of annotation and its parent.
-    """
-    structs_count = len(annotations_structs)
-    parents = {}
-
-    text = util.corpus.read_corpus_text(text)
-    token = list(util.read_annotation_iterkeys(token))
-
-    for annot in annotations_structs:
-        if annot not in parents:
-            parents[annot] = util.get_parents(text, None, annot, token, orphan_alert=True)
-
-    vrt = defaultdict(ListWithGet)
-
-    for annot in annotations_structs:
-        # Enumerate structural attributes, to handle attributes without values
-        enumerated_struct = {
-            span: [index, value, span]
-            for index, (span, value)
-            in enumerate(list(util.read_annotation(annot).items()), 1)
-            # Must enumerate from 1, due to the use of any() later
-        }
-        token_annotations = (
-            (word_tok, enumerated_struct.get(tok_span))
-            for word_tok, tok_span
-            in list(parents[annot].items())
-        )
-        for tok, value in token_annotations:
-            if not value:
-                # This happens for tokens that are outside the structural
-                # attribute, such as b in "<text>a</text> b"
-                value = ["", "", None]
-
-            value[1] = "|" if value[1] == "|/|" else value[1]
-            value[1] = value[1].replace("\n", " ") if value[1] else ""
-            vrt[tok].append(value)
-
-    for n, annot in enumerate(annotations_columns):
-        n += structs_count
-        annotation = util.read_annotation(annot)
-        for key in vrt.keys():
-            value = annotation.get(key, UNDEF)
-            if n > structs_count:  # Any column except the first (the word)
-                value = "|" if value == "|/|" else value
-            vrt[key].append(value.replace("\n", " "))
-
-    return vrt
+def make_attr_str(annotation, annotation_dict, index):
+    """Create a string with attributes and values for a struct element."""
+    attrs = []
+    for name, annotation in annotation_dict[annotation].items():
+        if name != "@span":
+            attrs.append('%s="%s"' % (name, annotation[index]))
+    return " ".join(attrs)
 
 
-def tokens_and_vrt(order, annotations_structs, annotations_columns, text, token):
-    """Return the tokens in order and the vrt table."""
-    vrt = vrt_table(annotations_structs, annotations_columns, text, token)
-    sortkey = util.read_annotation(order).get
-    tokens = sorted(vrt, key=sortkey)
-    return tokens, vrt
-
-
-def export(format, out, order, annotations_columns, annotations_structs, text=None, token=None, fileid=None, fileids=None, valid_xml=True, columns=(), structs=(), encoding=CWB_ENCODING):
-    """Export 'annotations' to the VRT or XML file 'out'.
-
-    The order of the annotation keys is decided by the annotation 'order'.
-    The columns to be exported are taken from 'columns', default all 'annotations'.
-    The structural attributes are specified by 'structs', default no structs.
-    If an attribute in 'columns' or 'structs' is "-", that annotation is skipped.
-    The structs are specified by "elem:attr", giving <elem attr=N> xml tags.
-    """
-    assert format in ("vrt", "xml", "formatted"), "Wrong format specified"
-    if isinstance(annotations_columns, str):
-        annotations_columns = annotations_columns.split()
-    if isinstance(annotations_structs, str):
-        annotations_structs = [x for x in annotations_structs.split()]
-
-    if isinstance(columns, str):
-        columns = columns.split()
-    if isinstance(columns, str):
-        structs_count = len(structs.split())
-    else:
-        structs_count = len(structs)
-    structs = parse_structural_attributes(structs)
-
-    assert len(annotations_columns) == len(columns), "columns and annotations_columns must contain same number of values"
-    assert len(annotations_structs) == structs_count, "structs and annotations_structs must contain same number of values"
-
-    valid_xml = util.strtobool(valid_xml)
-
-    if format == "formatted":
-        write_formatted(out, annotations_columns, annotations_structs, columns, structs, structs_count, text)
-    else:
-        tokens, vrt = tokens_and_vrt(order, annotations_structs, annotations_columns, text, token)
-        column_nrs = [n + structs_count for (n, col) in enumerate(columns) if col and col != "-"]
-
-        if format == "vrt":
-            write_vrt(out, structs, structs_count, column_nrs, tokens, vrt)
-        elif format == "xml":
-            write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fileid, fileids, valid_xml)
+def token_annotations(token, annotation_dict, index):
+    """Return iterator for token annotations."""
+    # TODO: Order attributes
+    # TODO: Handle missing attrs with UNDEF
+    for name, annotation in annotation_dict[token].items():
+        if name != "@span":
+            yield annotation[index]
 
 
 def write_vrt(out, structs, structs_count, column_nrs, tokens, vrt):
-    r"""Write annotations to vrt file 'out'.
-
-    >>> with tempfile.NamedTemporaryFile() as out:
-    ...     write_vrt(out.name,
-    ...               **example_data().without("columns"))
-    ...     print(out.read().decode("UTF-8").replace('\\t', '    '))
-    <text title="Kokboken" author="Jane Oliver">
-    <s>
-    Ett    DT
-    exempel    NN
-    </s>
-    <s>
-    Banankaka    NN
-    </s>
-    </text>
-    <text title="Nya kokboken" author="Jane Oliver">
-    <s>
-    Flambera    VB
-    </s>
-    </text>
-    <BLANKLINE>
-
-    >>> with tempfile.NamedTemporaryFile() as out:
-    ...     write_vrt(out.name,
-    ...               **example_overlapping_data().without("columns"))
-    ...     print(out.read().decode("UTF-8"))
-    <b>
-    bold
-    <i>
-    bold_italic
-    </b>
-    italic
-    </i>
-    <BLANKLINE>
-    """
+    """Kept as reference for now, to be removed soon."""
     with open(out, "w") as OUT:
         old_attr_values = dict((elem, None) for (elem, _attrs) in structs)
         for tok in tokens:
@@ -201,6 +125,10 @@ def write_vrt(out, structs, structs_count, column_nrs, tokens, vrt):
                 print("</%s>" % elem, file=OUT)
 
     util.log.info("Exported %d tokens, %d columns, %d structs: %s", len(tokens), len(column_nrs), len(structs), out)
+
+
+######################################################################
+# Saving as Corpus Workbench data file
 
 
 def cwb_encode(master, columns, structs=(), vrtdir=None, vrtfiles=None, vrtlist=None,
@@ -329,7 +257,6 @@ def parse_structural_attributes(structural_atts):
     >>> parse_structural_attributes("s - text:title text:author")
     [('s', [('__UNDEF__', 0)]), ('text', [('title', 2), ('author', 3)])]
     """
-
     if isinstance(structural_atts, str):
         structural_atts = structural_atts.split()
     structs = {}
@@ -348,153 +275,6 @@ def parse_structural_attributes(structural_atts):
                 order.append(elem)
             structs[elem].append((attr, n))
     return [(elem, structs[elem]) for elem in order]
-
-
-def vrt_iterate(tokens, vrt, trail=[0]):
-    """
-    Yield segments from vrt separated using the structural attributes from trail.
-
-    >>> tokens = ["w:1", "w:2", "w:3", "w:4", "w:5"]
-    >>> vrt = {
-    ...     "w:1": [[1, "A", "w:1-1"], "word1", "pos1"],
-    ...     "w:2": [[2, "B", "w:2-3"], "word2", "pos2"],
-    ...     "w:3": [[2, "B", "w:2-3"], "word3", "pos3"],
-    ...     "w:4": [[3, "B", "w:4-5"], "word4", "pos4"],
-    ...     "w:5": [[3, "B", "w:4-5"], "word5", "pos5"]
-    ... }
-    >>> list(vrt_iterate(tokens, vrt))          # doctest: +NORMALIZE_WHITESPACE
-    [(['A', 'w:1-1'], [['word1', 'pos1']]),
-     (['B', 'w:2-3'], [['word2', 'pos2'], ['word3', 'pos3']]),
-     (['B', 'w:4-5'], [['word4', 'pos4'], ['word5', 'pos5']])]
-
-    >>> tokens = ['w:0','w:1','w:2','w:3','w:4','w:5']
-    >>> vrt = {
-    ...     'w:0': [[0, 'text:0', 'w:0-1'], [0, 's:0', 'w:0-1'], 'word0'],
-    ...     'w:1': [[0, 'text:0', 'w:0-1'], [0, 's:0', 'w:0-1'], 'word1'],
-    ...     'w:2': [[0, 'text:0', 'w:0-1'], [1, 's:1', 'w:1-2'], 'word2'],
-    ...     'w:3': [[0, 'text:0', 'w:0-1'], [1, 's:1', 'w:1-2'], 'word3'],
-    ...     'w:4': [[1, 'text:1', 'w:1-2'], [2, 's:2', 'w:2-3'], 'word4'],
-    ...     'w:5': [[1, 'text:1', 'w:1-2'], [2, 's:2', 'w:2-3'], 'word5'],
-    ... }
-    >>> list(vrt_iterate(tokens, vrt, trail=[1]))
-    ...                                         # doctest: +NORMALIZE_WHITESPACE
-    [(['s:0', 'w:0-1'], [['word0'], ['word1']]),
-     (['s:1', 'w:1-2'], [['word2'], ['word3']]),
-     (['s:2', 'w:2-3'], [['word4'], ['word5']])]
-    >>> [ (text, list(sent))
-    ...   for text, sent in vrt_iterate(tokens, vrt, trail=[0,1]) ]
-    ...                                         # doctest: +NORMALIZE_WHITESPACE
-    [(['text:0', 'w:0-1'],
-      [(['s:0', 'w:0-1'], [['word0'], ['word1']]),
-       (['s:1', 'w:1-2'], [['word2'], ['word3']])]),
-     (['text:1', 'w:1-2'],
-      [(['s:2', 'w:2-3'], [['word4'], ['word5']])])]
-
-    """
-    cols = []
-    toks = []
-    for tok, next_tok in zip(tokens, it.chain(tokens[1:], (None,))):
-
-        cols.append(vrt[tok][trail[-1] + 1:])
-        toks.append(tok)
-
-        if next_tok is None:
-            next = None
-        else:
-            next = vrt[next_tok][trail[0]][0]
-
-        now = vrt[tok][trail[0]][0]
-        if now != next:
-            if len(trail[1:]):
-                yield vrt[tok][trail[0]][1:], vrt_iterate(toks, vrt, trail[1:])
-            else:
-                yield vrt[tok][trail[0]][1:], cols
-            cols = []
-            toks = []
-
-
-class DictWithWithout(dict):
-    """A dictionary with a without function that excludes some elements."""
-
-    def without(self, *keys):
-        """
-        Return a copy of the dictionary without these keys.
-
-        >>> DictWithWithout(apa=1, bepa=2).without("apa")
-        {'bepa': 2}
-        """
-        return DictWithWithout(
-            **{k: v for k, v in list(self.items()) if k not in keys})
-
-
-def example_data():
-    """Example data to test the write_* functions."""
-    # Structs come in the reverse nesting order:
-    structs = [["s", [[UNDEF, 0]]],
-               ["text", [["title", 1], ["author", 2]]]]
-    structs_count = 3
-    columns = ["word", "pos"]
-    column_nrs = [3, 4]
-    # The names and the order of the tokens:
-    tokens = ["w:1", "w:2", "w:3", "w:4"]
-    vrt = {
-        "w:1": ListWithGet([
-            [1, ""],
-            [1, "Kokboken"],
-            [1, "Jane Oliver"],
-            "Ett",
-            "DT"
-        ]),
-        "w:2": ListWithGet([
-            [1, ""],
-            [1, "Kokboken"],
-            [1, "Jane Oliver"],
-            "exempel",
-            "NN"
-        ]),
-        "w:3": ListWithGet([
-            [2, ""],
-            [1, "Kokboken"],
-            [1, "Jane Oliver"],
-            "Banankaka",
-            "NN"
-        ]),
-        "w:4": ListWithGet([
-            [3, ""],
-            [2, "Nya kokboken"],
-            [2, "Jane Oliver"],
-            "Flambera",
-            "VB"
-        ])
-    }
-    return DictWithWithout(**locals())
-
-
-def example_overlapping_data():
-    """Overlapping data to test the write_* functions."""
-    structs = [["b", [[UNDEF, 0]]], ["i", [[UNDEF, 1]]]]
-    structs_count = 2
-    columns = ["word"]
-    column_nrs = [2]
-    tokens = ["w:1", "w:2", "w:3"]
-    vrt = {
-        "w:1": ListWithGet([
-            [1, ""],
-            [],
-            "bold"
-        ]),
-        "w:2": ListWithGet([
-            [1, ""],
-            [2, ""],
-            "bold_italic"
-        ]),
-        "w:3": ListWithGet([
-            [],
-            [2, ""],
-            "italic"
-        ]),
-    }
-    return DictWithWithout(**locals())
 
 
 if __name__ == "__main__":

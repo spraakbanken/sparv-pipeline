@@ -98,8 +98,14 @@ python -m sparv.freeling --doc korpus_en --text text --sentence sentence --token
 python -m sparv.freeling --doc korpus_en --text text --token token --word token:word --lemma token:lemma --pos token:pos --msd token:msd --conf_file ../models/freeling/en.cfg --lang en --slevel s
 
 -------------------------------------------------------------
-# XML export
+# Export
+
+## XML export
 
 python -m sparv.modules.xml_export.xml_export --doc korpus1 --export_dir "export/xml/" --token token --word token:word --annotations "text sentence token token:pos token:baseform token:ref"
+
+## VRT export
+
+python -m sparv.modules.cwb.cwb --export --doc korpus1 --export_dir "export/vrt/" --token token --word token:word --annotations "text text:lix text:blingbring sentence token token:pos token:baseform token:sentimentclass token:ref"
 
 -------------------------------------------------------------
