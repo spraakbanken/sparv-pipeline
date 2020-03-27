@@ -6,10 +6,10 @@ import os
 
 import sparv.util as util
 
-UNDEF = "__UNDEF__"
+UNDEF = "__UNDEF__"  # Do we need this for xml exports?
 
 
-def export(doc, export_dir, token, word, annotations, original_annotations=None):
+def export(doc, export_dir, token, word, annotations, skip_annotations=None, original_annotations=None):
     """Export annotations to XML in export_dir.
 
     - doc: name of the original document
@@ -17,22 +17,15 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
     - word: annotation containing the token strings.
     - annotations: list of elements:attributes (annotations) to include.
       All elements and attributes from the original document will be kept.
+    - skip_annotations: list of elements:attributes from the original document
+      to exclude from the export.
     """
-    # TODO: make option for excluding original annotations
     # TODO: make option for renaming elements/attributes
 
-    os.makedirs(os.path.dirname(export_dir), exist_ok=True)
-
-    word_annotation = list(util.read_annotation(doc, word))
-    annotations = util.split(annotations)
-
-    # Add original_annotations to annotations
-    original_annotations = util.split(original_annotations)
-    if not original_annotations:
-        original_annotations = util.split(util.read_data(doc, "@structure"))
-    annotations.extend(original_annotations)
-
-    sorted_spans, annotation_dict = util.gather_annotations(doc, annotations)
+    # Prepare xml export
+    word_annotation, sorted_spans, annotation_dict = prepare_xml_export(
+        doc, export_dir, token, word, annotations, skip_annotations=skip_annotations,
+        original_annotations=original_annotations)
 
     # Create root node
     root_tag = sorted_spans[0][1]
@@ -42,25 +35,66 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
 
     # Go through sorted_spans and build xml tree
     for span in sorted_spans[1:]:
-        # Pop stack if end position of top stack element < end position of current element
-        while node_stack[-1][1][0][1] < span[0][1]:
+        # Pop stack if top stack element is no parent to current span
+        while not util.is_child(span[0], node_stack[-1][1][0]):
             node_stack.pop()
         # Create child node to top stack node
         new_node = etree.SubElement(node_stack[-1][0], span[1])
         node_stack.append((new_node, span))
         add_attrs(new_node, span[1], annotation_dict, span[2])
+        # Add text if this node is a token
         if span[1] == token:
             new_node.text = word_annotation[span[2]]
 
     # Write xml to file
     out_file = os.path.join(export_dir, "%s_export.xml" % doc)
     etree.ElementTree(root_node).write(out_file, xml_declaration=False, method="xml", encoding=util.UTF8)
+    util.log.info("Exported: %s", out_file)
 
 
-def export_formatted(doc, export_dir, word, annotations=None):
+def export_formatted(doc, export_dir, token, word, annotations, skip_annotations=None, original_annotations=None):
     """Export annotations to XML in export_dir and keep whitespaces and indentation from original file."""
-    # Will be similar to export(). Some abstraction is needed here.
+    # Prepare xml export
+    word_annotation, sorted_spans, annotation_dict = prepare_xml_export(
+        doc, export_dir, token, word, annotations, skip_annotations=skip_annotations,
+        original_annotations=original_annotations)
     pass
+
+
+########################################################################################################
+# HELPERS
+########################################################################################################
+
+
+def prepare_xml_export(doc, export_dir, token, word, annotations, skip_annotations, original_annotations):
+    """Prepare xml export (abstraction for export and export_formatted).
+
+    Create export dir, figure out what annotations to include and order the spans.
+    """
+    # Create export dir
+    os.makedirs(os.path.dirname(export_dir), exist_ok=True)
+
+    # Read words
+    word_annotation = list(util.read_annotation(doc, word))
+
+    # Add original_annotations to annotations
+    annotations = util.split(annotations)
+    original_annotations = util.split(original_annotations)
+    if not original_annotations:
+        original_annotations = util.split(util.read_data(doc, "@structure"))
+    annotations.extend(original_annotations)
+
+    # Remove skipped annotations
+    skip_annotations = util.split(skip_annotations)
+    if skip_annotations:
+        annotations = list(set(annotations).difference(set(skip_annotations)))
+
+    sorted_spans, annotation_dict = util.gather_annotations(doc, annotations)
+
+    # Check if root tag covers the last span
+    assert util.is_child(sorted_spans[-1][0], sorted_spans[0][0]), "Root tag is missing!"
+
+    return word_annotation, sorted_spans, annotation_dict
 
 
 def add_attrs(node, annotation, annotation_dict, index):
@@ -73,187 +107,6 @@ def add_attrs(node, annotation, annotation_dict, index):
 ########################################################################################################
 # OLD STUFF NOT UPDATED
 ########################################################################################################
-
-
-def write_xml(out, structs, structs_count, columns, column_nrs, tokens, vrt, fileid, fileids, valid_xml):
-    """Write annotations to a valid xml file, unless valid_xml == False.
-
-    >>> with tempfile.NamedTemporaryFile() as fileids:
-    ...     util.write_annotation(fileids.name, {"fileid": "kokkonster"})
-    ...     with tempfile.NamedTemporaryFile() as out:
-    ...         write_xml(out.name,
-    ...                   fileid="fileid",
-    ...                   fileids=fileids.name,
-    ...                   valid_xml=True,
-    ...                   **example_data())
-    ...         print(out.read().decode("UTF-8"))
-    <corpus>
-    <text title="Kokboken" author="Jane Oliver">
-    <s>
-    <w pos="DT">Ett</w>
-    <w pos="NN">exempel</w>
-    </s>
-    <s>
-    <w pos="NN">Banankaka</w>
-    </s>
-    </text>
-    <text title="Nya kokboken" author="Jane Oliver">
-    <s>
-    <w pos="VB">Flambera</w>
-    </s>
-    </text>
-    </corpus>
-    <BLANKLINE>
-
-    >>> for valid_xml in [True, False]:
-    ...     print('<!-- valid_xml: ' + str(valid_xml) + ' -->')
-    ...     with tempfile.NamedTemporaryFile() as fileids:
-    ...         util.write_annotation(fileids.name, {"fileid": "typography"})
-    ...         with tempfile.NamedTemporaryFile() as out:
-    ...             write_xml(out.name,
-    ...                       fileid="fileid",
-    ...                       fileids=fileids.name,
-    ...                       valid_xml=valid_xml,
-    ...                       **example_overlapping_data())
-    ...             print(out.read().decode("UTF-8"))
-    <!-- valid_xml: True -->
-    <corpus>
-    <b>
-    <w>bold</w>
-    <i _overlap="typography-1">
-    <w>bold_italic</w>
-    </i>
-    </b>
-    <i _overlap="typography-1">
-    <w>italic</w>
-    </i>
-    </corpus>
-    <!-- valid_xml: False -->
-    <corpus>
-    <b>
-    <w>bold</w>
-    <i>
-    <w>bold_italic</w>
-    </b>
-    <w>italic</w>
-    </i>
-    </corpus>
-    <BLANKLINE>
-    """
-    assert fileid, "fileid not specified"
-    assert fileids, "fileids not specified"
-
-    fileid = util.read_annotation(fileids)[fileid]
-    overlap = False
-    open_tag_stack = []
-    pending_tag_stack = []
-    str_buffer = ["<corpus>"]
-    elemid = 0
-    elemids = {}
-    invalid_str_buffer = ["<corpus>"]
-    old_attr_values = dict((elem, None) for (elem, _attrs) in structs)
-    for tok in tokens:
-        cols = vrt[tok]
-        new_attr_values = {}
-
-        # Close tags/fix overlaps
-        for elem, attrs in structs:
-            new_attr_values[elem] = [(attr, cols[n]) for (attr, n) in attrs if cols.get(n)]
-            if old_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
-                if not valid_xml:
-                    invalid_str_buffer.append("</%s>" % elem)
-
-                # Check for overlap
-                while elem != open_tag_stack[-1][0]:
-                    overlap = True
-                    # Close top stack element, remember to re-open later
-                    str_buffer.append("</%s>" % open_tag_stack[-1][0])
-                    pending_tag_stack.append(open_tag_stack.pop())
-
-                # Fix pending tags
-                while pending_tag_stack:
-                    if elem == open_tag_stack[-1][0]:
-                        str_buffer.append("</%s>" % elem)
-                        open_tag_stack.pop()
-                    # Re-open pending tag
-                    pending_elem, attrstring = pending_tag_stack[-1]
-                    if not elemids.get(pending_elem):
-                        elemid += 1
-                        elemids[pending_elem] = elemid
-                    line = '<%s _overlap="%s-%s"%s>' % (pending_elem, fileid, elemids[pending_elem], attrstring)
-                    str_buffer.append(line)
-                    open_tag_stack.append(pending_tag_stack.pop())
-                    old_attr_values[elem] = None
-
-                # Close last open tag from overlap
-                if elem == open_tag_stack[-1][0] and not pending_tag_stack:
-                    str_buffer.append("</%s>" % elem)
-                    open_tag_stack.pop()
-                    old_attr_values[elem] = None
-                    elemids = {}
-
-        # Open tags
-        for elem, _attrs in reversed(structs):
-            if any(x[1][0] for x in new_attr_values[elem]) and new_attr_values[elem] != old_attr_values[elem]:
-                attrstring = ''.join(' %s="%s"' % (attr, val[1].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
-                                     for (attr, val) in new_attr_values[elem] if val and not attr == UNDEF)
-                line = "<%s%s>" % (elem, attrstring)
-                str_buffer.append(line)
-                old_attr_values[elem] = new_attr_values[elem]
-                open_tag_stack.append((elem, attrstring))
-                if not valid_xml:
-                    invalid_str_buffer.append("<%s%s>" % (elem, attrstring))
-
-        # Add word annotations
-        word = cols.get(structs_count, UNDEF).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-
-        attrstring = "".join(' %s="%s"' % (columns[n - structs_count], cols.get(n, UNDEF).replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")) for n in column_nrs[1:] if cols.get(n, UNDEF) != UNDEF)
-
-        line = "<w%s>%s</w>" % (attrstring, word)
-        str_buffer.append(util.remove_control_characters(line))
-        if not valid_xml:
-            invalid_str_buffer.append(util.remove_control_characters(line))
-
-    # Close remaining open tags
-    if open_tag_stack:
-        for elem in reversed(open_tag_stack):
-            str_buffer.append("</%s>" % elem[0])
-    if not valid_xml:
-        for elem, _attrs in structs:
-            if old_attr_values[elem]:
-                invalid_str_buffer.append("</%s>" % elem)
-
-    str_buffer.append("</corpus>")
-    invalid_str_buffer.append("</corpus>")
-
-    # Convert str_buffer list to string
-    str_buffer = "\n".join(str_buffer)
-    invalid_str_buffer = "\n".join(invalid_str_buffer)
-
-    if not valid_xml:
-        # Write string buffer to invalid xml file
-        with open(out, "w") as OUT:
-            print(invalid_str_buffer, file=OUT)
-    elif not overlap:
-        # Write string buffer
-        with open(out, "w") as OUT:
-            print(str_buffer, file=OUT)
-    else:
-        # Go through xml structure and add missing _overlap attributes
-        xmltree = etree.ElementTree(etree.fromstring(str_buffer))
-        for child in xmltree.getroot().iter():
-            # If child has and id, get previous element with same tag
-            if child.tag != "w" and child.attrib.get("_overlap"):
-                elemlist = list(xmltree.getroot().iter(child.tag))
-                if child != elemlist[0]:
-                    prev_elem = elemlist[elemlist.index(child) - 1]
-                    # If previous element has no id, add id of child
-                    if not prev_elem.attrib.get("_overlap"):
-                        prev_elem.set("_overlap", child.attrib.get("_overlap"))
-        xmltree.write(out, xml_declaration=False, method="xml", encoding=util.UTF8)
-
-    util.log.info("Exported %d tokens, %d columns, %d structs: %s", len(tokens), len(column_nrs), len(structs), out)
-
 
 def write_formatted(out, annotations_columns, annotations_structs, columns, structs, structs_count, text):
     """Export xml with the same whitespaces and indentation as in the original."""

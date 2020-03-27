@@ -111,3 +111,24 @@ def calculate_element_hierarchy(doc, spans_list):
         # Check that unclear_spans is getting smaller, otherwise there might be circularity
         assert len(unclear_spans) < size, error_msg
     return hierarchy
+
+
+def is_child(span1, span2):
+    """Return True if span1 lies within span2, or if span1 == span2.
+
+    Span format: ((start_pos_main, start_pos_sub), (end_pos_main, end_pos_sub))
+    """
+    if span1 == span2:
+        return True
+
+    def comes_first(pos1, pos2):
+        """Check if pos1 comes before pos2."""
+        if pos1[0] > pos2[0]:
+            return False
+        if pos1[0] == pos2[0]:
+            # Main position is the same and both spans have sub positions
+            if len(pos1) > 1 and len(pos2) > 1:
+                return pos1[1] < pos2[1]
+        return True
+
+    return comes_first(span2[0], span1[0]) and comes_first(span1[1], span2[1])
