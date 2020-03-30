@@ -23,12 +23,8 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
     - original_annotations: list of elements:attributes from the original document
       to be kept. If not specified, everything will be kep.
     """
-    # TODO: cwb needs a fixed order of attributes... how do we guarantee this?
-    # TODO: certain characters need to be escaped in order to make cwb happy:
-
-    # # Whitespace and / needs to be replaced for CQP parsing to work. / is only allowed in the word itself.
-    # line = "\t".join(cols.get(n, UNDEF).replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") if n > structs_count else cols.get(n, UNDEF).replace(" ", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") for n in column_nrs)
-    # print(util.remove_control_characters(line), file=OUT)
+    # TODO: cwb needs a fixed order of attributes for the entire corpus. How do we guarantee this?
+    # TODO: when should UNDEF be used? Do we need UNDEF for structural attributes?
 
     # Create export dir
     os.makedirs(os.path.dirname(export_dir), exist_ok=True)
@@ -43,6 +39,9 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
         original_annotations = util.split(util.read_data(doc, "@structure"))
     annotations.extend(original_annotations)
 
+    # Get the names of all token annotations (but not token itself)
+    token_annotations = [util.split_annotation(i)[1] for i in annotations if util.split_annotation(i)[0] == token and i != token]
+
     sorted_spans, annotation_dict = util.gather_annotations(doc, annotations)
 
     vrt = []
@@ -56,9 +55,7 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
             open_elements.pop()
         # Create token line
         if span[1] == token:
-            tline = [word_annotation[span[2]]]
-            tline.extend(token_annotations(token, annotation_dict, span[2]))
-            vrt.append("\t".join(tline))
+            vrt.append(make_token_line(word_annotation[span[2]], token, token_annotations, annotation_dict, span[2]))
         # Create line with structural info
         else:
             open_elements.append(span)
@@ -83,48 +80,26 @@ def make_attr_str(annotation, annotation_dict, index):
     attrs = []
     for name, annotation in annotation_dict[annotation].items():
         if name != "@span":
-            attrs.append('%s="%s"' % (name, annotation[index]))
+            # Escape special characters in value
+            value = annotation[index].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+            attrs.append('%s="%s"' % (name, value))
     return " ".join(attrs)
 
 
-def token_annotations(token, annotation_dict, index):
-    """Return iterator for token annotations."""
-    # TODO: Order attributes
-    # TODO: Handle missing attrs with UNDEF
-    for name, annotation in annotation_dict[token].items():
-        if name != "@span":
-            yield annotation[index]
+def make_token_line(word, token, token_annotations, annotation_dict, index):
+    """Create a string with the token and its annotations.
 
-
-def write_vrt(out, structs, structs_count, column_nrs, tokens, vrt):
-    """Kept as reference for now, to be removed soon."""
-    with open(out, "w") as OUT:
-        old_attr_values = dict((elem, None) for (elem, _attrs) in structs)
-        for tok in tokens:
-            cols = vrt[tok]
-            new_attr_values = {}
-            for elem, attrs in structs:
-                new_attr_values[elem] = [(attr, cols[n]) for (attr, n) in attrs if cols.get(n)]
-                if old_attr_values[elem] and new_attr_values[elem] != old_attr_values[elem]:
-                    print("</%s>" % elem, file=OUT)
-                    old_attr_values[elem] = None
-
-            for elem, _attrs in reversed(structs):
-                if any(x[1][0] for x in new_attr_values[elem]) and new_attr_values[elem] != old_attr_values[elem]:
-                    attrstring = ''.join(' %s="%s"' % (attr, val[1].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;"))
-                                         for (attr, val) in new_attr_values[elem] if not attr == UNDEF)
-                    print("<%s%s>" % (elem, attrstring), file=OUT)
-                    old_attr_values[elem] = new_attr_values[elem]
-
-            # Whitespace and / needs to be replaced for CQP parsing to work. / is only allowed in the word itself.
-            line = "\t".join(cols.get(n, UNDEF).replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") if n > structs_count else cols.get(n, UNDEF).replace(" ", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") for n in column_nrs)
-            print(util.remove_control_characters(line), file=OUT)
-
-        for elem, _attrs in structs:
-            if old_attr_values[elem]:
-                print("</%s>" % elem, file=OUT)
-
-    util.log.info("Exported %d tokens, %d columns, %d structs: %s", len(tokens), len(column_nrs), len(structs), out)
+    Whitespace and / need to be replaced for CQP parsing to work. / is only allowed in the word itself.
+    """
+    line = [word.replace(" ", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")]
+    for attr in token_annotations:
+        if attr not in annotation_dict[token]:
+            attr_str = UNDEF
+        else:
+            attr_str = annotation_dict[token][attr][index]
+        line.append(attr_str)
+    line = "\t".join(a.replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") for a in line[1:])
+    return util.remove_control_characters(line)
 
 
 def cwb_encode(corpus, columns, structs=(), vrtdir=None, vrtfiles=None, vrtlist=None,
