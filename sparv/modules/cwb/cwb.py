@@ -6,7 +6,6 @@ from glob import glob
 import sparv.util as util
 
 ALIGNDIR = "annotations/align"
-UNDEF = "__UNDEF__"
 
 CWB_ENCODING = os.environ.get("CWB_ENCODING", "utf8")
 CWB_DATADIR = os.environ.get("CWB_DATADIR")
@@ -21,11 +20,8 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
     - word: annotation containing the token strings.
     - annotations: list of elements:attributes (annotations) to include.
     - original_annotations: list of elements:attributes from the original document
-      to be kept. If not specified, everything will be kep.
+      to be kept. If not specified, everything will be kept.
     """
-    # TODO: cwb needs a fixed order of attributes for the entire corpus. How do we guarantee this?
-    # TODO: when should UNDEF be used? Do we need UNDEF for structural attributes?
-
     # Create export dir
     os.makedirs(os.path.dirname(export_dir), exist_ok=True)
 
@@ -60,7 +56,10 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
         else:
             open_elements.append(span)
             attrs = make_attr_str(span[1], annotation_dict, span[2])
-            vrt.append("<%s %s>" % (span[1], attrs))
+            if attrs:
+                vrt.append("<%s %s>" % (span[1], attrs))
+            else:
+                vrt.append("<%s>" % span[1])
 
     # Close remaining open elements
     while len(open_elements):
@@ -94,7 +93,7 @@ def make_token_line(word, token, token_annotations, annotation_dict, index):
     line = [word.replace(" ", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")]
     for attr in token_annotations:
         if attr not in annotation_dict[token]:
-            attr_str = UNDEF
+            attr_str = util.UNDEF
         else:
             attr_str = annotation_dict[token][attr][index]
         line.append(attr_str)
@@ -139,7 +138,7 @@ def cwb_encode(corpus, columns, structs=(), vrtdir=None, vrtfiles=None, vrtlist=
         if col != "-":
             encode_args += ["-P", col]
     for struct, attrs in structs:
-        attrs2 = "+".join(attr for attr, _n in attrs if not attr == UNDEF)
+        attrs2 = "+".join(attr for attr, _n in attrs if not attr == util.UNDEF)
         if attrs2:
             attrs2 = "+" + attrs2
         encode_args += ["-S", "%s:0%s" % (struct, attrs2)]
@@ -237,7 +236,7 @@ def parse_structural_attributes(structural_atts):
             elem, attr = struct.split(":")
         else:
             elem = struct
-            attr = UNDEF
+            attr = util.UNDEF
         if struct and not struct == "-":
             if elem not in structs:
                 structs[elem] = []

@@ -5,6 +5,8 @@ AFFIX = "|"       # Char to put before and after results to mark a set
 SCORESEP = ":"    # Char that separates an annotation from a score
 COMPSEP = "+"     # Char to separate compound parts
 
+UNDEF = "__UNDEF__"  # Value for undefined annotations
+
 # Encodings:
 UTF8 = "UTF-8"
 LATIN1 = "ISO-8859-1"
