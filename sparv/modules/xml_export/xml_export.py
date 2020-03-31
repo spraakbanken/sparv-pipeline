@@ -17,7 +17,7 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
     - word: annotation containing the token strings.
     - annotations: list of elements:attributes (annotations) to include.
     - original_annotations: list of elements:attributes from the original document
-      to be kept. If not specified, everything will be kep.
+      to be kept. If not specified, everything will be kept.
     """
     # TODO: make option for renaming elements/attributes
 
@@ -28,6 +28,7 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
     # Create root node
     root_tag = sorted_spans[0][1]
     root_node = etree.Element(root_tag)
+    root_node.text = "\n"
     add_attrs(root_node, root_tag, annotation_dict, 0)
     node_stack = [(root_node, sorted_spans[0])]
 
@@ -43,6 +44,10 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
         # Add text if this node is a token
         if span[1] == token:
             new_node.text = word_annotation[span[2]]
+        # Some formatting: add new lines between elements
+        else:
+            new_node.text = "\n"
+        new_node.tail = "\n"
 
     # Write xml to file
     out_file = os.path.join(export_dir, "%s_export.xml" % doc)
