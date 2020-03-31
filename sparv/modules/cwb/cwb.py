@@ -96,8 +96,8 @@ def make_token_line(word, token, token_annotations, annotation_dict, index):
             attr_str = util.UNDEF
         else:
             attr_str = annotation_dict[token][attr][index]
-        line.append(attr_str)
-    line = "\t".join(a.replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") for a in line[1:])
+        line.append(attr_str.replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
+    line = "\t".join(line)
     return util.remove_control_characters(line)
 
 
