@@ -20,34 +20,63 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
       to be kept. If not specified, everything will be kept.
     """
     # TODO: make option for renaming elements/attributes
+    # TODO: add file ID to overlap index
 
     # Prepare xml export
     word_annotation, sorted_spans, annotation_dict = prepare_xml_export(
         doc, export_dir, token, word, annotations, original_annotations=original_annotations)
 
     # Create root node
-    root_tag = sorted_spans[0][1]
+    first_span = sorted_spans[0][1][0]
+    root_tag = first_span[1]
     root_node = etree.Element(root_tag)
     root_node.text = "\n"
     add_attrs(root_node, root_tag, annotation_dict, 0)
-    node_stack = [(root_node, sorted_spans[0])]
+    node_stack = [(root_node, (first_span[1], first_span[2]))]
 
     # Go through sorted_spans and build xml tree
-    for span in sorted_spans[1:]:
-        # Pop stack if top stack element is no parent to current span
-        while not util.is_child(span[0], node_stack[-1][1][0]):
-            node_stack.pop()
-        # Create child node to top stack node
-        new_node = etree.SubElement(node_stack[-1][0], span[1])
-        node_stack.append((new_node, span))
-        add_attrs(new_node, span[1], annotation_dict, span[2])
-        # Add text if this node is a token
-        if span[1] == token:
-            new_node.text = word_annotation[span[2]]
-        # Some formatting: add new lines between elements
-        else:
-            new_node.text = "\n"
-        new_node.tail = "\n"
+    overlap_ids = defaultdict(int)  # Keeps track of which overlapping spans belong together
+    for pos, spans in sorted_spans:
+        for instruction, name, index in spans:
+
+            # Create child node under the top stack node
+            if instruction == "open":
+                new_node = etree.SubElement(node_stack[-1][0], name)
+                node_stack.append((new_node, (name, index)))
+                add_attrs(new_node, name, annotation_dict, index)
+                # Add text if this node is a token
+                if name == token:
+                    new_node.text = word_annotation[index]
+                # Some formatting: add new lines between elements
+                else:
+                    new_node.text = "\n"
+                new_node.tail = "\n"
+
+            # Close node
+            else:
+                # Closing node == top stack node: pop stack and move on to next span
+                if (name, index) == node_stack[-1][1]:
+                    node_stack.pop()
+
+                # Handle overlapping spans
+                else:
+                    overlap_stack = []
+                    # Close all overlapping spans and add and _overlap attribute to them
+                    while node_stack[-1][1] != (name, index):
+                        overlap_elem = node_stack.pop()
+                        overlap_ids[overlap_elem[1][0]] += 1
+                        overlap_elem[0].set("_overlap", str(overlap_ids[overlap_elem[1][0]]))  # TODO: add file ID to index
+                        overlap_stack.append(overlap_elem[1])
+                    node_stack.pop()  # Close current span
+
+                    # Re-open overlapping spans and add and _overlap attribute to them
+                    while overlap_stack:
+                        overlap_elem = overlap_stack.pop()
+                        new_node = etree.SubElement(node_stack[-1][0], overlap_elem[0])
+                        new_node.text = new_node.tail = "\n"
+                        new_node.set("_overlap", str(overlap_ids[overlap_elem[0]]))
+                        node_stack.append((new_node, overlap_elem))
+                        add_attrs(new_node, overlap_elem[0], annotation_dict, overlap_elem[1])
 
     # Write xml to file
     out_file = os.path.join(export_dir, "%s_export.xml" % doc)
@@ -86,10 +115,18 @@ def prepare_xml_export(doc, export_dir, token, word, annotations, original_annot
         original_annotations = util.split(util.read_data(doc, "@structure"))
     annotations.extend(original_annotations)
 
-    sorted_spans, annotation_dict = util.gather_annotations(doc, annotations)
+    spans_dict, annotation_dict = util.gather_annotations(doc, annotations)
+    sorted_spans = sorted(spans_dict.items())
 
-    # Check if root tag covers the last span
-    assert util.is_child(sorted_spans[-1][0], sorted_spans[0][0]), "Root tag is missing!"
+    # Check the validity of the root tag
+    first_tag = sorted_spans[0][1][0]
+    last_tag = sorted_spans[-1][1][-1]
+    assert (
+        first_tag[0] == "open"
+        and last_tag[0] == "close"
+        and first_tag[1] == last_tag[1]
+        and first_tag[2] == last_tag[2]
+    ), "Root tag is missing!"
 
     return word_annotation, sorted_spans, annotation_dict
 
