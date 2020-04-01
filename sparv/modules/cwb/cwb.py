@@ -38,33 +38,29 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
     # Get the names of all token annotations (but not token itself)
     token_annotations = [util.split_annotation(i)[1] for i in annotations if util.split_annotation(i)[0] == token and i != token]
 
-    sorted_spans, annotation_dict = util.gather_annotations(doc, annotations)
+    spans_dict, annotation_dict = util.gather_annotations(doc, annotations)
 
+    # Go through spans_dict and add to vrt, line by line
     vrt = []
-    open_elements = []
+    for pos, spans in sorted(spans_dict.items()):
+        for instruction, name, index in spans:
 
-    # Go through sorted_spans and add to vrt, line by line
-    for span in sorted_spans:
-        # Close element and pop stack if top stack element is no parent to current span
-        while len(open_elements) and not util.is_child(span[0], open_elements[-1][0]):
-            vrt.append("</%s>" % open_elements[-1][1])
-            open_elements.pop()
-        # Create token line
-        if span[1] == token:
-            vrt.append(make_token_line(word_annotation[span[2]], token, token_annotations, annotation_dict, span[2]))
-        # Create line with structural info
-        else:
-            open_elements.append(span)
-            attrs = make_attr_str(span[1], annotation_dict, span[2])
-            if attrs:
-                vrt.append("<%s %s>" % (span[1], attrs))
-            else:
-                vrt.append("<%s>" % span[1])
+            # Create token line
+            if name == token and instruction == "open":
+                vrt.append(make_token_line(word_annotation[index], token, token_annotations, annotation_dict, index))
 
-    # Close remaining open elements
-    while len(open_elements):
-        vrt.append("</%s>" % open_elements[-1][1])
-        open_elements.pop()
+            # Create line with structural annotation
+            elif name != token:
+                # Open structural element
+                if instruction == "open":
+                    attrs = make_attr_str(name, annotation_dict, index)
+                    if attrs:
+                        vrt.append("<%s %s>" % (name, attrs))
+                    else:
+                        vrt.append("<%s>" % name)
+                # Close element
+                else:
+                    vrt.append("</%s>" % name)
 
     # Write result to file
     vrt = "\n".join(vrt)

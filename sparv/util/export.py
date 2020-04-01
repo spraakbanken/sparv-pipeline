@@ -17,7 +17,7 @@ def gather_annotations(doc, annotations):
             # This is necessary, span_name needs to be in the dictionary
             annotation_dict[span_name]["@span"] = None
             for i, s in enumerate(corpus.read_annotation_spans(doc, span_name, decimals=True)):
-                spans_list.append((s, span_name, i))
+                spans_list.append([s, span_name, i])
         if attr and not annotation_dict[span_name].get(attr):
             a = list(corpus.read_annotation(doc, annotation_pointer))
             annotation_dict[span_name][attr] = a
@@ -58,7 +58,18 @@ def gather_annotations(doc, annotations):
         return 0
 
     sorted_spans = sorted(spans_list, key=cmp_to_key(sort_spans))
-    return sorted_spans, annotation_dict
+
+    # Create spans_dict = {position1: [span1, span2, ...], position2: ...}
+    # Where span1 = ('close'/'open', span_name, span_index)
+    spans_dict = defaultdict(list)
+    for span in sorted_spans:
+        open_tuple = ("open", *span[1:])
+        close_tuple = ("close", *span[1:])
+        spans_dict[span[0][0][0]].append(open_tuple)
+        # Insert closing spans in the beginning
+        spans_dict[span[0][1][0]].insert(0, close_tuple)
+
+    return spans_dict, annotation_dict
 
 
 def calculate_element_hierarchy(doc, spans_list):
