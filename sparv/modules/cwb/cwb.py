@@ -29,16 +29,19 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
     word_annotation = list(util.read_annotation(doc, word))
 
     # Add original_annotations to annotations
-    annotations = util.split(annotations)
-    original_annotations = util.split(original_annotations)
+    annotations = util.split_tuples_list(annotations)
+    original_annotations = util.split_tuples_list(original_annotations)
     if not original_annotations:
-        original_annotations = util.split(util.read_data(doc, "@structure"))
+        original_annotations = util.split_tuples_list(util.read_data(doc, "@structure"))
     annotations.extend(original_annotations)
 
-    # Get the names of all token annotations (but not token itself)
-    token_annotations = [util.split_annotation(i)[1] for i in annotations if util.split_annotation(i)[0] == token and i != token]
+    # Create dictionary for renamed annotations
+    annotation_names = dict((a, b) for a, b in annotations if b)
 
-    spans_dict, annotation_dict = util.gather_annotations(doc, annotations)
+    # Get the names of all token annotations (but not token itself)
+    token_annotations = [util.split_annotation(i[0])[1] for i in annotations if util.split_annotation(i[0])[0] == token and i[0] != token]
+
+    spans_dict, annotation_dict = util.gather_annotations(doc, [i[0] for i in annotations])
 
     # Go through spans_dict and add to vrt, line by line
     vrt = []
@@ -51,16 +54,17 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
 
             # Create line with structural annotation
             elif name != token:
+                annot_name = annotation_names.get(name, name)
                 # Open structural element
                 if instruction == "open":
-                    attrs = make_attr_str(name, annotation_dict, index)
+                    attrs = make_attr_str(name, annotation_dict, annotation_names, index)
                     if attrs:
-                        vrt.append("<%s %s>" % (name, attrs))
+                        vrt.append("<%s %s>" % (annot_name, attrs))
                     else:
-                        vrt.append("<%s>" % name)
+                        vrt.append("<%s>" % annot_name)
                 # Close element
                 else:
-                    vrt.append("</%s>" % name)
+                    vrt.append("</%s>" % annot_name)
 
     # Write result to file
     vrt = "\n".join(vrt)
@@ -70,14 +74,15 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
     util.log.info("Exported: %s", out_file)
 
 
-def make_attr_str(annotation, annotation_dict, index):
+def make_attr_str(annotation, annotation_dict, annotation_names, index):
     """Create a string with attributes and values for a struct element."""
     attrs = []
-    for name, annotation in annotation_dict[annotation].items():
+    for name, annot in annotation_dict[annotation].items():
         if name != "@span":
+            annot_name = annotation_names.get(":".join([annotation, name]), name)
             # Escape special characters in value
-            value = annotation[index].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
-            attrs.append('%s="%s"' % (name, value))
+            value = annot[index].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+            attrs.append('%s="%s"' % (annot_name, value))
     return " ".join(attrs)
 
 
