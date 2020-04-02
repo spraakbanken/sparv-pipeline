@@ -1,10 +1,11 @@
-# -*- coding: utf-8 -*-
+"""Creates morphtable files for use with Hunpos."""
 import sparv.util as util
-import sparv.saldo as saldo
+from sparv.modules.saldo import saldo
 from collections import defaultdict
 
 
-def make_morphtable(out, saldo_model, suc, morphtable_base="", morphtable_patterns="", add_capitalized=True, add_lowercase=False):
+def make_morphtable(out, saldo_model, suc, morphtable_base="", morphtable_patterns="", add_capitalized=True,
+                    add_lowercase=False):
     """ Creates a morphtable file for use with Hunpos, containing wordforms
     from SALDO's morphology (with accompanying tags) which are missing in SUC3.
     Since the morphtable is case sensitive, both the original form and a capitalized form
@@ -74,5 +75,6 @@ def make_morphtable(out, saldo_model, suc, morphtable_base="", morphtable_patter
         for word in sorted(tags):
             out.write("%s\t%s\n" % (word, "\t".join(tags[word])))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     util.run.main(make_morphtable)
