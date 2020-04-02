@@ -19,11 +19,9 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
     - original_annotations: list of elements:attributes from the original document
       to be kept. If not specified, everything will be kept.
     """
-    # TODO: add file ID to overlap index
-
     # Prepare xml export
-    word_annotation, span_positions, annotation_dict, export_names = prepare_xml_export(
-        doc, export_dir, token, word, annotations, original_annotations=original_annotations)
+    word_annotation, span_positions, annotation_dict, export_names, docid = prepare_xml_export(
+        doc, export_dir, token, word, annotations, original_annotations)
 
     # Create root node
     first_span = span_positions[0][2]
@@ -63,7 +61,8 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
                 while node_stack[-1][1] != span:
                     overlap_elem = node_stack.pop()
                     overlap_ids[overlap_elem[1].name] += 1
-                    overlap_elem[0].set("_overlap", str(overlap_ids[overlap_elem[1].name]))  # TODO: add file ID to index
+                    overlap_attr = "%s-%s" % (docid, str(overlap_ids[overlap_elem[1].name]))
+                    overlap_elem[0].set("_overlap", overlap_attr)
                     overlap_stack.append(overlap_elem[1])
                 node_stack.pop()  # Close current span
 
@@ -72,7 +71,8 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
                     overlap_elem = overlap_stack.pop()
                     new_node = etree.SubElement(node_stack[-1][0], overlap_elem.export)
                     new_node.text = new_node.tail = "\n"
-                    new_node.set("_overlap", str(overlap_ids[overlap_elem.name]))
+                    overlap_attr = "%s-%s" % (docid, str(overlap_ids[overlap_elem.name]))
+                    new_node.set("_overlap", overlap_attr)
                     node_stack.append((new_node, overlap_elem))
                     add_attrs(new_node, overlap_elem.name, annotation_dict, export_names, overlap_elem.index)
 
@@ -85,8 +85,8 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
 def export_formatted(doc, export_dir, token, word, annotations, original_annotations=None):
     """Export annotations to XML in export_dir and keep whitespaces and indentation from original file."""
     # Prepare xml export
-    word_annotation, span_positions, annotation_dict, export_names = prepare_xml_export(
-        doc, export_dir, token, word, annotations, original_annotations=original_annotations)
+    word_annotation, span_positions, annotation_dict, export_names, docid = prepare_xml_export(
+        doc, export_dir, token, word, annotations, original_annotations)
     pass
 
 
@@ -106,6 +106,9 @@ def prepare_xml_export(doc, export_dir, token, word, annotations, original_annot
     # Read words
     word_annotation = list(util.read_annotation(doc, word))
 
+    # Read document ID
+    docid = util.read_data(doc, "docid")
+
     # Get annotation spans, annotations list etc.
     annotations, _, export_names = util.get_annotation_names(doc, token, annotations, original_annotations)
     span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names)
@@ -120,7 +123,7 @@ def prepare_xml_export(doc, export_dir, token, word, annotations, original_annot
         and first_item[2].index == last_item[2].index
     ), "Root tag is missing!"
 
-    return word_annotation, span_positions, annotation_dict, export_names
+    return word_annotation, span_positions, annotation_dict, export_names, docid
 
 
 def add_attrs(node, annotation, annotation_dict, export_names, index):
