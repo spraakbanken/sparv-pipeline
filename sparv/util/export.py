@@ -1,14 +1,67 @@
 """Util functions for corpus export."""
 
 from collections import defaultdict
-from functools import cmp_to_key
 from itertools import combinations
 
-from sparv.util import corpus, parent
+from sparv.util import corpus, parent, misc
 
 
-def gather_annotations(doc, annotations):
-    """Calculate the span hierarchy and the annotation_dict containing all annotation elements and attributes."""
+def gather_annotations(doc, annotations, export_names):
+    """Calculate the span hierarchy and the annotation_dict containing all annotation elements and attributes.
+
+    - doc: the name of the document
+    - annotations: list of annotations to include
+    - annotation_names: dictionary that maps from annotation names to export names
+    """
+    class Span(object):
+        """Object to store span information."""
+
+        def __init__(self, name, index, start, end, export_names):
+            """Set attributes."""
+            self.name = name
+            self.index = index
+            self.start = start[0]
+            self.end = end[0]
+            self.start_sub = start[1] if len(start) > 1 else False
+            self.end_sub = end[1] if len(end) > 1 else False
+            self.export = export_names.get(self.name, self.name)
+
+        def __repr__(self):
+            """Stringify the most interesting span info (for debugging mostly)."""
+            if self.export != self.name:
+                return "<%s/%s %s %s-%s>" % (self.name, self.export, self.index, self.start, self.end)
+            return "<%s %s %s-%s>" % (self.name, self.index, self.start, self.end)
+
+        def __lt__(self, other_span):
+            """Return True of other_span comes after this span.
+
+            Sort spans according to their position and hierarchy. Sort by:
+            1. start position (smaller indices first)
+            2. end position (larger indices first)
+            3. the calculated element hierarchy
+            """
+            def get_sort_key(span, sub_positions=False):
+                """Return a sort key for span which makes span comparison possible."""
+                hierarchy_index = elem_hierarchy.index(span.name) if span.name in elem_hierarchy else -1
+                if sub_positions:
+                    return ((span.start, span.start_sub), (- span.end, - span.end_sub), hierarchy_index)
+                else:
+                    return (span.start, - span.end, hierarchy_index)
+
+            # Both spans have sub positions
+            if self.start_sub and other_span.start_sub:
+                sort_key1 = get_sort_key(self, sub_positions=True)
+                sort_key2 = get_sort_key(other_span, sub_positions=True)
+            # At least one of the spans does not have sub positions
+            else:
+                sort_key1 = get_sort_key(self)
+                sort_key2 = get_sort_key(other_span)
+
+            if sort_key1 < sort_key2:
+                return True
+            return False
+
+    # Collect annotation information and list of all annotation spans
     annotation_dict = defaultdict(dict)
     spans_list = []
     for annotation_pointer in annotations:
@@ -17,59 +70,25 @@ def gather_annotations(doc, annotations):
             # This is necessary, span_name needs to be in the dictionary
             annotation_dict[span_name]["@span"] = None
             for i, s in enumerate(corpus.read_annotation_spans(doc, span_name, decimals=True)):
-                spans_list.append([s, span_name, i])
+                spans_list.append(Span(span_name, i, s[0], s[1], export_names))
         if attr and not annotation_dict[span_name].get(attr):
             a = list(corpus.read_annotation(doc, annotation_pointer))
             annotation_dict[span_name][attr] = a
 
+    # Calculate hierarchy (if needed) and sort the span objects
     elem_hierarchy = calculate_element_hierarchy(doc, spans_list)
+    sorted_spans = sorted(spans_list)
 
-    def sort_spans(span1, span2):
-        """Compare span1 and span2.
-
-        Sort spans according to their position and hierarchy. Sort by:
-        1. start position (smaller indices first)
-        2. end position (larger indices first)
-        3. the calculated element hierarchy
-        """
-        def get_sort_key(span, sub_positions=False):
-            """Return a sort key for span which makes span comparison possible."""
-            (start_pos, end_pos), name, _ = span
-            hierarchy_index = elem_hierarchy.index(name) if name in elem_hierarchy else -1
-            if sub_positions:
-                return ((start_pos[0], start_pos[1]), (- end_pos[0], - end_pos[1]), hierarchy_index)
-            else:
-                return (start_pos[0], - end_pos[0], hierarchy_index)
-
-        # At least one of the spans does not have sub positions
-        if len(span1[0][0]) == 1 or len(span2[0][0]) == 1:
-            sort_key1 = get_sort_key(span1)
-            sort_key2 = get_sort_key(span2)
-        # Both spans have sub positions
-        else:
-            sort_key1 = get_sort_key(span1, sub_positions=True)
-            sort_key2 = get_sort_key(span2, sub_positions=True)
-
-        # cmp(span1, span2) => 1 if span1>span2, -1 if span1<span2, 0 if span1=span2
-        if sort_key1 > sort_key2:
-            return 1
-        if sort_key1 < sort_key2:
-            return -1
-        return 0
-
-    sorted_spans = sorted(spans_list, key=cmp_to_key(sort_spans))
-
-    # Create spans_dict = {position1: [span1, span2, ...], position2: ...}
-    # Where span1 = ('close'/'open', span_name, span_index)
+    # Add position information to sorted_spans
     spans_dict = defaultdict(list)
     for span in sorted_spans:
-        open_tuple = ("open", *span[1:])
-        close_tuple = ("close", *span[1:])
-        spans_dict[span[0][0][0]].append(open_tuple)
-        # Insert closing spans in the beginning
-        spans_dict[span[0][1][0]].insert(0, close_tuple)
+        # Append opening spans; prepend closing spans
+        spans_dict[span.start].append(("open", span))
+        spans_dict[span.end].insert(0, ("close", span))
+    # Flatten structure
+    span_positions = [(pos, span[0], span[1]) for pos, spans in sorted(spans_dict.items()) for span in spans]
 
-    return spans_dict, annotation_dict
+    return span_positions, annotation_dict
 
 
 def calculate_element_hierarchy(doc, spans_list):
@@ -81,8 +100,7 @@ def calculate_element_hierarchy(doc, spans_list):
     # Find elements with identical spans
     span_duplicates = defaultdict(set)
     for span in spans_list:
-        plain_span = (span[0][0][0], span[0][1][0])
-        span_duplicates[plain_span].add(span[1])
+        span_duplicates[(span.start, span.end)].add(span.name)
     span_duplicates = [v for k, v in span_duplicates.items() if len(v) > 1]
 
     # Flatten structure
@@ -124,22 +142,20 @@ def calculate_element_hierarchy(doc, spans_list):
     return hierarchy
 
 
-def is_child(span1, span2):
-    """Return True if span1 lies within span2, or if span1 == span2.
+def get_annotation_names(doc, token, annotations, original_annotations=None):
+    """Get a list of annotations, token annotations and a dictionary for renamed annotations."""
+    # Combine annotations and original_annotations
+    annotations = misc.split_tuples_list(annotations)
+    original_annotations = misc.split_tuples_list(original_annotations)
+    if not original_annotations:
+        # Get original_annotations from @structure
+        original_annotations = misc.split_tuples_list(corpus.read_data(doc, "@structure"))
+    annotations.extend(original_annotations)
 
-    Span format: ((start_pos_main, start_pos_sub), (end_pos_main, end_pos_sub))
-    """
-    if span1 == span2:
-        return True
+    # Get the names of all token annotations (but not token itself)
+    token_annotations = [corpus.split_annotation(i[0])[1] for i in annotations if corpus.split_annotation(i[0])[0] == token and i[0] != token]
 
-    def comes_first(pos1, pos2):
-        """Check if pos1 comes before pos2."""
-        if pos1[0] > pos2[0]:
-            return False
-        if pos1[0] == pos2[0]:
-            # Main position is the same and both spans have sub positions
-            if len(pos1) > 1 and len(pos2) > 1:
-                return pos1[1] < pos2[1]
-        return True
+    # Create dictionary for renamed annotations
+    export_names = dict((a, b) for a, b in annotations if b)
 
-    return comes_first(span2[0], span1[0]) and comes_first(span1[1], span2[1])
+    return [i[0] for i in annotations], token_annotations, export_names

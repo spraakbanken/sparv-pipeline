@@ -109,11 +109,13 @@ python -m sparv.freeling --doc korpus_en --text text --token token --word token:
 # Export
 
 ## XML export
-
+### minimal command:
 python -m sparv.modules.xml_export.xml_export --doc korpus1 --export_dir "export/xml/" --token token --word token:word --annotations "text sentence token token:pos token:baseform token:ref"
 
-## VRT export
+### with some customisation:
+python -m sparv.modules.xml_export.xml_export --doc korpus1 --export_dir "export/xml/" --token token --word token:word --annotations "text text:lix text:blingbring>lexical_class sentence token token:pos token:baseform token:sentimentclass token:ref ne:name ne:ex" --original_annotations "text text:date text:forfattare>author corpus>supertext"
 
+## VRT export
 ### minimal command:
 python -m sparv.modules.cwb.cwb --export --doc korpus1 --export_dir "export/vrt/" --token token --word token:word --annotations "text text:lix text:blingbring sentence token token:pos token:baseform token:sentimentclass token:ref"
 

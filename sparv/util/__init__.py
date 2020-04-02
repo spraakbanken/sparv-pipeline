@@ -3,7 +3,7 @@ from .constants import *
 from .corpus import *
 from .misc import *
 from .parent import get_children, get_parents
-from .export import gather_annotations, is_child
+from .export import gather_annotations, get_annotation_names
 from . import log
 from . import run
 from . import system

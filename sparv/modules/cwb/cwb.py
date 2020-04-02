@@ -28,43 +28,29 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
     # Read words
     word_annotation = list(util.read_annotation(doc, word))
 
-    # Add original_annotations to annotations
-    annotations = util.split_tuples_list(annotations)
-    original_annotations = util.split_tuples_list(original_annotations)
-    if not original_annotations:
-        original_annotations = util.split_tuples_list(util.read_data(doc, "@structure"))
-    annotations.extend(original_annotations)
-
-    # Create dictionary for renamed annotations
-    annotation_names = dict((a, b) for a, b in annotations if b)
-
-    # Get the names of all token annotations (but not token itself)
-    token_annotations = [util.split_annotation(i[0])[1] for i in annotations if util.split_annotation(i[0])[0] == token and i[0] != token]
-
-    spans_dict, annotation_dict = util.gather_annotations(doc, [i[0] for i in annotations])
+    # Get annotation spans, annotations list etc.
+    annotations, token_annotations, export_names = util.get_annotation_names(doc, token, annotations, original_annotations)
+    span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names)
 
     # Go through spans_dict and add to vrt, line by line
     vrt = []
-    for pos, spans in sorted(spans_dict.items()):
-        for instruction, name, index in spans:
+    for _pos, instruction, span in span_positions:
+        # Create token line
+        if span.name == token and instruction == "open":
+            vrt.append(make_token_line(word_annotation[span.index], token, token_annotations, annotation_dict, span.index))
 
-            # Create token line
-            if name == token and instruction == "open":
-                vrt.append(make_token_line(word_annotation[index], token, token_annotations, annotation_dict, index))
-
-            # Create line with structural annotation
-            elif name != token:
-                annot_name = annotation_names.get(name, name)
-                # Open structural element
-                if instruction == "open":
-                    attrs = make_attr_str(name, annotation_dict, annotation_names, index)
-                    if attrs:
-                        vrt.append("<%s %s>" % (annot_name, attrs))
-                    else:
-                        vrt.append("<%s>" % annot_name)
-                # Close element
+        # Create line with structural annotation
+        elif span.name != token:
+            # Open structural element
+            if instruction == "open":
+                attrs = make_attr_str(span.name, annotation_dict, export_names, span.index)
+                if attrs:
+                    vrt.append("<%s %s>" % (span.export, attrs))
                 else:
-                    vrt.append("</%s>" % annot_name)
+                    vrt.append("<%s>" % span.export)
+            # Close element
+            else:
+                vrt.append("</%s>" % span.export)
 
     # Write result to file
     vrt = "\n".join(vrt)
@@ -74,15 +60,15 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
     util.log.info("Exported: %s", out_file)
 
 
-def make_attr_str(annotation, annotation_dict, annotation_names, index):
+def make_attr_str(annotation, annotation_dict, export_names, index):
     """Create a string with attributes and values for a struct element."""
     attrs = []
     for name, annot in annotation_dict[annotation].items():
         if name != "@span":
-            annot_name = annotation_names.get(":".join([annotation, name]), name)
+            export_name = export_names.get(":".join([annotation, name]), name)
             # Escape special characters in value
             value = annot[index].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
-            attrs.append('%s="%s"' % (annot_name, value))
+            attrs.append('%s="%s"' % (export_name, value))
     return " ".join(attrs)
 
 
