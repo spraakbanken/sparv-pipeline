@@ -7,7 +7,7 @@ import os
 import sparv.util as util
 
 
-def export(doc, export_dir, token, word, annotations, original_annotations=None):
+def export(doc, docid, export_dir, token, word, annotations, original_annotations=None):
     """Export annotations to xml in export_dir.
 
     - doc: name of the original document
@@ -22,7 +22,7 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
 
     # Read words and document ID
     word_annotation = list(util.read_annotation(doc, word))
-    docid = util.read_data(doc, "docid")
+    docid = util.read_data(doc, docid)
 
     # Get annotation spans, annotations list etc.
     annotations, _, export_names = util.get_annotation_names(doc, token, annotations, original_annotations)
@@ -71,7 +71,7 @@ def export(doc, export_dir, token, word, annotations, original_annotations=None)
     util.log.info("Exported: %s", out_file)
 
 
-def export_formatted(doc, export_dir, token, annotations, original_annotations=None):
+def export_formatted(doc, docid, export_dir, token, annotations, original_annotations=None):
     """Export annotations to xml in export_dir and keep whitespaces and indentation from original file.
 
     - doc: name of the original document
@@ -85,7 +85,7 @@ def export_formatted(doc, export_dir, token, annotations, original_annotations=N
 
     # Read corpus text and document ID
     corpus_text = util.read_corpus_text(doc)
-    docid = util.read_data(doc, "docid")
+    docid = util.read_data(doc, docid)
 
     # Get annotation spans, annotations list etc.
     annotations, _, export_names = util.get_annotation_names(doc, token, annotations, original_annotations)

@@ -110,13 +110,13 @@ python -m sparv.freeling --doc korpus_en --text text --token token --word token:
 
 ## XML export
 ### minimal command:
-python -m sparv.modules.xml_export.xml_export --doc korpus1 --export_dir "export/xml/" --token token --word token:word --annotations "text sentence token token:pos token:baseform token:ref"
+python -m sparv.modules.xml_export.xml_export --doc korpus1 --docid "docid" --export_dir "export/xml/" --token token --word token:word --annotations "text sentence token token:pos token:baseform token:ref"
 
 ### with some customisation:
-python -m sparv.modules.xml_export.xml_export --doc korpus1 --export_dir "export/xml/" --token token --word token:word --annotations "text text:lix text:blingbring>lexical_class sentence token token:pos token:baseform token:sentimentclass token:ref ne:name ne:ex" --original_annotations "text text:date text:forfattare>author corpus>supertext"
+python -m sparv.modules.xml_export.xml_export --doc korpus1 --docid "docid" --export_dir "export/xml/" --token token --word token:word --annotations "text text:lix text:blingbring>lexical_class sentence token token:pos token:baseform token:sentimentclass token:ref ne:name ne:ex" --original_annotations "text text:date text:forfattare>author corpus>supertext"
 
 ### formatted export:
-python -m sparv.modules.xml_export.xml_export --export_formatted --doc korpus1 --export_dir "export/xml_formatted/" --token token --annotations "text text:lix sentence token token:pos token:ref ne:name ne:ex" --original_annotations "text text:date text:forfattare>author corpus"
+python -m sparv.modules.xml_export.xml_export --export_formatted --doc korpus1 --docid "docid" --export_dir "export/xml_formatted/" --token token --annotations "text text:lix sentence token token:pos token:ref ne:name ne:ex" --original_annotations "text text:date text:forfattare>author corpus"
 
 ## VRT export
 ### minimal command:
