@@ -2,11 +2,12 @@
 
 from collections import defaultdict
 from itertools import combinations
+import xml.etree.cElementTree as etree
 
 from sparv.util import corpus, parent, misc
 
 
-def gather_annotations(doc, annotations, export_names):
+def gather_annotations(doc, annotations, export_names, flatten=True):
     """Calculate the span hierarchy and the annotation_dict containing all annotation elements and attributes.
 
     - doc: the name of the document
@@ -25,6 +26,13 @@ def gather_annotations(doc, annotations, export_names):
             self.start_sub = start[1] if len(start) > 1 else False
             self.end_sub = end[1] if len(end) > 1 else False
             self.export = export_names.get(self.name, self.name)
+            self.node = None
+
+        def set_node(self, parent_node=None):
+            if parent_node is not None:
+                self.node = etree.SubElement(parent_node, self.export)
+            else:
+                self.node = etree.Element(self.export)
 
         def __repr__(self):
             """Stringify the most interesting span info (for debugging mostly)."""
@@ -85,10 +93,12 @@ def gather_annotations(doc, annotations, export_names):
         # Append opening spans; prepend closing spans
         spans_dict[span.start].append(("open", span))
         spans_dict[span.end].insert(0, ("close", span))
-    # Flatten structure
-    span_positions = [(pos, span[0], span[1]) for pos, spans in sorted(spans_dict.items()) for span in spans]
 
-    return span_positions, annotation_dict
+    if flatten:
+        # Flatten structure
+        span_positions = [(pos, span[0], span[1]) for pos, spans in sorted(spans_dict.items()) for span in spans]
+        return span_positions, annotation_dict
+    return spans_dict, annotation_dict
 
 
 def calculate_element_hierarchy(doc, spans_list):
