@@ -1,7 +1,7 @@
 """Export annotated corpus data to xml."""
 
 import os
-import xml.etree.cElementTree as etree
+import xml.etree.ElementTree as etree
 from collections import defaultdict
 from typing import Optional
 

@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from itertools import combinations
-import xml.etree.cElementTree as etree
+import xml.etree.ElementTree as etree
 
 from sparv.util import corpus, parent, misc
 
@@ -29,6 +29,7 @@ def gather_annotations(doc, annotations, export_names, flatten=True):
             self.node = None
 
         def set_node(self, parent_node=None):
+            """Create an xml node under parent_node."""
             if parent_node is not None:
                 self.node = etree.SubElement(parent_node, self.export)
             else:
@@ -41,7 +42,7 @@ def gather_annotations(doc, annotations, export_names, flatten=True):
             return "<%s %s %s-%s>" % (self.name, self.index, self.start, self.end)
 
         def __lt__(self, other_span):
-            """Return True of other_span comes after this span.
+            """Return True if other_span comes after this span.
 
             Sort spans according to their position and hierarchy. Sort by:
             1. start position (smaller indices first)
@@ -119,7 +120,8 @@ def calculate_element_hierarchy(doc, spans_list):
     # Read all annotation spans for quicker access later
     read_items = {}
     for span in unclear_spans:
-        read_items[span] = sorted(enumerate(corpus.read_annotation_spans(doc, span, decimals=True)), key=lambda x: x[1])
+        read_items[span] = sorted(enumerate(corpus.read_annotation_spans(
+                                  doc, span, decimals=True)), key=lambda x: x[1])
 
     # Get pairs of relations that need to be ordered
     relation_pairs = list(combinations(unclear_spans, r=2))
@@ -163,7 +165,8 @@ def get_annotation_names(doc, token, annotations, original_annotations=None):
     annotations.extend(original_annotations)
 
     # Get the names of all token annotations (but not token itself)
-    token_annotations = [corpus.split_annotation(i[0])[1] for i in annotations if corpus.split_annotation(i[0])[0] == token and i[0] != token]
+    token_annotations = [corpus.split_annotation(i[0])[1] for i in annotations
+                         if corpus.split_annotation(i[0])[0] == token and i[0] != token]
 
     # Create dictionary for renamed annotations
     export_names = dict((a, b) for a, b in annotations if b)
