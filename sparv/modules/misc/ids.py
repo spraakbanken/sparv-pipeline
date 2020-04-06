@@ -1,13 +1,21 @@
 """Generate unique IDs for corpus files."""
-import random
 import math
+import random
 from binascii import hexlify
+
 import sparv.util as util
+from sparv import annotator
+from sparv.util.classes import *
 
 _ID_LENGTH = 10
 
 
-def doc_id(out, docs=None, doclist=None, prefix="", add=False):
+@annotator("Give every document a unique ID.")
+def doc_id(out: str = Output("misc.docid", cls="docid", data=True),
+           docs: Optional[list] = AllDocuments,
+           doclist: Optional[str] = None,
+           prefix: str = "",
+           add: bool = False):
     """Create unique IDs for every document in a list, using the document names as seed.
     The resulting IDs are written to the annotation specified by 'out'.
     If 'add' is True, existing IDs will not be overwritten."""
@@ -42,7 +50,12 @@ def doc_id(out, docs=None, doclist=None, prefix="", add=False):
         util.write_data(doc, out, new_id)
 
 
-def ids(doc, annotation, out, docid, prefix=""):
+@annotator("Unique IDs for annotations.")
+def ids(doc: str = Document,
+        annotation: str = Annotation("{annotation}"),
+        out: str = Output("{annotation}:misc.id", description="Unique ID for {annotation}"),
+        docid: str = Annotation("<docid>", data=True),
+        prefix: str = ""):
     """Create unique IDs for every span of an existing annotation."""
     docid = util.read_data(doc, docid)
     prefix = prefix + docid

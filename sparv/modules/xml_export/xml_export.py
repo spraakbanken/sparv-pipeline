@@ -1,13 +1,22 @@
 """Export annotated corpus data to xml."""
 
-from collections import defaultdict
-import xml.etree.cElementTree as etree
 import os
+import xml.etree.cElementTree as etree
+from collections import defaultdict
+from typing import Optional
 
 import sparv.util as util
+from sparv import *
 
 
-def export(doc, docid, export_dir, token, word, annotations, original_annotations=None):
+@annotator("XML export", exporter=True)
+def export(doc: str = Document,
+           docid: str = Annotation("<docid>", data=True),
+           export_dir: str = Export("xml"),
+           token: str = Annotation("<token>"),
+           word: str = Annotation("<token:word>"),
+           annotations: list = ExportAnnotations,
+           original_annotations: Optional[list] = None):
     """Export annotations to xml in export_dir.
 
     - doc: name of the original document

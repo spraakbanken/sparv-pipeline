@@ -1,0 +1,255 @@
+"""Snakefile used by Snakemake."""
+import inspect
+import os
+import re
+
+import snakemake
+
+from sparv import util
+from sparv.core import config as sparv_config
+from sparv.core import paths
+from sparv.core import registry
+from sparv.util.classes import *
+
+# List of all available source files
+input_files = [f[1][0] for f in snakemake.utils.listfiles(os.path.join(paths.source_dir, "{file}.xml"))]
+
+# We have to wait until the configuration dict is complete until we load modules
+registry.find_modules(paths.sparv_path)
+
+# All output annotations available, used for printing a list
+all_annotations = {}
+
+def get_annotation_path(annotation, data=False):
+    """Construct a path to an annotation file given a doc and annotation."""
+    elem, attr = util.split_annotation(annotation)
+
+    if data:
+        path = elem
+    else:
+        if not attr:
+            attr = util.SPAN_ANNOTATION
+        path = os.path.join(elem, attr)
+    return "{doc}/" + path
+
+
+def make_rule(module_name, f_name, desc, f, importer, exporter):
+    """Build Snakemake rules."""
+    # Build input, output and parameter list
+    if config.get("debug"):
+        print(module_name, f_name)
+    inputs = []
+    outputs = []
+    parameters = {}
+    docs = []  # List of parameters refering to documents
+    wildcard_annotations = []  # List of parameters containign wildcards
+    if importer:
+        inputs.append(os.path.join(paths.source_dir, "{doc}.xml"))
+        outputs.append(os.path.join(paths.annotation_dir, "{doc}", util.TEXT_FILE))
+        xml_elements = set()
+        for element in sparv_config.get("xml_elements", []):
+            xml_elements.add(element)
+            xml_elements.add(util.split_annotation(element)[0])
+        for element in xml_elements:
+            outputs.append(os.path.join(paths.annotation_dir, get_annotation_path(element)))
+    elif exporter:
+        pass
+    else:
+        # Every other rule depends on an input rule, so add @text as a requirement
+        inputs.append(get_annotation_path(util.TEXT_FILE, data=True))
+
+    params = inspect.signature(f).parameters
+
+    # Go though function parameters and handle based on type
+    for param_name, param in params.items():
+        # Output
+        if isinstance(param.default, Output):
+            param_value = registry.expand_variables(param.default)
+            outputs.append(get_annotation_path(param_value, data=param.default.data))
+            parameters[param_name] = param_value
+            if "{" in param_value:
+                wildcard_annotations.append(param_name)
+            all_annotations.setdefault(module_name, {}).setdefault(f_name, {"description": desc, "annotations": []})
+            all_annotations[module_name][f_name]["annotations"].append((param.default, param.default.description))
+        # Annotation
+        elif registry.dig(Annotation, param.default):
+            param_value = registry.expand_variables(param.default)
+            if exporter:
+                inputs.append(os.path.join(paths.annotation_dir, get_annotation_path(param_value,
+                                                                                     data=param.default.data)))
+            else:
+                inputs.append(get_annotation_path(param_value, data=param.default.data))
+            parameters[param_name] = param_value
+            if "{" in param_value:
+                wildcard_annotations.append(param_name)
+        # ExportAnnotations
+        elif param.annotation == ExportAnnotations or param.default == ExportAnnotations or \
+                isinstance(param.default, ExportAnnotations):
+            parameters[param_name] = []
+            export_annotations = sparv_config.get("annotations", [])
+            for annotation in export_annotations:
+                annotation, _, new_name = annotation.partition(" as ")
+                param_value = registry.expand_variables(annotation)
+                inputs.append(os.path.join(paths.annotation_dir, get_annotation_path(param_value)))
+                if new_name:
+                    param_value = ">".join((param_value, new_name))
+                parameters[param_name].append(param_value)
+        # Document
+        elif param.annotation == Document or param.default == Document or isinstance(param.default, Document):
+            docs.append(param_name)
+        # AllDocuments (all source documents)
+        elif registry.dig(AllDocuments, param.annotation) or registry.dig(AllDocuments, param.default):
+            parameters[param_name] = input_files
+        # Model
+        elif registry.dig(Model, param.default):
+            if not param.default is None:
+                if isinstance(param.default, Model):
+                    model = paths.get_model_path(registry.expand_variables(param.default))
+                    inputs.append(model)
+                    parameters[param_name] = model
+                elif isinstance(param.default, (list, tuple)):
+                    parameters[param_name] = []
+                    for model in param.default:
+                        model = paths.get_model_path(registry.expand_variables(model))
+                        inputs.append(model)
+                        parameters[param_name].append(model)
+        # Binary
+        elif param.annotation == Binary or isinstance(param.default, Binary):
+            binary = paths.get_bin_path(registry.expand_variables(param.default))
+            inputs.append(binary)
+            parameters[param_name] = binary
+        # Source
+        elif param.annotation == Source or param.default == Source or isinstance(param.default, Source):
+            parameters[param_name] = paths.source_dir
+        # Export
+        elif param.annotation == Export or param.default == Export or isinstance(param.default, Export):
+            if param.default == inspect.Parameter.empty:
+                parameters[param_name] = paths.export_dir
+            else:
+                parameters[param_name] = os.path.join(paths.export_dir, param.default)
+            outputs.append(os.path.join(parameters[param_name], "{doc}_export.xml"))
+        # Config
+        elif isinstance(param.default, Config):
+            parameters[param_name] = sparv_config.get(param.default)
+        # Everything else with a default value
+        elif param.default is not None:
+            parameters[param_name] = param.default
+
+    if config.get("debug"):
+        print("inputs:", inputs)
+        print("outputs:", outputs)
+        print("parameters:", parameters)
+        print()
+
+    def get_doc_value(wildcards):
+        """Extract the {doc} part from full annotation path."""
+        if importer or exporter:
+            doc = wildcards.doc
+        else:
+            doc = wildcards.doc[len(paths.annotation_dir) + 1:]
+        return doc
+
+    def get_parameters(wildcards):
+        """Extend function parameters with doc names and replace wildcards."""
+        doc = get_doc_value(wildcards)
+        parameters.update({name: doc for name in docs})
+
+        # Replace wildcards in parameters
+        for name in wildcard_annotations:
+            wcs = re.finditer(r"{([^}]+)}", parameters[name])
+            for wc in wcs:
+                parameters[name] = parameters[name].replace(wc.group(), wildcards.get(wc.group(1)))
+        return parameters
+
+    rule:
+        input:
+            inputs
+        output:
+            outputs
+        params:
+            module_name = module_name,
+            f_name = f_name,
+            parameters = get_parameters
+        script:
+            "run_snake.py"
+            # We don't use "run:" since the whole Snakefile would have to be reloaded for every single job, due to how
+            # Snakemake creates processes for run-jobs.
+
+    # Create rule to run this annotation on all input files, but skip rules containing wildcards
+    if not any(re.search(r"{(?!doc)[^}]+}", o) for o in outputs):
+        @workflow.rule(name=module_name + ":" + f_name)
+        @workflow.input(expand([os.path.join(paths.annotation_dir, o) if not o.startswith(paths.annotation_dir) else o
+                                for o in outputs], doc=input_files))
+        @workflow.run
+        def __rule__(*_args, **_kwargs):
+            pass
+
+rule empty:
+    shell:
+        "echo"
+
+# Find local corpus config
+corpus_config_file = os.path.join(os.getcwd(), paths.config_file)
+if not os.path.isfile(corpus_config_file):
+    print("No corpus config file found.")
+    corpus_config_file = None
+
+# Read config file(s)
+sparv_config.load_config(corpus_config_file)
+
+registry.annotation_classes["config_classes"] = sparv_config.config["classes"]
+
+# Create rules for all available annotation functions
+for module_name in registry.annotators:
+    for f_name in registry.annotators[module_name]:
+        f, desc, importer, exporter = registry.annotators[module_name][f_name]
+        make_rule(module_name, f_name, desc, f, importer, exporter)
+
+# Rule to list all config options and their current values
+rule config:
+    run:
+        longest_key = max(len(key) for key in sparv_config.config) + 10
+        for key, val in sorted(sparv_config.config.items()):
+            print("{:{width}}{}".format(key + ":", str(val), width=longest_key))
+
+rule annotations:
+    run:
+        max_len = max(len(a[0]) for m in all_annotations for f in all_annotations[m]
+                      for a in all_annotations[m][f]["annotations"]) + 8
+        print()
+        print("Available modules, annotators and annotations")
+        print("=============================================\n")
+        for module_name in sorted(all_annotations):
+            print(util.COLORS["bold"] + "{}".format(module_name.upper()) + util.COLORS["default"])
+            for f_name in sorted(all_annotations[module_name]):
+                print("      {}{}{}".format(util.COLORS["underline"], f_name, util.COLORS["default"]))
+                f_desc = all_annotations[module_name][f_name]["description"]
+                if f_desc:
+                    print("      {}".format(f_desc))
+                print()
+                f_anns = all_annotations[module_name][f_name]["annotations"]
+                for f_ann in sorted(f_anns):
+                    print("        • {:{width}}{}".format(f_ann[0], f_ann[1] or "", width=max_len))
+                    if f_ann[0].cls:
+                        print(util.COLORS["italic"] + "          <{}>".format(f_ann[0].cls) + util.COLORS["default"])
+                print()
+            print("\n")
+
+        max_len = max(len(cls) for cls in registry.annotation_classes["module_classes"]) + 8
+
+        print("Available classes")
+        print("=================\n")
+        print("    Classes defined by pipeline modules")
+        print("        {:{}}    {}".format("Class", max_len, "Annotation\n"))
+        for cls, anns in registry.annotation_classes["module_classes"].items():
+            print("        {:{}}    {}".format(cls, max_len, anns[0]))
+            if len(anns) > 1:
+                for ann in anns[1:]:
+                    print("        {:{}}    {}".format("", max_len, ann))
+
+        if registry.annotation_classes["config_classes"]:
+            print()
+            print("    Classes from config")
+            print("        {:{}}    {}".format("Class", max_len, "Annotation\n"))
+            for cls, ann in registry.annotation_classes["config_classes"].items():
+                print("        {:{}}    {}".format(cls, max_len, ann))

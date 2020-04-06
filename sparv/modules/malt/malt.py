@@ -1,6 +1,7 @@
 import re
 import os
 import sparv.util as util
+from sparv import *
 
 """
 Running malt processes are only kept if the input is small: otherwise
@@ -19,8 +20,21 @@ DEPREL_COLUMN = 7
 UNDEF = "_"
 
 
-def maltparse(doc, maltjar, model, out_dephead, out_dephead_ref, out_deprel, word, pos, msd, ref, sentence, token,
-              encoding=util.UTF8, process_dict=None):
+@annotator("Dependency parsing using MALT Parser.")
+def maltparse(doc: str = Document,
+              maltjar: str = Binary("[malt.jar=maltparser-1.7.2/maltparser-1.7.2.jar]"),
+              model: str = Model("[malt.model=swemalt-1.7.2.mco]"),
+              out_dephead: str = Output("<token>:malt.dephead"),
+              out_dephead_ref: str = Output("<token>:malt.dephead_ref"),
+              out_deprel: str = Output("<token>:malt.deprel"),
+              word: str = Annotation("<token:word>"),
+              pos: str = Annotation("<token:pos>"),
+              msd: str = Annotation("<token:msd>"),
+              ref: str = Annotation("<token>:misc.number_rel_<sentence>"),
+              sentence: str = Annotation("<sentence>"),
+              token: str = Annotation("<token>"),
+              encoding: str = util.UTF8,
+              process_dict=None):
     """
     Run the malt parser, in an already started process defined in
     process_dict, or starts a new process (default)

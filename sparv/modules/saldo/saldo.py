@@ -1,10 +1,14 @@
 """Create annotations from Saldo."""
 
-import sparv.util as util
 import itertools
+import os
 import pickle
 import re
-import os
+
+from typing import List, Optional
+
+from sparv import *
+import sparv.util as util
 
 # The minimun precision difference for two annotations to be considered equal
 PRECISION_DIFF = 0.01
@@ -13,23 +17,37 @@ PRECISION_DIFF = 0.01
 # Annotate.
 
 
-def annotate(doc, token, word, sentence, reference, out, annotations, models, msd="",
-             delimiter="|", affix="|", precision=":%.3f", precision_filter="max", min_precision=0.66,
-             skip_multiword=False, allow_multiword_overlap=False, word_separator="", lexicons=None):
+@annotator("SALDO annotations.")
+def annotate(doc: str = Document,
+             token: str = Annotation("<token>"),
+             word: str = Annotation("<token:word>"),
+             sentence: str = Annotation("<sentence>"),
+             reference: str = Annotation("<token>:misc.number_rel_<sentence>"),
+             out_sense: str = Output("<token>:saldo.sense", description="SALDO identifier"),
+             out_lemgram: str = Output("<token>:saldo.lemgram", description="SALDO lemgram"),
+             out_baseform: str = Output("<token>:saldo.baseform", description="Baseform from SALDO"),
+             models: List[str] = [Model("saldo.pickle")],
+             msd: Optional[str] = Annotation("<token:msd>"),
+             delimiter: str = "|",
+             affix: str = "|",
+             precision: str = Config("saldo.precision", util.SCORESEP + "%.3f"),
+             precision_filter: str = "max",
+             min_precision: float = 0.66,
+             skip_multiword: bool = False,
+             allow_multiword_overlap: bool = False,
+             word_separator: str = "",
+             lexicons: bool = None):
     """Use the Saldo lexicon model (and optionally other older lexicons) to annotate pos-tagged words.
 
     - word, msd are existing annotations for wordforms and part-of-speech
     - sentence is an existing annotation for sentences and their children (words)
     - reference is an existing annotation for word references, to be used when
       annotating multi-word units
-    - out is a string containing a whitespace separated list of the resulting annotation files
-    - annotations is a string containing a whitespace separated list of annotations to be written.
-      Currently: gf (=baseform), lem (=lemgram), saldo
-      Number of annotations and their order must correspond to the list in the 'out' argument.
+    - out_baseform, out_lemgram, out_sense are the resulting annotations to be written.
     - models is a list of pickled lexica, typically the Saldo model (saldo.pickle) and optional old lexicons
     - delimiter is the delimiter character to put between ambiguous results
     - affix is an optional character to put before and after results
-    - precision is a format string for how to print the precision for each annotation
+    - precision is a format string for how to print the precision for each annotation, e.g. ":%.3f"
       (use empty string for no precision)
     - precision_filter is an optional filter, currently there are the following values:
       max: only use the annotations that are most probable
@@ -44,7 +62,7 @@ def annotate(doc, token, word, sentence, reference, out, annotations, models, ms
       but is used in the catapult. This argument must be last.
     """
     # Allow use of multiple lexicons
-    models = [(os.path.basename(m).rstrip(".pickle"), m) for m in models.split()]
+    models = [(os.path.basename(m).rstrip(".pickle"), m) for m in util.split(models)]
     if not lexicons:
         lexicon_list = [(name, SaldoLexicon(lex)) for name, lex in models]
     # Use pre-loaded lexicons (from catapult)
@@ -58,9 +76,14 @@ def annotate(doc, token, word, sentence, reference, out, annotations, models, ms
     # TODO: Set to 0 for hist-mode? since many (most?) multi-word in the old lexicons are unseparable (half öre etc)
     max_gaps = 1
 
-    annotations = annotations.split()
-    out = out.split()
-    assert len(out) == len(annotations), "Number of target files and annotations must be the same"
+    # Combine annotation names i SALDO lexicon with out annotations
+    annotations = []
+    if out_baseform:
+        annotations.append((out_baseform, "gf"))
+    if out_lemgram:
+        annotations.append((out_lemgram, "lem"))
+    if out_sense:
+        annotations.append((out_sense, "saldo"))
 
     skip_multiword = util.strtobool(skip_multiword)
     if skip_multiword:
@@ -70,15 +93,14 @@ def annotate(doc, token, word, sentence, reference, out, annotations, models, ms
 
     min_precision = float(min_precision)
 
-    # If min_precision is 0, skip almost all part-of-speech checking (verb multi-word expressions still won't be allowed to span over other verbs)
+    # If min_precision is 0, skip almost all part-of-speech checking (verb multi-word expressions still won't be
+    # allowed to span over other verbs)
     skip_pos_check = (min_precision == 0.0)
 
     word_annotation = list(util.read_annotation(doc, word))
     ref_annotation = list(util.read_annotation(doc, reference))
     if msd:
         msd_annotation = list(util.read_annotation(doc, msd))
-    for out_file in out:
-        util.clear_annotation(doc, out_file)
 
     sentences, orphans = util.get_children(doc, sentence, token)
     sentences.append(orphans)
@@ -105,11 +127,13 @@ def annotate(doc, token, word, sentence, reference, out, annotations, models, ms
                 thewords = [theword]
 
             # First use MSD tags to find the most probable single word annotations
-            ann_tags_words = find_single_word(thewords, lexicon_list, msdtag, precision, min_precision, precision_filter, annotation_info)
+            ann_tags_words = find_single_word(thewords, lexicon_list, msdtag, precision, min_precision,
+                                              precision_filter, annotation_info)
 
             # Find multi-word expressions
             if not skip_multiword:
-                find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref, msdtag, max_gaps, ann_tags_words, msd_annotation, sent, skip_pos_check)
+                find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref, msdtag, max_gaps,
+                                           ann_tags_words, msd_annotation, sent, skip_pos_check)
 
             # Loop to next token
 
@@ -125,8 +149,8 @@ def annotate(doc, token, word, sentence, reference, out, annotations, models, ms
 
         # Loop to next sentence
 
-    for out_file, annotation in zip(out, annotations):
-        util.write_annotation(doc, out_file, [v.get(annotation, delimiter) for v in out_annotation])
+    for out_annotation_name, annotation_name in annotations:
+        util.write_annotation(doc, out_annotation_name, [v.get(annotation_name, delimiter) for v in out_annotation])
 
 
 def find_single_word(thewords, lexicon_list, msdtag, precision, min_precision, precision_filter, annotation_info):
@@ -420,6 +444,7 @@ def _split_triple(annotation_tag_words):
 # converting between different file formats
 
 class HashableDict(dict):
+    """A dict that's hashable."""
     def __key(self):
         return tuple((k, self[k]) for k in sorted(self))
 
@@ -430,13 +455,13 @@ class HashableDict(dict):
         return self.__key() == other.__key()
 
 
-def read_xml(xml="saldom.xml", annotation_elements="gf lem saldo", tagset="SUC", verbose=True):
+def read_xml(xml="saldom.xml", annotation_elements=("gf", "lem", "saldo"), tagset="SUC", verbose=True):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml).
     Return a lexicon dictionary, {wordform: {{annotation-type: annotation}: ( set(possible tags), set(tuples with following words) )}}
      - annotation_element is the XML element for the annotation value (currently: 'gf' for baseform, 'lem' for lemgram or 'saldo' for SALDO id)
      - tagset is the tagset for the possible tags (currently: 'SUC', 'Parole', 'Saldo')
     """
-    annotation_elements = annotation_elements.split()
+    annotation_elements = util.split(annotation_elements)
     # assert annotation_element in ("gf", "lem", "saldo"), "Invalid annotation element"
     import xml.etree.cElementTree as cet
     tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower())

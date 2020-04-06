@@ -1,5 +1,7 @@
 import re
-import sparv.util as util
+
+from sparv import annotator, util
+from sparv.util.classes import *
 
 SENT_SEP = "\n\n"
 TOK_SEP = "\n"
@@ -7,7 +9,16 @@ TAG_SEP = "\t"
 TAG_COLUMN = 1
 
 
-def msdtag(doc, model, out, word, sentence, tag_mapping=None, morphtable=None, patterns=None, encoding=util.UTF8):
+@annotator("Part-of-speech annotation with morphological descriptions.")
+def msdtag(doc: str = Document,
+           model: str = Model("hunpos.suc3.suc-tags.default-setting.utf8.model"),
+           out: str = Output("<token>:hunpos.msd", cls="token:msd"),
+           word: str = Annotation("<token:word>"),
+           sentence: str = Annotation("<sentence>"),
+           tag_mapping=None,
+           morphtable: str = Model("hunpos.saldo.suc-tags.morphtable"),
+           patterns: str = Model("hunpos.suc.patterns"),
+           encoding: str = util.UTF8):
     """POS/MSD tag using the Hunpos tagger."""
     if isinstance(tag_mapping, str) and tag_mapping:
         tag_mapping = util.tagsets.__dict__[tag_mapping]
@@ -49,12 +60,14 @@ def msdtag(doc, model, out, word, sentence, tag_mapping=None, morphtable=None, p
     util.write_annotation(doc, out, out_annotation)
 
 
-# TODO: använd sockets
-# - spara socket-id i en fil i tmp/
+@annotator("Extract POS from MSD.")
+def postag(doc: str = Document,
+           out: str = Output("<token>:hunpos.pos", cls="token:pos"),
+           msd: str = Annotation("<token>:hunpos.msd")):
+    """"Extract POS from MSD."""
+    from sparv.modules.misc import misc
+    misc.select(doc, out, msd, index=0, separator=".")
 
-def postag():
-    pass
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     util.run.main(msdtag)

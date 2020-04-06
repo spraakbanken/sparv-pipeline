@@ -1,11 +1,20 @@
 import os
 import unicodedata
 import xml.etree.ElementTree as etree
-import sparv.util as util
+from sparv import util
+from sparv import *
 
 
-def parse(doc, elements=[], skip=(), headers=[], header_elements=[], encoding=util.UTF8,
-          source_dir="src", normalize="NFC"):
+@annotator("XML import.", importer=True)
+def parse(doc: str = Document,
+          source_dir: str = Source,
+          elements: str = Config("xml_elements", []),
+          skip: list = [],
+          headers: list = [],
+          header_elements: list = [],
+          prefix: str = "",
+          encoding: str = util.UTF8,
+          normalize: str = "NFC"):
     """Parse XML source file and create annotation files."""
     if isinstance(elements, str):
         elements = elements.split()
@@ -16,21 +25,23 @@ def parse(doc, elements=[], skip=(), headers=[], header_elements=[], encoding=ut
     if isinstance(header_elements, str):
         header_annotations = header_elements.split()
 
-    parser = SparvXMLParser(elements, skip, headers, header_elements, encoding, source_dir,
+    parser = SparvXMLParser(elements, skip, headers, header_elements, encoding, source_dir, prefix,
                             normalize)
     parser.parse(doc)
     parser.save()
 
 
 class SparvXMLParser:
+    """XML parser class for parsing XML."""
 
     def __init__(self, elements=[], skip=(), headers=[], header_elements=[], encoding=util.UTF8,
-                 source_dir="src", normalize="NFC"):
+                 source_dir="src", prefix="", normalize="NFC"):
 
         self.source_dir = source_dir
         self.encoding = encoding
         self.normalize = normalize
         self.doc = None
+        self.prefix = prefix
 
         self.pos = 0  # Current position in the text data
         self.subpos = 0  # Subposition for tags with same position
@@ -53,6 +64,7 @@ class SparvXMLParser:
             element, _, target = element.partition(">")
             element, attr = elsplit(element)
             all_elems.add((element, attr))
+            all_elems.add((element, ""))  # Make sure that the bare element is added as well
 
             if target:
                 target_element, target_attr = elsplit(target)
@@ -152,7 +164,6 @@ class SparvXMLParser:
         structure = []
 
         for element in self.data:
-            structure.append(element)
             spans = []
             original_elements = []
             attributes = {attr: [] for attr in self.data[element]["attrs"]}
@@ -163,12 +174,15 @@ class SparvXMLParser:
                 for attr in attributes:
                     attributes[attr].append(attrs.get(attr, ""))
 
-            util.write_annotation(self.doc, element, spans)
+            full_element = "{}.{}".format(self.prefix, element) if self.prefix else element
+            util.write_annotation(self.doc, full_element, spans)
             # util.write_annotation(self.doc, "{}:@original".format(element), original_elements)
+            structure.append(full_element)
 
             for attr in attributes:
-                util.write_annotation(self.doc, "{}:{}".format(element, attr), attributes[attr])
-                structure.append("{}:{}".format(element, attr))
+                full_attr = "{}.{}".format(self.prefix, attr) if self.prefix else attr
+                util.write_annotation(self.doc, "{}:{}".format(full_element, full_attr), attributes[attr])
+                structure.append("{}:{}".format(full_element, full_attr))
 
         util.write_data(self.doc, "@structure", "\n".join(structure))
 

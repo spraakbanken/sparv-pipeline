@@ -2,6 +2,7 @@
 Add annotations for parent links and/or children links.
 """
 import sparv.util as util
+from sparv.util.classes import Annotation
 
 
 def get_parents(doc, parent, child, orphan_alert=False):
@@ -92,9 +93,9 @@ def get_children(doc, parent, child, orphan_alert=False, preserve_parent_annotat
 def read_parents_and_children(doc, parent, child):
     """Read parent and child annotations. Reorder them according to span position, but keep original index
     information."""
-    if isinstance(parent, str):
+    if isinstance(parent, (Annotation, str)):
         parent = sorted(enumerate(util.read_annotation_spans(doc, parent, decimals=True)), key=lambda x: x[1])
-    if isinstance(child, str):
+    if isinstance(child, (Annotation, str)):
         child = sorted(enumerate(util.read_annotation_spans(doc, child, decimals=True)), key=lambda x: x[1])
 
     # Only use sub-positions if both parent and child have them

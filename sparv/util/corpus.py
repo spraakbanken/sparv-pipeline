@@ -1,6 +1,7 @@
 import os
 import heapq
 from . import log
+from .classes import Annotation
 
 ######################################################################
 # Annotations
@@ -34,7 +35,9 @@ def clear_annotation(doc, annotation):
 def write_annotation(doc, annotation, values, append=False):
     """Write an annotation to one or more files. The file is overwritten if it exists.
     The annotation should be a list of values."""
-    if isinstance(annotation, str):
+    if isinstance(annotation, Annotation):
+        annotation = str(annotation).split()
+    elif isinstance(annotation, str):
         annotation = annotation.split()
 
     if len(annotation) == 1:
@@ -98,6 +101,9 @@ def create_empty_attribute(doc, annotation):
     - a list (i.e. an annotation that has already been loaded)
     - an integer
     """
+    if isinstance(annotation, Annotation):
+        annotation = str(annotation)
+
     if isinstance(annotation, str):
         length = len(list(read_annotation_spans(doc, annotation)))
     elif isinstance(annotation, list):
@@ -109,6 +115,8 @@ def create_empty_attribute(doc, annotation):
 
 def read_annotation_spans(doc, annotation, decimals=False, with_annotation_name=False):
     """Iterate over the spans of an annotation."""
+    if isinstance(annotation, Annotation):
+        annotation = str(annotation)
     # Strip any annotation attributes
     annotation = [split_annotation(ann)[0] for ann in annotation.split()]
     for span in read_annotation(doc, annotation, with_annotation_name):
@@ -120,7 +128,9 @@ def read_annotation_spans(doc, annotation, decimals=False, with_annotation_name=
 
 def read_annotation(doc, annotation, with_annotation_name=False):
     """An iterator that yields each line from an annotation file."""
-    if isinstance(annotation, str):
+    if isinstance(annotation, Annotation):
+        annotation = str(annotation).split()
+    elif isinstance(annotation, str):
         annotation = annotation.split()
     if len(annotation) == 1:
         # Handle single annotation
@@ -192,12 +202,16 @@ def read_data(doc, name):
 
 
 def split_annotation(annotation):
+    """Split annotation into annotation name and attribute."""
+    if isinstance(annotation, Annotation):
+        annotation = str(annotation)
     elem, _, attr = annotation.partition(ELEM_ATTR_DELIM)
     return elem, attr
 
 
 def join_annotation(name, attribute):
-    return ELEM_ATTR_DELIM.join((name, attribute))
+    """Join annotation name and attribute."""
+    return ELEM_ATTR_DELIM.join((name, attribute)) if attribute else name
 
 
 def get_annotation_path(doc, annotation, data=False):

@@ -23,7 +23,7 @@ ratelimiter==1.2.0.post0  # via snakemake
 requests==2.22.0          # via snakemake
 six==1.12.0
 smmap2==2.0.5             # via gitdb2
-snakemake==5.6.0
+snakemake==5.13.0
 urllib3==1.25.6           # via requests
 wrapt==1.11.2             # via snakemake
 

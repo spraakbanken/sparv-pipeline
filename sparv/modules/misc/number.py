@@ -1,8 +1,10 @@
-from collections import defaultdict
 import random
-import sparv.util as util
 import re
 from binascii import hexlify
+from collections import defaultdict
+
+import sparv.util as util
+from sparv import *
 
 START_DEFAULT = 1
 
@@ -60,7 +62,13 @@ def number_by_parent(doc, out, chunk, parent_order, prefix="", start=START_DEFAU
     read_chunks_and_write_new_ordering(doc, out, chunk, order, prefix, start)
 
 
-def number_relative(doc, out, parent, child, prefix="", start=START_DEFAULT):
+@annotator("Number {annotation} by relative position within {parent}.")
+def number_relative(doc: str = Document,
+                    out: str = Output("{annotation}:misc.number_rel_{parent}"),
+                    parent: str = Annotation("{parent}"),
+                    child: str = Annotation("{annotation}"),
+                    prefix: str = "",
+                    start: int = START_DEFAULT):
     """Number chunks by their relative position within a parent."""
     parent_children, orphans = util.get_children(doc, parent, child)
 

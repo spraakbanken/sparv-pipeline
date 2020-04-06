@@ -1,17 +1,21 @@
-# -*- coding: utf-8 -*-
-
 """
 Small annotations that don't fit as standalone python files.
 """
 
-from sparv import util
 import re
 
+from sparv import annotator
+from sparv import util
+from sparv.util.classes import *
 
-def text_spans(doc, chunk, out):
+
+@annotator("Text value of a span (usually a token).")
+def text_spans(doc: str = Document,
+               chunk: str = Annotation("<token>"),
+               out: str = Output("<token>:misc.word", cls="token:word")):
     """Add the text content for each edge as a new annotation."""
     corpus_text = util.corpus.read_corpus_text(doc)
-    if isinstance(chunk, str):
+    if isinstance(chunk, (str, Annotation)):
         chunk = util.read_annotation_spans(doc, chunk)
     out_annotation = []
     for span in chunk:

@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """
 This module contains translations between Saldo, SUC, Parole and Granska-ish tagsets.
 The Parole and SUC tags are described here:
@@ -43,7 +41,6 @@ saldo_to_granska: 1-many mapping between Saldo and Granska-ish
 saldo_to_parole: 1-many mapping between Saldo and Parole
 saldo_to_saldo: 1-many identity mapping of Saldo tags
 """
-from __future__ import print_function
 
 TAGSEP = "."
 
@@ -1351,6 +1348,7 @@ def _make_saldo_to_suc(compound=False):
         #     print saldotag, ":", paramstr, "->", sucfilter
     return tagmap
 
+
 saldo_to_suc = _make_saldo_to_suc()
 saldo_to_suc_compound = _make_saldo_to_suc(compound=True)  # For use with the compound module
 
@@ -1398,8 +1396,7 @@ def lag18002pos(tag):
          'nl': ['RG', 'RO'],
          'nlm': ['RG', 'RO'],
          'al': ['DT'],
-         'pma': ['PM'],
-         'vb': ['VB']
+         'pma': ['PM']
          }
 
     return d.get(tag, [])

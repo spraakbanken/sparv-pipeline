@@ -1,15 +1,28 @@
-import sparv.util as util
-from collections import defaultdict
-from sparv.util.mysql_wrapper import MySQL
-import re
 import math
+import re
+from collections import defaultdict
+from typing import Optional
+
+import sparv.util as util
+from sparv import *
+from sparv.util.mysql_wrapper import MySQL
 
 MAX_STRING_LENGTH = 100
 MAX_STRINGEXTRA_LENGTH = 32
 MAX_POS_LENGTH = 5
 
 
-def relations(doc, out, word, pos, lemgram, dephead, deprel, sentence_id, ref, baseform):
+@annotator("Find dependencies for Korp's Word Picture.")
+def relations(doc: str = Document,
+              out: str = Output("korp.relations", data=True),
+              word: str = Annotation("<token:word>"),
+              pos: str = Annotation("<token:pos>"),
+              lemgram: str = Annotation("<token>:saldo.lemgram"),
+              dephead: str = Annotation("<token>:malt.dephead"),
+              deprel: str = Annotation("<token>:malt.deprel"),
+              sentence_id: str = Annotation("<sentence>:misc.id"),
+              ref: str = Annotation("<token>:misc.number_rel_<sentence>"),
+              baseform: str = Annotation("<token>:saldo.baseform")):
     """Find certain dependencies between words, to be used by the Word Picture feature in Korp."""
 
     sentence_ids = util.read_annotation(doc, sentence_id)
@@ -220,7 +233,14 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
     return x_rel_y * math.log((rel * x_rel_y) / (x_rel * rel_y * 1.0), 2)
 
 
-def create_sql(corpus, db_name, out, relations, docs="", doclist="", split=False):
+@annotator("Create Word Picture SQL for Korp.")
+def create_sql(corpus: str = Config("name"),
+               db_name: str = Config("korp.relations_db_name", "korp_relations"),
+               out: str = Output("korp.relations.sql", data=True),
+               relations: str = Annotation("korp.relations", data=True),
+               docs: Optional[list] = AllDocuments,
+               doclist: str = "",
+               split: bool = False):
     """Calculate statistics of the dependencies and saves to SQL files.
        - corpus is the corpus name.
        - db_name is the name of the database.

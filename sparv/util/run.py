@@ -24,8 +24,8 @@ def main(*default_functions, **functions):
 
     # Each function argument is a possible commandline option:
     for fun in list(default_functions) + list(functions.values()):
-        spec = inspect.getargspec(fun)
-        if spec.varargs or spec.keywords:
+        spec = inspect.getfullargspec(fun)
+        if spec.varargs or spec.varkw:
             exit("\nsparv.util.run.main: I cannot handle functions with ** or * arguments.\n")
         for arg in spec.args:
             if arg in functions:
@@ -56,7 +56,7 @@ def main(*default_functions, **functions):
         exit_usage()
 
     # Check that all options are arguments to the function:
-    spec = inspect.getargspec(fun)
+    spec = inspect.getfullargspec(fun)
     defaults = spec.defaults or ()
     minargs = len(spec.args) - len(defaults)
     for arg in spec.args[:minargs]:
@@ -84,7 +84,7 @@ def print_usage_and_exit(*default_functions, **functions):
         usage += "python -m %s" % module
         if choice:
             usage += " --%s" % choice
-        spec = inspect.getargspec(fun)
+        spec = inspect.getfullargspec(fun)
         defaults = spec.defaults or ()
         minargs = len(spec.args) - len(defaults)
         for arg in spec.args[:minargs]:

@@ -1,0 +1,7 @@
+
+token_chunk: <sentence>
+saldo.precision: ""
+
+classes:
+    token: segment.token
+    sentence: segment.sentence

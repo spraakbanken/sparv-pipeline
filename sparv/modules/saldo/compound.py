@@ -1,17 +1,36 @@
-import pickle
+"""Compound analysis."""
 import itertools
+import pickle
 import re
 import time
-import sparv.util as util
 from functools import reduce
+
+import sparv.util as util
+from sparv import *
 
 SPLIT_LIMIT = 200
 COMP_LIMIT = 100
 
 
-def annotate(doc, out_complemgrams, out_compwf, out_baseform, word, msd, baseform_tmp, saldo_comp_model, nst_model,
-             stats_model, complemgramfmt=util.SCORESEP + "%.3e", delimiter=util.DELIM, compdelim=util.COMPSEP,
-             affix=util.AFFIX, cutoff=True, saldo_comp_lexicon=None, stats_lexicon=None):
+@annotator("Compound analysis.", name="compound")
+def annotate(doc: str = Document,
+             out_complemgrams: str = Output("<token>:saldo.complemgram", description="Compound analysis using lemgrams"),
+             out_compwf: str = Output("<token>:saldo.compwf", description="Compound analysis using wordforms"),
+             out_baseform: str = Output("<token>:saldo.baseform2",
+                                        description="Baseform including baseforms derived from compounds"),
+             word: str = Annotation("<token:word>"),
+             msd: str = Annotation("<token:msd>"),
+             baseform_tmp: str = Annotation("<token>:saldo.baseform"),
+             saldo_comp_model: str = Model("[saldo.comp_model=saldo.compound.pickle]"),
+             nst_model: str = Model("[saldo.comp_nst_model=nst.comp.pos.pickle]"),
+             stats_model: str = Model("[saldo.comp_stats_model=stats.pickle]"),
+             complemgramfmt: str = util.SCORESEP + "%.3e",
+             delimiter: str = util.DELIM,
+             compdelim: str = util.COMPSEP,
+             affix: str = util.AFFIX,
+             cutoff: bool = True,
+             saldo_comp_lexicon=None,
+             stats_lexicon=None):
     """Divides compound words into prefix(es) and suffix.
     - out_complemgram is the resulting annotation file for compound lemgrams
       and their probabilities

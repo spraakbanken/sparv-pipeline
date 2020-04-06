@@ -1,23 +1,54 @@
 import os.path
-import re
-import nltk
 import pickle
-import sparv.util as util
+import re
+from typing import Optional
+
+import nltk
+
 import sparv.modules.saldo.saldo as saldo
+import sparv.util as util
+from sparv import *
+
 try:
     from . import crf  # for CRF++ models
 except ImportError:
     pass
 
 
-def do_segmentation(doc, out, chunk, segmenter, existing_segments=None, model=None, no_pickled_model=False):
+@annotator("Automatic tokenization.")
+def tokenize(doc: str = Document,
+             out: str = Output("segment.token", cls="token"),
+             chunk: str = Annotation("[token_chunk]"),
+             segmenter: str = Config("token_segmenter", "better_word"),
+             existing_segments: str = Config("existing_tokens"),
+             model: Optional[str] = Model("bettertokenizer.sv"),
+             pickled_model=False):
+    """Tokenize text."""
+    do_segmentation(doc=doc, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,
+                    model=model, pickled_model=pickled_model)
+
+
+@annotator("Automatic segmentation of sentences.")
+def sentence(doc: str = Document,
+             out: str = Output("segment.sentence", cls="sentence"),
+             chunk: Optional[str] = Annotation("[sentence_chunk]"),
+             segmenter: str = Config("sentence_segmenter", "punkt_sentence"),
+             existing_segments: str = Config("existing_sentences"),
+             model: Optional[str] = None,
+             pickled_model=False):
+    """Split text into sentences."""
+    do_segmentation(doc=doc, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,
+                    model=model, pickled_model=pickled_model)
+
+
+def do_segmentation(doc, out, segmenter, chunk=None, existing_segments=None, model=None, pickled_model=False):
     """Segment all "chunks" (e.g. sentences) into smaller "tokens" (e.g. words),
     and annotate them as "element" (e.g. w).
     Segmentation is done by the given "segmenter"; some segmenters take
     an extra argument which is a pickled "model" object.
     """
     if model:
-        if not no_pickled_model:
+        if pickled_model:
             with open(model, "rb") as M:
                 model = pickle.load(M, encoding="UTF-8")
         segmenter_args = (model,)
@@ -36,9 +67,8 @@ def do_segmentation(doc, out, chunk, segmenter, existing_segments=None, model=No
     #   (but using spans (pairs of anchors) instead of strings)
 
     positions = set()
-    for c in chunk.split():
-        chunk_spans = util.read_annotation_spans(doc, c)
-        positions = positions.union(set(pos for span in chunk_spans for pos in span))
+    chunk_spans = util.read_annotation_spans(doc, chunk) if chunk else []
+    positions = positions.union(set(pos for span in chunk_spans for pos in span))
     positions = sorted(set([0, len(corpus_text)]) | positions)
     chunk_spans = list(zip(positions, positions[1:]))
 
