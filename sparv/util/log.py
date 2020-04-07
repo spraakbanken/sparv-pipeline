@@ -72,7 +72,7 @@ def warning(msg, *args):
         init()
     global totalwarnings
     totalwarnings += 1
-    output(constants.COLORS["yellow"] + "warning : " + msg + constants.COLORS["default"], *args)
+    output(constants.Color.YELLOW + "warning : " + msg + constants.Color.RESET, *args)
 
 
 def error(msg, *args):
@@ -81,7 +81,7 @@ def error(msg, *args):
         init()
     global totalerrors
     totalerrors += 1
-    output(constants.COLORS["red"] + "-ERROR- : " + msg + constants.COLORS["default"], *args)
+    output(constants.Color.RED + "-ERROR- : " + msg + constants.Color.RESET, *args)
 
 
 def debug(msg, *args):
@@ -91,16 +91,16 @@ def debug(msg, *args):
         init()
     global sparv_debug
     if sparv_debug:
-        output(constants.COLORS["cyan"] + "-DEBUG- : " + msg + constants.COLORS["default"], *args)
+        output(constants.Color.CYAN + "-DEBUG- : " + msg + constants.Color.RESET, *args)
 
 
 def statistics():
     """Prints statistics and summary."""
     info("Total time: %.2f s", time.time() - starttime)
     if totalwarnings:
-        output(constants.COLORS["yellow"] + constants.COLORS["bold"] + "%d warnings were reported" + constants.COLORS["default"], totalwarnings)
+        output(constants.Color.YELLOW + constants.Color.BOLD + "%d warnings were reported" + constants.Color.RESET, totalwarnings)
     if totalerrors:
-        output(constants.COLORS["red"] + constants.COLORS["bold"] + "%d ERRORS were reported" + constants.COLORS["default"], totalerrors)
+        output(constants.Color.RED + constants.Color.BOLD + "%d ERRORS were reported" + constants.Color.RESET, totalerrors)
     if totalwarnings or totalerrors:
         save_to_logfile()
         raise_error = ""  # raw_input("Press enter to continue. Enter anything else to break: ")
@@ -118,8 +118,10 @@ def save_to_logfile():
     with open(os.getcwd() + logfile, "a") as o:
         o.write(process_id_prefix + "_" * 80)
         o.write("\n")
+        styles = [v[1] for v in constants.Color.__dict__.items() if not v[0].startswith("__")]
         for l in lastmessage:
-            for v in list(constants.COLORS.values()):
+            # Remove styling
+            for v in styles:
                 l = l.replace(v, "")
             o.write(l + "\n")
         o.write(process_id_prefix + "^" * 80)

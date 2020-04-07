@@ -220,9 +220,9 @@ rule annotations:
         print("Available modules, annotators and annotations")
         print("=============================================\n")
         for module_name in sorted(all_annotations):
-            print(util.COLORS["bold"] + "{}".format(module_name.upper()) + util.COLORS["default"])
+            print(util.Color.BOLD + "{}".format(module_name.upper()) + util.Color.RESET)
             for f_name in sorted(all_annotations[module_name]):
-                print("      {}{}{}".format(util.COLORS["underline"], f_name, util.COLORS["default"]))
+                print("      {}{}{}".format(util.Color.UNDERLINE, f_name, util.Color.RESET))
                 f_desc = all_annotations[module_name][f_name]["description"]
                 if f_desc:
                     print("      {}".format(f_desc))
@@ -231,7 +231,7 @@ rule annotations:
                 for f_ann in sorted(f_anns):
                     print("        • {:{width}}{}".format(f_ann[0], f_ann[1] or "", width=max_len))
                     if f_ann[0].cls:
-                        print(util.COLORS["italic"] + "          <{}>".format(f_ann[0].cls) + util.COLORS["default"])
+                        print(util.Color.ITALIC + "          <{}>".format(f_ann[0].cls) + util.Color.RESET)
                 print()
             print("\n")
 
