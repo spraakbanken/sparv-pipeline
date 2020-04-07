@@ -16,11 +16,11 @@ subparsers = parser.add_subparsers(dest="command")
 subparsers.required = True
 
 target_parser = subparsers.add_parser("target")
-target_parser.add_argument("targets", nargs="+", help="Annotation file to create.")
+target_parser.add_argument("targets", nargs="*", help="Annotation file(s) to create.")
 target_parser.add_argument("--dir", help="Path to working directory.")
 target_parser.add_argument("--j", type=int, help="Number of cores to use.", default=1)
 target_parser.add_argument("--dry-run", action="store_true", help="Only dry-run the workflow.")
-target_parser.add_argument("--list-rules", action="store_true", help="List available rules.")
+target_parser.add_argument("--list-targets", action="store_true", help="List available targets.")
 target_parser.add_argument("--debug", action="store_true", help="Show debug messages.")
 
 annotations_parser = subparsers.add_parser("annotations", help="List available modules and annotations.")
@@ -47,10 +47,18 @@ elif args.command == "target":
     snakemake_args = {
         "workdir": args.dir,
         "dryrun": args.dry_run,
-        "listrules": args.list_rules,
         "cores": args.j,
         "targets": args.targets
     }
+    if args.list_targets:
+        snakemake_args["targets"].append("list_targets")
     config = {"debug": args.debug}
+    # List available targets if no target was specified
+    if not snakemake_args["targets"]:
+        print("\nNo targets provided!\n")
+        snakemake_args["targets"].append("list_targets")
+    # Surpress some of the chatty output when only printing targets
+    if len(snakemake_args["targets"]) == 1:
+        snakemake_args["force_use_threads"] = True
 
 snakemake.snakemake(os.path.join(sparv_path, "core", "Snakefile"), **snakemake_args, quiet=True, config=config)
