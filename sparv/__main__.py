@@ -16,7 +16,7 @@ subparsers = parser.add_subparsers(dest="command")
 subparsers.required = True
 
 target_parser = subparsers.add_parser("target")
-target_parser.add_argument("targets", nargs="*", help="Annotation file to create.")
+target_parser.add_argument("targets", nargs="+", help="Annotation file to create.")
 target_parser.add_argument("--dir", help="Path to working directory.")
 target_parser.add_argument("--j", type=int, help="Number of cores to use.", default=1)
 target_parser.add_argument("--dry-run", action="store_true", help="Only dry-run the workflow.")

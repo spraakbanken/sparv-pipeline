@@ -19,8 +19,12 @@ def main(argv=None):
 
     available_modules = sorted(registry.find_modules(paths.sparv_path, no_import=True))
 
-    module_parser = argparse.ArgumentParser(prog="sparv run", add_help=False)
-    module_parser.add_argument("module", choices=available_modules, help="Module name")
+    module_parser = argparse.ArgumentParser(prog="sparv run")
+    subparsers = module_parser.add_subparsers(dest="module")
+    subparsers.required = True
+
+    for module in available_modules:
+        subparsers.add_parser(module, add_help=False)
 
     module_args, rest_args = module_parser.parse_known_args(argv)
     module_name = module_args.module
