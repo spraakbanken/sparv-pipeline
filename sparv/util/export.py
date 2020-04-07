@@ -76,10 +76,10 @@ def gather_annotations(doc, annotations, export_names, flatten=True):
     for annotation_pointer in annotations:
         span_name, attr = corpus.split_annotation(annotation_pointer)
         if span_name not in annotation_dict:
-            # This is necessary, span_name needs to be in the dictionary
-            annotation_dict[span_name]["@span"] = None
+            annotation_dict[span_name] = {}  # span_name needs to be in the dictionary
             for i, s in enumerate(corpus.read_annotation_spans(doc, span_name, decimals=True)):
                 spans_list.append(Span(span_name, i, s[0], s[1], export_names))
+        # TODO: assemble all attrs first and use read_annotation_attributes
         if attr and not annotation_dict[span_name].get(attr):
             a = list(corpus.read_annotation(doc, annotation_pointer))
             annotation_dict[span_name][attr] = a
@@ -95,11 +95,13 @@ def gather_annotations(doc, annotations, export_names, flatten=True):
         spans_dict[span.start].append(("open", span))
         spans_dict[span.end].insert(0, ("close", span))
 
-    if flatten:
-        # Flatten structure
-        span_positions = [(pos, span[0], span[1]) for pos, spans in sorted(spans_dict.items()) for span in spans]
-        return span_positions, annotation_dict
-    return spans_dict, annotation_dict
+    # Return the span_dict without converting to list first
+    if not flatten:
+        return spans_dict, annotation_dict
+
+    # Flatten structure
+    span_positions = [(pos, span[0], span[1]) for pos, spans in sorted(spans_dict.items()) for span in spans]
+    return span_positions, annotation_dict
 
 
 def calculate_element_hierarchy(doc, spans_list):

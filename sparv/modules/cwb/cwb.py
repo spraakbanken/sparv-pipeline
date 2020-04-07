@@ -64,11 +64,10 @@ def make_attr_str(annotation, annotation_dict, export_names, index):
     """Create a string with attributes and values for a struct element."""
     attrs = []
     for name, annot in annotation_dict[annotation].items():
-        if name != "@span":
-            export_name = export_names.get(":".join([annotation, name]), name)
-            # Escape special characters in value
-            value = annot[index].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
-            attrs.append('%s="%s"' % (export_name, value))
+        export_name = export_names.get(":".join([annotation, name]), name)
+        # Escape special characters in value
+        value = annot[index].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+        attrs.append('%s="%s"' % (export_name, value))
     return " ".join(attrs)
 
 

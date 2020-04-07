@@ -6,7 +6,7 @@ from collections import defaultdict
 from typing import Optional
 
 import sparv.util as util
-from sparv import *
+from sparv import annotator, Document, Annotation, Export, ExportAnnotations
 
 
 @annotator("XML export", exporter=True)
@@ -201,11 +201,10 @@ def valid_root(first_item, last_item):
 
 
 def add_attrs(node, annotation, annotation_dict, export_names, index):
-    """Att attributes from annotation_dict to node."""
+    """Add attributes from annotation_dict to node."""
     for name, annot in annotation_dict[annotation].items():
-        if name != "@span":
-            export_name = export_names.get(":".join([annotation, name]), name)
-            node.set(export_name, annot[index])
+        export_name = export_names.get(":".join([annotation, name]), name)
+        node.set(export_name, annot[index])
 
 
 def handle_overlaps(span, node_stack, docid, overlap_ids, annotation_dict, export_names):
