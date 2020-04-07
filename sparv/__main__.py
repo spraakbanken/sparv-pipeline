@@ -52,13 +52,14 @@ elif args.command == "target":
     }
     if args.list_targets:
         snakemake_args["targets"].append("list_targets")
+        # Suppress some of the chatty output when only printing targets
+        if len(snakemake_args["targets"]) == 1:
+            snakemake_args["force_use_threads"] = True
     config = {"debug": args.debug}
     # List available targets if no target was specified
     if not snakemake_args["targets"]:
         print("\nNo targets provided!\n")
         snakemake_args["targets"].append("list_targets")
-    # Surpress some of the chatty output when only printing targets
-    if len(snakemake_args["targets"]) == 1:
         snakemake_args["force_use_threads"] = True
 
 snakemake.snakemake(os.path.join(sparv_path, "core", "Snakefile"), **snakemake_args, quiet=True, config=config)
