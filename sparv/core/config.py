@@ -15,11 +15,18 @@ def load_config(config_file: str):
     """Read config file and parse as YAML."""
 
     # Read defalult config
-    with open(DEFAULT_CONFIG) as f:
-        default_config = yaml.load(f, Loader=yaml.FullLoader)
+    if os.path.isfile(DEFAULT_CONFIG):
+        with open(DEFAULT_CONFIG) as f:
+            default_config = yaml.load(f, Loader=yaml.FullLoader)
+    else:
+        print("WARNING: Default config file is missing: " + DEFAULT_CONFIG)
+        default_config = {}
 
-    with open(config_file) as f:
-        user_config = yaml.load(f, Loader=yaml.FullLoader)
+    if config_file:
+        with open(config_file) as f:
+            user_config = yaml.load(f, Loader=yaml.FullLoader)
+    else:
+        user_config = {}
 
     # Merge default and corpus config
     combined_config = merge_configs(copy.deepcopy(user_config), default_config)

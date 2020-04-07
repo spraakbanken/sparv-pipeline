@@ -112,8 +112,15 @@ def expand_variables(string):
             break
         for cfg in cfgs:
             cfg_value = config.get(cfg.group(1), cfg.group(2))
-            assert cfg_value is not None, "Could not convert " + cfg.group() + " into config value"
-            string = string.replace(cfg.group(), cfg_value)
+            if cfg_value is not None:
+                string = string.replace(cfg.group(), cfg_value)
+            else:
+                print("WARNING: Could not convert " + cfg.group() + " into config value.")
+                break
+        else:
+            # No break occurred, continue outer loop
+            continue
+        break
 
     # Convert class names to real annotations
     while True:
@@ -122,7 +129,7 @@ def expand_variables(string):
             break
         for cls in clss:
             real_ann = _expand_class(cls.group(1))
-            assert real_ann, "Could not convert " + cls.group() + " into a real annotation"
+            assert real_ann, "Could not convert " + cls.group() + " into a real annotation."
             string = string.replace(cls.group(), real_ann)
 
     return string

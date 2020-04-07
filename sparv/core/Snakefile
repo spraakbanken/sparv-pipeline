@@ -197,7 +197,7 @@ if not os.path.isfile(corpus_config_file):
 # Read config file(s)
 sparv_config.load_config(corpus_config_file)
 
-registry.annotation_classes["config_classes"] = sparv_config.config["classes"]
+registry.annotation_classes["config_classes"] = sparv_config.config.get("classes", {})
 
 # Create rules for all available annotation functions
 for module_name in registry.annotators:
