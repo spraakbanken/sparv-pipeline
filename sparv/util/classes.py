@@ -27,6 +27,11 @@ class Document(str):
     pass
 
 
+class Corpus(str):
+    """Name of the corpus."""
+    pass
+
+
 class AllDocuments(List[str]):
     """All source documents."""
     pass

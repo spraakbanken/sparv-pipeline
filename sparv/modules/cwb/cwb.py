@@ -2,8 +2,10 @@
 
 import os
 from glob import glob
+from typing import Optional
 
 import sparv.util as util
+from sparv import annotator, Corpus, Document, Annotation, Export, ExportAnnotations
 
 ALIGNDIR = "annotations/align"
 
@@ -12,7 +14,13 @@ CWB_DATADIR = os.environ.get("CWB_DATADIR")
 CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 
-def export(doc, export_dir, token, word, annotations, original_annotations=None):
+@annotator("VRT export", exporter=True)
+def export(doc: str = Document,
+           export_dir: str = Export("vrt"),
+           token: str = Annotation("<token>"),
+           word: str = Annotation("<token:word>"),
+           annotations: list = ExportAnnotations,
+           original_annotations: Optional[list] = None):
     """Export annotations to vrt in export_dir.
 
     - doc: name of the original document
@@ -87,8 +95,19 @@ def make_token_line(word, token, token_annotations, annotation_dict, index):
     return util.remove_control_characters(line)
 
 
-def cwb_encode(corpus, columns, structs=(), vrtdir=None, vrtfiles=None, vrtlist=None,
-               encoding=CWB_ENCODING, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY, skip_compression=False, skip_validation=False):
+# TODO: Check correctness of type hints below. Do something with encoding, datadir and registry.
+@annotator("CWB encode", exporter=True)
+def encode(corpus: str = Corpus,
+           columns: list = ExportAnnotations,
+           structs: list = ExportAnnotations,
+           vrtdir: Optional[str] = None,
+           vrtfiles: Optional[str] = None,
+           vrtlist: Optional[str] = None,
+           encoding=CWB_ENCODING,
+           datadir=CWB_DATADIR,
+           registry=CORPUS_REGISTRY,
+           skip_compression: Optional[bool] = False,
+           skip_validation: Optional[bool] = False):
     """Encode a number of vrt files, by calling cwb-encode.
 
     params, structs describe the attributes that are exported in the vrt files.
