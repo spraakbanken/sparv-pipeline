@@ -36,7 +36,7 @@ def annotate(doc: str = Document,
              skip_multiword: bool = False,
              allow_multiword_overlap: bool = False,
              word_separator: str = "",
-             lexicons: bool = None):
+             lexicons=None):
     """Use the Saldo lexicon model (and optionally other older lexicons) to annotate pos-tagged words.
 
     - word, msd are existing annotations for wordforms and part-of-speech
