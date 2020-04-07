@@ -1,4 +1,7 @@
+"""Sentiment annotation per token using SenSALDO."""
+
 import sparv.util as util
+from sparv import annotator, Annotation, Document, Model, Output
 
 SENTIMENT_LABLES = {
     -1: "negative",
@@ -7,18 +10,23 @@ SENTIMENT_LABLES = {
 }
 
 
-def sentiment(doc, sense, out_scores, out_labels, model, max_decimals=6, lexicon=None):
+@annotator("Sentiment annotation per token using SenSALDO.")
+def annotate(doc: str = Document,
+             sense: str = Annotation("<token>:saldo.sense"),
+             out_scores: str = Output("<token>:sentiment.score", description="SenSALDO sentiment score"),
+             out_labels: str = Output("<token>:sentiment.label", description="SenSALDO sentiment label"),
+             model: str = Model("[sensaldo.model=sensaldo.pickle]"),
+             lexicon=None):
     """Assign sentiment values to tokens based on their sense annotation.
+
     When more than one sense is possible, calulate a weighted mean.
     - doc: the corpus document.
     - sense: existing annotation with saldoIDs.
     - out_scores, out_labels: resulting annotation file.
     - model: pickled lexicon with saldoIDs as keys.
-    - max_decimals: int stating the amount of decimals the result is rounded to.
     - lexicon: this argument cannot be set from the command line,
       but is used in the catapult. This argument must be last.
     """
-
     if not lexicon:
         lexicon = util.PickledLexicon(model)
     # Otherwise use pre-loaded lexicon (from catapult)
@@ -86,6 +94,6 @@ def sensaldo_to_pickle(tsv, filename, protocol=-1, verbose=True):
 
 
 if __name__ == '__main__':
-    util.run.main(sentiment,
+    util.run.main(annotate,
                   sensaldo_to_pickle=sensaldo_to_pickle
                   )
