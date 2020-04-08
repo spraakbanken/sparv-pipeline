@@ -20,6 +20,9 @@ registry.find_modules(paths.sparv_path)
 # All output annotations available, used for printing a list
 all_annotations = {}
 
+# All named targets available, used in list_targets
+named_targets = []
+
 
 def get_annotation_path(annotation, data=False):
     """Construct a path to an annotation file given a doc and annotation."""
@@ -178,7 +181,9 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
 
     # Create rule to run this annotation on all input files, but skip rules containing wildcards
     if not any(re.search(r"{(?!doc)[^}]+}", o) for o in outputs):
-        @workflow.rule(name=module_name + ":" + f_name)
+        target_name = module_name + ":" + f_name
+        named_targets.append((target_name, desc))
+        @workflow.rule(name=target_name)
         @workflow.input(expand([os.path.join(paths.annotation_dir, o) if not o.startswith(paths.annotation_dir) else o
                                 for o in outputs], doc=input_files))
         @workflow.run
@@ -258,15 +263,9 @@ rule annotations:
 
 rule list_targets:
     run:
-        targets = []
-        for module_name in registry.annotators:
-            for f_name in registry.annotators[module_name]:
-                f, desc, importer, exporter = registry.annotators[module_name][f_name]
-                targets.append((module_name + ":" + f_name, desc))
-
-        max_len = max(len(t[0]) for t in targets) + 4
+        max_len = max(len(t[0]) for t in named_targets) + 4
         print()
         print("Available targets")
         print("=================\n")
-        for target, desc in sorted(targets):
+        for target, desc in sorted(named_targets):
             print("      {:{}}    {}".format(target, max_len, desc))
