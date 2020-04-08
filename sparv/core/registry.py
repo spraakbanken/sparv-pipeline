@@ -63,14 +63,12 @@ def _add_to_registry(module_name, description, f, name, importer, exporter):
             # Make sure annotation names inclue module names as prefix
             if not attr:
                 if not ann_name.startswith(module_name + "."):
-                    print("Output annotation '{}' in module '{}' doesn't include module "
-                          "name as prefix and will not be usable.".format(ann_name, module_name))
-                    return
+                    raise ValueError("Output annotation '{}' in module '{}' doesn't include module "
+                                     "name as prefix.".format(ann_name, module_name))
             else:
                 if not attr.startswith(module_name + "."):
-                    print("Output annotation '{}' in module '{}' doesn't include module "
-                          "name as prefix in attribute and will not be usable.".format(ann, module_name))
-                    return
+                    raise ValueError("Output annotation '{}' in module '{}' doesn't include module "
+                                     "name as prefix in attribute.".format(ann, module_name))
 
             # Add to class registry
             if cls:
