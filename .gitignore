@@ -1,4 +1,5 @@
 .snakemake
+.idea/
 
 sparv/__pycache__
 sparv/freeling.py
