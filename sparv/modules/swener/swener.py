@@ -1,23 +1,36 @@
+"""Named entity tagging with SweNER."""
+
 import re
+import xml.etree.ElementTree as etree
 import xml.sax.saxutils
-import xml.etree.cElementTree as etree
+
 import sparv.util as util
+from sparv import Annotation, Document, Output, annotator
 
 RESTART_THRESHOLD_LENGTH = 64000
 SENT_SEP = "\n"
 TOK_SEP = " "
 
 
-def tag_ne(doc, out_ne, out_ne_ex, out_ne_type, out_ne_subtype, out_ne_name, word, sentence, token, process_dict=None):
-    """
-    Tag named entities using HFST-SweNER.
+@annotator("Named entity tagging with SweNER")
+def annotate(doc: str = Document,
+             out_ne: str = Output("swener.ne"),
+             out_ne_ex: str = Output("swener.ne:ex"),
+             out_ne_type: str = Output("swener.ne:type"),
+             out_ne_subtype: str = Output("swener.ne:subtype"),
+             out_ne_name: str = Output("swener.ne:name"),
+             word: str = Annotation("<token:word>"),
+             sentence: str = Annotation("<sentence>"),
+             token: str = Annotation("<token>"),
+             process_dict=None):
+    """Tag named entities using HFST-SweNER.
+
     SweNER is either run in an already started process defined in
     process_dict, or a new process is started(default)
-    - out_ne_ex, out_ne_type and out_ne_subtype are resulting annotation files for the named entities
-    - word and sentence are existing annotation files for wordforms and sentences
-    - process_dict should never be set from the command line
+    - doc, word, sentence, token: existing annotations
+    - out_ne_ex, out_ne_type, out_ne_subtype: resulting annotation files for the named entities
+    - process_dict is used in the catapult and should never be set from the command line
     """
-
     if process_dict is None:
         process = swenerstart("", util.UTF8, verbose=False)
     # else:
@@ -64,7 +77,6 @@ def tag_ne(doc, out_ne, out_ne_ex, out_ne_type, out_ne_subtype, out_ne_name, wor
 
 def parse_swener_output(doc, sentences, token, output, out_ne, out_ne_ex, out_ne_type, out_ne_subtype, out_ne_name):
     """Parse the SweNER output and write annotation files."""
-
     out_ne_spans = []
     out_ex = []
     out_type = []
@@ -145,7 +157,3 @@ def parse_swener_output(doc, sentences, token, output, out_ne, out_ne_ex, out_ne
 def swenerstart(stdin, encoding, verbose):
     """Start a SweNER process and return it."""
     return util.system.call_binary("hfst-swener", [], stdin, encoding=encoding, verbose=verbose, return_command=True)
-
-
-if __name__ == "__main__":
-    util.run.main(tag_ne)
