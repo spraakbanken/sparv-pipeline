@@ -1,15 +1,14 @@
-import re
+"""Dependency parsing using MALT Parser."""
 import os
+import re
+
 import sparv.util as util
-from sparv import *
+from sparv import Annotation, Binary, Document, Model, Output, annotator
 
-"""
-Running malt processes are only kept if the input is small: otherwise
-flush() on stdin blocks, and readline() on stdout is too slow to be
-practical on long texts. We cannot use read() because it reads to EOF.
-
-The value of this constant is a bit arbitrary, and could probably be longer.
-"""
+# Running malt processes are only kept if the input is small: otherwise
+# flush() on stdin blocks, and readline() on stdout is too slow to be
+# practical on long texts. We cannot use read() because it reads to EOF.
+# The value of this constant is a bit arbitrary, and could probably be longer.
 RESTART_THRESHOLD_LENGTH = 64000
 
 SENT_SEP = "\n\n"
@@ -20,7 +19,7 @@ DEPREL_COLUMN = 7
 UNDEF = "_"
 
 
-@annotator("Dependency parsing using MALT Parser.")
+@annotator("Dependency parsing using MALT Parser")
 def maltparse(doc: str = Document,
               maltjar: str = Binary("[malt.jar=maltparser-1.7.2/maltparser-1.7.2.jar]"),
               model: str = Model("[malt.model=swemalt-1.7.2.mco]"),
@@ -36,8 +35,7 @@ def maltparse(doc: str = Document,
               encoding: str = util.UTF8,
               process_dict=None):
     """
-    Run the malt parser, in an already started process defined in
-    process_dict, or starts a new process (default)
+    Run the malt parser, in an already started process defined in process_dict, or start a new process (default).
 
     The process_dict argument should never be set from the command line.
     """
@@ -120,9 +118,7 @@ def maltparse(doc: str = Document,
 
 
 def maltstart(maltjar, model, encoding, send_empty_sentence=False):
-    """
-    Start a malt process and return it.
-    """
+    """Start a malt process and return it."""
     java_opts = ["-Xmx1024m"]
     malt_args = ["-ic", encoding, "-oc", encoding, "-m", "parse"]
     if model.startswith("http://"):
@@ -152,65 +148,3 @@ def maltstart(maltjar, model, encoding, send_empty_sentence=False):
         stdout_fd.readline()
 
     return process
-
-
-################################################################################
-
-def read_conll_file(filename, encoding=util.UTF8):
-    with open(filename, encoding=encoding) as F:
-        sentence = []
-        for line in F:
-            line = line.strip()
-            if line:
-                cols = [(None if col == "_" else col) for col in line.split("\t")]
-                nr, wordform, lemma, cpos, pos, feats, head, deprel, phead, pdeprel = cols + [None] * (10 - len(cols))
-                sentence.append({"id": nr,
-                                 "form": wordform,
-                                 "lemma": lemma,
-                                 "cpos": cpos,
-                                 "pos": pos,
-                                 "feats": feats,
-                                 "head": head,
-                                 "deprel": deprel,
-                                 "phead": phead,
-                                 "pdeprel": pdeprel,
-                                 })
-            elif sentence:
-                yield sentence
-                sentence = []
-        if sentence:
-            yield sentence
-
-
-def write_conll_file(sentences, filename, encoding=util.UTF8):
-    with open(filename, "w", encoding=encoding) as F:
-        for sent in sentences:
-            nr = 1
-            for token in sent:
-                if isinstance(token, str):
-                    cols = (nr, token)
-                elif isinstance(token, (tuple, list)):
-                    cols = list(token)
-                    if isinstance(cols[0], int):
-                        assert cols[0] == nr, "Token mismatch: %s / %r" % (nr, token)
-                    else:
-                        cols.insert(0, nr)
-                elif isinstance(token, dict):
-                    form = token.get("form", token.get("word", "_"))
-                    lemma = token.get("lemma", "_")
-                    pos = token.get("pos", "_")
-                    cpos = token.get("cpos", pos)
-                    feats = token.get("feats", token.get("msd", "_"))
-                    # feats = re.sub(r"[ ,.]", "|", feats)
-                    cols = (nr, form, lemma, cpos, pos, feats)
-                else:
-                    raise ValueError("Unknown token: %r" % token)
-                print("\t".join(str(col) for col in cols), file=F)
-                nr += 1
-            print(file=F)
-
-
-################################################################################
-
-if __name__ == "__main__":
-    util.run.main(maltparse)

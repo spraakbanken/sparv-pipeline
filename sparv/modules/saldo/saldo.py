@@ -4,20 +4,16 @@ import itertools
 import os
 import pickle
 import re
-
 from typing import List, Optional
 
-from sparv import *
 import sparv.util as util
+from sparv import Annotation, Config, Document, Model, Output, annotator
 
 # The minimun precision difference for two annotations to be considered equal
 PRECISION_DIFF = 0.01
 
-######################################################################
-# Annotate.
 
-
-@annotator("SALDO annotations.")
+@annotator("SALDO annotations")
 def annotate(doc: str = Document,
              token: str = Annotation("<token>"),
              word: str = Annotation("<token:word>"),
@@ -39,27 +35,25 @@ def annotate(doc: str = Document,
              lexicons=None):
     """Use the Saldo lexicon model (and optionally other older lexicons) to annotate pos-tagged words.
 
-    - word, msd are existing annotations for wordforms and part-of-speech
-    - sentence is an existing annotation for sentences and their children (words)
-    - reference is an existing annotation for word references, to be used when
-      annotating multi-word units
-    - out_baseform, out_lemgram, out_sense are the resulting annotations to be written.
-    - models is a list of pickled lexica, typically the Saldo model (saldo.pickle) and optional old lexicons
-    - delimiter is the delimiter character to put between ambiguous results
-    - affix is an optional character to put before and after results
-    - precision is a format string for how to print the precision for each annotation, e.g. ":%.3f"
+    - doc, token, word, msd, sentence, reference: existing annotations
+    - out_baseform, out_lemgram, out_sense: resulting annotations to be written
+    - models: a list of pickled lexica, typically the Saldo model (saldo.pickle)
+      and optional lexicons for older Swedish.
+    - delimiter: delimiter character to put between ambiguous results
+    - affix: an optional character to put before and after results
+    - precision: a format string for how to print the precision for each annotation, e.g. ":%.3f"
       (use empty string for no precision)
-    - precision_filter is an optional filter, currently there are the following values:
-      max: only use the annotations that are most probable
-      first: only use the most probable annotation (or one of the most probable if more than one)
-      none: use all annotations
+    - precision_filter: an optional filter, currently there are the following values:
+        max: only use the annotations that are most probable
+        first: only use the most probable annotation (or one of the most probable if more than one)
+        none: use all annotations
     - min_precision: only use annotations with a probability score higher than this
-    - skip_multiword can be set to True to disable multi word annotations
+    - skip_multiword: set to True to disable multi word annotations
     - allow_multiword_overlap: by default we do some cleanup among overlapping multi word annotations.
       By setting this to True, all overlaps will be allowed.
-    - word_separator is an optional character used to split the values of "word" into several word variations.
-    - lexicons: this argument cannot be set from the command line,
-      but is used in the catapult. This argument must be last.
+    - word_separator: an optional character used to split the values of "word" into several word variations
+    - lexicons: this argument cannot be set from the command line, but is used in the catapult.
+      This argument must be last.
     """
     # Allow use of multiple lexicons
     models = [(os.path.basename(m).rstrip(".pickle"), m) for m in util.split(models)]
@@ -182,7 +176,10 @@ def find_single_word(thewords, lexicon_list, msdtag, precision, min_precision, p
             annotation_precisions = annotation_precisions[:1]
         elif precision_filter == "max":
             maxprec = annotation_precisions[0][0]
-            ismax = lambda lemprec: lemprec[0] >= maxprec - PRECISION_DIFF
+
+            # ismax = lambda lemprec: lemprec[0] >= maxprec - PRECISION_DIFF
+            def ismax(lemprec):
+                return lemprec[0] >= maxprec - PRECISION_DIFF
             annotation_precisions = itertools.takewhile(ismax, annotation_precisions)
 
     if precision:
@@ -209,7 +206,8 @@ def find_single_word(thewords, lexicon_list, msdtag, precision, min_precision, p
     return ann_tags_words
 
 
-def find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref, msdtag, max_gaps, ann_tags_words, msd_annotation, sent, skip_pos_check):
+def find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref, msdtag, max_gaps, ann_tags_words,
+                               msd_annotation, sent, skip_pos_check):
     todelfromincomplete = []  # list to keep track of which expressions that have been completed
 
     for i, x in enumerate(incomplete_multis):
@@ -321,6 +319,7 @@ def save_multiwords(complete_multis, sentence_tokens):
 
 class SaldoLexicon(object):
     """A lexicon for Saldo lookups.
+
     It is initialized from a Pickled file, or a space-separated text file.
     """
     def __init__(self, saldofile, verbose=True):
@@ -341,6 +340,7 @@ class SaldoLexicon(object):
 
     def lookup(self, word):
         """Lookup a word in the lexicon.
+
         Returns a list of (annotation-dictionary, list-of-pos-tags, list-of-lists-with-words).
         """
         if word.lower() == word:
@@ -352,6 +352,7 @@ class SaldoLexicon(object):
     @staticmethod
     def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
         """Save a Saldo lexicon to a Pickled file.
+
         The input lexicon should be a dict:
           - lexicon = {wordform: {{annotation-type: annotation}: (set(possible tags), set(tuples with following words), gap-allowed-boolean, is-particle-verb-boolean)}}
         """
@@ -362,12 +363,12 @@ class SaldoLexicon(object):
         for word in lexicon:
             annotations = []
             for annotation, extra in list(lexicon[word].items()):
-                #annotationlist = PART_DELIM3.join(annotation)
+                # annotationlist = PART_DELIM3.join(annotation)
                 annotationlist = PART_DELIM2.join(k + PART_DELIM3 + PART_DELIM3.join(annotation[k]) for k in annotation)
-                taglist =        PART_DELIM3.join(sorted(extra[0]))
-                wordlist =       PART_DELIM2.join([PART_DELIM3.join(x) for x in sorted(extra[1])])
-                gap_allowed =    "1" if extra[2] else "0"
-                particle =       "1" if extra[3] else "0"
+                taglist = PART_DELIM3.join(sorted(extra[0]))
+                wordlist = PART_DELIM2.join([PART_DELIM3.join(x) for x in sorted(extra[1])])
+                gap_allowed = "1" if extra[2] else "0"
+                particle = "1" if extra[3] else "0"
                 annotations.append(PART_DELIM1.join([annotationlist, taglist, wordlist, gap_allowed, particle]))
 
             picklex[word] = sorted(annotations)
@@ -380,6 +381,7 @@ class SaldoLexicon(object):
     @staticmethod
     def save_to_textfile(saldofile, lexicon, verbose=True):
         """Save a Saldo lexicon to a space-separated text file.
+
         The input lexicon should be a dict:
           - lexicon = {wordform: {annotation: set(possible tags)}}
         NOT UP TO DATE
@@ -402,8 +404,9 @@ def _join_annotation(annotation, delimiter, affix):
 
 def get_precision(msd, msdtags):
     """
-    A very simple way of calculating the precision of a Saldo annotation:
-    if the the word's msdtag is among the annotation's possible msdtags,
+    Calculate the precision of a Saldo annotation.
+
+    If the the word's msdtag is among the annotation's possible msdtags,
     we return a high value (0.75), a partial match returns 0.66, missing MSD returns 0.5,
     and otherwise a low value (0.25).
     """
@@ -457,6 +460,7 @@ class HashableDict(dict):
 
 def read_xml(xml="saldom.xml", annotation_elements=("gf", "lem", "saldo"), tagset="SUC", verbose=True):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml).
+
     Return a lexicon dictionary, {wordform: {{annotation-type: annotation}: ( set(possible tags), set(tuples with following words) )}}
      - annotation_element is the XML element for the annotation value (currently: 'gf' for baseform, 'lem' for lemgram or 'saldo' for SALDO id)
      - tagset is the tagset for the possible tags (currently: 'SUC', 'Parole', 'Saldo')
@@ -550,9 +554,9 @@ def read_xml(xml="saldom.xml", annotation_elements=("gf", "lem", "saldo"), tagse
 
 
 def save_to_cstlemmatizer(cstfile, lexicon, encoding="latin-1", verbose=True):
-    """Save a JSON lexicon as an external file that can be used for
-    training the CST lemmatizer. The default encoding of the resulting
-    file is ISO-8859-1 (Latin-1).
+    """Save a JSON lexicon as an external file that can be used for training the CST lemmatizer.
+
+    The default encoding of the resulting file is ISO-8859-1 (Latin-1).
     """
     if verbose:
         util.log.info("Saving CST lexicon")
@@ -573,6 +577,7 @@ def save_to_cstlemmatizer(cstfile, lexicon, encoding="latin-1", verbose=True):
 
 def extract_tags(lexicon):
     """Extract the set of all tags that are used in a lexicon.
+
     The input lexicon should be a dict:
       - lexicon = {wordform: {annotation: set(possible tags)}}
     """
@@ -584,11 +589,11 @@ def extract_tags(lexicon):
 
 def xml_to_pickle(xml, filename, annotation_elements="gf lem saldo"):
     """Read an XML dictionary and save as a pickle file."""
-
     xml_lexicon = read_xml(xml, annotation_elements)
     SaldoLexicon.save_to_picklefile(filename, xml_lexicon)
 
 ######################################################################
+
 
 if __name__ == "__main__":
     util.run.main(annotate, xml_to_pickle=xml_to_pickle)
