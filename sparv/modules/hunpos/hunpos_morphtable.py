@@ -1,13 +1,16 @@
-"""Creates morphtable files for use with Hunpos."""
+"""Create morphtable files for use with Hunpos."""
+
+from collections import defaultdict
+
 import sparv.util as util
 from sparv.modules.saldo import saldo
-from collections import defaultdict
 
 
 def make_morphtable(out, saldo_model, suc, morphtable_base="", morphtable_patterns="", add_capitalized=True,
                     add_lowercase=False):
-    """ Creates a morphtable file for use with Hunpos, containing wordforms
-    from SALDO's morphology (with accompanying tags) which are missing in SUC3.
+    """Create a morphtable file for use with Hunpos.
+
+    A morphtable contains wordforms from SALDO's morphology (with accompanying tags) which are missing in SUC3.
     Since the morphtable is case sensitive, both the original form and a capitalized form
     is saved.
     - out specifies the resulting morphtable file to be written
@@ -16,13 +19,12 @@ def make_morphtable(out, saldo_model, suc, morphtable_base="", morphtable_patter
     - morphtable_base is an existing morphtable file, whose contents will be included in the new one
     - morphtable_patterns is an optional file with regular expressions
     """
-
-    l = saldo.SaldoLexicon(saldo_model)
+    lex = saldo.SaldoLexicon(saldo_model)
     tags = defaultdict(set)
 
     # Get all wordforms from SALDO
-    for word in list(l.lexicon.keys()):
-        words = l.lookup(word)
+    for word in list(lex.lexicon.keys()):
+        words = lex.lookup(word)
         # Filter out multi word expressions
         words = [x for x in words if len(x[2]) == 0]
         if words:

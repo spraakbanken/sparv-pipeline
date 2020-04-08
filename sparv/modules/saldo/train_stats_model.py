@@ -1,13 +1,17 @@
-# -*- coding: utf-8 -*-
+"""Train a probability model on a Korp statistics file."""
+
 import pickle
-from nltk import FreqDist, LidstoneProbDist
+
 import sparv.util as util
+from nltk import FreqDist, LidstoneProbDist
 
 
 def make_model(stats_infile, picklefile, smoothingparam=0.001, min_freq=3, protocol=-1):
-    """Train a probability model on a korp statistics file and save it as a pickle file.
+    """Train a probability model on a Korp statistics file and save it as a pickle file.
+
     The model is a LidstoneProbDist (NLTK) which has tuples (wordform, MSD-tag) as keys
-    and smoothed probabilities as values."""
+    and smoothed probabilities as values.
+    """
     fdist = FreqDist()
     with open(stats_infile, encoding='utf-8') as f:
         for line in f:
@@ -32,6 +36,7 @@ def make_model(stats_infile, picklefile, smoothingparam=0.001, min_freq=3, proto
     # Save probability model as pickle
     with open(picklefile, "wb") as p:
         pickle.dump(pd, p, protocol=protocol)
+
 
 if __name__ == '__main__':
     util.run.main(make_model)

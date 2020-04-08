@@ -1,3 +1,5 @@
+"""Segmentation mostly based on NLTK."""
+
 import os.path
 import pickle
 import re
@@ -7,7 +9,7 @@ import nltk
 
 import sparv.modules.saldo.saldo as saldo
 import sparv.util as util
-from sparv import *
+from sparv import Annotation, Config, Document, Model, Output, annotator
 
 try:
     from . import crf  # for CRF++ models
@@ -15,7 +17,7 @@ except ImportError:
     pass
 
 
-@annotator("Automatic tokenization.")
+@annotator("Automatic tokenization")
 def tokenize(doc: str = Document,
              out: str = Output("segment.token", cls="token"),
              chunk: str = Annotation("[token_chunk]"),
@@ -28,7 +30,7 @@ def tokenize(doc: str = Document,
                     model=model, pickled_model=pickled_model)
 
 
-@annotator("Automatic segmentation of sentences.")
+@annotator("Automatic segmentation of sentences")
 def sentence(doc: str = Document,
              out: str = Output("segment.sentence", cls="sentence"),
              chunk: Optional[str] = Annotation("[sentence_chunk]"),
@@ -42,8 +44,8 @@ def sentence(doc: str = Document,
 
 
 def do_segmentation(doc, out, segmenter, chunk=None, existing_segments=None, model=None, pickled_model=False):
-    """Segment all "chunks" (e.g. sentences) into smaller "tokens" (e.g. words),
-    and annotate them as "element" (e.g. w).
+    """Segment all chunks (e.g. sentences) into smaller "tokens" (e.g. words), and annotate them as "element" (e.g. w).
+
     Segmentation is done by the given "segmenter"; some segmenters take
     an extra argument which is a pickled "model" object.
     """
@@ -104,7 +106,6 @@ def do_segmentation(doc, out, segmenter, chunk=None, existing_segments=None, mod
 
 def build_token_wordlist(saldo_model, out, segmenter, model=None, no_pickled_model=False):
     """Build a list of words from a SALDO model, to help BetterTokenizer."""
-
     if model:
         if not no_pickled_model:
             with open(model, "rb") as M:
@@ -139,8 +140,7 @@ def build_token_wordlist(saldo_model, out, segmenter, model=None, no_pickled_mod
 # Punkt word tokenizer
 
 class ModifiedLanguageVars(nltk.tokenize.punkt.PunktLanguageVars):
-    """Slight modification to handle unicode quotation marks and other
-    punctuation."""
+    """Slight modification to handle unicode quotation marks and other punctuation."""
     # http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt.PunktLanguageVars-class.html
     # http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt-pysrc.html#PunktLanguageVars
 
@@ -204,9 +204,9 @@ class ModifiedPunktWordTokenizer(object):
 
 
 ######################################################################
-# Training a Punkt sentence tokenizer
 
 def train_punkt_segmenter(textfiles, modelfile, encoding=util.UTF8, protocol=-1):
+    """Train a Punkt sentence tokenizer."""
     if isinstance(textfiles, str):
         textfiles = textfiles.split()
 
@@ -232,9 +232,10 @@ class LinebreakTokenizer(nltk.RegexpTokenizer):
 
 
 class PunctuationTokenizer(nltk.RegexpTokenizer):
-    """ A very simple sentence tokenizer, separating sentences on
-    every .!? no matter the context. Use only when PunktSentenceTokenizer
-    does not work, for example when there's no whitespace after punctuation. """
+    """A very simple sentence tokenizer, separating sentences on every .!? no matter the context.
+
+    Use only when PunktSentenceTokenizer does not work, for example when there's no whitespace after punctuation.
+    """
 
     def __init__(self):
         nltk.RegexpTokenizer.__init__(self, r"[\.!\?]\s*", gaps=True)
@@ -259,9 +260,9 @@ class PunctuationTokenizer(nltk.RegexpTokenizer):
 
 
 class BetterWordTokenizer(object):
-    """
-    A word tokenizer based on the PunktWordTokenizer code, heavily modified to add support for
-    custom regular expressions, wordlists, and external configuration files.
+    """A word tokenizer based on the PunktWordTokenizer code.
+
+    Heavily modified to add support for custom regular expressions, wordlists, and external configuration files.
     http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt.PunktSentenceTokenizer-class.html
     """
 
@@ -333,7 +334,7 @@ class BetterWordTokenizer(object):
                     self.abbreviations.add(line.strip())
 
     def _word_tokenizer_re(self):
-        """Compiles and returns a regular expression for word tokenization"""
+        """Compile and return a regular expression for word tokenization."""
         try:
             return self._re_word_tokenizer
         except AttributeError:
@@ -341,21 +342,21 @@ class BetterWordTokenizer(object):
             self._re_word_tokenizer = re.compile(
                 self._word_tokenize_fmt %
                 {
-                    "tokens":   ("(?:" + "|".join(self.patterns["tokens"]) + ")|") if self.patterns["tokens"] else "",
-                    "abbrevs":  ("(?:" + "|".join(re.escape(a + ".") for a in self.abbreviations) + ")|") if self.abbreviations else "",
-                    "misc":     "|".join(self.patterns["misc"]),
-                    "number":   self.patterns["number"],
-                    "within":   self.patterns["within"],
-                    "multi":    self.patterns["multi"],
-                    "start":    self.patterns["start"],
-                    "end":      self.patterns["end"]
+                    "tokens": ("(?:" + "|".join(self.patterns["tokens"]) + ")|") if self.patterns["tokens"] else "",
+                    "abbrevs": ("(?:" + "|".join(re.escape(a + ".") for a in self.abbreviations) + ")|") if self.abbreviations else "",
+                    "misc": "|".join(self.patterns["misc"]),
+                    "number": self.patterns["number"],
+                    "within": self.patterns["within"],
+                    "multi": self.patterns["multi"],
+                    "start": self.patterns["start"],
+                    "end": self.patterns["end"]
                 },
                 modifiers
             )
             return self._re_word_tokenizer
 
     def word_tokenize(self, s):
-        """Tokenize a string to split off punctuation other than periods"""
+        """Tokenize a string to split off punctuation other than periods."""
         words = self._word_tokenizer_re().findall(s)
         if not words:
             return words
@@ -384,8 +385,10 @@ class BetterWordTokenizer(object):
 
 
 class CRFTokenizer(object):
-    """ Tokenization based on Conditional Random Fields
-        Implemented for Old Swedish, see crf.py for more details"""
+    """Tokenization based on Conditional Random Fields.
+
+    Implemented for Old Swedish, see crf.py for more details.
+    """
 
     def __init__(self, model):
         self.model = model
@@ -395,7 +398,7 @@ class CRFTokenizer(object):
 
 
 class FSVParagraphSplitter(object):
-    """ A paragraph splitter for old Swedish. """
+    """A paragraph splitter for old Swedish."""
 
     def __init__(self):
         pass

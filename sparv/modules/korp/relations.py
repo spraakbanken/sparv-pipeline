@@ -1,10 +1,12 @@
+"""Create files needed for the word picture in Korp."""
+
 import math
 import re
 from collections import defaultdict
 from typing import Optional
 
 import sparv.util as util
-from sparv import *
+from sparv import AllDocuments, Annotation, Config, Document, Output, annotator
 from sparv.util.mysql_wrapper import MySQL
 
 MAX_STRING_LENGTH = 100
@@ -12,7 +14,7 @@ MAX_STRINGEXTRA_LENGTH = 32
 MAX_POS_LENGTH = 5
 
 
-@annotator("Find dependencies for Korp's Word Picture.")
+@annotator("Find dependencies for Korp's Word Picture")
 def relations(doc: str = Document,
               out: str = Output("korp.relations", data=True),
               word: str = Annotation("<token:word>"),
@@ -24,7 +26,6 @@ def relations(doc: str = Document,
               ref: str = Annotation("<token>:misc.number_rel_<sentence>"),
               baseform: str = Annotation("<token>:saldo.baseform")):
     """Find certain dependencies between words, to be used by the Word Picture feature in Korp."""
-
     sentence_ids = util.read_annotation(doc, sentence_id)
     sentence_tokens, _ = util.get_children(doc, sentence_id, word)
 
@@ -100,7 +101,7 @@ def relations(doc: str = Document,
             if isinstance(dep, dict):
                 h = dep["head"]
                 if h and _match(rel, h[0]) and _match(head, h[1]["pos"]):
-                        result.append(h[1])
+                    result.append(h[1])
             return result
 
         # Look for relations
@@ -152,8 +153,8 @@ def relations(doc: str = Document,
                     missing_rels = [x for x in nrel[1] if x not in token_rels]
                     for mrel in missing_rels:
                         triple = (
-                        (v["lemgram"], v["word"], v["pos"], v["ref"]), mrel, ("", "", "", v["ref"]), ("", None), sentid,
-                        v["ref"], v["ref"])
+                            (v["lemgram"], v["word"], v["pos"], v["ref"]), mrel, ("", "", "", v["ref"]), ("", None), sentid,
+                            v["ref"], v["ref"])
                         triples.extend(_mutate_triple(triple))
 
     triples = set(triples)
@@ -166,8 +167,10 @@ def relations(doc: str = Document,
 
 
 def _mutate_triple(triple):
-    """ Split |head1|head2|...| REL |dep1|dep2|...| into several separate relations.
-    Also remove multi-words which are in both head and dep, and remove the :nn part from words. """
+    """Split |head1|head2|...| REL |dep1|dep2|...| into several separate relations.
+
+    Also remove multi-words which are in both head and dep, and remove the :nn part from words.
+    """
 
     head, rel, dep, extra, sentid, refhead, refdep = triple
 
@@ -183,7 +186,7 @@ def _mutate_triple(triple):
             parts[part] = [val[0]]
 
     def _remove_doubles(a, b):
-        """ Remove multi-words which are in both. """
+        """Remove multi-words which are in both."""
         if a in is_lemgrams and b in is_lemgrams:
             doubles = [d for d in set(parts[a]).intersection(set(parts[b])) if re.search(r"\.\.\w\wm\.", d)]
             for double in doubles:
@@ -224,16 +227,17 @@ def _mutate_triple(triple):
 
 
 def mi_lex(rel, x_rel_y, x_rel, rel_y):
-    """ Calculates "Lexicographer's mutual information".
-     - rel is the frequency of (rel)
-     - x_rel_y is the frequency of (head, rel, dep)
-     - x_rel is the frequency of (head, rel)
-     - rel_y is the frequency of (rel, dep)
+    """Calculate "Lexicographer's mutual information".
+
+    - rel is the frequency of (rel)
+    - x_rel_y is the frequency of (head, rel, dep)
+    - x_rel is the frequency of (head, rel)
+    - rel_y is the frequency of (rel, dep)
     """
     return x_rel_y * math.log((rel * x_rel_y) / (x_rel * rel_y * 1.0), 2)
 
 
-@annotator("Create Word Picture SQL for Korp.")
+@annotator("Create Word Picture SQL for Korp")
 def create_sql(corpus: str = Config("name"),
                db_name: str = Config("korp.relations_db_name", "korp_relations"),
                out: str = Output("korp.relations.sql", data=True),
@@ -242,14 +246,15 @@ def create_sql(corpus: str = Config("name"),
                doclist: str = "",
                split: bool = False):
     """Calculate statistics of the dependencies and saves to SQL files.
-       - corpus is the corpus name.
-       - db_name is the name of the database.
-       - out is the name for the SQL file which will contain the resulting SQL statements.
-       - relations is the name of the relations annotation.
-       - docs is a list of documents.
-       - doclist can be used instead of docs, and should be a file containing the name of docs, one per row.
-       - split set to true leads to SQL commands being split into several parts, requiring less memory during creation,
-         but installing the data will take much longer.
+
+    - corpus is the corpus name.
+    - db_name is the name of the database.
+    - out is the name for the SQL file which will contain the resulting SQL statements.
+    - relations is the name of the relations annotation.
+    - docs is a list of documents.
+    - doclist can be used instead of docs, and should be a file containing the name of docs, one per row.
+    - split set to true leads to SQL commands being split into several parts, requiring less memory during creation,
+     but installing the data will take much longer.
     """
     split = util.strtobool(split)
     db_table = MYSQL_TABLE + "_" + corpus.upper()
@@ -520,9 +525,8 @@ MYSQL_STRINGS = {"columns": [
                  "row_format": "compressed"
                  }
 
-MYSQL_REL = {"columns": [
-                          ("rel",    rel_enum, RELNAMES[0], "NOT NULL"),
-                          ("freq", int, 0, "NOT NULL")],
+MYSQL_REL = {"columns": [("rel", rel_enum, RELNAMES[0], "NOT NULL"),
+                         ("freq", int, 0, "NOT NULL")],
              "primary": "rel freq",
              "indexes": [],
              "constraints": [("UNIQUE INDEX", "relation", ("rel",))],
@@ -531,9 +535,8 @@ MYSQL_REL = {"columns": [
              "row_format": "compressed"
              }
 
-MYSQL_HEAD_REL = {"columns": [
-                              ("head",   int, 0, "NOT NULL"),
-                              ("rel",    rel_enum, RELNAMES[0], "NOT NULL"),
+MYSQL_HEAD_REL = {"columns": [("head", int, 0, "NOT NULL"),
+                              ("rel", rel_enum, RELNAMES[0], "NOT NULL"),
                               ("freq", int, 0, "NOT NULL")],
                   "primary": "head rel freq",
                   "indexes": [],
@@ -543,10 +546,9 @@ MYSQL_HEAD_REL = {"columns": [
                   "row_format": "compressed"
                   }
 
-MYSQL_DEP_REL = {"columns": [
-                              ("dep",   int, 0, "NOT NULL"),
-                              ("rel",    rel_enum, RELNAMES[0], "NOT NULL"),
-                              ("freq", int, 0, "NOT NULL")],
+MYSQL_DEP_REL = {"columns": [("dep", int, 0, "NOT NULL"),
+                             ("rel", rel_enum, RELNAMES[0], "NOT NULL"),
+                             ("freq", int, 0, "NOT NULL")],
                  "primary": "dep rel freq",
                  "indexes": [],
                  "constraints": [("UNIQUE INDEX", "relation", ("dep", "rel"))],
@@ -555,17 +557,12 @@ MYSQL_DEP_REL = {"columns": [
                  "row_format": "compressed"
                  }
 
-MYSQL_SENTENCES = {"columns": [
-                               ("id", int, None, ""),
-                               ("sentence",   "varchar(64)", "", "NOT NULL"),
-                               ("start",    int, None, ""),
+MYSQL_SENTENCES = {"columns": [("id", int, None, ""),
+                               ("sentence", "varchar(64)", "", "NOT NULL"),
+                               ("start", int, None, ""),
                                ("end", int, None, "")],
                    "indexes": ["id"],
                    "default charset": "utf8",
                    "collate": "utf8_bin",
                    "row_format": "compressed"
                    }
-################################################################################
-
-if __name__ == "__main__":
-    util.run.main(relations, sql=create_sql)

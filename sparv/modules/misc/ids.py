@@ -1,25 +1,27 @@
 """Generate unique IDs for corpus files."""
+
 import math
 import random
 from binascii import hexlify
+from typing import Optional
 
 import sparv.util as util
-from sparv import annotator
-from sparv.util.classes import *
+from sparv import AllDocuments, Annotation, Document, Output, annotator
 
 _ID_LENGTH = 10
 
 
-@annotator("Give every document a unique ID.")
+@annotator("Give every document a unique ID")
 def doc_id(out: str = Output("misc.docid", cls="docid", data=True),
            docs: Optional[list] = AllDocuments,
            doclist: Optional[str] = None,
            prefix: str = "",
            add: bool = False):
     """Create unique IDs for every document in a list, using the document names as seed.
-    The resulting IDs are written to the annotation specified by 'out'.
-    If 'add' is True, existing IDs will not be overwritten."""
 
+    The resulting IDs are written to the annotation specified by 'out'.
+    If 'add' is True, existing IDs will not be overwritten.
+    """
     assert docs or doclist, "docs or doclist must be specified"
     add = util.strtobool(add)
 
@@ -50,7 +52,7 @@ def doc_id(out: str = Output("misc.docid", cls="docid", data=True),
         util.write_data(doc, out, new_id)
 
 
-@annotator("Unique IDs for annotations.")
+@annotator("Unique IDs for annotations")
 def ids(doc: str = Document,
         annotation: str = Annotation("{annotation}"),
         out: str = Output("{annotation}:misc.id", description="Unique ID for {annotation}"),
@@ -86,8 +88,3 @@ def _make_id(prefix, existing_ids=()):
         ident = prefix + hex(n)[2:].zfill(_ID_LENGTH)
         if ident not in existing_ids:
             return ident
-
-
-if __name__ == "__main__":
-    util.run.main(doc_id=doc_id,
-                  id=ids)

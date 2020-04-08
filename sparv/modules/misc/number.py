@@ -1,17 +1,18 @@
+"""Annotators for numbering things."""
+
 import random
 import re
 from binascii import hexlify
 from collections import defaultdict
 
 import sparv.util as util
-from sparv import *
+from sparv import Annotation, Document, Output, annotator
 
 START_DEFAULT = 1
 
 
 def number_by_position(doc, out, chunk, prefix="", start=START_DEFAULT):
     """Number chunks by their position."""
-
     spans = list(util.read_annotation_spans(doc, chunk))
 
     def order(index, _value):
@@ -22,7 +23,9 @@ def number_by_position(doc, out, chunk, prefix="", start=START_DEFAULT):
 
 def number_by_random(doc, out, chunk, prefix="", start=START_DEFAULT):
     """Number chunks randomly.
-    Uses index as random seed."""
+
+    Uses index as random seed.
+    """
     def order(index, _value):
         random.seed(int(hexlify(str(index).encode()), 16))
         return random.random()
@@ -40,7 +43,9 @@ def renumber_by_attribute(doc, out, chunk, prefix="", start=START_DEFAULT):
 
 def renumber_by_shuffle(doc, out, chunk, prefix="", start=START_DEFAULT):
     """Renumber already numbered chunks, in new random order.
-       Retains the connection between parallelly numbered chunks by using the values as random seed."""
+
+    Retains the connection between parallelly numbered chunks by using the values as random seed.
+    """
     def order(_index, value):
         random.seed(int(hexlify(value.encode()), 16))
         return random.random(), natural_sorting(value)
@@ -62,7 +67,7 @@ def number_by_parent(doc, out, chunk, parent_order, prefix="", start=START_DEFAU
     read_chunks_and_write_new_ordering(doc, out, chunk, order, prefix, start)
 
 
-@annotator("Number {annotation} by relative position within {parent}.")
+@annotator("Number {annotation} by relative position within {parent}")
 def number_relative(doc: str = Document,
                     out: str = Output("{annotation}:misc.number_rel_{parent}"),
                     parent: str = Annotation("{parent}"),

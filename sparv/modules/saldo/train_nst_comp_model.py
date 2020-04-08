@@ -1,14 +1,18 @@
-# -*- coding: utf-8 -*-
+"""Train a POS probability model on the NST lexicon."""
+
 import pickle
 import re
+
 import sparv.util as util
 from nltk import FreqDist, LidstoneProbDist
 
 
 def make_model(nst_infile, picklefile, protocol=-1):
-    """ Train a POS probability model on the NST lexicon and save it as a pickle file.
+    """Train a POS probability model on the NST lexicon and save it as a pickle file.
+
     The model is a LidstoneProbDist (NLTK) which has compounded POS tags (SUC set) as keys (e.g. "NN+NN")
-    and smoothed probabilities as values."""
+    and smoothed probabilities as values.
+    """
     # Collect all compounds from nst data
     nst_full_compounds = set()
     with open(nst_infile, encoding='UTF-8') as f:

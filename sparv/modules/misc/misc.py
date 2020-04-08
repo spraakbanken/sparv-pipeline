@@ -1,15 +1,11 @@
-"""
-Small annotations that don't fit as standalone python files.
-"""
+"""Small annotators that don't fit as standalone python files."""
 
 import re
 
-from sparv import annotator
-from sparv import util
-from sparv.util.classes import *
+from sparv import Annotation, Document, Output, annotator, util
 
 
-@annotator("Text value of a span (usually a token).")
+@annotator("Text value of a span (usually a token)")
 def text_spans(doc: str = Document,
                chunk: str = Annotation("<token>"),
                out: str = Output("<token>:misc.word", cls="token:word")):
@@ -28,7 +24,6 @@ def text_spans(doc: str = Document,
 
 def text_headtail(text, chunk, order, out_head, out_tail):
     """Extract "head" and "tail" whitespace characters for tokens."""
-
     def escape(t):
         return t.replace(" ", "\\s").replace("\n", "\\n").replace("\t", "\\t")
 
@@ -74,6 +69,7 @@ def text_headtail(text, chunk, order, out_head, out_tail):
 
 def translate_tag(tag, out, mapping):
     """Convert part-of-speech tags, specified by the mapping.
+
     Example mappings: parole_to_suc, suc_to_simple, ...
     """
     if isinstance(mapping, str):
@@ -84,6 +80,7 @@ def translate_tag(tag, out, mapping):
 
 def chain(out, annotations, default=None):
     """Create a functional composition of a list of annotations.
+
     E.g., token.sentence + sentence.id -> token.sentence-id
     """
     if isinstance(annotations, str):
@@ -99,13 +96,14 @@ def span_as_value(out, keys):
 
 def select(doc, out, annotation, index, separator=None):
     """Select a specific index from the values of an annotation.
+
     The given annotation values are separated by 'separator',
     by default whitespace, with at least index + 1 elements.
     """
     if isinstance(index, str):
         index = int(index)
     util.write_annotation(doc, out, (value.split(separator)[index]
-                                for value in util.read_annotation(doc, annotation)))
+                                     for value in util.read_annotation(doc, annotation)))
 
 
 def constant(chunk, out, value=None):
@@ -124,8 +122,11 @@ def replace(chunk, out, find, sub=""):
 
 
 def replace_list(chunk, out, find, sub=""):
-    """Find and replace annotations. Find string must match whole annotation.
-    find and sub are whitespace separated lists of words to replace and their replacement."""
+    """Find and replace annotations.
+
+    Find string must match whole annotation.
+    find and sub are whitespace separated lists of words to replace and their replacement.
+    """
     find = find.split()
     sub = sub.split()
     assert len(find) == len(sub), "find and len must have the same number of words."
@@ -145,7 +146,9 @@ def find_replace_regex(chunk, out, find, sub=""):
 
 def concat(out, left, right, separator="", merge_twins=""):
     """Concatenate values from two annotations, with an optional separator.
-    If merge_twins is set to True, no concatenation will be done on identical values."""
+
+    If merge_twins is set to True, no concatenation will be done on identical values.
+    """
     merge_twins = merge_twins.lower() == "true"
     b = util.read_annotation(right)
     util.write_annotation(out, ((key_a, u"%s%s%s" % (val_a, separator, b[key_a]) if not (merge_twins and val_a == b[key_a]) else val_a) for (key_a, val_a) in util.read_annotation_iteritems(left)))

@@ -1,4 +1,5 @@
 """Compound analysis."""
+
 import itertools
 import pickle
 import re
@@ -6,13 +7,13 @@ import time
 from functools import reduce
 
 import sparv.util as util
-from sparv import *
+from sparv import Annotation, Document, Model, Output, annotator
 
 SPLIT_LIMIT = 200
 COMP_LIMIT = 100
 
 
-@annotator("Compound analysis.", name="compound")
+@annotator("Compound analysis", name="compound")
 def annotate(doc: str = Document,
              out_complemgrams: str = Output("<token>:saldo.complemgram", description="Compound analysis using lemgrams"),
              out_compwf: str = Output("<token>:saldo.compwf", description="Compound analysis using wordforms"),
@@ -31,7 +32,8 @@ def annotate(doc: str = Document,
              cutoff: bool = True,
              saldo_comp_lexicon=None,
              stats_lexicon=None):
-    """Divides compound words into prefix(es) and suffix.
+    """Divide compound words into prefix(es) and suffix.
+
     - out_complemgram is the resulting annotation file for compound lemgrams
       and their probabilities
     - out_compwf is the resulting annotation file for compound wordforms
@@ -46,7 +48,6 @@ def annotate(doc: str = Document,
     - saldo_comp_lexicon, stats_lexicon: these arguments cannot be set from the command line,
       but are used in the catapult. These arguments must be last.
     """
-
     ##################
     # Load models
     ##################
@@ -113,9 +114,11 @@ def annotate(doc: str = Document,
 
 class StatsLexicon(object):
     """A lexicon for probabilities of word forms and their POS tags.
+
     It is initialized from a pickled file.
     """
     def __init__(self, stats_model, verbose=True):
+        """Load lexicon."""
         if verbose:
             util.log.info("Reading statistics model: %s", stats_model)
         with open(stats_model, "rb") as s:
@@ -124,17 +127,21 @@ class StatsLexicon(object):
             util.log.info("Done")
 
     def lookup_prob(self, word):
+        """Look up the probability of the word."""
         return self.lexicon.prob(word)
 
     def lookup_word_tag_freq(self, word, tag):
+        """Look up frequency of this word-tag combination."""
         return self.lexicon.freqdist()[(word, tag)]
 
 
 class SaldoCompLexicon(object):
     """A lexicon for Saldo compound lookups.
+
     It is initialized from a Pickled file.
     """
     def __init__(self, saldofile, verbose=True):
+        """Load lexicon."""
         if verbose:
             util.log.info("Reading Saldo lexicon: %s", saldofile)
         with open(saldofile, "rb") as F:
@@ -151,14 +158,17 @@ class SaldoCompLexicon(object):
         return list(map(_split_triple, annotation_tag_pairs))
 
     def get_prefixes(self, prefix):
+        """Get all possible prefixes."""
         return [(prefix, p[0], tuple(p[3])) for p in self.lookup(prefix) if
                 set(p[1]).intersection({"c", "ci"})]
 
     def get_infixes(self, infix):
+        """Get all possible infixes (= mid parts of a word)."""
         return [(infix, i[0], tuple(i[3])) for i in self.lookup(infix) if
                 set(i[1]).intersection({"c", "cm"})]
 
     def get_suffixes(self, suffix, msd=None):
+        """Get all possible suffixes."""
         return [(suffix, s[0], tuple(s[3])) for s in self.lookup(suffix)
                 if (s[2] in ("nn", "vb", "av") or s[2][-1] == "h")
                 and set(s[1]).difference({"c", "ci", "cm", "sms"})
@@ -168,13 +178,15 @@ class SaldoCompLexicon(object):
 
 class InFileLexicon(object):
     """A dictionary of all words occuring in the input file.
+
     keys = words, values =  MSD tags
     """
     def __init__(self, annotations):
+        """Create a lexicon for the words occuring in this file."""
         lex = {}
         for word, msd, _ in annotations:
             w = word.lower()
-            # Skip words consisting of a single letter (saldo should take care of these)
+            # Skip words consisting of a single letter (SALDO should take care of these)
             # Also skip words consisting of two letters, to avoid an explosion of analyses
             if len(w) > 2:
                 lex[w] = lex.get(w, set())
@@ -187,12 +199,14 @@ class InFileLexicon(object):
         return list(self.lexicon.get(word, []))
 
     def get_prefixes(self, prefix):
+        """Get all possible prefixes."""
         return [(prefix, "0", (s[1],)) for s in self.lookup(prefix.lower())]
 
     def get_suffixes(self, suffix, msd=None):
+        """Get all possible suffixes."""
         return [(suffix, "0", (s[1],)) for s in self.lookup(suffix.lower())
-                if (s[1][0:2] in ("NN", "VB", "AV")) and
-                (not msd or msd in s[1] or s[1].startswith(msd[:msd.find(".")]))
+                if (s[1][0:2] in ("NN", "VB", "AV"))
+                and (not msd or msd in s[1] or s[1].startswith(msd[:msd.find(".")]))
                 ]
 
 
@@ -308,7 +322,7 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
 
 
 def exception(w):
-    """ Filter out unwanted suffixes. """
+    """Filter out unwanted suffixes."""
     return w.lower() in [
         "il", u"ör", "en", "ens", "ar", "ars",
         "or", "ors", "ur", "urs", u"lös", "tik", "bar",
@@ -319,14 +333,16 @@ def exception(w):
 
 
 def three_consonant_rule(compound):
-    """ Expand prefix if its last letter == first letter of suffix.
-    ("glas", "skål") --> ("glas", "skål"), ("glass", "skål") """
+    """Expand prefix if its last letter == first letter of suffix.
+
+    ("glas", "skål") --> ("glas", "skål"), ("glass", "skål")
+    """
     combinations = []
     suffix = compound[len(compound) - 1]
     for index in range(len(compound) - 1):
         current_prefix = compound[index]
         current_suffix = compound[index + 1]
-        # last prefix letter == first suffix letter; and prefix ends in one of "bdfgjlmnprstv"
+        # Last prefix letter == first suffix letter; and prefix ends in one of "bdfgjlmnprstv"
         if current_prefix[-1].lower() in "bdfgjlmnprstv" and current_prefix[-1] == current_suffix[0]:
             combinations.append((current_prefix, current_prefix + current_prefix[-1]))
         else:
@@ -337,6 +353,7 @@ def three_consonant_rule(compound):
 
 def rank_compounds(compounds, nst_model, stats_lexicon):
     """Return a list of compounds, ordered according to their ranks.
+
     Ranking is being done according to the amount of affixes (the fewer the higher)
     and the compound probability which is calculated as follows:
 
@@ -357,19 +374,16 @@ def rank_compounds(compounds, nst_model, stats_lexicon):
     ranklist = sorted(ranklist, key=lambda x: x[0], reverse=True)
     # Sort according to length
     ranklist = sorted(ranklist, key=lambda x: len(x[1]))
-    # for s, c in ranklist:
-    #     print "%.3e, %s" % (s, c)
     return ranklist
 
 
 def deep_len(lst):
-    """Return the deep length of a list."""
+    """Return the depth of a list."""
     return sum(deep_len(el) if isinstance(el, (list, tuple)) else 1 for el in lst)
 
 
 def compound(saldo_lexicon, altlexicon, w, msd=None):
     """Create a list of compound analyses for word w."""
-
     if len(w) > 75 or re.search(r"(.)\1{4,}", w):
         return []
 
@@ -485,8 +499,7 @@ def make_new_baseforms(out_baseform, msd_tag, compounds, stats_lexicon, altlexic
 
 
 def read_xml(xml="saldom.xml", tagset="SUC"):
-    """Read the XML version of SALDO's morphological lexicon (saldom.xml).
-    """
+    """Read the XML version of SALDO's morphological lexicon (saldom.xml)."""
     import xml.etree.cElementTree as cet
     tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower() + "_compound")
     util.log.info("Reading XML lexicon")
@@ -536,6 +549,7 @@ PARTDELIM3 = "^3"
 
 def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
     """Save a Saldo lexicon to a Pickled file.
+
     The input lexicon should be a dict:
       - lexicon = {wordform: {lemgram: {"msd": set(), "pos": str}}}
     """

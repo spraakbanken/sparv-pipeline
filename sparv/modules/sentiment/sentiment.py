@@ -1,7 +1,7 @@
 """Sentiment annotation per token using SenSALDO."""
 
 import sparv.util as util
-from sparv import annotator, Annotation, Document, Model, Output
+from sparv import Annotation, Document, Model, Output, annotator
 
 SENTIMENT_LABLES = {
     -1: "negative",
@@ -10,7 +10,7 @@ SENTIMENT_LABLES = {
 }
 
 
-@annotator("Sentiment annotation per token using SenSALDO.")
+@annotator("Sentiment annotation per token using SenSALDO")
 def annotate(doc: str = Document,
              sense: str = Annotation("<token>:saldo.sense"),
              out_scores: str = Output("<token>:sentiment.score", description="SenSALDO sentiment score"),

@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
-"""
-Creates training material from SUC2 for use with the HUNPOS-tagger.
-"""
-import sparv.util as util
+"""Create training material from SUC2 for use with the HUNPOS-tagger."""
+
 import os.path
+
+import sparv.util as util
 
 
 def suc2hunpos(out, msd, sentences, word):
@@ -35,6 +34,7 @@ def write_hunsource(file, annotation):
                 print("".encode(util.UTF8), file=DB)
             ctr += 1
     util.log.info("Wrote %d items: %s", ctr, file)
+
 
 if __name__ == "__main__":
     util.run.main(suc2hunpos)

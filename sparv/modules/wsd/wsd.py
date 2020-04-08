@@ -1,11 +1,12 @@
 """Word sense disambiguation based on SALDO annotation."""
+
 import sparv.util as util
-from sparv import annotator, Document, Annotation, Output, Binary, Model
+from sparv import Annotation, Binary, Document, Model, Output, annotator
 
 SENT_SEP = "$SENT$"
 
 
-@annotator("Word sense disambiguation.")
+@annotator("Word sense disambiguation")
 def run_wsd(doc: str = Document,
             wsdjar: str = Binary("[wsd.jar=wsd/saldowsd.jar]"),
             sense_model: str = Model("[wsd.sense_model=wsd/ALL_512_128_w10_A2_140403_ctx1.bin]"),
@@ -21,8 +22,8 @@ def run_wsd(doc: str = Document,
             sensefmt: str = util.SCORESEP + "%.3f",
             default_prob: float = -1.0,
             encoding: str = util.UTF8):
-    """
-    Runs the word sense disambiguation tool (saldowsd.jar) to add probabilities to the saldo annotation.
+    """Run the word sense disambiguation tool (saldowsd.jar) to add probabilities to the saldo annotation.
+
     Unanalyzed senses (e.g. multiword expressions) receive the probability value given by default_prob.
       - wsdjar is the name of the java programme to be used for the wsd
       - sense_model and context_model are the models to be used with wsdjar
@@ -35,7 +36,6 @@ def run_wsd(doc: str = Document,
       - sensefmt is a format string for how to print the sense and its probability
       - default_prob is the default value for unanalyzed senses
     """
-
     word_annotation = list(util.read_annotation(doc, word))
     ref_annotation = list(util.read_annotation(doc, ref))
     lemgram_annotation = list(util.read_annotation(doc, lemgram))
@@ -101,7 +101,7 @@ def build_input(sentences, word_annotation, ref_annotation, lemgram_annotation, 
             ref = ref_annotation[token_index]
             pos = pos_annotation[token_index].lower()
             saldo = saldo_annotation[token_index].strip(util.AFFIX) if saldo_annotation[
-                                                                           token_index] != util.AFFIX else "_"
+                token_index] != util.AFFIX else "_"
             if "_" in saldo and len(saldo) > 1:
                 mwe = True
 
@@ -173,7 +173,3 @@ def remove_mwe(annotation):
         return util.DELIM.join(annotation)
     else:
         return "_"
-
-
-if __name__ == "__main__":
-    util.run.main(run_wsd)

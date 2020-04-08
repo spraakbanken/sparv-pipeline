@@ -1,5 +1,6 @@
-import subprocess
 import os
+import subprocess
+
 import sparv.util as util
 from sparv.util.mysql_wrapper import MySQL
 

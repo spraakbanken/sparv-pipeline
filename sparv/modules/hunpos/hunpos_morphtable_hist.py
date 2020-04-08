@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+"""Make morphtable for Swedish historical resources."""
 import sparv.util as util
 import re
 
@@ -9,14 +9,13 @@ SALDO_TO_SUC['nl invar'] = {'NL.NOM'}
 
 
 def make_table(out, files, saldosuc_morphtable):
-    """ Read files and make a morphtable of the information in them
-    together with the information from SALDO (saldosuc_morphtable).
+    """Read files and make a morphtable together with the information from SALDO (saldosuc_morphtable).
+
     Used by SB_MODELS/Makefile
     - out specifies the resulting morphtable file to be written
     - files is a string of files containing wordlists and SALDO MSD-tags
     - saldosuc_morphtable is the SALDO Hunpos morphtable
     """
-
     files = files.split()
     words = {}
     read_saldosuc(words, saldosuc_morphtable)

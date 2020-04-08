@@ -1,4 +1,5 @@
 """Dependency parsing using MALT Parser."""
+
 import os
 import re
 
