@@ -14,7 +14,7 @@ TAG_COLUMN = 1
 @annotator("Part-of-speech annotation with morphological descriptions")
 def msdtag(doc: str = Document,
            model: str = Model("hunpos.suc3.suc-tags.default-setting.utf8.model"),
-           out: str = Output("<token>:hunpos.msd", cls="token:msd"),
+           out: str = Output("<token>:hunpos.msd", cls="token:msd", description="Part-of-speeches with morphological descriptions"),
            word: str = Annotation("<token:word>"),
            sentence: str = Annotation("<sentence>"),
            tag_mapping=None,
@@ -64,7 +64,7 @@ def msdtag(doc: str = Document,
 
 @annotator("Extract POS from MSD")
 def postag(doc: str = Document,
-           out: str = Output("<token>:hunpos.pos", cls="token:pos"),
+           out: str = Output("<token>:hunpos.pos", cls="token:pos", description="Part-of-speech tags"),
            msd: str = Annotation("<token>:hunpos.msd")):
     """Extract POS from MSD."""
     from sparv.modules.misc import misc

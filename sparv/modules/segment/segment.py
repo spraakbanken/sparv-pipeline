@@ -6,7 +6,6 @@ import re
 from typing import Optional
 
 import nltk
-
 import sparv.modules.saldo.saldo as saldo
 import sparv.util as util
 from sparv import Annotation, Config, Document, Model, Output, annotator
@@ -19,7 +18,7 @@ except ImportError:
 
 @annotator("Automatic tokenization")
 def tokenize(doc: str = Document,
-             out: str = Output("segment.token", cls="token"),
+             out: str = Output("segment.token", cls="token", description="Token segments"),
              chunk: str = Annotation("[token_chunk]"),
              segmenter: str = Config("token_segmenter", "better_word"),
              existing_segments: str = Config("existing_tokens"),
@@ -32,7 +31,7 @@ def tokenize(doc: str = Document,
 
 @annotator("Automatic segmentation of sentences")
 def sentence(doc: str = Document,
-             out: str = Output("segment.sentence", cls="sentence"),
+             out: str = Output("segment.sentence", cls="sentence", description="Sentence segments"),
              chunk: Optional[str] = Annotation("[sentence_chunk]"),
              segmenter: str = Config("sentence_segmenter", "punkt_sentence"),
              existing_segments: str = Config("existing_sentences"),

@@ -5,3 +5,4 @@ saldo.precision: ""
 classes:
     token: segment.token
     sentence: segment.sentence
+    sense: wsd.sense 

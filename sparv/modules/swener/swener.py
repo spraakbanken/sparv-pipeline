@@ -14,11 +14,11 @@ TOK_SEP = " "
 
 @annotator("Named entity tagging with SweNER")
 def annotate(doc: str = Document,
-             out_ne: str = Output("swener.ne"),
-             out_ne_ex: str = Output("swener.ne:swener.ex"),
-             out_ne_type: str = Output("swener.ne:swener.type"),
-             out_ne_subtype: str = Output("swener.ne:swener.subtype"),
-             out_ne_name: str = Output("swener.ne:swener.name"),
+             out_ne: str = Output("swener.ne", cls="named_entity", description="Named entity segments from SweNER"),
+             out_ne_ex: str = Output("swener.ne:swener.ex", description="Named entity expressions from from SweNER"),
+             out_ne_type: str = Output("swener.ne:swener.type", description="Named entity types from from SweNER"),
+             out_ne_subtype: str = Output("swener.ne:swener.subtype", description="Named entity sub types from from SweNER"),
+             out_ne_name: str = Output("swener.ne:swener.name", description="Names in SweNER named entities"),
              word: str = Annotation("<token:word>"),
              sentence: str = Annotation("<sentence>"),
              token: str = Annotation("<token>"),

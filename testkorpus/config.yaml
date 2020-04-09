@@ -3,7 +3,6 @@ name: testkorpus
 # Elements and attributes from the source XML that we want to be available as input for other annotations
 xml_elements:
   - text:date
-  - text:forfattare
 
 sentence_chunk: <text>
 
@@ -12,6 +11,10 @@ annotations:
   - <sentence>
   - <token>
   - <token:pos>
+
+original_annotations:
+  - text:date
+  - text:forfattare>author
 
 classes:
     token: segment.token
