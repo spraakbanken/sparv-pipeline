@@ -12,10 +12,10 @@ parser = argparse.ArgumentParser(prog="sparv",
                                  description="Sparv Pipeline",
                                  allow_abbrev=False)
 
-subparsers = parser.add_subparsers(dest="command")
+subparsers = parser.add_subparsers(dest="command", title="commands")
 subparsers.required = True
 
-target_parser = subparsers.add_parser("target")
+target_parser = subparsers.add_parser("target", help="Run pipeline to create specified annotation file(s).")
 target_parser.add_argument("targets", nargs="*", help="Annotation file(s) to create.")
 target_parser.add_argument("--dir", help="Path to working directory.")
 target_parser.add_argument("--j", type=int, help="Number of cores to use.", default=1)

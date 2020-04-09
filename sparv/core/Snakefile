@@ -41,7 +41,9 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
     """Build Snakemake rules."""
     # Build input, output and parameter list
     if config.get("debug"):
-        print(module_name, f_name)
+        print()
+        print("{}{}:{} {}".format(util.Color.BOLD, module_name.upper(), util.Color.RESET, f_name))
+        print()
     inputs = []
     outputs = []
     parameters = {}
@@ -147,9 +149,18 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
             parameters[param_name] = param.default
 
     if config.get("debug"):
-        print("inputs:", inputs)
-        print("outputs:", outputs)
-        print("parameters:", parameters)
+        print("    " + util.Color.BOLD + "INPUTS" + util.Color.RESET)
+        for i in inputs:
+            print("        {}".format(i))
+        print()
+        print("    " + util.Color.BOLD + "OUTPUTS" + util.Color.RESET)
+        for o in outputs:
+            print("        {}".format(o))
+        print()
+        print("    " + util.Color.BOLD + "PARAMETERS" + util.Color.RESET)
+        for p in parameters:
+            print("        {} = {!r}".format(p, parameters[p]))
+        print()
         print()
 
     def get_doc_value(wildcards):
