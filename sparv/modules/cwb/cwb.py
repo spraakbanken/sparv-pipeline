@@ -5,7 +5,7 @@ from glob import glob
 from typing import Optional
 
 import sparv.util as util
-from sparv import annotator, Corpus, Document, Annotation, Export, ExportAnnotations
+from sparv import Annotation, Config, Corpus, Document, Export, ExportAnnotations, annotator
 
 ALIGNDIR = "annotations/align"
 
@@ -20,7 +20,7 @@ def export(doc: str = Document,
            token: str = Annotation("<token>"),
            word: str = Annotation("<token:word>"),
            annotations: list = ExportAnnotations,
-           original_annotations: Optional[list] = None):
+           original_annotations: Optional[list] = Config("original_annotations")):
     """Export annotations to vrt in export_dir.
 
     - doc: name of the original document

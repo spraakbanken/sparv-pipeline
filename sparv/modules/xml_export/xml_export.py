@@ -6,7 +6,7 @@ from collections import defaultdict
 from typing import Optional
 
 import sparv.util as util
-from sparv import annotator, Document, Annotation, Export, ExportAnnotations, Config
+from sparv import Annotation, Config, Document, Export, ExportAnnotations, annotator
 
 
 @annotator("XML export", exporter=True)
@@ -16,7 +16,7 @@ def export(doc: str = Document,
            token: str = Annotation("<token>"),
            word: str = Annotation("<token:word>"),
            annotations: list = ExportAnnotations,
-           original_annotations: Optional[list] = None):
+           original_annotations: Optional[list] = Config("original_annotations")):
     """Export annotations to xml in export_dir.
 
     - doc: name of the original document
@@ -85,7 +85,7 @@ def export_formatted(doc: str = Document,
                      out: str = Export("xml_formatted/[xml_export.filename_formatted={doc}_export.xml]"),
                      token: str = Annotation("<token>"),
                      annotations: list = ExportAnnotations,
-                     original_annotations: Optional[list] = None):
+                     original_annotations: Optional[list] = Config("original_annotations")):
     """Export annotations to xml in export_dir and keep whitespaces and indentation from original file.
 
     - doc: name of the original document
