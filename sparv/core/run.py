@@ -33,48 +33,53 @@ def main(argv=None):
     importlib.import_module(".".join((modules_path, module_name)))
 
     parser = argparse.ArgumentParser(prog="sparv run " + module_name,
-        epilog="note: Annotation classes and configuration variables are not available "
+                                     epilog="note: Annotation classes and configuration variables are not available "
                                             "when running annotators independently. Complete names must be used.")
-    subparsers = parser.add_subparsers(dest="annotator", help="Annotator function")
+    subparsers = parser.add_subparsers(dest="_annotator", help="Annotator function")
     subparsers.required = True
 
     for f_name in registry.annotators[module_name]:
         f, description, *_ = registry.annotators[module_name][f_name]
-        subparser = subparsers.add_parser(f_name)
+        subparser = subparsers.add_parser(f_name, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         subparser.set_defaults(f_=f)
         required_args = subparser.add_argument_group("required named arguments")
         for parameter in inspect.signature(f).parameters.items():
             param_ann = parameter[1].annotation
             if not param_ann == inspect.Parameter.empty:
-                arg_type = param_ann if type(param_ann) in (str, int, bool) else None
+                arg_type = param_ann if param_ann in (str, int, bool) else None
             else:
                 arg_type = None
             required = parameter[1].default == inspect.Parameter.empty
+            f_args = {"type": arg_type}
             if not required:
                 # Check if the default argument is of a type we can't handle when running a single module alone
                 for t in (Annotation, Output, Model, Binary, Config, Document, AllDocuments, ExportAnnotations):
                     if registry.dig(t, parameter[1].default):
-                        required = True
+                        # If the type hint is Optional, set default to None, otherwise make required
+                        # TODO: Replace the below with the following when upgrading to Python 3.8:
+                        #  typing.get_origin(param_ann) is typing.Union and \
+                        #             type(None) in typing.get_args(param_ann)
+                        if (getattr(param_ann, "__origin__", None) is Union and type(None) in getattr(param_ann,
+                                                                                                      "__args__",
+                                                                                                      ())):
+                            f_args["default"] = None
+                        else:
+                            required = True
                         break
-
-                if required:
-                    # If the type hint is Optional, set default to None and make parameter optional
-                    # TODO: Replace the below with the following when upgrading to Python 3.8:
-                    #  typing.get_origin(param_ann) is typing.Union and \
-                    #             type(None) in typing.get_args(param_ann)
-                    if (getattr(param_ann, "__origin__", None) is Union and type(None) in getattr(param_ann,
-                                                                                                  "__args__",
-                                                                                                  ())):
-                        subparser.add_argument("--" + parameter[0], type=arg_type, default=None)
-                        required = False
                 else:
-                    subparser.add_argument("--" + parameter[0], type=arg_type)
+                    # If default argument is of a type we can handle
+                    f_args["default"] = parameter[1].default
+                    if arg_type == bool and parameter[1].default == False:
+                        f_args["action"] = "store_true"
+                        del f_args["type"]
+
             if required:
-                required_args.add_argument("--" + parameter[0], type=arg_type, required=True)
+                required_args.add_argument("--" + parameter[0], required=True, **f_args)
+            else:
+                subparser.add_argument("--" + parameter[0], help=" ", **f_args)
 
     args = parser.parse_args(rest_args)
-
-    arguments = {k: v for k, v in vars(args).items() if v is not None and k not in ("f_", "annotator")}
+    arguments = {k: v for k, v in vars(args).items() if k not in ("f_", "_annotator")}
     args.f_(**arguments)
 
 
