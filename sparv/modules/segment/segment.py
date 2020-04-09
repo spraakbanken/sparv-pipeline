@@ -23,7 +23,7 @@ def tokenize(doc: str = Document,
              segmenter: str = Config("token_segmenter", "better_word"),
              existing_segments: str = Config("existing_tokens"),
              model: Optional[str] = Model("bettertokenizer.sv"),
-             pickled_model=False):
+             pickled_model: bool = False):
     """Tokenize text."""
     do_segmentation(doc=doc, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,
                     model=model, pickled_model=pickled_model)
@@ -36,7 +36,7 @@ def sentence(doc: str = Document,
              segmenter: str = Config("sentence_segmenter", "punkt_sentence"),
              existing_segments: str = Config("existing_sentences"),
              model: Optional[str] = None,
-             pickled_model=False):
+             pickled_model: bool = False):
     """Split text into sentences."""
     do_segmentation(doc=doc, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,
                     model=model, pickled_model=pickled_model)

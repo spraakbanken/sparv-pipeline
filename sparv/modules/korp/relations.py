@@ -6,7 +6,7 @@ from collections import defaultdict
 from typing import Optional
 
 import sparv.util as util
-from sparv import AllDocuments, Annotation, Config, Corpus, Document, Output, annotator
+from sparv import AllDocuments, Annotation, Config, Corpus, Document, Export, Output, annotator
 from sparv.util.mysql_wrapper import MySQL
 
 MAX_STRING_LENGTH = 100
@@ -237,11 +237,11 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
     return x_rel_y * math.log((rel * x_rel_y) / (x_rel * rel_y * 1.0), 2)
 
 
-@annotator("Create Word Picture SQL for Korp")
+@annotator("Create Word Picture SQL for Korp", exporter=True)
 def create_sql(corpus: str = Corpus,
                db_name: str = Config("korp.relations_db_name", "korp_relations"),
-               out: str = Output("korp.relations.sql", data=True),
-               relations: str = Annotation("korp.relations", data=True),
+               out: str = Export("korp_wordpicture/relations.sql"),
+               relations: str = Annotation("korp.relations", data=True, all_docs=True),
                docs: Optional[list] = AllDocuments,
                doclist: str = "",
                split: bool = False):
@@ -258,7 +258,6 @@ def create_sql(corpus: str = Corpus,
     """
     split = util.strtobool(split)
     db_table = MYSQL_TABLE + "_" + corpus.upper()
-    out = util.get_annotation_path(None, out, data=True)
 
     # Relations that will be grouped together
     rel_grouping = {

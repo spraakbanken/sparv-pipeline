@@ -6,13 +6,13 @@ from collections import defaultdict
 from typing import Optional
 
 import sparv.util as util
-from sparv import annotator, Document, Annotation, Export, ExportAnnotations
+from sparv import annotator, Document, Annotation, Export, ExportAnnotations, Config
 
 
 @annotator("XML export", exporter=True)
 def export(doc: str = Document,
            docid: str = Annotation("<docid>", data=True),
-           export_dir: str = Export("xml"),
+           out: str = Export("xml/[xml_export.filename={doc}_export.xml]"),
            token: str = Annotation("<token>"),
            word: str = Annotation("<token:word>"),
            annotations: list = ExportAnnotations,
@@ -27,7 +27,7 @@ def export(doc: str = Document,
       to be kept. If not specified, everything will be kept.
     """
     # Create export dir
-    os.makedirs(os.path.dirname(export_dir), exist_ok=True)
+    os.makedirs(os.path.dirname(out), exist_ok=True)
 
     # Read words and document ID
     word_annotation = list(util.read_annotation(doc, word))
@@ -75,12 +75,17 @@ def export(doc: str = Document,
                 handle_overlaps(span, node_stack, docid, overlap_ids, annotation_dict, export_names)
 
     # Write xml to file
-    out_file = os.path.join(export_dir, "%s_export.xml" % doc)
-    etree.ElementTree(root_span.node).write(out_file, xml_declaration=False, method="xml", encoding=util.UTF8)
-    util.log.info("Exported: %s", out_file)
+    etree.ElementTree(root_span.node).write(out, xml_declaration=False, method="xml", encoding=util.UTF8)
+    util.log.info("Exported: %s", out)
 
 
-def export_formatted(doc, docid, export_dir, token, annotations, original_annotations=None):
+@annotator("XML export preserving whitespace from source file", exporter=True)
+def export_formatted(doc: str = Document,
+                     docid: str = Annotation("<docid>", data=True),
+                     out: str = Export("xml_formatted/[xml_export.filename_formatted={doc}_export.xml]"),
+                     token: str = Annotation("<token>"),
+                     annotations: list = ExportAnnotations,
+                     original_annotations: Optional[list] = None):
     """Export annotations to xml in export_dir and keep whitespaces and indentation from original file.
 
     - doc: name of the original document
@@ -90,7 +95,7 @@ def export_formatted(doc, docid, export_dir, token, annotations, original_annota
       to be kept. If not specified, everything will be kept.
     """
     # Create export dir
-    os.makedirs(os.path.dirname(export_dir), exist_ok=True)
+    os.makedirs(os.path.dirname(out), exist_ok=True)
 
     # Read corpus text and document ID
     corpus_text = util.read_corpus_text(doc)
@@ -156,9 +161,8 @@ def export_formatted(doc, docid, export_dir, token, annotations, original_annota
                 handle_overlaps(span, node_stack, docid, overlap_ids, annotation_dict, export_names)
 
     # Write xml to file
-    out_file = os.path.join(export_dir, "%s_export.xml" % doc)
-    etree.ElementTree(root_span.node).write(out_file, xml_declaration=False, method="xml", encoding=util.UTF8)
-    util.log.info("Exported: %s", out_file)
+    etree.ElementTree(root_span.node).write(out, xml_declaration=False, method="xml", encoding=util.UTF8)
+    util.log.info("Exported: %s", out)
 
 
 def combine_xml(master, out, xmlfiles="", xmlfiles_list=""):

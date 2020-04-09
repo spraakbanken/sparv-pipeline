@@ -1,9 +1,11 @@
 """Snakefile used by Snakemake."""
+import copy
 import inspect
 import os
 import re
 
 import snakemake
+
 from sparv import util
 from sparv.core import config as sparv_config
 from sparv.core import paths, registry
@@ -43,8 +45,9 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
     inputs = []
     outputs = []
     parameters = {}
-    docs = []  # List of parameters refering to documents
-    wildcard_annotations = []  # List of parameters containign wildcards
+    docs = []  # List of parameters refering to Document
+    doc_annotations = []  # List of parameters containing the {doc} wildcard
+    wildcard_annotations = []  # List of parameters containing other wildcards
     if importer:
         inputs.append(os.path.join(paths.source_dir, "{doc}.xml"))
         outputs.append(os.path.join(paths.annotation_dir, "{doc}", util.TEXT_FILE))
@@ -77,8 +80,12 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
         elif registry.dig(Annotation, param.default):
             param_value = registry.expand_variables(param.default)
             if exporter:
-                inputs.append(os.path.join(paths.annotation_dir, get_annotation_path(param_value,
-                                                                                     data=param.default.data)))
+                if param.default.all_docs:
+                    inputs.extend(expand(os.path.join(paths.annotation_dir, get_annotation_path(param_value,
+                                                                                         data=param.default.data)), doc=input_files))
+                else:
+                    inputs.append(os.path.join(paths.annotation_dir, get_annotation_path(param_value,
+                                                                                         data=param.default.data)))
             else:
                 inputs.append(get_annotation_path(param_value, data=param.default.data))
             parameters[param_name] = param_value
@@ -128,11 +135,10 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
             parameters[param_name] = paths.source_dir
         # Export
         elif param.annotation == Export or param.default == Export or isinstance(param.default, Export):
-            if param.default == inspect.Parameter.empty:
-                parameters[param_name] = paths.export_dir
-            else:
-                parameters[param_name] = os.path.join(paths.export_dir, param.default)
-            outputs.append(os.path.join(parameters[param_name], "{doc}_export.xml"))
+            parameters[param_name] = os.path.join(paths.export_dir, registry.expand_variables(param.default))
+            outputs.append(parameters[param_name])
+            if "{doc}" in parameters[param_name]:
+                doc_annotations.append(param_name)
         # Config
         elif isinstance(param.default, Config):
             parameters[param_name] = sparv_config.get(param.default)
@@ -148,23 +154,31 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
 
     def get_doc_value(wildcards):
         """Extract the {doc} part from full annotation path."""
-        if importer or exporter:
-            doc = wildcards.doc
-        else:
-            doc = wildcards.doc[len(paths.annotation_dir) + 1:]
+        doc = None
+        if hasattr(wildcards, "doc"):
+            if importer or exporter:
+                doc = wildcards.doc
+            else:
+                doc = wildcards.doc[len(paths.annotation_dir) + 1:]
         return doc
 
     def get_parameters(wildcards):
         """Extend function parameters with doc names and replace wildcards."""
         doc = get_doc_value(wildcards)
-        parameters.update({name: doc for name in docs})
+        # We need to make a copy of the parameters, since the rule might be used for multiple documents
+        _parameters = copy.deepcopy(parameters)
+        _parameters.update({name: doc for name in docs})
+
+        # Replace {doc} wildcard in parameters
+        for name in doc_annotations:
+            _parameters[name] = _parameters[name].replace("{doc}", doc)
 
         # Replace wildcards in parameters
         for name in wildcard_annotations:
-            wcs = re.finditer(r"{([^}]+)}", parameters[name])
+            wcs = re.finditer(r"{([^}]+)}", _parameters[name])
             for wc in wcs:
-                parameters[name] = parameters[name].replace(wc.group(), wildcards.get(wc.group(1)))
-        return parameters
+                _parameters[name] = _parameters[name].replace(wc.group(), wildcards.get(wc.group(1)))
+        return _parameters
 
     rule:
         input:
@@ -181,11 +195,13 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
             # Snakemake creates processes for run-jobs.
 
     # Create rule to run this annotation on all input files, but skip rules containing wildcards
-    if not any(re.search(r"{(?!doc)[^}]+}", o) for o in outputs):
+    if not any(re.search(r"(?!{doc}){[^}]+}", o) for o in outputs):
         target_name = module_name + ":" + f_name
         named_targets.append((target_name, desc))
         @workflow.rule(name=target_name)
-        @workflow.input(expand([os.path.join(paths.annotation_dir, o) if not o.startswith(paths.annotation_dir) else o
+        @workflow.input(expand([os.path.join(paths.annotation_dir, o)
+                                if not (o.startswith(paths.annotation_dir) or o.startswith(paths.export_dir))
+                                else o
                                 for o in outputs], doc=input_files))
         @workflow.run
         def __rule__(*_args, **_kwargs):

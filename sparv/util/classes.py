@@ -8,9 +8,10 @@ class Annotation(str):
     def __new__(_cls, name: str, *args, **kwargs):
         return super().__new__(_cls, name)
 
-    def __init__(self, name: str, data: bool = False):
+    def __init__(self, name: str, data: bool = False, all_docs: bool = False):
         self.source = name
         self.data = data
+        self.all_docs = all_docs
 
 
 class Output(Annotation):
@@ -64,7 +65,7 @@ class Source(str):
 
 
 class Export(str):
-    """Export path."""
+    """Export path and filename."""
     pass
 
 
