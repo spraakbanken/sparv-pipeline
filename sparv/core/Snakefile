@@ -4,11 +4,9 @@ import os
 import re
 
 import snakemake
-
 from sparv import util
 from sparv.core import config as sparv_config
-from sparv.core import paths
-from sparv.core import registry
+from sparv.core import paths, registry
 from sparv.util.classes import *
 
 # List of all available source files
@@ -98,6 +96,9 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
                 if new_name:
                     param_value = ">".join((param_value, new_name))
                 parameters[param_name].append(param_value)
+        # Corpus
+        elif param.annotation == Corpus or param.default == Corpus or isinstance(param.default, Corpus):
+            parameters[param_name] = sparv_config.get("id")
         # Document
         elif param.annotation == Document or param.default == Document or isinstance(param.default, Document):
             docs.append(param_name)

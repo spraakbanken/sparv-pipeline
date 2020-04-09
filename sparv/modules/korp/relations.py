@@ -6,7 +6,7 @@ from collections import defaultdict
 from typing import Optional
 
 import sparv.util as util
-from sparv import AllDocuments, Annotation, Config, Document, Output, annotator
+from sparv import AllDocuments, Annotation, Config, Corpus, Document, Output, annotator
 from sparv.util.mysql_wrapper import MySQL
 
 MAX_STRING_LENGTH = 100
@@ -238,7 +238,7 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
 
 
 @annotator("Create Word Picture SQL for Korp")
-def create_sql(corpus: str = Config("name"),
+def create_sql(corpus: str = Corpus,
                db_name: str = Config("korp.relations_db_name", "korp_relations"),
                out: str = Output("korp.relations.sql", data=True),
                relations: str = Annotation("korp.relations", data=True),

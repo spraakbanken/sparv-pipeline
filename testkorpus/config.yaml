@@ -1,4 +1,5 @@
-name: testkorpus
+id: testkorpus
+name: Testkorpus
 
 # Elements and attributes from the source XML that we want to be available as input for other annotations
 xml_elements:
