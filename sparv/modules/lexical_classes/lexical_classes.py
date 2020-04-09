@@ -1,10 +1,13 @@
 """Annotate words or documents with lexical classes from Blingbring or SweFN."""
 
-import sparv.util as util
 import os
-import sys
 import subprocess
+import sys
 from collections import defaultdict
+from typing import List
+
+import sparv.util as util
+from sparv import Annotation, Document, Model, annotator
 
 # Path to the cwb binaries
 CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
@@ -12,8 +15,19 @@ CWB_DESCRIBE_EXECUTABLE = "cwb-describe-corpus"
 CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 
-def annotate_bb_words(doc, out, model, saldoids, pos, pos_limit="NN VB JJ AB", class_set="bring", connect_ids=False,
-                      delimiter=util.DELIM, affix=util.AFFIX, scoresep=util.SCORESEP, lexicon=None):
+@annotator("Annotate tokens with Blingbring classes")
+def annotate_bb_words(doc: str = Document,
+                      out: str = Annotation("<token>:lexical_classes.blingbring"),
+                      model: str = Model("[lexical_classes.bb_word_model=blingbring.pickle]"),
+                      saldoids: str = Annotation("<token:sense>"),
+                      pos: str = Annotation("<token:pos>"),
+                      pos_limit: List[str] = ["NN", "VB", "JJ", "AB"],
+                      class_set: str = "bring",
+                      connect_ids: bool = False,
+                      delimiter: str = util.DELIM,
+                      affix: str = util.AFFIX,
+                      scoresep: str = util.SCORESEP,
+                      lexicon=None):
     """Blingbring specific wrapper for annotate_words. See annotate_words for more info."""
     # pos_limit="NN VB JJ AB" | None
     connect_ids = util.strtobool(connect_ids)
@@ -212,8 +226,8 @@ def annotate_doc(doc, out, in_token_annotation, text, token, saldoids=None, cuto
 
 
 def read_blingbring(tsv="blingbring.txt", classmap="rogetMap.xml", verbose=True):
-    """
-    Read the tsv version of the Blingbring lexicon (blingbring.xml).
+    """Read the tsv version of the Blingbring lexicon (blingbring.xml).
+
     Return a lexicon dictionary: {senseid: {roget_head: roget_head,
                                             roget_subsection: roget_subsection,
                                             roget_section: roget_section,
@@ -271,11 +285,8 @@ def read_blingbring(tsv="blingbring.txt", classmap="rogetMap.xml", verbose=True)
 
 
 def read_rogetmap(xml="roget_hierarchy.xml", verbose=True):
-    """
-    Parse Roget map (Roget hierarchy) into a dictionary with
-    Roget head words as keys.
-    """
-    import xml.etree.cElementTree as cet
+    """Parse Roget map (Roget hierarchy) into a dictionary with Roget head words as keys."""
+    import xml.etree.ElementTree as cet
     if verbose:
         util.log.info("Reading XML lexicon")
     lexicon = {}
@@ -306,11 +317,11 @@ def read_rogetmap(xml="roget_hierarchy.xml", verbose=True):
 
 
 def read_swefn(xml='swefn.xml', verbose=True):
-    """
-    Read the XML version of the swedish Framenet resource.
+    """Read the XML version of the swedish Framenet resource.
+
     Return a lexicon dictionary, {saldoID: {swefnID}}.
     """
-    import xml.etree.cElementTree as cet
+    import xml.etree.ElementTree as cet
     if verbose:
         util.log.info("Reading XML lexicon")
     lexicon = {}
@@ -357,9 +368,7 @@ def swefn_to_pickle(xml, filename, protocol=-1, verbose=True):
 
 
 def create_freq_pickle(corpus, annotation, filename, model, class_set=None, score_separator=util.SCORESEP):
-    """Build pickle with relative frequency for a given annotation in one or
-       more reference corpora."""
-
+    """Build pickle with relative frequency for a given annotation in one or more reference corpora."""
     lexicon = util.PickledLexicon(model)
     # Create a set of all possible classes
     if class_set:

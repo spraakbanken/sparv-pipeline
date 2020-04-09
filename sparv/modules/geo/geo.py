@@ -2,15 +2,18 @@
 Annotate geographical features.
 """
 
-import sparv.util as util
 import pickle
 from collections import defaultdict
+
+import sparv.util as util
+from sparv import Annotation, Document, Model, Output, annotator
 
 
 def build_model(geonames, alternative_names, out, protocol=-1):
     """Read list of cities from Geonames dump (http://download.geonames.org/export/dump/).
-    Add alternative names for each city."""
 
+    Add alternative names for each city.
+    """
     util.log.info("Reading geonames: %s", geonames)
     result = {}
     with open(geonames, encoding="UTF-8") as model_file:
@@ -80,7 +83,17 @@ def _format_location(location_data):
     return util.cwbset(";".join((y[0], y[3], y[1], y[2])) for x, y in location_data)
 
 
-def contextual(doc, out, chunk, context, ne_type, ne_subtype, ne_name, model, method="populous", language=[]):
+@annotator("Annotate chunks with location data, based on locations contained within the text")
+def contextual(doc: str = Document,
+               out: str = Output("{chunk}:geo.geo", description="Geographical places with coordinates"),
+               chunk: str = Annotation("{chunk}"),
+               context: str = Annotation("{context}"),
+               ne_type: str = Annotation("swener.ne:swener.type"),
+               ne_subtype: str = Annotation("swener.ne:swener.subtype"),
+               ne_name: str = Annotation("swener.ne:swener.name"),
+               model: str = Model("[geo.model=geo.pickle]"),
+               method: str = "populous",
+               language: list = []):
     """Annotate chunks with location data, based on locations contained within the text.
 
     context = text chunk to use for disambiguating places (when applicable).
@@ -126,7 +139,14 @@ def contextual(doc, out, chunk, context, ne_type, ne_subtype, ne_name, model, me
     util.write_annotation(doc, out, out_annotation)
 
 
-def metadata(doc, out, chunk, source, model, method="populous", language=[]):
+@annotator("Annotate chunks with location data, based on metadata containing location names")
+def metadata(doc: str = Document,
+             out: str = Output("{chunk}:geo.geo", description="Geographical places with coordinates"),
+             chunk: str = Annotation("{chunk}"),
+             source: str = Annotation("{source}"),
+             model: str = Model("[geo.model=geo.pickle]"),
+             method: str = "populous",
+             language: list = []):
     """Get location data based on metadata containing location names."""
     if isinstance(language, str):
         language = language.split()
