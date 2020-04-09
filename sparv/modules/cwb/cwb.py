@@ -16,7 +16,7 @@ CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 @annotator("VRT export", exporter=True)
 def export(doc: str = Document,
-           export_dir: str = Export("vrt"),
+           out: str = Export("vrt/{doc}.vrt"),
            token: str = Annotation("<token>"),
            word: str = Annotation("<token:word>"),
            annotations: list = ExportAnnotations,
@@ -31,7 +31,7 @@ def export(doc: str = Document,
       to be kept. If not specified, everything will be kept.
     """
     # Create export dir
-    os.makedirs(os.path.dirname(export_dir), exist_ok=True)
+    os.makedirs(os.path.dirname(out), exist_ok=True)
 
     # Read words
     word_annotation = list(util.read_annotation(doc, word))
@@ -62,10 +62,9 @@ def export(doc: str = Document,
 
     # Write result to file
     vrt = "\n".join(vrt)
-    out_file = os.path.join(export_dir, "%s_export.vrt" % doc)
-    with open(out_file, "w") as f:
+    with open(out, "w") as f:
         f.write(vrt)
-    util.log.info("Exported: %s", out_file)
+    util.log.info("Exported: %s", out)
 
 
 def make_attr_str(annotation, annotation_dict, export_names, index):
