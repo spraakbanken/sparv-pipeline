@@ -10,9 +10,11 @@ venv/
 models/freeling
 models/treetagger
 models/wsd
+models/lexical_classes/blingbring.pickle
+models/lexical_classes/blingbring.txt
+models/lexical_classes/swefn.pickle
+models/lexical_classes/swefn.xml
 models/bettertokenizer.sv.saldo-tokens
-models/blingbring.pickle
-models/blingbring.txt
 models/dalin.pickle
 models/dalinm.xml
 models/diapivot.pickle
@@ -32,8 +34,6 @@ models/stats.pickle
 models/stats_all.txt
 models/swedberg.pickle
 models/swedbergm.xml
-models/swefn.pickle
-models/swefn.xml
 models/swemalt-1.7.2.mco
 
 bin/maltparser-1.7.2/
