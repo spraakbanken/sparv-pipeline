@@ -22,7 +22,7 @@ def tokenize(doc: str = Document,
              chunk: str = Annotation("[token_chunk]"),
              segmenter: str = Config("token_segmenter", "better_word"),
              existing_segments: str = Config("existing_tokens"),
-             model: Optional[str] = Model("bettertokenizer.sv"),
+             model: Optional[str] = Model("segment/bettertokenizer.sv"),
              pickled_model: bool = False):
     """Tokenize text."""
     do_segmentation(doc=doc, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,

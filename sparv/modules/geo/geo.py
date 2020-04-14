@@ -91,7 +91,7 @@ def contextual(doc: str = Document,
                ne_type: str = Annotation("swener.ne:swener.type"),
                ne_subtype: str = Annotation("swener.ne:swener.subtype"),
                ne_name: str = Annotation("swener.ne:swener.name"),
-               model: str = Model("[geo.model=geo.pickle]"),
+               model: str = Model("[geo.model=geo/geo.pickle]"),
                method: str = "populous",
                language: list = []):
     """Annotate chunks with location data, based on locations contained within the text.
@@ -144,7 +144,7 @@ def metadata(doc: str = Document,
              out: str = Output("{chunk}:geo.geo", description="Geographical places with coordinates"),
              chunk: str = Annotation("{chunk}"),
              source: str = Annotation("{source}"),
-             model: str = Model("[geo.model=geo.pickle]"),
+             model: str = Model("[geo.model=geo/geo.pickle]"),
              method: str = "populous",
              language: list = []):
     """Get location data based on metadata containing location names."""

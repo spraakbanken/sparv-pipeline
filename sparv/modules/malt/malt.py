@@ -23,7 +23,7 @@ UNDEF = "_"
 @annotator("Dependency parsing using MALT Parser")
 def maltparse(doc: str = Document,
               maltjar: str = Binary("[malt.jar=maltparser-1.7.2/maltparser-1.7.2.jar]"),
-              model: str = Model("[malt.model=swemalt-1.7.2.mco]"),
+              model: str = Model("[malt.model=malt/swemalt-1.7.2.mco]"),
               out_dephead: str = Output("<token>:malt.dephead", description="Positions of the dependency heads"),
               out_dephead_ref: str = Output("<token>:malt.dephead_ref", description="Sentence-relative positions of the dependency heads"),
               out_deprel: str = Output("<token>:malt.deprel", description="Dependency relations to the head"),

@@ -15,7 +15,7 @@ def annotate(doc: str = Document,
              sense: str = Annotation("<token>:saldo.sense"),
              out_scores: str = Output("<token>:sentiment.score", description="SenSALDO sentiment score"),
              out_labels: str = Output("<token>:sentiment.label", description="SenSALDO sentiment label"),
-             model: str = Model("[sensaldo.model=sensaldo.pickle]"),
+             model: str = Model("[sensaldo.model=sensaldo/sensaldo.pickle]"),
              lexicon=None):
     """Assign sentiment values to tokens based on their sense annotation.
 
