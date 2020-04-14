@@ -10,6 +10,8 @@ venv/
 models/freeling
 models/treetagger
 models/wsd
+models/hunpos/hunpos.saldo.suc-tags.morphtable
+models/hunpos/hunpos.dalinm-swedberg.saldo.suc-tags.morphtable
 models/lexical_classes/blingbring.pickle
 models/lexical_classes/blingbring.txt
 models/lexical_classes/swefn.pickle
@@ -22,8 +24,6 @@ models/diapivot.xml
 models/geo.pickle
 models/geo_alternateNames.txt
 models/geo_cities1000.txt
-models/hunpos.saldo.suc-tags.morphtable
-models/hunpos.dalinm-swedberg.saldo.suc-tags.morphtable
 models/nst_utf8.txt
 models/saldo.compound.pickle
 models/saldo.pickle

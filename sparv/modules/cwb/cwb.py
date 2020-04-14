@@ -251,5 +251,5 @@ def parse_structural_attributes(structural_atts):
 
 if __name__ == "__main__":
     util.run.main(export=export,
-                  encode=cwb_encode,
+                  encode=encode,
                   align=cwb_align)

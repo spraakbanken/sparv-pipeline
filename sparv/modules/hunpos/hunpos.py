@@ -13,13 +13,13 @@ TAG_COLUMN = 1
 
 @annotator("Part-of-speech annotation with morphological descriptions")
 def msdtag(doc: str = Document,
-           model: str = Model("hunpos.suc3.suc-tags.default-setting.utf8.model"),
+           model: str = Model("hunpos/hunpos.suc3.suc-tags.default-setting.utf8.model"),
            out: str = Output("<token>:hunpos.msd", cls="token:msd", description="Part-of-speeches with morphological descriptions"),
            word: str = Annotation("<token:word>"),
            sentence: str = Annotation("<sentence>"),
            tag_mapping=None,
-           morphtable: str = Model("hunpos.saldo.suc-tags.morphtable"),
-           patterns: str = Model("hunpos.suc.patterns"),
+           morphtable: str = Model("hunpos/hunpos.saldo.suc-tags.morphtable"),
+           patterns: str = Model("hunpos/hunpos.suc.patterns"),
            encoding: str = util.UTF8):
     """POS/MSD tag using the Hunpos tagger."""
     if isinstance(tag_mapping, str) and tag_mapping:

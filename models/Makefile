@@ -1,7 +1,8 @@
 include $(SPARV_MAKEFILES)/Makefile.config
 
-TARGETS = help info clean space all saldom.xml saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable bettertokenizer.sv.saldo-tokens stats_all.txt stats.pickle dalinm.xml dalin.pickle diapivot.xml diapivot.pickle swedbergm.xml swedberg.pickle geo.pickle nst_utf8.txt nst.comp.pos.pickle sensaldo-base-v02.txt sensaldo.pickle lexical_classes wsd
-.PHONY: help info clean all wsd lexical_classes
+TARGETS = help info clean space all saldom.xml saldo.pickle saldo.compound.pickle hunpos hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable bettertokenizer.sv.saldo-tokens stats_all.txt stats.pickle dalinm.xml dalin.pickle diapivot.xml diapivot.pickle swedbergm.xml swedberg.pickle geo.pickle nst_utf8.txt nst.comp.pos.pickle sensaldo-base-v02.txt sensaldo.pickle lexical_classes wsd
+
+.PHONY: help info clean all hunpos wsd lexical_classes
 
 ifndef python
 python = python
@@ -16,7 +17,7 @@ clean:
 space:
 	rm -f stats_all.txt saldom.xml nst_utf8.txt dalinm.xml diapivot.xml swedbergm.xml lexical_classes/blingbring.txt lexical_classes/swefn.xml sensaldo-base-v02.txt
 
-all: saldo.pickle saldo.compound.pickle hunpos.saldo.suc-tags.morphtable hunpos.dalinm-swedberg.saldo.suc-tags.morphtable stats.pickle bettertokenizer.sv.saldo-tokens diapivot.pickle dalin.pickle swedberg.pickle geo.pickle sensaldo.pickle lexical_classes wsd
+all: saldo.pickle saldo.compound.pickle hunpos stats.pickle bettertokenizer.sv.saldo-tokens diapivot.pickle dalin.pickle swedberg.pickle geo.pickle sensaldo.pickle lexical_classes wsd
 
 info:
 	@echo "Subversion revision:"
@@ -35,11 +36,13 @@ saldo.pickle: saldom.xml
 saldo.compound.pickle: saldom.xml
 	$(python) -m sparv.modules.saldo.compound --xml_to_pickle  --xml "saldom.xml"  --filename "$@"
 
-hunpos.saldo.suc-tags.morphtable: saldo.pickle hunpos.suc.morphtable hunpos.suc.patterns
+hunpos: hunpos/hunpos.saldo.suc-tags.morphtable hunpos/hunpos.dalinm-swedberg.saldo.suc-tags.morphtable
+
+hunpos/hunpos.saldo.suc-tags.morphtable: saldo.pickle hunpos.suc.morphtable hunpos.suc.patterns
 	$(python) -m sparv.modules.hunpos.hunpos_morphtable --out "$@" --saldo_model "saldo.pickle" --suc "suc3.morphtable.words" --morphtable_base "hunpos.suc.morphtable" --morphtable_patterns "hunpos.suc.patterns"
 
-hunpos.dalinm-swedberg.saldo.suc-tags.morphtable: hunpos.saldo.suc-tags.morphtable
-	$(python) -m sparv.modules.hunpos.hunpos_morphtable_hist --out "$@" --files "hist_hunposfiles/swedberg-gender.hunpos hist_hunposfiles/dalinm.hunpos" --saldosuc_morphtable "$<"
+hunpos/hunpos.dalinm-swedberg.saldo.suc-tags.morphtable: hunpos.saldo.suc-tags.morphtable
+	$(python) -m sparv.modules.hunpos.hunpos_morphtable_hist --out "$@" --files "hunpos/hist_hunposfiles/swedberg-gender.hunpos hunpos/hist_hunposfiles/dalinm.hunpos" --saldosuc_morphtable "$<"
 
 bettertokenizer.sv.saldo-tokens:
 	$(python) -m sparv.modules.segment.segment --build_token_wordlist --out "$@" --saldo_model "saldo.pickle" --segmenter better_word --model "bettertokenizer.sv" --no_pickled_model=True
