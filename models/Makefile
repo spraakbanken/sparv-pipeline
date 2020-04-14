@@ -1,6 +1,6 @@
 include $(SPARV_MAKEFILES)/Makefile.config
 
-TARGETS = help info clean space all saldo/saldom.xml saldo/saldo.pickle saldo/saldo.compound.pickle hunpos bettertokenizer.sv.saldo-tokens saldo/stats_all.txt saldo/stats.pickle dalinm.xml dalin.pickle diapivot.xml diapivot.pickle swedbergm.xml swedberg.pickle geo saldo/nst_utf8.txt saldo/nst.comp.pos.pickle sensaldo/sensaldo-base-v02.txt sensaldo/sensaldo.pickle lexical_classes wsd
+TARGETS = help info clean space all saldo/saldom.xml saldo/saldo.pickle saldo/saldo.compound.pickle hunpos segment/bettertokenizer.sv.saldo-tokens saldo/stats_all.txt saldo/stats.pickle hist/dalinm.xml hist/dalin.pickle hist/diapivot.xml hist/diapivot.pickle hist/swedbergm.xml hist/swedberg.pickle geo saldo/nst_utf8.txt saldo/nst.comp.pos.pickle sensaldo/sensaldo-base-v02.txt sensaldo/sensaldo.pickle lexical_classes wsd
 
 .PHONY: help info clean all hunpos wsd lexical_classes geo
 
@@ -15,15 +15,15 @@ clean:
 	rm -rf saldo/saldom.xml saldo/saldo.pickle saldo/saldo.compound.pickle saldo/stats.pickle saldo/stats_all.txt lexical_classes/blingbring.pickle lexical_classes/swefn.pickle wsd
 
 space:
-	rm -f saldo/stats_all.txt saldo/saldom.xml saldo/nst_utf8.txt dalinm.xml diapivot.xml swedbergm.xml lexical_classes/blingbring.txt lexical_classes/swefn.xml sensaldo/sensaldo-base-v02.txt geo/geo_alternateNames.txt geo/geo_cities1000.txt
+	rm -f saldo/stats_all.txt saldo/saldom.xml saldo/nst_utf8.txt hist/dalinm.xml hist/diapivot.xml hist/swedbergm.xml lexical_classes/blingbring.txt lexical_classes/swefn.xml sensaldo/sensaldo-base-v02.txt geo/geo_alternateNames.txt geo/geo_cities1000.txt
 
-all: saldo/saldo.pickle saldo/saldo.compound.pickle hunpos saldo/stats.pickle segment/bettertokenizer.sv.saldo-tokens diapivot.pickle dalin.pickle swedberg.pickle geo.pickle sensaldo/sensaldo.pickle lexical_classes wsd
+all: saldo/saldo.pickle saldo/saldo.compound.pickle hunpos saldo/stats.pickle segment/bettertokenizer.sv.saldo-tokens hist/diapivot.pickle hist/dalin.pickle hist/swedberg.pickle geo sensaldo/sensaldo.pickle lexical_classes wsd
 
 info:
 	@echo "Subversion revision:"
 	@svn info https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/saldom/saldom.xml | grep 'Last Changed Rev:' | grep -o '[0-9]*'
 	@echo "Local revision:"
-	@head saldom.xml | grep -o 'saldom.xml [0-9]*' | grep -o '[0-9]*'
+	@head saldo/saldom.xml | grep -o 'saldo/saldom.xml [0-9]*' | grep -o '[0-9]*'
 
 saldo/saldom.xml:
 	@echo "Downloading saldom.xml..."
@@ -62,50 +62,50 @@ saldo/nst_utf8.txt:
 saldo/nst.comp.pos.pickle: saldo/nst_utf8.txt
 	$(python) -m sparv.modules.saldo.train_nst_comp_model --nst_infile saldo/nst_utf8.txt --picklefile nst.comp.pos.pickle
 
-dalinm.xml:
+hist/dalinm.xml:
 	@echo "Downloading dalinm.xml..."
-	@wget -N https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/dalinm/dalinm.xml
+	@wget -N https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/dalinm/dalinm.xml -P hist/
 	@echo "Done."
 
-dalin.pickle: dalinm.xml
-	$(python) -m sparv.util.lmflexicon --xml_to_pickle --xml "dalinm.xml" --filename "dalin.pickle"
+hist/dalin.pickle: hist/dalinm.xml
+	$(python) -m sparv.util.lmflexicon --xml_to_pickle --xml "hist/dalinm.xml" --filename "$@"
 
-diapivot.xml:
+hist/diapivot.xml:
 	@echo "Downloading diapivot.xml..."
-	@wget -N https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/diapivot/diapivot.xml
+	@wget -N https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/diapivot/diapivot.xml -P hist/
 	@echo "Done."
 
-diapivot.pickle: diapivot.xml
-	$(python) -m sparv.modules.hist.diapivot --xml_to_pickle  --xml "diapivot.xml"  --filename "$@"
+hist/diapivot.pickle: hist/diapivot.xml
+	$(python) -m sparv.modules.hist.diapivot --xml_to_pickle  --xml "hist/diapivot.xml"  --filename "$@"
 
-swedbergm.xml:
+hist/swedbergm.xml:
 	@echo "Downloading swedbergm.xml..."
-	@wget -N https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/swedbergm/swedbergm.xml
+	@wget -N https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/swedbergm/swedbergm.xml -P hist/
 	@echo "Done."
 
-swedberg.pickle: swedbergm.xml
-	$(python) -m sparv.util.lmflexicon --xml_to_pickle --xml "swedbergm.xml" --filename "swedberg.pickle"
+hist/swedberg.pickle: hist/swedbergm.xml
+	$(python) -m sparv.util.lmflexicon --xml_to_pickle --xml "hist/swedbergm.xml" --filename "$@"
 
 geo: geo/geo.pickle
 
 geo/geo_cities1000.txt:
 	@echo "Downloading and extracting cities1000..."
-	@wget -N http://download.geonames.org/export/dump/cities1000.zip
-	@unzip cities1000.zip
-	@mv cities1000.txt geo_cities1000.txt
-	@rm cities1000.zip
+	@wget -N http://download.geonames.org/export/dump/cities1000.zip -P geo/
+	@unzip geo/cities1000.zip
+	@mv geo/cities1000.txt geo/geo_cities1000.txt
+	@rm geo/cities1000.zip
 	@echo "Done."
 
 geo/geo_alternateNames.txt:
 	@echo "Downloading and extracting alternateNames..."
-	@wget -N http://download.geonames.org/export/dump/alternateNames.zip
-	@unzip alternateNames.zip
-	@mv alternateNames.txt geo_alternateNames.txt
-	@rm alternateNames.zip iso-languagecodes.txt
+	@wget -N http://download.geonames.org/export/dump/alternateNames.zip -P geo/
+	@unzip geo/alternateNames.zip
+	@mv geo/alternateNames.txt geo/geo_alternateNames.txt
+	@rm geo/alternateNames.zip geo/iso-languagecodes.txt
 	@echo "Done."
 
 geo/geo.pickle: geo_cities1000.txt geo_alternateNames.txt
-	$(python) -m sparv.modules.geo.geo --build_model --geonames "geo_cities1000.txt" --alternative_names "geo_alternateNames.txt" --out "$@"
+	$(python) -m sparv.modules.geo.geo --build_model --geonames "geo/geo_cities1000.txt" --alternative_names "geo/geo_alternateNames.txt" --out "$@"
 
 lexical_classes: lexical_classes/blingbring.pickle lexical_classes/swefn.pickle
 
@@ -127,7 +127,7 @@ lexical_classes/swefn.pickle: lexical_classes/swefn.xml
 
 sensaldo/sensaldo-base-v02.txt:
 	@echo "Downloading and extracting sensaldo-base-v02.txt..."
-	@wget -N https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/sensaldo/sensaldo-v02.zip
+	@wget -N https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/sensaldo/sensaldo-v02.zip -P sensaldo/
 	@unzip sensaldo-v02.zip
 	@rm sensaldo-fullform-v02.txt sensaldo-v02.zip
 	@echo "Done."
