@@ -20,7 +20,8 @@ def export(doc: str = Document,
            token: str = Annotation("<token>"),
            word: str = Annotation("<token:word>"),
            annotations: list = ExportAnnotations,
-           original_annotations: Optional[list] = Config("original_annotations")):
+           original_annotations: Optional[list] = Config("original_annotations"),
+           remove_namespaces: bool = Config("remove_export_namespaces", False)):
     """Export annotations to vrt in export_dir.
 
     - doc: name of the original document
@@ -37,7 +38,8 @@ def export(doc: str = Document,
     word_annotation = list(util.read_annotation(doc, word))
 
     # Get annotation spans, annotations list etc.
-    annotations, token_annotations, export_names = util.get_annotation_names(doc, token, annotations, original_annotations)
+    annotations, token_annotations, export_names = util.get_annotation_names(doc, token, annotations,
+                                                                             original_annotations, remove_namespaces)
     span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names)
 
     # Go through spans_dict and add to vrt, line by line

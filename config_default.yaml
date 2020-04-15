@@ -1,5 +1,6 @@
 
 language: "sv"
+
 token_chunk: <sentence>
 saldo.precision: ""
 
@@ -7,3 +8,6 @@ classes:
     token: segment.token
     sentence: segment.sentence
     "token:sense": <token>:wsd.sense
+
+
+remove_export_namespaces: true

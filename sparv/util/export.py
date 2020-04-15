@@ -162,7 +162,7 @@ def calculate_element_hierarchy(doc, spans_list):
     return hierarchy
 
 
-def get_annotation_names(doc, token, annotations, original_annotations=None):
+def get_annotation_names(doc, token, annotations, original_annotations=None, remove_namespaces=False):
     """Get a list of annotations, token annotations and a dictionary for renamed annotations."""
     # Combine annotations and original_annotations
     annotations = misc.split_tuples_list(annotations)
@@ -177,6 +177,22 @@ def get_annotation_names(doc, token, annotations, original_annotations=None):
                          if corpus.split_annotation(i[0])[0] == token and i[0] != token]
 
     # Create dictionary for renamed annotations
-    export_names = dict((a, b) for a, b in annotations if b)
+    if remove_namespaces:
+        short_names = [name.split(".")[-1] for name, new_name in annotations if not new_name]
+        export_names = {}
+        for name, new_name in annotations:
+            if not new_name:
+                # Skip if there is no name space
+                if "." not in name:
+                    continue
+                # Don't use short_name unless it is unique
+                short_name = name.split(".")[-1]
+                if short_names.count(short_name) == 1:
+                    new_name = short_name
+                else:
+                    continue
+            export_names[name] = new_name
+    else:
+        export_names = dict((a, b) for a, b in annotations if b)
 
     return [i[0] for i in annotations], token_annotations, export_names

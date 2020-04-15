@@ -16,7 +16,8 @@ def export(doc: str = Document,
            token: str = Annotation("<token>"),
            word: str = Annotation("<token:word>"),
            annotations: list = ExportAnnotations,
-           original_annotations: Optional[list] = Config("original_annotations")):
+           original_annotations: Optional[list] = Config("original_annotations"),
+           remove_namespaces: bool = Config("remove_export_namespaces", False)):
     """Export annotations to xml in export_dir.
 
     - doc: name of the original document
@@ -34,7 +35,8 @@ def export(doc: str = Document,
     docid = util.read_data(doc, docid)
 
     # Get annotation spans, annotations list etc.
-    annotations, _, export_names = util.get_annotation_names(doc, token, annotations, original_annotations)
+    annotations, _, export_names = util.get_annotation_names(doc, token, annotations, original_annotations,
+                                                             remove_namespaces)
     span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names)
 
     # Root tag sanity check
@@ -85,7 +87,8 @@ def export_formatted(doc: str = Document,
                      out: str = Export("xml_formatted/[xml_export.filename_formatted={doc}_export.xml]"),
                      token: str = Annotation("<token>"),
                      annotations: list = ExportAnnotations,
-                     original_annotations: Optional[list] = Config("original_annotations")):
+                     original_annotations: Optional[list] = Config("original_annotations"),
+                     remove_namespaces: bool = Config("remove_export_namespaces", False)):
     """Export annotations to xml in export_dir and keep whitespaces and indentation from original file.
 
     - doc: name of the original document
@@ -102,7 +105,8 @@ def export_formatted(doc: str = Document,
     docid = util.read_data(doc, docid)
 
     # Get annotation spans, annotations list etc.
-    annotations, _, export_names = util.get_annotation_names(doc, token, annotations, original_annotations)
+    annotations, _, export_names = util.get_annotation_names(doc, token, annotations, original_annotations,
+                                                             remove_namespaces)
     span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names, flatten=False)
     sorted_positions = [(pos, span[0], span[1]) for pos, spans in sorted(span_positions.items()) for span in spans]
 
