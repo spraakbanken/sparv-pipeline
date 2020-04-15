@@ -16,10 +16,12 @@ class Annotation(str):
 
 class Output(Annotation):
     """An annotation or attribute used as output."""
-    def __init__(self, name: str, cls: Optional[str] = None, data: bool = False, description: Optional[str] = None):
+    def __init__(self, name: str, cls: Optional[str] = None, data: bool = False, all_docs: bool = False,
+                 description: Optional[str] = None):
         self.source = name
         self.cls = cls
         self.data = data
+        self.all_docs = all_docs
         self.description = description
 
 

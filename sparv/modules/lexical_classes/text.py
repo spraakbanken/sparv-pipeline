@@ -1,10 +1,13 @@
 """Annotate text chunks with lexical classes from Blingbring or SweFN."""
 
+import logging
 from collections import defaultdict
 from typing import Optional
 
 import sparv.util as util
 from sparv import Annotation, Document, Model, Output, annotator
+
+log = logging.getLogger(__name__)
 
 
 @annotator("Annotate text chunks with Blingbring classes")
@@ -100,7 +103,7 @@ def annotate_text(doc, out, lexical_classes_token, text, token, saldoids, cutoff
                 # Calculate class dominance
                 ref_freq = freq_model.lookup(c.replace("_", " "), 0)
                 if not ref_freq:
-                    util.log.error("Class '%s' is missing" % ref_freq)
+                    log.error("Class '%s' is missing" % ref_freq)
                 class_freqs[c] = (rel / ref_freq)
 
         # Sort words according to frequency/dominance

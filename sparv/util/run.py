@@ -1,10 +1,10 @@
-# -*- coding: utf-8 -*-
-
 import inspect
 import sys
 import os
-from . import log
+import logging
 from getopt import getopt, GetoptError
+
+log = logging.getLogger(__name__)
 
 
 def main(*default_functions, **functions):
@@ -64,13 +64,8 @@ def main(*default_functions, **functions):
             exit_usage()
 
     # Now we can call the function:
-    log.init(showpid=True)
-    log.header()
     log.info("RUN: %s(%s)", fun.__name__, ", ".join("%s='%s'" % i for i in list(options.items())))
     fun(**options)
-    log.statistics()
-    if log.totalerrors:
-        exit("\nFailure: %d error(s) occurred\n" % log.totalerrors)
 
 
 def print_usage_and_exit(*default_functions, **functions):

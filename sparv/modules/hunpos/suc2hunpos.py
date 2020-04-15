@@ -1,8 +1,10 @@
 """Create training material from SUC2 for use with the HUNPOS-tagger."""
-
+import logging
 import os.path
 
 import sparv.util as util
+
+log = logging.getLogger(__name__)
 
 
 def suc2hunpos(out, msd, sentences, word):
@@ -33,7 +35,7 @@ def write_hunsource(file, annotation):
             else:
                 print("".encode(util.UTF8), file=DB)
             ctr += 1
-    util.log.info("Wrote %d items: %s", ctr, file)
+    log.info("Wrote %d items: %s", ctr, file)
 
 
 if __name__ == "__main__":

@@ -1,9 +1,13 @@
-# -*- coding: utf-8 -*-
-from glob import glob
+import logging
 import os
-import subprocess
-import sparv.util as util
 import re
+import subprocess
+from glob import glob
+
+import sparv.util as util
+
+log = logging.getLogger(__name__)
+
 
 CWB_DATADIR = os.environ.get('CWB_DATADIR')
 CORPUS_REGISTRY = os.environ.get('CORPUS_REGISTRY')
@@ -15,7 +19,7 @@ def install_corpus(host, master, datadir=CWB_DATADIR, registry=CORPUS_REGISTRY, 
     If local and remote paths differ, target_datadir and target_registry must be specified.
     """
     if not master:
-        util.log.error("Missing master. Corpus not installed.")
+        log.error("Missing master. Corpus not installed.")
     else:
         target = os.path.join(target_datadir, master) if target_datadir else None
         util.system.rsync(os.path.join(datadir, master), host, target)
@@ -70,11 +74,11 @@ def install_mysql(host, db_name, sqlfile):
     for sqlf in sqlfiles:
         file_count += 1
         if not os.path.exists(sqlf):
-            util.log.error("Missing SQL file:", sqlf)
+            log.error("Missing SQL file:", sqlf)
         elif os.path.getsize(sqlf) < 10:
-            util.log.info("Skipping empty file: %s (%d/%d)", sqlf, file_count, file_total)
+            log.info("Skipping empty file: %s (%d/%d)", sqlf, file_count, file_total)
         else:
-            util.log.info("Installing MySQL database: %s, source: %s (%d/%d)", db_name, sqlf, file_count, file_total)
+            log.info("Installing MySQL database: %s, source: %s (%d/%d)", db_name, sqlf, file_count, file_total)
             subprocess.check_call('cat %s | ssh %s "mysql %s"' % (sqlf, host, db_name), shell=True)
 
 
@@ -84,7 +88,7 @@ def install_mysql_dump(host, db_name, tables):
     """
     if isinstance(tables, str):
         tables = tables.split()
-    util.log.info("Copying MySQL database: %s, tables: %s", db_name, ", ".join(tables))
+    log.info("Copying MySQL database: %s, tables: %s", db_name, ", ".join(tables))
     subprocess.check_call('mysqldump %s %s | ssh %s "mysql %s"' %
                           (db_name, " ".join(tables), host, db_name), shell=True)
 

@@ -1,10 +1,13 @@
 """Util functions for corpus export."""
 
+import logging
 import xml.etree.ElementTree as etree
 from collections import defaultdict
 from itertools import combinations
 
-from sparv.util import corpus, log, misc, parent
+from sparv.util import corpus, misc, parent
+
+log = logging.getLogger(__name__)
 
 
 def gather_annotations(doc, annotations, export_names, flatten=True):

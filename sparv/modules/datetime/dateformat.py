@@ -2,9 +2,14 @@
 Formats dates and times.
 """
 import datetime
+import logging
 import re
+
 from dateutil.relativedelta import relativedelta
+
 import sparv.util as util
+
+log = logging.getLogger(__name__)
 
 
 def dateformat(doc, infrom, outfrom=None, into=None, outto=None, informat="", outformat="%Y%m%d%H%M%S", splitter=None,
@@ -137,7 +142,7 @@ def dateformat(doc, infrom, outfrom=None, into=None, outto=None, informat="", ou
                 break
             except ValueError:
                 if tries == len(informat):
-                    util.log.error("Could not parse: %s", str(vals))
+                    log.error("Could not parse: %s", str(vals))
                     raise
                 continue
 
@@ -211,7 +216,7 @@ def dateformat(doc, infrom, outfrom=None, into=None, outto=None, informat="", ou
                     break
                 except ValueError:
                     if tries == len(informat):
-                        util.log.error("Could not parse: %s", str(vals))
+                        log.error("Could not parse: %s", str(vals))
                         raise
                     continue
 

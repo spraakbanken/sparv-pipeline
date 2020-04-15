@@ -12,7 +12,7 @@ _ID_LENGTH = 10
 
 
 @annotator("Give every document a unique ID")
-def doc_id(out: str = Output("misc.docid", cls="docid", data=True),
+def doc_id(out: str = Output("misc.docid", cls="docid", data=True, all_docs=True),
            docs: Optional[list] = AllDocuments,
            doclist: Optional[str] = None,
            prefix: str = "",
@@ -44,7 +44,6 @@ def doc_id(out: str = Output("misc.docid", cls="docid", data=True),
 
     for doc in docs:
         if add and doc in docs_with_ids:
-            print("skipping", doc)
             continue
         _reset_id(doc, numdocs)
         new_id = _make_id(prefix, used_ids)

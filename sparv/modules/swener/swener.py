@@ -1,11 +1,14 @@
 """Named entity tagging with SweNER."""
 
+import logging
 import re
 import xml.etree.ElementTree as etree
 import xml.sax.saxutils
 
 import sparv.util as util
 from sparv import Annotation, Document, Output, annotator
+
+log = logging.getLogger(__name__)
 
 RESTART_THRESHOLD_LENGTH = 64000
 SENT_SEP = "\n"
@@ -52,7 +55,7 @@ def annotate(doc: str = Document,
     stdin = xml.sax.saxutils.escape(stdin)
 
     # keep_process = len(stdin) < RESTART_THRESHOLD_LENGTH and process_dict is not None
-    # util.log.info("Stdin length: %s, keep process: %s", len(stdin), keep_process)
+    # log.info("Stdin length: %s, keep process: %s", len(stdin), keep_process)
 
     # if process_dict is not None:
     #     process_dict["restart"] = not keep_process
@@ -67,9 +70,9 @@ def annotate(doc: str = Document,
 
     # else:
     # Otherwise use communicate which buffers properly
-    # util.log.info("STDIN %s %s", type(stdin.encode(encoding)), stdin.encode(encoding))
+    # log.info("STDIN %s %s", type(stdin.encode(encoding)), stdin.encode(encoding))
     stdout, _ = process.communicate(stdin.encode(util.UTF8))
-    # util.log.info("STDOUT %s %s", type(stdout.decode(encoding)), stdout.decode(encoding))
+    # log.info("STDOUT %s %s", type(stdout.decode(encoding)), stdout.decode(encoding))
 
     parse_swener_output(doc, sentences, token, stdout.decode(util.UTF8), out_ne, out_ne_ex, out_ne_type, out_ne_subtype,
                         out_ne_name)
@@ -95,7 +98,7 @@ def parse_swener_output(doc, sentences, token, output, out_ne, out_ne_ex, out_ne
         try:
             root = etree.fromstring(xml_sent)
         except:
-            util.log.warning("Error parsing sentence. Skipping.")
+            log.warning("Error parsing sentence. Skipping.")
             continue
 
         # Init token counter; needed to get start_pos and end_pos
@@ -116,7 +119,7 @@ def parse_swener_output(doc, sentences, token, output, out_ne, out_ne_ex, out_ne
                     if child.tag != "sroot":
                         if start_i < previous_end:
                             pass
-                            # util.log.warning("Overlapping NE elements found; discarding one.")
+                            # log.warning("Overlapping NE elements found; discarding one.")
                         else:
                             end_pos = token_spans[sent[i - 1]][1]
                             previous_end = i
@@ -132,7 +135,7 @@ def parse_swener_output(doc, sentences, token, output, out_ne, out_ne_ex, out_ne
                         if (child.tail and child.tail.strip() and not child.tail[0] == " ") or (
                                 not child.tail and count < len(children) - 1):
                             i -= 1
-                            # util.log.warning("Split token returned by name tagger.")
+                            # log.warning("Split token returned by name tagger.")
 
                 # If current child has text in the tail, increase token counter
                 if child.tail and child.tail.strip():
@@ -143,7 +146,7 @@ def parse_swener_output(doc, sentences, token, output, out_ne, out_ne_ex, out_ne
                     # The next NE would start in the middle of a token, so decrease the counter by 1
                     i -= 1
         except IndexError:
-            util.log.warning("Error parsing sentence. Skipping.")
+            log.warning("Error parsing sentence. Skipping.")
             continue
 
     # Write annotations

@@ -6,12 +6,13 @@ import inspect
 import sys
 from typing import Union
 
-from sparv.core import paths, registry
+from sparv.core import paths, registry, log
 from sparv.util.classes import Annotation, Output, Model, Binary, Config, Document, AllDocuments, ExportAnnotations
 
 
 def main(argv=None):
     """Parse command line arguments and execute the requested Sparv module."""
+    log.setup_logging(verbose=True)
     modules_path = ".".join(("sparv", paths.modules_dir))
 
     if argv is None:

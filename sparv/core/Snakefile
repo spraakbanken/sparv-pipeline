@@ -5,6 +5,7 @@ import os
 import re
 
 import snakemake
+from snakemake.logging import logger
 
 from sparv import util
 from sparv.core import config as sparv_config
@@ -22,6 +23,9 @@ all_annotations = {}
 
 # All named targets available, used in list_targets
 named_targets = []
+# Remove Snakemake's default log handler
+if logger.log_handler and logger.log_handler[0] == logger.text_handler:
+    logger.log_handler = []
 
 
 def get_annotation_path(annotation, data=False):
@@ -61,9 +65,6 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
             outputs.append(os.path.join(paths.annotation_dir, get_annotation_path(element)))
     elif exporter:
         pass
-    else:
-        # Every other rule depends on an input rule, so add @text as a requirement
-        inputs.append(get_annotation_path(util.TEXT_FILE, data=True))
 
     params = inspect.signature(f).parameters
 
@@ -72,7 +73,11 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
         # Output
         if isinstance(param.default, Output):
             param_value = registry.expand_variables(param.default)
-            outputs.append(get_annotation_path(param_value, data=param.default.data))
+            if param.default.all_docs:
+                outputs.extend(expand(os.path.join(paths.annotation_dir, get_annotation_path(param_value,
+                                                                                         data=param.default.data)), doc=input_files))
+            else:
+                outputs.append(get_annotation_path(param_value, data=param.default.data))
             parameters[param_name] = param_value
             if "{" in param_value:
                 wildcard_annotations.append(param_name)
@@ -90,6 +95,11 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
                                                                                          data=param.default.data)))
             else:
                 inputs.append(get_annotation_path(param_value, data=param.default.data))
+
+                # Add @text as requirement for all rules with non-data Annotation dependencies
+                text_file = get_annotation_path(util.TEXT_FILE, data=True)
+                if not param.default.data and not text_file in inputs:
+                    inputs.append(text_file)
             parameters[param_name] = param_value
             if "{" in param_value:
                 wildcard_annotations.append(param_name)
@@ -195,6 +205,8 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
         return _parameters
 
     rule:
+        message:
+            "Running {}:{}".format(module_name, f_name)
         input:
             inputs
         output:
@@ -202,7 +214,8 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
         params:
             module_name = module_name,
             f_name = f_name,
-            parameters = get_parameters
+            parameters = get_parameters,
+            log = config.get("log")
         script:
             "run_snake.py"
             # We don't use "run:" since the whole Snakefile would have to be reloaded for every single job, due to how

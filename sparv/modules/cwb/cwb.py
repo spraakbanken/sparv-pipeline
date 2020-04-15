@@ -1,11 +1,14 @@
 """Tools for exporting, encoding and aligning corpora for Corpus Workbench."""
 
+import logging
 import os
 from glob import glob
 from typing import Optional
 
 import sparv.util as util
 from sparv import Annotation, Config, Corpus, Document, Export, ExportAnnotations, annotator
+
+log = logging.getLogger(__name__)
 
 ALIGNDIR = "annotations/align"
 
@@ -66,7 +69,7 @@ def export(doc: str = Document,
     vrt = "\n".join(vrt)
     with open(out, "w") as f:
         f.write(vrt)
-    util.log.info("Exported: %s", out)
+    log.info("Exported: %s", out)
 
 
 def make_attr_str(annotation, annotation_dict, export_names, index):
@@ -157,34 +160,34 @@ def encode(corpus: str = Corpus,
 
     index_args = ["-V", "-r", registry, corpus.upper()]
     util.system.call_binary("cwb-makeall", index_args, verbose=True)
-    util.log.info("Encoded and indexed %d columns, %d structs", len(columns), len(structs))
+    log.info("Encoded and indexed %d columns, %d structs", len(columns), len(structs))
 
     if not skip_compression:
-        util.log.info("Compressing corpus files...")
+        log.info("Compressing corpus files...")
         compress_args = ["-A", corpus.upper()]
         if skip_validation:
             compress_args.insert(0, "-T")
-            util.log.info("Skipping validation")
+            log.info("Skipping validation")
         # Compress token stream
         util.system.call_binary("cwb-huffcode", compress_args)
-        util.log.info("Removing uncompressed token stream...")
+        log.info("Removing uncompressed token stream...")
         for f in glob(os.path.join(corpus_datadir, "*.corpus")):
             os.remove(f)
         # Compress index files
         util.system.call_binary("cwb-compress-rdx", compress_args)
-        util.log.info("Removing uncompressed index files...")
+        log.info("Removing uncompressed index files...")
         for f in glob(os.path.join(corpus_datadir, "*.corpus.rev")):
             os.remove(f)
         for f in glob(os.path.join(corpus_datadir, "*.corpus.rdx")):
             os.remove(f)
-        util.log.info("Compression done.")
+        log.info("Compression done.")
 
 
 def cwb_align(corpus, other, link, aligndir=ALIGNDIR, encoding=CWB_ENCODING):
     """Align 'corpus' with 'other' corpus, using the 'link' annotation for alignment."""
     os.makedirs(aligndir, exist_ok=True)
     alignfile = os.path.join(aligndir, corpus + ".align")
-    util.log.info("Aligning %s <-> %s", corpus, other)
+    log.info("Aligning %s <-> %s", corpus, other)
 
     try:
         [(link_name, [(link_attr, _path)])] = parse_structural_attributes(link)
@@ -198,10 +201,10 @@ def cwb_align(corpus, other, link, aligndir=ALIGNDIR, encoding=CWB_ENCODING):
     with open(alignfile + ".result", "w") as F:
         print(result, file=F)
     _, lastline = result.rsplit("Alignment complete.", 1)
-    util.log.info("%s", lastline.strip())
+    log.info("%s", lastline.strip())
     if " 0 alignment" in lastline.strip():
-        util.log.warning("No alignment regions created")
-    util.log.info("Alignment file/result: %s/.result", alignfile)
+        log.warning("No alignment regions created")
+    log.info("Alignment file/result: %s/.result", alignfile)
 
     # Add alignment parameter to registry
     # cwb-regedit is not installed by default, so we skip it and modify the regfile directly instead:
@@ -214,15 +217,15 @@ def cwb_align(corpus, other, link, aligndir=ALIGNDIR, encoding=CWB_ENCODING):
             print(file=F)
             print("# Added by cwb.py", file=F)
             print("ALIGNED", other, file=F)
-        util.log.info("Added alignment to registry: %s", regfile)
+        log.info("Added alignment to registry: %s", regfile)
     # args = [corpus, ":add", ":a", other]
     # result, _ = util.system.call_binary("cwb-regedit", args, verbose=True)
-    # util.log.info("%s", result.strip())
+    # log.info("%s", result.strip())
 
     # Encode the alignments into CWB
     args = ["-v", "-D", alignfile]
     result, _ = util.system.call_binary("cwb-align-encode", args, encoding=encoding, verbose=True)
-    util.log.info("%s", result.strip())
+    log.info("%s", result.strip())
 
 
 def parse_structural_attributes(structural_atts):

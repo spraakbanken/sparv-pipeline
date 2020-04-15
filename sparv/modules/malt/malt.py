@@ -5,6 +5,10 @@ import re
 
 import sparv.util as util
 from sparv import Annotation, Binary, Document, Model, Output, annotator
+import logging
+
+log = logging.getLogger(__name__)
+
 
 # Running malt processes are only kept if the input is small: otherwise
 # flush() on stdin blocks, and readline() on stdout is too slow to be
@@ -72,7 +76,7 @@ def maltparse(doc: str = Document,
         stdin = stdin.encode(encoding)
 
     keep_process = len(stdin) < RESTART_THRESHOLD_LENGTH and process_dict is not None
-    util.log.info("Stdin length: %s, keep process: %s", len(stdin), keep_process)
+    log.info("Stdin length: %s, keep process: %s", len(stdin), keep_process)
 
     if process_dict is not None:
         process_dict["restart"] = not keep_process
@@ -124,7 +128,7 @@ def maltstart(maltjar, model, encoding, send_empty_sentence=False):
     malt_args = ["-ic", encoding, "-oc", encoding, "-m", "parse"]
     if model.startswith("http://"):
         malt_args += ["-u", model]
-        util.log.info("Using MALT model from URL: %s", model)
+        log.info("Using MALT model from URL: %s", model)
     else:
         modeldir, model = os.path.split(model)
         if model.endswith(".mco"):
@@ -132,7 +136,7 @@ def maltstart(maltjar, model, encoding, send_empty_sentence=False):
         if modeldir:
             malt_args += ["-w", modeldir]
         malt_args += ["-c", model]
-        util.log.info("Using local MALT model: %s (in directory %s)", model, modeldir or ".")
+        log.info("Using local MALT model: %s (in directory %s)", model, modeldir or ".")
 
     process = util.system.call_java(maltjar, malt_args, options=java_opts,
                                     stdin="", encoding=encoding, verbose=True,
@@ -142,7 +146,7 @@ def maltstart(maltjar, model, encoding, send_empty_sentence=False):
         # Send a simple sentence to malt, this greatly enhances performance
         # for subsequent requests.
         stdin_fd, stdout_fd = process.stdin, process.stdout
-        util.log.info("Sending empty sentence to malt")
+        log.info("Sending empty sentence to malt")
         stdin_fd.write("1\t.\t_\tMAD\tMAD\tMAD\n\n\n".encode(util.UTF8))
         stdin_fd.flush()
         stdout_fd.readline()

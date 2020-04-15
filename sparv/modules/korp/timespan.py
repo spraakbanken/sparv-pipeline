@@ -1,8 +1,11 @@
+import logging
 import os
 import subprocess
 
 import sparv.util as util
 from sparv.util.mysql_wrapper import MySQL
+
+log = logging.getLogger(__name__)
 
 # Path to the cwb-scan-corpus binary
 CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
@@ -26,21 +29,21 @@ def timespan(corpus, db_name, out):
         if error:
             error = error.decode()
             if "Error: can't open attribute" in error and (".text_datefrom" in error or ".text_dateto" in error):
-                util.log.info("No date information present in corpus.")
+                log.info("No date information present in corpus.")
                 # No date information in corpus. Calculate total token count instead.
                 process = subprocess.Popen([CQP_EXECUTABLE, "-c", "-r", CORPUS_REGISTRY], stdin=subprocess.PIPE,
                                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 reply, error = process.communicate(bytes("set PrettyPrint off;%s;info;" % corpus, "UTF-8"))
 
                 if error:
-                    print(error)
+                    log.error(error)
                     raise Exception
 
                 for line in reply.decode().splitlines():
                     if line.startswith("Size: "):
                         reply = "%s\t\t\t\t" % line[6:].strip()
             else:
-                print(error)
+                log.error(error)
                 raise Exception
 
         spans = {}
@@ -83,7 +86,7 @@ def timespan(corpus, db_name, out):
     rows_datetime = calculate(True)
     rows_date = calculate(False)
 
-    util.log.info("Creating SQL")
+    log.info("Creating SQL")
     mysql = MySQL(db_name, encoding=util.UTF8, output=out)
     mysql.create_table(MYSQL_TABLE, drop=False, **MYSQL_TIMESPAN)
     mysql.create_table(MYSQL_TABLE_DATE, drop=False, **MYSQL_TIMESPAN_DATE)

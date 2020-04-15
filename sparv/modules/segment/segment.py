@@ -1,5 +1,6 @@
 """Segmentation mostly based on NLTK."""
 
+import logging
 import os.path
 import pickle
 import re
@@ -14,6 +15,8 @@ try:
     from . import crf  # for CRF++ models
 except ImportError:
     pass
+
+log = logging.getLogger(__name__)
 
 
 @annotator("Automatic tokenization")
@@ -86,7 +89,7 @@ def do_segmentation(doc, out, segmenter, chunk=None, existing_segments=None, mod
                 chunk_start = segment_end
                 chunk_spans[n] = (chunk_start, chunk_end)
         chunk_spans.sort()
-        util.log.info("Reorganized into %d chunks" % len(chunk_spans))
+        log.info("Reorganized into %d chunks" % len(chunk_spans))
     else:
         segments = []
 
@@ -209,18 +212,18 @@ def train_punkt_segmenter(textfiles, modelfile, encoding=util.UTF8, protocol=-1)
     if isinstance(textfiles, str):
         textfiles = textfiles.split()
 
-    util.log.info("Reading files")
+    log.info("Reading files")
     text = u""
     for filename in textfiles:
         with open(filename) as stream:
             text += stream.read().decode(encoding)
-    util.log.info("Training model")
+    log.info("Training model")
     trainer = nltk.tokenize.PunktTrainer(text, verbose=True)
-    util.log.info("Saving pickled model")
+    log.info("Saving pickled model")
     params = trainer.get_params()
     with open(modelfile, "wb") as stream:
         pickle.dump(params, stream, protocol=protocol)
-    util.log.info("OK")
+    log.info("OK")
 
 
 ######################################################################
@@ -308,7 +311,7 @@ class BetterWordTokenizer(object):
                         try:
                             key, val = line.strip().split(None, 1)
                         except ValueError as e:
-                            print("Error parsing configuration file:", line)
+                            log.error("Error parsing configuration file:", line)
                             raise e
                         key = key[:-1]
 

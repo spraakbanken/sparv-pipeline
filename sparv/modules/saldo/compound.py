@@ -1,6 +1,7 @@
 """Compound analysis."""
 
 import itertools
+import logging
 import pickle
 import re
 import time
@@ -8,6 +9,8 @@ from functools import reduce
 
 import sparv.util as util
 from sparv import Annotation, Document, Model, Output, annotator
+
+log = logging.getLogger(__name__)
 
 SPLIT_LIMIT = 200
 COMP_LIMIT = 100
@@ -120,11 +123,11 @@ class StatsLexicon(object):
     def __init__(self, stats_model, verbose=True):
         """Load lexicon."""
         if verbose:
-            util.log.info("Reading statistics model: %s", stats_model)
+            log.info("Reading statistics model: %s", stats_model)
         with open(stats_model, "rb") as s:
             self.lexicon = pickle.load(s)
         if verbose:
-            util.log.info("Done")
+            log.info("Done")
 
     def lookup_prob(self, word):
         """Look up the probability of the word."""
@@ -143,11 +146,11 @@ class SaldoCompLexicon(object):
     def __init__(self, saldofile, verbose=True):
         """Load lexicon."""
         if verbose:
-            util.log.info("Reading Saldo lexicon: %s", saldofile)
+            log.info("Reading Saldo lexicon: %s", saldofile)
         with open(saldofile, "rb") as F:
             self.lexicon = pickle.load(F)
         if verbose:
-            util.log.info("OK, read %d words", len(self.lexicon))
+            log.info("OK, read %d words", len(self.lexicon))
 
     def lookup(self, word):
         """Lookup a word in the lexicon."""
@@ -233,11 +236,11 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
             iterations += 1
             if iterations > MAX_ITERATIONS:
                 giveup = True
-                util.log.info("Too many iterations for word '%s'", w)
+                log.info("Too many iterations for word '%s'", w)
                 break
             if time.time() - start_time > MAX_TIME:
                 giveup = True
-                util.log.info("Compound analysis took to long for word '%s'", w)
+                log.info("Compound analysis took to long for word '%s'", w)
                 break
 
             if first:
@@ -311,7 +314,7 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
                     counter += 1
                     if counter > SPLIT_LIMIT:
                         giveup = True
-                        util.log.info("Too many possible compounds for word '%s'" % w)
+                        log.info("Too many possible compounds for word '%s'" % w)
                         break
                     yield comp
 
@@ -502,7 +505,7 @@ def read_xml(xml="saldom.xml", tagset="SUC"):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml)."""
     import xml.etree.cElementTree as cet
     tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower() + "_compound")
-    util.log.info("Reading XML lexicon")
+    log.info("Reading XML lexicon")
     lexicon = {}
 
     context = cet.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
@@ -538,7 +541,7 @@ def read_xml(xml="saldom.xml", tagset="SUC"):
             if elem.tag in ["LexicalEntry", "frame", "resFrame"]:
                 root.clear()
 
-    util.log.info("OK, read")
+    log.info("OK, read")
     return lexicon
 
 
@@ -554,7 +557,7 @@ def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
       - lexicon = {wordform: {lemgram: {"msd": set(), "pos": str}}}
     """
     if verbose:
-        util.log.info("Saving Saldo lexicon in Pickle format")
+        log.info("Saving Saldo lexicon in Pickle format")
 
     picklex = {}
     for word in lexicon:
@@ -570,7 +573,7 @@ def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
     with open(saldofile, "wb") as F:
         pickle.dump(picklex, F, protocol=protocol)
     if verbose:
-        util.log.info("OK, saved")
+        log.info("OK, saved")
 
 
 def _split_triple(annotation_tag_words):

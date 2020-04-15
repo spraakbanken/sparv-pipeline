@@ -1,8 +1,12 @@
 """
 Add annotations for parent links and/or children links.
 """
+import logging
+
 import sparv.util as util
 from sparv.util.classes import Annotation
+
+log = logging.getLogger(__name__)
 
 
 def get_parents(doc, parent, child, orphan_alert=False):
@@ -27,8 +31,8 @@ def get_parents(doc, parent, child, orphan_alert=False):
                 break
         if parent_span is None or parent_span[0] > child_span[0]:
             if orphan_alert:
-                util.log.warning("Child '%s' missing parent; closest parent is %s",
-                                 child_i, parent_i or previous_parent_i)
+                log.warning("Child '%s' missing parent; closest parent is %s",
+                            child_i, parent_i or previous_parent_i)
             child_parents.append((child_i, None))
         else:
             child_parents.append((child_i, parent_i))
@@ -70,8 +74,8 @@ def get_children(doc, parent, child, orphan_alert=False, preserve_parent_annotat
                     break
         if parent_span is None or parent_span[0] > child_span[0]:
             if orphan_alert:
-                util.log.warning("Child '%s' missing parent; closest parent is %s",
-                                 child_i, parent_i or previous_parent_i)
+                log.warning("Child '%s' missing parent; closest parent is %s",
+                            child_i, parent_i or previous_parent_i)
             orphans.append(child_i)
         else:
             parent_children[-1][1].append(child_i)

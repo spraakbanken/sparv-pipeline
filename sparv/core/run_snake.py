@@ -1,10 +1,10 @@
 """This script is used by Snakemake to run Sparv modules."""
 
 import importlib
+import logging
 
-from sparv.core import paths
+from sparv.core import paths, log
 from sparv.core.registry import annotators
-from sparv.util import log
 
 # The snakemake variable is provided by Snakemake. The below is just to get fewer errors in editor.
 try:
@@ -21,11 +21,9 @@ module = importlib.import_module(".".join((modules_path, module_name)))
 f_name = snakemake.params.f_name
 parameters = snakemake.params.parameters
 
-log.init(showpid=True)
-log.header()
-log.info("RUN: %s(%s)", f_name, ", ".join("%s=%s" % (i[0], repr(i[1])) for i in list(parameters.items())))
+log.setup_logging(verbose=snakemake.params.log)
+logger = logging.getLogger("sparv")
+logger.info("RUN: %s(%s)", f_name, ", ".join("%s=%s" % (i[0], repr(i[1])) for i in list(parameters.items())))
 
 # Execute function
 annotators[module_name][f_name][0](**parameters)
-
-log.statistics()

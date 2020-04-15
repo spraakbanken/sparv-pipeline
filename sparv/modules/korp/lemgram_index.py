@@ -1,7 +1,11 @@
+import logging
 import os
 import subprocess
+
 import sparv.util as util
 from sparv.util.mysql_wrapper import MySQL
+
+log = logging.getLogger(__name__)
 
 # Path to the cwb-scan-corpus binary
 CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
@@ -36,13 +40,13 @@ def make_index(corpus, out, db_name, attributes=["lex", "prefix", "suffix"]):
 
         rows.append(row)
 
-    util.log.info("Creating SQL")
+    log.info("Creating SQL")
     mysql.add_row(MYSQL_TABLE, rows)
 
 
 def count_lemgrams(corpus, attributes):
     """Count lemgrams using cwb-scan."""
-    util.log.info("Reading corpus")
+    log.info("Reading corpus")
     result = {}
     process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-q", "-r", CORPUS_REGISTRY, corpus] + attributes,
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)

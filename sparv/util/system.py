@@ -1,14 +1,14 @@
-# -*- coding: utf-8 -*-
-
 """
 System utilities for Språkbanken
 """
+import errno
+import logging
+import os
+import shutil
 import subprocess
 import sys
-import os
-import errno
-import shutil
-from . import log
+
+log = logging.getLogger(__name__)
 
 
 def dirname(file):

@@ -1,7 +1,9 @@
+import logging
 import os
+
 from . import system
-from . import log
-from . import constants
+
+log = logging.getLogger(__name__)
 
 # Max size of SQL statement
 MAX_ALLOWED_PACKET = 900000

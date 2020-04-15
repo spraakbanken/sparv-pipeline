@@ -1,7 +1,11 @@
 """Word sense disambiguation based on SALDO annotation."""
 
+import logging
+
 import sparv.util as util
 from sparv import Annotation, Binary, Document, Model, Output, annotator
+
+log = logging.getLogger(__name__)
 
 SENT_SEP = "$SENT$"
 
@@ -60,7 +64,7 @@ def run_wsd(doc: str = Document,
     # Problem is that regular messages "Reading sense vectors.." are also piped to stderr.
     if len(stderr) > 52:
         util.system.kill_process(process)
-        util.log.error(str(stderr))
+        log.error(str(stderr))
         return
 
     if encoding:

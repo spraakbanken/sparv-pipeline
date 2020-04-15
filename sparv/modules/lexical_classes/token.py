@@ -1,9 +1,12 @@
 """Annotate words with lexical classes from Blingbring or SweFN."""
 
+import logging
 from typing import List
 
 import sparv.util as util
 from sparv import Annotation, Document, Model, Output, annotator
+
+log = logging.getLogger(__name__)
 
 
 @annotator("Annotate tokens with Blingbring classes")
@@ -27,7 +30,7 @@ def blingbring_words(doc: str = Document,
     disambiguate = util.strtobool(disambiguate)
 
     if class_set not in ["bring", "roget_head", "roget_subsection", "roget_section", "roget_class"]:
-        util.log.warning("Class '%s' not available. Fallback to 'bring'.")
+        log.warning("Class '%s' not available. Fallback to 'bring'.")
         class_set = "bring"
 
     # Blingbring annotation function

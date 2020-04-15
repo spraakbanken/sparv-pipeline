@@ -50,7 +50,7 @@ def msdtag(doc: str = Document,
     args = [model]
     if morphtable:
         args.extend(["-m", morphtable])
-    stdout, _ = util.system.call_binary("hunpos-tag", args, stdin, encoding=encoding, verbose=True)
+    stdout, _ = util.system.call_binary("hunpos-tag", args, stdin, encoding=encoding)
 
     out_annotation = util.create_empty_attribute(doc, word)
     for sent, tagged_sent in zip(sentences, stdout.strip().split(SENT_SEP)):

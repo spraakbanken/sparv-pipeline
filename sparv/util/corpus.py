@@ -1,7 +1,10 @@
-import os
 import heapq
-from . import log
+import logging
+import os
+
 from .classes import Annotation
+
+_log = logging.getLogger(__name__)
 
 ######################################################################
 # Annotations
@@ -92,7 +95,7 @@ def _write_single_annotation(doc, annotation, values, append):
             ctr += 1
     # Update file modification time even if nothing was written
     os.utime(file_path, None)
-    log.info("Wrote %d items: %s/%s", ctr, doc, annotation)
+    _log.info("Wrote %d items: %s/%s", ctr, doc, annotation)
 
 
 def create_empty_attribute(doc, annotation):
@@ -175,7 +178,7 @@ def _read_single_annotation(doc, annotation, with_annotation_name):
             # value = re.sub(r"((?<!\\)(?:\\\\)*)\\n", "\1\n", value).replace(r"\\", "\\")  # Replace literal "\n" with linebreak (only needed if we allow "\n" in values)
             yield value if not with_annotation_name else (value, annotation)
             ctr += 1
-    log.info("Read %d items: %s/%s", ctr, doc, annotation)
+    _log.info("Read %d items: %s/%s", ctr, doc, annotation)
 
 
 def write_data(doc, name, value, append=False):
@@ -188,7 +191,7 @@ def write_data(doc, name, value, append=False):
         f.write(value)
     # Update file modification time even if nothing was written
     os.utime(file_path, None)
-    log.info("Wrote %d bytes: %s/%s", len(value), doc, name)
+    _log.info("Wrote %d bytes: %s/%s", len(value), doc, name)
 
 
 def read_data(doc, name):
@@ -197,7 +200,7 @@ def read_data(doc, name):
 
     with open(file_path, "r") as f:
         data = f.read()
-    log.info("Read %d bytes: %s/%s", len(data), doc, name)
+    _log.info("Read %d bytes: %s/%s", len(data), doc, name)
     return data
 
 
@@ -271,11 +274,11 @@ def lexicon_to_pickle(lexicon, filename, protocol=-1, verbose=True):
     """Save lexicon as a pickle file."""
     import pickle
     if verbose:
-        log.info("Saving lexicon in pickle format")
+        _log.info("Saving lexicon in pickle format")
     with open(filename, "wb") as F:
         pickle.dump(lexicon, F, protocol=protocol)
     if verbose:
-        log.info("OK, saved")
+        _log.info("OK, saved")
 
 
 def test_annotations(lexicon, testwords):
@@ -284,9 +287,9 @@ def test_annotations(lexicon, testwords):
     Takes a dictionary (lexicon) and a list of test words.
     Prints the value for each test word.
     """
-    log.info("Testing annotations...")
+    _log.info("Testing annotations...")
     for key in testwords:
-        log.output("  %s = %s", key, lexicon.get(key))
+        _log.output("  %s = %s", key, lexicon.get(key))
 
 
 class PickledLexicon(object):
@@ -294,11 +297,11 @@ class PickledLexicon(object):
     def __init__(self, picklefile, verbose=True):
         import pickle
         if verbose:
-            log.info("Reading lexicon: %s", picklefile)
+            _log.info("Reading lexicon: %s", picklefile)
         with open(picklefile, "rb") as F:
             self.lexicon = pickle.load(F)
         if verbose:
-            log.info("OK, read %d words", len(self.lexicon))
+            _log.info("OK, read %d words", len(self.lexicon))
 
     def lookup(self, key, default=set()):
         """Lookup a key in the lexicon."""
@@ -313,7 +316,7 @@ def read_corpus_text(doc):
     text_file = get_annotation_path(doc, TEXT_FILE, data=True)
     with open(text_file, "r") as f:
         text = f.read()
-    log.info("Read %d chars: %s", len(text), text_file)
+    _log.info("Read %d chars: %s", len(text), text_file)
     return text
 
 
@@ -323,8 +326,7 @@ def write_corpus_text(doc, text):
     """
     doc, _, chunk = doc.partition(DOC_CHUNK_DELIM)
     text_file = get_annotation_path(doc, TEXT_FILE, data=True)
-    print(doc, text_file)
     os.makedirs(os.path.dirname(text_file), exist_ok=True)
     with open(text_file, "w") as f:
         f.write(text)
-    log.info("Wrote %d chars: %s", len(text), text_file)
+    _log.info("Wrote %d chars: %s", len(text), text_file)

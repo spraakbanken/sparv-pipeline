@@ -4,10 +4,13 @@ import itertools
 import os
 import pickle
 import re
+import logging
 from typing import List, Optional
 
 import sparv.util as util
 from sparv import Annotation, Config, Document, Model, Output, annotator
+
+log = logging.getLogger(__name__)
 
 # The minimun precision difference for two annotations to be considered equal
 PRECISION_DIFF = 0.01
@@ -81,7 +84,7 @@ def annotate(doc: str = Document,
 
     skip_multiword = util.strtobool(skip_multiword)
     if skip_multiword:
-        util.log.info("Skipping multi word annotations")
+        log.info("Skipping multi word annotations")
 
     allow_multiword_overlap = util.strtobool(allow_multiword_overlap)
 
@@ -324,7 +327,7 @@ class SaldoLexicon(object):
     """
     def __init__(self, saldofile, verbose=True):
         if verbose:
-            util.log.info("Reading Saldo lexicon: %s", saldofile)
+            log.info("Reading Saldo lexicon: %s", saldofile)
         if saldofile.endswith(".pickle"):
             with open(saldofile, "rb") as F:
                 self.lexicon = pickle.load(F)
@@ -336,7 +339,7 @@ class SaldoLexicon(object):
                     word = row.pop(0)
                     lexicon[word] = row
         if verbose:
-            util.log.info("OK, read %d words", len(self.lexicon))
+            log.info("OK, read %d words", len(self.lexicon))
 
     def lookup(self, word):
         """Lookup a word in the lexicon.
@@ -357,7 +360,7 @@ class SaldoLexicon(object):
           - lexicon = {wordform: {{annotation-type: annotation}: (set(possible tags), set(tuples with following words), gap-allowed-boolean, is-particle-verb-boolean)}}
         """
         if verbose:
-            util.log.info("Saving Saldo lexicon in Pickle format")
+            log.info("Saving Saldo lexicon in Pickle format")
 
         picklex = {}
         for word in lexicon:
@@ -376,7 +379,7 @@ class SaldoLexicon(object):
         with open(saldofile, "wb") as F:
             pickle.dump(picklex, F, protocol=protocol)
         if verbose:
-            util.log.info("OK, saved")
+            log.info("OK, saved")
 
     @staticmethod
     def save_to_textfile(saldofile, lexicon, verbose=True):
@@ -387,14 +390,14 @@ class SaldoLexicon(object):
         NOT UP TO DATE
         """
         if verbose:
-            util.log.info("Saving Saldo lexicon in text format")
+            log.info("Saving Saldo lexicon in text format")
         with open(saldofile, "w") as F:
             for word in sorted(lexicon):
                 annotations = [PART_DELIM.join([annotation] + sorted(postags))
                                for annotation, postags in list(lexicon[word].items())]
                 print(" ".join([word] + annotations).encode(util.UTF8), file=F)
         if verbose:
-            util.log.info("OK, saved")
+            log.info("OK, saved")
 
 
 def _join_annotation(annotation, delimiter, affix):
@@ -470,7 +473,7 @@ def read_xml(xml="saldom.xml", annotation_elements=("gf", "lem", "saldo"), tagse
     import xml.etree.cElementTree as cet
     tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower())
     if verbose:
-        util.log.info("Reading XML lexicon")
+        log.info("Reading XML lexicon")
     lexicon = {}
 
     context = cet.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
@@ -549,7 +552,7 @@ def read_xml(xml="saldom.xml", annotation_elements=("gf", "lem", "saldo"), tagse
     util.test_annotations(lexicon, testwords)
 
     if verbose:
-        util.log.info("OK, read")
+        log.info("OK, read")
     return lexicon
 
 
@@ -559,7 +562,7 @@ def save_to_cstlemmatizer(cstfile, lexicon, encoding="latin-1", verbose=True):
     The default encoding of the resulting file is ISO-8859-1 (Latin-1).
     """
     if verbose:
-        util.log.info("Saving CST lexicon")
+        log.info("Saving CST lexicon")
     with open(cstfile, "w") as F:
         for word in sorted(lexicon):
             for lemma in sorted(lexicon[word]):
@@ -569,7 +572,7 @@ def save_to_cstlemmatizer(cstfile, lexicon, encoding="latin-1", verbose=True):
                     line = "%s\t%s\t%s" % (word, lemma, postag)
                     print(line.encode(encoding), file=F)
     if verbose:
-        util.log.info("OK, saved")
+        log.info("OK, saved")
 
 
 ######################################################################

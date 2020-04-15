@@ -1,11 +1,14 @@
 """Handle models for lexical classes."""
 
+import logging
 import os
 import subprocess
 import sys
 from collections import defaultdict
 
 import sparv.util as util
+
+log = logging.getLogger(__name__)
 
 # Path to the cwb binaries
 CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
@@ -27,7 +30,7 @@ def read_blingbring(tsv="blingbring.txt", classmap="rogetMap.xml", verbose=True)
     import csv
 
     if verbose:
-        util.log.info("Reading tsv lexicon")
+        log.info("Reading tsv lexicon")
     lexicon = {}
     classmapping = {}
 
@@ -68,7 +71,7 @@ def read_blingbring(tsv="blingbring.txt", classmap="rogetMap.xml", verbose=True)
     util.test_annotations(lexicon, testwords)
 
     if verbose:
-        util.log.info("OK, read")
+        log.info("OK, read")
     return lexicon
 
 
@@ -76,7 +79,7 @@ def read_rogetmap(xml="roget_hierarchy.xml", verbose=True):
     """Parse Roget map (Roget hierarchy) into a dictionary with Roget head words as keys."""
     import xml.etree.ElementTree as cet
     if verbose:
-        util.log.info("Reading XML lexicon")
+        log.info("Reading XML lexicon")
     lexicon = {}
     context = cet.iterparse(xml, events=("start", "end"))
     context = iter(context)
@@ -100,7 +103,7 @@ def read_rogetmap(xml="roget_hierarchy.xml", verbose=True):
     util.test_annotations(lexicon, testwords)
 
     if verbose:
-        util.log.info("OK, read.")
+        log.info("OK, read.")
     return lexicon
 
 
@@ -111,7 +114,7 @@ def read_swefn(xml='swefn.xml', verbose=True):
     """
     import xml.etree.ElementTree as cet
     if verbose:
-        util.log.info("Reading XML lexicon")
+        log.info("Reading XML lexicon")
     lexicon = {}
 
     context = cet.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
@@ -139,7 +142,7 @@ def read_swefn(xml='swefn.xml', verbose=True):
     util.test_annotations(lexicon, testwords)
 
     if verbose:
-        util.log.info("OK, read.")
+        log.info("OK, read.")
     return lexicon
 
 
@@ -181,7 +184,7 @@ def create_freq_pickle(corpus, annotation, filename, model, class_set=None, scor
 
         if error:
             error = error.decode()
-            util.log.error(error)
+            log.error(error)
             sys.exit(1)
 
         for line in reply.splitlines():
@@ -190,7 +193,7 @@ def create_freq_pickle(corpus, annotation, filename, model, class_set=None, scor
                 corpus_size += int(size.strip())
 
         # Get frequency of annotation
-        util.log.info("Getting frequencies from %s", c)
+        log.info("Getting frequencies from %s", c)
         process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-r", CORPUS_REGISTRY, c] + [annotation],
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         reply, error = process.communicate()
@@ -199,7 +202,7 @@ def create_freq_pickle(corpus, annotation, filename, model, class_set=None, scor
             error = error.decode()
             if "Error:" in error:  # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
                 if "Error: can't open attribute" in error:
-                    util.log.error("Annotation '%s' not found", annotation)
+                    log.error("Annotation '%s' not found", annotation)
                     sys.exit(1)
 
         for line in reply.splitlines():
@@ -226,7 +229,7 @@ def create_freq_pickle(corpus, annotation, filename, model, class_set=None, scor
     util.lexicon_to_pickle(rel_freq, filename)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     util.run.main(blingbring_to_pickle=blingbring_to_pickle,
                   swefn_to_pickle=swefn_to_pickle,
                   create_freq_pickle=create_freq_pickle

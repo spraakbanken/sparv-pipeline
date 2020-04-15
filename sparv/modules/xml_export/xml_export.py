@@ -1,5 +1,6 @@
 """Export annotated corpus data to xml."""
 
+import logging
 import os
 import xml.etree.ElementTree as etree
 from collections import defaultdict
@@ -7,6 +8,8 @@ from typing import Optional
 
 import sparv.util as util
 from sparv import Annotation, Config, Document, Export, ExportAnnotations, annotator
+
+log = logging.getLogger(__name__)
 
 
 @annotator("XML export", exporter=True)
@@ -78,7 +81,7 @@ def export(doc: str = Document,
 
     # Write xml to file
     etree.ElementTree(root_span.node).write(out, xml_declaration=False, method="xml", encoding=util.UTF8)
-    util.log.info("Exported: %s", out)
+    log.info("Exported: %s", out)
 
 
 @annotator("XML export preserving whitespace from source file", exporter=True)
@@ -166,7 +169,7 @@ def export_formatted(doc: str = Document,
 
     # Write xml to file
     etree.ElementTree(root_span.node).write(out, xml_declaration=False, method="xml", encoding=util.UTF8)
-    util.log.info("Exported: %s", out)
+    log.info("Exported: %s", out)
 
 
 def combine_xml(master, out, xmlfiles="", xmlfiles_list=""):
@@ -188,12 +191,12 @@ def combine_xml(master, out, xmlfiles="", xmlfiles_list=""):
     with open(out, "w") as OUT:
         print('<corpus id="%s">' % master.replace("&", "&amp;").replace('"', "&quot;"), file=OUT)
         for infile in xmlfiles:
-            util.log.info("Read: %s", infile)
+            log.info("Read: %s", infile)
             with open(infile, "r") as IN:
                 # Append everything but <corpus> and </corpus>
                 print(IN.read()[9:-10], end=' ', file=OUT)
         print("</corpus>", file=OUT)
-        util.log.info("Exported: %s" % out)
+        log.info("Exported: %s" % out)
 
 
 ########################################################################################################
