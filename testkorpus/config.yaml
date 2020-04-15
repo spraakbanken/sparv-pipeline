@@ -9,15 +9,16 @@ sentence_chunk: <text>
 
 annotations:
   - text
+  - <text>:readability.lix
   - <sentence>
   - <token>
   - <token:pos>
-  - <text>:readability.lix
+  - <token>:misc.number_rel_<sentence> as ref
 
 original_annotations:
   - corpus
   - text:date
-  - text:forfattare>author
+  - text:forfattare as author
 
 classes:
     token: segment.token

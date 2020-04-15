@@ -103,7 +103,7 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
                 param_value = registry.expand_variables(annotation)
                 inputs.append(os.path.join(paths.annotation_dir, get_annotation_path(param_value)))
                 if new_name:
-                    param_value = ">".join((param_value, new_name))
+                    param_value = " as ".join((param_value, new_name))
                 parameters[param_name].append(param_value)
         # Corpus
         elif param.annotation == Corpus or param.default == Corpus or isinstance(param.default, Corpus):

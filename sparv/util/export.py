@@ -88,7 +88,7 @@ def gather_annotations(doc, annotations, export_names, flatten=True):
                 a = list(corpus.read_annotation(doc, annotation_pointer))
                 annotation_dict[span_name][attr] = a
             except FileNotFoundError:
-                log.info("Attribute %s.%s not present in %s. Skipping." % (span_name, attr, doc))
+                log.info("Attribute %s not present in %s. Skipping." % (annotation_pointer, doc))
 
     # Calculate hierarchy (if needed) and sort the span objects
     elem_hierarchy = calculate_element_hierarchy(doc, spans_list)

@@ -26,12 +26,12 @@ def split(value):
 def split_tuples_list(value):
     """Convert value to a list containing tuples.
 
-    Each list item will be split into a tuple by the '>' character.
-    Each tuple will contain 2 elements. If there is no '>' in the string, the second element will be None.
+    Each list item will be split into a tuple by the string ' as '.
+    Each tuple will contain 2 elements. If there is no ' as ' in the string, the second element will be None.
     """
     value = split(value)
     if isinstance(value, list) and isinstance(value[0], str):
-        value = [(v.split(">")[0], v.split(">")[1]) if len(tuple(v.split(">"))) > 1 else (v, None) for v in value]
+        value = [(v.partition(" as ")[0], v.partition(" as ")[2]) if v.partition(" as ")[2] else (v, None) for v in value]
     return value
 
 
