@@ -105,7 +105,7 @@ def expand_variables(string):
 
     # Convert config keys to config values
     while True:
-        cfgs = list(re.finditer(r"\[([^\]=]+)(?:=([^\]]+))?\]", string))
+        cfgs = list(re.finditer(r"\[([^\]=[]+)(?:=([^\][]+))?\]", string))
         if not cfgs:
             break
         for cfg in cfgs:
