@@ -26,6 +26,7 @@ target_parser.add_argument("--dry-run", action="store_true", help="Only dry-run 
 target_parser.add_argument("--list-targets", action="store_true", help="List available targets.")
 target_parser.add_argument("--debug", action="store_true", help="Show debug messages.")
 
+files_parser = subparsers.add_parser("files", help="List available input files.")
 annotations_parser = subparsers.add_parser("annotations", help="List available modules and annotations.")
 config_parser = subparsers.add_parser("config", help="Display corpus config.")
 run_parser = subparsers.add_parser("run", help="Run annotator module independently.", add_help=False)
@@ -44,7 +45,7 @@ snakemake_args = {}
 config = {}
 use_progressbar = False
 
-if args.command in ("annotations", "config"):
+if args.command in ("annotations", "config", "files"):
     snakemake_args["targets"] = [args.command]
     snakemake_args["force_use_threads"] = True
 elif args.command == "target":

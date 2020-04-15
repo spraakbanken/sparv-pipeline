@@ -325,3 +325,9 @@ rule list_targets:
         print("    ANNOTATIONS")
         for target, desc in sorted(named_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
+
+rule files:
+    # List all input files
+    run:
+        print("Input files available:\n")
+        print(", ".join(input_files))
