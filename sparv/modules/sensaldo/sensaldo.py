@@ -60,11 +60,10 @@ def annotate(doc: str = Document,
 
 
 def read_sensaldo(tsv="sensaldo-base-v02.txt", verbose=True):
-    """
-    Read the TSV version of the sensaldo lexicon (sensaldo-base.txt).
+    """Read the TSV version of the sensaldo lexicon (sensaldo-base.txt).
+
     Return a lexicon dictionary: {senseid: (class, ranking)}
     """
-
     if verbose:
         util.log.info("Reading TSV lexicon")
     lexicon = {}

@@ -59,7 +59,7 @@ def swefn_words(doc: str = Document,
                 affix: str = util.AFFIX,
                 scoresep: str = util.SCORESEP,
                 lexicon=None):
-    """SweFN specific wrapper for annotate_words. See annotate_words for more info."""
+    """Swefn specific wrapper for annotate_words. See annotate_words for more info."""
     disambiguate = util.strtobool(disambiguate)
     connect_ids = util.strtobool(connect_ids)
 

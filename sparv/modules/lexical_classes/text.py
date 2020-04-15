@@ -67,7 +67,7 @@ def annotate_text(doc, out, lexical_classes_token, text, token, saldoids, cutoff
     """
     cutoff = int(cutoff)
     types = util.strtobool(types)
-    text_children, orphans = util.get_children(doc, text, token, preserve_parent_annotation_order=True)
+    text_children, _orphans = util.get_children(doc, text, token, preserve_parent_annotation_order=True)
     classes = list(util.read_annotation(doc, lexical_classes_token))
     sense = list(util.read_annotation(doc, saldoids)) if types else None
 

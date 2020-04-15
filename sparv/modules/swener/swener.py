@@ -42,7 +42,7 @@ def annotate(doc: str = Document,
     #         process_dict["process"] = process
 
     # Get sentence annotation
-    sentences, orphans = util.get_children(doc, sentence, token, orphan_alert=True)
+    sentences, _orphans = util.get_children(doc, sentence, token, orphan_alert=True)
 
     # Collect all text
     word_annotation = list(util.read_annotation(doc, word))

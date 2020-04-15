@@ -1,86 +1,10 @@
-"""
-Annotate geographical features.
-"""
+"""Annotate geographical features."""
 
 import pickle
 from collections import defaultdict
 
 import sparv.util as util
 from sparv import Annotation, Document, Model, Output, annotator
-
-
-def build_model(geonames, alternative_names, out, protocol=-1):
-    """Read list of cities from Geonames dump (http://download.geonames.org/export/dump/).
-
-    Add alternative names for each city.
-    """
-    util.log.info("Reading geonames: %s", geonames)
-    result = {}
-    with open(geonames, encoding="UTF-8") as model_file:
-        for line in model_file:
-            geonameid, name, _, _, latitude, longitude, feature_class, feature_code, country, _, admin1, admin2, admin3, admin4, population, _, _, _, _ = line.split("\t")
-
-            result[geonameid] = {
-                "name": name,
-                "alternative_names": {},
-                "latitude": latitude,
-                "longitude": longitude,
-                "country": country,
-                "population": population
-            }
-
-    # Parse file with alternative names of locations, paired with language codes
-    util.log.info("Reading alternative names: %s", alternative_names)
-
-    with open(alternative_names, encoding="UTF-8") as model_file:
-        for line in model_file:
-            altid, geonameid, isolanguage, altname, is_preferred_name, is_short_name, is_colloquial, is_historic = line.split("\t")
-            if geonameid in result:
-                result[geonameid]["alternative_names"].setdefault(isolanguage, [])
-                result[geonameid]["alternative_names"][isolanguage].append(altname)
-
-    util.log.info("Saving geomodel in Pickle format")
-
-    with open(out, "wb") as outfile:
-        pickle.dump(result, outfile, protocol=protocol)
-
-    util.log.info("OK, saved")
-
-
-def load_model(model, language=()):
-    util.log.info("Reading geomodel: %s", model)
-    with open(model, "rb") as infile:
-        m = pickle.load(infile)
-
-    result = defaultdict(set)
-    for geonameid, l in list(m.items()):
-        result[l["name"].lower()].add((l["name"], l["latitude"], l["longitude"], l["country"], l["population"]))
-        for lang in l["alternative_names"]:
-            if lang in language or not language:
-                for altname in l["alternative_names"][lang]:
-                    result[altname.lower()].add((l["name"], l["latitude"], l["longitude"], l["country"], l["population"]))
-
-    util.log.info("Read %d geographical names", len(result))
-
-    return result
-
-
-def most_populous(locations):
-    """Disambiguate locations by only keeping the most populous ones."""
-    new_locations = {}
-
-    for chunk in locations:
-        new_locations[chunk] = set()
-
-        for l in locations[chunk]:
-            biggest = (l[0], sorted(l[1], key=lambda x: -int(x[-1]))[0])
-            new_locations[chunk].add(biggest)
-    return new_locations
-
-
-def _format_location(location_data):
-    """Format location as city;country;latitude;longitude."""
-    return util.cwbset(";".join((y[0], y[3], y[1], y[2])) for x, y in location_data)
 
 
 @annotator("Annotate chunks with location data, based on locations contained within the text")
@@ -108,8 +32,8 @@ def contextual(doc: str = Document,
     ne_subtype_annotation = list(util.read_annotation(doc, ne_subtype))
     ne_name_annotation = list(util.read_annotation(doc, ne_name))
 
-    children_context_chunk, orphans = util.get_children(doc, context, chunk)
-    children_chunk_ne, orphans = util.get_children(doc, chunk, ne_type)
+    children_context_chunk, _orphans = util.get_children(doc, context, chunk)
+    children_chunk_ne, _orphans = util.get_children(doc, chunk, ne_type)
 
     out_annotation = util.create_empty_attribute(doc, chunk)
 
@@ -186,8 +110,87 @@ def metadata(doc: str = Document,
     util.write_annotation(doc, out, out_annotation)
 
 
+def build_model(geonames, alternative_names, out, protocol=-1):
+    """Read list of cities from Geonames dump (http://download.geonames.org/export/dump/).
+
+    Add alternative names for each city.
+    """
+    util.log.info("Reading geonames: %s", geonames)
+    result = {}
+    with open(geonames, encoding="UTF-8") as model_file:
+        for line in model_file:
+            geonameid, name, _, _, latitude, longitude, _feature_class, _feature_code, \
+                country, _, _admin1, _admin2, _admin3, _admin4, population, _, _, _, _ = line.split("\t")
+
+            result[geonameid] = {
+                "name": name,
+                "alternative_names": {},
+                "latitude": latitude,
+                "longitude": longitude,
+                "country": country,
+                "population": population
+            }
+
+    # Parse file with alternative names of locations, paired with language codes
+    util.log.info("Reading alternative names: %s", alternative_names)
+
+    with open(alternative_names, encoding="UTF-8") as model_file:
+        for line in model_file:
+            _altid, geonameid, isolanguage, altname, _is_preferred_name, _is_short_name, \
+                _is_colloquial, _is_historic = line.split("\t")
+            if geonameid in result:
+                result[geonameid]["alternative_names"].setdefault(isolanguage, [])
+                result[geonameid]["alternative_names"][isolanguage].append(altname)
+
+    util.log.info("Saving geomodel in Pickle format")
+
+    with open(out, "wb") as outfile:
+        pickle.dump(result, outfile, protocol=protocol)
+
+    util.log.info("OK, saved")
+
+
+########################################################################################################
+# HELPERS
+########################################################################################################
+
+
+def load_model(model, language=()):
+    """Load geo model and return as dict."""
+    util.log.info("Reading geomodel: %s", model)
+    with open(model, "rb") as infile:
+        m = pickle.load(infile)
+
+    result = defaultdict(set)
+    for _geonameid, l in list(m.items()):
+        result[l["name"].lower()].add((l["name"], l["latitude"], l["longitude"], l["country"], l["population"]))
+        for lang in l["alternative_names"]:
+            if lang in language or not language:
+                for altname in l["alternative_names"][lang]:
+                    result[altname.lower()].add((l["name"], l["latitude"], l["longitude"], l["country"], l["population"]))
+
+    util.log.info("Read %d geographical names", len(result))
+
+    return result
+
+
+def most_populous(locations):
+    """Disambiguate locations by only keeping the most populous ones."""
+    new_locations = {}
+
+    for chunk in locations:
+        new_locations[chunk] = set()
+
+        for l in locations[chunk]:
+            biggest = (l[0], sorted(l[1], key=lambda x: -int(x[-1]))[0])
+            new_locations[chunk].add(biggest)
+    return new_locations
+
+
+def _format_location(location_data):
+    """Format location as city;country;latitude;longitude."""
+    return util.cwbset(";".join((y[0], y[3], y[1], y[2])) for x, y in location_data)
+
+
 if __name__ == '__main__':
-    util.run.main(contextual,
-                  metadata=metadata,
-                  build_model=build_model
-                  )
+    util.run.main(build_model)
