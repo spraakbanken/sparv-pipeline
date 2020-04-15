@@ -23,6 +23,8 @@ all_annotations = {}
 
 # All named targets available, used in list_targets
 named_targets = []
+export_targets = []
+
 # Remove Snakemake's default log handler
 if logger.log_handler and logger.log_handler[0] == logger.text_handler:
     logger.log_handler = []
@@ -224,7 +226,10 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
     # Create rule to run this annotation on all input files, but skip rules containing wildcards
     if not any(re.search(r"(?!{doc}){[^}]+}", o) for o in outputs):
         target_name = module_name + ":" + f_name
-        named_targets.append((target_name, desc))
+        if exporter:
+            export_targets.append((target_name, desc))
+        else:
+            named_targets.append((target_name, desc))
         @workflow.rule(name=target_name)
         @workflow.input(expand([os.path.join(paths.annotation_dir, o)
                                 if not (o.startswith(paths.annotation_dir) or o.startswith(paths.export_dir))
@@ -309,9 +314,14 @@ rule annotations:
 
 rule list_targets:
     run:
-        max_len = max(len(t[0]) for t in named_targets) + 4
+        max_len = max(len(t[0]) for t in named_targets + export_targets) + 4
         print()
         print("Available targets")
         print("=================\n")
+        print("    EXPORTS")
+        for target, desc in sorted(export_targets):
+            print("        {:{}}    {}".format(target, max_len, desc))
+        print()
+        print("    ANNOTATIONS")
         for target, desc in sorted(named_targets):
-            print("      {:{}}    {}".format(target, max_len, desc))
+            print("        {:{}}    {}".format(target, max_len, desc))
