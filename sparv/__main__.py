@@ -20,6 +20,8 @@ subparsers.required = True
 target_parser = subparsers.add_parser("target", help="Create specified annotation(s) or annotation file(s).")
 target_parser.add_argument("targets", nargs="*", help="Annotation(s) or annotation file(s) to create.")
 target_parser.add_argument("--dir", help="Path to working directory.")
+target_parser.add_argument("--file", nargs="+", default=[],
+                           help="When target is an annotation, only annotate specified input file(s).")
 target_parser.add_argument("--cores", type=int, help="Number of cores to use.", default=1)
 target_parser.add_argument("--log", action="store_true", help="Show log instead of progress bar.")
 target_parser.add_argument("--dry-run", action="store_true", help="Only dry-run the workflow.")
@@ -62,7 +64,7 @@ elif args.command == "target":
         if len(snakemake_args["targets"]) == 1:
             snakemake_args["force_use_threads"] = True
             use_progressbar = False
-    config = {"debug": args.debug, "log": args.log}
+    config = {"debug": args.debug, "file": args.file, "log": args.log}
     # List available targets if no target was specified
     if not snakemake_args["targets"]:
         use_progressbar = False
