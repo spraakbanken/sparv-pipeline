@@ -1,8 +1,8 @@
 """Main Sparv package."""
 from sparv.core import config
 from sparv.core.registry import annotator
-from sparv.util.classes import AllDocuments, Annotation, Binary, Config, Corpus, Document, Export, ExportAnnotations,\
-    Model, Output, Source
+from sparv.util.classes import (AllDocuments, Annotation, Binary, Config, Corpus, Document, Export, ExportAnnotations,
+                                Language, Model, Output, Source)
 
 __all__ = [
     "annotator",
@@ -15,6 +15,7 @@ __all__ = [
     "Document",
     "Export",
     "ExportAnnotations",
+    "Language",
     "Model",
     "Output",
     "Source"

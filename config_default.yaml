@@ -1,4 +1,5 @@
 
+language: "sv"
 token_chunk: <sentence>
 saldo.precision: ""
 

@@ -72,3 +72,8 @@ class Export(str):
 class ExportAnnotations(List[Annotation]):
     """List of annotations to include in export."""
     pass
+
+
+class Language(str):
+    """Language of the corpus."""
+    pass

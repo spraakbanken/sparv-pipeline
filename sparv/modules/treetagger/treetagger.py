@@ -1,5 +1,7 @@
 """Process tokens with treetagger."""
+
 import sparv.util as util
+from sparv import Annotation, Binary, Document, Language, Model, Output, annotator
 
 SENT_SEP = "\n<eos>\n"
 TOK_SEP = "\n"
@@ -8,8 +10,18 @@ TAG_COLUMN = 1
 LEM_COLUMN = 2
 
 
-def tt_proc(doc, model, tt_binary, out_pos, out_msd, out_lemma, word, sentence, lang, encoding=util.UTF8):
-    """POS/MSD tag and lemmatize using the TreeTagger.
+@annotator("Part-of-speech tags and baseforms from TreeTagger")
+def annotate(doc: str = Document,
+             lang: str = Language,
+             model: str = Model("[treetagger.model=treetagger/[language].par]"),
+             tt_binary: str = Binary("[treetagger.binary=treetagger/tree-tagger]"),
+             out_pos: str = Output("<token>:treetagger.pos", description="Part-of-speeches in UD"),
+             out_msd: str = Output("<token>:treetagger.msd", description="Part-of-speeches from TreeTagger"),
+             out_baseform: str = Output("<token>:treetagger.baseform", description="Baseforms from TreeTagger"),
+             word: str = Annotation("<token:word>"),
+             sentence: str = Annotation("<sentence>"),
+             encoding: str = util.UTF8):
+    """POS/MSD tag and lemmatize using TreeTagger.
 
     - model is the binary TreeTagger model file
     - tt_binary provides the path to the TreeTagger executable
@@ -17,7 +29,7 @@ def tt_proc(doc, model, tt_binary, out_pos, out_msd, out_lemma, word, sentence, 
     - word and sentence are existing annotation files
     - lang is the two-letter language code of the language to be analyzed
     """
-    sentences, orphans = util.get_children(doc, sentence, word)
+    sentences, _orphans = util.get_children(doc, sentence, word)
     word_annotation = list(util.read_annotation(doc, word))
     stdin = SENT_SEP.join(TOK_SEP.join(word_annotation[token_index] for token_index in sent)
                           for sent in sentences)
@@ -42,7 +54,4 @@ def tt_proc(doc, model, tt_binary, out_pos, out_msd, out_lemma, word, sentence, 
         for token_id, tagged_token in zip(sent, tagged_sent.strip().split(TOK_SEP)):
             lem = tagged_token.strip().split(TAG_SEP)[LEM_COLUMN]
             out_lemma_annotation[token_id] = lem
-    util.write_annotation(doc, out_lemma, out_lemma_annotation)
-
-if __name__ == '__main__':
-    util.run.main(tt_proc)
+    util.write_annotation(doc, out_baseform, out_lemma_annotation)

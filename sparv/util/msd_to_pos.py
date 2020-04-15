@@ -1,30 +1,30 @@
-# -*- coding: utf-8 -*-
+"""Map MSD tags to simple Universal Depenendy POS tags.
 
-# maps MSD tags to simple Universal Depenendy POS tags
-# http://universaldependencies.org/u/pos/all.html
+http://universaldependencies.org/u/pos/all.html
+"""
 
 CONVERTERS = {
-    "as": "as_convert_fl",
-    "ca": "ca_convert_fl",
-    "cy": "cy_convert_fl",  # Not used yet, FreeLing dict is not working.
-    "de": "de_convert_fl",
-    "es": "es_convert_fl",
-    "en": "en_convert_fl",
-    "fr": "fr_convert_fl",
-    "gl": "gl_convert_fl",
-    "it": "it_convert_fl",
-    "no": "no_convert_fl",
-    "pt": "pt_convert_fl",
-    "ru": "ru_convert_fl",
-    "sl": "sl_convert_fl",
-    "bg": "bg_convert_tt",
-    "et": "et_convert_tt",
-    "fi": "fi_convert_tt",
-    "nl": "nl_convert_tt",
-    "la": "la_convert_tt",
-    "pl": "pl_convert_tt",
-    "ro": "ro_convert_tt",
-    "sk": "sk_convert_tt",
+    "as": "_as_convert_fl",
+    "ca": "_ca_convert_fl",
+    "cy": "_cy_convert_fl",  # Not used yet, FreeLing dict is not working.
+    "de": "_de_convert_fl",
+    "es": "_es_convert_fl",
+    "en": "_en_convert_fl",
+    "fr": "_fr_convert_fl",
+    "gl": "_gl_convert_fl",
+    "it": "_it_convert_fl",
+    "no": "_no_convert_fl",
+    "pt": "_pt_convert_fl",
+    "ru": "_ru_convert_fl",
+    "sl": "_sl_convert_fl",
+    "bg": "_bg_convert_tt",
+    "et": "_et_convert_tt",
+    "fi": "_fi_convert_tt",
+    "nl": "_nl_convert_tt",
+    "la": "_la_convert_tt",
+    "pl": "_pl_convert_tt",
+    "ro": "_ro_convert_tt",
+    "sk": "_sk_convert_tt",
 }
 
 # Fallback POS
@@ -77,6 +77,7 @@ COMMON_FL_DICT = {
 
 
 def convert(msd, lang):
+    """Map MSD tags from Freeling or TreeTagger to Universal Depenendy POS tags."""
     if lang in CONVERTERS:
         lang_convert = eval(CONVERTERS[lang])
         return lang_convert(msd)
@@ -84,59 +85,60 @@ def convert(msd, lang):
         return msd
 
 
-def common_fl_convert(msd):
+def _common_fl_convert(msd):
     if msd[0] in "NVC":
         return COMMON_FL_DICT.get(msd[0:2], FALLBACK)
     else:
         return COMMON_FL_DICT.get(msd[0], FALLBACK)
 
 
-def as_convert_fl(msd):
-    return common_fl_convert(msd)
+def _as_convert_fl(msd):
+    return _common_fl_convert(msd)
 
 
-def ca_convert_fl(msd):
-    return common_fl_convert(msd)
+def _ca_convert_fl(msd):
+    return _common_fl_convert(msd)
 
 
-def cy_convert_fl(msd):
-    return common_fl_convert(msd)
+def _cy_convert_fl(msd):
+    return _common_fl_convert(msd)
 
 
-def de_convert_fl(msd):
-    return common_fl_convert(msd)
+def _de_convert_fl(msd):
+    return _common_fl_convert(msd)
 
 
-def es_convert_fl(msd):
-    return common_fl_convert(msd)
+def _es_convert_fl(msd):
+    return _common_fl_convert(msd)
 
 
-def fr_convert_fl(msd):
-    return common_fl_convert(msd)
+def _fr_convert_fl(msd):
+    return _common_fl_convert(msd)
 
 
-def gl_convert_fl(msd):
-    return common_fl_convert(msd)
+def _gl_convert_fl(msd):
+    return _common_fl_convert(msd)
 
 
-def it_convert_fl(msd):
-    return common_fl_convert(msd)
+def _it_convert_fl(msd):
+    return _common_fl_convert(msd)
 
 
-def no_convert_fl(msd):
-    return common_fl_convert(msd)
+def _no_convert_fl(msd):
+    return _common_fl_convert(msd)
 
 
-def pt_convert_fl(msd):
-    return common_fl_convert(msd)
+def _pt_convert_fl(msd):
+    return _common_fl_convert(msd)
 
 
-def sl_convert_fl(msd):
-    return common_fl_convert(msd)
+def _sl_convert_fl(msd):
+    return _common_fl_convert(msd)
 
 
-def ru_convert_fl(msd):
+def _ru_convert_fl(msd):
     return ru_dict.get(msd[0], FALLBACK)
+
 
 ru_dict = {
     "A": "ADJ",
@@ -160,7 +162,7 @@ ru_dict = {
 }
 
 
-def en_convert_fl(msd):
+def _en_convert_fl(msd):
     if msd in ["NN", "NNS"]:
         return "NOUN"
     elif msd.startswith("N"):
@@ -170,6 +172,7 @@ def en_convert_fl(msd):
     if msd.startswith("Z"):
         return "NUM"
     return en_dict.get(msd, FALLBACK)
+
 
 en_dict = {
     # https://talp-upc.gitbooks.io/freeling-user-manual/content/tagsets/tagset-en.html  # FreeLing
@@ -210,13 +213,14 @@ en_dict = {
 #####################################################################
 
 
-def bg_convert_tt(msd):
+def _bg_convert_tt(msd):
     if msd[0] in ["N", "V", "C"]:
         return bg_dict.get(msd[0:2], FALLBACK)
     if msd.startswith("PT"):
         return "PUNCT"
     else:
         return bg_dict.get(msd[0], FALLBACK)
+
 
 bg_dict = {
     # http://www.bultreebank.org/TechRep/BTB-TR03.pdf
@@ -240,7 +244,7 @@ bg_dict = {
 }
 
 
-def et_convert_tt(msd):
+def _et_convert_tt(msd):
     if "." in msd:
         pos = msd.split(".")[0]
         if pos == "J":
@@ -248,6 +252,7 @@ def et_convert_tt(msd):
         return et_dict.get(msd.split(".")[0])
     else:
         return et_dict.get(msd, FALLBACK)
+
 
 et_dict = {
     # http://www.cl.ut.ee/korpused/morfliides/seletus
@@ -269,11 +274,12 @@ et_dict = {
 }
 
 
-def fi_convert_tt(msd):
+def _fi_convert_tt(msd):
     if msd in fi_dict:
         return fi_dict[msd]
     else:
         return fi_dict.get(msd.split("_")[0], FALLBACK)
+
 
 fi_dict = {
     # http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/finnish-tags.txt
@@ -297,7 +303,7 @@ fi_dict = {
 }
 
 
-def nl_convert_tt(msd):
+def _nl_convert_tt(msd):
     if len(msd) == 2 and msd.startswith("$."):
         return "PUNCT"
     elif msd == "pronadv":
@@ -306,6 +312,7 @@ def nl_convert_tt(msd):
         return "DET"
     else:
         return nl_dict.get(msd[0:3], FALLBACK)
+
 
 nl_dict = {
     # http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/dutch-tagset.txt
@@ -324,11 +331,12 @@ nl_dict = {
 }
 
 
-def la_convert_tt(msd):
+def _la_convert_tt(msd):
     if ":" in msd:
         return la_dict.get(msd.split(":")[0], FALLBACK)
     else:
         return la_dict.get(msd, FALLBACK)
+
 
 la_dict = {
     # http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/Lamap-Tagset.pdf
@@ -357,11 +365,12 @@ la_dict = {
 }
 
 
-def pl_convert_tt(msd):
+def _pl_convert_tt(msd):
     if ":" in msd:
         return pl_dict.get(msd.split(":")[0], FALLBACK)
     else:
         return pl_dict.get(msd, FALLBACK)
+
 
 pl_dict = {
     # http://nkjp.pl/poliqarp/help/ense2.html
@@ -405,11 +414,12 @@ pl_dict = {
 }
 
 
-def ro_convert_tt(msd):
+def _ro_convert_tt(msd):
     if msd[0] in ["N", "V", "C", "S"]:
         return ro_dict.get(msd[0:2], FALLBACK)
     else:
         return ro_dict.get(msd[0], FALLBACK)
+
 
 ro_dict = {
     "Nc": "NOUN",
@@ -435,13 +445,14 @@ ro_dict = {
 }
 
 
-def sk_convert_tt(msd):
+def _sk_convert_tt(msd):
     if len(msd) == 1 and not msd.isalpha():
         return "PUNCT"
     elif msd.startswith(":"):
         return sk_dict.get(msd, FALLBACK)
     else:
         return sk_dict.get(msd[0], FALLBACK)
+
 
 sk_dict = {
     # http://korpus.juls.savba.sk/morpho_en.html
@@ -469,8 +480,9 @@ sk_dict = {
 }
 
 
-def de_convert_tt(msd):
+def _de_convert_tt(msd):
     return de_dict[msd]
+
 
 de_dict = {
     # http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/stts_guide.pdf

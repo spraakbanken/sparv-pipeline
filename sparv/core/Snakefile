@@ -108,6 +108,9 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
         # Corpus
         elif param.annotation == Corpus or param.default == Corpus or isinstance(param.default, Corpus):
             parameters[param_name] = sparv_config.get("id")
+        # Language
+        elif param.annotation == Language or param.default == Language or isinstance(param.default, Language):
+            parameters[param_name] = sparv_config.get("language")
         # Document
         elif param.annotation == Document or param.default == Document or isinstance(param.default, Document):
             docs.append(param_name)
