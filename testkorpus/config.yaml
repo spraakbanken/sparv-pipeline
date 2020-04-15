@@ -12,6 +12,7 @@ annotations:
   - <sentence>
   - <token>
   - <token:pos>
+  - <text>:readability.lix
 
 original_annotations:
   - corpus
