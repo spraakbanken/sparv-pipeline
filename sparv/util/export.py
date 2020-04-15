@@ -1,10 +1,10 @@
 """Util functions for corpus export."""
 
+import xml.etree.ElementTree as etree
 from collections import defaultdict
 from itertools import combinations
-import xml.etree.ElementTree as etree
 
-from sparv.util import corpus, parent, misc
+from sparv.util import corpus, log, misc, parent
 
 
 def gather_annotations(doc, annotations, export_names, flatten=True):
@@ -77,12 +77,18 @@ def gather_annotations(doc, annotations, export_names, flatten=True):
         span_name, attr = corpus.split_annotation(annotation_pointer)
         if span_name not in annotation_dict:
             annotation_dict[span_name] = {}  # span_name needs to be in the dictionary
-            for i, s in enumerate(corpus.read_annotation_spans(doc, span_name, decimals=True)):
-                spans_list.append(Span(span_name, i, s[0], s[1], export_names))
+            try:
+                for i, s in enumerate(corpus.read_annotation_spans(doc, span_name, decimals=True)):
+                    spans_list.append(Span(span_name, i, s[0], s[1], export_names))
+            except FileNotFoundError:
+                log.info("Element %s not present in %s. Skipping." % (span_name, doc))
         # TODO: assemble all attrs first and use read_annotation_attributes
         if attr and not annotation_dict[span_name].get(attr):
-            a = list(corpus.read_annotation(doc, annotation_pointer))
-            annotation_dict[span_name][attr] = a
+            try:
+                a = list(corpus.read_annotation(doc, annotation_pointer))
+                annotation_dict[span_name][attr] = a
+            except FileNotFoundError:
+                log.info("Attribute %s.%s not present in %s. Skipping." % (span_name, attr, doc))
 
     # Calculate hierarchy (if needed) and sort the span objects
     elem_hierarchy = calculate_element_hierarchy(doc, spans_list)
