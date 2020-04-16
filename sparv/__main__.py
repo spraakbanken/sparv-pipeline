@@ -9,6 +9,10 @@ from snakemake.logging import logger
 from sparv.core import progressbar
 from sparv.core.paths import sparv_path
 
+# Check Python version
+if sys.version_info < (3, 6):
+    raise Exception("Python 3.6+ is required.")
+
 # Set up command line arguments
 parser = argparse.ArgumentParser(prog="sparv",
                                  description="Sparv Pipeline",
