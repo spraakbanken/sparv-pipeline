@@ -1,7 +1,11 @@
 """Process tokens with treetagger."""
 
+import logging
+
 import sparv.util as util
 from sparv import Annotation, Binary, Document, Language, Model, Output, annotator
+
+log = logging.getLogger(__name__)
 
 SENT_SEP = "\n<eos>\n"
 TOK_SEP = "\n"
@@ -35,7 +39,8 @@ def annotate(doc: str = Document,
                           for sent in sentences)
     args = ["-token", "-lemma", "-cap-heuristics", "-no-unknown", "-eos-tag", "<eos>", model]
 
-    stdout, _ = util.system.call_binary(tt_binary, args, stdin, encoding=encoding, verbose=True)
+    stdout, stderr = util.system.call_binary(tt_binary, args, stdin, encoding=encoding)
+    log.debug("Message from TreeTagger:\n%s", stderr)
 
     # Write pos and msd annotations.
     out_pos_annotation = util.create_empty_attribute(doc, word_annotation)

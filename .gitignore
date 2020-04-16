@@ -2,12 +2,11 @@
 .idea/
 
 sparv/__pycache__
-sparv/freeling.py
 sparv/util/__pycache__/
 venv/
 *.pyc
 
-models/freeling
+# Models
 models/geo/geo_alternateNames.txt
 models/geo/geo_cities1000.txt
 models/geo/geo.pickle
@@ -37,7 +36,11 @@ models/treetagger
 models/wsd/ALL_512_128_w10_A2_140403_ctx1.bin
 models/wsd/lem_cbow0_s512_w10_NEW2_ctx.bin
 
+# Bin
 bin/maltparser-1.7.2/
 bin/wsd/
 bin/word_alignment/
 bin/treetagger/
+
+# Plugins
+freeling

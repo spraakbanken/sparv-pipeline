@@ -53,7 +53,7 @@ python -m sparv.modules.korp.relations --sql --corpus KORPUS --db_name TEST_DB -
 -------------------------------------------------------------
 # Sentiment
 
-python -m sparv.modules.sentiment.sentiment --doc korpus1 --sense token:sense --out_scores token:sentiment --out_labels token:sentimentclass --model ../models/sensaldo.pickle
+python -m sparv.modules.sensaldo.sensaldo --doc korpus1 --sense token:sense --out_scores token:sentiment --out_labels token:sentimentclass --model ../models/sensaldo.pickle
 
 -------------------------------------------------------------
 # Geo-tagging

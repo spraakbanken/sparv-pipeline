@@ -296,8 +296,7 @@ rule annotations:
         print("Available classes")
         print("=================\n")
         print(util.Color.BOLD + "    Classes defined by pipeline modules"+ util.Color.RESET)
-        print("        {}{:{}}{}    {}{}{}".format(util.Color.UNDERLINE, "Class", max_len, util.Color.RESET,
-                                                   util.Color.UNDERLINE, "Annotation", util.Color.RESET))
+        print("        {}{:{}}    {}{}".format(util.Color.ITALIC, "Class", max_len, "Annotation", util.Color.RESET))
         for cls, anns in registry.annotation_classes["module_classes"].items():
             print("        {:{}}    {}".format(cls, max_len, anns[0]))
             if len(anns) > 1:
@@ -307,8 +306,7 @@ rule annotations:
         if registry.annotation_classes["config_classes"]:
             print()
             print(util.Color.BOLD + "    Classes from config" + util.Color.RESET)
-            print("        {}{:{}}{}    {}{}{}".format(util.Color.UNDERLINE, "Class", max_len, util.Color.RESET,
-                                                       util.Color.UNDERLINE, "Annotation", util.Color.RESET))
+            print("        {}{:{}}    {}{}".format(util.Color.ITALIC, "Class", max_len, "Annotation", util.Color.RESET))
             for cls, ann in registry.annotation_classes["config_classes"].items():
                 print("        {:{}}    {}".format(cls, max_len, ann))
 
@@ -329,5 +327,5 @@ rule list_targets:
 rule files:
     # List all input files
     run:
-        print("Input files available:\n")
+        print("Available input files:\n")
         print(", ".join(input_files))
