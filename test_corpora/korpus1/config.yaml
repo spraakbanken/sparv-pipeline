@@ -16,7 +16,8 @@ annotations:
   - <token>:misc.number_rel_<sentence> as ref
 
 original_annotations:
-  - corpus
+  - dokument as document
+  - text:id
   - text:date
   - text:forfattare as author
 

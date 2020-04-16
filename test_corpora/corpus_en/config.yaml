@@ -1,0 +1,19 @@
+id: test_en
+name: English Test Corpus
+language: en
+
+sentence_chunk: <text>
+
+annotations:
+  - text
+  - <text>:readability.lix
+  - <sentence>
+  - <token>
+  - <token:pos>
+  - <token:msd>
+  - <token:baseform>
+
+
+classes:
+    token: freeling.token
+    text: text
