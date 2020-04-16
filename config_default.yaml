@@ -6,8 +6,9 @@ saldo.precision: ""
 
 classes:
     token: segment.token
-    sentence: segment.sentence
+    "token:word": <token>:misc.word
     "token:sense": <token>:wsd.sense
+    sentence: segment.sentence
 
 
 remove_export_namespaces: true

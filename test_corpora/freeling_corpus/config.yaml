@@ -1,0 +1,25 @@
+id: freeling-corpus
+name: FreeLing test corpus
+language: en
+
+# Elements and attributes from the source XML that we want to be available as input for other annotations
+xml_elements:
+  - text
+
+annotations:
+  - text
+  - <text>:readability.lix
+  - <sentence>
+  - <token>
+  - <token:pos>
+  - <token:msd>
+  - <token:baseform>
+
+classes:
+    text: text
+    sentence: freeling.sentence
+    token: freeling.token
+    "token:word": <token>:freeling.word
+    "token:pos": <token>:freeling.pos
+    "token:msd": <token>:freeling.msd
+    "token:baseform": <token>:freeling.baseform
