@@ -136,8 +136,9 @@ def expand_variables(string):
 def dig(needle, haystack):
     """Go though 'haystack' and return any objects of the type 'needle' found.
 
-    The haystack may be a list, dict or a combination, or a type from the typing library.
-    The needle can be any type except for the above."""
+    The haystack may be a list, tuple, dict or a combination of the three. It may also be equal to or an instance of
+    the needle.
+    The needle can be any type except for list, tuple and dict."""
     needles = []
     if isinstance(haystack, list):
         for item in haystack:
@@ -148,18 +149,6 @@ def dig(needle, haystack):
         for key in haystack:
             found = dig(needle, haystack[key])
             needles.extend(found)
-
-    elif hasattr(haystack, "__module__") and haystack.__module__ == "typing":
-        # Handle List, Optional, Union etc.
-        if haystack == needle:
-            return [haystack]
-        if haystack._name in ("List", "Optional", "Union") or haystack.__origin__ in (Union,):
-            if hasattr(haystack, "__args__"):
-                for child in haystack.__args__:
-                    found = dig(needle, child)
-                    needles.extend(found)
-            elif haystack == needle:
-                return [haystack]
 
     elif type(haystack) == needle or (type(needle) == type and haystack == needle):
         # We've found what we're looking for
