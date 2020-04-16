@@ -329,3 +329,25 @@ rule files:
     run:
         print("Available input files:\n")
         print(", ".join(input_files))
+
+rule clean:
+    # Remove annotations dir
+    run:
+        # Only run if corpus config is found in same dir
+        if corpus_config_file is None:
+            print("No corpus config found. Not removing anything.")
+        else:
+            import shutil
+            if config.get("export"):
+                to_remove = paths.export_dir
+                assert paths.export_dir, "Export dir name not configured."
+            else:
+                to_remove = paths.annotation_dir
+                assert paths.annotation_dir, "Annotations dir name not configured."
+
+            full_path = os.path.join(os.getcwd(), to_remove)
+            if os.path.isdir(full_path):
+                shutil.rmtree(full_path)
+                print(to_remove, "directory removed")
+            else:
+                print("Nothing to remove")

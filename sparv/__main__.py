@@ -32,6 +32,10 @@ target_parser.add_argument("--dry-run", action="store_true", help="Only dry-run 
 target_parser.add_argument("--list-targets", action="store_true", help="List available targets.")
 target_parser.add_argument("--debug", action="store_true", help="Show debug messages.")
 
+clean_parser = subparsers.add_parser("clean",
+                                     help="Remove output directories (by default only the annotations directory).")
+clean_parser.add_argument("--export", action="store_true", help="Remove export directory.")
+
 files_parser = subparsers.add_parser("files", help="List available input files.")
 annotations_parser = subparsers.add_parser("annotations", help="List available modules and annotations.")
 config_parser = subparsers.add_parser("config", help="Display corpus config.")
@@ -53,9 +57,11 @@ config = {"run_by_sparv": True}
 use_progressbar = True
 simple_target = False
 
-if args.command in ("annotations", "config", "files"):
+if args.command in ("annotations", "config", "files", "clean"):
     snakemake_args["targets"] = [args.command]
     simple_target = True
+    if args.command == "clean":
+        config["export"] = args.export
 elif args.command == "target":
     snakemake_args = {
         "workdir": args.dir,
