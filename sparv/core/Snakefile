@@ -26,7 +26,7 @@ named_targets = []
 export_targets = []
 
 # Remove Snakemake's default log handler
-if logger.log_handler and logger.log_handler[0] == logger.text_handler:
+if config.get("run_by_sparv") and logger.log_handler and logger.log_handler[0] == logger.text_handler:
     logger.log_handler = []
 
 
@@ -208,7 +208,7 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
 
     rule:
         message:
-            "Running {}:{}".format(module_name, f_name)
+            "{}:{}".format(module_name, f_name)
         input:
             inputs
         output:

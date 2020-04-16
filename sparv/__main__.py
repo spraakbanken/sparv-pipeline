@@ -36,6 +36,7 @@ run_parser = subparsers.add_parser("run", help="Run annotator module independent
 # Parse arguments. We allow unknown arguments for the 'run' command which is handled separately.
 args, unknown_args = parser.parse_known_args(args=None if sys.argv[1:] else ["--help"])
 
+# The 'run' command in handled by a separate script
 if args.command == "run":
     from sparv.core import run
     run.main(unknown_args)
@@ -44,49 +45,53 @@ else:
     args = parser.parse_args()
 
 snakemake_args = {}
-config = {}
-use_progressbar = False
+config = {"run_by_sparv": True}
+use_progressbar = True
+simple_target = False
 
 if args.command in ("annotations", "config", "files"):
     snakemake_args["targets"] = [args.command]
-    snakemake_args["force_use_threads"] = True
+    simple_target = True
 elif args.command == "target":
-    use_progressbar = True
     snakemake_args = {
         "workdir": args.dir,
         "dryrun": args.dry_run,
         "cores": args.cores,
         "targets": args.targets
     }
+
+    config.update({"debug": args.debug, "file": args.file, "log": args.log})
+
     if args.list_targets:
-        snakemake_args["targets"].append("list_targets")
-        # Suppress some of the chatty output when only printing targets
-        if len(snakemake_args["targets"]) == 1:
-            snakemake_args["force_use_threads"] = True
-            use_progressbar = False
-    config = {"debug": args.debug, "file": args.file, "log": args.log}
-    # List available targets if no target was specified
-    if not snakemake_args["targets"]:
-        use_progressbar = False
+        snakemake_args["targets"] = ["list_targets"]
+        simple_target = True
+    elif not snakemake_args["targets"]:
+        # List available targets if no target was specified
+        snakemake_args["targets"] = ["list_targets"]
         print("\nNo targets provided!\n")
-        snakemake_args["targets"].append("list_targets")
-        snakemake_args["force_use_threads"] = True
+        simple_target = True
+
     if args.log:
         use_progressbar = False
 
-snakemake_args["config"] = config
+if simple_target:
+    # Disable progressbar for simple targets, and force Snakemake to use threads to prevent unnecessary processes
+    use_progressbar = False
+    snakemake_args["force_use_threads"] = True
+
+# Disable Snakemake's default log handler
+logger.log_handler = []
 
 if use_progressbar:
-    # Create progress bar log handler
+    # Use progress bar log handler
     progress = progressbar.ProgressLogger()
-
-    # Disable Snakemake's default log handler
-    logger.log_handler = []
-
     snakemake_args["log_handler"] = [progress.log_handler]
+else:
+    # Use minimal log handler
+    snakemake_args["log_handler"] = [progressbar.minimal_log_handler]
 
 # Run Snakemake
-snakemake.snakemake(os.path.join(sparv_path, "core", "Snakefile"), **snakemake_args)
+snakemake.snakemake(os.path.join(sparv_path, "core", "Snakefile"), config=config, **snakemake_args)
 
 if use_progressbar:
     progress.stop()

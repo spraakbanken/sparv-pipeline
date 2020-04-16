@@ -9,6 +9,8 @@ from snakemake import logger
 class ProgressLogger:
     """Class providing a log handler for Snakemake"""
 
+    icon = "\U0001f426"
+
     def __init__(self):
         self.bar_mgr = None
         self.exit = lambda *x: None
@@ -19,7 +21,7 @@ class ProgressLogger:
     def setup_bar(self, total: int):
         """Initialize the progress bar."""
         print()
-        self.bar_mgr = (alive_bar(total, enrich_print=False))
+        self.bar_mgr = (alive_bar(total, enrich_print=False, title=ProgressLogger.icon, length=30))
         self.exit = type(self.bar_mgr).__exit__
         self.bar = type(self.bar_mgr).__enter__(self.bar_mgr)
         self.stopped = False
@@ -57,10 +59,7 @@ class ProgressLogger:
         elif level == "job_info":
             if msg["msg"] and self.bar is not None:
                 # Only update status message, don't advance progress
-                self.bar(text="\U0001f426  " + msg["msg"], incr=0)
-
-        elif level == "1error":
-            print(msg["msg"])
+                self.bar(text=ProgressLogger.icon + "  " + msg["msg"], incr=0)
 
         elif level == "info":
             if msg["msg"] == "Nothing to be done.":
@@ -82,3 +81,12 @@ class ProgressLogger:
                 os.remove(log_file)
 
             print()
+
+
+def minimal_log_handler(msg):
+    """Minimal log handler for Snakemake, forwarding important messages to the default
+    handler while silencing the rest."""
+
+    # Defer to Snakemake's default log handler for some types of messages
+    if msg["level"] in ("warning", "error", "job_error"):
+        logger.text_handler(msg)
