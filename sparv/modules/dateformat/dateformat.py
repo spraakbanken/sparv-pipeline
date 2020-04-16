@@ -15,11 +15,11 @@ log = logging.getLogger(__name__)
 
 @annotator("Convert existing dates to specified output format")
 def dateformat(doc: str = Document,
-               in_from: str = Annotation("{from_chunk}"),
-               in_to: Optional[str] = Annotation("{to_chunk}"),
-               out_from: str = Output("{from_chunk}:dateformat.from", description="From-dates"),
-               out_to: Optional[str] = Output("{to_chunk}:dateformat.to", description="To-dates"),
-               informat: str = Config("dateformat.informat", ""),
+               in_from: str = Annotation("[dateformat.date_from]"),
+               in_to: Optional[str] = Annotation("[dateformat.date_to]"),
+               out_from: str = Output("[dateformat.out_annotation=<text>]:dateformat.from", description="From-dates"),
+               out_to: Optional[str] = Output("[dateformat.out_annotation=<text>]:dateformat.to", description="To-dates"),
+               informat: str = Config("dateformat.informat"),
                outformat: str = Config("dateformat.outformat", "%Y%m%d%H%M%S"),
                splitter: str = Config("dateformat.splitter", None),
                regex: str = Config("dateformat.regex", None)):
@@ -30,9 +30,9 @@ def dateformat(doc: str = Document,
     - out_from, annotation with from-dates to be written
     - in_to, annotation containing to-dates (optional)
     - out_to, annotation with to-dates to be written (optional)
-    - informat, the format of the infrom and into dates. Several formats can be specified separated by |. They will be tried in order.
+    - informat, the format of the in_from and in_to dates. Several formats can be specified separated by |. They will be tried in order.
     - outformat, the desired format of the outfrom and out_to dates. Several formats can be specified separated by |. They will be tied to their respective in-format.
-    - splitter, a character or more separating two dates in 'infrom', treating them as from-date and to-date
+    - splitter, a character or more separating two dates in 'in_from', treating them as from-date and to-date
     - regex, a regular expression with a catching group whose content will be used in the parsing instead of the whole string
 
     http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior
@@ -83,7 +83,7 @@ def dateformat(doc: str = Document,
         return length
 
     if not in_to:
-        into = in_from
+        in_to = in_from
 
     informat = informat.split("|")
     outformat = outformat.split("|")
@@ -158,8 +158,8 @@ def dateformat(doc: str = Document,
     del ofrom
 
     if out_to:
-        ito = list(util.read_annotation(doc, into))
-        oto = util.create_empty_attribute(doc, into)
+        ito = list(util.read_annotation(doc, in_to))
+        oto = util.create_empty_attribute(doc, in_to)
 
         for index, val in enumerate(ito):
             if not val:

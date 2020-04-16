@@ -7,6 +7,10 @@ xml_elements:
 
 sentence_chunk: <text>
 
+dateformat.date_from: <text>:date
+dateformat.date_to: <text>:date
+dateformat.informat: "%Y-%m-%d"
+
 annotations:
   - text
   - <text>:readability.lix
