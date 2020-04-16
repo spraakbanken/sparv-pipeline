@@ -3,7 +3,7 @@ Add annotations for parent links and/or children links.
 """
 import logging
 
-import sparv.util as util
+from sparv.util import corpus
 from sparv.util.classes import Annotation
 
 log = logging.getLogger(__name__)
@@ -12,13 +12,13 @@ log = logging.getLogger(__name__)
 def get_parents(doc, parent, child, orphan_alert=False):
     """Return a list with n (= total number of children) elements where every element is an index in the parent
     annotation, or None when no parent is found."""
-    orphan_alert = util.strtobool(orphan_alert)
     parent_spans, child_spans = read_parents_and_children(doc, parent, child)
     child_parents = []
     previous_parent_i = None
     try:
         parent_i, parent_span = next(parent_spans)
     except StopIteration:
+        parent_i = None
         parent_span = None
 
     for child_i, child_span in child_spans:
@@ -51,7 +51,6 @@ def get_children(doc, parent, child, orphan_alert=False, preserve_parent_annotat
     preserve_parent_annotation_order is set to True, in which case the parents keep the order from the 'parent'
     annotation.
     """
-    orphan_alert = util.strtobool(orphan_alert)
     parent_spans, child_spans = read_parents_and_children(doc, parent, child)
     parent_children = []
     orphans = []
@@ -60,6 +59,7 @@ def get_children(doc, parent, child, orphan_alert=False, preserve_parent_annotat
         parent_i, parent_span = next(parent_spans)
         parent_children.append((parent_i, []))
     except StopIteration:
+        parent_i = None
         parent_span = None
 
     for child_i, child_span in child_spans:
@@ -98,9 +98,9 @@ def read_parents_and_children(doc, parent, child):
     """Read parent and child annotations. Reorder them according to span position, but keep original index
     information."""
     if isinstance(parent, (Annotation, str)):
-        parent = sorted(enumerate(util.read_annotation_spans(doc, parent, decimals=True)), key=lambda x: x[1])
+        parent = sorted(enumerate(corpus.read_annotation_spans(doc, parent, decimals=True)), key=lambda x: x[1])
     if isinstance(child, (Annotation, str)):
-        child = sorted(enumerate(util.read_annotation_spans(doc, child, decimals=True)), key=lambda x: x[1])
+        child = sorted(enumerate(corpus.read_annotation_spans(doc, child, decimals=True)), key=lambda x: x[1])
 
     # Only use sub-positions if both parent and child have them
     if parent and child:
