@@ -106,8 +106,7 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
             if "{" in param_value:
                 wildcard_annotations.append(param_name)
         # ExportAnnotations
-        elif param.annotation == ExportAnnotations or param.default == ExportAnnotations or \
-                isinstance(param.default, ExportAnnotations):
+        elif param.default == ExportAnnotations or isinstance(param.default, ExportAnnotations):
             parameters[param_name] = []
             export_annotations = sparv_config.get("annotations", [])
             for annotation in export_annotations:
@@ -118,16 +117,16 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
                     param_value = " as ".join((param_value, new_name))
                 parameters[param_name].append(param_value)
         # Corpus
-        elif param.annotation == Corpus or param.default == Corpus or isinstance(param.default, Corpus):
+        elif param.default == Corpus or isinstance(param.default, Corpus):
             parameters[param_name] = sparv_config.get("id")
         # Language
-        elif param.annotation == Language or param.default == Language or isinstance(param.default, Language):
+        elif param.default == Language or isinstance(param.default, Language):
             parameters[param_name] = sparv_config.get("language")
         # Document
-        elif param.annotation == Document or param.default == Document or isinstance(param.default, Document):
+        elif param.default == Document or isinstance(param.default, Document):
             docs.append(param_name)
         # AllDocuments (all source documents)
-        elif registry.dig(AllDocuments, param.annotation) or registry.dig(AllDocuments, param.default):
+        elif registry.dig(AllDocuments, param.default):
             parameters[param_name] = input_files
         # Model
         elif registry.dig(Model, param.default):
@@ -143,15 +142,15 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
                         inputs.append(model)
                         parameters[param_name].append(model)
         # Binary
-        elif param.annotation == Binary or isinstance(param.default, Binary):
+        elif isinstance(param.default, Binary):
             binary = paths.get_bin_path(registry.expand_variables(param.default))
             inputs.append(binary)
             parameters[param_name] = binary
         # Source
-        elif param.annotation == Source or param.default == Source or isinstance(param.default, Source):
+        elif param.default == Source or isinstance(param.default, Source):
             parameters[param_name] = paths.source_dir
         # Export
-        elif param.annotation == Export or param.default == Export or isinstance(param.default, Export):
+        elif param.default == Export or isinstance(param.default, Export):
             parameters[param_name] = os.path.join(paths.export_dir, registry.expand_variables(param.default))
             outputs.append(parameters[param_name])
             if "{doc}" in parameters[param_name]:
