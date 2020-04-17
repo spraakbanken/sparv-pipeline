@@ -6,6 +6,7 @@ import sys
 import snakemake
 from snakemake.logging import logger
 
+from sparv import __version__
 from sparv.core import progressbar
 from sparv.core.paths import sparv_path
 
@@ -21,6 +22,8 @@ def main():
     parser = argparse.ArgumentParser(prog="sparv",
                                      description="Sparv Pipeline",
                                      allow_abbrev=False)
+
+    parser.add_argument("--version", action="version", version=f"Sparv Pipeline v{__version__}")
 
     subparsers = parser.add_subparsers(dest="command", title="commands")
     subparsers.required = True
