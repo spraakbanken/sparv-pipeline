@@ -1,6 +1,0 @@
-snakemake
-nltk>=3.4.5
-python-dateutil
-PyYAML
-six
-alive-progress
