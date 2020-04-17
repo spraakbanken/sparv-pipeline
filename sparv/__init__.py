@@ -2,7 +2,7 @@
 from sparv.core import config
 from sparv.core.registry import annotator
 from sparv.util.classes import (AllDocuments, Annotation, Binary, Config, Corpus, Document, Export, ExportAnnotations,
-                                Language, Model, Output, Source)
+                                Language, Model, Output, Source, XMLExportFiles)
 
 __all__ = [
     "annotator",
@@ -18,5 +18,6 @@ __all__ = [
     "Language",
     "Model",
     "Output",
-    "Source"
+    "Source",
+    "XMLExportFiles"
 ]

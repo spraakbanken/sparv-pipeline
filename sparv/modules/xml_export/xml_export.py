@@ -7,7 +7,7 @@ from collections import defaultdict
 from typing import Optional
 
 import sparv.util as util
-from sparv import Annotation, Config, Document, Export, ExportAnnotations, annotator
+from sparv import Annotation, Config, Corpus, Document, Export, ExportAnnotations, XMLExportFiles, annotator
 
 log = logging.getLogger(__name__)
 
@@ -172,29 +172,20 @@ def export_formatted(doc: str = Document,
     log.info("Exported: %s", out)
 
 
-def combine_xml(master, out, xmlfiles="", xmlfiles_list=""):
-    """Combine xmlfiles into a single xml file and save to out."""
-    # TODO: Test this
-    assert master != "", "Master not specified"
-    assert out != "", "Outfile not specified"
-    assert (xmlfiles or xmlfiles_list), "Missing source"
-
-    if xmlfiles:
-        if isinstance(xmlfiles, str):
-            xmlfiles = xmlfiles.split()
-    elif xmlfiles_list:
-        with open(xmlfiles_list) as insource:
-            xmlfiles = [line.strip() for line in insource]
-
+@annotator("Combined XML export (all results in one file)", exporter=True)
+def combine(corpus: str = Corpus,
+            out: str = Export("[xml_export.filename_combined=[id]_export.xml]"),
+            xmlfiles: list = XMLExportFiles):
+    """Combine xmlfiles into a single xml file."""
     xmlfiles.sort()
 
     with open(out, "w") as OUT:
-        print('<corpus id="%s">' % master.replace("&", "&amp;").replace('"', "&quot;"), file=OUT)
+        print('<corpus id="%s">' % corpus.replace("&", "&amp;").replace('"', "&quot;"), file=OUT)
         for infile in xmlfiles:
             log.info("Read: %s", infile)
             with open(infile, "r") as IN:
                 # Append everything but <corpus> and </corpus>
-                print(IN.read()[9:-10], end=' ', file=OUT)
+                print(IN.read(), file=OUT)
         print("</corpus>", file=OUT)
         log.info("Exported: %s" % out)
 
@@ -240,9 +231,3 @@ def handle_overlaps(span, node_stack, docid, overlap_ids, annotation_dict, expor
         overlap_elem.node.set("_overlap", overlap_attr)
         node_stack.append(overlap_elem)
         add_attrs(overlap_elem.node, overlap_elem.name, annotation_dict, export_names, overlap_elem.index)
-
-
-if __name__ == "__main__":
-    util.run.main(export,
-                  export_formatted=export_formatted,
-                  combine_xml=combine_xml)

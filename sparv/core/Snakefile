@@ -155,6 +155,12 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
             outputs.append(parameters[param_name])
             if "{doc}" in parameters[param_name]:
                 doc_annotations.append(param_name)
+        # XMLExportFiles
+        elif param.default == XMLExportFiles or isinstance(param.default, XMLExportFiles):
+            export_name = sparv_config.get("xml_export.filename")
+            export_names = [export_name.replace("{doc}", f) for f in input_files]
+            parameters[param_name] = [os.path.join(paths.export_dir, "xml", i) for i in export_names]
+            inputs.extend(parameters[param_name])
         # Config
         elif isinstance(param.default, Config):
             parameters[param_name] = sparv_config.get(param.default)

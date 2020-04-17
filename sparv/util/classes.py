@@ -71,6 +71,11 @@ class Export(str):
     pass
 
 
+class XMLExportFiles(List[Export]):
+    """List of export files to include in the combined export."""
+    pass
+
+
 class ExportAnnotations(List[Annotation]):
     """List of annotations to include in export."""
     pass
