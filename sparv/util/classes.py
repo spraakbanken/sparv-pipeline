@@ -4,7 +4,7 @@ from sparv.core import config as _config
 
 
 class Annotation(str):
-    """An annotation or attribute."""
+    """An annotation or attribute used as input."""
     def __new__(_cls, name: str, *args, **kwargs):
         return super().__new__(_cls, name)
 
@@ -26,7 +26,7 @@ class Output(Annotation):
 
 
 class Document(str):
-    """A source document."""
+    """Name of a source document."""
     pass
 
 
@@ -36,7 +36,7 @@ class Corpus(str):
 
 
 class AllDocuments(List[str]):
-    """All source documents."""
+    """List with names of all source documents."""
     pass
 
 
@@ -62,18 +62,22 @@ class Binary(str):
 
 
 class Source(str):
-    """Source path of XML files."""
+    """Path to directory containing input files."""
     pass
 
 
 class Export(str):
-    """Export path and filename."""
+    """Export directory and filename pattern."""
     pass
 
 
-class XMLExportFiles(List[Export]):
-    """List of export files to include in the combined export."""
-    pass
+class ExportInput(str):
+    """Export directory and filename pattern, used as input."""
+    def __new__(_cls, val: str, *args, **kwargs):
+        return super().__new__(_cls, val)
+
+    def __init__(self, val: str, all_docs: bool = False):
+        self.all_docs = all_docs
 
 
 class ExportAnnotations(List[Annotation]):

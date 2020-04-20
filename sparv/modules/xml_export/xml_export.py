@@ -7,7 +7,8 @@ from collections import defaultdict
 from typing import Optional
 
 import sparv.util as util
-from sparv import Annotation, Config, Corpus, Document, Export, ExportAnnotations, XMLExportFiles, annotator
+from sparv import Annotation, Config, Corpus, Document, Export, ExportAnnotations, ExportInput, annotator, \
+    AllDocuments
 
 log = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ log = logging.getLogger(__name__)
 @annotator("XML export", exporter=True)
 def export(doc: str = Document,
            docid: str = Annotation("<docid>", data=True),
-           out: str = Export("xml/[xml_export.filename={doc}_export.xml]"),
+           out: str = Export("[xml_export.dir=xml]/[xml_export.filename={doc}_export.xml]"),
            token: str = Annotation("<token>"),
            word: str = Annotation("<token:word>"),
            annotations: list = ExportAnnotations,
@@ -175,13 +176,16 @@ def export_formatted(doc: str = Document,
 @annotator("Combined XML export (all results in one file)", exporter=True)
 def combine(corpus: str = Corpus,
             out: str = Export("[xml_export.filename_combined=[id]_export.xml]"),
-            xmlfiles: list = XMLExportFiles):
-    """Combine xmlfiles into a single xml file."""
-    xmlfiles.sort()
+            docs: list = AllDocuments,
+            xml_input: str = ExportInput("[xml_export.dir]/[xml_export.filename]", all_docs=True)):
+    """Combine XML export files into a single XML file."""
+
+    xml_files = [xml_input.replace("{doc}", doc) for doc in docs]
+    xml_files.sort()
 
     with open(out, "w") as OUT:
         print('<corpus id="%s">' % corpus.replace("&", "&amp;").replace('"', "&quot;"), file=OUT)
-        for infile in xmlfiles:
+        for infile in xml_files:
             log.info("Read: %s", infile)
             with open(infile, "r") as IN:
                 # Append everything but <corpus> and </corpus>
