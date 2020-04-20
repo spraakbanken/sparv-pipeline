@@ -12,35 +12,32 @@ sb-sparv@svenska.gu.se
 ## Prerequisites
 
 * A Unix-like environment (e.g. Linux, OS X)
-* [Python 3.4](http://python.org/) or newer
-* [GNU Make](https://www.gnu.org/software/make/)
-* [Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+* [Python 3.6](http://python.org/) or newer
+* [pip](https://pip.pypa.io/en/stable/installing)
+* [Git](https://git-scm.com/downloads) and [Git Large File Storage](https://git-lfs.github.com/)
+
+### Additional prerequisites
+* [Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) (if you want to run the Malt parser or Swedish word sense disambiguation)
 
 ## Installation
 
 * Before cloning the git repository make sure you have
   [Git Large File Storage](https://git-lfs.github.com/)
   installed (`apt install git-lfs`). Some files will not be downloaded correctly otherwise.
-* After cloning, set variables in `makefiles/Makefile.config` (especially `SPARV_PIPELINE_PATH`).
-* Add `SPARV_MAKEFILES` to your environment variables and point its path
-  to the `makefiles` directory.
-* Create a Python 3 virtual environment and install the requirements:
+* The sparv-pipeline directory must not be removed after installation, so make sure to clone to a 
+  location where it can be kept permanently.
+* After cloning, install pipx and sparv-pipeline:
 
-    ```
-    python3 -m venv venv
-    source venv/bin/activate
-    pip install --upgrade pip
-    pip install -r requirements.txt
-    deactivate
-    ```
-* Build the pipeline models:
+```
+cd sparv-pipeline
+python3 -m pip install --user pipx
+python3 -m pipx ensurepath
+cd ..
+pipx install -e sparv-pipeline
+```
 
-    ```
-    make -C models/ all
-    # Optional: remove unnecessary files to save disk space
-    make -C models/ space
-    ```
+* Now you should be ready to run the Sparv pipeline! Try it by typing `sparv --help`.
 
 ## Installation of additional software
 
-The Sparv Pipeline can be used together with several plugins and third-party software. Please check https://spraakbanken.gu.se/en/tools/sparv/pipeline/installation for more details!
+The Sparv Pipeline can be used together with several plugins and third-party software. Please check [Språkbanken's homepage](https://spraakbanken.gu.se/verktyg/sparv/importkedja/installation) for more details!
