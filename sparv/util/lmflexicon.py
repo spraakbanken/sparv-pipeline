@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
+"""Parses an lmf-lexicon into the standard Saldo format.
 
-"""
-Parses an lmf-lexicon into the standard Saldo format
 Does not handle msd-information well
 Does not mark particles
 Does handle multiwords expressions with gaps
@@ -9,9 +7,14 @@ To pickle a file, run
 lmflexicon.xml_to_pickle("swedberg.xml", "swedberg.pickle", skip_multiword=False)
 lmlexicon place in subversion: https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/dalinm
 """
-import sparv.saldo as saldo
-import sparv.util as util
+
+import logging
 import re
+
+import sparv.modules.saldo.saldo as saldo
+import sparv.util as util
+
+log = logging.getLogger(__name__)
 
 ######################################################################
 # converting between different file formats
@@ -19,17 +22,18 @@ import re
 
 def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset='SUC', verbose=True, skip_multiword=False, translate_tags=True):
     """Read the XML version of a morphological lexicon in lmf format (dalinm.xml).
-       Return a lexicon dictionary, {wordform: {{annotation-type: annotation}: ( set(possible tags), set(tuples with following words) )}}
-        - annotation_element is the XML element for the annotation value, 'writtenForm' for baseform, 'lemgram' for lemgram
-            writtenForm is translated to 'gf' and lemgram to 'lem' (for compatability with Saldo)
-        - skip_multiword is a flag telling whether to make special entries for multiword expressions. Set this to False only if
-          the tool used for text annotation cannot handle this at all
+
+    Return a lexicon dictionary, {wordform: {{annotation-type: annotation}: ( set(possible tags), set(tuples with following words) )}}
+    - annotation_element is the XML element for the annotation value, 'writtenForm' for baseform, 'lemgram' for lemgram
+        writtenForm is translated to 'gf' and lemgram to 'lem' (for compatability with Saldo)
+    - skip_multiword is a flag telling whether to make special entries for multiword expressions. Set this to False only if
+        the tool used for text annotation cannot handle this at all
     """
     annotation_elements = annotation_elements.split()
     # assert annotation_element in ("writtenForm lemgram") "Invalid annotation element"
     import xml.etree.cElementTree as cet
     if verbose:
-        util.log.info("Reading XML lexicon")
+        log.info("Reading XML lexicon")
     lexicon = {}
     tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower())
 
@@ -69,9 +73,10 @@ def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset
                             # Handle multi-word expressions
                             multiwords.append(word)
 
-                            particle = False  # we don't use any particles or mwe:s with gaps
-                                              # since that information is not formally expressed in the historical lexicons
-                            mwe_gap = False   # but keep the fields so that the file format match the normal saldo-pickle format
+                            # We don't use any particles or mwe:s with gaps since that information is not formally
+                            # expressed in the historical lexicons
+                            particle = False
+                            mwe_gap = False   # but keep the fields so that the file format matches the normal saldo-pickle format
 
                             # is it the last word in the multi word expression?
                             if i == len(wordparts) - 1:
@@ -99,7 +104,7 @@ def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset
                      "stöpljus",
                      "katt"]
         util.test_annotations(lexicon, testwords)
-        util.log.info("OK, read")
+        log.info("OK, read")
     return lexicon
 
 
@@ -123,7 +128,7 @@ def convert_default(pos, inh, param, tagmap):
 
 
 def try_translate(params):
-    """ Some basic translations """
+    """Do some basic translations."""
     params_list = [params]
     if ' m ' in params:
         # masculine is translated into utrum
@@ -147,7 +152,7 @@ def try_translate(params):
 
 
 def findval(elems, key):
-    """ help function for looking up values in the lmf """
+    """Help function for looking up values in the lmf."""
     def iterfindval():
         for form in elems:
             att = form.get("att", "")
@@ -174,11 +179,11 @@ testwords = [u"äggtoddyarna",
 
 def xml_to_pickle(xml, filename, annotation_elements="writtenForm lemgram", skip_multiword=False):
     """Read an XML dictionary and save as a pickle file."""
-
     xml_lexicon = read_xml(xml, annotation_elements, skip_multiword=skip_multiword)
     saldo.SaldoLexicon.save_to_picklefile(filename, xml_lexicon)
 
 ######################################################################
+
 
 if __name__ == '__main__':
     util.run.main(xml_to_pickle=xml_to_pickle)

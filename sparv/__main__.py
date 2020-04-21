@@ -1,4 +1,5 @@
 """Main Sparv executable."""
+
 import argparse
 import os
 import sys
@@ -16,8 +17,10 @@ if sys.version_info < (3, 6):
 
 
 def main():
-    """Main entrypoint for Sparv pipeline."""
+    """Run Sparv pipeline.
 
+    Main entry point for Sparv pipeline.
+    """
     # Set up command line arguments
     parser = argparse.ArgumentParser(prog="sparv",
                                      description="Sparv Pipeline",
@@ -43,10 +46,10 @@ def main():
                                          help="Remove output directories (by default only the annotations directory).")
     clean_parser.add_argument("--export", action="store_true", help="Remove export directory.")
 
-    files_parser = subparsers.add_parser("files", help="List available input files.")
-    annotations_parser = subparsers.add_parser("annotations", help="List available modules and annotations.")
-    config_parser = subparsers.add_parser("config", help="Display corpus config.")
-    run_parser = subparsers.add_parser("run", help="Run annotator module independently.", add_help=False)
+    subparsers.add_parser("files", help="List available input files.")
+    subparsers.add_parser("annotations", help="List available modules and annotations.")
+    subparsers.add_parser("config", help="Display corpus config.")
+    subparsers.add_parser("run", help="Run annotator module independently.", add_help=False)
 
     # Parse arguments. We allow unknown arguments for the 'run' command which is handled separately.
     args, unknown_args = parser.parse_known_args(args=None if sys.argv[1:] else ["--help"])

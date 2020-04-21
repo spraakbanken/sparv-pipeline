@@ -1,8 +1,10 @@
+"""Parse XML source file."""
+
 import os
 import unicodedata
 import xml.etree.ElementTree as etree
-from sparv import util
-from sparv import *
+
+from sparv import Config, Document, Source, annotator, util
 
 
 @annotator("XML import.", importer=True)
@@ -185,7 +187,3 @@ class SparvXMLParser:
                 structure.append("{}:{}".format(full_element, full_attr))
 
         util.write_data(self.doc, "@structure", "\n".join(structure))
-
-
-if __name__ == "__main__":
-    util.run.main(parse)

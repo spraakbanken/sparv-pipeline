@@ -1,8 +1,4 @@
-# -*- coding: utf-8 -*-
-
-"""
-This module contains information about TEI elements
-"""
+"""This module contains information about TEI elements."""
 
 toplevel_elements = set("teiCorpus TEI tei.2".split())
 
@@ -17,13 +13,13 @@ header_elements = set("""
 teiHeader
   fileDesc
     titleStmt title author sponsor funder principal
-      respStmt resp 
+      respStmt resp
     editionStmt edition respStmt
     extent
     publicationStmt publisher distributor authority
-                    pubPlace idno availability 
+                    pubPlace idno availability
     seriesStmt title idno respStmt
-    notesStmt 
+    notesStmt
     sourceDesc biblFull listBibl
       __bibl__ author title date address
         addrLine
@@ -62,9 +58,10 @@ overlapping_elements = set("""
 link page
 """.split())
 
+
 def can_overlap(tag, overlaps):
-    return (tag in overlapping_elements or
-            all(t in overlapping_elements for t in overlaps))
+    return (tag in overlapping_elements
+            or all(t in overlapping_elements for t in overlaps))
 
 
 # The HTMLParser returns all elements in lowercase,

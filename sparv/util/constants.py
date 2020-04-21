@@ -45,4 +45,3 @@ class Color:
     ON_MAGENTA = "\033[45m"
     ON_CYAN = "\033[46m"
     ON_WHITE = "\033[47m"
-

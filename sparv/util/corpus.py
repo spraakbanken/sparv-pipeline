@@ -1,3 +1,5 @@
+"""Corpus-related util functions like reading and writing annotations."""
+
 import heapq
 import logging
 import os
@@ -37,7 +39,9 @@ def clear_annotation(doc, annotation):
 
 def write_annotation(doc, annotation, values, append=False):
     """Write an annotation to one or more files. The file is overwritten if it exists.
-    The annotation should be a list of values."""
+
+    The annotation should be a list of values.
+    """
     if isinstance(annotation, Annotation):
         annotation = str(annotation).split()
     elif isinstance(annotation, str):
@@ -99,7 +103,9 @@ def _write_single_annotation(doc, annotation, values, append):
 
 
 def create_empty_attribute(doc, annotation):
-    """Return a list filled with None of the same size as 'annotation'. 'annotation' can be either of the following:
+    """Return a list filled with None of the same size as 'annotation'.
+
+    'annotation' can be either of the following:
     - the name of an annotation
     - a list (i.e. an annotation that has already been loaded)
     - an integer
@@ -130,7 +136,7 @@ def read_annotation_spans(doc, annotation, decimals=False, with_annotation_name=
 
 
 def read_annotation(doc, annotation, with_annotation_name=False):
-    """An iterator that yields each line from an annotation file."""
+    """Yield each line from an annotation file."""
     if isinstance(annotation, Annotation):
         annotation = str(annotation).split()
     elif isinstance(annotation, str):
@@ -157,7 +163,7 @@ def read_annotation(doc, annotation, with_annotation_name=False):
 
 
 def read_annotation_attributes(doc, annotations, with_annotation_name=False):
-    """Iterator that yields tuples of multiple annotations."""
+    """Yield tuples of multiple annotations."""
     assert isinstance(annotations, (tuple, list)), "'annotations' argument must be tuple or list"
     assert len(set(split_annotation(annotation)[0] for annotation in annotations)), "All attributes need to be for " \
                                                                                     "the same annotation spans"
@@ -166,7 +172,7 @@ def read_annotation_attributes(doc, annotations, with_annotation_name=False):
 
 
 def _read_single_annotation(doc, annotation, with_annotation_name):
-    """Internal function for reading a single annotation file."""
+    """Read a single annotation file."""
     ann_file = get_annotation_path(doc, annotation)
 
     with open(ann_file, "r") as f:
@@ -239,6 +245,7 @@ def get_annotation_path(doc, annotation, data=False):
 
 def chain(annotations, default=None):
     """Create a functional composition of a list of annotations.
+
     E.g., token.sentence + sentence.id -> token.sentence-id
 
     >>> from pprint import pprint
@@ -282,8 +289,8 @@ def lexicon_to_pickle(lexicon, filename, protocol=-1, verbose=True):
 
 
 def test_annotations(lexicon, testwords):
-    """
-    For testing the validity of a lexicon.
+    """Test the validity of a lexicon.
+
     Takes a dictionary (lexicon) and a list of test words.
     Prints the value for each test word.
     """
@@ -294,7 +301,9 @@ def test_annotations(lexicon, testwords):
 
 class PickledLexicon(object):
     """Read basic pickled lexicon and look up keys."""
+
     def __init__(self, picklefile, verbose=True):
+        """Read lexicon from picklefile."""
         import pickle
         if verbose:
             _log.info("Reading lexicon: %s", picklefile)
@@ -322,9 +331,10 @@ def read_corpus_text(doc):
 
 def write_corpus_text(doc, text):
     """Write text to the designated file of a corpus.
+
     text is a unicode string.
     """
-    doc, _, chunk = doc.partition(DOC_CHUNK_DELIM)
+    doc, _, _chunk = doc.partition(DOC_CHUNK_DELIM)
     text_file = get_annotation_path(doc, TEXT_FILE, data=True)
     os.makedirs(os.path.dirname(text_file), exist_ok=True)
     with open(text_file, "w") as f:

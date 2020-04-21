@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-Used by crf.py
-"""
+"""Util function used by crf.py."""
+
 punctuation = frozenset([u',', u':', u'/', u'.', u'·', u'¶', u';', '°', '-', '—'])
 vowels = frozenset(u'aeiouvöäåy')
 

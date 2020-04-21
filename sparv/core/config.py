@@ -2,7 +2,9 @@
 
 import copy
 import os
+
 import yaml
+
 from sparv.core import paths
 
 DEFAULT_CONFIG = os.path.join(paths.sparv_path, "..", paths.default_config_file)
@@ -13,7 +15,6 @@ config = {}
 
 def load_config(config_file: str):
     """Read config file and parse as YAML."""
-
     # Read defalult config
     if os.path.isfile(DEFAULT_CONFIG):
         with open(DEFAULT_CONFIG) as f:

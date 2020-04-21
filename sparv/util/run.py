@@ -1,3 +1,8 @@
+"""A wrapper to be able to call Python functions from the commandline.
+
+To be deprecated (replaced by Snakemake).
+"""
+
 import inspect
 import sys
 import os
@@ -8,7 +13,8 @@ log = logging.getLogger(__name__)
 
 
 def main(*default_functions, **functions):
-    """A wrapper to be able to call Python functions from the commandline.
+    """Call a Python function from the commandline.
+
     The arguments to the function is specified as options, as well as the
     chosen function. There can be at most one default function.
     """
@@ -69,8 +75,7 @@ def main(*default_functions, **functions):
 
 
 def print_usage_and_exit(*default_functions, **functions):
-    """Exit Python with a usage message derived from the given functions.
-    """
+    """Exit Python with a usage message derived from the given functions."""
     for fun in default_functions:
         functions[""] = fun
     module = "sparv." + os.path.splitext(os.path.basename(sys.argv[0]))[0]

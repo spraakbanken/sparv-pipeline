@@ -5,7 +5,6 @@ import os
 import pkgutil
 import re
 from collections import defaultdict
-from typing import Union
 
 from sparv.core import paths, config
 from sparv.util import split_annotation
@@ -100,9 +99,10 @@ def _expand_class(cls):
 
 
 def expand_variables(string):
-    """Take a string and replace <class> references with real annotations,
-    and [config] references to config values. Return the resulting string."""
+    """Take a string and replace <class> references with real annotations, and [config] references to config values.
 
+    Return the resulting string.
+    """
     # Convert config keys to config values
     while True:
         cfgs = list(re.finditer(r"\[([^\]=[]+)(?:=([^\][]+))?\]", string))
@@ -138,7 +138,8 @@ def dig(needle, haystack):
 
     The haystack may be a list, tuple, dict or a combination of the three. It may also be equal to or an instance of
     the needle.
-    The needle can be any type except for list, tuple and dict."""
+    The needle can be any type except for list, tuple and dict.
+    """
     needles = []
     if isinstance(haystack, list):
         for item in haystack:

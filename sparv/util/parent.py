@@ -1,6 +1,5 @@
-"""
-Add annotations for parent links and/or children links.
-"""
+"""Add annotations for parent links and/or children links."""
+
 import logging
 
 from sparv.util import corpus
@@ -10,8 +9,10 @@ log = logging.getLogger(__name__)
 
 
 def get_parents(doc, parent, child, orphan_alert=False):
-    """Return a list with n (= total number of children) elements where every element is an index in the parent
-    annotation, or None when no parent is found."""
+    """Return a list with n (= total number of children) elements where every element is an index in the parent annotation.
+
+    Return None when no parent is found.
+    """
     parent_spans, child_spans = read_parents_and_children(doc, parent, child)
     child_parents = []
     previous_parent_i = None
@@ -44,9 +45,11 @@ def get_parents(doc, parent, child, orphan_alert=False):
 
 
 def get_children(doc, parent, child, orphan_alert=False, preserve_parent_annotation_order=False):
-    """Return two lists. The first is a list with n (= total number of parents) elements where every element is a list
-    of indices in the child annotation. The second is a list of orphans, i.e. containing indices in the child annotation
-    that have no parent.
+    """Return two lists.
+
+    The first one is a list with n (= total number of parents) elements where every element is a list
+    of indices in the child annotation.
+    The second one is a list of orphans, i.e. containing indices in the child annotation that have no parent.
     Both parents and children are sorted according to their position in the source document, unless
     preserve_parent_annotation_order is set to True, in which case the parents keep the order from the 'parent'
     annotation.
@@ -95,8 +98,10 @@ def get_children(doc, parent, child, orphan_alert=False, preserve_parent_annotat
 
 
 def read_parents_and_children(doc, parent, child):
-    """Read parent and child annotations. Reorder them according to span position, but keep original index
-    information."""
+    """Read parent and child annotations.
+
+    Reorder them according to span position, but keep original index information.
+    """
     if isinstance(parent, (Annotation, str)):
         parent = sorted(enumerate(corpus.read_annotation_spans(doc, parent, decimals=True)), key=lambda x: x[1])
     if isinstance(child, (Annotation, str)):

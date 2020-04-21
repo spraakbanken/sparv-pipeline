@@ -6,8 +6,8 @@ import inspect
 import sys
 from typing import Union
 
-from sparv.core import paths, registry, log
-from sparv.util.classes import Annotation, Output, Model, Binary, Config, Document, AllDocuments, ExportAnnotations
+from sparv.core import log, paths, registry
+from sparv.util.classes import AllDocuments, Annotation, Binary, Config, Document, ExportAnnotations, Model, Output
 
 
 def main(argv=None):
@@ -40,7 +40,7 @@ def main(argv=None):
     subparsers.required = True
 
     for f_name in registry.annotators[module_name]:
-        f, description, *_ = registry.annotators[module_name][f_name]
+        f, _description, *_ = registry.annotators[module_name][f_name]
         subparser = subparsers.add_parser(f_name, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         subparser.set_defaults(f_=f)
         required_args = subparser.add_argument_group("required named arguments")
@@ -70,7 +70,7 @@ def main(argv=None):
                 else:
                     # If default argument is of a type we can handle
                     f_args["default"] = parameter[1].default
-                    if arg_type == bool and parameter[1].default == False:
+                    if arg_type == bool and parameter[1].default is False:
                         f_args["action"] = "store_true"
                         del f_args["type"]
 

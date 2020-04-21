@@ -1,3 +1,5 @@
+"""Util function for creating mysql files."""
+
 import logging
 import os
 
@@ -142,6 +144,7 @@ class MySQL(object):
 
 def _TYPE(typ):
     return _TYPE_CONVERSIONS.get(typ, typ)
+
 
 _TYPE_CONVERSIONS = {str: "varchar(255)",
                      str: "varchar(255)",

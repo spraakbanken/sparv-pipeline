@@ -75,7 +75,7 @@ def number_relative(doc: str = Document,
                     prefix: str = "",
                     start: int = START_DEFAULT):
     """Number chunks by their relative position within a parent."""
-    parent_children, orphans = util.get_children(doc, parent, child)
+    parent_children, _orphans = util.get_children(doc, parent, child)
 
     util.write_annotation(doc, out, ("%s%0*d" % (prefix, len(str(len(parent) - 1 + start)), cnr)
                                      for parent in parent_children

@@ -1,5 +1,5 @@
-"""
-This module contains translations between Saldo, SUC, Parole and Granska-ish tagsets.
+"""This module contains translations between Saldo, SUC, Parole and Granska-ish tagsets.
+
 The Parole and SUC tags are described here:
   http://spraakbanken.gu.se/parole/tags.phtml
 
@@ -46,8 +46,7 @@ TAGSEP = "."
 
 
 def split_tag(tag, sep=TAGSEP):
-    """Split a tag 'X.Y.Z' into a tuple ('X', 'Y.Z')
-    """
+    """Split a tag 'X.Y.Z' into a tuple ('X', 'Y.Z')."""
     pos_msd = tag.split(sep, 1)
     if len(pos_msd) == 1:
         return pos_msd[0], ""
@@ -56,8 +55,9 @@ def split_tag(tag, sep=TAGSEP):
 
 
 def join_tag(tag, sep=TAGSEP):
-    """Join a complex tag into a string. The tag can be
-    a dict {'pos':pos, 'msd':msd} or a tuple (pos, msd).
+    """Join a complex tag into a string.
+
+    The tag can be a dict {'pos':pos, 'msd':msd} or a tuple (pos, msd).
     """
     if isinstance(tag, dict):
         pos, msd = tag['pos'], tag['msd']
@@ -1362,9 +1362,7 @@ saldo_to_saldo = dict((saldotag, set([saldotag])) for saldotag in saldo_tags)
 
 
 def lag18002pos(tag):
-    """A mapping from the tags in the lemgrams of lag1800 (a subset of saldos part
-    of speech tags) to the korp POS-tagset."""
-
+    """Map from the tags in the lemgrams of lag1800 (a subset of saldos part of speech tags) to the Korp POS-tagset."""
     d = {'nn': ['NN'],
          'av': ['JJ'],
          'vb': ['VB'],

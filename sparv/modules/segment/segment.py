@@ -7,6 +7,7 @@ import re
 from typing import Optional
 
 import nltk
+
 import sparv.modules.saldo.saldo as saldo
 import sparv.util as util
 from sparv import Annotation, Config, Document, Model, Output, annotator
@@ -143,6 +144,7 @@ def build_token_wordlist(saldo_model, out, segmenter, model=None, no_pickled_mod
 
 class ModifiedLanguageVars(nltk.tokenize.punkt.PunktLanguageVars):
     """Slight modification to handle unicode quotation marks and other punctuation."""
+
     # http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt.PunktLanguageVars-class.html
     # http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt-pysrc.html#PunktLanguageVars
 
@@ -311,7 +313,7 @@ class BetterWordTokenizer(object):
                         try:
                             key, val = line.strip().split(None, 1)
                         except ValueError as e:
-                            log.error("Error parsing configuration file:", line)
+                            log.error("Error parsing configuration file: %s", line)
                             raise e
                         key = key[:-1]
 

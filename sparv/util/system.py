@@ -1,6 +1,5 @@
-"""
-System utilities for Språkbanken
-"""
+"""System utility functions."""
+
 import errno
 import logging
 import os
@@ -12,11 +11,12 @@ log = logging.getLogger(__name__)
 
 
 def dirname(file):
+    """Return the name of the parent directory of file."""
     return os.path.dirname(file)
 
 
 def kill_process(process):
-    """Kills a process, and ignores the error if it is already dead"""
+    """Kill a process, and ignore the error if it is already dead."""
     try:
         process.kill()
     except OSError as exc:
@@ -27,6 +27,10 @@ def kill_process(process):
 
 
 def clear_directory(dir):
+    """Create a new empty dir.
+
+    Remove it's contents if it already exists.
+    """
     shutil.rmtree(dir, ignore_errors=True)
     os.makedirs(dir, exist_ok=True)
 
@@ -34,6 +38,7 @@ def clear_directory(dir):
 def call_java(jar, arguments, options=[], stdin="", search_paths=(),
               encoding=None, verbose=False, return_command=False):
     """Call java with a jar file, command line arguments and stdin.
+
     Returns a pair (stdout, stderr).
     If the verbose flag is True, pipes all stderr output to stderr,
     and an empty string is returned as the stderr component.
@@ -57,8 +62,8 @@ def call_java(jar, arguments, options=[], stdin="", search_paths=(),
 def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
                 binary_names=(), encoding=None, verbose=False,
                 use_shell=False, return_command=False):
-    """
-    Call a binary with arguments and stdin, return a pair (stdout, stderr).
+    """Call a binary with arguments and stdin, return a pair (stdout, stderr).
+
     If the verbose flag is True, pipes all stderr output to stderr,
     and an empty string is returned as the stderr component.
 
@@ -105,9 +110,7 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
 
 
 def find_binary(name, search_paths=(), binary_names=(), executable=True):
-    """
-    Search for the binary for a program. Stolen and modified from NLTK.
-    """
+    """Search for the binary for a program. Stolen and modified from NLTK."""
     assert isinstance(name, str)
     assert isinstance(search_paths, (list, tuple))
     assert isinstance(binary_names, (list, tuple))
@@ -131,7 +134,8 @@ def find_binary(name, search_paths=(), binary_names=(), executable=True):
 
 
 def rsync(local, host, remote=None):
-    """ Transfer files and/or directories using rsync.
+    """Transfer files and/or directories using rsync.
+
     When syncing directories, extraneous files in destination dirs are deleted.
     """
     if remote is None:

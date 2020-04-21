@@ -120,6 +120,7 @@ class StatsLexicon(object):
 
     It is initialized from a pickled file.
     """
+
     def __init__(self, stats_model, verbose=True):
         """Load lexicon."""
         if verbose:
@@ -143,6 +144,7 @@ class SaldoCompLexicon(object):
 
     It is initialized from a Pickled file.
     """
+
     def __init__(self, saldofile, verbose=True):
         """Load lexicon."""
         if verbose:
@@ -184,6 +186,7 @@ class InFileLexicon(object):
 
     keys = words, values =  MSD tags
     """
+
     def __init__(self, annotations):
         """Create a lexicon for the words occuring in this file."""
         lex = {}

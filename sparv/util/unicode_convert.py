@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
+"""Safe unicode conversions."""
 
-"""
-Safe unicode conversions
-"""
+import unicodedata as _U
 
 
 def utf8(u):
@@ -49,16 +47,14 @@ def _encode_unichar(c, encoding):
     try:
         return c.encode(encoding)
     except UnicodeEncodeError:
-        return remove_diacritics(c).encode(encoding, "replace")
+        return _remove_diacritics(c).encode(encoding, "replace")
 
 
 ######################################################################
 # Private functions
 
-import unicodedata as _U
 
-
-def remove_diacritics(u):
+def _remove_diacritics(u):
     nfkc = _U.normalize("NFKC", u)
     return u"".join(_remove_diacritics_unichar(c) for c in nfkc)
 
@@ -68,6 +64,7 @@ def _remove_diacritics_unichar(c):
         return _DIACRITIC_REPLACEMENTS[c]
     except KeyError:
         return _U.normalize("NFD", c)[0]
+
 
 _DIACRITIC_REPLACEMENTS = {
     u"å": u"å",

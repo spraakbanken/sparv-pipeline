@@ -1,6 +1,4 @@
-from . import run
-from . import system
-from . import tagsets
+from . import run, system, tagsets
 from .constants import *
 from .corpus import *
 from .export import gather_annotations, get_annotation_names

@@ -43,7 +43,7 @@ def msdtag(doc: str = Document,
                 return "[[%s]]" % p[0]
         return w
 
-    sentences, orphans = util.parent.get_children(doc, sentence, word)
+    sentences, _orphans = util.parent.get_children(doc, sentence, word)
     token_word = list(util.read_annotation(doc, word))
     stdin = SENT_SEP.join(TOK_SEP.join(replace_word(token_word[token_index]) for token_index in sent)
                           for sent in sentences)
