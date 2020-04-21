@@ -4,10 +4,10 @@ import os
 import unicodedata
 import xml.etree.ElementTree as etree
 
-from sparv import Config, Document, Source, annotator, util
+from sparv import Config, Document, Source, importer, util
 
 
-@annotator("XML import.", importer=True)
+@importer("XML import", source_type="xml", outputs=Config("xml_elements", []))
 def parse(doc: str = Document,
           source_dir: str = Source,
           elements: str = Config("xml_elements", []),

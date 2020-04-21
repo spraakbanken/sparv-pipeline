@@ -12,9 +12,6 @@ from sparv.core import config as sparv_config
 from sparv.core import paths, registry
 from sparv.util.classes import *
 
-# List of all available source files
-input_files = [f[1][0] for f in snakemake.utils.listfiles(os.path.join(paths.source_dir, "{file}.xml"))]
-
 # We have to wait until the configuration dict is complete until we load modules
 registry.find_modules(paths.sparv_path)
 
@@ -25,9 +22,17 @@ all_annotations = {}
 named_targets = []
 export_targets = []
 
+# List which will contain all source files
+source_files = []
+
 # Remove Snakemake's default log handler
 if config.get("run_by_sparv") and logger.log_handler and logger.log_handler[0] == logger.text_handler:
     logger.log_handler = []
+
+
+def get_source_path() -> str:
+    """Get path to source files."""
+    return sparv_config.get("source_dir", paths.source_dir)
 
 
 def get_annotation_path(annotation, data=False):
@@ -43,7 +48,16 @@ def get_annotation_path(annotation, data=False):
     return "{doc}/" + path
 
 
-def make_rule(module_name, f_name, desc, f, importer, exporter):
+def get_source_files() -> List[str]:
+    """Get list of all available source files"""
+    global source_files
+    if not source_files:
+        source_files = [f[1][0] for f in snakemake.utils.listfiles(
+            os.path.join(get_source_path(), "{file}." + sparv_config.get("source_type", "xml")))]
+    return source_files
+
+
+def make_rule(module_name, f_name, desc, f, importer, exporter, source_type, import_outputs) -> None:
     """Build Snakemake rules."""
     # Build input, output and parameter list
     if config.get("debug"):
@@ -57,14 +71,20 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
     doc_annotations = []  # List of parameters containing the {doc} wildcard
     wildcard_annotations = []  # List of parameters containing other wildcards
     if importer:
-        inputs.append(os.path.join(paths.source_dir, "{doc}.xml"))
-        outputs.append(os.path.join(paths.annotation_dir, "{doc}", util.TEXT_FILE))
-        xml_elements = set()
-        for element in sparv_config.get("xml_elements", []):
-            xml_elements.add(element)
-            xml_elements.add(util.split_annotation(element)[0])
-        for element in xml_elements:
-            outputs.append(os.path.join(paths.annotation_dir, get_annotation_path(element)))
+        inputs.append(os.path.join(get_source_path(), "{doc}." + source_type))
+        if source_type == sparv_config.get("source_type", "xml"):
+            # Exports always generate corpus text file
+            outputs.append(os.path.join(paths.annotation_dir, "{doc}", util.TEXT_FILE))
+            # If importer guarantees other outputs, add them to outputs list
+            if import_outputs:
+                if isinstance(import_outputs, Config):
+                    import_outputs = sparv_config.get(import_outputs)
+                annotations_ = set()
+                for annotation in import_outputs:
+                    annotations_.add(annotation)
+                    annotations_.add(util.split_annotation(annotation)[0])
+                for element in annotations_:
+                    outputs.append(os.path.join(paths.annotation_dir, get_annotation_path(element)))
     elif exporter:
         pass
 
@@ -77,7 +97,8 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
             param_value = registry.expand_variables(param.default)
             if param.default.all_docs:
                 outputs.extend(expand(os.path.join(paths.annotation_dir, get_annotation_path(param_value,
-                                                                                         data=param.default.data)), doc=input_files))
+                                                                                         data=param.default.data)),
+                                      doc=get_source_files()))
             else:
                 outputs.append(get_annotation_path(param_value, data=param.default.data))
             parameters[param_name] = param_value
@@ -91,7 +112,8 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
             if exporter:
                 if param.default.all_docs:
                     inputs.extend(expand(os.path.join(paths.annotation_dir, get_annotation_path(param_value,
-                                                                                         data=param.default.data)), doc=input_files))
+                                                                                         data=param.default.data)),
+                                         doc=get_source_files()))
                 else:
                     inputs.append(os.path.join(paths.annotation_dir, get_annotation_path(param_value,
                                                                                          data=param.default.data)))
@@ -128,7 +150,7 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
             docs.append(param_name)
         # AllDocuments (all source documents)
         elif registry.dig(AllDocuments, param.default):
-            parameters[param_name] = input_files
+            parameters[param_name] = get_source_files()
         # Model
         elif registry.dig(Model, param.default):
             if param.default is not None:
@@ -149,7 +171,7 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
             parameters[param_name] = binary
         # Source
         elif param.default == Source or isinstance(param.default, Source):
-            parameters[param_name] = paths.source_dir
+            parameters[param_name] = get_source_path()
         # Export
         elif param.default == Export or isinstance(param.default, Export):
             if param.default.absolute_path:
@@ -163,7 +185,7 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
         elif isinstance(param.default, ExportInput):
             parameters[param_name] = os.path.join(paths.export_dir, registry.expand_variables(param.default))
             if param.default.all_docs:
-                inputs.extend(expand(parameters[param_name], doc=input_files))
+                inputs.extend(expand(parameters[param_name], doc=get_source_files()))
             else:
                 inputs.append(parameters[param_name])
         # Config
@@ -244,7 +266,7 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
         @workflow.input(expand([os.path.join(paths.annotation_dir, o)
                                 if not (o.startswith(paths.annotation_dir) or o.startswith(paths.export_dir))
                                 else o
-                                for o in outputs], doc=config.get("file") or input_files))
+                                for o in outputs], doc=config.get("file") or get_source_files()))
         @workflow.run
         def __rule__(*_args, **_kwargs):
             pass
@@ -268,8 +290,8 @@ registry.annotation_classes["config_classes"] = sparv_config.config.get("classes
 # Create rules for all available annotation functions
 for module_name in registry.annotators:
     for f_name in registry.annotators[module_name]:
-        f, desc, importer, exporter = registry.annotators[module_name][f_name]
-        make_rule(module_name, f_name, desc, f, importer, exporter)
+        f, desc, importer, exporter, source_type, outputs = registry.annotators[module_name][f_name]
+        make_rule(module_name, f_name, desc, f, importer, exporter, source_type, outputs)
 
 # Rule to list all config options and their current values
 rule config:
@@ -338,7 +360,7 @@ rule files:
     # List all input files
     run:
         print("Available input files:\n")
-        print(", ".join(input_files))
+        print(", ".join(get_source_files()))
 
 rule clean:
     # Remove annotations dir

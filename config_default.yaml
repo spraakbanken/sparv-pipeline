@@ -1,6 +1,8 @@
 
 language: "sv"
 
+source_type: xml
+
 token_chunk: <sentence>
 saldo.precision: ""
 

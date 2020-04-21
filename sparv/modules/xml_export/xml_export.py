@@ -7,12 +7,12 @@ from collections import defaultdict
 from typing import Optional
 
 import sparv.util as util
-from sparv import AllDocuments, Annotation, Config, Corpus, Document, Export, ExportAnnotations, ExportInput, annotator
+from sparv import AllDocuments, Annotation, Config, Corpus, Document, Export, ExportAnnotations, ExportInput, exporter
 
 log = logging.getLogger(__name__)
 
 
-@annotator("XML export", exporter=True)
+@exporter("XML export")
 def export(doc: str = Document,
            docid: str = Annotation("<docid>", data=True),
            out: str = Export("[xml_export.dir=xml]/[xml_export.filename={doc}_export.xml]"),
@@ -84,7 +84,7 @@ def export(doc: str = Document,
     log.info("Exported: %s", out)
 
 
-@annotator("XML export preserving whitespace from source file", exporter=True)
+@exporter("XML export preserving whitespace from source file")
 def export_formatted(doc: str = Document,
                      docid: str = Annotation("<docid>", data=True),
                      out: str = Export("xml_formatted/[xml_export.filename_formatted={doc}_export.xml]"),
@@ -172,7 +172,7 @@ def export_formatted(doc: str = Document,
     log.info("Exported: %s", out)
 
 
-@annotator("Combined XML export (all results in one file)", exporter=True)
+@exporter("Combined XML export (all results in one file)")
 def combine(corpus: str = Corpus,
             out: str = Export("[xml_export.filename_combined=[id]_export.xml]"),
             docs: list = AllDocuments,

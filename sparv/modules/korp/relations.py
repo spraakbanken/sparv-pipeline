@@ -7,7 +7,7 @@ from collections import defaultdict
 from typing import Optional
 
 import sparv.util as util
-from sparv import AllDocuments, Annotation, Config, Corpus, Document, Export, Output, annotator
+from sparv import AllDocuments, Annotation, Config, Corpus, Document, Export, Output, annotator, exporter
 from sparv.util.mysql_wrapper import MySQL
 
 log = logging.getLogger(__name__)
@@ -240,7 +240,7 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
     return x_rel_y * math.log((rel * x_rel_y) / (x_rel * rel_y * 1.0), 2)
 
 
-@annotator("Create Word Picture SQL for Korp", exporter=True)
+@exporter("Create Word Picture SQL for Korp")
 def create_sql(corpus: str = Corpus,
                db_name: str = Config("korp.relations_db_name", "korp_relations"),
                out: str = Export("korp_wordpicture/relations.sql"),

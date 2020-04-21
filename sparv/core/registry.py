@@ -6,7 +6,7 @@ import pkgutil
 import re
 from collections import defaultdict
 
-from sparv.core import paths, config
+from sparv.core import config, paths
 from sparv.util import split_annotation
 from sparv.util.classes import Output
 
@@ -37,21 +37,46 @@ def find_modules(sparv_path, no_import=False):
     return modules
 
 
-def annotator(arg, name=None, importer=False, exporter=False):
-    """Return a decorator for annotator functions, adding them to annotator registry."""
+def _annotator(description: str, name=None, importer=False, exporter=False, source_type=None, outputs=()):
+    """Return a decorator for annotator, importer and exporter functions, adding them to annotator registry."""
     def decorator(f):
         """Add wrapped function to registry."""
         module_name = f.__module__[len(modules_path) + 1:].split(".")[0]
-        _add_to_registry(module_name, arg, f, name, importer, exporter)
+        _add_to_registry(module_name, description, f, name, importer, exporter, source_type, outputs)
         return f
 
-    if isinstance(arg, str):
-        return decorator
-    else:
-        return decorator(arg)
+    return decorator
 
 
-def _add_to_registry(module_name, description, f, name, importer, exporter):
+def annotator(description: str, name=None):
+    """Return a decorator for annotator functions, adding them to the annotator registry."""
+    return _annotator(description, name)
+
+
+def importer(description: str, source_type: str, name=None, outputs=None):
+    """Return a decorator for importer functions.
+
+    Args:
+        description: Description of importer.
+        source_type: The file extension of the type of source this importer handles, e.g. "xml" or "txt".
+        name: Optional name to use instead of the function name.
+        outputs: A list of annotations and attributes that the importer is guaranteed to generate.
+            May also be a Config instance referring to such a list.
+            It may generate more outputs than listed, but only the annotations listed here will be available
+            to use as input for annotator functions.
+
+    Returns:
+        A decorator
+    """
+    return _annotator(description, name, importer=True, source_type=source_type, outputs=outputs)
+
+
+def exporter(description: str, name=None):
+    """Return a decorator for exporter functions."""
+    return _annotator(description, name, exporter=True)
+
+
+def _add_to_registry(module_name: str, description: str, f, name, importer, exporter, source_type, outputs):
     """Add function to annotator registry. Used by annotator."""
     for param, val in inspect.signature(f).parameters.items():
         if (val.annotation == Output or isinstance(val.default, Output)) and not val.default == inspect.Parameter.empty:
@@ -59,7 +84,7 @@ def _add_to_registry(module_name, description, f, name, importer, exporter):
             cls = val.default.cls
             ann_name, attr = split_annotation(ann)
 
-            # Make sure annotation names inclue module names as prefix
+            # Make sure annotation names include module names as prefix
             if not attr:
                 if not ann_name.startswith(module_name + "."):
                     raise ValueError("Output annotation '{}' in module '{}' doesn't include module "
@@ -86,7 +111,7 @@ def _add_to_registry(module_name, description, f, name, importer, exporter):
         print("Annotator function '{}' collides with other function with same name in module '{}'.".format(f_name,
                                                                                                            module_name))
     else:
-        annotators[module_name][f_name] = (f, description, importer, exporter)
+        annotators[module_name][f_name] = (f, description, importer, exporter, source_type, outputs)
 
 
 def _expand_class(cls):
@@ -99,7 +124,7 @@ def _expand_class(cls):
 
 
 def expand_variables(string):
-    """Take a string and replace <class> references with real annotations, and [config] references to config values.
+    """Take a string and replace <class> references with real annotations, and [config] references with config values.
 
     Return the resulting string.
     """

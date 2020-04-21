@@ -13,7 +13,7 @@ bin_dir = "bin"
 # Corpus relative paths
 corpus_dir = os.environ.get("CORPUS_DIR", "")
 annotation_dir = "annotations"
-source_dir = os.path.join("original", "xml")
+source_dir = "original"
 export_dir = "export"
 config_file = "config.yaml"
 default_config_file = "config_default.yaml"

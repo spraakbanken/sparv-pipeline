@@ -7,13 +7,13 @@ from typing import Optional
 
 import sparv.util as util
 from sparv import (AllDocuments, Annotation, Config, Corpus, Document, Export, ExportAnnotations, ExportInput,
-                   annotator)
+                   exporter)
 from sparv.core import paths
 
 log = logging.getLogger(__name__)
 
 
-@annotator("VRT export", exporter=True)
+@exporter("VRT export")
 def export(doc: str = Document,
            out: str = Export("vrt/{doc}.vrt"),
            classes: str = Config("classes"),
@@ -96,7 +96,7 @@ def make_token_line(word, token_name, token_annotations, annotation_dict, index)
     return util.remove_control_characters(line)
 
 
-@annotator("CWB encode", exporter=True)
+@exporter("CWB encode")
 def encode(corpus: str = Corpus,
            annotations: str = ExportAnnotations(is_input=False),
            original_annotations: Optional[list] = Config("original_annotations"),
