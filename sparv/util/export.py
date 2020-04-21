@@ -165,21 +165,37 @@ def calculate_element_hierarchy(doc, spans_list):
     return hierarchy
 
 
-def get_annotation_names(doc, token, annotations, original_annotations=None, remove_namespaces=False):
-    """Get a list of annotations, token annotations and a dictionary for renamed annotations."""
+def get_annotation_names(doc, token_name, annotations, original_annotations=None, remove_namespaces=False,
+                         keep_struct_refs=False):
+    """Get a list of annotations, token annotations and a dictionary for renamed annotations.
+    
+    remove_namespaces: remove all name spaces in export_names unless names are ambiguous.
+    keep_struct_refs: for structural attributes, include everything before ":" in export_names (used in cwb encode)
+    """
     # Combine annotations and original_annotations
     annotations = misc.split_tuples_list(annotations)
     original_annotations = misc.split_tuples_list(original_annotations)
     if not original_annotations:
         # Get original_annotations from @structure
-        original_annotations = misc.split_tuples_list(corpus.read_data(doc, "@structure"))
+        if isinstance(doc, list):
+            original_annotations = []
+            for d in doc:
+                original_annotations.extend(misc.split_tuples_list(corpus.read_data(d, "@structure")))
+        else:
+            original_annotations = misc.split_tuples_list(corpus.read_data(doc, "@structure"))
     annotations.extend(original_annotations)
 
     # Get the names of all token annotations (but not token itself)
     token_annotations = [corpus.split_annotation(i[0])[1] for i in annotations
-                         if corpus.split_annotation(i[0])[0] == token and i[0] != token]
+                         if corpus.split_annotation(i[0])[0] == token_name and i[0] != token_name]
 
-    # Create dictionary for renamed annotations
+    export_names = _create_export_names(annotations, token_name, remove_namespaces, keep_struct_refs)
+
+    return [i[0] for i in annotations], token_annotations, export_names
+
+
+def _create_export_names(annotations, token_name, remove_namespaces, keep_struct_refs):
+    """Create dictionary for renamed annotations."""
     if remove_namespaces:
         short_names = [name.split(".")[-1] for name, new_name in annotations if not new_name]
         export_names = {}
@@ -194,8 +210,12 @@ def get_annotation_names(doc, token, annotations, original_annotations=None, rem
                     new_name = short_name
                 else:
                     continue
+            if keep_struct_refs:
+                # Keep everything before ":" if this is not a token attribute
+                if ":" in name and new_name != name and not name.startswith(token_name):
+                    new_name = name[0:name.find(":") + 1] + new_name
             export_names[name] = new_name
     else:
         export_names = dict((a, b) for a, b in annotations if b)
 
-    return [i[0] for i in annotations], token_annotations, export_names
+    return export_names

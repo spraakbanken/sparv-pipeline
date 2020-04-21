@@ -6,21 +6,17 @@ from glob import glob
 from typing import Optional
 
 import sparv.util as util
-from sparv import Annotation, Config, Corpus, Document, Export, ExportAnnotations, annotator
+from sparv import (AllDocuments, Annotation, Config, Corpus, Document, Export, ExportAnnotations, ExportInput,
+                   annotator)
+from sparv.core import paths
 
 log = logging.getLogger(__name__)
-
-ALIGNDIR = "annotations/align"
-
-CWB_ENCODING = os.environ.get("CWB_ENCODING", "utf8")
-CWB_DATADIR = os.environ.get("CWB_DATADIR")
-CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 
 @annotator("VRT export", exporter=True)
 def export(doc: str = Document,
            out: str = Export("vrt/{doc}.vrt"),
-           token: str = Annotation("<token>"),
+           classes: str = Config("classes"),
            word: str = Annotation("<token:word>"),
            annotations: list = ExportAnnotations,
            original_annotations: Optional[list] = Config("original_annotations"),
@@ -28,7 +24,6 @@ def export(doc: str = Document,
     """Export annotations to vrt in export_dir.
 
     - doc: name of the original document
-    - token: name of the token level annotation span
     - word: annotation containing the token strings.
     - annotations: list of elements:attributes (annotations) to include.
     - original_annotations: list of elements:attributes from the original document
@@ -41,7 +36,8 @@ def export(doc: str = Document,
     word_annotation = list(util.read_annotation(doc, word))
 
     # Get annotation spans, annotations list etc.
-    annotations, token_annotations, export_names = util.get_annotation_names(doc, token, annotations,
+    token_name = classes.get("token")
+    annotations, token_annotations, export_names = util.get_annotation_names(doc, token_name, annotations,
                                                                              original_annotations, remove_namespaces)
     span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names)
 
@@ -49,11 +45,12 @@ def export(doc: str = Document,
     vrt = []
     for _pos, instruction, span in span_positions:
         # Create token line
-        if span.name == token and instruction == "open":
-            vrt.append(make_token_line(word_annotation[span.index], token, token_annotations, annotation_dict, span.index))
+        if span.name == token_name and instruction == "open":
+            vrt.append(make_token_line(word_annotation[span.index], token_name, token_annotations, annotation_dict,
+                                       span.index))
 
         # Create line with structural annotation
-        elif span.name != token:
+        elif span.name != token_name:
             # Open structural element
             if instruction == "open":
                 attrs = make_attr_str(span.name, annotation_dict, export_names, span.index)
@@ -83,49 +80,53 @@ def make_attr_str(annotation, annotation_dict, export_names, index):
     return " ".join(attrs)
 
 
-def make_token_line(word, token, token_annotations, annotation_dict, index):
+def make_token_line(word, token_name, token_annotations, annotation_dict, index):
     """Create a string with the token and its annotations.
 
     Whitespace and / need to be replaced for CQP parsing to work. / is only allowed in the word itself.
     """
     line = [word.replace(" ", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")]
     for attr in token_annotations:
-        if attr not in annotation_dict[token]:
+        if attr not in annotation_dict[token_name]:
             attr_str = util.UNDEF
         else:
-            attr_str = annotation_dict[token][attr][index]
+            attr_str = annotation_dict[token_name][attr][index]
         line.append(attr_str.replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
     line = "\t".join(line)
     return util.remove_control_characters(line)
 
 
-# TODO: Check correctness of type hints below. Do something with encoding, datadir and registry.
 @annotator("CWB encode", exporter=True)
 def encode(corpus: str = Corpus,
-           columns: list = ExportAnnotations,
-           structs: list = ExportAnnotations,
-           vrtdir: Optional[str] = None,
-           vrtfiles: Optional[str] = None,
-           vrtlist: Optional[str] = None,
-           encoding=CWB_ENCODING,
-           datadir=CWB_DATADIR,
-           registry=CORPUS_REGISTRY,
-           skip_compression: Optional[bool] = False,
-           skip_validation: Optional[bool] = False):
-    """Encode a number of vrt files, by calling cwb-encode.
-
-    params, structs describe the attributes that are exported in the vrt files.
-    """
-    assert corpus != "", "Corpus not specified"
-    assert util.single_true((vrtdir, vrtfiles, vrtlist)), "One of the following must be specified: vrtdir, vrtfiles, vrtlist"
+           annotations: str = ExportAnnotations(is_input=False),
+           original_annotations: Optional[list] = Config("original_annotations"),
+           docs: list = AllDocuments,
+           vrtfiles: str = ExportInput("vrt/{doc}.vrt", all_docs=True),
+           # vrtfiles: list = VRTExportFiles,
+           out: str = Export("[cwb_registry]/[id]", absolute_path=True),
+           classes: str = Config("classes"),
+           encoding: str = Config("cwb_encoding", paths.cwb_encoding),
+           datadir: str = Config("cwb_datadir", paths.cwb_datadir),
+           registry: str = Config("cwb_registry", paths.cwb_registry),
+           remove_namespaces: bool = Config("remove_export_namespaces", False),
+           skip_compression: Optional[bool] = Config("skip_cwb_compression", False),
+           skip_validation: Optional[bool] = Config("skip_cwb_validation", False)):
+    """Encode a number of vrt files, by calling cwb-encode."""
     assert datadir, "CWB_DATADIR not specified"
-    assert registry, "CORPUS_REGISTRY not specified"
+    assert registry, "CWB_REGISTRY not specified"
+    # Get vrt files
+    vrtfiles = [vrtfiles.replace("{doc}", doc) for doc in docs]
+    vrtfiles.sort()
 
-    skip_validation = util.strtobool(skip_validation)
-    skip_compression = util.strtobool(skip_compression)
-    vrtfiles = util.split(vrtfiles)
-    columns = util.split(columns)
-    structs = parse_structural_attributes(structs)
+    token_name = classes.get("token")
+    annotations, token_annotations, export_names = util.get_annotation_names(docs, token_name, annotations,
+                                                                             original_annotations, remove_namespaces,
+                                                                             keep_struct_refs=True)
+
+    # Get VRT columns and structs
+    columns = [export_names.get(i, i) for i in token_annotations]
+    struct_annotations = [export_names.get(i, i) for i in annotations if not i.startswith(token_name)]
+    structs = parse_structural_attributes(struct_annotations)
 
     corpus_registry = os.path.join(registry, corpus)
     corpus_datadir = os.path.join(datadir, corpus)
@@ -137,11 +138,9 @@ def encode(corpus: str = Corpus,
                    "-c", encoding,
                    "-x"
                    ]
-    if vrtdir:
-        encode_args += ["-F", vrtdir]
-    elif vrtfiles:
-        for vrt in vrtfiles:
-            encode_args += ["-f", vrt]
+
+    for vrt in vrtfiles:
+        encode_args += ["-f", vrt]
 
     for col in columns:
         if col != "-":
@@ -152,11 +151,9 @@ def encode(corpus: str = Corpus,
             attrs2 = "+" + attrs2
         encode_args += ["-S", "%s:0%s" % (struct, attrs2)]
 
-    if vrtlist:
-        # Use xargs to avoid "Argument list too long" problems
-        util.system.call_binary("cwb-encode", raw_command="cat %s | xargs cat | %%s %s" % (vrtlist, " ".join(encode_args)), verbose=True, use_shell=True)
-    else:
-        util.system.call_binary("cwb-encode", encode_args, verbose=True)
+    util.system.call_binary("cwb-encode", encode_args, verbose=True)
+    # Use xargs to avoid "Argument list too long" problems
+    # util.system.call_binary("cwb-encode", raw_command="cat %s | xargs cat | %%s %s" % (vrtfiles, " ".join(encode_args)), verbose=True, use_shell=True)
 
     index_args = ["-V", "-r", registry, corpus.upper()]
     util.system.call_binary("cwb-makeall", index_args, verbose=True)
@@ -183,7 +180,7 @@ def encode(corpus: str = Corpus,
         log.info("Compression done.")
 
 
-def cwb_align(corpus, other, link, aligndir=ALIGNDIR, encoding=CWB_ENCODING):
+def cwb_align(corpus, other, link, aligndir="annotations/align", encoding: str = Config("cwb_encoding", "utf8")):
     """Align 'corpus' with 'other' corpus, using the 'link' annotation for alignment."""
     os.makedirs(aligndir, exist_ok=True)
     alignfile = os.path.join(aligndir, corpus + ".align")
@@ -255,6 +252,4 @@ def parse_structural_attributes(structural_atts):
 
 
 if __name__ == "__main__":
-    util.run.main(export=export,
-                  encode=encode,
-                  align=cwb_align)
+    util.run.main(align=cwb_align)

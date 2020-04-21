@@ -18,6 +18,11 @@ export_dir = "export"
 config_file = "config.yaml"
 default_config_file = "config_default.yaml"
 
+# CWB variables
+cwb_encoding = os.environ.get("CWB_ENCODING", "utf8")
+cwb_datadir = os.environ.get("CWB_DATADIR")
+cwb_registry = os.environ.get("CWB_REGISTRY")
+
 
 def get_model_path(name: str):
     """Get full path to model file."""

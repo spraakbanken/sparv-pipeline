@@ -112,7 +112,8 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
             for annotation in export_annotations:
                 annotation, _, new_name = annotation.partition(" as ")
                 param_value = registry.expand_variables(annotation)
-                inputs.append(os.path.join(paths.annotation_dir, get_annotation_path(param_value)))
+                if param.default.is_input:
+                    inputs.append(os.path.join(paths.annotation_dir, get_annotation_path(param_value)))
                 if new_name:
                     param_value = " as ".join((param_value, new_name))
                 parameters[param_name].append(param_value)
@@ -151,7 +152,10 @@ def make_rule(module_name, f_name, desc, f, importer, exporter):
             parameters[param_name] = paths.source_dir
         # Export
         elif param.default == Export or isinstance(param.default, Export):
-            parameters[param_name] = os.path.join(paths.export_dir, registry.expand_variables(param.default))
+            if param.default.absolute_path:
+                parameters[param_name] = registry.expand_variables(param.default)
+            else:
+                parameters[param_name] = os.path.join(paths.export_dir, registry.expand_variables(param.default))
             outputs.append(parameters[param_name])
             if "{doc}" in parameters[param_name]:
                 doc_annotations.append(param_name)

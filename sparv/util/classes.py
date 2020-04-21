@@ -68,7 +68,12 @@ class Source(str):
 
 class Export(str):
     """Export directory and filename pattern."""
-    pass
+    
+    def __new__(cls, name: str, *args, **kwargs):
+        return super().__new__(cls, name)
+
+    def __init__(self, name: str, absolute_path: bool = False):
+        self.absolute_path = absolute_path
 
 
 class ExportInput(str):
@@ -80,9 +85,14 @@ class ExportInput(str):
         self.all_docs = all_docs
 
 
-class ExportAnnotations(List[Annotation]):
+class ExportAnnotations(list):
     """List of annotations to include in export."""
-    pass
+
+    is_input = True
+
+    def __init__(self, items=(), is_input: bool = True):
+        list.__init__(self, items)
+        self.is_input = is_input
 
 
 class Language(str):

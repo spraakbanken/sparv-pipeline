@@ -12,8 +12,8 @@ __all__ = [
     "AllDocuments",
     "Annotation",
     "Binary",
-    "Corpus",
     "Config",
+    "Corpus",
     "Document",
     "Export",
     "ExportAnnotations",
@@ -21,5 +21,5 @@ __all__ = [
     "Language",
     "Model",
     "Output",
-    "Source"
+    "Source",
 ]

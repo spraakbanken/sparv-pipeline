@@ -7,8 +7,7 @@ from collections import defaultdict
 from typing import Optional
 
 import sparv.util as util
-from sparv import Annotation, Config, Corpus, Document, Export, ExportAnnotations, ExportInput, annotator, \
-    AllDocuments
+from sparv import AllDocuments, Annotation, Config, Corpus, Document, Export, ExportAnnotations, ExportInput, annotator
 
 log = logging.getLogger(__name__)
 
@@ -17,7 +16,7 @@ log = logging.getLogger(__name__)
 def export(doc: str = Document,
            docid: str = Annotation("<docid>", data=True),
            out: str = Export("[xml_export.dir=xml]/[xml_export.filename={doc}_export.xml]"),
-           token: str = Annotation("<token>"),
+           classes: str = Config("classes"),
            word: str = Annotation("<token:word>"),
            annotations: list = ExportAnnotations,
            original_annotations: Optional[list] = Config("original_annotations"),
@@ -25,7 +24,6 @@ def export(doc: str = Document,
     """Export annotations to xml in export_dir.
 
     - doc: name of the original document
-    - token: name of the token level annotation span
     - word: annotation containing the token strings.
     - annotations: list of elements:attributes (annotations) to include.
     - original_annotations: list of elements:attributes from the original document
@@ -39,7 +37,8 @@ def export(doc: str = Document,
     docid = util.read_data(doc, docid)
 
     # Get annotation spans, annotations list etc.
-    annotations, _, export_names = util.get_annotation_names(doc, token, annotations, original_annotations,
+    token_name = classes.get("token")
+    annotations, _, export_names = util.get_annotation_names(doc, token_name, annotations, original_annotations,
                                                              remove_namespaces)
     span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names)
 
@@ -63,7 +62,7 @@ def export(doc: str = Document,
             node_stack.append(span)
             add_attrs(span.node, span.name, annotation_dict, export_names, span.index)
             # Add text if this node is a token
-            if span.name == token:
+            if span.name == token_name:
                 span.node.text = word_annotation[span.index]
             # Some formatting: add line breaks between elements
             else:
@@ -89,14 +88,13 @@ def export(doc: str = Document,
 def export_formatted(doc: str = Document,
                      docid: str = Annotation("<docid>", data=True),
                      out: str = Export("xml_formatted/[xml_export.filename_formatted={doc}_export.xml]"),
-                     token: str = Annotation("<token>"),
+                     classes: str = Config("classes"),
                      annotations: list = ExportAnnotations,
                      original_annotations: Optional[list] = Config("original_annotations"),
                      remove_namespaces: bool = Config("remove_export_namespaces", False)):
     """Export annotations to xml in export_dir and keep whitespaces and indentation from original file.
 
     - doc: name of the original document
-    - token: name of the token level annotation span
     - annotations: list of elements:attributes (annotations) to include.
     - original_annotations: list of elements:attributes from the original document
       to be kept. If not specified, everything will be kept.
@@ -109,7 +107,8 @@ def export_formatted(doc: str = Document,
     docid = util.read_data(doc, docid)
 
     # Get annotation spans, annotations list etc.
-    annotations, _, export_names = util.get_annotation_names(doc, token, annotations, original_annotations,
+    token_name = classes.get("token")
+    annotations, _, export_names = util.get_annotation_names(doc, token_name, annotations, original_annotations,
                                                              remove_namespaces)
     span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names, flatten=False)
     sorted_positions = [(pos, span[0], span[1]) for pos, spans in sorted(span_positions.items()) for span in spans]
@@ -179,7 +178,6 @@ def combine(corpus: str = Corpus,
             docs: list = AllDocuments,
             xml_input: str = ExportInput("[xml_export.dir]/[xml_export.filename]", all_docs=True)):
     """Combine XML export files into a single XML file."""
-
     xml_files = [xml_input.replace("{doc}", doc) for doc in docs]
     xml_files.sort()
 
