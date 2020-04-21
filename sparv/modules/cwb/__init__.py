@@ -1,1 +1,1 @@
-from . import cwb
+from . import cwb, info

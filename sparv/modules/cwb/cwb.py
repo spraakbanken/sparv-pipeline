@@ -103,7 +103,6 @@ def encode(corpus: str = Corpus,
            docs: list = AllDocuments,
            words: str = Annotation("<token:word>", all_docs=True),
            vrtfiles: str = ExportInput("vrt/{doc}.vrt", all_docs=True),
-           # vrtfiles: list = VRTExportFiles,
            out: str = Export("[corpus_registry]/[id]", absolute_path=True),
            classes: str = Config("classes"),
            encoding: str = Config("cwb_encoding", paths.cwb_encoding),
@@ -187,6 +186,7 @@ def encode(corpus: str = Corpus,
         log.info("Compression done.")
 
 
+# TODO: Add snake-support!
 def cwb_align(corpus, other, link, aligndir="annotations/align", encoding: str = Config("cwb_encoding", "utf8")):
     """Align 'corpus' with 'other' corpus, using the 'link' annotation for alignment."""
     os.makedirs(aligndir, exist_ok=True)
