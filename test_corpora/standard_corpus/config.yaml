@@ -14,6 +14,10 @@ dateformat.datetime_informat: "%Y-%m-%d"
 annotations:
   - text
   - <text>:readability.lix
+  - <text>:dateformat.datefrom
+  - <text>:dateformat.dateto
+  - <text>:dateformat.timefrom
+  - <text>:dateformat.timeto
   - <sentence>
   - <token>
   - <token:pos>

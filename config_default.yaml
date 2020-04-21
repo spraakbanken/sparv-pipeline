@@ -16,3 +16,6 @@ classes:
 remove_export_namespaces: true
 
 xml_export.filename: "{doc}_export.xml"
+
+# Korp: password protected corpus
+protected: false
