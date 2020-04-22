@@ -101,29 +101,36 @@ def encode(corpus: str = Corpus,
            annotations: str = ExportAnnotations(is_input=False),
            original_annotations: Optional[list] = Config("original_annotations"),
            docs: list = AllDocuments,
+           words: str = Annotation("<token:word>", all_docs=True),
            vrtfiles: str = ExportInput("vrt/{doc}.vrt", all_docs=True),
            # vrtfiles: list = VRTExportFiles,
-           out: str = Export("[cwb_registry]/[id]", absolute_path=True),
+           out: str = Export("[corpus_registry]/[id]", absolute_path=True),
            classes: str = Config("classes"),
            encoding: str = Config("cwb_encoding", paths.cwb_encoding),
            datadir: str = Config("cwb_datadir", paths.cwb_datadir),
-           registry: str = Config("cwb_registry", paths.cwb_registry),
+           registry: str = Config("corpus_registry", paths.corpus_registry),
            remove_namespaces: bool = Config("remove_export_namespaces", False),
            skip_compression: Optional[bool] = Config("skip_cwb_compression", False),
            skip_validation: Optional[bool] = Config("skip_cwb_validation", False)):
     """Encode a number of vrt files, by calling cwb-encode."""
     assert datadir, "CWB_DATADIR not specified"
-    assert registry, "CWB_REGISTRY not specified"
+    assert registry, "CORPUS_REGISTRY not specified"
+
     # Get vrt files
     vrtfiles = [vrtfiles.replace("{doc}", doc) for doc in docs]
     vrtfiles.sort()
 
+    # Word annotation should always be included in CWB export
+    annotations.insert(0, words)
+
+    # Get annotation names
     token_name = classes.get("token")
     annotations, token_annotations, export_names = util.get_annotation_names(docs, token_name, annotations,
                                                                              original_annotations, remove_namespaces,
                                                                              keep_struct_refs=True)
 
     # Get VRT columns and structs
+    token_annotations = [(token_name + ":" + i) for i in token_annotations]
     columns = [export_names.get(i, i) for i in token_annotations]
     struct_annotations = [export_names.get(i, i) for i in annotations if not i.startswith(token_name)]
     structs = parse_structural_attributes(struct_annotations)

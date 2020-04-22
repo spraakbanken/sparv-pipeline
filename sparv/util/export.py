@@ -168,7 +168,7 @@ def calculate_element_hierarchy(doc, spans_list):
 def get_annotation_names(doc, token_name, annotations, original_annotations=None, remove_namespaces=False,
                          keep_struct_refs=False):
     """Get a list of annotations, token annotations and a dictionary for renamed annotations.
-    
+
     remove_namespaces: remove all name spaces in export_names unless names are ambiguous.
     keep_struct_refs: for structural attributes, include everything before ":" in export_names (used in cwb encode)
     """
