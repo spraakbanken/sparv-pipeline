@@ -15,28 +15,86 @@ log = logging.getLogger(__name__)
 
 @annotator("Convert existing dates to specified output format")
 def dateformat(doc: str = Document,
-               in_from: str = Annotation("[dateformat.date_from]"),
-               in_to: Optional[str] = Annotation("[dateformat.date_to]"),
-               out_from: str = Output("[dateformat.out_annotation=<text>]:dateformat.from", description="From-dates"),
-               out_to: Optional[str] = Output("[dateformat.out_annotation=<text>]:dateformat.to", description="To-dates"),
-               informat: str = Config("dateformat.informat"),
-               outformat: str = Config("dateformat.outformat", "%Y%m%d%H%M%S"),
+               in_from: str = Annotation("[dateformat.datetime_from]"),
+               in_to: Optional[str] = Annotation("[dateformat.datetime_to]"),
+               out_from: str = Output("[dateformat.out_annotation=<text>]:dateformat.datefrom",
+                                      description="From-dates"),
+               out_to: Optional[str] = Output("[dateformat.out_annotation=<text>]:dateformat.dateto",
+                                              description="To-dates"),
+               informat: str = Config("dateformat.datetime_informat"),
+               outformat: str = Config("dateformat.date_outformat", "%Y%m%d"),
                splitter: str = Config("dateformat.splitter", None),
                regex: str = Config("dateformat.regex", None)):
-    """Take existing dates and input formats and convert to specified output format.
-
-    - doc, corpus document name
-    - in_from, annotation containing from-dates
-    - out_from, annotation with from-dates to be written
-    - in_to, annotation containing to-dates (optional)
-    - out_to, annotation with to-dates to be written (optional)
-    - informat, the format of the in_from and in_to dates. Several formats can be specified separated by |. They will be tried in order.
-    - outformat, the desired format of the outfrom and out_to dates. Several formats can be specified separated by |. They will be tied to their respective in-format.
-    - splitter, a character or more separating two dates in 'in_from', treating them as from-date and to-date
-    - regex, a regular expression with a catching group whose content will be used in the parsing instead of the whole string
+    """Convert existing dates/times to specified date output format.
 
     http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior
+
+    Args:
+        doc (str, optional): Corpus document name. Defaults to Document.
+        in_from (str, optional): Annotation containing from-dates (and times).
+            Defaults to Annotation("[dateformat.datetime_from]").
+        in_to (Optional[str], optional): Annotation containing to-dates.
+            Defaults to Annotation("[dateformat.datetime_to]").
+        out_from (str, optional): Annotation with from-times to be written.
+            Defaults to Output("[dateformat.out_annotation=<text>]:dateformat.datefrom",description="From-dates").
+        out_to (Optional[str], optional): Annotation with to-times to be written.
+            Defaults to Output("[dateformat.out_annotation=<text>]:dateformat.dateto",description="To-dates").
+        informat (str, optional): Format of the in_from and in_to dates/times.
+            Several formats can be specified separated by |. They will be tried in order.
+            Defaults to Config("dateformat.datetime_informat").
+        outformat (str, optional): Desired format of the outfrom and out_to dates.
+            Several formats can be specified separated by |. They will be tied to their respective in-format.
+            Defaults to Config("dateformat.date_outformat", "%Y%m%d").
+        splitter (str, optional): One or more characters separating two dates in 'in_from',
+            treating them as from-date and to-date. Defaults to Config("dateformat.splitter", None).
+        regex (str, optional): Regular expression with a catching group whose content will be used in the parsing
+            instead of the whole string. Defaults to Config("dateformat.regex", None).
     """
+    _formatter(doc, in_from, in_to, out_from, out_to, informat, outformat, splitter, regex)
+
+
+@annotator("Convert existing times to specified output format")
+def timeformat(doc: str = Document,
+               in_from: str = Annotation("[dateformat.datetime_from]"),
+               in_to: Optional[str] = Annotation("[dateformat.datetime_to]"),
+               out_from: str = Output("[dateformat.out_annotation=<text>]:dateformat.timefrom",
+                                      description="From-times"),
+               out_to: Optional[str] = Output("[dateformat.out_annotation=<text>]:dateformat.timeto",
+                                              description="To-times"),
+               informat: str = Config("dateformat.datetime_informat"),
+               outformat: str = Config("dateformat.time_outformat", "%H%M%S"),
+               splitter: str = Config("dateformat.splitter", None),
+               regex: str = Config("dateformat.regex", None)):
+    """Convert existing dates/times to specified time output format.
+
+    http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior
+
+    Args:
+        doc (str, optional): Corpus document name. Defaults to Document.
+        in_from (str, optional): Annotation containing from-dates (and times).
+            Defaults to Annotation("[dateformat.datetime_from]").
+        in_to (Optional[str], optional): Annotation containing to-dates.
+            Defaults to Annotation("[dateformat.datetime_to]").
+        out_from (str, optional): Annotation with from-times to be written.
+            Defaults to Output("[dateformat.out_annotation=<text>]:dateformat.timefrom",description="From-times").
+        out_to (Optional[str], optional): Annotation with to-times to be written.
+            Defaults to Output("[dateformat.out_annotation=<text>]:dateformat.timeto",description="To-times").
+        informat (str, optional): Format of the in_from and in_to dates/times.
+            Several formats can be specified separated by |. They will be tried in order.
+            Defaults to Config("dateformat.datetime_informat").
+        outformat (str, optional): Desired format of the outfrom and out_to times.
+            Several formats can be specified separated by |. They will be tied to their respective in-format.
+            Defaults to Config("dateformat.time_outformat", "%Y%m%d").
+        splitter (str, optional): One or more characters separating two dates in 'in_from',
+            treating them as from-date and to-date. Defaults to Config("dateformat.splitter", None).
+        regex (str, optional): Regular expression with a catching group whose content will be used in the parsing
+            instead of the whole string. Defaults to Config("dateformat.regex", None).
+    """
+    _formatter(doc, in_from, in_to, out_from, out_to, informat, outformat, splitter, regex)
+
+
+def _formatter(doc, in_from, in_to, out_from, out_to, informat, outformat, splitter, regex):
+    """Take existing dates/times and input formats and convert to specified output format."""
     def get_smallest_unit(informat):
         smallest_unit = 0  # No date
 
