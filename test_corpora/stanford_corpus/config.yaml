@@ -1,0 +1,33 @@
+id: stanford-corpus
+name: Stanford Parser test corpus
+language: en
+
+# Elements and attributes from the source XML that we want to be available as input for other annotations
+xml_elements:
+  - text
+
+annotations:
+  - text
+  - <text>:readability.lix
+  - <sentence>
+  - <token>
+  - <token:pos>
+  - <token:msd>
+  - <token:baseform>
+  - <token:ne>
+  - <token:dephead_ref>
+  - <token:deprel>
+  - <token:ref>
+
+classes:
+    text: text
+    sentence: stanford.sentence
+    token: stanford.token
+    "token:word": <token>:stanford.word
+    "token:ref": <token>:stanford.ref
+    "token:pos": <token>:stanford.pos
+    "token:msd": <token>:stanford.msd
+    "token:baseform": <token>:stanford.baseform
+    "token:ne": <token>:stanford.ne
+    "token:dephead_ref": <token>:stanford.dephead_ref
+    "token:deprel": <token>:stanford.deprel

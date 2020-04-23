@@ -41,6 +41,7 @@ bin/maltparser-1.7.2/
 bin/wsd/
 bin/word_alignment/
 bin/treetagger/
+bin/stanford_parser/
 
 # Plugins
 freeling
