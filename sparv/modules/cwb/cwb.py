@@ -14,13 +14,13 @@ log = logging.getLogger(__name__)
 
 
 @exporter("VRT export")
-def export(doc: str = Document,
-           out: str = Export("vrt/{doc}.vrt"),
-           classes: str = Config("classes"),
-           word: str = Annotation("<token:word>"),
-           annotations: list = ExportAnnotations,
-           original_annotations: Optional[list] = Config("original_annotations"),
-           remove_namespaces: bool = Config("remove_export_namespaces", False)):
+def vrt(doc: str = Document,
+        out: str = Export("vrt/{doc}.vrt"),
+        classes: str = Config("classes"),
+        word: str = Annotation("<token:word>"),
+        annotations: list = ExportAnnotations,
+        original_annotations: Optional[list] = Config("original_annotations"),
+        remove_namespaces: bool = Config("remove_export_namespaces", False)):
     """Export annotations to vrt in export_dir.
 
     - doc: name of the original document
