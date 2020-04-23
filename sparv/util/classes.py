@@ -12,6 +12,8 @@ class Annotation(str):
         return super().__new__(_cls, name)
 
     def __init__(self, name: str, data: bool = False, all_docs: bool = False, common: bool = False):
+        assert not (all_docs and common), "'all_docs' and 'common' are mutually exclusive"
+        assert not (common and not data), "'common' requires 'data'"
         self.data = data
         self.all_docs = all_docs
         self.common = common
@@ -23,12 +25,9 @@ class Output(Annotation):
 
     def __init__(self, name: str, cls: Optional[str] = None, data: bool = False, all_docs: bool = False,
                  common: bool = False, description: Optional[str] = None):
+        super().__init__(name, data, all_docs, common)
         self.cls = cls
-        self.data = data
-        self.all_docs = all_docs
-        self.common = common
         self.description = description
-        Config.parse_config_string(name)
 
 
 class Document(str):
