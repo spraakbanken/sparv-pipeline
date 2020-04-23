@@ -39,7 +39,12 @@ def load_config(config_file: str):
 
 def get(name: str, default=None):
     """Get value from config. If 'name' is missing and 'default' is supplied, add to config."""
-    config.setdefault(name, default)
+
+    # If config variable is already set to None but we get a better default value, replace the existing
+    if default is not None and name in config and config[name] is None:
+        config[name] = default
+    else:
+        config.setdefault(name, default)
     return config[name]
 
 
