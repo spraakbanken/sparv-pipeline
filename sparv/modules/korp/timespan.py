@@ -1,8 +1,11 @@
+"""Create timespan SQL data for use in Korp."""
+
 import logging
-import os
 import subprocess
 
 import sparv.util as util
+from sparv import Config, Corpus, Export, exporter
+from sparv.core import paths
 from sparv.util.mysql_wrapper import MySQL
 
 log = logging.getLogger(__name__)
@@ -10,19 +13,21 @@ log = logging.getLogger(__name__)
 # Path to the cwb-scan-corpus binary
 CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
 CQP_EXECUTABLE = "cqp"
-CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 
-def timespan(corpus, db_name, out):
+@exporter("Create timespan SQL data for use in Korp")
+def timespan_sql(corpus: str = Corpus,
+                 db_name: str = Config("korp_timespan", "timespan"),
+                 corpus_registry: str = Config("corpus_registry", paths.corpus_registry),
+                 out: str = Export("korp_timespan/timespan.sql")):
     """Create timespan SQL data for use in Korp."""
-
     def calculate(usetime=True):
         rows = []
 
         dateattribs = ["text_datefrom", "text_timefrom", "text_dateto", "text_timeto"] if usetime else ["text_datefrom",
                                                                                                         "text_dateto"]
 
-        process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-q", "-r", CORPUS_REGISTRY, corpus] + dateattribs,
+        process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-q", "-r", corpus_registry, corpus] + dateattribs,
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         reply, error = process.communicate()
         reply = reply.decode()
@@ -31,7 +36,7 @@ def timespan(corpus, db_name, out):
             if "Error: can't open attribute" in error and (".text_datefrom" in error or ".text_dateto" in error):
                 log.info("No date information present in corpus.")
                 # No date information in corpus. Calculate total token count instead.
-                process = subprocess.Popen([CQP_EXECUTABLE, "-c", "-r", CORPUS_REGISTRY], stdin=subprocess.PIPE,
+                process = subprocess.Popen([CQP_EXECUTABLE, "-c", "-r", corpus_registry], stdin=subprocess.PIPE,
                                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 reply, error = process.communicate(bytes("set PrettyPrint off;%s;info;" % corpus, "UTF-8"))
 
@@ -44,7 +49,7 @@ def timespan(corpus, db_name, out):
                         reply = "%s\t\t\t\t" % line[6:].strip()
             else:
                 log.error(error)
-                raise Exception
+                raise Exception(error)
 
         spans = {}
 
@@ -103,25 +108,20 @@ def timespan(corpus, db_name, out):
 MYSQL_TABLE = "timedata"
 MYSQL_TABLE_DATE = "timedata_date"
 
-MYSQL_TIMESPAN = {"columns": [
-                               ("corpus",   "varchar(64)", "", "NOT NULL"),
-                               ("datefrom",  "datetime", "0000-00-00 00:00:00", "NOT NULL"),
-                               ("dateto",  "datetime", "0000-00-00 00:00:00", "NOT NULL"),
-                               ("tokens",   int, 0, "NOT NULL")],
+MYSQL_TIMESPAN = {"columns": [("corpus", "varchar(64)", "", "NOT NULL"),
+                              ("datefrom", "datetime", "0000-00-00 00:00:00", "NOT NULL"),
+                              ("dateto", "datetime", "0000-00-00 00:00:00", "NOT NULL"),
+                              ("tokens", int, 0, "NOT NULL")],
                   "primary": "corpus datefrom dateto",
                   "indexes": [],
                   "default charset": "utf8"
                   }
 
-MYSQL_TIMESPAN_DATE = {"columns": [
-                               ("corpus",   "varchar(64)", "", "NOT NULL"),
-                               ("datefrom",  "date", "0000-00-00", "NOT NULL"),
-                               ("dateto",  "date", "0000-00-00", "NOT NULL"),
-                               ("tokens",   int, 0, "NOT NULL")],
+MYSQL_TIMESPAN_DATE = {"columns": [("corpus", "varchar(64)", "", "NOT NULL"),
+                                   ("datefrom", "date", "0000-00-00", "NOT NULL"),
+                                   ("dateto", "date", "0000-00-00", "NOT NULL"),
+                                   ("tokens", int, 0, "NOT NULL")],
                        "primary": "corpus datefrom dateto",
                        "indexes": [],
                        "default charset": "utf8"
                        }
-
-if __name__ == "__main__":
-    util.run.main(timespan)
