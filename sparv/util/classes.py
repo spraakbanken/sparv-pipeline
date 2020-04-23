@@ -109,8 +109,9 @@ class ExportInput(str):
     def __new__(_cls, val: str, *args, **kwargs):
         return super().__new__(_cls, val)
 
-    def __init__(self, val: str, all_docs: bool = False):
+    def __init__(self, val: str, all_docs: bool = False, absolute_path: bool = False):
         self.all_docs = all_docs
+        self.absolute_path = absolute_path
 
 
 class ExportAnnotations(list):

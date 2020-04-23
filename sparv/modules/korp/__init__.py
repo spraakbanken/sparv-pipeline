@@ -1,1 +1,1 @@
-from . import relations
+from . import install, relations

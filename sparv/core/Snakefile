@@ -183,7 +183,10 @@ def make_rule(module_name, f_name, desc, f, importer, exporter, source_type, imp
                 doc_annotations.append(param_name)
         # ExportInput
         elif isinstance(param.default, ExportInput):
-            parameters[param_name] = os.path.join(paths.export_dir, registry.expand_variables(param.default))
+            if param.default.absolute_path:
+                parameters[param_name] = registry.expand_variables(param.default)
+            else:
+                parameters[param_name] = os.path.join(paths.export_dir, registry.expand_variables(param.default))
             if param.default.all_docs:
                 inputs.extend(expand(parameters[param_name], doc=get_source_files()))
             else:

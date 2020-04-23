@@ -17,5 +17,23 @@ remove_export_namespaces: true
 
 xml_export.filename: "{doc}_export.xml"
 
+
+### SB-Korp stuff. Should be stored elsewhere?
 # Korp: password protected corpus
 protected: false
+
+# Remote host name for installation of both corpus data and database
+remote_host: ""
+
+# Paths on remote server (targets for install_corpus)
+remote_cwb_datadir: ""
+remote_corpus_registry: ""
+
+# Export hosts and paths (targets for install_export and install_export_original)
+export_host: ""
+export_path: ""
+export_original_host: ""
+export_original_path: ""
+
+# Database name for relations, lemgram index and timespan
+mysql_dbname: ""
