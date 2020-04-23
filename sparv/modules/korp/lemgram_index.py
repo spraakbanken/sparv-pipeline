@@ -1,24 +1,33 @@
+"""Create files needed for the lemgram search in Korp."""
+
 import logging
-import os
 import subprocess
 
 import sparv.util as util
+from sparv import Config, Corpus, Export, exporter, Annotation
+from sparv.core import paths
 from sparv.util.mysql_wrapper import MySQL
 
 log = logging.getLogger(__name__)
 
 # Path to the cwb-scan-corpus binary
 CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
-CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 
-def make_index(corpus, out, db_name, attributes=["lex", "prefix", "suffix"]):
+# TODO: Korp search for complemgram needs to be fixed before this can be re-written
+# @exporter("Lemgram index SQL file for use in Korp")
+def lemgram_sql(corpus: str = Corpus,
+                out: str = Export("korp_lemgramindex/lemgram_index.sql"),
+                lemgram: str = Annotation("<token>:saldo.lemgram", all_docs=True),
+                complemgram: str = Annotation("<token>:saldo.complemgram", all_docs=True),
+                db_name: str = Config("korp.lemgram_db_name", "korp_lemgram"),
+                attributes: list = Config("lemgram_index_attributes", ["lemgram", "prefix", "suffix"]),  # ??
+                corpus_registry: str = Config("corpus_registry", paths.corpus_registry)):
     """Create lemgram index SQL file."""
-    attributes = util.split(attributes)
-    attribute_fields = {"lex": "freq", "prefix": "freq_prefix", "suffix": "freq_suffix"}
+    attribute_fields = {"lemgram": "freq", "prefix": "freq_prefix", "suffix": "freq_suffix"}
 
     corpus = corpus.upper()
-    index = count_lemgrams(corpus, attributes)
+    index = _count_lemgrams(corpus, attributes, corpus_registry)
 
     mysql = MySQL(db_name, encoding=util.UTF8, output=out)
     mysql.create_table(MYSQL_TABLE, drop=False, **MYSQL_INDEX)
@@ -44,11 +53,11 @@ def make_index(corpus, out, db_name, attributes=["lex", "prefix", "suffix"]):
     mysql.add_row(MYSQL_TABLE, rows)
 
 
-def count_lemgrams(corpus, attributes):
+def _count_lemgrams(corpus, attributes, corpus_registry):
     """Count lemgrams using cwb-scan."""
     log.info("Reading corpus")
     result = {}
-    process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-q", "-r", CORPUS_REGISTRY, corpus] + attributes,
+    process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-q", "-r", corpus_registry, corpus] + attributes,
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     reply, error = process.communicate()
     if error:
@@ -80,8 +89,3 @@ MYSQL_INDEX = {"columns": [("lemgram", "varchar(64)", "", "NOT NULL"),
                "indexes": ["lemgram corpus freq freq_prefix freq_suffix"],  # Can't make this primary due to collation
                "default charset": "utf8",
                }
-
-################################################################################
-
-if __name__ == "__main__":
-    util.run.main(make_index)

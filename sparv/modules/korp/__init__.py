@@ -1,1 +1,1 @@
-from . import install, relations, timespan
+from . import install, lemgram_index, relations, timespan
