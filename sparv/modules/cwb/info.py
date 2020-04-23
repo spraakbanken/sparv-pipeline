@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 
 import sparv.util as util
-from sparv import AllDocuments, Annotation, Config, Corpus, Export, ExportInput, exporter
+from sparv import AllDocuments, Annotation, Config, Corpus, Export, ExportInput, Output, annotator, exporter
 from sparv.core import paths
 
 log = logging.getLogger(__name__)
@@ -13,22 +13,21 @@ log = logging.getLogger(__name__)
 
 @exporter("CWB .info file")
 def info(out: str = Export("[cwb_datadir]/[id]/.info", absolute_path=True),
-         sentences: str = ExportInput("info/sentencecount"),
-         firstdate: str = ExportInput("info/datefirst"),
-         lastdate: str = ExportInput("info/datelast"),
+         sentences: str = Annotation("cwb.sentencecount", data=True, common=True),
+         firstdate: str = Annotation("cwb.datefirst", data=True, common=True),
+         lastdate: str = Annotation("cwb.datelast", data=True, common=True),
          protected: bool = Config("protected", False)):
     """Save information to the file specified by 'out'."""
     content = []
     protected = str(util.strtobool(protected)).lower()
 
-    for key, value_obj, is_file in [("Sentences", sentences, True),
-                                    ("FirstDate", firstdate, True),
-                                    ("LastDate", lastdate, True),
-                                    ("Updated", time.strftime("%Y-%m-%d"), False),
-                                    ("Protected", protected, False)]:
-        if is_file:
-            with open(value_obj, mode="r", encoding="UTF-8") as f:
-                value = f.read().strip()
+    for key, value_obj, is_annotation in [("Sentences", sentences, True),
+                                          ("FirstDate", firstdate, True),
+                                          ("LastDate", lastdate, True),
+                                          ("Updated", time.strftime("%Y-%m-%d"), False),
+                                          ("Protected", protected, False)]:
+        if is_annotation:
+            value = util.read_common_data(value_obj)
         else:
             value = value_obj
 
@@ -41,36 +40,32 @@ def info(out: str = Export("[cwb_datadir]/[id]/.info", absolute_path=True),
     log.info("Exported: %s", out)
 
 
-@exporter("sentencecount file for .info")
-def info_sentences(out: str = Export("info/sentencecount"),
-                   # sentences: str = Annotation("[sentence]", all_docs=True),  # Not supported yet!
-                   vrtfiles: str = ExportInput("vrt/{doc}.vrt", all_docs=True),  # Remove this when 'sentences' can be used
+@annotator("sentencecount file for .info")
+def info_sentences(out: str = Output("cwb.sentencecount", data=True, common=True),
+                   sentence: str = Annotation("<sentence>", all_docs=True),
                    docs: list = AllDocuments,
                    classes: str = Config("classes")):
     """Determine how many sentences there are in the corpus."""
     # Read sentence annotation and count the sentences
-    # sentence_files = [sentences.replace("{doc}", doc) for doc in docs]  # Not supported yet!
-    sentence_name = classes.get("sentence")
     sentence_count = 0
     for doc in docs:
         try:
-            sentence_count += len(list(util.read_annotation_spans(doc, sentence_name)))
+            sentence_count += len(list(util.read_annotation_spans(doc, sentence)))
         except FileNotFoundError:
             pass
 
     if sentence_count == 0:
         log.info("No sentence information found in corpus")
 
-    # Write sentencecount file
-    with open(out, "w") as f:
-        f.write(str(sentence_count))
-    log.info("Exported: %s", out)
+    # Write sentencecount data
+    util.write_common_data(out, str(sentence_count))
+    log.info("Wrote: %s", out)
 
 
-@exporter("datefirst and datelast files for .info")
+@annotator("datefirst and datelast files for .info")
 def info_date(corpus: str = Corpus,
-              out_datefirst: str = Export("info/datefirst"),
-              out_datelast: str = Export("info/datelast"),
+              out_datefirst: str = Output("cwb.datefirst", data=True, common=True),
+              out_datelast: str = Output("cwb.datelast", data=True, common=True),
               corpus_data_file: str = ExportInput("[corpus_registry]/[id]"),
               datefrom: str = Annotation("[dateformat.out_annotation=<text>]:dateformat.datefrom", all_docs=True),
               dateto: str = Annotation("[dateformat.out_annotation=<text>]:dateformat.dateto", all_docs=True),
@@ -105,17 +100,15 @@ def info_date(corpus: str = Corpus,
     datefirst_args = ["-r", registry, "-q", corpus, datefrom, timefrom]
     datefirst_out, _ = util.system.call_binary("cwb-scan-corpus", datefirst_args)
     datefirst = _parse_cwb_output(datefirst_out)[0]
-    with open(out_datefirst, "w") as f:
-        f.write(str(datefirst))
-    log.info("Exported: %s", out_datefirst)
+    util.write_common_data(out_datefirst, str(datefirst))
+    log.info("Wrote: %s", out_datefirst)
 
     # Get datelast and write to file
     datelast_args = ["-r", registry, "-q", corpus, dateto, timeto]
     datelast_out, _ = util.system.call_binary("cwb-scan-corpus", datelast_args)
     datelast = _parse_cwb_output(datelast_out)[-1]
-    with open(out_datelast, "w") as f:
-        f.write(str(datelast))
-    log.info("Exported: %s", out_datelast)
+    util.write_common_data(out_datelast, str(datelast))
+    log.info("Wrote: %s", out_datelast)
 
 
 # TODO: This rule should activate if the above info_date cannot be run (due to lacking date info in corpus)

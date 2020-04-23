@@ -210,6 +210,16 @@ def read_data(doc, name):
     return data
 
 
+def write_common_data(name, value, append=False):
+    """Write arbitrary corpus level string data to file in annotations directory."""
+    write_data(None, name, value, append)
+
+
+def read_common_data(name):
+    """Read arbitrary corpus level string data from file in annotations directory."""
+    return read_data(None, name)
+
+
 def split_annotation(annotation):
     """Split annotation into annotation name and attribute."""
     if isinstance(annotation, Annotation):

@@ -11,9 +11,10 @@ class Annotation(str):
     def __new__(_cls, name: str, *args, **kwargs):
         return super().__new__(_cls, name)
 
-    def __init__(self, name: str, data: bool = False, all_docs: bool = False):
+    def __init__(self, name: str, data: bool = False, all_docs: bool = False, common: bool = False):
         self.data = data
         self.all_docs = all_docs
+        self.common = common
         Config.parse_config_string(name)
 
 
@@ -21,10 +22,11 @@ class Output(Annotation):
     """An annotation or attribute used as output."""
 
     def __init__(self, name: str, cls: Optional[str] = None, data: bool = False, all_docs: bool = False,
-                 description: Optional[str] = None):
+                 common: bool = False, description: Optional[str] = None):
         self.cls = cls
         self.data = data
         self.all_docs = all_docs
+        self.common = common
         self.description = description
         Config.parse_config_string(name)
 

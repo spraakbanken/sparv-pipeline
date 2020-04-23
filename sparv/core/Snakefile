@@ -35,17 +35,19 @@ def get_source_path() -> str:
     return sparv_config.get("source_dir", paths.source_dir)
 
 
-def get_annotation_path(annotation, data=False):
+def get_annotation_path(annotation, data=False, common=False):
     """Construct a path to an annotation file given a doc and annotation."""
     elem, attr = util.split_annotation(annotation)
 
-    if data:
+    if data or common:
         path = elem
     else:
         if not attr:
             attr = util.SPAN_ANNOTATION
         path = os.path.join(elem, attr)
-    return "{doc}/" + path
+    if not common:
+        path = "{doc}/" + path
+    return path
 
 
 def get_source_files() -> List[str]:
@@ -99,6 +101,10 @@ def make_rule(module_name, f_name, desc, f, importer, exporter, source_type, imp
                 outputs.extend(expand(os.path.join(paths.annotation_dir, get_annotation_path(param_value,
                                                                                          data=param.default.data)),
                                       doc=get_source_files()))
+            elif param.default.common:
+                outputs.append(os.path.join(paths.annotation_dir, get_annotation_path(param_value,
+                                                                                      data=param.default.data,
+                                                                                      common=param.default.common)))
             else:
                 outputs.append(get_annotation_path(param_value, data=param.default.data))
             parameters[param_name] = param_value
@@ -109,16 +115,21 @@ def make_rule(module_name, f_name, desc, f, importer, exporter, source_type, imp
         # Annotation
         elif registry.dig(Annotation, param.default):
             param_value = registry.expand_variables(param.default)
-            if exporter:
+            if exporter or param.default.all_docs:
                 if param.default.all_docs:
                     inputs.extend(expand(os.path.join(paths.annotation_dir, get_annotation_path(param_value,
                                                                                          data=param.default.data)),
                                          doc=get_source_files()))
                 else:
                     inputs.append(os.path.join(paths.annotation_dir, get_annotation_path(param_value,
-                                                                                         data=param.default.data)))
+                                                                                         data=param.default.data,
+                                                                                         common=param.default.common)))
+            elif param.default.common:
+                inputs.append(os.path.join(
+                    paths.annotation_dir,
+                    get_annotation_path(param_value, data=param.default.data, common=param.default.common)))
             else:
-                inputs.append(get_annotation_path(param_value, data=param.default.data))
+                inputs.append(get_annotation_path(param_value, data=param.default.data, common=param.default.common))
 
                 # Add @text as requirement for all rules with non-data Annotation dependencies
                 text_file = get_annotation_path(util.TEXT_FILE, data=True)
