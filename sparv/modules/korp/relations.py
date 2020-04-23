@@ -241,13 +241,13 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
 
 
 @exporter("Create Word Picture SQL for Korp")
-def create_sql(corpus: str = Corpus,
-               db_name: str = Config("korp.relations_db_name", "korp_relations"),
-               out: str = Export("korp_wordpicture/relations.sql"),
-               relations: str = Annotation("korp.relations", data=True, all_docs=True),
-               docs: Optional[list] = AllDocuments,
-               doclist: str = "",
-               split: bool = False):
+def relations_sql(corpus: str = Corpus,
+                  db_name: str = Config("korp.relations_db_name", "korp_relations"),
+                  out: str = Export("korp_wordpicture/relations.sql"),
+                  relations: str = Annotation("korp.relations", data=True, all_docs=True),
+                  docs: Optional[list] = AllDocuments,
+                  doclist: str = "",
+                  split: bool = False):
     """Calculate statistics of the dependencies and saves to SQL files.
 
     - corpus is the corpus name.
