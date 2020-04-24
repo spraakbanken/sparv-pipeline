@@ -30,6 +30,7 @@ original_annotations:
   - text:id
   - text:date
   - text:forfattare as author
+  - i
 
 classes:
     token: segment.token
