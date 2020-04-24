@@ -1,6 +1,8 @@
 .snakemake
 .idea/
 
+sparv_pipeline.egg-info
+
 sparv/__pycache__
 sparv/util/__pycache__/
 venv/
