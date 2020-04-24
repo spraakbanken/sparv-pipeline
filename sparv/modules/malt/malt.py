@@ -139,7 +139,7 @@ def maltstart(maltjar, model, encoding, send_empty_sentence=False):
         log.info("Using local MALT model: %s (in directory %s)", model, modeldir or ".")
 
     process = util.system.call_java(maltjar, malt_args, options=java_opts,
-                                    stdin="", encoding=encoding, verbose=True,
+                                    stdin="", encoding=encoding, verbose=False,
                                     return_command=True)
 
     if send_empty_sentence:
