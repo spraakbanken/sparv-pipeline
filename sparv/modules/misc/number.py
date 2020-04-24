@@ -11,49 +11,49 @@ from sparv import Annotation, Document, Output, annotator
 START_DEFAULT = 1
 
 
-def number_by_position(doc, out, chunk, prefix="", start=START_DEFAULT):
+def number_by_position(doc, out, chunk, prefix="", zfill=False, start=START_DEFAULT):
     """Number chunks by their position."""
     spans = list(util.read_annotation_spans(doc, chunk))
 
-    def order(index, _value):
+    def _order(index, _value):
         return spans[index]
 
-    read_chunks_and_write_new_ordering(doc, out, chunk, order, prefix, start)
+    read_chunks_and_write_new_ordering(doc, out, chunk, _order, prefix, zfill, start)
 
 
-def number_by_random(doc, out, chunk, prefix="", start=START_DEFAULT):
+def number_by_random(doc, out, chunk, prefix="", zfill=False, start=START_DEFAULT):
     """Number chunks randomly.
 
     Uses index as random seed.
     """
-    def order(index, _value):
+    def _order(index, _value):
         random.seed(int(hexlify(str(index).encode()), 16))
         return random.random()
 
-    read_chunks_and_write_new_ordering(doc, out, chunk, order, prefix, start)
+    read_chunks_and_write_new_ordering(doc, out, chunk, _order, prefix, zfill, start)
 
 
-def renumber_by_attribute(doc, out, chunk, prefix="", start=START_DEFAULT):
+def renumber_by_attribute(doc, out, chunk, prefix="", zfill=False, start=START_DEFAULT):
     """Renumber chunks, with the order determined by an attribute."""
-    def order(_index, value):
+    def _order(_index, value):
         return natural_sorting(value)
 
-    read_chunks_and_write_new_ordering(doc, out, chunk, order, prefix, start)
+    read_chunks_and_write_new_ordering(doc, out, chunk, _order, prefix, zfill, start)
 
 
-def renumber_by_shuffle(doc, out, chunk, prefix="", start=START_DEFAULT):
+def renumber_by_shuffle(doc, out, chunk, prefix="", zfill=False, start=START_DEFAULT):
     """Renumber already numbered chunks, in new random order.
 
     Retains the connection between parallelly numbered chunks by using the values as random seed.
     """
-    def order(_index, value):
+    def _order(_index, value):
         random.seed(int(hexlify(value.encode()), 16))
         return random.random(), natural_sorting(value)
 
-    read_chunks_and_write_new_ordering(doc, out, chunk, order, prefix, start)
+    read_chunks_and_write_new_ordering(doc, out, chunk, _order, prefix, zfill, start)
 
 
-def number_by_parent(doc, out, chunk, parent_order, prefix="", start=START_DEFAULT):
+def number_by_parent(doc, out, chunk, parent_order, prefix="", zfill=False, start=START_DEFAULT):
     """Number chunks by (parent order, chunk order)."""
     parent_children, _orphans = util.get_children(doc, parent_order, chunk)
 
@@ -61,10 +61,10 @@ def number_by_parent(doc, out, chunk, parent_order, prefix="", start=START_DEFAU
                    for parent_index, parent_nr in enumerate(util.read_annotation(doc, parent_order))
                    for child_index in parent_children[parent_index]}
 
-    def order(index, _value):
+    def _order(index, _value):
         return child_order.get(index)
 
-    read_chunks_and_write_new_ordering(doc, out, chunk, order, prefix, start)
+    read_chunks_and_write_new_ordering(doc, out, chunk, _order, prefix, zfill, start)
 
 
 @annotator("Number {annotation} by relative position within {parent}")
@@ -73,16 +73,20 @@ def number_relative(doc: str = Document,
                     parent: str = Annotation("{parent}"),
                     child: str = Annotation("{annotation}"),
                     prefix: str = "",
+                    zfill: bool = False,
                     start: int = START_DEFAULT):
     """Number chunks by their relative position within a parent."""
     parent_children, _orphans = util.get_children(doc, parent, child)
 
-    util.write_annotation(doc, out, ("%s%0*d" % (prefix, len(str(len(parent) - 1 + start)), cnr)
+    util.write_annotation(doc, out, ("{prefix}{nr:0{length}d}".format(prefix=prefix,
+                                                                      length=len(str(len(parent) - 1 + start))
+                                                                      if zfill else 0,
+                                                                      nr=cnr)
                                      for parent in parent_children
                                      for cnr, _index in enumerate(parent, start)))
 
 
-def read_chunks_and_write_new_ordering(doc, out, chunk, order, prefix="", start=START_DEFAULT):
+def read_chunks_and_write_new_ordering(doc, out, chunk, order, prefix="", zfill=False, start=START_DEFAULT):
     """Common function called by other numbering functions."""
     new_order = defaultdict(list)
 
@@ -97,7 +101,9 @@ def read_chunks_and_write_new_ordering(doc, out, chunk, order, prefix="", start=
     nr_digits = len(str(len(new_order) - 1 + start))
     for nr, key in enumerate(sorted(new_order), start):
         for index in new_order[key]:
-            out_annotation[index] = "%s%0*d" % (prefix, nr_digits, nr)
+            out_annotation[index] = "{prefix}{nr:0{length}d}".format(prefix=prefix,
+                                                                     length=nr_digits if zfill else 0,
+                                                                     nr=nr)
 
     util.write_annotation(doc, out, out_annotation)
 
