@@ -163,10 +163,13 @@ ru_dict = {
 
 
 def _en_convert_fl(msd):
+    """Convert from Penn Treebank tagset (with FreeLing modifications)."""
     if msd in ["NN", "NNS"]:
         return "NOUN"
-    elif msd.startswith("N"):
+    if msd.startswith("N"):
         return "PROPN"
+    if msd == "FW":  # Foreign word in Penn Treebank tagset
+        return "X"
     if msd.startswith("F"):
         return "PUNCT"
     if msd.startswith("Z"):
@@ -178,8 +181,6 @@ en_dict = {
     # https://talp-upc.gitbooks.io/freeling-user-manual/content/tagsets/tagset-en.html  # FreeLing
     "CC": "CONJ",
     "DT": "DET",
-    "WDT": "DET",
-    "PDT": "DET",
     "EX": "PRON",
     "I": "INTJ",
     "IN": "ADP",
@@ -187,13 +188,13 @@ en_dict = {
     "JJR": "ADJ",
     "JJS": "ADJ",
     "MD": "VERB",
+    "PDT": "DET",
     "POS": "ADP",
     "PRP": "PRON",
     "PRP$": "PRON",
     "RB": "ADV",
     "RBR": "ADV",
     "RBS": "ADV",
-    "WRB": "ADV",
     "RP": "PART",
     "TO": "PART",
     "UH": "INTJ",
@@ -203,9 +204,15 @@ en_dict = {
     "VBN": "VERB",
     "VBP": "VERB",
     "VBZ": "VERB",
+    "W": "NUM",
+    "WDT": "DET",
     "WP": "PRON",
     "WP$": "PRON",
-    "W": "NUM",
+    "WRB": "ADV",
+    "CD": "NUM",
+    "FW": "X",
+    "LS": "X",
+    "SYM": "SYM"
 }
 
 #####################################################################
