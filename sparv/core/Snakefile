@@ -21,6 +21,7 @@ all_annotations = {}
 # All named targets available, used in list_targets
 named_targets = []
 export_targets = []
+install_targets = []
 
 # List which will contain all source files
 source_files = []
@@ -59,7 +60,7 @@ def get_source_files() -> List[str]:
     return source_files
 
 
-def make_rule(module_name, f_name, desc, f, importer, exporter, source_type, import_outputs) -> None:
+def make_rule(module_name, f_name, desc, f, importer, exporter, installer, source_type, import_outputs) -> None:
     """Build Snakemake rules."""
     # Build input, output and parameter list
     if config.get("debug"):
@@ -87,7 +88,7 @@ def make_rule(module_name, f_name, desc, f, importer, exporter, source_type, imp
                     annotations_.add(util.split_annotation(annotation)[0])
                 for element in annotations_:
                     outputs.append(os.path.join(paths.annotation_dir, get_annotation_path(element)))
-    elif exporter:
+    elif exporter or installer:
         pass
 
     params = inspect.signature(f).parameters
@@ -115,7 +116,7 @@ def make_rule(module_name, f_name, desc, f, importer, exporter, source_type, imp
         # Annotation
         elif registry.dig(Annotation, param.default):
             param_value = registry.expand_variables(param.default)
-            if exporter or param.default.all_docs:
+            if exporter or installer or param.default.all_docs:
                 if param.default.all_docs:
                     inputs.extend(expand(os.path.join(paths.annotation_dir, get_annotation_path(param_value,
                                                                                          data=param.default.data)),
@@ -228,7 +229,7 @@ def make_rule(module_name, f_name, desc, f, importer, exporter, source_type, imp
         """Extract the {doc} part from full annotation path."""
         doc = None
         if hasattr(wildcards, "doc"):
-            if importer or exporter:
+            if importer or exporter or installer:
                 doc = wildcards.doc
             else:
                 doc = wildcards.doc[len(paths.annotation_dir) + 1:]
@@ -274,6 +275,8 @@ def make_rule(module_name, f_name, desc, f, importer, exporter, source_type, imp
         target_name = module_name + ":" + f_name
         if exporter:
             export_targets.append((target_name, desc))
+        elif installer:
+            install_targets.append((target_name, desc))
         else:
             named_targets.append((target_name, desc))
         @workflow.rule(name=target_name)
@@ -304,8 +307,8 @@ registry.annotation_classes["config_classes"] = sparv_config.config.get("classes
 # Create rules for all available annotation functions
 for module_name in registry.annotators:
     for f_name in registry.annotators[module_name]:
-        f, desc, importer, exporter, source_type, outputs = registry.annotators[module_name][f_name]
-        make_rule(module_name, f_name, desc, f, importer, exporter, source_type, outputs)
+        f, desc, importer, exporter, installer, source_type, outputs = registry.annotators[module_name][f_name]
+        make_rule(module_name, f_name, desc, f, importer, exporter, installer, source_type, outputs)
 
 # Rule to list all config options and their current values
 rule config:
@@ -364,6 +367,10 @@ rule list_targets:
         print("=================\n")
         print("    EXPORTS")
         for target, desc in sorted(export_targets):
+            print("        {:{}}    {}".format(target, max_len, desc))
+        print()
+        print("    INSTALLERS")
+        for target, desc in sorted(install_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
         print()
         print("    ANNOTATIONS")

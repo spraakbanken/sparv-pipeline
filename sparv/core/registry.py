@@ -37,12 +37,13 @@ def find_modules(sparv_path, no_import=False):
     return modules
 
 
-def _annotator(description: str, name=None, importer=False, exporter=False, source_type=None, outputs=()):
-    """Return a decorator for annotator, importer and exporter functions, adding them to annotator registry."""
+def _annotator(description: str, name=None, importer=False, exporter=False, installer=False, source_type=None,
+               outputs=()):
+    """Return a decorator for annotator, importer, exporter and installer functions, adding them to annotator registry."""
     def decorator(f):
         """Add wrapped function to registry."""
         module_name = f.__module__[len(modules_path) + 1:].split(".")[0]
-        _add_to_registry(module_name, description, f, name, importer, exporter, source_type, outputs)
+        _add_to_registry(module_name, description, f, name, importer, exporter, installer, source_type, outputs)
         return f
 
     return decorator
@@ -76,7 +77,12 @@ def exporter(description: str, name=None):
     return _annotator(description, name, exporter=True)
 
 
-def _add_to_registry(module_name: str, description: str, f, name, importer, exporter, source_type, outputs):
+def installer(description: str, name=None):
+    """Return a decorator for installer functions."""
+    return _annotator(description, name, installer=True)
+
+
+def _add_to_registry(module_name: str, description: str, f, name, importer, exporter, installer, source_type, outputs):
     """Add function to annotator registry. Used by annotator."""
     for param, val in inspect.signature(f).parameters.items():
         if (val.annotation == Output or isinstance(val.default, Output)) and not val.default == inspect.Parameter.empty:
@@ -111,7 +117,7 @@ def _add_to_registry(module_name: str, description: str, f, name, importer, expo
         print("Annotator function '{}' collides with other function with same name in module '{}'.".format(f_name,
                                                                                                            module_name))
     else:
-        annotators[module_name][f_name] = (f, description, importer, exporter, source_type, outputs)
+        annotators[module_name][f_name] = (f, description, importer, exporter, installer, source_type, outputs)
 
 
 def _expand_class(cls):

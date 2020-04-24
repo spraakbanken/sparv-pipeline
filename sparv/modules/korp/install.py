@@ -7,13 +7,13 @@ import subprocess
 from glob import glob
 
 import sparv.util as util
-from sparv import Config, Corpus, ExportInput, exporter
+from sparv import Config, Corpus, ExportInput, installer
 from sparv.core import paths
 
 log = logging.getLogger(__name__)
 
 
-@exporter("Install CWB datafiles on remote host")
+@installer("Install CWB datafiles on remote host")
 def install_corpus(corpus: str = Corpus,
                    info_file: str = ExportInput("[cwb_datadir]/[id]/.info", absolute_path=True),
                    cwb_file: str = ExportInput("[corpus_registry]/[id]", absolute_path=True),
