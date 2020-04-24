@@ -5,6 +5,7 @@ import os
 import xml.etree.ElementTree as etree
 from collections import defaultdict
 from typing import Optional
+import xml.dom.minidom
 
 import sparv.util as util
 from sparv import AllDocuments, Annotation, Config, Corpus, Document, Export, ExportAnnotations, ExportInput, exporter
@@ -47,7 +48,6 @@ def pretty(doc: str = Document,
     # Create root node
     root_span = span_positions[0][2]
     root_span.set_node()
-    root_span.node.text = "\n"
     add_attrs(root_span.node, root_span.name, annotation_dict, export_names, 0)
     node_stack = [root_span]
     overlap_ids = defaultdict(int)  # Keeps track of which overlapping spans belong together
@@ -63,10 +63,6 @@ def pretty(doc: str = Document,
             # Add text if this node is a token
             if span.name == token:
                 span.node.text = word_annotation[span.index]
-            # Some formatting: add line breaks between elements
-            else:
-                span.node.text = "\n"
-            span.node.tail = "\n"
 
         # Close node
         else:
@@ -78,8 +74,14 @@ def pretty(doc: str = Document,
             else:
                 handle_overlaps(span, node_stack, docid, overlap_ids, annotation_dict, export_names)
 
-    # Write xml to file
-    etree.ElementTree(root_span.node).write(out, xml_declaration=False, method="xml", encoding=util.UTF8)
+    # Pretty formatting through minidom
+    xmlstr = xml.dom.minidom.parseString(
+        etree.tostring(root_span.node, method="xml", encoding=util.UTF8)).toprettyxml(
+        indent="  ", encoding=util.UTF8).decode()
+
+    # Write XML to file
+    with open(out, mode="w") as outfile:
+        outfile.write(xmlstr)
     log.info("Exported: %s", out)
 
 
@@ -183,7 +185,7 @@ def combined(corpus: str = Corpus,
         print('<corpus id="%s">' % corpus.replace("&", "&amp;").replace('"', "&quot;"), file=OUT)
         for infile in xml_files:
             log.info("Read: %s", infile)
-            with open(infile, "r") as IN:
+            with open(infile) as IN:
                 # Append everything but <corpus> and </corpus>
                 print(IN.read(), file=OUT)
         print("</corpus>", file=OUT)
@@ -217,7 +219,7 @@ def handle_overlaps(span, node_stack, docid, overlap_ids, annotation_dict, expor
     while node_stack[-1] != span:
         overlap_elem = node_stack.pop()
         overlap_ids[overlap_elem.name] += 1
-        overlap_attr = "%s-%s" % (docid, str(overlap_ids[overlap_elem.name]))
+        overlap_attr = "{}-{}".format(docid, overlap_ids[overlap_elem.name])
         overlap_elem.node.set("_overlap", overlap_attr)
         overlap_stack.append(overlap_elem)
     node_stack.pop()  # Close current span
@@ -226,8 +228,7 @@ def handle_overlaps(span, node_stack, docid, overlap_ids, annotation_dict, expor
     while overlap_stack:
         overlap_elem = overlap_stack.pop()
         overlap_elem.set_node(parent_node=node_stack[-1].node)
-        overlap_elem.node.text = overlap_elem.node.tail = "\n"
-        overlap_attr = "%s-%s" % (docid, str(overlap_ids[overlap_elem.name]))
+        overlap_attr = "{}-{}".format(docid, overlap_ids[overlap_elem.name])
         overlap_elem.node.set("_overlap", overlap_attr)
         node_stack.append(overlap_elem)
         add_attrs(overlap_elem.node, overlap_elem.name, annotation_dict, export_names, overlap_elem.index)
