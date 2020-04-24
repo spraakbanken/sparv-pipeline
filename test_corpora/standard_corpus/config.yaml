@@ -21,6 +21,8 @@ annotations:
   - <sentence>
   - <token>
   - <token:pos>
+  - <token:deprel>
+  - <token:dephead_ref>
   - <token>:misc.number_rel_<sentence> as ref
 
 original_annotations:
@@ -32,3 +34,5 @@ original_annotations:
 classes:
     token: segment.token
     text: text
+    "token:dephead_ref": <token>:malt.dephead_ref
+    "token:deprel": <token>:malt.deprel
