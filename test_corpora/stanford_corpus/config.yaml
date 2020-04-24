@@ -8,7 +8,6 @@ xml_elements:
 
 annotations:
   - text
-  - <text>:readability.lix
   - <sentence>
   - <token>
   - <token:pos>

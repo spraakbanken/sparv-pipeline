@@ -33,8 +33,7 @@ setuptools.setup(
         "nltk==3.4.5",
         "python-dateutil==2.8.0",
         "pyyaml==5.1.2",
-        "snakemake==5.13.0",
-        "stanfordcorenlp==3.9.1.1"
+        "snakemake==5.13.0"
     ],
     entry_points={
         "console_scripts": [

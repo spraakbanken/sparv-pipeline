@@ -11,10 +11,6 @@ import re
 import sparv.util as util
 from sparv import Annotation, Binary, Document, Language, Output, annotator
 
-# from stanfordcorenlp import StanfordCoreNLP
-
-UNDEF = "_"
-
 
 @annotator("Parse and annotate with Stanford Parser")
 def annotate(doc: str = Document,
@@ -29,18 +25,16 @@ def annotate(doc: str = Document,
              out_msd: str = Output("<token>:stanford.msd", description="Part-of-speeches from Stanford Parser"),
              out_ne: str = Output("<token>:stanford.ne", description="Named entitiy types from Stanford Parser"),
              out_deprel: str = Output("<token>:stanford.deprel", description="Dependency relations to the head"),
-             out_dephead_ref: str = Output("<token>:stanford.dephead_ref", description="Sentence-relative positions of the dependency heads"),
+             out_dephead_ref: str = Output("<token>:stanford.dephead_ref",
+                                           description="Sentence-relative positions of the dependency heads"),
              binary: str = Binary("[stanford.bin=stanford_parser]")):
     """Use Stanford Parser to parse and annotate text."""
-    # PARSER = StanfordCoreNLP(binary, memory="8g", lang=lang)
-    # props = {"annotators": "ssplit,tokenize,pos,lemma,depparse,ner", "tokenize.whitespace": "False", "ssplit.isOneSentence": "False"}
-
-    # Read sentences and corpus_text
     args = ["-cp", binary + "/*", "edu.stanford.nlp.pipeline.StanfordCoreNLP",
             "-annotators", "tokenize,ssplit,pos,lemma,depparse,ner",
             "-outputFormat", "conll"]
     process = util.system.call_binary("java", arguments=args, return_command=True)
 
+    # Read corpus_text and text_spans
     corpus_text = util.read_corpus_text(doc)
     text_spans = util.read_annotation_spans(doc, text)
 
@@ -81,24 +75,17 @@ def annotate(doc: str = Document,
     util.write_annotation(doc, out_dephead_ref, [t.dephead_ref for t in all_tokens])
     util.write_annotation(doc, out_deprel, [t.deprel for t in all_tokens])
 
-    # output = json.loads(PARSER.annotate(corpus_text, properties=props))
-    # for sentence in output["sentences"]:
-    #     pass
-    # PARSER.close()
-
 
 def _parse_output(stdout, lang):
     """Parse the conll format output from the Standford Parser."""
     sentences = []
     sentence = []
     for line in stdout.split("\n"):
-
         # Empty lines == new sentence
         if not line.strip():
             if sentence:
                 sentences.append(sentence)
                 sentence = []
-
         # Create new word with attributes
         else:
             fields = line.split("\t")
@@ -131,84 +118,3 @@ class Token(object):
         self.deprel = deprel
         self.start = start
         self.end = end
-
-
-def _get_dependencies(dependencies):
-    stanford_dep_sent = {}
-    for dependency_info in dependencies:
-        relation_name = dependency_info["dep"]
-        gov_index = int(dependency_info["governor"])
-        stanford_dep_sent[dependency_info["dependent"]] = (relation_name, gov_index)
-    return stanford_dep_sent
-
-
-def _normalize_surface(ss):
-    """Normalize words.
-
-    This is very specific to the LSI data, and has nothing to do for general-purpsoe text.
-    """
-    segs = {
-        u"ā": u"a",
-        u"Ā": u"A",
-        u"ä": u"a",
-        u"ă": u"a",
-        u"å": u"a",
-        u"ä̂": u"a",
-        u"ã": u"a",
-        u"ĭ": u"i",
-        u"ĩ": u"i",
-        u"Ḍ": u"D",
-        u"ŭ": u"u",
-        u"ē": u"e",
-        u"ӗ": u"e",
-        u"Ē": u"E",
-        u"ī": u"i",
-        u"ї": u"i",
-        "Ī": u"I",
-        u"ṅ": u"n",
-        u"ñ": u"n",
-        u"ō": u"o",
-        "Ō": u"O",
-        u"ŏ": u"o",
-        u"ö": u"o",
-        u"ö̂": u"o",
-        u"õ": u"o",
-        u"š": u"s",
-        u"Ṭ": u"T",
-        u"ū": u"u",
-        "Ū": u"U",
-        u"Ǘ": u"U",
-        u"ü": u"u",
-        u"ǚ": u"u",
-        u"ũ": u"u",
-        u"ž": u"z",
-        u"ᵃ": u"a",
-        u"ᵉ": u"e",
-        u"ⁱ": u"i",
-        u"ᵘ": u"u",
-        u"–": u"",
-        u"m̊": u"m",
-        u"°": u"o",
-        u"ö̆": u"o",
-        u"ȭ": u"o",
-        u"ǖ": u"u",
-        u"θ": u"T",
-        u"δ": u"D",
-        u"γ": u"G",
-        u"ʋ": u"V",
-        u"χ": u"X",
-        u"ϕ": u"F",
-        u"ạ": u"a",
-        u"ḍ": u"d",
-        u"ḷ": u"l",
-        u"ṇ": u"n",
-        u"ṛ": u"r",
-        u"ṣ": u"s",
-        u"ṭ": u"t",
-        u"ụ": u"u",
-        u"ż": u"z"
-    }
-
-    for k in segs.keys():
-        ss = ss.replace(k, segs[k])
-    return ss
