@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 @exporter("VRT export")
 def vrt(doc: str = Document,
         out: str = Export("vrt/{doc}.vrt"),
-        classes: str = Config("classes"),
+        token: str = Annotation("<token>"),
         word: str = Annotation("<token:word>"),
         annotations: list = ExportAnnotations,
         original_annotations: Optional[list] = Config("original_annotations"),
@@ -36,8 +36,7 @@ def vrt(doc: str = Document,
     word_annotation = list(util.read_annotation(doc, word))
 
     # Get annotation spans, annotations list etc.
-    token_name = classes.get("token")
-    annotations, token_annotations, export_names = util.get_annotation_names(doc, token_name, annotations,
+    annotations, token_annotations, export_names = util.get_annotation_names(doc, token, annotations,
                                                                              original_annotations, remove_namespaces)
     span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names)
 
@@ -45,12 +44,12 @@ def vrt(doc: str = Document,
     vrt = []
     for _pos, instruction, span in span_positions:
         # Create token line
-        if span.name == token_name and instruction == "open":
-            vrt.append(make_token_line(word_annotation[span.index], token_name, token_annotations, annotation_dict,
+        if span.name == token and instruction == "open":
+            vrt.append(make_token_line(word_annotation[span.index], token, token_annotations, annotation_dict,
                                        span.index))
 
         # Create line with structural annotation
-        elif span.name != token_name:
+        elif span.name != token:
             # Open structural element
             if instruction == "open":
                 attrs = make_attr_str(span.name, annotation_dict, export_names, span.index)
@@ -80,17 +79,17 @@ def make_attr_str(annotation, annotation_dict, export_names, index):
     return " ".join(attrs)
 
 
-def make_token_line(word, token_name, token_annotations, annotation_dict, index):
+def make_token_line(word, token, token_annotations, annotation_dict, index):
     """Create a string with the token and its annotations.
 
     Whitespace and / need to be replaced for CQP parsing to work. / is only allowed in the word itself.
     """
     line = [word.replace(" ", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")]
     for attr in token_annotations:
-        if attr not in annotation_dict[token_name]:
+        if attr not in annotation_dict[token]:
             attr_str = util.UNDEF
         else:
-            attr_str = annotation_dict[token_name][attr][index]
+            attr_str = annotation_dict[token][attr][index]
         line.append(attr_str.replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
     line = "\t".join(line)
     return util.remove_control_characters(line)
@@ -104,7 +103,7 @@ def encode(corpus: str = Corpus,
            words: str = Annotation("<token:word>", all_docs=True),
            vrtfiles: str = ExportInput("vrt/{doc}.vrt", all_docs=True),
            out: str = Export("[corpus_registry]/[id]", absolute_path=True),
-           classes: str = Config("classes"),
+           token: str = Annotation("<token>", all_docs=True),
            encoding: str = Config("cwb_encoding", paths.cwb_encoding),
            datadir: str = Config("cwb_datadir", paths.cwb_datadir),
            registry: str = Config("corpus_registry", paths.corpus_registry),
@@ -123,15 +122,14 @@ def encode(corpus: str = Corpus,
     annotations.insert(0, words)
 
     # Get annotation names
-    token_name = classes.get("token")
-    annotations, token_annotations, export_names = util.get_annotation_names(docs, token_name, annotations,
+    annotations, token_annotations, export_names = util.get_annotation_names(docs, token, annotations,
                                                                              original_annotations, remove_namespaces,
                                                                              keep_struct_refs=True)
 
     # Get VRT columns and structs
-    token_annotations = [(token_name + ":" + i) for i in token_annotations]
+    token_annotations = [(token + ":" + i) for i in token_annotations]
     columns = [export_names.get(i, i) for i in token_annotations]
-    struct_annotations = [export_names.get(i, i) for i in annotations if not i.startswith(token_name)]
+    struct_annotations = [export_names.get(i, i) for i in annotations if not i.startswith(token)]
     structs = parse_structural_attributes(struct_annotations)
 
     corpus_registry = os.path.join(registry, corpus)

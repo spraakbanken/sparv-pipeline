@@ -12,11 +12,11 @@ from sparv import AllDocuments, Annotation, Config, Corpus, Document, Export, Ex
 log = logging.getLogger(__name__)
 
 
-@exporter("XML export")
-def export(doc: str = Document,
+@exporter("XML export with one token element per line")
+def pretty(doc: str = Document,
            docid: str = Annotation("<docid>", data=True),
-           out: str = Export("[xml_export.dir=xml]/[xml_export.filename={doc}_export.xml]"),
-           classes: str = Config("classes"),
+           out: str = Export("[xml_export.dir=xml_pretty]/[xml_export.filename={doc}_export.xml]"),
+           token: str = Annotation("<token>"),
            word: str = Annotation("<token:word>"),
            annotations: list = ExportAnnotations,
            original_annotations: Optional[list] = Config("original_annotations"),
@@ -37,8 +37,7 @@ def export(doc: str = Document,
     docid = util.read_data(doc, docid)
 
     # Get annotation spans, annotations list etc.
-    token_name = classes.get("token")
-    annotations, _, export_names = util.get_annotation_names(doc, token_name, annotations, original_annotations,
+    annotations, _, export_names = util.get_annotation_names(doc, token, annotations, original_annotations,
                                                              remove_namespaces)
     span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names)
 
@@ -62,7 +61,7 @@ def export(doc: str = Document,
             node_stack.append(span)
             add_attrs(span.node, span.name, annotation_dict, export_names, span.index)
             # Add text if this node is a token
-            if span.name == token_name:
+            if span.name == token:
                 span.node.text = word_annotation[span.index]
             # Some formatting: add line breaks between elements
             else:
@@ -84,14 +83,14 @@ def export(doc: str = Document,
     log.info("Exported: %s", out)
 
 
-@exporter("XML export preserving whitespace from source file")
-def export_formatted(doc: str = Document,
-                     docid: str = Annotation("<docid>", data=True),
-                     out: str = Export("xml_formatted/[xml_export.filename_formatted={doc}_export.xml]"),
-                     classes: str = Config("classes"),
-                     annotations: list = ExportAnnotations,
-                     original_annotations: Optional[list] = Config("original_annotations"),
-                     remove_namespaces: bool = Config("remove_export_namespaces", False)):
+@exporter("XML export preserving whitespaces from source file")
+def preserve_formatting(doc: str = Document,
+                        docid: str = Annotation("<docid>", data=True),
+                        out: str = Export("xml_preserve_formatting/[xml_export.filename_formatted={doc}_export.xml]"),
+                        token: str = Annotation("<token>"),
+                        annotations: list = ExportAnnotations,
+                        original_annotations: Optional[list] = Config("original_annotations"),
+                        remove_namespaces: bool = Config("remove_export_namespaces", False)):
     """Export annotations to xml in export_dir and keep whitespaces and indentation from original file.
 
     - doc: name of the original document
@@ -107,8 +106,7 @@ def export_formatted(doc: str = Document,
     docid = util.read_data(doc, docid)
 
     # Get annotation spans, annotations list etc.
-    token_name = classes.get("token")
-    annotations, _, export_names = util.get_annotation_names(doc, token_name, annotations, original_annotations,
+    annotations, _, export_names = util.get_annotation_names(doc, token, annotations, original_annotations,
                                                              remove_namespaces)
     span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names, flatten=False)
     sorted_positions = [(pos, span[0], span[1]) for pos, spans in sorted(span_positions.items()) for span in spans]
@@ -173,10 +171,10 @@ def export_formatted(doc: str = Document,
 
 
 @exporter("Combined XML export (all results in one file)")
-def combine(corpus: str = Corpus,
-            out: str = Export("[xml_export.filename_combined=[id]_export.xml]"),
-            docs: list = AllDocuments,
-            xml_input: str = ExportInput("[xml_export.dir]/[xml_export.filename]", all_docs=True)):
+def combined(corpus: str = Corpus,
+             out: str = Export("[xml_export.filename_combined=[id]_export.xml]"),
+             docs: list = AllDocuments,
+             xml_input: str = ExportInput("[xml_export.dir]/[xml_export.filename]", all_docs=True)):
     """Combine XML export files into a single XML file."""
     xml_files = [xml_input.replace("{doc}", doc) for doc in docs]
     xml_files.sort()
