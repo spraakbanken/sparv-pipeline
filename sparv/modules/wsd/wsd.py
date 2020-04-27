@@ -117,7 +117,7 @@ def build_input(sentences, word_annotation, ref_annotation, lemgram_annotation, 
                 saldo = remove_mwe(saldo)
             row = "\t".join([ref, word, "_", lemgram, simple_lemgram, saldo])
             rows.append(row)
-        # Append empty row as sentence seperator
+        # Append empty row as sentence separator
         rows.append("\t".join(["_", "_", "_", "_", SENT_SEP, "_"]))
     return "\n".join(rows)
 

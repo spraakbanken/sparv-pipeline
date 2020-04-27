@@ -15,7 +15,7 @@ config = {}
 
 def load_config(config_file: str):
     """Read config file and parse as YAML."""
-    # Read defalult config
+    # Read default config
     if os.path.isfile(DEFAULT_CONFIG):
         with open(DEFAULT_CONFIG) as f:
             default_config = yaml.load(f, Loader=yaml.FullLoader)

@@ -70,7 +70,7 @@ def make_rule(module_name, f_name, desc, f, importer, exporter, installer, sourc
     inputs = []
     outputs = []
     parameters = {}
-    docs = []  # List of parameters refering to Document
+    docs = []  # List of parameters referring to Document
     doc_annotations = []  # List of parameters containing the {doc} wildcard
     wildcard_annotations = []  # List of parameters containing other wildcards
     if importer:

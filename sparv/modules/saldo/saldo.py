@@ -12,7 +12,7 @@ from sparv import Annotation, Config, Document, Model, Output, annotator
 
 log = logging.getLogger(__name__)
 
-# The minimun precision difference for two annotations to be considered equal
+# The minimum precision difference for two annotations to be considered equal
 PRECISION_DIFF = 0.01
 
 
