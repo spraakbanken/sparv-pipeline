@@ -3,6 +3,7 @@ import copy
 import inspect
 import os
 import re
+from collections import defaultdict
 
 import snakemake
 from snakemake.logging import logger
@@ -22,6 +23,9 @@ all_annotations = {}
 named_targets = []
 export_targets = []
 install_targets = []
+
+# Outputs from all installers, used in install_annotated_corpus
+install_outputs = defaultdict(list)
 
 # List which will contain all source files
 source_files = []
@@ -73,6 +77,7 @@ def make_rule(module_name, f_name, annotator_info) -> None:
     docs = []  # List of parameters referring to Document
     doc_annotations = []  # List of parameters containing the {doc} wildcard
     wildcard_annotations = []  # List of parameters containing other wildcards
+    target_name = module_name + ":" + f_name
 
     importer = annotator_info["type"] is registry.Annotator.importer
     exporter = annotator_info["type"] is registry.Annotator.exporter
@@ -96,8 +101,6 @@ def make_rule(module_name, f_name, annotator_info) -> None:
                     annotations_.add(util.split_annotation(annotation)[0])
                 for element in annotations_:
                     outputs.append(os.path.join(paths.annotation_dir, get_annotation_path(element)))
-    elif exporter or installer:
-        pass
 
     params = inspect.signature(annotator_info["function"]).parameters
 
@@ -106,14 +109,13 @@ def make_rule(module_name, f_name, annotator_info) -> None:
         # Output
         if isinstance(param.default, Output):
             param_value = registry.expand_variables(param.default)
+            ann_path = get_annotation_path(param_value, data=param.default.data, common=param.default.common)
             if param.default.all_docs:
-                outputs.extend(expand(os.path.join(paths.annotation_dir, get_annotation_path(param_value,
-                                                                                         data=param.default.data)),
-                                      doc=get_source_files()))
+                outputs.extend(expand(os.path.join(paths.annotation_dir, ann_path), doc=get_source_files()))
             elif param.default.common:
-                outputs.append(os.path.join(paths.annotation_dir, get_annotation_path(param_value,
-                                                                                      data=param.default.data,
-                                                                                      common=param.default.common)))
+                outputs.append(os.path.join(paths.annotation_dir, ann_path))
+                if installer:
+                    install_outputs[target_name].append(os.path.join(paths.annotation_dir, ann_path))
             else:
                 outputs.append(get_annotation_path(param_value, data=param.default.data))
             parameters[param_name] = param_value
@@ -125,21 +127,16 @@ def make_rule(module_name, f_name, annotator_info) -> None:
         # Annotation
         elif registry.dig(Annotation, param.default):
             param_value = registry.expand_variables(param.default)
+            ann_path = get_annotation_path(param_value, data=param.default.data, common=param.default.common)
             if exporter or installer or param.default.all_docs:
                 if param.default.all_docs:
-                    inputs.extend(expand(os.path.join(paths.annotation_dir, get_annotation_path(param_value,
-                                                                                         data=param.default.data)),
-                                         doc=get_source_files()))
+                    inputs.extend(expand(os.path.join(paths.annotation_dir, ann_path), doc=get_source_files()))
                 else:
-                    inputs.append(os.path.join(paths.annotation_dir, get_annotation_path(param_value,
-                                                                                         data=param.default.data,
-                                                                                         common=param.default.common)))
+                    inputs.append(os.path.join(paths.annotation_dir, ann_path))
             elif param.default.common:
-                inputs.append(os.path.join(
-                    paths.annotation_dir,
-                    get_annotation_path(param_value, data=param.default.data, common=param.default.common)))
+                inputs.append(os.path.join(paths.annotation_dir, ann_path))
             else:
-                inputs.append(get_annotation_path(param_value, data=param.default.data, common=param.default.common))
+                inputs.append(ann_path)
 
                 # Add @text as requirement for all rules with non-data Annotation dependencies
                 text_file = get_annotation_path(util.TEXT_FILE, data=True)
@@ -281,7 +278,6 @@ def make_rule(module_name, f_name, annotator_info) -> None:
 
     # Create rule to run this annotation on all input files, but skip rules containing wildcards
     if not any(re.search(r"(?!{doc}){[^}]+}", o) for o in outputs):
-        target_name = module_name + ":" + f_name
         if exporter:
             export_targets.append((target_name, description))
         elif installer:
@@ -413,3 +409,13 @@ rule clean:
                 print(to_remove, "directory removed")
             else:
                 print("Nothing to remove")
+
+
+# Collect files to be created for all installations listed in config.install
+install_inputs = []
+for installation in sparv_config.config.get("install"):
+    install_inputs.extend(install_outputs[installation])
+
+rule install_annotated_corpus:
+    input:
+        install_inputs

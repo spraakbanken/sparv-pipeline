@@ -28,6 +28,9 @@ def install_corpus(corpus: str = Corpus,
     if not corpus:
         raise(Exception("Missing corpus name. Corpus not installed."))
 
+    if not host:
+        raise(Exception("No host provided! Corpus not installed."))
+
     target = os.path.join(target_datadir, corpus) if target_datadir else None
     util.system.rsync(os.path.join(datadir, corpus), host, target)
 

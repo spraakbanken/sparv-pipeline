@@ -37,3 +37,9 @@ export_original_path: ""
 
 # Database name for relations, lemgram index and timespan
 mysql_dbname: ""
+
+# Installations to be made when running `sparv install`
+install:
+    - "korp:install_corpus"
+    - "korp:install_relations"
+    - "korp:install_timespan"

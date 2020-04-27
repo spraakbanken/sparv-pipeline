@@ -48,6 +48,10 @@ def main():
     clean_parser.add_argument("--export", action="store_true", help="Remove export directory.")
 
     subparsers.add_parser("files", help="List available input files.")
+    install_parser = subparsers.add_parser("install", help="Install annotated corpus on remote server.")
+    install_parser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel.",
+                                default=1)
+    install_parser.add_argument("-n", "--dry-run", action="store_true", help="Only dry-run the workflow.")
     subparsers.add_parser("annotations", help="List available modules and annotations.")
     subparsers.add_parser("config", help="Display corpus config.")
     subparsers.add_parser("run", help="Run annotator module independently.", add_help=False)
@@ -93,6 +97,13 @@ def main():
 
         if args.log:
             use_progressbar = False
+
+    elif args.command == "install":
+        snakemake_args.update({
+            "dryrun": args.dry_run,
+            "cores": args.cores,
+            "targets": ["install_annotated_corpus"]
+        })
 
     if simple_target:
         # Disable progressbar for simple targets, and force Snakemake to use threads to prevent unnecessary processes
