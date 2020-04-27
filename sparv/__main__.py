@@ -27,18 +27,19 @@ def main():
                                      allow_abbrev=False)
 
     parser.add_argument("--version", action="version", version=f"Sparv Pipeline v{__version__}")
+    parser.add_argument("-d", "--dir", help="Specify corpus directory.")
 
     subparsers = parser.add_subparsers(dest="command", title="commands")
     subparsers.required = True
 
     target_parser = subparsers.add_parser("target", help="Create specified annotation(s) or annotation file(s).")
     target_parser.add_argument("targets", nargs="*", help="Annotation(s) or annotation file(s) to create.")
-    target_parser.add_argument("--dir", help="Path to working directory.")
-    target_parser.add_argument("--file", nargs="+", default=[],
+    target_parser.add_argument("-f", "--file", nargs="+", default=[],
                                help="When target is an annotation, only annotate specified input file(s).")
-    target_parser.add_argument("--cores", type=int, help="Number of cores to use.", default=1)
-    target_parser.add_argument("--log", action="store_true", help="Show log instead of progress bar.")
-    target_parser.add_argument("--dry-run", action="store_true", help="Only dry-run the workflow.")
+    target_parser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel.",
+                               default=1)
+    target_parser.add_argument("-l", "--log", action="store_true", help="Show log instead of progress bar.")
+    target_parser.add_argument("-n", "--dry-run", action="store_true", help="Only dry-run the workflow.")
     target_parser.add_argument("--list-targets", action="store_true", help="List available targets.")
     target_parser.add_argument("--debug", action="store_true", help="Show debug messages.")
 
@@ -62,7 +63,7 @@ def main():
     else:
         args = parser.parse_args()
 
-    snakemake_args = {}
+    snakemake_args = {"workdir": args.dir}
     config = {"run_by_sparv": True}
     use_progressbar = True
     simple_target = False
@@ -73,12 +74,11 @@ def main():
         if args.command == "clean":
             config["export"] = args.export
     elif args.command == "target":
-        snakemake_args = {
-            "workdir": args.dir,
+        snakemake_args.update({
             "dryrun": args.dry_run,
             "cores": args.cores,
             "targets": args.targets
-        }
+        })
 
         config.update({"debug": args.debug, "file": args.file, "log": args.log})
 
