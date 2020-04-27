@@ -8,7 +8,7 @@ import snakemake
 from snakemake.logging import logger
 
 from sparv import __version__
-from sparv.core import progressbar
+from sparv.core import progressbar, paths
 from sparv.core.paths import sparv_path
 
 # Check Python version
@@ -66,6 +66,11 @@ def main():
         sys.exit()
     else:
         args = parser.parse_args()
+
+    # Check that a corpus config file is available in the working dir
+    if not os.path.isfile(os.path.join(args.dir or os.getcwd(), paths.config_file)):
+        print(f"No config file ({paths.config_file}) found in working directory.")
+        sys.exit(1)
 
     snakemake_args = {"workdir": args.dir}
     config = {"run_by_sparv": True}

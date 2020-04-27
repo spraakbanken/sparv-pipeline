@@ -3,6 +3,7 @@ import copy
 import inspect
 import os
 import re
+import sys
 from collections import defaultdict
 
 import snakemake
@@ -302,7 +303,7 @@ rule empty:
 corpus_config_file = os.path.join(os.getcwd(), paths.config_file)
 if not os.path.isfile(corpus_config_file):
     print("No corpus config file found.")
-    corpus_config_file = None
+    sys.exit(1)
 
 # Read config file(s)
 sparv_config.load_config(corpus_config_file)
