@@ -11,8 +11,6 @@ from sparv import (AllDocuments, Annotation, Config, Corpus, Document, Export, E
                    installer)
 from sparv.util.mysql_wrapper import MySQL
 
-from . import install
-
 log = logging.getLogger(__name__)
 
 MAX_STRING_LENGTH = 100
@@ -34,7 +32,7 @@ def install_relations(sqlfile: str = ExportInput("korp_wordpicture/relations.sql
         db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname", "").
         host (str, optional): Remote host to install to. Defaults to Config("remote_host", "").
     """
-    install.install_mysql(host, db_name, sqlfile)
+    util.install_mysql(host, db_name, sqlfile)
     util.write_common_data(out, "")
 
 

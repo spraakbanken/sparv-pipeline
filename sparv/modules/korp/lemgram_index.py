@@ -8,8 +8,6 @@ from sparv import Annotation, Config, Corpus, Export, ExportInput, Output, expor
 from sparv.core import paths
 from sparv.util.mysql_wrapper import MySQL
 
-from . import install
-
 log = logging.getLogger(__name__)
 
 # Path to the cwb-scan-corpus binary
@@ -31,7 +29,7 @@ def install_lemgrams(sqlfile: str = ExportInput("korp_lemgramindex/lemgram_index
         db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname", "").
         host (str, optional): Remote host to install to. Defaults to Config("remote_host", "").
     """
-    install.install_mysql(host, db_name, sqlfile)
+    util.install_mysql(host, db_name, sqlfile)
     util.write_common_data(out, "")
 
 

@@ -3,8 +3,6 @@
 import logging
 import os
 import re
-import subprocess
-from glob import glob
 
 import sparv.util as util
 from sparv import Config, Corpus, ExportInput, installer
@@ -50,56 +48,3 @@ def install_corpus(corpus: str = Corpus,
     util.system.rsync(source_registry_file, host, target_registry_file)
     if target_registry:
         os.remove(os.path.join(registry, corpus + ".tmp"))
-
-
-def install_file(host, local_file, remote_file):
-    """Rsync a file to a target host."""
-    util.system.rsync(local_file, host, remote_file)
-
-
-def install_directory(host, directory):
-    """Rsync every file from local directory to target host.
-
-    Target path is extracted from filenames by replacing "#" with "/".
-    """
-    for local in glob(os.path.join(directory, '*')):
-        remote = os.path.basename(local).replace("#", "/")
-        util.system.rsync(local, host, remote)
-
-
-def install_mysql(host, db_name, sqlfile):
-    """Insert tables and data from local SQL-file to remote MySQL database.
-
-    sqlfile may be a whitespace separated list of SQL-files.
-    """
-    if not host:
-        raise(Exception("No host provided! Installations aborted."))
-
-    sqlfiles = sqlfile.split()
-    file_count = 0
-    file_total = len(sqlfiles)
-
-    for sqlf in sqlfiles:
-        file_count += 1
-        if not os.path.exists(sqlf):
-            log.error("Missing SQL file: %s", sqlf)
-        elif os.path.getsize(sqlf) < 10:
-            log.info("Skipping empty file: %s (%d/%d)", sqlf, file_count, file_total)
-        else:
-            log.info("Installing MySQL database: %s, source: %s (%d/%d)", db_name, sqlf, file_count, file_total)
-            subprocess.check_call('cat %s | ssh %s "mysql %s"' % (sqlf, host, db_name), shell=True)
-
-
-def install_mysql_dump(host, db_name, tables):
-    """Copy selected tables (including data) from local to remote MySQL database."""
-    if isinstance(tables, str):
-        tables = tables.split()
-    log.info("Copying MySQL database: %s, tables: %s", db_name, ", ".join(tables))
-    subprocess.check_call('mysqldump %s %s | ssh %s "mysql %s"' %
-                          (db_name, " ".join(tables), host, db_name), shell=True)
-
-
-if __name__ == '__main__':
-    util.run.main(dir=install_directory,
-                  file=install_file,
-                  mysql=install_mysql)
