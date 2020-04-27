@@ -51,6 +51,7 @@ def pretty(doc: str = Document,
     add_attrs(root_span.node, root_span.name, annotation_dict, export_names, 0)
     node_stack = [root_span]
     overlap_ids = defaultdict(int)  # Keeps track of which overlapping spans belong together
+    total_overlaps = 0
 
     # Go through span_positions and build xml tree
     for _pos, instruction, span in span_positions[1:]:
@@ -72,7 +73,8 @@ def pretty(doc: str = Document,
 
             # Handle overlapping spans
             else:
-                handle_overlaps(span, node_stack, docid, overlap_ids, annotation_dict, export_names)
+                total_overlaps = handle_overlaps(span, node_stack, docid, overlap_ids, total_overlaps, annotation_dict,
+                                                 export_names)
 
     # Pretty formatting through minidom
     xmlstr = xml.dom.minidom.parseString(
@@ -122,6 +124,7 @@ def preserve_formatting(doc: str = Document,
     node_stack = []
     last_pos = 0  # Keeps track of the position of the processed text
     overlap_ids = defaultdict(int)  # Keeps track of which overlapping spans belong together
+    total_overlaps = 0
 
     for x, (_pos, instruction, span) in enumerate(sorted_positions):
 
@@ -165,7 +168,8 @@ def preserve_formatting(doc: str = Document,
                 node_stack.pop()
             # Handle overlapping spans
             else:
-                handle_overlaps(span, node_stack, docid, overlap_ids, annotation_dict, export_names)
+                total_overlaps = handle_overlaps(span, node_stack, docid, overlap_ids, total_overlaps, annotation_dict,
+                                                 export_names)
 
     # Write xml to file
     etree.ElementTree(root_span.node).write(out, xml_declaration=False, method="xml", encoding=util.UTF8)
@@ -212,13 +216,14 @@ def add_attrs(node, annotation, annotation_dict, export_names, index):
         node.set(export_name, annot[index])
 
 
-def handle_overlaps(span, node_stack, docid, overlap_ids, annotation_dict, export_names):
+def handle_overlaps(span, node_stack, docid, overlap_ids, total_overlaps, annotation_dict, export_names):
     """Close and open overlapping spans in correct order and add IDs to them."""
     overlap_stack = []
     # Close all overlapping spans and add and _overlap attribute to them
     while node_stack[-1] != span:
         overlap_elem = node_stack.pop()
-        overlap_ids[overlap_elem.name] += 1
+        total_overlaps += 1
+        overlap_ids[overlap_elem.name] += total_overlaps
         overlap_attr = "{}-{}".format(docid, overlap_ids[overlap_elem.name])
         overlap_elem.node.set("_overlap", overlap_attr)
         overlap_stack.append(overlap_elem)
@@ -232,3 +237,5 @@ def handle_overlaps(span, node_stack, docid, overlap_ids, annotation_dict, expor
         overlap_elem.node.set("_overlap", overlap_attr)
         node_stack.append(overlap_elem)
         add_attrs(overlap_elem.node, overlap_elem.name, annotation_dict, export_names, overlap_elem.index)
+    
+    return total_overlaps
