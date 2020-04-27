@@ -5,7 +5,7 @@ import os
 import re
 
 import sparv.util as util
-from sparv import Config, Corpus, ExportInput, installer
+from sparv import Config, Corpus, ExportInput, Output, installer
 from sparv.core import paths
 
 log = logging.getLogger(__name__)
@@ -15,6 +15,7 @@ log = logging.getLogger(__name__)
 def install_corpus(corpus: str = Corpus,
                    info_file: str = ExportInput("[cwb_datadir]/[id]/.info", absolute_path=True),
                    cwb_file: str = ExportInput("[corpus_registry]/[id]", absolute_path=True),
+                   out: str = Output("korp.time_install_corpus", data=True, common=True),
                    host: str = Config("remote_host", ""),
                    datadir: str = Config("cwb_datadir", paths.cwb_datadir),
                    registry: str = Config("corpus_registry", paths.corpus_registry),
@@ -48,3 +49,6 @@ def install_corpus(corpus: str = Corpus,
     util.system.rsync(source_registry_file, host, target_registry_file)
     if target_registry:
         os.remove(os.path.join(registry, corpus + ".tmp"))
+
+    # Write timestamp file
+    util.write_common_data(out, "")
