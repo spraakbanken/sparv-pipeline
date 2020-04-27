@@ -4,15 +4,35 @@ import logging
 import subprocess
 
 import sparv.util as util
-from sparv import Config, Corpus, Export, exporter
+from sparv import Config, Corpus, Export, ExportInput, Output, exporter, installer
 from sparv.core import paths
 from sparv.util.mysql_wrapper import MySQL
+
+from . import install
 
 log = logging.getLogger(__name__)
 
 # Path to the cwb-scan-corpus binary
 CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
 CQP_EXECUTABLE = "cqp"
+
+
+@installer("Install timespan SQL on remote host")
+def install_timespan(sqlfile: str = ExportInput("korp_timespan/timespan.sql"),
+                     out: str = Output("korp.time_install_timespan", data=True, common=True),
+                     db_name: str = Config("korp.mysql_dbname", ""),
+                     host: str = Config("remote_host", "")):
+    """Install timespan SQL on remote host.
+
+    Args:
+        sqlfile (str, optional): SQL file to be installed. Defaults to ExportInput("korp_timespan/timespan.sql").
+        out (str, optional): Timestamp file to be written.
+            Defaults to Output("korp.time_install_relations", data=True, common=True).
+        db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname", "").
+        host (str, optional): Remote host to install to. Defaults to Config("remote_host", "").
+    """
+    install.install_mysql(host, db_name, sqlfile)
+    util.write_common_data(out, "")
 
 
 @exporter("Create timespan SQL data for use in Korp")

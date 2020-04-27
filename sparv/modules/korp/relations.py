@@ -7,14 +7,35 @@ from collections import defaultdict
 from typing import Optional
 
 import sparv.util as util
-from sparv import AllDocuments, Annotation, Config, Corpus, Document, Export, Output, annotator, exporter
+from sparv import (AllDocuments, Annotation, Config, Corpus, Document, Export, ExportInput, Output, annotator, exporter,
+                   installer)
 from sparv.util.mysql_wrapper import MySQL
+
+from . import install
 
 log = logging.getLogger(__name__)
 
 MAX_STRING_LENGTH = 100
 MAX_STRINGEXTRA_LENGTH = 32
 MAX_POS_LENGTH = 5
+
+
+@installer("Install Korp's Word Picture SQL on remote host")
+def install_relations(sqlfile: str = ExportInput("korp_wordpicture/relations.sql"),
+                      out: str = Output("korp.time_install_relations", data=True, common=True),
+                      db_name: str = Config("korp.mysql_dbname", ""),
+                      host: str = Config("remote_host", "")):
+    """Install Korp's Word Picture SQL on remote host.
+
+    Args:
+        sqlfile (str, optional): SQL file to be installed. Defaults to ExportInput("korp_wordpicture/relations.sql").
+        out (str, optional): Timestamp file to be written.
+            Defaults to Output("korp.time_install_relations", data=True, common=True).
+        db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname", "").
+        host (str, optional): Remote host to install to. Defaults to Config("remote_host", "").
+    """
+    install.install_mysql(host, db_name, sqlfile)
+    util.write_common_data(out, "")
 
 
 @annotator("Find dependencies for Korp's Word Picture")
@@ -174,7 +195,6 @@ def _mutate_triple(triple):
 
     Also remove multi-words which are in both head and dep, and remove the :nn part from words.
     """
-
     head, rel, dep, extra, sentid, refhead, refdep = triple
 
     triples = []
@@ -208,7 +228,7 @@ def _mutate_triple(triple):
             if int(r) <= int(extra[1]) <= int(dep[3]):
                 try:
                     parts["dep"].remove(w)
-                except:
+                except Exception:
                     pass
 
     if extra[0].startswith("|") and extra[0].endswith("|"):
@@ -495,16 +515,15 @@ rel_enum = "ENUM(%s)" % ", ".join("'%s'" % r for r in RELNAMES)
 
 MYSQL_TABLE = "relations"
 
-MYSQL_RELATIONS = {"columns": [
-                               ("id",     int, 0, "NOT NULL"),
-                               ("head",   int, 0, "NOT NULL"),
-                               ("rel",    rel_enum, RELNAMES[0], "NOT NULL"),
-                               ("dep",    int, 0, "NOT NULL"),
-                               ("freq",   int, 0, "NOT NULL"),
+MYSQL_RELATIONS = {"columns": [("id", int, 0, "NOT NULL"),
+                               ("head", int, 0, "NOT NULL"),
+                               ("rel", rel_enum, RELNAMES[0], "NOT NULL"),
+                               ("dep", int, 0, "NOT NULL"),
+                               ("freq", int, 0, "NOT NULL"),
                                ("bfhead", "BOOL", None, ""),
-                               ("bfdep",  "BOOL", None, ""),
+                               ("bfdep", "BOOL", None, ""),
                                ("wfhead", "BOOL", None, ""),
-                               ("wfdep",  "BOOL", None, "")],
+                               ("wfdep", "BOOL", None, "")],
                    "primary": "head wfhead dep rel freq id",
                    "indexes": ["dep wfdep head rel freq id",
                                "head dep bfhead bfdep rel freq id",
@@ -515,11 +534,10 @@ MYSQL_RELATIONS = {"columns": [
                    # "collate": "utf8_bin"
                    }
 
-MYSQL_STRINGS = {"columns": [
-                             ("id",          int, 0, "NOT NULL"),
-                             ("string",      "varchar(%d)" % MAX_STRING_LENGTH, "", "NOT NULL"),
+MYSQL_STRINGS = {"columns": [("id", int, 0, "NOT NULL"),
+                             ("string", "varchar(%d)" % MAX_STRING_LENGTH, "", "NOT NULL"),
                              ("stringextra", "varchar(%d)" % MAX_STRINGEXTRA_LENGTH, "", "NOT NULL"),
-                             ("pos",         "varchar(%d)" % MAX_POS_LENGTH, "", "NOT NULL")],
+                             ("pos", "varchar(%d)" % MAX_POS_LENGTH, "", "NOT NULL")],
                  "primary": "string id pos stringextra",
                  "indexes": ["id string pos stringextra"],
                  "default charset": "utf8",

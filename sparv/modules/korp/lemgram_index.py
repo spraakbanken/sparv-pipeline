@@ -4,14 +4,35 @@ import logging
 import subprocess
 
 import sparv.util as util
-from sparv import Config, Corpus, Export, exporter, Annotation
+from sparv import Annotation, Config, Corpus, Export, ExportInput, Output, exporter, installer
 from sparv.core import paths
 from sparv.util.mysql_wrapper import MySQL
+
+from . import install
 
 log = logging.getLogger(__name__)
 
 # Path to the cwb-scan-corpus binary
 CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
+
+
+# @installer("Install lemgram SQL on remote host")
+def install_lemgrams(sqlfile: str = ExportInput("korp_lemgramindex/lemgram_index.sql"),
+                     out: str = Output("korp.time_install_lemgram", data=True, common=True),
+                     db_name: str = Config("korp.mysql_dbname", ""),
+                     host: str = Config("remote_host", "")):
+    """Install lemgram SQL on remote host.
+
+    Args:
+        sqlfile (str, optional): SQL file to be installed.
+            Defaults to ExportInput("korp_lemgramindex/lemgram_index.sql").
+        out (str, optional): Timestamp file to be written.
+            Defaults to Output("korp.time_install_lemgram", data=True, common=True).
+        db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname", "").
+        host (str, optional): Remote host to install to. Defaults to Config("remote_host", "").
+    """
+    install.install_mysql(host, db_name, sqlfile)
+    util.write_common_data(out, "")
 
 
 # TODO: Korp search for complemgram needs to be fixed before this can be re-written
