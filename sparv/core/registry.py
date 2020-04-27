@@ -5,12 +5,22 @@ import os
 import pkgutil
 import re
 from collections import defaultdict
+from enum import Enum
 
 from sparv.core import config, paths
 from sparv.util import split_annotation
 from sparv.util.classes import Output
 
 modules_path = ".".join(("sparv", paths.modules_dir))
+
+
+class Annotator(Enum):
+    """Annotator types."""
+    annotator = 1
+    importer = 2
+    exporter = 3
+    installer = 4
+
 
 # All available annotator functions
 annotators = {}
@@ -25,8 +35,19 @@ annotation_classes = {
 }
 
 
-def find_modules(sparv_path, no_import=False):
-    """Find Sparv modules and optionally import them."""
+def find_modules(sparv_path, no_import=False) -> list:
+    """Find Sparv modules and optionally import them.
+
+    By importing a module containing annotator functions, the functions will automatically be
+    added to the registry.
+
+    Args:
+        sparv_path: Path to sparv package.
+        no_import: Set to True to disable importing of modules.
+
+    Returns:
+        A list of available module names.
+    """
     modules_full_path = os.path.join(sparv_path, paths.modules_dir)
     found_modules = pkgutil.iter_modules([modules_full_path])
     modules = []
@@ -37,13 +58,20 @@ def find_modules(sparv_path, no_import=False):
     return modules
 
 
-def _annotator(description: str, name=None, importer=False, exporter=False, installer=False, source_type=None,
-               outputs=()):
+def _annotator(description: str, a_type: Annotator, name=None, source_type=None, outputs=()):
     """Return a decorator for annotator, importer, exporter and installer functions, adding them to annotator registry."""
     def decorator(f):
         """Add wrapped function to registry."""
         module_name = f.__module__[len(modules_path) + 1:].split(".")[0]
-        _add_to_registry(module_name, description, f, name, importer, exporter, installer, source_type, outputs)
+        _add_to_registry({
+            "module_name": module_name,
+            "description": description,
+            "function": f,
+            "name": name,
+            "type": a_type,
+            "source_type": source_type,
+            "outputs": outputs
+        })
         return f
 
     return decorator
@@ -51,7 +79,7 @@ def _annotator(description: str, name=None, importer=False, exporter=False, inst
 
 def annotator(description: str, name=None):
     """Return a decorator for annotator functions, adding them to the annotator registry."""
-    return _annotator(description, name)
+    return _annotator(description=description, a_type=Annotator.annotator, name=name)
 
 
 def importer(description: str, source_type: str, name=None, outputs=None):
@@ -69,22 +97,24 @@ def importer(description: str, source_type: str, name=None, outputs=None):
     Returns:
         A decorator
     """
-    return _annotator(description, name, importer=True, source_type=source_type, outputs=outputs)
+    return _annotator(description=description, a_type=Annotator.importer, name=name, source_type=source_type,
+                      outputs=outputs)
 
 
 def exporter(description: str, name=None):
     """Return a decorator for exporter functions."""
-    return _annotator(description, name, exporter=True)
+    return _annotator(description=description, a_type=Annotator.exporter, name=name)
 
 
 def installer(description: str, name=None):
     """Return a decorator for installer functions."""
-    return _annotator(description, name, installer=True)
+    return _annotator(description=description, a_type=Annotator.installer, name=name)
 
 
-def _add_to_registry(module_name: str, description: str, f, name, importer, exporter, installer, source_type, outputs):
+def _add_to_registry(annotator):
     """Add function to annotator registry. Used by annotator."""
-    for param, val in inspect.signature(f).parameters.items():
+    module_name = annotator["module_name"]
+    for param, val in inspect.signature(annotator["function"]).parameters.items():
         if (val.annotation == Output or isinstance(val.default, Output)) and not val.default == inspect.Parameter.empty:
             ann = val.default
             cls = val.default.cls
@@ -112,12 +142,14 @@ def _add_to_registry(module_name: str, description: str, f, name, importer, expo
                     print("Malformed class name: '{}'".format(cls))
 
     annotators.setdefault(module_name, {})
-    f_name = f.__name__ if not name else name
+    f_name = annotator["function"].__name__ if not annotator["name"] else annotator["name"]
     if f_name in annotators[module_name]:
         print("Annotator function '{}' collides with other function with same name in module '{}'.".format(f_name,
                                                                                                            module_name))
     else:
-        annotators[module_name][f_name] = (f, description, importer, exporter, installer, source_type, outputs)
+        del annotator["module_name"]
+        del annotator["name"]
+        annotators[module_name][f_name] = annotator
 
 
 def _expand_class(cls):

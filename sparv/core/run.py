@@ -40,7 +40,9 @@ def main(argv=None):
     subparsers.required = True
 
     for f_name in registry.annotators[module_name]:
-        f, _description, *_ = registry.annotators[module_name][f_name]
+        annotator = registry.annotators[module_name][f_name]
+        f = annotator["function"]
+        _description = annotator["description"]
         subparser = subparsers.add_parser(f_name, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         subparser.set_defaults(f_=f)
         required_args = subparser.add_argument_group("required named arguments")

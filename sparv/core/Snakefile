@@ -60,7 +60,7 @@ def get_source_files() -> List[str]:
     return source_files
 
 
-def make_rule(module_name, f_name, desc, f, importer, exporter, installer, source_type, import_outputs) -> None:
+def make_rule(module_name, f_name, annotator_info) -> None:
     """Build Snakemake rules."""
     # Build input, output and parameter list
     if config.get("debug"):
@@ -73,6 +73,14 @@ def make_rule(module_name, f_name, desc, f, importer, exporter, installer, sourc
     docs = []  # List of parameters referring to Document
     doc_annotations = []  # List of parameters containing the {doc} wildcard
     wildcard_annotations = []  # List of parameters containing other wildcards
+
+    importer = annotator_info["type"] is registry.Annotator.importer
+    exporter = annotator_info["type"] is registry.Annotator.exporter
+    installer = annotator_info["type"] is registry.Annotator.installer
+    description = annotator_info["description"]
+    source_type = annotator_info["source_type"]
+    import_outputs = annotator_info["outputs"]
+
     if importer:
         inputs.append(os.path.join(get_source_path(), "{doc}." + source_type))
         if source_type == sparv_config.get("source_type", "xml"):
@@ -91,7 +99,7 @@ def make_rule(module_name, f_name, desc, f, importer, exporter, installer, sourc
     elif exporter or installer:
         pass
 
-    params = inspect.signature(f).parameters
+    params = inspect.signature(annotator_info["function"]).parameters
 
     # Go though function parameters and handle based on type
     for param_name, param in params.items():
@@ -111,7 +119,8 @@ def make_rule(module_name, f_name, desc, f, importer, exporter, installer, sourc
             parameters[param_name] = param_value
             if "{" in param_value:
                 wildcard_annotations.append(param_name)
-            all_annotations.setdefault(module_name, {}).setdefault(f_name, {"description": desc, "annotations": []})
+            all_annotations.setdefault(module_name, {}).setdefault(f_name, {"description": description,
+                                                                            "annotations": []})
             all_annotations[module_name][f_name]["annotations"].append((param.default, param.default.description))
         # Annotation
         elif registry.dig(Annotation, param.default):
@@ -274,11 +283,11 @@ def make_rule(module_name, f_name, desc, f, importer, exporter, installer, sourc
     if not any(re.search(r"(?!{doc}){[^}]+}", o) for o in outputs):
         target_name = module_name + ":" + f_name
         if exporter:
-            export_targets.append((target_name, desc))
+            export_targets.append((target_name, description))
         elif installer:
-            install_targets.append((target_name, desc))
+            install_targets.append((target_name, description))
         else:
-            named_targets.append((target_name, desc))
+            named_targets.append((target_name, description))
         @workflow.rule(name=target_name)
         @workflow.input(expand([os.path.join(paths.annotation_dir, o)
                                 if not (o.startswith(paths.annotation_dir) or o.startswith(paths.export_dir))
@@ -307,8 +316,8 @@ registry.annotation_classes["config_classes"] = sparv_config.config.get("classes
 # Create rules for all available annotation functions
 for module_name in registry.annotators:
     for f_name in registry.annotators[module_name]:
-        f, desc, importer, exporter, installer, source_type, outputs = registry.annotators[module_name][f_name]
-        make_rule(module_name, f_name, desc, f, importer, exporter, installer, source_type, outputs)
+        annotator = registry.annotators[module_name][f_name]
+        make_rule(module_name, f_name, annotator)
 
 # Rule to list all config options and their current values
 rule config:

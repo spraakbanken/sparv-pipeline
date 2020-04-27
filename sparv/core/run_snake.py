@@ -9,7 +9,7 @@ from sparv.core.registry import annotators
 # The snakemake variable is provided by Snakemake. The below is just to get fewer errors in editor.
 try:
     snakemake
-except:
+except NameError:
     snakemake = None
 
 # Import module
@@ -26,4 +26,4 @@ logger = logging.getLogger("sparv")
 logger.info("RUN: %s(%s)", f_name, ", ".join("%s=%s" % (i[0], repr(i[1])) for i in list(parameters.items())))
 
 # Execute function
-annotators[module_name][f_name][0](**parameters)
+annotators[module_name][f_name]["function"](**parameters)
