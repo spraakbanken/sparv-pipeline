@@ -11,17 +11,29 @@ from sparv import Annotation, Document, Output, annotator
 START_DEFAULT = 1
 
 
-def number_by_position(doc, out, chunk, prefix="", zfill=False, start=START_DEFAULT):
+@annotator("Number {annotation} by position")
+def number_by_position(doc: str = Document,
+                       out: str = Output("{annotation}:misc.number_position"),
+                       chunk: str = Annotation("{annotation}"),
+                       prefix: str = "",
+                       zfill: bool = False,
+                       start: int = START_DEFAULT):
     """Number chunks by their position."""
     spans = list(util.read_annotation_spans(doc, chunk))
 
     def _order(index, _value):
         return spans[index]
 
-    read_chunks_and_write_new_ordering(doc, out, chunk, _order, prefix, zfill, start)
+    _read_chunks_and_write_new_ordering(doc, out, chunk, _order, prefix, zfill, start)
 
 
-def number_by_random(doc, out, chunk, prefix="", zfill=False, start=START_DEFAULT):
+@annotator("Number {annotation} randomly")
+def number_random(doc: str = Document,
+                  out: str = Output("{annotation}:misc.number_random"),
+                  chunk: str = Annotation("{annotation}"),
+                  prefix: str = "",
+                  zfill: bool = False,
+                  start: int = START_DEFAULT):
     """Number chunks randomly.
 
     Uses index as random seed.
@@ -30,15 +42,15 @@ def number_by_random(doc, out, chunk, prefix="", zfill=False, start=START_DEFAUL
         random.seed(int(hexlify(str(index).encode()), 16))
         return random.random()
 
-    read_chunks_and_write_new_ordering(doc, out, chunk, _order, prefix, zfill, start)
+    _read_chunks_and_write_new_ordering(doc, out, chunk, _order, prefix, zfill, start)
 
 
 def renumber_by_attribute(doc, out, chunk, prefix="", zfill=False, start=START_DEFAULT):
     """Renumber chunks, with the order determined by an attribute."""
     def _order(_index, value):
-        return natural_sorting(value)
+        return _natural_sorting(value)
 
-    read_chunks_and_write_new_ordering(doc, out, chunk, _order, prefix, zfill, start)
+    _read_chunks_and_write_new_ordering(doc, out, chunk, _order, prefix, zfill, start)
 
 
 def renumber_by_shuffle(doc, out, chunk, prefix="", zfill=False, start=START_DEFAULT):
@@ -48,9 +60,9 @@ def renumber_by_shuffle(doc, out, chunk, prefix="", zfill=False, start=START_DEF
     """
     def _order(_index, value):
         random.seed(int(hexlify(value.encode()), 16))
-        return random.random(), natural_sorting(value)
+        return random.random(), _natural_sorting(value)
 
-    read_chunks_and_write_new_ordering(doc, out, chunk, _order, prefix, zfill, start)
+    _read_chunks_and_write_new_ordering(doc, out, chunk, _order, prefix, zfill, start)
 
 
 def number_by_parent(doc, out, chunk, parent_order, prefix="", zfill=False, start=START_DEFAULT):
@@ -64,7 +76,7 @@ def number_by_parent(doc, out, chunk, parent_order, prefix="", zfill=False, star
     def _order(index, _value):
         return child_order.get(index)
 
-    read_chunks_and_write_new_ordering(doc, out, chunk, _order, prefix, zfill, start)
+    _read_chunks_and_write_new_ordering(doc, out, chunk, _order, prefix, zfill, start)
 
 
 @annotator("Number {annotation} by relative position within {parent}")
@@ -86,7 +98,7 @@ def number_relative(doc: str = Document,
                                      for cnr, _index in enumerate(parent, start)))
 
 
-def read_chunks_and_write_new_ordering(doc, out, chunk, order, prefix="", zfill=False, start=START_DEFAULT):
+def _read_chunks_and_write_new_ordering(doc, out, chunk, order, prefix="", zfill=False, start=START_DEFAULT):
     """Common function called by other numbering functions."""
     new_order = defaultdict(list)
 
@@ -108,7 +120,7 @@ def read_chunks_and_write_new_ordering(doc, out, chunk, order, prefix="", zfill=
     util.write_annotation(doc, out, out_annotation)
 
 
-def natural_sorting(astr):
+def _natural_sorting(astr):
     """Convert a string into a naturally sortable tuple."""
     return tuple(int(s) if s.isdigit() else s for s in re.split(r"(\d+)", astr))
 
@@ -116,10 +128,7 @@ def natural_sorting(astr):
 ######################################################################
 
 if __name__ == "__main__":
-    util.run.main(position=number_by_position,
-                  random=number_by_random,
-                  attribute=renumber_by_attribute,
+    util.run.main(attribute=renumber_by_attribute,
                   shuffle=renumber_by_shuffle,
-                  parent_annotation=number_by_parent,
-                  relative=number_relative,
+                  parent_annotation=number_by_parent
                   )
