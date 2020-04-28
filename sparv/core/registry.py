@@ -242,7 +242,7 @@ def dig(needle, haystack):
             found = dig(needle, haystack[key])
             needles.extend(found)
 
-    elif type(haystack) == needle or (type(needle) == type and haystack == needle):
+    elif type(haystack) == needle or haystack == needle:
         # We've found what we're looking for
         return [haystack]
 
