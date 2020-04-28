@@ -12,7 +12,7 @@ import sparv.util as util
 from sparv import Annotation, Binary, Document, Language, Output, annotator
 
 
-@annotator("Parse and annotate with Stanford Parser")
+@annotator("Parse and annotate with Stanford Parser", language=["eng"])
 def annotate(doc: str = Document,
              lang: str = Language,
              text: str = Annotation("<text>"),

@@ -6,6 +6,7 @@ import pkgutil
 import re
 from collections import defaultdict
 from enum import Enum
+from typing import Optional
 
 from sparv.core import config, paths
 from sparv.util import split_annotation
@@ -16,6 +17,7 @@ modules_path = ".".join(("sparv", paths.modules_dir))
 
 class Annotator(Enum):
     """Annotator types."""
+
     annotator = 1
     importer = 2
     exporter = 3
@@ -58,7 +60,8 @@ def find_modules(sparv_path, no_import=False) -> list:
     return modules
 
 
-def _annotator(description: str, a_type: Annotator, name=None, source_type=None, outputs=()):
+def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, source_type: Optional[str] = None,
+               outputs=(), language=None):
     """Return a decorator for annotator, importer, exporter and installer functions, adding them to annotator registry."""
     def decorator(f):
         """Add wrapped function to registry."""
@@ -70,19 +73,20 @@ def _annotator(description: str, a_type: Annotator, name=None, source_type=None,
             "name": name,
             "type": a_type,
             "source_type": source_type,
-            "outputs": outputs
+            "outputs": outputs,
+            "language": language
         })
         return f
 
     return decorator
 
 
-def annotator(description: str, name=None):
+def annotator(description: str, name: Optional[str] = None, language: Optional[list] = None):
     """Return a decorator for annotator functions, adding them to the annotator registry."""
-    return _annotator(description=description, a_type=Annotator.annotator, name=name)
+    return _annotator(description=description, a_type=Annotator.annotator, name=name, language=language)
 
 
-def importer(description: str, source_type: str, name=None, outputs=None):
+def importer(description: str, source_type: str, name: Optional[str] = None, outputs=None):
     """Return a decorator for importer functions.
 
     Args:
@@ -101,12 +105,12 @@ def importer(description: str, source_type: str, name=None, outputs=None):
                       outputs=outputs)
 
 
-def exporter(description: str, name=None):
+def exporter(description: str, name: Optional[str] = None):
     """Return a decorator for exporter functions."""
     return _annotator(description=description, a_type=Annotator.exporter, name=name)
 
 
-def installer(description: str, name=None):
+def installer(description: str, name: Optional[str] = None):
     """Return a decorator for installer functions."""
     return _annotator(description=description, a_type=Annotator.installer, name=name)
 
@@ -132,14 +136,17 @@ def _add_to_registry(annotator):
 
             # Add to class registry
             if cls:
-                if ":" in cls and not cls.startswith(":") and ann_name and attr:
-                    annotation_classes["module_classes"][cls].append(ann)
-                elif cls.startswith(":") and attr:
-                    annotation_classes["module_classes"][cls].append(attr)
-                elif ":" not in cls:
-                    annotation_classes["module_classes"][cls].append(ann_name)
-                else:
-                    print("Malformed class name: '{}'".format(cls))
+                # Only add classes for relevant languages
+                if not annotator["language"] or (
+                        annotator["language"] and config.get("language") in annotator["language"]):
+                    if ":" in cls and not cls.startswith(":") and ann_name and attr:
+                        annotation_classes["module_classes"][cls].append(ann)
+                    elif cls.startswith(":") and attr:
+                        annotation_classes["module_classes"][cls].append(attr)
+                    elif ":" not in cls:
+                        annotation_classes["module_classes"][cls].append(ann_name)
+                    else:
+                        print("Malformed class name: '{}'".format(cls))
 
     annotators.setdefault(module_name, {})
     f_name = annotator["function"].__name__ if not annotator["name"] else annotator["name"]
@@ -153,6 +160,10 @@ def _add_to_registry(annotator):
 
 
 def _expand_class(cls):
+    """Convert class name to annotation.
+
+    Classes from config takes precedence over classes automatically collected from modules.
+    """
     annotation = None
     if cls in annotation_classes["config_classes"]:
         annotation = annotation_classes["config_classes"][cls]

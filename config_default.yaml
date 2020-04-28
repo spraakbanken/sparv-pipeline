@@ -1,5 +1,6 @@
 
-language: "sv"
+# ISO 639-3
+language: swe
 
 source_type: xml
 

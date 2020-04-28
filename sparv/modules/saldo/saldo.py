@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 PRECISION_DIFF = 0.01
 
 
-@annotator("SALDO annotations")
+@annotator("SALDO annotations", language=["swe"])
 def annotate(doc: str = Document,
              token: str = Annotation("<token>"),
              word: str = Annotation("<token:word>"),

@@ -87,6 +87,10 @@ def make_rule(module_name, f_name, annotator_info) -> None:
     source_type = annotator_info["source_type"]
     import_outputs = annotator_info["outputs"]
 
+    # Skip any annotator that is not available for the selected corpus language
+    if annotator_info["language"] and sparv_config.get("language") not in annotator_info["language"]:
+        return
+
     if importer:
         inputs.append(os.path.join(get_source_path(), "{doc}." + source_type))
         if source_type == sparv_config.get("source_type", "xml"):

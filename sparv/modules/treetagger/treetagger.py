@@ -14,7 +14,8 @@ TAG_COLUMN = 1
 LEM_COLUMN = 2
 
 
-@annotator("Part-of-speech tags and baseforms from TreeTagger")
+@annotator("Part-of-speech tags and baseforms from TreeTagger", language=["bul", "est", "fin", "lat", "nld", "pol",
+                                                                          "ron", "slk"])
 def annotate(doc: str = Document,
              lang: str = Language,
              model: str = Model("[treetagger.model=treetagger/[language].par]"),

@@ -16,7 +16,7 @@ SPLIT_LIMIT = 200
 COMP_LIMIT = 100
 
 
-@annotator("Compound analysis", name="compound")
+@annotator("Compound analysis", name="compound", language=["swe"])
 def annotate(doc: str = Document,
              out_complemgrams: str = Output("<token>:saldo.complemgram", description="Compound analysis using lemgrams"),
              out_compwf: str = Output("<token>:saldo.compwf", description="Compound analysis using wordforms"),

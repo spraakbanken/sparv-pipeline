@@ -1,6 +1,6 @@
 id: treetagger-corpus
 name: TreeTagger test corpus
-language: nl
+language: nld
 
 # Elements and attributes from the source XML that we want to be available as input for other annotations
 xml_elements:
