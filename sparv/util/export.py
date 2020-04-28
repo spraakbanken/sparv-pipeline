@@ -100,9 +100,13 @@ def gather_annotations(doc, annotations, export_names, flatten=True):
     # Add position information to sorted_spans
     spans_dict = defaultdict(list)
     for span in sorted_spans:
-        # Append opening spans; prepend closing spans
-        spans_dict[span.start].append(("open", span))
-        spans_dict[span.end].insert(0, ("close", span))
+        if span.start == span.end:
+            spans_dict[span.start].append(("open", span))
+            spans_dict[span.end].append(("close", span))
+        else:
+            # Append opening spans; prepend closing spans
+            spans_dict[span.start].append(("open", span))
+            spans_dict[span.end].insert(0, ("close", span))
 
     # Return the span_dict without converting to list first
     if not flatten:
