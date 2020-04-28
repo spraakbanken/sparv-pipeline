@@ -61,7 +61,7 @@ def call_java(jar, arguments, options=[], stdin="", search_paths=(),
 
 def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
                 binary_names=(), encoding=None, verbose=False,
-                use_shell=False, return_command=False):
+                use_shell=False, allow_error=False, return_command=False):
     """Call a binary with arguments and stdin, return a pair (stdout, stderr).
 
     If the verbose flag is True, pipes all stderr output to stderr,
@@ -96,7 +96,7 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
         return command
     else:
         stdout, stderr = command.communicate(stdin)
-        if command.returncode:
+        if not allow_error and command.returncode:
             if stdout:
                 print(stdout)
             if stderr:
