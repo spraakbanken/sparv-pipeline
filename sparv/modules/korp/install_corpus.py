@@ -13,12 +13,12 @@ log = logging.getLogger(__name__)
 
 @installer("Install CWB datafiles on remote host")
 def install_corpus(corpus: str = Corpus,
-                   info_file: str = ExportInput("[cwb_datadir]/[id]/.info", absolute_path=True),
-                   cwb_file: str = ExportInput("[corpus_registry]/[id]", absolute_path=True),
+                   info_file: str = ExportInput("[cwb.cwb_datadir]/[id]/.info", absolute_path=True),
+                   cwb_file: str = ExportInput("[cwb.corpus_registry]/[id]", absolute_path=True),
                    out: str = Output("korp.time_install_corpus", data=True, common=True),
                    host: str = Config("remote_host", ""),
-                   datadir: str = Config("cwb_datadir", paths.cwb_datadir),
-                   registry: str = Config("corpus_registry", paths.corpus_registry),
+                   datadir: str = Config("cwb.cwb_datadir"),
+                   registry: str = Config("cwb.corpus_registry"),
                    target_datadir: str = Config("remote_cwb_datadir", ""),
                    target_registry: str = Config("remote_corpus_registry", "")):
     """Install CWB datafiles on server, by rsyncing datadir and registry.

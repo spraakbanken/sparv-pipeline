@@ -3,7 +3,7 @@
 import logging
 
 import sparv.util as util
-from sparv import Annotation, Binary, Document, Language, Model, Output, annotator
+from sparv import Annotation, Binary, Config, Document, Language, Model, Output, annotator
 
 log = logging.getLogger(__name__)
 
@@ -14,12 +14,16 @@ TAG_COLUMN = 1
 LEM_COLUMN = 2
 
 
-@annotator("Part-of-speech tags and baseforms from TreeTagger", language=["bul", "est", "fin", "lat", "nld", "pol",
-                                                                          "ron", "slk"])
+@annotator("Part-of-speech tags and baseforms from TreeTagger",
+           language=["bul", "est", "fin", "lat", "nld", "pol", "ron", "slk"],
+           config=[
+               Config("treetagger.binary", "treetagger/tree-tagger"),
+               Config("treetagger.model", "treetagger/[language].par")
+           ])
 def annotate(doc: str = Document,
              lang: str = Language,
-             model: str = Model("[treetagger.model=treetagger/[language].par]"),
-             tt_binary: str = Binary("[treetagger.binary=treetagger/tree-tagger]"),
+             model: str = Model("[treetagger.model]"),
+             tt_binary: str = Binary("[treetagger.binary]"),
              out_pos: str = Output("<token>:treetagger.pos", description="Part-of-speeches in UD"),
              out_msd: str = Output("<token>:treetagger.msd", description="Part-of-speeches from TreeTagger"),
              out_baseform: str = Output("<token>:treetagger.baseform", description="Baseforms from TreeTagger"),

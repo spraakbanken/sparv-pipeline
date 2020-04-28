@@ -1,8 +1,5 @@
 """Classes used as default input for annotator functions."""
-import re
-from typing import Optional, List
-
-from sparv.core import config as _config
+from typing import Any, List, Optional
 
 
 class Annotation(str):
@@ -17,7 +14,6 @@ class Annotation(str):
         self.data = data
         self.all_docs = all_docs
         self.common = common
-        Config.parse_config_string(name)
 
 
 class Output(Annotation):
@@ -54,38 +50,21 @@ class Config(str):
     def __new__(cls, name: str, *args, **kwargs):
         return super().__new__(cls, name)
 
-    def __init__(self, name: str, default: str = None):
+    def __init__(self, name: str, default: Any = None):
+        self.name = name
         self.default = default
-        _config.get(name, default)  # Add to config if not already there
-
-    @staticmethod
-    def parse_config_string(string):
-        """Parse a string possibly containing references to config variables and add them to the config.
-
-        Args:
-            string: The string to parse.
-        """
-        while True:
-            cfgs = list(re.finditer(r"\[([^\]=[]+)(?:=([^\][]+))?\]", string))
-            if not cfgs:
-                break
-            for cfg in cfgs:
-                _config.get(cfg.group(1), cfg.group(2).replace("\0", "[").replace("\1", "]") if cfg.group(2) else None)
-                string = string.replace(cfg.group(), "\0{}\1".format(cfg.group()[1:-1]))
 
 
 class Model(str):
     """Path to model file."""
 
-    def __init__(self, value):
-        Config.parse_config_string(value)
+    pass
 
 
 class Binary(str):
     """Path to binary executable."""
 
-    def __init__(self, value):
-        Config.parse_config_string(value)
+    pass
 
 
 class Source(str):

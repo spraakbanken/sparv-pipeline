@@ -13,16 +13,24 @@ from sparv import Annotation, Config, Document, Output, annotator
 log = logging.getLogger(__name__)
 
 
-@annotator("Convert existing dates to specified output format")
+@annotator("Convert existing dates to specified output format", config=[
+    Config("dateformat.datetime_from"),
+    Config("dateformat.datetime_to"),
+    Config("dateformat.datetime_informat"),
+    Config("dateformat.splitter"),
+    Config("dateformat.regex"),
+    Config("dateformat.date_outformat", default="%Y%m%d"),
+    Config("dateformat.out_annotation", default="<text>")
+])
 def dateformat(doc: str = Document,
                in_from: str = Annotation("[dateformat.datetime_from]"),
                in_to: Optional[str] = Annotation("[dateformat.datetime_to]"),
                out_from: str = Output("[dateformat.out_annotation=<text>]:dateformat.datefrom",
                                       description="From-dates"),
-               out_to: Optional[str] = Output("[dateformat.out_annotation=<text>]:dateformat.dateto",
+               out_to: Optional[str] = Output("[dateformat.out_annotation]:dateformat.dateto",
                                               description="To-dates"),
                informat: str = Config("dateformat.datetime_informat"),
-               outformat: str = Config("dateformat.date_outformat", "%Y%m%d"),
+               outformat: str = Config("dateformat.date_outformat"),
                splitter: str = Config("dateformat.splitter", None),
                regex: str = Config("dateformat.regex", None)):
     """Convert existing dates/times to specified date output format.

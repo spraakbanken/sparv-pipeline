@@ -20,12 +20,15 @@ except ImportError:
 log = logging.getLogger(__name__)
 
 
-@annotator("Automatic tokenization")
+@annotator("Automatic tokenization", config=[
+    Config("segment.token_segmenter", default="better_word"),
+    Config("segment.existing_tokens")
+])
 def tokenize(doc: str = Document,
              out: str = Output("segment.token", cls="token", description="Token segments"),
              chunk: str = Annotation("[token_chunk]"),
-             segmenter: str = Config("token_segmenter", "better_word"),
-             existing_segments: str = Config("existing_tokens"),
+             segmenter: str = Config("segment.token_segmenter"),
+             existing_segments: str = Config("segment.existing_tokens"),
              model: Optional[str] = Model("segment/bettertokenizer.sv"),
              pickled_model: bool = False):
     """Tokenize text."""
@@ -33,12 +36,15 @@ def tokenize(doc: str = Document,
                     model=model, pickled_model=pickled_model)
 
 
-@annotator("Automatic segmentation of sentences")
+@annotator("Automatic segmentation of sentences", config=[
+    Config("segment.sentence_segmenter", default="punkt_sentence"),
+    Config("segment.existing_sentences")
+])
 def sentence(doc: str = Document,
              out: str = Output("segment.sentence", cls="sentence", description="Sentence segments"),
              chunk: Optional[str] = Annotation("[sentence_chunk]"),
-             segmenter: str = Config("sentence_segmenter", "punkt_sentence"),
-             existing_segments: str = Config("existing_sentences"),
+             segmenter: str = Config("segment.sentence_segmenter"),
+             existing_segments: str = Config("segment.existing_sentences"),
              model: Optional[str] = None,
              pickled_model: bool = False):
     """Split text into sentences."""

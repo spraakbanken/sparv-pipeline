@@ -11,6 +11,7 @@ DEFAULT_CONFIG = os.path.join(paths.sparv_path, "..", paths.default_config_file)
 
 # Dict holding full configuration
 config = {}
+config_undeclared = set()  # Config variables collected from use but not declared anywhere
 
 
 def load_config(config_file: str):
@@ -38,14 +39,19 @@ def load_config(config_file: str):
 
 
 def get(name: str, default=None):
-    """Get value from config. If 'name' is missing and 'default' is supplied, add to config."""
+    """Get value from config."""
+    if name not in config:
+        config_undeclared.add(name)
+    return config.get(name, default)
 
+
+def set_default(name: str, default=None):
+    """Set default value for config variable."""
     # If config variable is already set to None but we get a better default value, replace the existing
     if default is not None and name in config and config[name] is None:
         config[name] = default
     else:
         config.setdefault(name, default)
-    return config[name]
 
 
 def extend_config(new_config):

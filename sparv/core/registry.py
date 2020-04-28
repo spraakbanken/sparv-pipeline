@@ -6,11 +6,11 @@ import pkgutil
 import re
 from collections import defaultdict
 from enum import Enum
-from typing import Optional
+from typing import Optional, List
 
-from sparv.core import config, paths
+from sparv.core import config as sparv_config, paths
 from sparv.util import split_annotation
-from sparv.util.classes import Output
+from sparv.util.classes import Output, Config
 
 modules_path = ".".join(("sparv", paths.modules_dir))
 
@@ -61,7 +61,7 @@ def find_modules(sparv_path, no_import=False) -> list:
 
 
 def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, source_type: Optional[str] = None,
-               outputs=(), language=None):
+               outputs=(), language: Optional[List[str]] = None, config: Optional[List[Config]] = None):
     """Return a decorator for annotator, importer, exporter and installer functions, adding them to annotator registry."""
     def decorator(f):
         """Add wrapped function to registry."""
@@ -74,19 +74,23 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
             "type": a_type,
             "source_type": source_type,
             "outputs": outputs,
-            "language": language
+            "language": language,
+            "config": config
         })
         return f
 
     return decorator
 
 
-def annotator(description: str, name: Optional[str] = None, language: Optional[list] = None):
+def annotator(description: str, name: Optional[str] = None, language: Optional[List[str]] = None,
+              config: Optional[List[Config]] = None):
     """Return a decorator for annotator functions, adding them to the annotator registry."""
-    return _annotator(description=description, a_type=Annotator.annotator, name=name, language=language)
+    return _annotator(description=description, a_type=Annotator.annotator, name=name, language=language,
+                      config=config)
 
 
-def importer(description: str, source_type: str, name: Optional[str] = None, outputs=None):
+def importer(description: str, source_type: str, name: Optional[str] = None, outputs=None,
+             config: Optional[List[Config]] = None):
     """Return a decorator for importer functions.
 
     Args:
@@ -97,29 +101,42 @@ def importer(description: str, source_type: str, name: Optional[str] = None, out
             May also be a Config instance referring to such a list.
             It may generate more outputs than listed, but only the annotations listed here will be available
             to use as input for annotator functions.
+        config: List of Config instances defining config options for the importer.
 
     Returns:
         A decorator
     """
     return _annotator(description=description, a_type=Annotator.importer, name=name, source_type=source_type,
-                      outputs=outputs)
+                      outputs=outputs, config=config)
 
 
-def exporter(description: str, name: Optional[str] = None):
+def exporter(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None):
     """Return a decorator for exporter functions."""
-    return _annotator(description=description, a_type=Annotator.exporter, name=name)
+    return _annotator(description=description, a_type=Annotator.exporter, name=name, config=config)
 
 
-def installer(description: str, name: Optional[str] = None):
+def installer(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None):
     """Return a decorator for installer functions."""
-    return _annotator(description=description, a_type=Annotator.installer, name=name)
+    return _annotator(description=description, a_type=Annotator.installer, name=name, config=config)
 
 
 def _add_to_registry(annotator):
     """Add function to annotator registry. Used by annotator."""
     module_name = annotator["module_name"]
+
+    # Add config variables to config
+    if annotator["config"]:
+        # Only add config for relevant languages
+        if not annotator["language"] or (
+                annotator["language"] and sparv_config.get("language") in annotator["language"]):
+            for c in annotator["config"]:
+                if not c.name.startswith(module_name + "."):
+                    raise ValueError("Config option '{}' in module '{}' doesn't include module "
+                                     "name as prefix.".format(c.name, module_name))
+                sparv_config.set_default(c.name, c.default)
+
     for param, val in inspect.signature(annotator["function"]).parameters.items():
-        if (val.annotation == Output or isinstance(val.default, Output)) and not val.default == inspect.Parameter.empty:
+        if isinstance(val.default, Output):
             ann = val.default
             cls = val.default.cls
             ann_name, attr = split_annotation(ann)
@@ -138,7 +155,7 @@ def _add_to_registry(annotator):
             if cls:
                 # Only add classes for relevant languages
                 if not annotator["language"] or (
-                        annotator["language"] and config.get("language") in annotator["language"]):
+                        annotator["language"] and sparv_config.get("language") in annotator["language"]):
                     if ":" in cls and not cls.startswith(":") and ann_name and attr:
                         annotation_classes["module_classes"][cls].append(ann)
                     elif cls.startswith(":") and attr:
@@ -183,7 +200,7 @@ def expand_variables(string):
         if not cfgs:
             break
         for cfg in cfgs:
-            cfg_value = config.get(cfg.group(1), cfg.group(2))
+            cfg_value = sparv_config.get(cfg.group(1), cfg.group(2))
             if cfg_value is not None:
                 string = string.replace(cfg.group(), cfg_value)
             else:

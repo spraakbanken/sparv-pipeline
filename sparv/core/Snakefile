@@ -14,9 +14,6 @@ from sparv.core import config as sparv_config
 from sparv.core import paths, registry
 from sparv.util.classes import *
 
-# We have to wait until the configuration dict is complete until we load modules
-registry.find_modules(paths.sparv_path)
-
 # All output annotations available, used for printing a list
 all_annotations = {}
 
@@ -216,7 +213,7 @@ def make_rule(module_name, f_name, annotator_info) -> None:
                 inputs.append(parameters[param_name])
         # Config
         elif isinstance(param.default, Config):
-            parameters[param_name] = sparv_config.get(param.default)
+            parameters[param_name] = sparv_config.get(param.default, param.default.default)
         # Everything else with a default value
         elif param.default is not None:
             parameters[param_name] = param.default
@@ -312,6 +309,10 @@ if not os.path.isfile(corpus_config_file):
 # Read config file(s)
 sparv_config.load_config(corpus_config_file)
 
+# Find and load Sparv modules
+registry.find_modules(paths.sparv_path)
+
+# Add classes collected from modules to config
 registry.annotation_classes["config_classes"] = sparv_config.config.get("classes", {})
 
 # Create rules for all available annotation functions

@@ -95,21 +95,27 @@ def make_token_line(word, token, token_annotations, annotation_dict, index):
     return util.remove_control_characters(line)
 
 
-@exporter("CWB encode")
+@exporter("CWB encode", config=[
+    Config("cwb.corpus_registry", default=paths.corpus_registry),
+    Config("cwb.cwb_datadir", default=paths.cwb_datadir),
+    Config("cwb.encoding", default=paths.cwb_encoding),
+    Config("cwb.skip_compression", False),
+    Config("cwb.skip_validation", False)
+])
 def encode(corpus: str = Corpus,
            annotations: str = ExportAnnotations(is_input=False),
            original_annotations: Optional[list] = Config("original_annotations"),
            docs: list = AllDocuments,
            words: str = Annotation("<token:word>", all_docs=True),
            vrtfiles: str = ExportInput("vrt/{doc}.vrt", all_docs=True),
-           out: str = Export("[corpus_registry]/[id]", absolute_path=True),
+           out: str = Export("[cwb.corpus_registry]/[id]", absolute_path=True),
            token: str = Annotation("<token>", all_docs=True),
-           encoding: str = Config("cwb_encoding", paths.cwb_encoding),
-           datadir: str = Config("cwb_datadir", paths.cwb_datadir),
-           registry: str = Config("corpus_registry", paths.corpus_registry),
+           encoding: str = Config("cwb.encoding"),
+           datadir: str = Config("cwb.cwb_datadir"),
+           registry: str = Config("cwb.corpus_registry"),
            remove_namespaces: bool = Config("remove_export_namespaces", False),
-           skip_compression: Optional[bool] = Config("skip_cwb_compression", False),
-           skip_validation: Optional[bool] = Config("skip_cwb_validation", False)):
+           skip_compression: Optional[bool] = Config("cwb.skip_compression"),
+           skip_validation: Optional[bool] = Config("cwb.skip_validation")):
     """Encode a number of vrt files, by calling cwb-encode."""
     assert datadir, "CWB_DATADIR not specified"
     assert registry, "CORPUS_REGISTRY not specified"
@@ -185,7 +191,7 @@ def encode(corpus: str = Corpus,
 
 
 # TODO: Add snake-support!
-def cwb_align(corpus, other, link, aligndir="annotations/align", encoding: str = Config("cwb_encoding", "utf8")):
+def cwb_align(corpus, other, link, aligndir="annotations/align", encoding: str = Config("cwb.encoding", "utf8")):
     """Align 'corpus' with 'other' corpus, using the 'link' annotation for alignment."""
     os.makedirs(aligndir, exist_ok=True)
     alignfile = os.path.join(aligndir, corpus + ".align")

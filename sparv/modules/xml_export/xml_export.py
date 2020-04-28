@@ -15,10 +15,13 @@ from sparv import (AllDocuments, Annotation, Config, Corpus, Document, Export, E
 log = logging.getLogger(__name__)
 
 
-@exporter("XML export with one token element per line")
+@exporter("XML export with one token element per line", config=[
+    Config("xml_export.dir", default="xml_pretty"),
+    Config("xml_export.filename", default="{doc}_export.xml")
+])
 def pretty(doc: str = Document,
            docid: str = Annotation("<docid>", data=True),
-           out: str = Export("[xml_export.dir=xml_pretty]/[xml_export.filename={doc}_export.xml]"),
+           out: str = Export("[xml_export.dir]/[xml_export.filename]"),
            token: str = Annotation("<token>"),
            word: str = Annotation("<token:word>"),
            annotations: list = ExportAnnotations,
@@ -89,10 +92,12 @@ def pretty(doc: str = Document,
     log.info("Exported: %s", out)
 
 
-@exporter("XML export preserving whitespaces from source file")
+@exporter("XML export preserving whitespaces from source file", config=[
+    Config("xml_export.filename_formatted", default="{doc}_export.xml")
+])
 def preserve_formatting(doc: str = Document,
                         docid: str = Annotation("<docid>", data=True),
-                        out: str = Export("xml_preserve_formatting/[xml_export.filename_formatted={doc}_export.xml]"),
+                        out: str = Export("xml_preserve_formatting/[xml_export.filename_formatted]"),
                         token: str = Annotation("<token>"),
                         annotations: list = ExportAnnotations,
                         original_annotations: Optional[list] = Config("original_annotations"),
@@ -178,9 +183,11 @@ def preserve_formatting(doc: str = Document,
     log.info("Exported: %s", out)
 
 
-@exporter("Combined XML export (all results in one file)")
+@exporter("Combined XML export (all results in one file)", config=[
+    Config("xml_export.filename_combined", default="[id]_export.xml")
+])
 def combined(corpus: str = Corpus,
-             out: str = Export("[xml_export.filename_combined=[id]_export.xml]"),
+             out: str = Export("[xml_export.filename_combined]"),
              docs: list = AllDocuments,
              xml_input: str = ExportInput("[xml_export.dir]/[xml_export.filename]", all_docs=True)):
     """Combine XML export files into a single XML file."""
@@ -197,12 +204,13 @@ def combined(corpus: str = Corpus,
         log.info("Exported: %s" % out)
 
 
-@exporter("Compress combined XML export")
-def compressed(corpus: str = Corpus,
-               out: str = Export("[xml_export.filename_compressed=[id].xml.bz2]"),
+@exporter("Compress combined XML export", config=[
+    Config("xml_export.filename_compressed", default="[id].xml.bz2")
+])
+def compressed(out: str = Export("[xml_export.filename_compressed]"),
                xmlfile: str = ExportInput("[xml_export.filename_combined]")):
     """Compress combined XML export."""
-    with open(xmlfile, "r") as f:
+    with open(xmlfile) as f:
         file_data = f.read()
         compressed_data = bz2.compress(file_data.encode(util.UTF8))
     with open(out, "wb") as f:

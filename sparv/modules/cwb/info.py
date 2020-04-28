@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 
 @exporter("CWB .info file")
-def info(out: str = Export("[cwb_datadir]/[id]/.info", absolute_path=True),
+def info(out: str = Export("[cwb.cwb_datadir]/[id]/.info", absolute_path=True),
          sentences: str = Annotation("cwb.sentencecount", data=True, common=True),
          firstdate: str = Annotation("cwb.datefirst", data=True, common=True),
          lastdate: str = Annotation("cwb.datelast", data=True, common=True),
@@ -43,8 +43,7 @@ def info(out: str = Export("[cwb_datadir]/[id]/.info", absolute_path=True),
 @annotator("sentencecount file for .info")
 def info_sentences(out: str = Output("cwb.sentencecount", data=True, common=True),
                    sentence: str = Annotation("<sentence>", all_docs=True),
-                   docs: list = AllDocuments,
-                   classes: str = Config("classes")):
+                   docs: list = AllDocuments):
     """Determine how many sentences there are in the corpus."""
     # Read sentence annotation and count the sentences
     sentence_count = 0
@@ -66,13 +65,13 @@ def info_sentences(out: str = Output("cwb.sentencecount", data=True, common=True
 def info_date(corpus: str = Corpus,
               out_datefirst: str = Output("cwb.datefirst", data=True, common=True),
               out_datelast: str = Output("cwb.datelast", data=True, common=True),
-              corpus_data_file: str = ExportInput("[corpus_registry]/[id]"),
+              corpus_data_file: str = ExportInput("[cwb.corpus_registry]/[id]"),
               datefrom: str = Annotation("[dateformat.out_annotation=<text>]:dateformat.datefrom", all_docs=True),
               dateto: str = Annotation("[dateformat.out_annotation=<text>]:dateformat.dateto", all_docs=True),
               timefrom: str = Annotation("[dateformat.out_annotation=<text>]:dateformat.timefrom", all_docs=True),
               timeto: str = Annotation("[dateformat.out_annotation=<text>]:dateformat.timeto", all_docs=True),
               remove_namespaces: bool = Config("remove_export_namespaces", False),
-              registry: str = Config("corpus_registry", paths.corpus_registry)):
+              registry: str = Config("cwb.corpus_registry")):
     """Create datefirst and datelast file (needed for .info file)."""
     def _fix_name(name: str):
         if remove_namespaces:
