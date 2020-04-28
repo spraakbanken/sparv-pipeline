@@ -96,7 +96,7 @@ def make_rule(module_name, f_name, annotator_info) -> None:
             # If importer guarantees other outputs, add them to outputs list
             if import_outputs:
                 if isinstance(import_outputs, Config):
-                    import_outputs = sparv_config.get(import_outputs)
+                    import_outputs = sparv_config.get(import_outputs, import_outputs.default)
                 annotations_ = set()
                 for annotation in import_outputs:
                     annotations_.add(annotation)
