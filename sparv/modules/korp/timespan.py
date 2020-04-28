@@ -1,17 +1,13 @@
 """Create timespan SQL data for use in Korp."""
 
 import logging
+from collections import defaultdict
 
 import sparv.util as util
-from sparv import Config, Corpus, Export, ExportInput, Output, exporter, installer
-from sparv.core import paths
+from sparv import AllDocuments, Annotation, Config, Corpus, Export, ExportInput, Output, exporter, installer
 from sparv.util.mysql_wrapper import MySQL
 
 log = logging.getLogger(__name__)
-
-# Path to the cwb-scan-corpus binary
-CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
-CQP_EXECUTABLE = "cqp"
 
 
 @installer("Install timespan SQL on remote host")
@@ -35,74 +31,46 @@ def install_timespan(sqlfile: str = ExportInput("korp_timespan/timespan.sql"),
 @exporter("Create timespan SQL data for use in Korp")
 def timespan_sql(corpus: str = Corpus,
                  db_name: str = Config("korp_timespan", "timespan"),
-                 corpus_registry: str = Config("corpus_registry", paths.corpus_registry),
-                 out: str = Export("korp_timespan/timespan.sql")):
+                 out: str = Export("korp_timespan/timespan.sql"),
+                 docs: str = AllDocuments,
+                 token: str = Annotation("<token>", all_docs=True),
+                 datefrom: str = Annotation("<text>:dateformat.datefrom", all_docs=True),
+                 dateto: str = Annotation("<text>:dateformat.dateto", all_docs=True),
+                 timefrom: str = Annotation("<text>:dateformat.timefrom", all_docs=True),
+                 timeto: str = Annotation("<text>:dateformat.timeto", all_docs=True)):
     """Create timespan SQL data for use in Korp."""
-    def calculate(usetime=True):
-        rows = []
-
-        dateattribs = ["text_datefrom", "text_timefrom", "text_dateto", "text_timeto"] if usetime else ["text_datefrom",
-                                                                                                        "text_dateto"]
-
-        reply, error = util.system.call_binary(CWB_SCAN_EXECUTABLE, ["-q", "-r", corpus_registry, corpus] + dateattribs,
-                                               encoding="UTF-8", allow_error=True)
-        if error:
-            if "Error: can't open attribute" in error and (".text_datefrom" in error or ".text_dateto" in error):
-                log.info("No date information present in corpus.")
-                # No date information in corpus. Calculate total token count instead.
-                reply, error = util.system.call_binary(CQP_EXECUTABLE, ["-c", "-r", corpus_registry],
-                                                       "set PrettyPrint off;%s;info;" % corpus, encoding="UTF-8")
-
-                if error:
-                    log.error(error)
-                    raise Exception
-
-                for line in reply.splitlines():
-                    if line.startswith("Size: "):
-                        reply = "%s\t\t\t\t" % line[6:].strip()
-            else:
-                log.error(error)
-                raise Exception(error)
-
-        spans = {}
-
-        for line in reply.splitlines():
-            if not line:
-                continue
-            line = line.split("\t")
-            tokens = int(line[0])
-
-            if usetime:
-                dfrom = line[1] + line[2]
-                dto = line[3] + line[4]
-                dfrom = dfrom.zfill(14)  # Pad years < 1000 with zeroes
-                dto = dto.zfill(14)
-            else:
-                dfrom = line[1]
-                dto = line[2]
-                dfrom = dfrom.zfill(8)
-                dto = dto.zfill(8)
-
-            span = (dfrom, dto)
-            spans[span] = spans.get(span, 0) + tokens  # Sometimes we get more than one row for tokens without date information
-
-        for span in spans:
-
-            row = {
-                "corpus": corpus,
-                "datefrom": span[0],
-                "dateto": span[1],
-                "tokens": spans[span]
-            }
-
-            rows.append(row)
-
-        return rows
-
     corpus = corpus.upper()
+    datespans = defaultdict(int)
+    datetimespans = defaultdict(int)
 
-    rows_datetime = calculate(True)
-    rows_date = calculate(False)
+    for doc in docs:
+        text_tokens, orphans = util.get_children(doc, datefrom, token)
+        datespans[("0" * 8, "0" * 8)] += len(orphans)
+        datetimespans[("0" * 14, "0" * 14)] += len(orphans)
+        dateinfo = util.read_annotation_attributes(doc, (datefrom, dateto, timefrom, timeto))
+        for i, text in enumerate(text_tokens):
+            d = next(dateinfo)
+            datespans[(d[0].zfill(8), d[1].zfill(8))] += len(text)
+            datetimespans[(d[0].zfill(8) + d[2].zfill(6), d[1].zfill(8) + d[3].zfill(6))] += len(text)
+
+    rows_date = []
+    rows_datetime = []
+
+    for span in datespans:
+        rows_date.append({
+            "corpus": corpus,
+            "datefrom": span[0],
+            "dateto": span[1],
+            "tokens": datespans[span]
+        })
+
+    for span in datetimespans:
+        rows_datetime.append({
+            "corpus": corpus,
+            "datefrom": span[0],
+            "dateto": span[1],
+            "tokens": datetimespans[span]
+        })
 
     log.info("Creating SQL")
     mysql = MySQL(db_name, encoding=util.UTF8, output=out)
@@ -115,8 +83,6 @@ def timespan_sql(corpus: str = Corpus,
     mysql.add_row(MYSQL_TABLE, rows_datetime)
     mysql.add_row(MYSQL_TABLE_DATE, rows_date)
 
-
-################################################################################
 
 MYSQL_TABLE = "timedata"
 MYSQL_TABLE_DATE = "timedata_date"
