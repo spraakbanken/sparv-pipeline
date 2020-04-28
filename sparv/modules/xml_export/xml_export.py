@@ -1,14 +1,16 @@
 """Export annotated corpus data to xml."""
 
+import bz2
 import logging
 import os
+import xml.dom.minidom
 import xml.etree.ElementTree as etree
 from collections import defaultdict
 from typing import Optional
-import xml.dom.minidom
 
 import sparv.util as util
-from sparv import AllDocuments, Annotation, Config, Corpus, Document, Export, ExportAnnotations, ExportInput, exporter
+from sparv import (AllDocuments, Annotation, Config, Corpus, Document, Export, ExportAnnotations, ExportInput, Output,
+                   exporter, installer)
 
 log = logging.getLogger(__name__)
 
@@ -185,16 +187,43 @@ def combined(corpus: str = Corpus,
     xml_files = [xml_input.replace("{doc}", doc) for doc in docs]
     xml_files.sort()
 
-    with open(out, "w") as OUT:
-        print('<corpus id="%s">' % corpus.replace("&", "&amp;").replace('"', "&quot;"), file=OUT)
+    with open(out, "w") as outf:
+        print('<corpus id="%s">' % corpus.replace("&", "&amp;").replace('"', "&quot;"), file=outf)
         for infile in xml_files:
             log.info("Read: %s", infile)
-            with open(infile) as IN:
-                # Append everything but <corpus> and </corpus>
-                print(IN.read(), file=OUT)
-        print("</corpus>", file=OUT)
+            with open(infile) as inf:
+                print(inf.read(), file=outf)
+        print("</corpus>", file=outf)
         log.info("Exported: %s" % out)
 
+
+@exporter("Compress combined XML export")
+def compressed(corpus: str = Corpus,
+               out: str = Export("[xml_export.filename_compressed=[id].xml.bz2]"),
+               xmlfile: str = ExportInput("[xml_export.filename_combined]")):
+    """Compress combined XML export."""
+    with open(xmlfile, "r") as f:
+        file_data = f.read()
+        compressed_data = bz2.compress(file_data.encode(util.UTF8))
+    with open(out, "wb") as f:
+        f.write(compressed_data)
+
+
+@installer("Copy compressed combined unscrabled XML to remote host")
+def install_original(xmlfile: str = ExportInput("[xml_export.filename_compressed]"),
+                     out: str = Output("xml_export.time_install_export", data=True, common=True),
+                     export_path: str = Config("export_path", ""),
+                     host: str = Config("export_host", "")):
+    """Copy compressed combined unscrabled XML to remote host."""
+    if not host:
+        raise(Exception("No host provided! Export not installed."))
+    filename = os.path.basename(xmlfile)
+    remote_file_path = os.path.join(export_path, filename)
+    util.install_file(host, xmlfile, remote_file_path)
+    util.write_common_data(out, "")
+
+
+# TODO: add exporter, compressed exporter and installer for sentence and paragraph scrambled xml
 
 ########################################################################################################
 # HELPERS
@@ -237,5 +266,5 @@ def handle_overlaps(span, node_stack, docid, overlap_ids, total_overlaps, annota
         overlap_elem.node.set("_overlap", overlap_attr)
         node_stack.append(overlap_elem)
         add_attrs(overlap_elem.node, overlap_elem.name, annotation_dict, export_names, overlap_elem.index)
-    
+
     return total_overlaps
