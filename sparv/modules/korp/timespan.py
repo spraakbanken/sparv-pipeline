@@ -1,7 +1,6 @@
 """Create timespan SQL data for use in Korp."""
 
 import logging
-import subprocess
 
 import sparv.util as util
 from sparv import Config, Corpus, Export, ExportInput, Output, exporter, installer
@@ -45,24 +44,20 @@ def timespan_sql(corpus: str = Corpus,
         dateattribs = ["text_datefrom", "text_timefrom", "text_dateto", "text_timeto"] if usetime else ["text_datefrom",
                                                                                                         "text_dateto"]
 
-        process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-q", "-r", corpus_registry, corpus] + dateattribs,
-                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        reply, error = process.communicate()
-        reply = reply.decode()
+        reply, error = util.system.call_binary(CWB_SCAN_EXECUTABLE, ["-q", "-r", corpus_registry, corpus] + dateattribs,
+                                               encoding="UTF-8", allow_error=True)
         if error:
-            error = error.decode()
             if "Error: can't open attribute" in error and (".text_datefrom" in error or ".text_dateto" in error):
                 log.info("No date information present in corpus.")
                 # No date information in corpus. Calculate total token count instead.
-                process = subprocess.Popen([CQP_EXECUTABLE, "-c", "-r", corpus_registry], stdin=subprocess.PIPE,
-                                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                reply, error = process.communicate(bytes("set PrettyPrint off;%s;info;" % corpus, "UTF-8"))
+                reply, error = util.system.call_binary(CQP_EXECUTABLE, ["-c", "-r", corpus_registry],
+                                                       "set PrettyPrint off;%s;info;" % corpus, encoding="UTF-8")
 
                 if error:
                     log.error(error)
                     raise Exception
 
-                for line in reply.decode().splitlines():
+                for line in reply.splitlines():
                     if line.startswith("Size: "):
                         reply = "%s\t\t\t\t" % line[6:].strip()
             else:
