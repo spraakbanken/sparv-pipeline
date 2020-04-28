@@ -5,14 +5,14 @@ import os
 import subprocess
 from glob import glob
 
-import sparv.util as util
+from sparv.util import system
 
 log = logging.getLogger(__name__)
 
 
 def install_file(host, local_file, remote_file):
     """Rsync a file to a target host."""
-    util.system.rsync(local_file, host, remote_file)
+    system.rsync(local_file, host, remote_file)
 
 
 def install_directory(host, directory):
@@ -22,7 +22,7 @@ def install_directory(host, directory):
     """
     for local in glob(os.path.join(directory, '*')):
         remote = os.path.basename(local).replace("#", "/")
-        util.system.rsync(local, host, remote)
+        system.rsync(local, host, remote)
 
 
 def install_mysql(host, db_name, sqlfile):
