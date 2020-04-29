@@ -44,3 +44,5 @@ install:
     - "korp:install_corpus"
     - "korp:install_relations"
     - "korp:install_timespan"
+    - "xml_export:install_original"
+    - "xml_export:install_sentence_scrambled"

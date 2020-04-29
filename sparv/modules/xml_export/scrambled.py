@@ -1,0 +1,171 @@
+"""Export annotated corpus data to scrabmled xml."""
+
+import logging
+import os
+from collections import defaultdict
+from typing import Optional
+
+import sparv.modules.xml_export.xml_utils as xml_utils
+import sparv.util as util
+from sparv import (AllDocuments, Annotation, Config, Corpus, Document, Export, ExportAnnotations, ExportInput, Output,
+                   exporter, installer)
+
+log = logging.getLogger(__name__)
+
+
+@exporter("Sentence scrabled XML export", config=[
+    Config("xml_export.filename", default="{doc}_export.xml")
+])
+def sentence_scrambled(doc: str = Document,
+                       docid: str = Annotation("<docid>", data=True),
+                       out: str = Export("xml_sentence_scrabled/[xml_export.filename]"),
+                       sentence: str = Annotation("<sentence>"),
+                       sentence_order: str = Annotation("<sentence>:misc.number_random"),
+                       token: str = Annotation("<token>"),
+                       word: str = Annotation("<token:word>"),
+                       annotations: list = ExportAnnotations,
+                       original_annotations: Optional[list] = Config("original_annotations"),
+                       remove_namespaces: bool = Config("remove_export_namespaces", False)):
+    """Export annotations to sentence scrabled XML."""
+    # Create export dir
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+
+    # Read words and document ID
+    word_annotation = list(util.read_annotation(doc, word))
+    sentence_order = list(util.read_annotation(doc, sentence_order))
+    docid = util.read_data(doc, docid)
+
+    # Get annotation spans, annotations list etc.
+    annotations, _, export_names = util.get_annotation_names(doc, token, annotations, original_annotations,
+                                                             remove_namespaces)
+    span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names)
+
+    # Reorder sentences and open/close tags in correct order
+    new_s_order = _reorder_spans(span_positions, sentence, sentence_order)
+    _fix_dangling_elems(new_s_order, sentence)
+    _fix_parents(new_s_order, sentence)
+
+    # Reformat span positions to fit the specs of make_pretty_xml
+    new_span_positions = [v for k, v in sorted(new_s_order.items())]  # Sort dict into list
+    new_span_positions = [t for s in new_span_positions for t in s]  # Unpack sentences
+    new_span_positions = [(0, instruction, span) for instruction, span in new_span_positions]  # Add fake position (0)
+
+    # Construct XML string
+    xmlstr = xml_utils.make_pretty_xml(new_span_positions, annotation_dict, export_names, token, word_annotation, docid)
+
+    # Write XML to file
+    with open(out, mode="w") as outfile:
+        outfile.write(xmlstr)
+    log.info("Exported: %s", out)
+
+
+@exporter("Combined sentence scrambled XML export", config=[
+    Config("xml_export.filename_combined_s_scrambled", default="[id]_s_scrambled_export.xml")
+])
+def combined_sentence_scrambled(corpus: str = Corpus,
+                                out: str = Export("[xml_export.filename_combined_s_scrambled]"),
+                                docs: list = AllDocuments,
+                                xml_input: str = ExportInput(
+                                    "xml_sentence_scrabled/[xml_export.filename]", all_docs=True)):
+    """Combine XML export files into a single XML file."""
+    xml_utils.combine(corpus, out, docs, xml_input)
+
+
+@exporter("Compressed combined sentence scrambled XML export", config=[
+    Config("xml_export.filename_compressed_s_scrambled", default="[id]_s_scrambled.xml.bz2")
+])
+def compressed_sentence_scrambled(out: str = Export("[xml_export.filename_compressed_s_scrambled]"),
+                                  xmlfile: str = ExportInput("[xml_export.filename_combined_s_scrambled]")):
+    """Compress combined XML export."""
+    xml_utils.compress(xmlfile, out)
+
+
+@installer("Copy compressed sentence scrambled XML to remote host")
+def install_sentence_scrambled(corpus: Corpus,
+                               xmlfile: str = ExportInput("[xml_export.filename_compressed_s_scrambled]"),
+                               out: str = Output("xml_export.time_install_export", data=True, common=True),
+                               export_path: str = Config("export_path", ""),
+                               host: str = Config("export_host", "")):
+    """Copy compressed combined sentence scrambled XML to remote host."""
+    xml_utils.install_compressed_xml(corpus, xmlfile, out, export_path, host)
+
+
+# TODO: add paragraph scrambled xml
+
+########################################################################################################
+# HELPERS
+########################################################################################################
+
+def _reorder_spans(span_positions, sentence_name, sentence_order):
+    """Scramble sentences according to the sentence_order."""
+    new_s_order = defaultdict(list)
+    parent_stack = []
+    current_s_index = -1
+
+    for _pos, instruction, span in span_positions:
+        if instruction == "open":
+            if span.name == sentence_name:
+                current_s_index = int(sentence_order[span.index])
+                new_s_order[current_s_index].extend(parent_stack)
+                new_s_order[current_s_index].append((instruction, span))
+            else:
+                if current_s_index == -1:
+                    # Encountered parent to sentence
+                    parent_stack.append((instruction, span))
+                else:
+                    # Encountered child to sentence
+                    new_s_order[current_s_index].append((instruction, span))
+
+        if instruction == "close":
+            if parent_stack and parent_stack[-1][1] == span:
+                if current_s_index != -1:
+                    new_s_order[current_s_index].append((instruction, span))
+                parent_stack.pop()
+            else:
+                new_s_order[current_s_index].append((instruction, span))
+                if span.name == sentence_name:
+                    current_s_index = -1
+
+    return new_s_order
+
+
+def _fix_dangling_elems(new_s_order, sentence_name):
+    """Fix child spans to sentence that are not being opened or closed."""
+    for sentence in new_s_order.values():
+        is_parent = True
+        for instruction, span in sentence:
+            if instruction == "open":
+                if span.name == sentence_name:
+                    is_parent = False
+                    sentence_span = span
+                elif not is_parent:
+                    if ("close", span) not in sentence:
+                        # This child span has no closing tag. Close it!
+                        close_s_indx = sentence.index(("close", sentence_span))
+                        sentence.insert(close_s_indx, ("close", span))
+            elif instruction == "close" and span.name != sentence_name:
+                if ("open", span) not in sentence:
+                    # This child span has no opening tag. Open it!
+                    open_s_indx = sentence.index(("open", sentence_span))
+                    sentence.insert(open_s_indx + 1, ("open", span))
+
+
+def _fix_parents(new_s_order, sentence_name):
+    """Go through new_span_positions and remove duplicate opened parents."""
+    open_parents = []
+    for s_index, sentence in sorted(new_s_order.items()):
+        is_parent = True
+        for instruction, span in sentence:
+            if instruction == "open":
+                if span.name == sentence_name:
+                    is_parent = False
+                elif is_parent:
+                    open_parents.append((instruction, span))
+        # Check next sentence: close parents that are not opened again and remove already opened parents
+        next_sentence = new_s_order.get(s_index + 1, [])
+        for parent in reversed(open_parents):
+            if parent in next_sentence:
+                next_sentence.remove(parent)
+            else:
+                sentence.append(("close", parent[1]))
+                open_parents.remove(parent)
