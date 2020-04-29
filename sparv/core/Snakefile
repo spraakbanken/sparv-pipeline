@@ -344,9 +344,19 @@ for module_name in registry.annotators:
 # Rule to list all config options and their current values
 rule config:
     run:
-        longest_key = max(len(key) for key in sparv_config.config) + 10
-        for key, val in sorted(sparv_config.config.items()):
-            print("{:{width}}{}".format(key + ":", str(val), width=longest_key))
+        import yaml
+        class MyDumper(yaml.Dumper):
+            """Customized YAML dumper that indents lists."""
+
+            def increase_indent(self, flow=False, indentless=False):
+                """Force indentation."""
+                return super(MyDumper, self).increase_indent(flow, False)
+
+        yaml_str = yaml.dump(sparv_config.config, default_flow_style=False, Dumper=MyDumper, indent=4)
+        # Colorize keys for easier reading
+        yaml_str = re.sub(r"^(\s*[\S]+):", util.Color.BLUE + r"\1" + util.Color.RESET + ":", yaml_str,
+                          flags=re.MULTILINE)
+        print(yaml_str)
 
 rule annotations:
     run:
