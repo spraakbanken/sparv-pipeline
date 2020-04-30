@@ -1,4 +1,4 @@
-"""Export annotated corpus data to scrabmled xml."""
+"""Export annotated corpus data to scrambled xml."""
 
 import logging
 import os
@@ -57,34 +57,30 @@ def scrambled(doc: str = Document,
     log.info("Exported: %s", out)
 
 
-# TODO: Make these work independent of the input chunk
-
-# @exporter("Combined scrambled XML export")
-# def combined_scrambled(corpus: str = Corpus,
-#                        out: str = Export("[id]_{chunk}_scrambled.xml"),
-#                        docs: list = AllDocuments,
-#                        xml_input: str = ExportInput("xml_{chunk}_scrambled/[xml_export.filename]", all_docs=True)):
-#     """Combine XML export files into a single XML file."""
-#     xml_utils.combine(corpus, out, docs, xml_input)
+@exporter("Combined scrambled XML export")
+def combined_scrambled(corpus: str = Corpus,
+                       out: str = Export("[id]_{chunk}_scrambled.xml"),
+                       docs: list = AllDocuments,
+                       xml_input: str = ExportInput("xml_{chunk}_scrambled/[xml_export.filename]", all_docs=True)):
+    """Combine XML export files into a single XML file."""
+    xml_utils.combine(corpus, out, docs, xml_input)
 
 
-# @exporter("Compressed combined scrambled XML export", config=[
-#     Config("xml_export.filename_compressed_scrambled", default="[id]_scrambled.xml.bz2")
-# ])
-# def compressed_scrambled(out: str = Export("[xml_export.filename_compressed_scrambled]"),
-#                          xmlfile: str = ExportInput("[xml_export.filename_combined_scrambled]")):
-#     """Compress combined XML export."""
-#     xml_utils.compress(xmlfile, out)
+@exporter("Compressed combined scrambled XML export")
+def compressed_scrambled(out: str = Export("[id]_{chunk}_scrambled.xml.bz2"),
+                         xmlfile: str = ExportInput("[id]_{chunk}_scrambled.xml")):
+    """Compress combined XML export."""
+    xml_utils.compress(xmlfile, out)
 
 
-# @installer("Copy compressed scrambled XML to remote host")
-# def install_scrambled(corpus: Corpus,
-#                       xmlfile: str = ExportInput("[xml_export.filename_compressed_scrambled]"),
-#                       out: str = Output("xml_export.time_install_export", data=True, common=True),
-#                       export_path: str = Config("export_path", ""),
-#                       host: str = Config("export_host", "")):
-#     """Copy compressed combined scrambled XML to remote host."""
-#     xml_utils.install_compressed_xml(corpus, xmlfile, out, export_path, host)
+@installer("Copy compressed scrambled XML to remote host")
+def install_scrambled(corpus: Corpus,
+                      xmlfile: str = ExportInput("[id]_{chunk}_scrambled.xml"),
+                      out: str = Output("xml_export.time_install_export", data=True, common=True),
+                      export_path: str = Config("export_path", ""),
+                      host: str = Config("export_host", "")):
+    """Copy compressed combined scrambled XML to remote host."""
+    xml_utils.install_compressed_xml(corpus, xmlfile, out, export_path, host)
 
 
 ########################################################################################################
