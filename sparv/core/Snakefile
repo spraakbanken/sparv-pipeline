@@ -201,6 +201,9 @@ def make_rule(module_name, f_name, annotator_info) -> None:
             outputs.append(parameters[param_name])
             if "{doc}" in parameters[param_name]:
                 doc_annotations.append(param_name)
+            param_value = registry.expand_variables(param.default)
+            if "{" in param_value:
+                wildcard_annotations.append(param_name)
         # ExportInput
         elif isinstance(param.default, ExportInput):
             if param.default.absolute_path:
