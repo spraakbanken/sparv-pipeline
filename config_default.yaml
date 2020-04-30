@@ -46,3 +46,7 @@ install:
     - "korp:install_timespan"
     - "xml_export:install_original"
     - "xml_export:install_sentence_scrambled"
+
+
+# Chunk to scramble the export on
+scramble_on: <sentence>

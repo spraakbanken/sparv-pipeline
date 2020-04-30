@@ -16,9 +16,9 @@ log = logging.getLogger(__name__)
 @exporter("Scrambled XML export")
 def scrambled(doc: str = Document,
               docid: str = Annotation("<docid>", data=True),
-              out: str = Export("xml_{chunk}_scrambled/[xml_export.filename]"),
-              chunk: str = Annotation("{chunk}"),
-              chunk_order: str = Annotation("{chunk}:misc.number_random"),
+              out: str = Export("xml_scrambled/[xml_export.filename]"),
+              chunk: str = Annotation("[scramble_on]"),
+              chunk_order: str = Annotation("[scramble_on]:misc.number_random"),
               token: str = Annotation("<token>"),
               word: str = Annotation("<token:word>"),
               annotations: list = ExportAnnotations,
@@ -59,23 +59,23 @@ def scrambled(doc: str = Document,
 
 @exporter("Combined scrambled XML export")
 def combined_scrambled(corpus: str = Corpus,
-                       out: str = Export("[id]_{chunk}_scrambled.xml"),
+                       out: str = Export("[id]_scrambled.xml"),
                        docs: list = AllDocuments,
-                       xml_input: str = ExportInput("xml_{chunk}_scrambled/[xml_export.filename]", all_docs=True)):
+                       xml_input: str = ExportInput("xml_scrambled/[xml_export.filename]", all_docs=True)):
     """Combine XML export files into a single XML file."""
     xml_utils.combine(corpus, out, docs, xml_input)
 
 
 @exporter("Compressed combined scrambled XML export")
-def compressed_scrambled(out: str = Export("[id]_{chunk}_scrambled.xml.bz2"),
-                         xmlfile: str = ExportInput("[id]_{chunk}_scrambled.xml")):
+def compressed_scrambled(out: str = Export("[id]_scrambled.xml.bz2"),
+                         xmlfile: str = ExportInput("[id]_scrambled.xml")):
     """Compress combined XML export."""
     xml_utils.compress(xmlfile, out)
 
 
 @installer("Copy compressed scrambled XML to remote host")
 def install_scrambled(corpus: Corpus,
-                      xmlfile: str = ExportInput("[id]_{chunk}_scrambled.xml"),
+                      xmlfile: str = ExportInput("[id]_scrambled.xml"),
                       out: str = Output("xml_export.time_install_export", data=True, common=True),
                       export_path: str = Config("export_path", ""),
                       host: str = Config("export_host", "")):
