@@ -106,6 +106,10 @@ def make_rule(module_name, f_name, annotator_info) -> None:
 
     params = inspect.signature(annotator_info["function"]).parameters
 
+    def escape_wildcards(s):
+        """Escape all wildcards other than {doc}."""
+        return re.sub(r"(?!{doc})({[^}]+})", r"{\1}", s)
+
     # Go though function parameters and handle based on type
     for param_name, param in params.items():
         # Output
@@ -113,7 +117,8 @@ def make_rule(module_name, f_name, annotator_info) -> None:
             param_value = registry.expand_variables(param.default)
             ann_path = get_annotation_path(param_value, data=param.default.data, common=param.default.common)
             if param.default.all_docs:
-                outputs.extend(expand(os.path.join(paths.annotation_dir, ann_path), doc=get_source_files()))
+                outputs.extend(expand(escape_wildcards(os.path.join(paths.annotation_dir, ann_path)),
+                                      doc=get_source_files()))
             elif param.default.common:
                 outputs.append(os.path.join(paths.annotation_dir, ann_path))
                 if installer:
@@ -132,7 +137,8 @@ def make_rule(module_name, f_name, annotator_info) -> None:
             ann_path = get_annotation_path(param_value, data=param.default.data, common=param.default.common)
             if exporter or installer or param.default.all_docs:
                 if param.default.all_docs:
-                    inputs.extend(expand(os.path.join(paths.annotation_dir, ann_path), doc=get_source_files()))
+                    inputs.extend(expand(escape_wildcards(os.path.join(paths.annotation_dir, ann_path)),
+                                         doc=get_source_files()))
                 else:
                     inputs.append(os.path.join(paths.annotation_dir, ann_path))
             elif param.default.common:
@@ -211,9 +217,11 @@ def make_rule(module_name, f_name, annotator_info) -> None:
             else:
                 parameters[param_name] = os.path.join(paths.export_dir, registry.expand_variables(param.default))
             if param.default.all_docs:
-                inputs.extend(expand(parameters[param_name], doc=get_source_files()))
+                inputs.extend(expand(escape_wildcards(parameters[param_name]), doc=get_source_files()))
             else:
                 inputs.append(parameters[param_name])
+            if "{" in parameters[param_name]:
+                wildcard_annotations.append(param_name)
         # Config
         elif isinstance(param.default, Config):
             parameters[param_name] = sparv_config.get(param.default, param.default.default)
@@ -257,9 +265,9 @@ def make_rule(module_name, f_name, annotator_info) -> None:
         for name in doc_annotations:
             _parameters[name] = _parameters[name].replace("{doc}", doc)
 
-        # Replace wildcards in parameters
+        # Replace wildcards (other than {doc}) in parameters
         for name in wildcard_annotations:
-            wcs = re.finditer(r"{([^}]+)}", _parameters[name])
+            wcs = re.finditer(r"(?!{doc}){([^}]+)}", _parameters[name])
             for wc in wcs:
                 _parameters[name] = _parameters[name].replace(wc.group(), wildcards.get(wc.group(1)))
         return _parameters
