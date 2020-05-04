@@ -408,7 +408,7 @@ rule list_targets:
         for target, desc in sorted(named_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
         print()
-        print("    MODELBUILDERS")
+        print("    MODEL BUILDERS")
         for target, desc in sorted(model_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
 

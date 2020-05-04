@@ -37,6 +37,16 @@ def clear_directory(dir):
     os.makedirs(dir, exist_ok=True)
 
 
+def remove_files(files: list, raise_errors: bool = False):
+    """Remove files from disk."""
+    for f in files:
+        try:
+            os.remove(f)
+        except FileNotFoundError as e:
+            if raise_errors:
+                raise e
+
+
 def download_file(url, out_path):
     """Download file from url and save to out_path."""
     urllib.request.urlretrieve(url, out_path)
