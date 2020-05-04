@@ -21,6 +21,7 @@ all_annotations = {}
 named_targets = []
 export_targets = []
 install_targets = []
+model_targets = []
 
 # Outputs from all installers, used in install_annotated_corpus
 install_outputs = defaultdict(list)
@@ -77,9 +78,11 @@ def make_rule(module_name, f_name, annotator_info) -> None:
     wildcard_annotations = []  # List of parameters containing other wildcards
     target_name = module_name + ":" + f_name
 
+    annotator = annotator_info["type"] is registry.Annotator.annotator
     importer = annotator_info["type"] is registry.Annotator.importer
     exporter = annotator_info["type"] is registry.Annotator.exporter
     installer = annotator_info["type"] is registry.Annotator.installer
+    modelbuilder = annotator_info["type"] is registry.Annotator.modelbuilder
     description = annotator_info["description"]
     source_type = annotator_info["source_type"]
     import_outputs = annotator_info["outputs"]
@@ -131,6 +134,10 @@ def make_rule(module_name, f_name, annotator_info) -> None:
             all_annotations.setdefault(module_name, {}).setdefault(f_name, {"description": description,
                                                                             "annotations": []})
             all_annotations[module_name][f_name]["annotations"].append((param.default, param.default.description))
+        # ModelOutput
+        if isinstance(param.default, ModelOutput):
+            param_value = registry.expand_variables(param.default)
+            outputs.append(paths.get_model_path(param_value))
         # Annotation
         elif registry.dig(Annotation, param.default):
             param_value = registry.expand_variables(param.default)
@@ -248,10 +255,10 @@ def make_rule(module_name, f_name, annotator_info) -> None:
         """Extract the {doc} part from full annotation path."""
         doc = None
         if hasattr(wildcards, "doc"):
-            if importer or exporter or installer:
-                doc = wildcards.doc
-            else:
+            if annotator:
                 doc = wildcards.doc[len(paths.annotation_dir) + 1:]
+            else:
+                doc = wildcards.doc
         return doc
 
     def get_parameters(wildcards):
@@ -295,6 +302,8 @@ def make_rule(module_name, f_name, annotator_info) -> None:
             export_targets.append((target_name, description))
         elif installer:
             install_targets.append((target_name, description))
+        elif modelbuilder:
+            model_targets.append((target_name, description))
         else:
             named_targets.append((target_name, description))
         @workflow.rule(name=target_name)
@@ -397,6 +406,10 @@ rule list_targets:
         print()
         print("    ANNOTATIONS")
         for target, desc in sorted(named_targets):
+            print("        {:{}}    {}".format(target, max_len, desc))
+        print()
+        print("    MODELBUILDERS")
+        for target, desc in sorted(model_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
 
 rule files:

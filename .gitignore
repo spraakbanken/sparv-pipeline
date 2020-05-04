@@ -9,9 +9,7 @@ venv/
 *.pyc
 
 # Models
-models/geo/geo_alternateNames.txt
-models/geo/geo_cities1000.txt
-models/geo/geo.pickle
+models/geo
 models/hist/dalin.pickle
 models/hist/dalinm.xml
 models/hist/diapivot.pickle

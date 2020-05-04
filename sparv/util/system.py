@@ -6,6 +6,8 @@ import os
 import shutil
 import subprocess
 import sys
+import urllib.request
+import zipfile
 
 log = logging.getLogger(__name__)
 
@@ -33,6 +35,17 @@ def clear_directory(dir):
     """
     shutil.rmtree(dir, ignore_errors=True)
     os.makedirs(dir, exist_ok=True)
+
+
+def download_file(url, out_path):
+    """Download file from url and save to out_path."""
+    urllib.request.urlretrieve(url, out_path)
+
+
+def unzip(zip_file, out_path):
+    """Unzip zip_file and save contents to out_path."""
+    with zipfile.ZipFile(zip_file, "r") as z:
+        z.extractall(out_path)
 
 
 def call_java(jar, arguments, options=[], stdin="", search_paths=(),
@@ -110,7 +123,7 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
 
 
 def find_binary(name, search_paths=(), binary_names=(), executable=True):
-    """Search for the binary for a program. Stolen and modified from NLTK."""
+    """Search for the binary for a program. Based on NLTK."""
     assert isinstance(name, str)
     assert isinstance(search_paths, (list, tuple))
     assert isinstance(binary_names, (list, tuple))

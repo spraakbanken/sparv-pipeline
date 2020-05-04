@@ -1,11 +1,13 @@
 """Annotate geographical features."""
 
 import logging
+import os
 import pickle
 from collections import defaultdict
 
 import sparv.util as util
-from sparv import Annotation, Document, Model, Output, annotator
+from sparv.core import paths
+from sparv import Annotation, Document, Model, ModelOutput, Output, annotator, modelbuilder
 
 log = logging.getLogger(__name__)
 
@@ -113,7 +115,39 @@ def metadata(doc: str = Document,
     util.write_annotation(doc, out, out_annotation)
 
 
-def build_model(geonames, alternative_names, out, protocol=-1):
+@modelbuilder("Model for geo tagging")
+def build_model(out: str = ModelOutput("geo/geo.pickle")):
+    """Download and build geo model."""
+    modeldir = paths.get_model_path(os.path.dirname(out))
+
+    # Create model dir
+    os.makedirs(modeldir, exist_ok=True)
+
+    # Download and extract cities1000.txt
+    cities_url = "http://download.geonames.org/export/dump/cities1000.zip"
+    cities_path = os.path.join(modeldir, "cities1000.zip")
+    util.download_file(cities_url, cities_path)
+    util.unzip(cities_path, modeldir)
+    geonames = os.path.join(modeldir, "cities1000.txt")
+    os.remove(cities_path)
+
+    # Download and extract alternateNames.txt
+    names_url = "http://download.geonames.org/export/dump/alternateNames.zip"
+    names_path = os.path.join(modeldir, "alternateNames.zip")
+    util.download_file(names_url, names_path)
+    util.unzip(names_path, modeldir)
+    alternative_names = os.path.join(modeldir, "alternateNames.txt")
+    os.remove(names_path)
+    os.remove(os.path.join(modeldir, "iso-languagecodes.txt"))
+
+    pickle_model(geonames, alternative_names, paths.get_model_path(out))
+
+    # Clean up
+    os.remove(os.path.join(modeldir, "cities1000.txt"))
+    os.remove(os.path.join(modeldir, "alternateNames.txt"))
+
+
+def pickle_model(geonames, alternative_names, out, protocol=-1):
     """Read list of cities from Geonames dump (http://download.geonames.org/export/dump/).
 
     Add alternative names for each city.
@@ -193,7 +227,3 @@ def most_populous(locations):
 def _format_location(location_data):
     """Format location as city;country;latitude;longitude."""
     return util.cwbset(";".join((y[0], y[3], y[1], y[2])) for x, y in location_data)
-
-
-if __name__ == '__main__':
-    util.run.main(build_model)

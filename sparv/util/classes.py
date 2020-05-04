@@ -61,6 +61,16 @@ class Model(str):
     pass
 
 
+class ModelOutput(str):
+    """Path to model file used as output of a modelbuilder."""
+
+    def __new__(cls, name: str, *args, **kwargs):
+        return super().__new__(cls, name)
+
+    def __init__(self, name: str, description: Optional[str] = None):
+        self.description = description
+
+
 class Binary(str):
     """Path to binary executable."""
 

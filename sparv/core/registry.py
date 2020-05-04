@@ -6,11 +6,12 @@ import pkgutil
 import re
 from collections import defaultdict
 from enum import Enum
-from typing import Optional, List
+from typing import List, Optional
 
-from sparv.core import config as sparv_config, paths
+from sparv.core import config as sparv_config
+from sparv.core import paths
 from sparv.util import split_annotation
-from sparv.util.classes import Output, Config
+from sparv.util.classes import Config, ModelOutput, Output
 
 modules_path = ".".join(("sparv", paths.modules_dir))
 
@@ -22,6 +23,7 @@ class Annotator(Enum):
     importer = 2
     exporter = 3
     installer = 4
+    modelbuilder = 5
 
 
 # All available annotator functions
@@ -62,7 +64,7 @@ def find_modules(sparv_path, no_import=False) -> list:
 
 def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, source_type: Optional[str] = None,
                outputs=(), language: Optional[List[str]] = None, config: Optional[List[Config]] = None):
-    """Return a decorator for annotator, importer, exporter and installer functions, adding them to annotator registry."""
+    """Return a decorator for annotator functions, adding them to annotator registry."""
     def decorator(f):
         """Add wrapped function to registry."""
         module_name = f.__module__[len(modules_path) + 1:].split(".")[0]
@@ -120,6 +122,11 @@ def installer(description: str, name: Optional[str] = None, config: Optional[Lis
     return _annotator(description=description, a_type=Annotator.installer, name=name, config=config)
 
 
+def modelbuilder(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None):
+    """Return a decorator for modelbuilder functions."""
+    return _annotator(description=description, a_type=Annotator.modelbuilder, name=name, config=config)
+
+
 def _add_to_registry(annotator):
     """Add function to annotator registry. Used by annotator."""
     module_name = annotator["module_name"]
@@ -164,6 +171,12 @@ def _add_to_registry(annotator):
                         annotation_classes["module_classes"][cls].append(ann_name)
                     else:
                         print("Malformed class name: '{}'".format(cls))
+
+        if isinstance(val.default, ModelOutput):
+            ann = val.default
+            if not ann.startswith(module_name + "/"):
+                raise ValueError("Output model '{}' in module '{}' doesn't include module "
+                                 "name as sub directory.".format(ann, module_name))
 
     annotators.setdefault(module_name, {})
     f_name = annotator["function"].__name__ if not annotator["name"] else annotator["name"]
