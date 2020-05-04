@@ -19,6 +19,12 @@ annotations:
   - <text>:dateformat.timefrom
   - <text>:dateformat.timeto
   - <sentence>
+  - <sentence>:geo.geo_context as geo
+  - swener.ne as ner
+  - swener.ne:swener.ex
+  - swener.ne:swener.name
+  - swener.ne:swener.type
+  - swener.ne:swener.subtype
   - <token>
   - <token:pos>
   - <token:deprel>

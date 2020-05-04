@@ -6,17 +6,18 @@ import pickle
 from collections import defaultdict
 
 import sparv.util as util
+from sparv import Annotation, Config, Document, Model, ModelOutput, Output, annotator, modelbuilder
 from sparv.core import paths
-from sparv import Annotation, Document, Model, ModelOutput, Output, annotator, modelbuilder
 
 log = logging.getLogger(__name__)
 
 
-@annotator("Annotate chunks with location data, based on locations contained within the text")
+@annotator("Annotate chunks with location data, based on locations contained within the text", config=[
+           Config("geo.context_chunk", default="<sentence>")])
 def contextual(doc: str = Document,
-               out: str = Output("{chunk}:geo.geo", description="Geographical places with coordinates"),
+               out: str = Output("{chunk}:geo.geo_context", description="Geographical places with coordinates"),
                chunk: str = Annotation("{chunk}"),
-               context: str = Annotation("{context}"),
+               context: str = Annotation("[geo.context_chunk]"),
                ne_type: str = Annotation("swener.ne:swener.type"),
                ne_subtype: str = Annotation("swener.ne:swener.subtype"),
                ne_name: str = Annotation("swener.ne:swener.name"),
@@ -68,17 +69,18 @@ def contextual(doc: str = Document,
     util.write_annotation(doc, out, out_annotation)
 
 
-@annotator("Annotate chunks with location data, based on metadata containing location names")
+@annotator("Annotate chunks with location data, based on metadata containing location names", config=[
+           Config("geo.metadata_source", default="")])
 def metadata(doc: str = Document,
-             out: str = Output("{chunk}:geo.geo", description="Geographical places with coordinates"),
+             out: str = Output("{chunk}:geo.geo_metadata", description="Geographical places with coordinates"),
              chunk: str = Annotation("{chunk}"),
-             source: str = Annotation("{source}"),
+             source: str = Annotation("[geo.metadata_source]"),
              model: str = Model("[geo.model=geo/geo.pickle]"),
              method: str = "populous",
              language: list = []):
     """Get location data based on metadata containing location names."""
-    if isinstance(language, str):
-        language = language.split()
+    if not source:
+        raise(Exception("Missing meta data source annotation."))
 
     model = load_model(model, language=language)
 
