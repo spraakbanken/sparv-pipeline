@@ -135,7 +135,7 @@ def make_rule(module_name, f_name, annotator_info) -> None:
                                                                             "annotations": []})
             all_annotations[module_name][f_name]["annotations"].append((param.default, param.default.description))
         # ModelOutput
-        if isinstance(param.default, ModelOutput):
+        elif isinstance(param.default, ModelOutput):
             param_value = registry.expand_variables(param.default)
             outputs.append(paths.get_model_path(param_value))
         # Annotation
