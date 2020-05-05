@@ -2,23 +2,46 @@
 
 from collections import defaultdict
 
-import sparv.util as util
+from sparv import Model, ModelOutput, modelbuilder
+from sparv.core import paths
 from sparv.modules.saldo import saldo
 
 
-def make_morphtable(out, saldo_model, suc, morphtable_base="", morphtable_patterns="", add_capitalized=True,
-                    add_lowercase=False):
+@modelbuilder("Hunpos-SALDO morphtable")
+def saldo_morphtable(out: str = ModelOutput("hunpos/hunpos.saldo.suc-tags.morphtable"),
+                     saldo_model: str = Model("saldo/saldo.pickle"),
+                     suc: str = Model("hunpos/suc3.morphtable.words"),
+                     morphtable_base: str = Model("hunpos/hunpos.suc.morphtable"),
+                     morphtable_patterns: str = Model("hunpos/hunpos.suc.patterns"),
+                     add_capitalized: bool = True,
+                     add_lowercase: bool = False):
     """Create a morphtable file for use with Hunpos.
 
     A morphtable contains wordforms from SALDO's morphology (with accompanying tags) which are missing in SUC3.
     Since the morphtable is case sensitive, both the original form and a capitalized form
     is saved.
-    - out specifies the resulting morphtable file to be written
-    - saldo_model is the path to a pickled SALDO model
-    - suc is a tab separated file with wordforms from SUC, containing: frequency, wordform, tag
-    - morphtable_base is an existing morphtable file, whose contents will be included in the new one
-    - morphtable_patterns is an optional file with regular expressions
+
+    Args:
+        out (str, optional): Resulting morphtable file to be written.
+            Defaults to ModelOutput("hunpos/hunpos.saldo.suc-tags.morphtable").
+        saldo_model (str, optional): Path to a pickled SALDO model.
+            Defaults to Model("saldo/saldo.pickle").
+        suc (str, optional): Tab-separated file with wordforms from SUC, containing: frequency, wordform, tag.
+            Defaults to Model("hunpos/suc3.morphtable.words").
+        morphtable_base (str, optional): Existing morphtable file, whose contents will be included in the new one.
+            Defaults to Model("hunpos/hunpos.suc.morphtable").
+        morphtable_patterns (str, optional): Optional file with regular expressions.
+            Defaults to Model("hunpos/hunpos.suc.patterns").
+        add_capitalized (bool, optional): Whether or not capitalized word forms should be added. Defaults to True.
+        add_lowercase (bool, optional): Whether or not lower case word forms should be added. Defaults to False.
     """
+    # Get full paths
+    out = paths.get_model_path(out)
+    saldo_model = paths.get_model_path(saldo_model)
+    suc = paths.get_model_path(suc)
+    morphtable_base = paths.get_model_path(morphtable_base)
+    morphtable_patterns = paths.get_model_path(morphtable_patterns)
+
     lex = saldo.SaldoLexicon(saldo_model)
     tags = defaultdict(set)
 
@@ -76,7 +99,3 @@ def make_morphtable(out, saldo_model, suc, morphtable_base="", morphtable_patter
 
         for word in sorted(tags):
             out.write("%s\t%s\n" % (word, "\t".join(tags[word])))
-
-
-if __name__ == "__main__":
-    util.run.main(make_morphtable)

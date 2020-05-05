@@ -39,11 +39,11 @@ More info: http://stp.lingfil.uu.se/~evafo/resources/taggermodels/HunPosmodels.h
 Created by: Martin Hammarstedt
 Tags: SUC3
 Encoding: UTF-8
-Created with: sb.hunpos_morphtable
+Created with: hunpos.morphtable
 
 
-- hunpos.dalinm-swedberg.saldo.suc-tags.morphtable
+- hist/hunpos.dalinm-swedberg.saldo.suc-tags.morphtable
 
 Created by: Malin Ahlberg
 Tags: SUC3
-Created with: sb.hunpos_morphtable_hist
+Created with: hunpos.morphtable_hist

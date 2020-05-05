@@ -114,9 +114,9 @@ def read_rogetmap(xml="roget_hierarchy.xml", verbose=True):
     lexicon = {}
     context = cet.iterparse(xml, events=("start", "end"))
     context = iter(context)
-    event, root = next(context)
+    _event, _root = next(context)
 
-    for event, elem in context:
+    for _event, elem in context:
         if elem.tag == "class":
             l1 = elem.get("name")
         elif elem.tag == "section":
