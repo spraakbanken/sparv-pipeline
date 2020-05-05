@@ -10,7 +10,8 @@ import nltk
 
 import sparv.modules.saldo.saldo as saldo
 import sparv.util as util
-from sparv import Annotation, Config, Document, Model, Output, annotator
+from sparv import Annotation, Config, Document, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv.core import paths
 
 try:
     from . import crf  # for CRF++ models
@@ -113,7 +114,12 @@ def do_segmentation(doc, out, segmenter, chunk=None, existing_segments=None, mod
     util.write_annotation(doc, out, segments)
 
 
-def build_token_wordlist(saldo_model, out, segmenter, model=None, no_pickled_model=False):
+@modelbuilder("Token list for BetterTokenizer")
+def build_tokenlist(saldo_model: str = Model("saldo/saldo.pickle"),
+                    out: str = ModelOutput("segment/bettertokenizer.sv.saldo-tokens"),
+                    segmenter: str = Config("segment.token_wordlist_segmenter", "better_word"),
+                    model: str = Model("segment/bettertokenizer.sv"),
+                    no_pickled_model: bool = True):
     """Build a list of words from a SALDO model, to help BetterTokenizer."""
     if model:
         if not no_pickled_model:
@@ -141,12 +147,12 @@ def build_token_wordlist(saldo_model, out, segmenter, model=None, no_pickled_mod
                 if len(spans) > 1 and not wf.endswith(","):
                     wordforms.add(wf)
 
-    with open(out, mode="w", encoding="utf-8") as outfile:
+    with open(paths.get_model_path(out), mode="w", encoding=util.UTF8) as outfile:
         outfile.write("\n".join(sorted(wordforms)))
-
 
 ######################################################################
 # Punkt word tokenizer
+
 
 class ModifiedLanguageVars(nltk.tokenize.punkt.PunktLanguageVars):
     """Slight modification to handle unicode quotation marks and other punctuation."""
