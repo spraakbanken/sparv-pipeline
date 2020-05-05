@@ -306,7 +306,7 @@ def test_annotations(lexicon, testwords):
     """
     _log.info("Testing annotations...")
     for key in testwords:
-        _log.output("  %s = %s", key, lexicon.get(key))
+        _log.info("  %s = %s", key, lexicon.get(key))
 
 
 class PickledLexicon(object):

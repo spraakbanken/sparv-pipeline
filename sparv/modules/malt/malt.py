@@ -1,11 +1,12 @@
 """Dependency parsing using MALT Parser."""
 
+import logging
 import os
 import re
 
 import sparv.util as util
-from sparv import Annotation, Binary, Document, Model, Output, annotator
-import logging
+from sparv import Annotation, Binary, Document, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv.core import paths
 
 log = logging.getLogger(__name__)
 
@@ -25,20 +26,20 @@ UNDEF = "_"
 
 
 @annotator("Dependency parsing using MALT Parser")
-def maltparse(doc: str = Document,
-              maltjar: str = Binary("[malt.jar=maltparser-1.7.2/maltparser-1.7.2.jar]"),
-              model: str = Model("[malt.model=malt/swemalt-1.7.2.mco]"),
-              out_dephead: str = Output("<token>:malt.dephead", description="Positions of the dependency heads"),
-              out_dephead_ref: str = Output("<token>:malt.dephead_ref", description="Sentence-relative positions of the dependency heads"),
-              out_deprel: str = Output("<token>:malt.deprel", description="Dependency relations to the head"),
-              word: str = Annotation("<token:word>"),
-              pos: str = Annotation("<token:pos>"),
-              msd: str = Annotation("<token:msd>"),
-              ref: str = Annotation("<token>:misc.number_rel_<sentence>"),
-              sentence: str = Annotation("<sentence>"),
-              token: str = Annotation("<token>"),
-              encoding: str = util.UTF8,
-              process_dict=None):
+def annotate(doc: str = Document,
+             maltjar: str = Binary("[malt.jar=maltparser-1.7.2/maltparser-1.7.2.jar]"),
+             model: str = Model("[malt.model=malt/swemalt-1.7.2.mco]"),
+             out_dephead: str = Output("<token>:malt.dephead", description="Positions of the dependency heads"),
+             out_dephead_ref: str = Output("<token>:malt.dephead_ref", description="Sentence-relative positions of the dependency heads"),
+             out_deprel: str = Output("<token>:malt.deprel", description="Dependency relations to the head"),
+             word: str = Annotation("<token:word>"),
+             pos: str = Annotation("<token:pos>"),
+             msd: str = Annotation("<token:msd>"),
+             ref: str = Annotation("<token>:misc.number_rel_<sentence>"),
+             sentence: str = Annotation("<sentence>"),
+             token: str = Annotation("<token>"),
+             encoding: str = util.UTF8,
+             process_dict=None):
     """
     Run the malt parser, in an already started process defined in process_dict, or start a new process (default).
 
@@ -153,3 +154,10 @@ def maltstart(maltjar, model, encoding, send_empty_sentence=False):
         stdout_fd.readline()
 
     return process
+
+
+@modelbuilder("Model for MALT Parser")
+def build_model(out: str = ModelOutput("malt/swemalt-1.7.2.mco")):
+    """Download model for MALT Parser."""
+    out_path = paths.get_model_path(out)
+    util.download_file("http://maltparser.org/mco/swedish_parser/swemalt-1.7.2.mco", out_path)

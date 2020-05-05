@@ -1,9 +1,11 @@
 """Word sense disambiguation based on SALDO annotation."""
 
 import logging
+import os
 
 import sparv.util as util
-from sparv import Annotation, Binary, Document, Model, Output, annotator
+from sparv import Annotation, Binary, Document, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv.core import paths
 
 log = logging.getLogger(__name__)
 
@@ -11,21 +13,21 @@ SENT_SEP = "$SENT$"
 
 
 @annotator("Word sense disambiguation")
-def run_wsd(doc: str = Document,
-            wsdjar: str = Binary("[wsd.jar=wsd/saldowsd.jar]"),
-            sense_model: str = Model("[wsd.sense_model=wsd/ALL_512_128_w10_A2_140403_ctx1.bin]"),
-            context_model: str = Model("[wsd.context_model=wsd/lem_cbow0_s512_w10_NEW2_ctx.bin]"),
-            out: str = Output("<token>:wsd.sense", cls="token:sense", description="Sense disambiguated SALDO identifiers"),
-            sentence: str = Annotation("<sentence>"),
-            word: str = Annotation("<token:word>"),
-            ref: str = Annotation("<token>:misc.number_rel_<sentence>"),
-            lemgram: str = Annotation("<token>:saldo.lemgram"),
-            saldo: str = Annotation("<token>:saldo.sense"),
-            pos: str = Annotation("<token:pos>"),
-            token: str = Annotation("<token>"),
-            sensefmt: str = util.SCORESEP + "%.3f",
-            default_prob: float = -1.0,
-            encoding: str = util.UTF8):
+def annotate(doc: str = Document,
+             wsdjar: str = Binary("[wsd.jar=wsd/saldowsd.jar]"),
+             sense_model: str = Model("[wsd.sense_model=wsd/ALL_512_128_w10_A2_140403_ctx1.bin]"),
+             context_model: str = Model("[wsd.context_model=wsd/lem_cbow0_s512_w10_NEW2_ctx.bin]"),
+             out: str = Output("<token>:wsd.sense", cls="token:sense", description="Sense disambiguated SALDO identifiers"),
+             sentence: str = Annotation("<sentence>"),
+             word: str = Annotation("<token:word>"),
+             ref: str = Annotation("<token>:misc.number_rel_<sentence>"),
+             lemgram: str = Annotation("<token>:saldo.lemgram"),
+             saldo: str = Annotation("<token>:saldo.sense"),
+             pos: str = Annotation("<token:pos>"),
+             token: str = Annotation("<token>"),
+             sensefmt: str = util.SCORESEP + "%.3f",
+             default_prob: float = -1.0,
+             encoding: str = util.UTF8):
     """Run the word sense disambiguation tool (saldowsd.jar) to add probabilities to the saldo annotation.
 
     Unanalyzed senses (e.g. multiword expressions) receive the probability value given by default_prob.
@@ -75,6 +77,28 @@ def run_wsd(doc: str = Document,
     # Kill running subprocess
     util.system.kill_process(process)
     return
+
+
+@modelbuilder("WSD models")
+def build_model(sense_model: str = ModelOutput("wsd/ALL_512_128_w10_A2_140403_ctx1.bin"),
+                context_model: str = ModelOutput("wsd/lem_cbow0_s512_w10_NEW2_ctx.bin")):
+    """Download models for SALDO-based word sense disambiguation."""
+    modeldir = paths.get_model_path(util.dirname(sense_model))
+
+    # Create model dir
+    os.makedirs(modeldir, exist_ok=True)
+
+    # Download sense model
+    sense_path = os.path.join(modeldir, "ALL_512_128_w10_A2_140403_ctx1.bin")
+    util.download_file(
+        "https://github.com/spraakbanken/sparv-wsd/raw/master/models/scouse/ALL_512_128_w10_A2_140403_ctx1.bin",
+        sense_path)
+
+    # Download context model
+    context_path = os.path.join(modeldir, "lem_cbow0_s512_w10_NEW2_ctx.bin")
+    util.download_file(
+        "https://github.com/spraakbanken/sparv-wsd/raw/master/models/scouse/lem_cbow0_s512_w10_NEW2_ctx.bin",
+        context_path)
 
 
 def wsd_start(wsdjar, sense_model, context_model, encoding):

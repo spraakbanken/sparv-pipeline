@@ -1,9 +1,11 @@
 """Sentiment annotation per token using SenSALDO."""
 
 import logging
+import os
 
 import sparv.util as util
-from sparv import Annotation, Document, Model, Output, annotator
+from sparv import Annotation, Document, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv.core import paths
 
 log = logging.getLogger(__name__)
 
@@ -90,13 +92,31 @@ def read_sensaldo(tsv="sensaldo-base-v02.txt", verbose=True):
     return lexicon
 
 
+@modelbuilder("Sentiment model (SenSALDO)")
+def build_model(out: str = ModelOutput("sensaldo/sensaldo.pickle")):
+    """Download and build SenSALDO model."""
+    modeldir = paths.get_model_path(util.dirname(out))
+
+    # Create model dir
+    os.makedirs(modeldir, exist_ok=True)
+
+    # Download and extract sensaldo-base-v02.txt
+    zip_path = os.path.join(modeldir, "sensaldo-v02.zip")
+    util.download_file("https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/sensaldo/sensaldo-v02.zip", zip_path)
+    util.unzip(zip_path, modeldir)
+    tsv_path = os.path.join(modeldir, "sensaldo-base-v02.txt")
+
+    sensaldo_to_pickle(tsv_path, paths.get_model_path(out))
+
+    # Clean up
+    util.remove_files([
+        zip_path,
+        os.path.join(modeldir, "sensaldo-fullform-v02.txt"),
+        os.path.join(modeldir, "sensaldo-base-v02.txt"),
+    ])
+
+
 def sensaldo_to_pickle(tsv, filename, protocol=-1, verbose=True):
     """Read sensaldo tsv dictionary and save as a pickle file."""
     lexicon = read_sensaldo(tsv)
     util.lexicon_to_pickle(lexicon, filename)
-
-
-if __name__ == '__main__':
-    util.run.main(annotate,
-                  sensaldo_to_pickle=sensaldo_to_pickle
-                  )

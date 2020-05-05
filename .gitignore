@@ -30,11 +30,9 @@ models/saldo/saldom.xml
 models/saldo/stats_all.txt
 models/saldo/stats.pickle
 models/segment/bettertokenizer.sv.saldo-tokens
-models/sensaldo/sensaldo-base*
-models/sensaldo/sensaldo.pickle
+models/sensaldo
 models/treetagger
-models/wsd/ALL_512_128_w10_A2_140403_ctx1.bin
-models/wsd/lem_cbow0_s512_w10_NEW2_ctx.bin
+models/wsd
 
 # Bin
 bin/maltparser-1.7.2/
