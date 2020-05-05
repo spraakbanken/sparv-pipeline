@@ -1,25 +1,39 @@
 
-# ISO 639-3
+# Language of the input documents, specified as ISO 639-3 code
 language: swe
 
+# File type of the input. Must be 'xml' or 'txt'.
 source_type: xml
 
+# Chunk to use for automatic sentence segmentation
+sentence_chunk: <paragraph>
+# Chunk to use for automatic tokenisation
 token_chunk: <sentence>
+
 saldo.precision: ""
 
+# Class definitions
 classes:
     token: segment.token
     "token:word": <token>:misc.word
     "token:sense": <token>:wsd.sense
     sentence: segment.sentence
 
+################################################################################
+# XML EXPORT
+################################################################################
 
+# Set to false if annotation name spaces should be kept in the export
 remove_export_namespaces: true
 
-xml_export.filename: "{doc}_export.xml"
+# Chunk to scramble the XML export on
+scramble_on: <sentence>
 
 
-### SB-Korp stuff. Should be stored elsewhere?
+################################################################################
+# KORP and INSTALLATION
+################################################################################
+
 # Korp: password protected corpus
 protected: false
 
@@ -46,7 +60,3 @@ install:
     - "korp:install_timespan"
     - "xml_export:install_original"
     - "xml_export:install_sentence_scrambled"
-
-
-# Chunk to scramble the export on
-scramble_on: <sentence>
