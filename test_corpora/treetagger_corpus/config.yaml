@@ -4,18 +4,18 @@ language: nld
 
 # Elements and attributes from the source XML that we want to be available as input for other annotations
 xml_elements:
-  - text
+    - text
 
 sentence_chunk: <text>
 
 annotations:
-  - text
-  - <text>:readability.lix
-  - <sentence>
-  - <token>
-  - <token:pos>
-  - <token:msd>
-  - <token:baseform>
+    - text
+    - <text>:readability.lix
+    - <sentence>
+    - <token>
+    - <token:pos>
+    - <token:msd>
+    - <token:baseform>
 
 classes:
     text: text

@@ -4,19 +4,19 @@ language: eng
 
 # Elements and attributes from the source XML that we want to be available as input for other annotations
 xml_elements:
-  - text
+    - text
 
 annotations:
-  - text
-  - <sentence>
-  - <token>
-  - <token:pos>
-  - <token:msd>
-  - <token:baseform>
-  - <token:ne>
-  - <token:dephead_ref>
-  - <token:deprel>
-  - <token:ref>
+    - text
+    - <sentence>
+    - <token>
+    - <token:pos>
+    - <token:msd>
+    - <token:baseform>
+    - <token:ne>
+    - <token:dephead_ref>
+    - <token:deprel>
+    - <token:ref>
 
 classes:
     text: text

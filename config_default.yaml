@@ -10,7 +10,8 @@ sentence_chunk: <paragraph>
 # Chunk to use for automatic tokenisation
 token_chunk: <sentence>
 
-saldo.precision: ""
+saldo:
+    precision: ""
 
 # Class definitions
 classes:

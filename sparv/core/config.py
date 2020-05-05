@@ -45,9 +45,6 @@ def load_config(config_file: str) -> None:
     global config
     config = _merge_dicts(combined_config, config)
 
-    # Split any dot notation keys into hierarchies
-    config = split_dots(config)
-
 
 def _get(name: str):
     """Try to get value from config, raising an exception if key doesn't exist."""
@@ -104,26 +101,3 @@ def _merge_dicts(user, default):
             else:
                 user[k] = _merge_dicts(user[k], v)
     return user
-
-
-def split_dots(d: dict) -> dict:
-    """Convert dict with dot notation to hierarchical dict.
-
-    Args:
-        d: Input dictionary
-
-    Returns:
-        New hierarchical dictionary.
-    """
-    new_d = {}
-    for key in d:
-        if "." in key:
-            new_key, rest = key.split(".", 1)
-            new_d.setdefault(new_key, {})
-            new_d[new_key] = _merge_dicts(split_dots({rest: d[key]}), new_d[new_key])
-        elif isinstance(d[key], dict):
-            new_d[key] = split_dots(d[key])
-        else:
-            new_d[key] = d[key]
-    return new_d
-

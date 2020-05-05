@@ -14,23 +14,24 @@ name: Testkorpus
 
 # Annotations to keep from original documents. If nothing is specified, everything is kept.
 original_annotations:
-  - dokument as document
-  - text:id
-  - text:date
-  - text:forfattare as author
-  - i
+    - dokument as document
+    - text:id
+    - text:date
+    - text:forfattare as author
+    - i
 
 # Elements and attributes from the source XML that we want to be available as input for other annotations
 xml_elements:
-  - text:date
+    - text:date
 
 # Chunk to use for automatic sentence segmentation
 sentence_chunk: <text>
 
 # Description of the date/time input format
-dateformat.datetime_from: <text>:date
-dateformat.datetime_to: <text>:date
-dateformat.datetime_informat: "%Y-%m-%d"
+dateformat:
+    datetime_from: <text>:date
+    datetime_to: <text>:date
+    datetime_informat: "%Y-%m-%d"
 
 
 ################################################################################
@@ -43,21 +44,21 @@ classes:
 
 # Automatic annotations to be included in the export
 annotations:
-  - <text>
-  - <text>:readability.lix
-  - <text>:dateformat.datefrom
-  - <text>:dateformat.dateto
-  - <text>:dateformat.timefrom
-  - <text>:dateformat.timeto
-  - <sentence>
-  - <sentence>:geo.geo_context as geo
-  - swener.ne
-  - swener.ne:swener.ex
-  - swener.ne:swener.name
-  - swener.ne:swener.type
-  - swener.ne:swener.subtype
-  - <token>
-  - <token:pos>
-  - <token>:malt.deprel
-  - <token>:malt.dephead_ref
-  - <token>:misc.number_rel_<sentence> as ref
+    - <text>
+    - <text>:readability.lix
+    - <text>:dateformat.datefrom
+    - <text>:dateformat.dateto
+    - <text>:dateformat.timefrom
+    - <text>:dateformat.timeto
+    - <sentence>
+    - <sentence>:geo.geo_context as geo
+    - swener.ne
+    - swener.ne:swener.ex
+    - swener.ne:swener.name
+    - swener.ne:swener.type
+    - swener.ne:swener.subtype
+    - <token>
+    - <token:pos>
+    - <token>:malt.deprel
+    - <token>:malt.dephead_ref
+    - <token>:misc.number_rel_<sentence> as ref
