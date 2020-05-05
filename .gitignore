@@ -19,9 +19,7 @@ models/hist/swedbergm.xml
 models/hunpos/hunpos.dalinm-swedberg.saldo.suc-tags.morphtable
 models/hunpos/hunpos.saldo.suc-tags.morphtable
 models/lexical_classes/blingbring.pickle
-models/lexical_classes/blingbring.txt
 models/lexical_classes/swefn.pickle
-models/lexical_classes/swefn.xml
 models/malt/swemalt-1.7.2.mco
 models/saldo/nst_utf8.txt
 models/saldo/saldo.compound.pickle

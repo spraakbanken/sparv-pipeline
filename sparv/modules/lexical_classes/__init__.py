@@ -1,1 +1,1 @@
-from . import text, token
+from . import models, text, token

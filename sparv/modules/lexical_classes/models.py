@@ -7,6 +7,8 @@ import sys
 from collections import defaultdict
 
 import sparv.util as util
+from sparv import ModelOutput, modelbuilder
+from sparv.core import paths
 
 log = logging.getLogger(__name__)
 
@@ -14,6 +16,35 @@ log = logging.getLogger(__name__)
 CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
 CWB_DESCRIBE_EXECUTABLE = "cwb-describe-corpus"
 CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
+
+
+@modelbuilder("Blingbring model")
+def blingbring_model(out: str = ModelOutput("lexical_classes/blingbring.pickle")):
+    """Download and build Blingbring model."""
+    modeldir = paths.get_model_path(util.dirname(out))
+
+    # Download blingbring.txt and build blingbring.pickle
+    raw_path = os.path.join(modeldir, "blingbring.txt")
+    util.download_file("https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/bring/blingbring.txt", raw_path)
+    classmap_path = os.path.join(modeldir, "roget_hierarchy.xml")
+    blingbring_to_pickle(raw_path, classmap_path, paths.get_model_path(out))
+
+    # Clean up
+    util.remove_files([raw_path])
+
+
+@modelbuilder("SweFN model")
+def swefn_model(out: str = ModelOutput("lexical_classes/swefn.pickle")):
+    """Download and build SweFN model."""
+    modeldir = paths.get_model_path(util.dirname(out))
+
+    # Download swefn.xml and build swefn.pickle
+    raw_path = os.path.join(modeldir, "swefn.xml")
+    util.download_file("https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/swefn/swefn.xml", raw_path)
+    swefn_to_pickle(raw_path, paths.get_model_path(out))
+
+    # Clean up
+    util.remove_files([raw_path])
 
 
 def read_blingbring(tsv="blingbring.txt", classmap="rogetMap.xml", verbose=True):
@@ -227,10 +258,3 @@ def create_freq_pickle(corpus, annotation, filename, model, class_set=None, scor
         rel_freq[cl] = (corpus_stats[cl] + smoothing) / (corpus_size + smoothing * lexicon_size)
 
     util.lexicon_to_pickle(rel_freq, filename)
-
-
-if __name__ == "__main__":
-    util.run.main(blingbring_to_pickle=blingbring_to_pickle,
-                  swefn_to_pickle=swefn_to_pickle,
-                  create_freq_pickle=create_freq_pickle
-                  )
