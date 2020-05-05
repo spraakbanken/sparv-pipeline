@@ -1,42 +1,86 @@
-# -*- coding: utf-8 -*-
-import sparv.util as util
+"""Create diapivot annotation."""
+
+import logging
+import os
 import pickle
+import xml.etree.ElementTree as etree
+
+import sparv.util as util
+from sparv import Annotation, Document, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv.core import paths
+
+log = logging.getLogger(__name__)
+
+PART_DELIM1 = "^1"
 
 
-def annotate(out, lemgram, model, affix="|", delimiter="|"):
-    """ Annotates each lemgram with its corresponding saldo_id,
-        according to model (crosslink.pickle)
-      - out is the resulting annotation file
-      - lemgram is the existing annotations for lemgrams
-      - model is the crosslink model
+@annotator("Diapivot annotation", language=["swe-1800"])
+def diapivot_annotate(doc: str = Document,
+                      out: str = Output("<token>:hist.diapivot", description="SALDO IDs corresponding to lemgrams"),
+                      lemgram: str = Annotation("<token>:saldo.lemgram"),
+                      model: str = Model("hist/diapivot.pickle")):
+    """Annotate each lemgram with its corresponding saldo_id according to model.
+
+    Args:
+        doc (str, optional): Document to be annotated. Defaults to Document.
+        out (str, optional): Resulting annotation file.
+            Defaults to Output("<token>:hist.diapivot", description="SALDO IDs corresponding to lemgrams").
+        lemgram (str, optional): Existing lemgram annotation. Defaults to Annotation("<token>:saldo.lemgram").
+        model (str, optional): Crosslink model. Defaults to Model("hist/diapivot.pickle").
     """
     lexicon = PivotLexicon(model)
-    WORD = util.read_annotation(lemgram)
+    lemgram_annotation = list(util.read_annotation(doc, lemgram))
 
-    OUT = {}
+    out_annotation = []
 
-    for tokid in WORD:
+    for lemgrams in lemgram_annotation:
         saldo_ids = []
-        for lemgram in WORD[tokid].split(delimiter):
+        for lemgram in lemgrams.split(util.DELIM):
             s_i = lexicon.get_exactMatch(lemgram)
             if s_i:
                 saldo_ids += [s_i]
-        OUT[tokid] = affix + delimiter.join(set(saldo_ids)) + affix if saldo_ids else affix
+        out_annotation.append(util.AFFIX + util.DELIM.join(set(saldo_ids)) + util.AFFIX if saldo_ids else util.AFFIX)
 
-    util.write_annotation(out, OUT)
+    util.write_annotation(doc, out, out_annotation)
+
+
+@modelbuilder("Diapivot model")
+def build_diapivot(out: str = ModelOutput("hist/diapivot.pickle")):
+    """Download diapivot XML dictionary and save as a pickle file."""
+    modeldir = paths.get_model_path(util.dirname(out))
+    out = paths.get_model_path(out)
+
+    # Download diapivot.xml
+    xml_path = os.path.join(modeldir, "diapivot.xml")
+    util.download_file("https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/diapivot/diapivot.xml", xml_path)
+
+    # Create pickle file
+    xml_lexicon = read_xml(xml_path)
+    save_to_picklefile(out, xml_lexicon)
+
+    # Clean up
+    util.remove_files([xml_path])
+
+
+################################################################################
+# Auxiliaries
+################################################################################
 
 
 class PivotLexicon(object):
-    """A lexicon for oldswedish-Saldo  lookups.
-    It is initialized from a Pickled file.
+    """A lexicon for old swedish SALDO lookups.
+
+    It is initialized from a pickled file.
     """
+
     def __init__(self, crossfile, verbose=True):
+        """Read pickled lexicon."""
         if verbose:
-            util.log.info("Reading cross lexicon: %s", crossfile)
+            log.info("Reading cross lexicon: %s", crossfile)
         with open(crossfile, "rb") as F:
             self.lexicon = pickle.load(F)
         if verbose:
-            util.log.info("OK, read %d words", len(self.lexicon))
+            log.info("OK, read %d words", len(self.lexicon))
 
     def lookup(self, lem):
         """Lookup a word in the lexicon."""
@@ -47,6 +91,7 @@ class PivotLexicon(object):
         return list(map(_split_val, annotation_tag_pairs))
 
     def get_exactMatch(self, word):
+        """Get only exact matches from lexicon."""
         s = self.lookup(word)
         if s and s[0] == "exactMatch":
             return s[1]
@@ -57,13 +102,11 @@ def _split_val(key_val):
 
 
 def read_xml(xml='diapivot.xml'):
-    """Read the XML version of crosslinked lexicon (crosslink.xml)."""
-
-    import xml.etree.cElementTree as cet
-    util.log.info("Reading XML lexicon")
+    """Read the XML version of crosslinked lexicon."""
+    log.info("Reading XML lexicon")
     lexicon = {}
 
-    context = cet.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
+    context = etree.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
     context = iter(context)
     event, root = next(context)
 
@@ -74,12 +117,12 @@ def read_xml(xml='diapivot.xml'):
                 lemma = elem.find("Lemma")
                 dalin, saldo = [], ''
                 for form in lemma.findall("FormRepresentation"):
-                    cat = findval(form, "category")
-                    lem = findval(form, "lemgram")
+                    cat = _findval(form, "category")
+                    lem = _findval(form, "lemgram")
                     if cat == "modern":
                         saldo = lem
                     else:
-                        match = findval(form, "match")
+                        match = _findval(form, "match")
                         dalin += [(lem, match)]
 
                 [lexicon.update({d: {'saldo': saldo, 'match': m}}) for (d, m) in dalin]
@@ -88,39 +131,31 @@ def read_xml(xml='diapivot.xml'):
             if elem.tag in ['LexicalEntry', 'frame', 'resFrame']:
                 root.clear()
 
-    test_annotations(lexicon)
-    util.log.info("OK, read")
+    testwords = ["tigerhjerta..nn.1",
+                 "lågland..nn.1",
+                 "gud..nn.1"]
+    util.test_annotations(lexicon, testwords)
+
+    log.info("OK, read")
     return lexicon
 
 
-def findval(elems, key):
+def _findval(elems, key):
     for form in elems:
-        param, word = "", ""
         att = form.get("att", "")
         if att == key:
             return form.get("val")
     return ""
 
 
-def test_annotations(lexicon):
-    for key in testwords:
-        util.log.output("%s = %s", key, lexicon.get(key))
+def save_to_picklefile(xmlfile, lexicon, protocol=-1, verbose=True):
+    """Save an xml lexicon to a pickled file.
 
-testwords = [u"tigerhjerta..nn.1",
-             u"lågland..nn.1",
-             u"gud..nn.1"
-             ]
-
-PART_DELIM1 = "^1"
-
-
-def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
-    """Save a cross lexicon to a Pickled file.
     The input lexicon should be a dict:
       - lexicon = {lemgram: {saldo: str, match : str}}
     """
     if verbose:
-        util.log.info("Saving cross lexicon in Pickle format")
+        log.info("Saving cross lexicon in Pickle format")
 
     picklex = {}
     for lem in lexicon:
@@ -131,18 +166,7 @@ def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
 
         picklex[lem] = sorted(lemgrams)
 
-    with open(saldofile, "wb") as F:
-        pickle.dump(picklex, F, protocol=protocol)
+    with open(xmlfile, "wb") as f:
+        pickle.dump(picklex, f, protocol=protocol)
     if verbose:
-        util.log.info("OK, saved")
-
-
-def xml_to_pickle(xml, filename):
-    """Read an XML dictionary and save as a pickle file."""
-
-    xml_lexicon = read_xml(xml)
-    save_to_picklefile(filename, xml_lexicon)
-
-
-if __name__ == '__main__':
-    util.run.main(annotate, xml_to_pickle=xml_to_pickle)
+        log.info("OK, saved")
