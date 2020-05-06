@@ -136,8 +136,9 @@ def make_rule(module_name, f_name, annotator_info) -> None:
             all_annotations[module_name][f_name]["annotations"].append((param.default, param.default.description))
         # ModelOutput
         elif isinstance(param.default, ModelOutput):
-            param_value = registry.expand_variables(param.default)
-            outputs.append(paths.get_model_path(param_value))
+            model = util.get_model_path(registry.expand_variables(param.default))
+            outputs.append(model)
+            parameters[param_name] = model
         # Annotation
         elif registry.dig(Annotation, param.default):
             param_value = registry.expand_variables(param.default)
@@ -188,13 +189,13 @@ def make_rule(module_name, f_name, annotator_info) -> None:
         elif registry.dig(Model, param.default):
             if param.default is not None:
                 if isinstance(param.default, Model):
-                    model = paths.get_model_path(registry.expand_variables(param.default))
+                    model = util.get_model_path(registry.expand_variables(param.default))
                     inputs.append(model)
                     parameters[param_name] = model
                 elif isinstance(param.default, (list, tuple)):
                     parameters[param_name] = []
                     for model in param.default:
-                        model = paths.get_model_path(registry.expand_variables(model))
+                        model = util.get_model_path(registry.expand_variables(model))
                         inputs.append(model)
                         parameters[param_name].append(model)
         # Binary

@@ -6,7 +6,6 @@ import re
 
 import sparv.util as util
 from sparv import Annotation, Binary, Document, Model, ModelOutput, Output, annotator, modelbuilder
-from sparv.core import paths
 
 log = logging.getLogger(__name__)
 
@@ -159,5 +158,4 @@ def maltstart(maltjar, model, encoding, send_empty_sentence=False):
 @modelbuilder("Model for MALT Parser")
 def build_model(out: str = ModelOutput("malt/swemalt-1.7.2.mco")):
     """Download model for MALT Parser."""
-    out_path = paths.get_model_path(out)
-    util.download_file("http://maltparser.org/mco/swedish_parser/swemalt-1.7.2.mco", out_path)
+    util.download_model("http://maltparser.org/mco/swedish_parser/swemalt-1.7.2.mco", out)

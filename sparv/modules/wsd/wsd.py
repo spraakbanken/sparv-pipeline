@@ -5,7 +5,6 @@ import os
 
 import sparv.util as util
 from sparv import Annotation, Binary, Document, Model, ModelOutput, Output, annotator, modelbuilder
-from sparv.core import paths
 
 log = logging.getLogger(__name__)
 
@@ -83,22 +82,15 @@ def annotate(doc: str = Document,
 def build_model(sense_model: str = ModelOutput("wsd/ALL_512_128_w10_A2_140403_ctx1.bin"),
                 context_model: str = ModelOutput("wsd/lem_cbow0_s512_w10_NEW2_ctx.bin")):
     """Download models for SALDO-based word sense disambiguation."""
-    modeldir = paths.get_model_path(util.dirname(sense_model))
-
-    # Create model dir
-    os.makedirs(modeldir, exist_ok=True)
-
     # Download sense model
-    sense_path = os.path.join(modeldir, "ALL_512_128_w10_A2_140403_ctx1.bin")
-    util.download_file(
+    util.download_model(
         "https://github.com/spraakbanken/sparv-wsd/raw/master/models/scouse/ALL_512_128_w10_A2_140403_ctx1.bin",
-        sense_path)
+        sense_model)
 
     # Download context model
-    context_path = os.path.join(modeldir, "lem_cbow0_s512_w10_NEW2_ctx.bin")
-    util.download_file(
+    util.download_model(
         "https://github.com/spraakbanken/sparv-wsd/raw/master/models/scouse/lem_cbow0_s512_w10_NEW2_ctx.bin",
-        context_path)
+        context_model)
 
 
 def wsd_start(wsdjar, sense_model, context_model, encoding):

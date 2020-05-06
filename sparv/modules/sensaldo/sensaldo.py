@@ -1,11 +1,9 @@
 """Sentiment annotation per token using SenSALDO."""
 
 import logging
-import os
 
 import sparv.util as util
 from sparv import Annotation, Document, Model, ModelOutput, Output, annotator, modelbuilder
-from sparv.core import paths
 
 log = logging.getLogger(__name__)
 
@@ -65,7 +63,28 @@ def annotate(doc: str = Document,
     util.write_annotation(doc, out_labels, result_labels)
 
 
-def read_sensaldo(tsv="sensaldo-base-v02.txt", verbose=True):
+@modelbuilder("Sentiment model (SenSALDO)")
+def build_model(out: str = ModelOutput("sensaldo/sensaldo.pickle")):
+    """Download and build SenSALDO model."""
+    # Download and extract sensaldo-base-v02.txt
+    zip_path = "sensaldo/sensaldo-v02.zip"
+    util.download_model("https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/sensaldo/sensaldo-v02.zip", zip_path)
+    util.unzip_model(zip_path)
+    tsv_path = "sensaldo/sensaldo-base-v02.txt"
+
+    # Read sensaldo tsv dictionary and save as a pickle file
+    lexicon = read_sensaldo(tsv_path)
+    util.lexicon_to_pickle(lexicon, out)
+
+    # Clean up
+    util.remove_model_files([
+        zip_path,
+        "sensaldo/sensaldo-fullform-v02.txt",
+        tsv_path
+    ])
+
+
+def read_sensaldo(tsv, verbose=True):
     """Read the TSV version of the sensaldo lexicon (sensaldo-base.txt).
 
     Return a lexicon dictionary: {senseid: (class, ranking)}
@@ -74,9 +93,11 @@ def read_sensaldo(tsv="sensaldo-base-v02.txt", verbose=True):
         log.info("Reading TSV lexicon")
     lexicon = {}
 
-    with open(tsv) as f:
-        for line in f:
-            if line.lstrip().startswith("#"):
+    f = util.read_model_data(tsv)
+    # with open(tsv) as f:
+    for line in f.split("\n"):
+        if line.lstrip():
+            if line.startswith("#"):
                 continue
             saldoid, label = line.split()
             lexicon[saldoid] = label
@@ -90,33 +111,3 @@ def read_sensaldo(tsv="sensaldo-base-v02.txt", verbose=True):
     if verbose:
         log.info("OK, read")
     return lexicon
-
-
-@modelbuilder("Sentiment model (SenSALDO)")
-def build_model(out: str = ModelOutput("sensaldo/sensaldo.pickle")):
-    """Download and build SenSALDO model."""
-    modeldir = paths.get_model_path(util.dirname(out))
-
-    # Create model dir
-    os.makedirs(modeldir, exist_ok=True)
-
-    # Download and extract sensaldo-base-v02.txt
-    zip_path = os.path.join(modeldir, "sensaldo-v02.zip")
-    util.download_file("https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/sensaldo/sensaldo-v02.zip", zip_path)
-    util.unzip(zip_path, modeldir)
-    tsv_path = os.path.join(modeldir, "sensaldo-base-v02.txt")
-
-    sensaldo_to_pickle(tsv_path, paths.get_model_path(out))
-
-    # Clean up
-    util.remove_files([
-        zip_path,
-        os.path.join(modeldir, "sensaldo-fullform-v02.txt"),
-        os.path.join(modeldir, "sensaldo-base-v02.txt"),
-    ])
-
-
-def sensaldo_to_pickle(tsv, filename, protocol=-1, verbose=True):
-    """Read sensaldo tsv dictionary and save as a pickle file."""
-    lexicon = read_sensaldo(tsv)
-    util.lexicon_to_pickle(lexicon, filename)

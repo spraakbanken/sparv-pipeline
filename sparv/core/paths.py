@@ -24,11 +24,7 @@ cwb_datadir = os.environ.get("CWB_DATADIR")
 corpus_registry = os.environ.get("CORPUS_REGISTRY")
 
 
-def get_model_path(name: str):
-    """Get full path to model file."""
-    return os.path.join(pipeline_path, models_dir, name)
-
-
 def get_bin_path(name: str):
-    """Get full path to binary file."""
-    return os.path.join(pipeline_path, bin_dir, name)
+    """Get full path to binary file (platform independent)."""
+    components = name.split("/")
+    return os.path.join(pipeline_path, bin_dir, *components)

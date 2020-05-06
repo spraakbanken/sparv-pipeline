@@ -4,7 +4,6 @@ import re
 
 import sparv.util as util
 from sparv import Model, ModelOutput, modelbuilder
-from sparv.core import paths
 
 # Constants
 SALDO_TO_SUC = util.tagsets.saldo_to_suc
@@ -29,12 +28,6 @@ def hist_morphtable(out: str = ModelOutput("hunpos/hist/hunpos.dalinm-swedberg.s
         saldosuc_morphtable (str, optional): SALDO Hunpos morphtable.
             Defaults to Model("hunpos/hunpos.saldo.suc-tags.morphtable").
     """
-    # Get full paths
-    out = paths.get_model_path(out)
-    swedberg = paths.get_model_path(swedberg)
-    dalin = paths.get_model_path(dalin)
-    saldosuc_morphtable = paths.get_model_path(saldosuc_morphtable)
-
     words = {}
     _read_saldosuc(words, saldosuc_morphtable)
     for fil in [dalin, swedberg]:

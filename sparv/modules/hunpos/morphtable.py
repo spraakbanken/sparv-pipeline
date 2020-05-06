@@ -3,7 +3,6 @@
 from collections import defaultdict
 
 from sparv import Model, ModelOutput, modelbuilder
-from sparv.core import paths
 from sparv.modules.saldo import saldo
 
 
@@ -35,13 +34,6 @@ def saldo_morphtable(out: str = ModelOutput("hunpos/hunpos.saldo.suc-tags.morpht
         add_capitalized (bool, optional): Whether or not capitalized word forms should be added. Defaults to True.
         add_lowercase (bool, optional): Whether or not lower case word forms should be added. Defaults to False.
     """
-    # Get full paths
-    out = paths.get_model_path(out)
-    saldo_model = paths.get_model_path(saldo_model)
-    suc = paths.get_model_path(suc)
-    morphtable_base = paths.get_model_path(morphtable_base)
-    morphtable_patterns = paths.get_model_path(morphtable_patterns)
-
     lex = saldo.SaldoLexicon(saldo_model)
     tags = defaultdict(set)
 

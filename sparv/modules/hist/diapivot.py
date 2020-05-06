@@ -1,13 +1,11 @@
 """Create diapivot annotation."""
 
 import logging
-import os
 import pickle
 import xml.etree.ElementTree as etree
 
 import sparv.util as util
 from sparv import Annotation, Document, Model, ModelOutput, Output, annotator, modelbuilder
-from sparv.core import paths
 
 log = logging.getLogger(__name__)
 
@@ -47,19 +45,24 @@ def diapivot_annotate(doc: str = Document,
 @modelbuilder("Diapivot model")
 def build_diapivot(out: str = ModelOutput("hist/diapivot.pickle")):
     """Download diapivot XML dictionary and save as a pickle file."""
-    modeldir = paths.get_model_path(util.dirname(out))
-    out = paths.get_model_path(out)
-
     # Download diapivot.xml
-    xml_path = os.path.join(modeldir, "diapivot.xml")
-    util.download_file("https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/diapivot/diapivot.xml", xml_path)
+    xml_path = "hist/diapivot.xml"
+    util.download_model("https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/diapivot/diapivot.xml", "hist/diapivot.xml")
 
     # Create pickle file
-    xml_lexicon = read_xml(xml_path)
-    save_to_picklefile(out, xml_lexicon)
+    xml_lexicon = read_xml(util.get_model_path(xml_path))
+    log.info("Saving cross lexicon in Pickle format")
+    picklex = {}
+    for lem in xml_lexicon:
+        lemgrams = []
+        for saldo, match in list(xml_lexicon[lem].items()):
+            lemgrams.append(PART_DELIM1.join([saldo, match]))
+        picklex[lem] = sorted(lemgrams)
+
+    util.write_model_pickle(out, picklex)
 
     # Clean up
-    util.remove_files([xml_path])
+    util.remove_model_files([xml_path])
 
 
 ################################################################################
@@ -101,14 +104,14 @@ def _split_val(key_val):
     return key_val.rsplit(PART_DELIM1)[1]
 
 
-def read_xml(xml='diapivot.xml'):
+def read_xml(xml):
     """Read the XML version of crosslinked lexicon."""
     log.info("Reading XML lexicon")
     lexicon = {}
 
     context = etree.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
     context = iter(context)
-    event, root = next(context)
+    _event, root = next(context)
 
     for event, elem in context:
         if event == "end":
@@ -146,27 +149,3 @@ def _findval(elems, key):
         if att == key:
             return form.get("val")
     return ""
-
-
-def save_to_picklefile(xmlfile, lexicon, protocol=-1, verbose=True):
-    """Save an xml lexicon to a pickled file.
-
-    The input lexicon should be a dict:
-      - lexicon = {lemgram: {saldo: str, match : str}}
-    """
-    if verbose:
-        log.info("Saving cross lexicon in Pickle format")
-
-    picklex = {}
-    for lem in lexicon:
-        lemgrams = []
-
-        for saldo, match in list(lexicon[lem].items()):
-            lemgrams.append(PART_DELIM1.join([saldo, match]))
-
-        picklex[lem] = sorted(lemgrams)
-
-    with open(xmlfile, "wb") as f:
-        pickle.dump(picklex, f, protocol=protocol)
-    if verbose:
-        log.info("OK, saved")

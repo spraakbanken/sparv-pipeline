@@ -6,8 +6,6 @@ import os
 import shutil
 import subprocess
 import sys
-import urllib.request
-import zipfile
 
 log = logging.getLogger(__name__)
 
@@ -35,27 +33,6 @@ def clear_directory(dir):
     """
     shutil.rmtree(dir, ignore_errors=True)
     os.makedirs(dir, exist_ok=True)
-
-
-def remove_files(files: list, raise_errors: bool = False):
-    """Remove files from disk."""
-    for f in files:
-        try:
-            os.remove(f)
-        except FileNotFoundError as e:
-            if raise_errors:
-                raise e
-
-
-def download_file(url, out_path):
-    """Download file from url and save to out_path."""
-    urllib.request.urlretrieve(url, out_path)
-
-
-def unzip(zip_file, out_path):
-    """Unzip zip_file and save contents to out_path."""
-    with zipfile.ZipFile(zip_file, "r") as z:
-        z.extractall(out_path)
 
 
 def call_java(jar, arguments, options=[], stdin="", search_paths=(),

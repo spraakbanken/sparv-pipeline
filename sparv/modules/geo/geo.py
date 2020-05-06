@@ -120,44 +120,39 @@ def metadata(doc: str = Document,
 @modelbuilder("Model for geo tagging")
 def build_model(out: str = ModelOutput("geo/geo.pickle")):
     """Download and build geo model."""
-    modeldir = paths.get_model_path(util.dirname(out))
-
-    # Create model dir
-    os.makedirs(modeldir, exist_ok=True)
-
     # Download and extract cities1000.txt
-    cities_path = os.path.join(modeldir, "cities1000.zip")
-    util.download_file("http://download.geonames.org/export/dump/cities1000.zip", cities_path)
-    util.unzip(cities_path, modeldir)
-    geonames = os.path.join(modeldir, "cities1000.txt")
+    cities_zip = "geo/cities1000.zip"
+    util.download_model("http://download.geonames.org/export/dump/cities1000.zip", cities_zip)
+    util.unzip_model(cities_zip)
 
     # Download and extract alternateNames.txt
-    names_path = os.path.join(modeldir, "alternateNames.zip")
-    util.download_file("http://download.geonames.org/export/dump/alternateNames.zip", names_path)
-    util.unzip(names_path, modeldir)
-    alternative_names = os.path.join(modeldir, "alternateNames.txt")
+    names_zip = "geo/alternateNames.zip"
+    util.download_model("http://download.geonames.org/export/dump/alternateNames.zip", names_zip)
+    util.unzip_model(names_zip)
 
-    pickle_model(geonames, alternative_names, paths.get_model_path(out))
+    pickle_model("geo/cities1000.txt", "geo/alternateNames.txt", out)
 
     # Clean up
-    util.remove_files([
-        cities_path,
-        names_path,
-        os.path.join(modeldir, "iso-languagecodes.txt"),
-        os.path.join(modeldir, "cities1000.txt"),
-        os.path.join(modeldir, "alternateNames.txt")
+    util.remove_model_files([
+        cities_zip,
+        names_zip,
+        "geo/iso-languagecodes.txt",
+        "geo/cities1000.txt",
+        "geo/alternateNames.txt"
     ])
 
 
-def pickle_model(geonames, alternative_names, out, protocol=-1):
+def pickle_model(geonames, alternative_names, out):
     """Read list of cities from Geonames dump (http://download.geonames.org/export/dump/).
 
     Add alternative names for each city.
     """
     log.info("Reading geonames: %s", geonames)
     result = {}
-    with open(geonames, encoding="UTF-8") as model_file:
-        for line in model_file:
+
+    model_file = util.read_model_data(geonames)
+    for line in model_file.split("\n"):
+        if line.strip():
             geonameid, name, _, _, latitude, longitude, _feature_class, _feature_code, \
                 country, _, _admin1, _admin2, _admin3, _admin4, population, _, _, _, _ = line.split("\t")
 
@@ -173,8 +168,9 @@ def pickle_model(geonames, alternative_names, out, protocol=-1):
     # Parse file with alternative names of locations, paired with language codes
     log.info("Reading alternative names: %s", alternative_names)
 
-    with open(alternative_names, encoding="UTF-8") as model_file:
-        for line in model_file:
+    model_file = util.read_model_data(alternative_names)
+    for line in model_file.split("\n"):
+        if line.strip():
             _altid, geonameid, isolanguage, altname, _is_preferred_name, _is_short_name, \
                 _is_colloquial, _is_historic = line.split("\t")
             if geonameid in result:
@@ -182,11 +178,7 @@ def pickle_model(geonames, alternative_names, out, protocol=-1):
                 result[geonameid]["alternative_names"][isolanguage].append(altname)
 
     log.info("Saving geomodel in Pickle format")
-
-    with open(out, "wb") as outfile:
-        pickle.dump(result, outfile, protocol=protocol)
-
-    log.info("OK, saved")
+    util.write_model_pickle(out, result)
 
 
 ########################################################################################################

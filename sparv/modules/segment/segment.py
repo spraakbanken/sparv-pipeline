@@ -11,7 +11,6 @@ import nltk
 import sparv.modules.saldo.saldo as saldo
 import sparv.util as util
 from sparv import Annotation, Config, Document, Model, ModelOutput, Output, annotator, modelbuilder
-from sparv.core import paths
 
 try:
     from . import crf  # for CRF++ models
@@ -147,8 +146,7 @@ def build_tokenlist(saldo_model: str = Model("saldo/saldo.pickle"),
                 if len(spans) > 1 and not wf.endswith(","):
                     wordforms.add(wf)
 
-    with open(paths.get_model_path(out), mode="w", encoding=util.UTF8) as outfile:
-        outfile.write("\n".join(sorted(wordforms)))
+    util.write_model_data(out, "\n".join(sorted(wordforms)))
 
 ######################################################################
 # Punkt word tokenizer

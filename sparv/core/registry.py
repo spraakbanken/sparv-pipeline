@@ -173,8 +173,8 @@ def _add_to_registry(annotator):
                         print("Malformed class name: '{}'".format(cls))
 
         if isinstance(val.default, ModelOutput):
-            ann = val.default
-            if not ann.startswith(module_name + "/"):
+            modeldir = val.default.split("/")[0]
+            if not modeldir.startswith(module_name):
                 raise ValueError("Output model '{}' in module '{}' doesn't include module "
                                  "name as sub directory.".format(ann, module_name))
 

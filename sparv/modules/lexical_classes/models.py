@@ -4,11 +4,11 @@ import logging
 import os
 import subprocess
 import sys
+import xml.etree.ElementTree as etree
 from collections import defaultdict
 
 import sparv.util as util
-from sparv import ModelOutput, modelbuilder
-from sparv.core import paths
+from sparv import Model, ModelOutput, modelbuilder
 
 log = logging.getLogger(__name__)
 
@@ -19,35 +19,33 @@ CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 
 @modelbuilder("Blingbring model")
-def blingbring_model(out: str = ModelOutput("lexical_classes/blingbring.pickle")):
+def blingbring_model(out: str = ModelOutput("lexical_classes/blingbring.pickle"),
+                     classmap: str = Model("lexical_classes/roget_hierarchy.xml")):
     """Download and build Blingbring model."""
-    modeldir = paths.get_model_path(util.dirname(out))
-
     # Download blingbring.txt and build blingbring.pickle
-    raw_path = os.path.join(modeldir, "blingbring.txt")
-    util.download_file("https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/bring/blingbring.txt", raw_path)
-    classmap_path = os.path.join(modeldir, "roget_hierarchy.xml")
-    blingbring_to_pickle(raw_path, classmap_path, paths.get_model_path(out))
+    raw_file = "lexical_classes/blingbring.txt"
+    util.download_model("https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/bring/blingbring.txt", raw_file)
+    lexicon = read_blingbring(util.get_model_path(raw_file), util.get_model_path(classmap))
+    util.lexicon_to_pickle(lexicon, out)
 
     # Clean up
-    util.remove_files([raw_path])
+    util.remove_model_files([raw_file])
 
 
 @modelbuilder("SweFN model")
 def swefn_model(out: str = ModelOutput("lexical_classes/swefn.pickle")):
     """Download and build SweFN model."""
-    modeldir = paths.get_model_path(util.dirname(out))
-
     # Download swefn.xml and build swefn.pickle
-    raw_path = os.path.join(modeldir, "swefn.xml")
-    util.download_file("https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/swefn/swefn.xml", raw_path)
-    swefn_to_pickle(raw_path, paths.get_model_path(out))
+    raw_file = "lexical_classes/swefn.xml"
+    util.download_model("https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/swefn/swefn.xml", raw_file)
+    lexicon = read_swefn(util.get_model_path(raw_file))
+    util.lexicon_to_pickle(lexicon, out)
 
     # Clean up
-    util.remove_files([raw_path])
+    util.remove_model_files([raw_file])
 
 
-def read_blingbring(tsv="blingbring.txt", classmap="rogetMap.xml", verbose=True):
+def read_blingbring(tsv, classmap, verbose=True):
     """Read the tsv version of the Blingbring lexicon (blingbring.xml).
 
     Return a lexicon dictionary: {senseid: {roget_head: roget_head,
@@ -106,15 +104,13 @@ def read_blingbring(tsv="blingbring.txt", classmap="rogetMap.xml", verbose=True)
     return lexicon
 
 
-def read_rogetmap(xml="roget_hierarchy.xml", verbose=True):
+def read_rogetmap(xml, verbose=True):
     """Parse Roget map (Roget hierarchy) into a dictionary with Roget head words as keys."""
-    import xml.etree.ElementTree as cet
     if verbose:
         log.info("Reading XML lexicon")
     lexicon = {}
-    context = cet.iterparse(xml, events=("start", "end"))
+    context = etree.iterparse(xml, events=("start", "end"))
     context = iter(context)
-    _event, _root = next(context)
 
     for _event, elem in context:
         if elem.tag == "class":
@@ -138,19 +134,18 @@ def read_rogetmap(xml="roget_hierarchy.xml", verbose=True):
     return lexicon
 
 
-def read_swefn(xml='swefn.xml', verbose=True):
+def read_swefn(xml, verbose=True):
     """Read the XML version of the swedish Framenet resource.
 
     Return a lexicon dictionary, {saldoID: {swefnID}}.
     """
-    import xml.etree.ElementTree as cet
     if verbose:
         log.info("Reading XML lexicon")
     lexicon = {}
 
-    context = cet.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
+    context = etree.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
     context = iter(context)
-    event, root = next(context)
+    _event, root = next(context)
 
     for event, elem in context:
         if event == "end":
@@ -175,18 +170,6 @@ def read_swefn(xml='swefn.xml', verbose=True):
     if verbose:
         log.info("OK, read.")
     return lexicon
-
-
-def blingbring_to_pickle(tsv, classmap, filename, protocol=-1, verbose=True):
-    """Read blingbring tsv dictionary and save as a pickle file."""
-    lexicon = read_blingbring(tsv, classmap)
-    util.lexicon_to_pickle(lexicon, filename)
-
-
-def swefn_to_pickle(xml, filename, protocol=-1, verbose=True):
-    """Read sweFN xml dictionary and save as a pickle file."""
-    lexicon = read_swefn(xml)
-    util.lexicon_to_pickle(lexicon, filename)
 
 
 def create_freq_pickle(corpus, annotation, filename, model, class_set=None, score_separator=util.SCORESEP):
