@@ -24,18 +24,42 @@ def main():
     # Set up command line arguments
     parser = argparse.ArgumentParser(prog="sparv",
                                      description="Sparv Pipeline",
-                                     allow_abbrev=False)
+                                     allow_abbrev=False,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("--version", action="version", version=f"Sparv Pipeline v{__version__}")
+    description = [
+        "ANNOTATE:",
+        "  run --output     Generate corpus export",
+        "  install          Install annotated corpus on remote server",
+        "  clean            Remove output directories",
+        "                   (by default only the annotations directory)",
+        "",
+        "INSPECT:",
+        "  config           Display corpus config",
+        "  files            List available input files",
+        "",
+        "SETUP:",
+        "  create-config    Run config wizard to create a corpus config",
+        "  build-models     Build Sparv models",
+        "  install-plugin   (?)",
+        "",
+        "ADVANCED COMMANDS:",
+        "  run-module       Run annotator module independently",
+        "  run-rule         Create specified annotation(s)",
+        "  create-file      Create specified annotation file(s).",
+        "  annotations      (?) List available modules and annotations",
+    ]
+
+    parser.add_argument("-v", "--version", action="version", version=f"Sparv Pipeline v{__version__}")
     parser.add_argument("-d", "--dir", help="Specify corpus directory.")
 
-    subparsers = parser.add_subparsers(dest="command", title="commands")
+    subparsers = parser.add_subparsers(dest="command", title="commands", description="\n".join(description))
     subparsers.required = True
 
-    target_parser = subparsers.add_parser("target", help="Create specified annotation(s) or annotation file(s).")
+    target_parser = subparsers.add_parser("target")
     target_parser.add_argument("targets", nargs="*", help="Annotation(s) or annotation file(s) to create.")
-    target_parser.add_argument("-f", "--file", nargs="+", default=[],
-                               help="When target is an annotation, only annotate specified input file(s).")
+    target_parser.add_argument("-d", "--doc", nargs="+", default=[],
+                               help="When target is an annotation, only annotate specified input document(s).")
     target_parser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel.",
                                default=1)
     target_parser.add_argument("-l", "--log", action="store_true", help="Show log instead of progress bar.")
@@ -43,18 +67,17 @@ def main():
     target_parser.add_argument("--list-targets", action="store_true", help="List available targets.")
     target_parser.add_argument("--debug", action="store_true", help="Show debug messages.")
 
-    clean_parser = subparsers.add_parser("clean",
-                                         help="Remove output directories (by default only the annotations directory).")
+    clean_parser = subparsers.add_parser("clean")
     clean_parser.add_argument("--export", action="store_true", help="Remove export directory.")
 
-    subparsers.add_parser("files", help="List available input files.")
-    install_parser = subparsers.add_parser("install", help="Install annotated corpus on remote server.")
+    subparsers.add_parser("files")
+    install_parser = subparsers.add_parser("install")
     install_parser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel.",
                                 default=1)
     install_parser.add_argument("-n", "--dry-run", action="store_true", help="Only dry-run the workflow.")
-    subparsers.add_parser("annotations", help="List available modules and annotations.")
-    subparsers.add_parser("config", help="Display corpus config.")
-    subparsers.add_parser("run", help="Run annotator module independently.", add_help=False)
+    subparsers.add_parser("annotations")
+    subparsers.add_parser("config")
+    subparsers.add_parser("run", add_help=False)
 
     # Parse arguments. We allow unknown arguments for the 'run' command which is handled separately.
     args, unknown_args = parser.parse_known_args(args=None if sys.argv[1:] else ["--help"])
