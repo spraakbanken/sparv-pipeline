@@ -427,6 +427,17 @@ rule list_targets:
         for target, desc in sorted(model_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
 
+
+rule list_exports:
+    run:
+        max_len = max(len(t[0]) for t in export_targets) + 4
+        print()
+        print("Available corpus export formats")
+        print("===============================")
+        for target, desc in sorted(export_targets):
+            print("    {:{}}    {}".format(target, max_len, desc))
+
+
 rule files:
     # List all input files
     run:

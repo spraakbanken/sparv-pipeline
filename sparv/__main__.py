@@ -64,10 +64,11 @@ def main():
     subparsers.required = True
 
     # Annotate
-    # TODO: Tell user what export formats there are. Make it impossible to run anything else than exports?
+    # TODO: Make it impossible to run anything else than exports?
     run_parser = subparsers.add_parser("run", description="Annotate a corpus and generate export files")
     run_parser.add_argument("-e", "--export", nargs="*", default=["xml_export:pretty"], metavar="<export>",
                             help="The type of export format to generate")
+    run_parser.add_argument("--list-exports", action="store_true", help="List available export formats")
 
     install_parser = subparsers.add_parser("install")
 
@@ -86,7 +87,7 @@ def main():
     subparsers.add_parser("run-module", add_help=False)
 
     runrule_parser = subparsers.add_parser("run-rule")
-    runrule_parser.add_argument("targets", nargs="*", help="Annotation(s) or annotation file(s) to create")
+    runrule_parser.add_argument("targets", nargs="*", default=["list_targets"], help="Annotation(s) or annotation file(s) to create")
     runrule_parser.add_argument("--list-targets", action="store_true", help="List available targets")
     # TODO: subparsers.add_parser("create-file")
     subparsers.add_parser("annotations", help="List available annotations and classes")
@@ -103,7 +104,7 @@ def main():
         subparser.add_argument("-l", "--log", action="store_true", help="Show log instead of progress bar")
         subparser.add_argument("--debug", action="store_true", help="Show debug messages")
 
-    # Parse arguments. We allow unknown arguments for the 'run' command which is handled separately.
+    # Parse arguments. We allow unknown arguments for the "run-module" command which is handled separately.
     args, unknown_args = parser.parse_known_args(args=None if sys.argv[1:] else ["--help"])
 
     # The "run-module" command is handled by a separate script
@@ -142,18 +143,17 @@ def main():
         # Command: run-rule
         if args.command == "run-rule":
             snakemake_args.update({"targets": args.targets})
-            if args.list_targets:
+            if args.list_targets or snakemake_args["targets"] == ["list_targets"]:
                 snakemake_args["targets"] = ["list_targets"]
-                simple_target = True
-            elif not snakemake_args["targets"]:
-                # List available targets if no target was specified
-                snakemake_args["targets"] = ["list_targets"]
-                print("\nNo targets provided!\n")
                 simple_target = True
         # Command: run
         elif args.command == "run":
-            print("Exporting corpus to: %s" % ", ".join(args.export))
-            snakemake_args.update({"targets": args.export})
+            if args.list_exports:
+                snakemake_args["targets"] = ["list_exports"]
+                simple_target = True
+            else:
+                print("Exporting corpus to: %s" % ", ".join(args.export))
+                snakemake_args.update({"targets": args.export})
         # Command: install
         elif args.command == "install":
             snakemake_args.update({"targets": ["install_annotated_corpus"]})
