@@ -16,13 +16,22 @@ if sys.version_info < (3, 6):
     raise Exception("Python 3.6+ is required.")
 
 
+class CustomHelpFormatter(argparse.RawDescriptionHelpFormatter):
+    """Custom help formatter for argparse, silencing subparser lists."""
+    def _format_action(self, action):
+        result = super()._format_action(action)
+        if isinstance(action, argparse._SubParsersAction):
+            return ""
+        return result
+
+
 def main():
     """Run Sparv pipeline (main entry point for Sparv)."""
     # Set up command line arguments
     parser = argparse.ArgumentParser(prog="sparv",
                                      description="Sparv Pipeline",
                                      allow_abbrev=False,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+                                     formatter_class=CustomHelpFormatter)
 
     parser.add_argument("-v", "--version", action="version", version=f"Sparv Pipeline v{__version__}")
     parser.add_argument("-d", "--dir", help="Specify corpus directory.")
@@ -49,7 +58,7 @@ def main():
         "   create-file      Create specified annotation file(s).",
         "   annotations      (?) List available modules and annotations",
     ]
-    subparsers = parser.add_subparsers(dest="command", title="commands", description="\n".join(description))
+    subparsers = parser.add_subparsers(dest="command", title="commands", metavar="<command>", description="\n".join(description))
     subparsers.required = True
 
     # Annotate
