@@ -315,7 +315,7 @@ def make_rule(module_name, f_name, annotator_info) -> None:
         @workflow.input(expand([os.path.join(paths.annotation_dir, o)
                                 if not (o.startswith(paths.annotation_dir) or o.startswith(paths.export_dir))
                                 else o
-                                for o in outputs], doc=config.get("file") or get_source_files()))
+                                for o in outputs], doc=config.get("doc") or get_source_files()))
         @workflow.run
         def __rule__(*_args, **_kwargs):
             pass

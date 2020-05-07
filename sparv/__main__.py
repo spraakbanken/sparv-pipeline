@@ -38,24 +38,24 @@ def main():
     description = [
         "",
         "Annotating a corpus:",
-        "   run              Generate corpus export",
+        "   run              Annotate a corpus and generate export files",
         "   install          Install annotated corpus on remote server",
         "   clean            Remove output directories",
         "                    (by default only the annotations directory)",
         "",
-        "Inspecting a corpus:",
+        "Inspecting corpus details:",
         "   config           Display the corpus config",
         "   files            List available input files",
         "",
         "Setting up the Sparv pipeline:",
-        "   create-config    Run config wizard to create a corpus config",
+        # "   create-config    Run config wizard to create a corpus config",
         "   build-models     Download and build all Sparv models",
         # "   install-plugin   (?)",
         "",
         "Advanced commands:",
-        "   run-module       Run annotator module independently",
         "   run-rule         Create specified annotation(s)",
         "   create-file      Create specified annotation file(s)",
+        "   run-module       Run annotator module independently",
         "   annotations      (?) List available modules and annotations",
         "",
         "See 'sparv <command> -h' for help with a specific command."
@@ -64,15 +64,16 @@ def main():
     subparsers.required = True
 
     # Annotate
-    # TODO: subparsers.add_parser("run")
+    # TODO: Tell user what export formats there are. Make it impossible to run anything else than exports?
+    run_parser = subparsers.add_parser("run", description="Annotate a corpus and generate export files")
+    run_parser.add_argument("-e", "--export", nargs="*", default=["xml_export:pretty"], metavar="<export>",
+                            help="The type of export format to generate")
+
     install_parser = subparsers.add_parser("install")
-    install_parser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel.",
-                                default=1)
-    install_parser.add_argument("-n", "--dry-run", action="store_true", help="Only dry-run the workflow.")
 
     clean_parser = subparsers.add_parser("clean")
-    clean_parser.add_argument("--export", action="store_true", help="Remove export directory.")
-    clean_parser.add_argument("--all", action="store_true", help="Remove both annotations and export directories.")
+    clean_parser.add_argument("--export", action="store_true", help="Remove export directory")
+    clean_parser.add_argument("--all", action="store_true", help="Remove both annotations and export directories")
 
     # Inspect
     subparsers.add_parser("config")
@@ -80,27 +81,27 @@ def main():
 
     # Setup
     models_parser = subparsers.add_parser("build-models")
-    models_parser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel.",
-                               default=1)
-    models_parser.add_argument("-n", "--dry-run", action="store_true", help="Only dry-run the workflow.")
 
     # Advanced commands
     subparsers.add_parser("run-module", add_help=False)
-    # TODO: subparsers.add_parser("run-rule")
-    # TODO: subparsers.add_parser("create-file")
-    subparsers.add_parser("annotations")
 
-    # TODO: Divide into "run", "run-rule", "create-file"
-    target_parser = subparsers.add_parser("target")
-    target_parser.add_argument("targets", nargs="*", help="Annotation(s) or annotation file(s) to create.")
-    target_parser.add_argument("-d", "--doc", nargs="+", default=[],
-                               help="When target is an annotation, only annotate specified input document(s).")
-    target_parser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel.",
+    runrule_parser = subparsers.add_parser("run-rule")
+    runrule_parser.add_argument("targets", nargs="*", help="Annotation(s) or annotation file(s) to create")
+    runrule_parser.add_argument("--list-targets", action="store_true", help="List available targets")
+    # TODO: subparsers.add_parser("create-file")
+    subparsers.add_parser("annotations", help="List available annotations and classes")
+
+    # Add common arguments
+    for subparser in [run_parser, install_parser, models_parser, runrule_parser]:
+        subparser.add_argument("-n", "--dry-run", action="store_true", help="Only dry-run the workflow")
+        subparser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel",
                                default=1)
-    target_parser.add_argument("-l", "--log", action="store_true", help="Show log instead of progress bar.")
-    target_parser.add_argument("-n", "--dry-run", action="store_true", help="Only dry-run the workflow.")
-    target_parser.add_argument("--list-targets", action="store_true", help="List available targets.")
-    target_parser.add_argument("--debug", action="store_true", help="Show debug messages.")
+
+    for subparser in [run_parser, runrule_parser]:
+        subparser.add_argument("-d", "--doc", nargs="+", default=[],
+                               help="When target is an annotation, only annotate specified input document(s)")
+        subparser.add_argument("-l", "--log", action="store_true", help="Show log instead of progress bar")
+        subparser.add_argument("--debug", action="store_true", help="Show debug messages")
 
     # Parse arguments. We allow unknown arguments for the 'run' command which is handled separately.
     args, unknown_args = parser.parse_known_args(args=None if sys.argv[1:] else ["--help"])
@@ -131,40 +132,40 @@ def main():
         if args.command == "clean":
             config["export"] = args.export
             config["all"] = args.all
-    elif args.command == "target":
+
+    elif args.command in ("run-rule", "run", "install", "build-models"):
         snakemake_args.update({
             "dryrun": args.dry_run,
-            "cores": args.cores,
-            "targets": args.targets
+            "cores": args.cores
         })
 
-        config.update({"debug": args.debug, "file": args.file, "log": args.log})
+        # Command: run-rule
+        if args.command == "run-rule":
+            snakemake_args.update({"targets": args.targets})
+            if args.list_targets:
+                snakemake_args["targets"] = ["list_targets"]
+                simple_target = True
+            elif not snakemake_args["targets"]:
+                # List available targets if no target was specified
+                snakemake_args["targets"] = ["list_targets"]
+                print("\nNo targets provided!\n")
+                simple_target = True
+        # Command: run
+        elif args.command == "run":
+            print("Exporting corpus to: %s" % ", ".join(args.export))
+            snakemake_args.update({"targets": args.export})
+        # Command: install
+        elif args.command == "install":
+            snakemake_args.update({"targets": ["install_annotated_corpus"]})
+        # Command: build-models
+        elif args.command == "build-models":
+            snakemake_args.update({"targets": ["build-models"]})
 
-        if args.list_targets:
-            snakemake_args["targets"] = ["list_targets"]
-            simple_target = True
-        elif not snakemake_args["targets"]:
-            # List available targets if no target was specified
-            snakemake_args["targets"] = ["list_targets"]
-            print("\nNo targets provided!\n")
-            simple_target = True
-
-        if args.log:
-            use_progressbar = False
-
-    elif args.command == "install":
-        snakemake_args.update({
-            "dryrun": args.dry_run,
-            "cores": args.cores,
-            "targets": ["install_annotated_corpus"]
-        })
-
-    elif args.command == "build-models":
-        snakemake_args.update({
-            "dryrun": args.dry_run,
-            "cores": args.cores,
-            "targets": ["build_models"]
-        })
+        # Command: run, run-rule
+        if args.command in ("run", "run-rule"):
+            config.update({"debug": args.debug, "doc": args.doc, "log": args.log})
+            if args.log:
+                use_progressbar = False
 
     if simple_target:
         # Disable progressbar for simple targets, and force Snakemake to use threads to prevent unnecessary processes
