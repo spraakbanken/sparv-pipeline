@@ -17,45 +17,68 @@ if sys.version_info < (3, 6):
 
 
 def main():
-    """Run Sparv pipeline.
-
-    Main entry point for Sparv pipeline.
-    """
+    """Run Sparv pipeline (main entry point for Sparv)."""
     # Set up command line arguments
     parser = argparse.ArgumentParser(prog="sparv",
                                      description="Sparv Pipeline",
                                      allow_abbrev=False,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    description = [
-        "ANNOTATE:",
-        "  run --output     Generate corpus export",
-        "  install          Install annotated corpus on remote server",
-        "  clean            Remove output directories",
-        "                   (by default only the annotations directory)",
-        "",
-        "INSPECT:",
-        "  config           Display corpus config",
-        "  files            List available input files",
-        "",
-        "SETUP:",
-        "  create-config    Run config wizard to create a corpus config",
-        "  build-models     Build Sparv models",
-        "  install-plugin   (?)",
-        "",
-        "ADVANCED COMMANDS:",
-        "  run-module       Run annotator module independently",
-        "  run-rule         Create specified annotation(s)",
-        "  create-file      Create specified annotation file(s).",
-        "  annotations      (?) List available modules and annotations",
-    ]
-
     parser.add_argument("-v", "--version", action="version", version=f"Sparv Pipeline v{__version__}")
     parser.add_argument("-d", "--dir", help="Specify corpus directory.")
-
+    description = [
+        "",
+        "Annotating a corpus:",
+        "   run              Generate corpus export",
+        "   install          Install annotated corpus on remote server",
+        "   clean            Remove output directories",
+        "                    (by default only the annotations directory)",
+        "",
+        "Inspecting a corpus:",
+        "   config           Display the corpus config",
+        "   files            List available input files",
+        "",
+        "Setting up the Sparv pipeline:",
+        "   create-config    Run config wizard to create a corpus config",
+        "   build-models     Download and build all Sparv models",
+        # "   install-plugin   (?)",
+        "",
+        "Advanced commands:",
+        "   run-module       Run annotator module independently",
+        "   run-rule         Create specified annotation(s)",
+        "   create-file      Create specified annotation file(s).",
+        "   annotations      (?) List available modules and annotations",
+    ]
     subparsers = parser.add_subparsers(dest="command", title="commands", description="\n".join(description))
     subparsers.required = True
 
+    # Annotate
+    # TODO: subparsers.add_parser("run")
+    install_parser = subparsers.add_parser("install")
+    install_parser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel.",
+                                default=1)
+    install_parser.add_argument("-n", "--dry-run", action="store_true", help="Only dry-run the workflow.")
+
+    clean_parser = subparsers.add_parser("clean")
+    clean_parser.add_argument("--export", action="store_true", help="Remove export directory.")
+
+    # Inspect
+    subparsers.add_parser("config")
+    subparsers.add_parser("files")
+
+    # Setup
+    models_parser = subparsers.add_parser("build-models")
+    models_parser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel.",
+                               default=1)
+    models_parser.add_argument("-n", "--dry-run", action="store_true", help="Only dry-run the workflow.")
+
+    # Advanced commands
+    subparsers.add_parser("run-module", add_help=False)
+    # TODO: subparsers.add_parser("run-rule")
+    # TODO: subparsers.add_parser("create-file")
+    subparsers.add_parser("annotations")
+
+    # TODO: Divide into "run", "run-rule", "create-file"
     target_parser = subparsers.add_parser("target")
     target_parser.add_argument("targets", nargs="*", help="Annotation(s) or annotation file(s) to create.")
     target_parser.add_argument("-d", "--doc", nargs="+", default=[],
@@ -67,23 +90,11 @@ def main():
     target_parser.add_argument("--list-targets", action="store_true", help="List available targets.")
     target_parser.add_argument("--debug", action="store_true", help="Show debug messages.")
 
-    clean_parser = subparsers.add_parser("clean")
-    clean_parser.add_argument("--export", action="store_true", help="Remove export directory.")
-
-    subparsers.add_parser("files")
-    install_parser = subparsers.add_parser("install")
-    install_parser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel.",
-                                default=1)
-    install_parser.add_argument("-n", "--dry-run", action="store_true", help="Only dry-run the workflow.")
-    subparsers.add_parser("annotations")
-    subparsers.add_parser("config")
-    subparsers.add_parser("run", add_help=False)
-
     # Parse arguments. We allow unknown arguments for the 'run' command which is handled separately.
     args, unknown_args = parser.parse_known_args(args=None if sys.argv[1:] else ["--help"])
 
-    # The 'run' command in handled by a separate script
-    if args.command == "run":
+    # The "run-module" command is handled by a separate script
+    if args.command == "run-module":
         from sparv.core import run
         run.main(unknown_args)
         sys.exit()
@@ -91,6 +102,8 @@ def main():
         args = parser.parse_args()
 
     # Check that a corpus config file is available in the working dir
+    # TODO: Allow some commands to be run without config file. Needs changes in Snakefile.
+    # if args.command not in ("create-config", "build-models"):
     if not os.path.isfile(os.path.join(args.dir or os.getcwd(), paths.config_file)):
         print(f"No config file ({paths.config_file}) found in working directory.")
         sys.exit(1)
@@ -131,6 +144,13 @@ def main():
             "dryrun": args.dry_run,
             "cores": args.cores,
             "targets": ["install_annotated_corpus"]
+        })
+
+    elif args.command == "build-models":
+        snakemake_args.update({
+            "dryrun": args.dry_run,
+            "cores": args.cores,
+            "targets": ["build_models"]
         })
 
     if simple_target:

@@ -23,6 +23,9 @@ export_targets = []
 install_targets = []
 model_targets = []
 
+# Outputs from modelbuilders, used in build_models
+model_outputs = []
+
 # Outputs from all installers, used in install_annotated_corpus
 install_outputs = defaultdict(list)
 
@@ -139,6 +142,7 @@ def make_rule(module_name, f_name, annotator_info) -> None:
             model = util.get_model_path(registry.expand_variables(param.default))
             outputs.append(model)
             parameters[param_name] = model
+            model_outputs.append(model)
         # Annotation
         elif registry.dig(Annotation, param.default):
             param_value = registry.expand_variables(param.default)
@@ -460,3 +464,8 @@ for installation in sparv_config.config.get("install"):
 rule install_annotated_corpus:
     input:
         install_inputs
+
+
+rule build_models:
+    input:
+        model_outputs
