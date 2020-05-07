@@ -55,8 +55,10 @@ def main():
         "Advanced commands:",
         "   run-module       Run annotator module independently",
         "   run-rule         Create specified annotation(s)",
-        "   create-file      Create specified annotation file(s).",
+        "   create-file      Create specified annotation file(s)",
         "   annotations      (?) List available modules and annotations",
+        "",
+        "See 'sparv <command> -h' for help with a specific command."
     ]
     subparsers = parser.add_subparsers(dest="command", title="commands", metavar="<command>", description="\n".join(description))
     subparsers.required = True
