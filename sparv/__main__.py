@@ -61,6 +61,7 @@ def main():
 
     clean_parser = subparsers.add_parser("clean")
     clean_parser.add_argument("--export", action="store_true", help="Remove export directory.")
+    clean_parser.add_argument("--all", action="store_true", help="Remove both annotations and export directories.")
 
     # Inspect
     subparsers.add_parser("config")
@@ -118,6 +119,7 @@ def main():
         simple_target = True
         if args.command == "clean":
             config["export"] = args.export
+            config["all"] = args.all
     elif args.command == "target":
         snakemake_args.update({
             "dryrun": args.dry_run,

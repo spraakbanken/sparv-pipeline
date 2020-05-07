@@ -441,18 +441,22 @@ rule clean:
             print("No corpus config found. Not removing anything.")
         else:
             import shutil
-            if config.get("export"):
-                to_remove = paths.export_dir
+            to_remove = []
+            if config.get("export") or config.get("all"):
+                to_remove.append(paths.export_dir)
                 assert paths.export_dir, "Export dir name not configured."
-            else:
-                to_remove = paths.annotation_dir
+            if config.get("all") or not config.get("export"):
+                to_remove.append(paths.annotation_dir)
                 assert paths.annotation_dir, "Annotations dir name not configured."
 
-            full_path = os.path.join(os.getcwd(), to_remove)
-            if os.path.isdir(full_path):
-                shutil.rmtree(full_path)
-                print(to_remove, "directory removed")
-            else:
+            something_removed = False
+            for d in to_remove:
+                full_path = os.path.join(os.getcwd(), d)
+                if os.path.isdir(full_path):
+                    shutil.rmtree(full_path)
+                    print(d, "directory removed")
+                    something_removed = True
+            if not something_removed:
                 print("Nothing to remove")
 
 
