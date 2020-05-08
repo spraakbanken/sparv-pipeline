@@ -26,7 +26,7 @@ def blingbring_model(out: str = ModelOutput("lexical_classes/blingbring.pickle")
     raw_file = "lexical_classes/blingbring.txt"
     util.download_model("https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/bring/blingbring.txt", raw_file)
     lexicon = read_blingbring(util.get_model_path(raw_file), util.get_model_path(classmap))
-    util.lexicon_to_pickle(lexicon, out)
+    util.write_model_pickle(out, lexicon)
 
     # Clean up
     util.remove_model_files([raw_file])
@@ -39,7 +39,7 @@ def swefn_model(out: str = ModelOutput("lexical_classes/swefn.pickle")):
     raw_file = "lexical_classes/swefn.xml"
     util.download_model("https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/swefn/swefn.xml", raw_file)
     lexicon = read_swefn(util.get_model_path(raw_file))
-    util.lexicon_to_pickle(lexicon, out)
+    util.write_model_pickle(out, lexicon)
 
     # Clean up
     util.remove_model_files([raw_file])
@@ -240,4 +240,4 @@ def create_freq_pickle(corpus, annotation, filename, model, class_set=None, scor
         cl = cl.replace("_", " ")
         rel_freq[cl] = (corpus_stats[cl] + smoothing) / (corpus_size + smoothing * lexicon_size)
 
-    util.lexicon_to_pickle(rel_freq, filename)
+    util.write_model_pickle(filename, rel_freq)

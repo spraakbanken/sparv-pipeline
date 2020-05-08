@@ -74,7 +74,7 @@ def build_model(out: str = ModelOutput("sensaldo/sensaldo.pickle")):
 
     # Read sensaldo tsv dictionary and save as a pickle file
     lexicon = read_sensaldo(tsv_path)
-    util.lexicon_to_pickle(lexicon, out)
+    util.write_model_pickle(out, lexicon)
 
     # Clean up
     util.remove_model_files([

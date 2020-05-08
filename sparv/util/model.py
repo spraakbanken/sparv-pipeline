@@ -43,13 +43,13 @@ def read_model_data(name: str):
     return data
 
 
-def write_model_pickle(name, data):
+def write_model_pickle(name, data, protocol=-1):
     """Dump data to pickle file in models directory."""
     file_path = get_model_path(name)
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
     with open(file_path, "wb") as f:
-        pickle.dump(data, f, protocol=-1)
+        pickle.dump(data, f, protocol=protocol)
     # Update file modification time even if nothing was written
     os.utime(file_path, None)
     log.info("Wrote %d bytes: %s", len(data), file_path)
