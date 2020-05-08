@@ -1,10 +1,11 @@
 """Create annotations from Saldo."""
 
 import itertools
+import logging
 import os
 import pickle
 import re
-import logging
+import xml.etree.ElementTree as etree
 from typing import List, Optional
 
 import sparv.util as util
@@ -360,7 +361,7 @@ class SaldoLexicon(object):
           - lexicon = {wordform: {{annotation-type: annotation}: (set(possible tags), set(tuples with following words), gap-allowed-boolean, is-particle-verb-boolean)}}
         """
         if verbose:
-            log.info("Saving Saldo lexicon in Pickle format")
+            log.info("Saving LMF lexicon in Pickle format")
 
         picklex = {}
         for word in lexicon:
@@ -390,7 +391,7 @@ class SaldoLexicon(object):
         NOT UP TO DATE
         """
         if verbose:
-            log.info("Saving Saldo lexicon in text format")
+            log.info("Saving LMF lexicon in text format")
         with open(saldofile, "w") as F:
             for word in sorted(lexicon):
                 annotations = [PART_DELIM.join([annotation] + sorted(postags))
@@ -461,7 +462,7 @@ class HashableDict(dict):
         return self.__key() == other.__key()
 
 
-def read_xml(xml="saldom.xml", annotation_elements=("gf", "lem", "saldo"), tagset="SUC", verbose=True):
+def read_xml(xml, annotation_elements=("gf", "lem", "saldo"), tagset="SUC", verbose=True):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml).
 
     Return a lexicon dictionary, {wordform: {{annotation-type: annotation}: ( set(possible tags), set(tuples with following words) )}}
@@ -470,13 +471,12 @@ def read_xml(xml="saldom.xml", annotation_elements=("gf", "lem", "saldo"), tagse
     """
     annotation_elements = util.split(annotation_elements)
     # assert annotation_element in ("gf", "lem", "saldo"), "Invalid annotation element"
-    import xml.etree.cElementTree as cet
     tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower())
     if verbose:
         log.info("Reading XML lexicon")
     lexicon = {}
 
-    context = cet.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
+    context = etree.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
     context = iter(context)
     event, root = next(context)
 

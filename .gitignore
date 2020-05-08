@@ -11,10 +11,8 @@ venv/
 # Models
 models/geo
 models/hist/dalin.pickle
-models/hist/dalinm.xml
 models/hist/diapivot.pickle
 models/hist/swedberg.pickle
-models/hist/swedbergm.xml
 models/hunpos/hist/hunpos.dalinm-swedberg.saldo.suc-tags.morphtable
 models/hunpos/hunpos.saldo.suc-tags.morphtable
 models/lexical_classes/blingbring.pickle

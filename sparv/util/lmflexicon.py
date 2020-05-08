@@ -3,47 +3,52 @@
 Does not handle msd-information well
 Does not mark particles
 Does handle multiwords expressions with gaps
+
 To pickle a file, run
-lmflexicon.xml_to_pickle("swedberg.xml", "swedberg.pickle", skip_multiword=False)
+lmflexicon.lmf_to_pickle("swedberg.xml", "swedberg.pickle", skip_multiword=False)
 lmlexicon place in subversion: https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/dalinm
 """
 
 import logging
 import re
+import xml.etree.ElementTree as etree
 
 import sparv.modules.saldo.saldo as saldo
 import sparv.util as util
 
 log = logging.getLogger(__name__)
 
-######################################################################
-# converting between different file formats
+
+def lmf_to_pickle(xml, filename, annotation_elements="writtenForm lemgram", skip_multiword=False):
+    """Read an XML dictionary and save as a pickle file."""
+    xml_lexicon = read_lmf(xml, annotation_elements, skip_multiword=skip_multiword)
+    saldo.SaldoLexicon.save_to_picklefile(filename, xml_lexicon)
 
 
-def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset='SUC', verbose=True, skip_multiword=False, translate_tags=True):
-    """Read the XML version of a morphological lexicon in lmf format (dalinm.xml).
+# TODO: Can this be united with saldo.read_xml ?
+def read_lmf(xml, annotation_elements=("writtenForm", "lemgram"), tagset="SUC", verbose=True, skip_multiword=False, translate_tags=True):
+    """Read the XML version of a morphological lexicon in lmf format (dalinm.xml, swedbergm.xml).
 
     Return a lexicon dictionary, {wordform: {{annotation-type: annotation}: ( set(possible tags), set(tuples with following words) )}}
-    - annotation_element is the XML element for the annotation value, 'writtenForm' for baseform, 'lemgram' for lemgram
-        writtenForm is translated to 'gf' and lemgram to 'lem' (for compatability with Saldo)
+    - annotation_element is the XML element for the annotation value, "writtenForm" for baseform, "lemgram" for lemgram
+        writtenForm is translated to "gf" and lemgram to "lem" (for compatability with Saldo)
     - skip_multiword is a flag telling whether to make special entries for multiword expressions. Set this to False only if
         the tool used for text annotation cannot handle this at all
     """
-    annotation_elements = annotation_elements.split()
+    annotation_elements = util.split(annotation_elements)
     # assert annotation_element in ("writtenForm lemgram") "Invalid annotation element"
-    import xml.etree.cElementTree as cet
     if verbose:
         log.info("Reading XML lexicon")
     lexicon = {}
     tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower())
 
-    context = cet.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
+    context = etree.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
     context = iter(context)
     event, root = next(context)
 
     for event, elem in context:
         if event == "end":
-            if elem.tag == 'LexicalEntry':
+            if elem.tag == "LexicalEntry":
                 annotations = saldo.HashableDict()
 
                 lem = elem.find("Lemma").find("FormRepresentation")
@@ -97,7 +102,7 @@ def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset
                                 lexicon.setdefault(word, {}).setdefault(annotations, (set(), set(), mwe_gap, particle))[0].update(tags)
 
             # Done parsing section. Clear tree to save memory
-            if elem.tag in ['LexicalEntry', 'frame', 'resFrame']:
+            if elem.tag in ["LexicalEntry", "frame", "resFrame"]:
                 root.clear()
     if verbose:
         testwords = ["äplebuske",
@@ -108,8 +113,13 @@ def read_xml(xml='dalinm.xml', annotation_elements='writtenForm lemgram', tagset
     return lexicon
 
 
+################################################################################
+# Auxiliaries
+################################################################################
+
+
 def convert_default(pos, inh, param, tagmap):
-    saldotag = ' '.join(([pos] + inh + [param]))
+    saldotag = " ".join(([pos] + inh + [param]))
     tags = tagmap.get(saldotag)
     if tags:
         return tags
@@ -130,12 +140,12 @@ def convert_default(pos, inh, param, tagmap):
 def try_translate(params):
     """Do some basic translations."""
     params_list = [params]
-    if ' m ' in params:
+    if " m " in params:
         # masculine is translated into utrum
-        params_list.append(re.sub(' m ', ' u ', params))
-    if ' f ' in params:
+        params_list.append(re.sub(" m ", " u ", params))
+    if " f " in params:
         # feminine is translated into utrum
-        params_list.append(re.sub(' f ', ' u ', params))
+        params_list.append(re.sub(" f ", " u ", params))
     for params in params_list:
         params = params.split()
         # copied from util.tagsets._make_saldo_to_suc(), try to convert the tag
@@ -161,29 +171,3 @@ def findval(elems, key):
         yield ""
 
     return next(iterfindval())
-
-
-######################################################################
-# additional utilities
-
-testwords = [u"äggtoddyarna",
-             u"Linköpingsbors",
-             u"vike",
-             u"katabatiska",
-             u"väg-",
-             u"formar",
-             u"ackommodera",
-             u"pittoresk",
-             u"in"]
-
-
-def xml_to_pickle(xml, filename, annotation_elements="writtenForm lemgram", skip_multiword=False):
-    """Read an XML dictionary and save as a pickle file."""
-    xml_lexicon = read_xml(xml, annotation_elements, skip_multiword=skip_multiword)
-    saldo.SaldoLexicon.save_to_picklefile(filename, xml_lexicon)
-
-######################################################################
-
-
-if __name__ == '__main__':
-    util.run.main(xml_to_pickle=xml_to_pickle)

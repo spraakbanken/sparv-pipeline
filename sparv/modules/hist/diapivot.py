@@ -47,7 +47,7 @@ def build_diapivot(out: str = ModelOutput("hist/diapivot.pickle")):
     """Download diapivot XML dictionary and save as a pickle file."""
     # Download diapivot.xml
     xml_path = "hist/diapivot.xml"
-    util.download_model("https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/diapivot/diapivot.xml", "hist/diapivot.xml")
+    util.download_model("https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/diapivot/diapivot.xml", xml_path)
 
     # Create pickle file
     xml_lexicon = read_xml(util.get_model_path(xml_path))
