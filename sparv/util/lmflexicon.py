@@ -13,8 +13,8 @@ import logging
 import re
 import xml.etree.ElementTree as etree
 
-from sparv.modules.saldo.saldo_model import SaldoLexicon
 import sparv.util as util
+from sparv.modules.saldo.saldo_model import HashableDict, SaldoLexicon
 
 log = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ def read_lmf(xml, annotation_elements=("writtenForm", "lemgram"), tagset="SUC", 
     for event, elem in context:
         if event == "end":
             if elem.tag == "LexicalEntry":
-                annotations = saldo.HashableDict()
+                annotations = HashableDict()
 
                 lem = elem.find("Lemma").find("FormRepresentation")
                 for a in annotation_elements:

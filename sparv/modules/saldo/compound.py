@@ -16,6 +16,12 @@ log = logging.getLogger(__name__)
 SPLIT_LIMIT = 200
 COMP_LIMIT = 100
 
+# SALDO: Delimiters that hopefully are never found in an annotation or in a POS tag:
+PART_DELIM = "^"
+PART_DELIM1 = "^1"
+PART_DELIM2 = "^2"
+PART_DELIM3 = "^3"
+
 
 @annotator("Compound analysis", name="compound", language=["swe"])
 def annotate(doc: str = Document,
@@ -166,9 +172,9 @@ class SaldoCompLexicon(object):
                 ]
 
     def _split_triple(self, annotation_tag_words):
-        lemgram, msds, pos, tags = annotation_tag_words.split(util.PART_DELIM1)
-        msds = msds.split(util.PART_DELIM2)
-        tags = tags.split(util.PART_DELIM2)
+        lemgram, msds, pos, tags = annotation_tag_words.split(PART_DELIM1)
+        msds = msds.split(PART_DELIM2)
+        tags = tags.split(PART_DELIM2)
         tags = list(set([t[:t.find(".")] if t.find(".") != -1 else t for t in tags]))
         return lemgram, msds, pos, tags
 
@@ -582,9 +588,9 @@ def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
         lemgrams = []
 
         for lemgram, annotation in list(lexicon[word].items()):
-            msds = util.PART_DELIM2.join(annotation["msd"])
-            tags = util.PART_DELIM2.join(annotation.get("tags", []))
-            lemgrams.append(util.PART_DELIM1.join([lemgram, msds, annotation["pos"], tags]))
+            msds = PART_DELIM2.join(annotation["msd"])
+            tags = PART_DELIM2.join(annotation.get("tags", []))
+            lemgrams.append(PART_DELIM1.join([lemgram, msds, annotation["pos"], tags]))
 
         picklex[word] = sorted(lemgrams)
 

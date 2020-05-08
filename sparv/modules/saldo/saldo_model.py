@@ -10,6 +10,12 @@ from sparv import Model, ModelOutput, modelbuilder
 
 log = logging.getLogger(__name__)
 
+# SALDO: Delimiters that hopefully are never found in an annotation or in a POS tag:
+PART_DELIM = "^"
+PART_DELIM1 = "^1"
+PART_DELIM2 = "^2"
+PART_DELIM3 = "^3"
+
 
 @modelbuilder("SALDO morphology XML")
 def download_saldo(out: str = ModelOutput("saldo/saldom.xml")):
@@ -73,12 +79,12 @@ class SaldoLexicon(object):
             annotations = []
             for annotation, extra in list(lexicon[word].items()):
                 # annotationlist = PART_DELIM3.join(annotation)
-                annotationlist = util.PART_DELIM2.join(k + util.PART_DELIM3 + util.PART_DELIM3.join(annotation[k]) for k in annotation)
-                taglist = util.PART_DELIM3.join(sorted(extra[0]))
-                wordlist = util.PART_DELIM2.join([util.PART_DELIM3.join(x) for x in sorted(extra[1])])
+                annotationlist = PART_DELIM2.join(k + PART_DELIM3 + PART_DELIM3.join(annotation[k]) for k in annotation)
+                taglist = PART_DELIM3.join(sorted(extra[0]))
+                wordlist = PART_DELIM2.join([PART_DELIM3.join(x) for x in sorted(extra[1])])
                 gap_allowed = "1" if extra[2] else "0"
                 particle = "1" if extra[3] else "0"
-                annotations.append(util.PART_DELIM1.join([annotationlist, taglist, wordlist, gap_allowed, particle]))
+                annotations.append(PART_DELIM1.join([annotationlist, taglist, wordlist, gap_allowed, particle]))
 
             picklex[word] = sorted(annotations)
 
@@ -99,7 +105,7 @@ class SaldoLexicon(object):
             log.info("Saving LMF lexicon in text format")
         with open(saldofile, "w") as F:
             for word in sorted(lexicon):
-                annotations = [util.PART_DELIM.join([annotation] + sorted(postags))
+                annotations = [PART_DELIM.join([annotation] + sorted(postags))
                                for annotation, postags in list(lexicon[word].items())]
                 print(" ".join([word] + annotations).encode(util.UTF8), file=F)
         if verbose:
@@ -108,15 +114,15 @@ class SaldoLexicon(object):
 
 def split_triple(annotation_tag_words):
     """Split annotation_tag_words."""
-    annotation, tags, words, gap_allowed, particle = annotation_tag_words.split(util.PART_DELIM1)
+    annotation, tags, words, gap_allowed, particle = annotation_tag_words.split(PART_DELIM1)
     # annotationlist = [x for x in annotation.split(PART_DELIM3) if x]
     annotationdict = {}
-    for a in annotation.split(util.PART_DELIM2):
-        key, values = a.split(util.PART_DELIM3, 1)
-        annotationdict[key] = values.split(util.PART_DELIM3)
+    for a in annotation.split(PART_DELIM2):
+        key, values = a.split(PART_DELIM3, 1)
+        annotationdict[key] = values.split(PART_DELIM3)
 
-    taglist = [x for x in tags.split(util.PART_DELIM3) if x]
-    wordlist = [x.split(util.PART_DELIM3) for x in words.split(util.PART_DELIM2) if x]
+    taglist = [x for x in tags.split(PART_DELIM3) if x]
+    wordlist = [x.split(PART_DELIM3) for x in words.split(PART_DELIM2) if x]
 
     return annotationdict, taglist, wordlist, gap_allowed == "1", particle == "1"
 

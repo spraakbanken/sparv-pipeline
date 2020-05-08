@@ -12,15 +12,9 @@ UTF8 = "UTF-8"
 LATIN1 = "ISO-8859-1"
 
 
-# SALDO: Delimiters that hopefully are never found in an annotation or in a POS tag:
-PART_DELIM = "^"
-PART_DELIM1 = "^1"
-PART_DELIM2 = "^2"
-PART_DELIM3 = "^3"
-
-
 class Color:
     """Colors and styles for printing."""
+
     RESET = "\033[m"
 
     # Styles
