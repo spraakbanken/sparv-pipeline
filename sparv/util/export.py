@@ -203,7 +203,7 @@ def _create_export_names(annotations, token_name, remove_namespaces, keep_struct
     if remove_namespaces:
         short_names = [name.split(".")[-1] for name, new_name in annotations if not new_name]
         export_names = {}
-        for name, new_name in annotations:
+        for name, new_name in sorted(annotations):
             if not new_name:
                 # Skip if there is no name space
                 if "." not in name:
@@ -215,9 +215,10 @@ def _create_export_names(annotations, token_name, remove_namespaces, keep_struct
                 else:
                     continue
             if keep_struct_refs:
-                # Keep everything before ":" if this is not a token attribute
+                # Keep reference (the part before ":") if this is not a token attribute
                 if ":" in name and new_name != name and not name.startswith(token_name):
-                    new_name = name[0:name.find(":") + 1] + new_name
+                    ref = name[0:name.find(":")]
+                    new_name = export_names.get(ref, ref) + ":" + new_name
             export_names[name] = new_name
     else:
         export_names = dict((a, b) for a, b in annotations if b)

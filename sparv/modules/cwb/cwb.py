@@ -247,7 +247,9 @@ def parse_structural_attributes(structural_atts):
     structs = {}
     order = []
     for n, struct in enumerate(structural_atts):
-        assert not struct or struct == "-" or "." not in struct, "Struct should contain ':' or be equal to '-': %s" % struct
+
+        # Why did we not allow "." before? I can see no problems with CWB, so let's allow "." for now.
+        # assert not struct or struct == "-" or "." not in struct, "Struct should contain ':' or be equal to '-': %s" % struct
 
         if ":" in struct:
             elem, attr = struct.split(":")
