@@ -436,6 +436,9 @@ rule list_exports:
         print("===============================")
         for target, desc in sorted(export_targets):
             print("    {:{}}    {}".format(target, max_len, desc))
+        print()
+        print("Default export: xml_export:pretty")
+        print()
 
 
 rule files:

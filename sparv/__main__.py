@@ -34,12 +34,12 @@ def main():
                                      formatter_class=CustomHelpFormatter)
 
     parser.add_argument("-v", "--version", action="version", version=f"Sparv Pipeline v{__version__}")
-    parser.add_argument("-d", "--dir", help="Specify corpus directory.")
+    parser.add_argument("-d", "--dir", help="Specify corpus directory")
     description = [
         "",
         "Annotating a corpus:",
         "   run              Annotate a corpus and generate export files",
-        "   install          Install annotated corpus on remote server",
+        "   install          Annotate and install corpus on remote server",
         "   clean            Remove output directories",
         "                    (by default only the annotations directory)",
         "",
@@ -58,7 +58,7 @@ def main():
         "   run-module       Run annotator module independently",
         "   annotations      (?) List available modules and annotations",
         "",
-        "See 'sparv <command> -h' for help with a specific command."
+        "See 'sparv <command> -h' for help with a specific command"
     ]
     subparsers = parser.add_subparsers(dest="command", title="commands", metavar="<command>", description="\n".join(description))
     subparsers.required = True
@@ -97,7 +97,6 @@ def main():
         subparser.add_argument("-n", "--dry-run", action="store_true", help="Only dry-run the workflow")
         subparser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel",
                                default=1)
-
     for subparser in [run_parser, runrule_parser]:
         subparser.add_argument("-d", "--doc", nargs="+", default=[],
                                help="When target is an annotation, only annotate specified input document(s)")
@@ -159,7 +158,7 @@ def main():
             snakemake_args.update({"targets": ["install_annotated_corpus"]})
         # Command: build-models
         elif args.command == "build-models":
-            snakemake_args.update({"targets": ["build-models"]})
+            snakemake_args.update({"targets": ["build_models"]})
 
         # Command: run, run-rule
         if args.command in ("run", "run-rule"):
