@@ -5,10 +5,11 @@ import logging
 import pickle
 import re
 import time
+import xml.etree.ElementTree as etree
 from functools import reduce
 
 import sparv.util as util
-from sparv import Annotation, Document, Model, Output, annotator
+from sparv import Annotation, Document, Model, ModelOutput, Output, annotator, modelbuilder
 
 log = logging.getLogger(__name__)
 
@@ -115,28 +116,12 @@ def annotate(doc: str = Document,
     util.write_annotation(doc, out_baseform, baseform_annotation)
 
 
-class StatsLexicon(object):
-    """A lexicon for probabilities of word forms and their POS tags.
-
-    It is initialized from a pickled file.
-    """
-
-    def __init__(self, stats_model, verbose=True):
-        """Load lexicon."""
-        if verbose:
-            log.info("Reading statistics model: %s", stats_model)
-        with open(stats_model, "rb") as s:
-            self.lexicon = pickle.load(s)
-        if verbose:
-            log.info("Done")
-
-    def lookup_prob(self, word):
-        """Look up the probability of the word."""
-        return self.lexicon.prob(word)
-
-    def lookup_word_tag_freq(self, word, tag):
-        """Look up frequency of this word-tag combination."""
-        return self.lexicon.freqdist()[(word, tag)]
+@modelbuilder("SALDO compound model")
+def build_saldo_comp(out: str = ModelOutput("saldo/saldo.compound.pickle"),
+                     saldom: str = Model("saldo/saldom.xml")):
+    """Extract compound info from saldom.xml and save as a pickle file."""
+    xml_lexicon = read_lmf(saldom)
+    save_to_picklefile(out, xml_lexicon)
 
 
 class SaldoCompLexicon(object):
@@ -160,7 +145,7 @@ class SaldoCompLexicon(object):
             annotation_tag_pairs = self.lexicon.get(word, [])
         else:
             annotation_tag_pairs = self.lexicon.get(word, []) + self.lexicon.get(word.lower(), [])
-        return list(map(_split_triple, annotation_tag_pairs))
+        return list(map(self._split_triple, annotation_tag_pairs))
 
     def get_prefixes(self, prefix):
         """Get all possible prefixes."""
@@ -179,6 +164,37 @@ class SaldoCompLexicon(object):
                 and set(s[1]).difference({"c", "ci", "cm", "sms"})
                 and (msd in s[3] or not msd or [partial for partial in s[3] if partial.startswith(msd[:msd.find(".")])])
                 ]
+
+    def _split_triple(self, annotation_tag_words):
+        lemgram, msds, pos, tags = annotation_tag_words.split(util.PART_DELIM1)
+        msds = msds.split(util.PART_DELIM2)
+        tags = tags.split(util.PART_DELIM2)
+        tags = list(set([t[:t.find(".")] if t.find(".") != -1 else t for t in tags]))
+        return lemgram, msds, pos, tags
+
+
+class StatsLexicon(object):
+    """A lexicon for probabilities of word forms and their POS tags.
+
+    It is initialized from a pickled file.
+    """
+
+    def __init__(self, stats_model, verbose=True):
+        """Load lexicon."""
+        if verbose:
+            log.info("Reading statistics model: %s", stats_model)
+        with open(stats_model, "rb") as s:
+            self.lexicon = pickle.load(s)
+        if verbose:
+            log.info("Done")
+
+    def lookup_prob(self, word):
+        """Look up the probability of the word."""
+        return self.lexicon.prob(word)
+
+    def lookup_word_tag_freq(self, word, tag):
+        """Look up frequency of this word-tag combination."""
+        return self.lexicon.freqdist()[(word, tag)]
 
 
 class InFileLexicon(object):
@@ -214,6 +230,11 @@ class InFileLexicon(object):
                 if (s[1][0:2] in ("NN", "VB", "AV"))
                 and (not msd or msd in s[1] or s[1].startswith(msd[:msd.find(".")]))
                 ]
+
+
+################################################################################
+# Auxiliaries
+################################################################################
 
 
 def split_word(saldo_lexicon, altlexicon, w, msd):
@@ -504,14 +525,13 @@ def make_new_baseforms(out_baseform, msd_tag, compounds, stats_lexicon, altlexic
     out_baseform.append(util.cwbset(baseform_list, delimiter, affix) if (compounds and baseform_list) else affix)
 
 
-def read_xml(xml="saldom.xml", tagset="SUC"):
+def read_lmf(xml="saldom.xml", tagset="SUC"):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml)."""
-    import xml.etree.cElementTree as cet
     tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower() + "_compound")
     log.info("Reading XML lexicon")
     lexicon = {}
 
-    context = cet.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
+    context = etree.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
     context = iter(context)
     event, root = next(context)
 
@@ -548,11 +568,6 @@ def read_xml(xml="saldom.xml", tagset="SUC"):
     return lexicon
 
 
-PARTDELIM1 = "^1"
-PARTDELIM2 = "^2"
-PARTDELIM3 = "^3"
-
-
 def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
     """Save a Saldo lexicon to a Pickled file.
 
@@ -567,9 +582,9 @@ def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
         lemgrams = []
 
         for lemgram, annotation in list(lexicon[word].items()):
-            msds = PARTDELIM2.join(annotation["msd"])
-            tags = PARTDELIM2.join(annotation.get("tags", []))
-            lemgrams.append(PARTDELIM1.join([lemgram, msds, annotation["pos"], tags]))
+            msds = util.PART_DELIM2.join(annotation["msd"])
+            tags = util.PART_DELIM2.join(annotation.get("tags", []))
+            lemgrams.append(util.PART_DELIM1.join([lemgram, msds, annotation["pos"], tags]))
 
         picklex[word] = sorted(lemgrams)
 
@@ -577,23 +592,3 @@ def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
         pickle.dump(picklex, F, protocol=protocol)
     if verbose:
         log.info("OK, saved")
-
-
-def _split_triple(annotation_tag_words):
-    lemgram, msds, pos, tags = annotation_tag_words.split(PARTDELIM1)
-    msds = msds.split(PARTDELIM2)
-    tags = tags.split(PARTDELIM2)
-    tags = list(set([t[:t.find(".")] if t.find(".") != -1 else t for t in tags]))
-    return lemgram, msds, pos, tags
-
-
-def xml_to_pickle(xml, filename):
-    """Read an XML dictionary and save as a pickle file."""
-    xml_lexicon = read_xml(xml)
-    save_to_picklefile(filename, xml_lexicon)
-
-######################################################################
-
-
-if __name__ == "__main__":
-    util.run.main(annotate, xml_to_pickle=xml_to_pickle)

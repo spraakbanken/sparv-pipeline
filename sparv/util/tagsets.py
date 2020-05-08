@@ -227,7 +227,7 @@ suc_descriptions = {
 }
 
 
-# This is automatically created from Saldo by saldo_lemmatizer.extract_tags()
+# This is automatically created from Saldo by saldo.saldo_model.extract_tags()
 saldo_tags = set("""\
 ab c
 ab invar

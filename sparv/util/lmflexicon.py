@@ -13,7 +13,7 @@ import logging
 import re
 import xml.etree.ElementTree as etree
 
-import sparv.modules.saldo.saldo as saldo
+from sparv.modules.saldo.saldo_model import SaldoLexicon
 import sparv.util as util
 
 log = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 def lmf_to_pickle(xml, filename, annotation_elements="writtenForm lemgram", skip_multiword=False):
     """Read an XML dictionary and save as a pickle file."""
     xml_lexicon = read_lmf(xml, annotation_elements, skip_multiword=skip_multiword)
-    saldo.SaldoLexicon.save_to_picklefile(filename, xml_lexicon)
+    SaldoLexicon.save_to_picklefile(filename, xml_lexicon)
 
 
 # TODO: Can this be united with saldo.read_xml ?

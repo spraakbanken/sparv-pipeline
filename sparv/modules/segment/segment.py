@@ -8,9 +8,9 @@ from typing import Optional
 
 import nltk
 
-import sparv.modules.saldo.saldo as saldo
 import sparv.util as util
 from sparv import Annotation, Config, Document, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv.modules.saldo.saldo_model import split_triple
 
 try:
     from . import crf  # for CRF++ models
@@ -139,7 +139,7 @@ def build_tokenlist(saldo_model: str = Model("saldo/saldo.pickle"),
     with open(saldo_model, "rb") as F:
         lexicon = pickle.load(F)
         for w in lexicon:
-            w2 = list(map(saldo._split_triple, lexicon[w]))
+            w2 = list(map(split_triple, lexicon[w]))
             mwu_extras = [contw for w3 in w2 for cont in w3[2] for contw in cont if contw not in lexicon]
             for wf in mwu_extras + [w]:
                 spans = list(segmenter.span_tokenize(wf))

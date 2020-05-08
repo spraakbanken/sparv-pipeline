@@ -1,9 +1,29 @@
 """Train a probability model on a Korp statistics file."""
 
+import logging
 import pickle
 
-import sparv.util as util
 from nltk import FreqDist, LidstoneProbDist
+
+import sparv.util as util
+from sparv import Model, ModelOutput, modelbuilder
+
+log = logging.getLogger(__name__)
+
+
+@modelbuilder("Korp statistic model")
+def build_korp_stats(out: str = ModelOutput("saldo/stats.pickle"),
+                     saldom: str = Model("saldo/saldom.xml")):
+    """Download Korp's word frequency file and convert it to a model."""
+    txt_path = "saldo/stats_all.txt"
+    log.info("Downloading Korp stats file...")
+    util.download_model("https://svn.spraakdata.gu.se/sb-arkiv/pub/frekvens/stats_all.txt", txt_path)
+
+    log.info("Building frequency model...")
+    make_model(util.get_model_path(txt_path), out)
+
+    # Clean up
+    util.remove_model_files([txt_path])
 
 
 def make_model(stats_infile, picklefile, smoothingparam=0.001, min_freq=3, protocol=-1):
@@ -36,7 +56,3 @@ def make_model(stats_infile, picklefile, smoothingparam=0.001, min_freq=3, proto
     # Save probability model as pickle
     with open(picklefile, "wb") as p:
         pickle.dump(pd, p, protocol=protocol)
-
-
-if __name__ == '__main__':
-    util.run.main(make_model)
