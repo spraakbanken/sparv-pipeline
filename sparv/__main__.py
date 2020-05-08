@@ -115,11 +115,10 @@ def main():
         args = parser.parse_args()
 
     # Check that a corpus config file is available in the working dir
-    # TODO: Allow some commands to be run without config file. Needs changes in Snakefile.
-    # if args.command not in ("create-config", "build-models"):
-    if not os.path.isfile(os.path.join(args.dir or os.getcwd(), paths.config_file)):
-        print(f"No config file ({paths.config_file}) found in working directory.")
-        sys.exit(1)
+    if args.command not in ("create-config", "build-models"):
+        if not os.path.isfile(os.path.join(args.dir or os.getcwd(), paths.config_file)):
+            print(f"No config file ({paths.config_file}) found in working directory.")
+            sys.exit(1)
 
     snakemake_args = {"workdir": args.dir}
     config = {"run_by_sparv": True}

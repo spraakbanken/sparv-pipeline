@@ -1,6 +1,7 @@
 """Functions for parsing the Sparv configuration files."""
 
 import copy
+import logging
 import os
 from functools import reduce
 from typing import Any
@@ -8,6 +9,8 @@ from typing import Any
 import yaml
 
 from sparv.core import paths
+
+log = logging.getLogger(__name__)
 
 DEFAULT_CONFIG = os.path.join(paths.sparv_path, "..", paths.default_config_file)
 
@@ -17,20 +20,20 @@ config_undeclared = set()  # Config variables collected from use but not declare
 
 
 def load_config(config_file: str) -> None:
-    """Load both default and local config and merge into one config structure.
+    """Load both default config and corpus config and merge into one config structure.
 
     Args:
-        config_file: Path to local config file.
+        config_file: Path to corpus config file.
     """
     # Read default config
     if os.path.isfile(DEFAULT_CONFIG):
         with open(DEFAULT_CONFIG) as f:
             default_config = yaml.load(f, Loader=yaml.FullLoader)
     else:
-        print("WARNING: Default config file is missing: " + DEFAULT_CONFIG)
+        log.warning("Default config file is missing: " + DEFAULT_CONFIG)
         default_config = {}
 
-    # Read local corpus config
+    # Read corpus config
     user_config = {}
 
     with open(config_file) as f:

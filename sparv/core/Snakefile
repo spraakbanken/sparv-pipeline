@@ -3,7 +3,6 @@ import copy
 import inspect
 import os
 import re
-import sys
 from collections import defaultdict
 
 import snakemake
@@ -66,7 +65,7 @@ def get_source_files() -> List[str]:
     return source_files
 
 
-def make_rule(module_name, f_name, annotator_info) -> None:
+def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missing: bool = False) -> None:
     """Build Snakemake rules."""
     # Build input, output and parameter list
     if config.get("debug"):
@@ -89,6 +88,10 @@ def make_rule(module_name, f_name, annotator_info) -> None:
     description = annotator_info["description"]
     source_type = annotator_info["source_type"]
     import_outputs = annotator_info["outputs"]
+
+    # Only create certain rules when config is missing
+    if config_missing and not modelbuilder:
+        return
 
     # Skip any annotator that is not available for the selected corpus language
     if annotator_info["language"] and sparv_config.get("language") not in annotator_info["language"]:
@@ -325,26 +328,28 @@ rule empty:
     shell:
         "echo"
 
-# Find local corpus config
-corpus_config_file = os.path.join(os.getcwd(), paths.config_file)
-if not os.path.isfile(corpus_config_file):
-    print("No corpus config file found.")
-    sys.exit(1)
 
-# Read config file(s)
-sparv_config.load_config(corpus_config_file)
+# Find corpus config
+corpus_config_file = os.path.join(os.getcwd(), paths.config_file)
+if os.path.isfile(corpus_config_file):
+    config_missing = False
+    # Read config
+    sparv_config.load_config(corpus_config_file)
+
+    # Add classes from config to registry
+    registry.annotation_classes["config_classes"] = sparv_config.config.get("classes", {})
+else:
+    config_missing = True
 
 # Find and load Sparv modules
 registry.find_modules(paths.sparv_path)
-
-# Add classes collected from modules to config
-registry.annotation_classes["config_classes"] = sparv_config.config.get("classes", {})
 
 # Create rules for all available annotation functions
 for module_name in registry.annotators:
     for f_name in registry.annotators[module_name]:
         annotator = registry.annotators[module_name][f_name]
-        make_rule(module_name, f_name, annotator)
+        make_rule(module_name, f_name, annotator, config_missing)
+
 
 # Rule to list all config options and their current values
 rule config:
@@ -362,6 +367,7 @@ rule config:
         yaml_str = re.sub(r"^(\s*[\S]+):", util.Color.BLUE + r"\1" + util.Color.RESET + ":", yaml_str,
                           flags=re.MULTILINE)
         print(yaml_str)
+
 
 rule annotations:
     run:
@@ -405,9 +411,10 @@ rule annotations:
             for cls, ann in registry.annotation_classes["config_classes"].items():
                 print("        {:{}}    {}".format(cls, max_len, ann))
 
+
 rule list_targets:
     run:
-        max_len = max(len(t[0]) for t in named_targets + export_targets) + 4
+        max_len = max(len(t[0]) for t in named_targets + export_targets + install_targets + model_targets) + 4
         print()
         print("Available targets")
         print("=================\n")
@@ -447,6 +454,7 @@ rule files:
         print("Available input files:\n")
         print(", ".join(get_source_files()))
 
+
 rule clean:
     # Remove annotations dir
     run:
@@ -476,8 +484,9 @@ rule clean:
 
 # Collect files to be created for all installations listed in config.install
 install_inputs = []
-for installation in sparv_config.config.get("install"):
+for installation in sparv_config.get("install", []):
     install_inputs.extend(install_outputs[installation])
+
 
 rule install_annotated_corpus:
     input:
