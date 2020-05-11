@@ -21,8 +21,8 @@ def annotate(doc: str = Document,
              out_word: str = Output("<token>:stanford.word", cls="token:word", description="Token strings"),
              out_ref: str = Output("<token>:stanford.ref", description="Token ID relative to sentence"),
              out_baseform: str = Output("<token>:stanford.baseform", description="Baseforms from Stanford Parser"),
-             out_pos: str = Output("<token>:stanford.pos", description="Part-of-speeches in UD"),
-             out_msd: str = Output("<token>:stanford.msd", description="Part-of-speeches from Stanford Parser"),
+             out_upos: str = Output("<token>:stanford.upos", cls="token:upos", description="Part-of-speeches in UD"),
+             out_pos: str = Output("<token>:stanford.pos", cls="token:pos", description="Part-of-speeches from Stanford Parser"),
              out_ne: str = Output("<token>:stanford.ne", description="Named entitiy types from Stanford Parser"),
              out_deprel: str = Output("<token>:stanford.deprel", description="Dependency relations to the head"),
              out_dephead_ref: str = Output("<token>:stanford.dephead_ref",
@@ -69,8 +69,8 @@ def annotate(doc: str = Document,
     util.write_annotation(doc, out_ref, [t.ref for t in all_tokens])
     util.write_annotation(doc, out_word, [t.word for t in all_tokens])
     util.write_annotation(doc, out_baseform, [t.baseform for t in all_tokens])
+    util.write_annotation(doc, out_upos, [t.upos for t in all_tokens])
     util.write_annotation(doc, out_pos, [t.pos for t in all_tokens])
-    util.write_annotation(doc, out_msd, [t.msd for t in all_tokens])
     util.write_annotation(doc, out_ne, [t.ne for t in all_tokens])
     util.write_annotation(doc, out_dephead_ref, [t.dephead_ref for t in all_tokens])
     util.write_annotation(doc, out_deprel, [t.deprel for t in all_tokens])
@@ -92,12 +92,12 @@ def _parse_output(stdout, lang):
             ref = fields[0]
             word = fields[1]
             lemma = fields[2]
-            msd = fields[3]
-            pos = util.convert_to_upos(msd, lang, "Penn")
+            pos = fields[3]
+            upos = util.convert_to_upos(pos, lang, "Penn")
             named_entity = fields[4] if fields[4] != "O" else ""  # O = empty name tag
             deprel = fields[6]
             dephead_ref = fields[5] if fields[4] != "0" else ""  # 0 = empty dephead
-            token = Token(ref, word, msd, pos, lemma, named_entity, dephead_ref, deprel)
+            token = Token(ref, word, pos, upos, lemma, named_entity, dephead_ref, deprel)
             sentence.append(token)
 
     return sentences
@@ -106,12 +106,12 @@ def _parse_output(stdout, lang):
 class Token(object):
     """Object to store annotation information for a token."""
 
-    def __init__(self, ref, word, msd, pos, baseform, ne, dephead_ref, deprel, start=-1, end=-1):
+    def __init__(self, ref, word, pos, upos, baseform, ne, dephead_ref, deprel, start=-1, end=-1):
         """Set attributes."""
         self.ref = ref
         self.word = word
-        self.msd = msd
         self.pos = pos
+        self.upos = upos
         self.baseform = baseform
         self.ne = ne
         self.dephead_ref = dephead_ref

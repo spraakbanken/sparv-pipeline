@@ -32,8 +32,8 @@ classes:
     sentence: freeling.sentence
     token: freeling.token
     "token:word": <token>:freeling.word
+    "token:upos": <token>:freeling.upos
     "token:pos": <token>:freeling.pos
-    "token:msd": <token>:freeling.msd
     "token:baseform": <token>:freeling.baseform
 
 # Automatic annotations to be included in the export
@@ -42,6 +42,6 @@ annotations:
     - <text>:readability.lix
     - <sentence>
     - <token>
+    - <token:upos>
     - <token:pos>
-    - <token:msd>
     - <token:baseform>

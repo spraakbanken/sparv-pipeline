@@ -11,7 +11,7 @@ annotations:
     - <sentence>
     - <token>
     - <token:pos>
-    - <token:msd>
+    - <token:upos>
     - <token:baseform>
     - <token:ne>
     - <token:dephead_ref>
@@ -25,7 +25,7 @@ classes:
     "token:word": <token>:stanford.word
     "token:ref": <token>:stanford.ref
     "token:pos": <token>:stanford.pos
-    "token:msd": <token>:stanford.msd
+    "token:upos": <token>:stanford.upos
     "token:baseform": <token>:stanford.baseform
     "token:ne": <token>:stanford.ne
     "token:dephead_ref": <token>:stanford.dephead_ref

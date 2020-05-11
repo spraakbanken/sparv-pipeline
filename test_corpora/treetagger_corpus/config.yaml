@@ -14,12 +14,12 @@ annotations:
     - <sentence>
     - <token>
     - <token:pos>
-    - <token:msd>
+    - <token:upos>
     - <token:baseform>
 
 classes:
     text: text
     token: segment.token
     "token:pos": <token>:treetagger.pos
-    "token:msd": <token>:treetagger.msd
+    "token:upos": <token>:treetagger.upos
     "token:baseform": <token>:treetagger.baseform
