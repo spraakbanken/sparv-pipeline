@@ -16,6 +16,19 @@ if sys.version_info < (3, 6):
     raise Exception("Python 3.6+ is required.")
 
 
+class CustomArgumentParser(argparse.ArgumentParser):
+    """ArgumentParser with custom help message."""
+
+    def __init__(self, *args, **kwargs):
+        no_help = kwargs.pop("no_help", False)
+        # Don't add default help message
+        kwargs["add_help"] = False
+        super().__init__(*args, **kwargs)
+        # Add our own help message unless the (sub)parser is created with the no_help argument
+        if not no_help:
+            self.add_argument("-h", "--help", action="help", help="Show this help message and exit")
+
+
 class CustomHelpFormatter(argparse.RawDescriptionHelpFormatter):
     """Custom help formatter for argparse, silencing subparser lists."""
     def _format_action(self, action):
@@ -27,14 +40,15 @@ class CustomHelpFormatter(argparse.RawDescriptionHelpFormatter):
 
 def main():
     """Run Sparv pipeline (main entry point for Sparv)."""
-    # Set up command line arguments
-    parser = argparse.ArgumentParser(prog="sparv",
-                                     description="Sparv Pipeline",
-                                     allow_abbrev=False,
-                                     formatter_class=CustomHelpFormatter)
 
-    parser.add_argument("-v", "--version", action="version", version=f"Sparv Pipeline v{__version__}")
-    parser.add_argument("-d", "--dir", help="specify corpus directory")
+    # Set up command line arguments
+    parser = CustomArgumentParser(prog="sparv",
+                                  description="Sparv Pipeline",
+                                  allow_abbrev=False,
+                                  formatter_class=CustomHelpFormatter)
+    parser.add_argument("-v", "--version", action="version", version=f"Sparv Pipeline v{__version__}",
+                        help="Show Sparv's version number and exit")
+    parser.add_argument("-d", "--dir", help="Specify corpus directory")
     description = [
         "",
         "Annotating a corpus:",
@@ -59,22 +73,24 @@ def main():
         "",
         "See 'sparv <command> -h' for help with a specific command"
     ]
-    subparsers = parser.add_subparsers(dest="command", title="commands", metavar="<command>", description="\n".join(description))
+    subparsers = parser.add_subparsers(dest="command", title="commands", metavar="<command>",
+                                       description="\n".join(description))
     subparsers.required = True
 
     # Annotate
     # TODO: Make it impossible to run anything else than exports?
     run_parser = subparsers.add_parser("run", description="Annotate a corpus and generate export files.")
-    run_parser.add_argument("-o", "--output", nargs="*", default=["xml_export:pretty"], metavar="<export>",
-                            help="the type of output format to generate")
-    run_parser.add_argument("-l", "--list", action="store_true", help="list available output formats")
+    run_parser.add_argument("-o", "--output", nargs="*", default=["xml_export:pretty"], metavar="<output>",
+                            help="The type of output format to generate")
+    run_parser.add_argument("-l", "--list", action="store_true", help="List available output formats")
 
     install_parser = subparsers.add_parser("install")
-    install_parser.add_argument("-l", "--list", action="store_true", help="list installations to be made")
+    install_parser.add_argument("-l", "--list", action="store_true", help="List installations to be made")
 
-    clean_parser = subparsers.add_parser("clean", description="Remove output directories (by default only the annotations directory).")
-    clean_parser.add_argument("--export", action="store_true", help="remove export directory")
-    clean_parser.add_argument("--all", action="store_true", help="remove both annotations and export directories")
+    clean_parser = subparsers.add_parser("clean", description="Remove output directories (by default only the "
+                                                              "annotations directory).")
+    clean_parser.add_argument("--export", action="store_true", help="Remove export directory")
+    clean_parser.add_argument("--all", action="store_true", help="Remove both annotations and export directories")
 
     # Inspect
     subparsers.add_parser("config", description="Display the corpus configuration.")
@@ -85,29 +101,31 @@ def main():
                                           description=("Download and build the Sparv models. "
                                                        "If this command is not run before annotating, "
                                                        "the models will be downloaded and built as needed. "
-                                                       "This will make things slower when annotating a corpus for the first time."))
-    models_parser.add_argument("-l", "--list", action="store_true", help="list available models")
-    models_parser.add_argument("--force-all", action="store_true", help="build all models, including the optional ones")
+                                                       "This will make things slower when annotating a corpus "
+                                                       "for the first time."))
+    models_parser.add_argument("-l", "--list", action="store_true", help="List available models")
+    models_parser.add_argument("--force-all", action="store_true", help="Build all models, including the optional ones")
 
     # Advanced commands
-    subparsers.add_parser("run-module", add_help=False)
+    subparsers.add_parser("run-module", no_help=True)
 
     runrule_parser = subparsers.add_parser("run-rule", description="Create specified annotation(s).")
-    runrule_parser.add_argument("targets", nargs="*", default=["list"], help="annotation(s) or annotation file(s) to create")
-    runrule_parser.add_argument("-l", "--list", action="store_true", help="list available targets")
+    runrule_parser.add_argument("targets", nargs="*", default=["list"],
+                                help="Annotation(s) or annotation file(s) to create")
+    runrule_parser.add_argument("-l", "--list", action="store_true", help="List available targets")
     # TODO: subparsers.add_parser("create-file")
     subparsers.add_parser("annotations", description="List available annotations and classes.")
 
     # Add common arguments
     for subparser in [run_parser, install_parser, models_parser, runrule_parser]:
-        subparser.add_argument("-n", "--dry-run", action="store_true", help="only dry-run the workflow")
-        subparser.add_argument("-j", "--cores", type=int, metavar="N", help="use at most N cores in parallel",
+        subparser.add_argument("-n", "--dry-run", action="store_true", help="Only dry-run the workflow")
+        subparser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel",
                                default=1)
     for subparser in [run_parser, runrule_parser]:
         subparser.add_argument("-d", "--doc", nargs="+", default=[],
-                               help="only annotate specified input document(s)")
-        subparser.add_argument("--log", action="store_true", help="show log instead of progress bar")
-        subparser.add_argument("--debug", action="store_true", help="show debug messages")
+                               help="Only annotate specified input document(s)")
+        subparser.add_argument("--log", action="store_true", help="Show log instead of progress bar")
+        subparser.add_argument("--debug", action="store_true", help="Show debug messages")
 
     # Parse arguments. We allow unknown arguments for the "run-module" command which is handled separately.
     args, unknown_args = parser.parse_known_args(args=None if sys.argv[1:] else ["--help"])

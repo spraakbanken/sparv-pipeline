@@ -20,7 +20,7 @@ def main(argv=None):
 
     available_modules = sorted(registry.find_modules(paths.sparv_path, no_import=True))
 
-    module_parser = argparse.ArgumentParser(prog="sparv run")
+    module_parser = argparse.ArgumentParser(prog="sparv run-module")
     subparsers = module_parser.add_subparsers(dest="module")
     subparsers.required = True
 
@@ -33,7 +33,7 @@ def main(argv=None):
     # Import module, which will add available functions to annotators registry
     importlib.import_module(".".join((modules_path, module_name)))
 
-    parser = argparse.ArgumentParser(prog="sparv run " + module_name,
+    parser = argparse.ArgumentParser(prog="sparv run-module " + module_name,
                                      epilog="note: Annotation classes and configuration variables are not available "
                                             "when running annotators independently. Complete names must be used.")
     subparsers = parser.add_subparsers(dest="_annotator", help="Annotator function")
