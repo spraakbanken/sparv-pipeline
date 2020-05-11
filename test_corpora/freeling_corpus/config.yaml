@@ -1,20 +1,32 @@
+################################################################################
+# META DATA
+################################################################################
+
+# Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
 id: freeling-corpus
+# Corpus name (human readable)
 name: FreeLing test corpus
-language: en
+# Language of the input documents, specified as ISO 639-3 code
+language: eng
+
+
+################################################################################
+# INPUT DESCRIPTION
+################################################################################
+
+#TODO: This is needed because of a current bug
+sentence_chunk: None
 
 # Elements and attributes from the source XML that we want to be available as input for other annotations
 xml_elements:
     - text
 
-annotations:
-    - text
-    - <text>:readability.lix
-    - <sentence>
-    - <token>
-    - <token:pos>
-    - <token:msd>
-    - <token:baseform>
 
+################################################################################
+# OUTPUT DESCRIPTION
+################################################################################
+
+# Class definitions
 classes:
     text: text
     sentence: freeling.sentence
@@ -23,3 +35,13 @@ classes:
     "token:pos": <token>:freeling.pos
     "token:msd": <token>:freeling.msd
     "token:baseform": <token>:freeling.baseform
+
+# Automatic annotations to be included in the export
+annotations:
+    - text
+    - <text>:readability.lix
+    - <sentence>
+    - <token>
+    - <token:pos>
+    - <token:msd>
+    - <token:baseform>

@@ -93,7 +93,7 @@ def _parse_output(stdout, lang):
             word = fields[1]
             lemma = fields[2]
             msd = fields[3]
-            pos = util.msd_to_pos.convert(msd, lang)
+            pos = util.convert_to_upos(msd, lang, "Penn")
             named_entity = fields[4] if fields[4] != "O" else ""  # O = empty name tag
             deprel = fields[6]
             dephead_ref = fields[5] if fields[4] != "0" else ""  # 0 = empty dephead

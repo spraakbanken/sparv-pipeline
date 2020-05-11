@@ -13,6 +13,19 @@ TAG_SEP = "\t"
 TAG_COLUMN = 1
 LEM_COLUMN = 2
 
+TAG_SETS = {
+    "bul": "BulTreeBank",
+    "est": "TreeTagger",
+    "fin": "FinnTreeBank",
+    "lat": "TreeTagger",
+    "nld": "TreeTagger",
+    "pol": "NationalCorpusofPolish",
+    "ron": "MULTEXT",
+    "slk": "SlovakNationalCorpus",
+    "deu": "STTS",
+    # TODO: Write tag translations for: spa, eng, fra, ita, rus
+}
+
 
 @annotator("Part-of-speech tags and baseforms from TreeTagger",
            language=["bul", "est", "fin", "lat", "nld", "pol", "ron", "slk"],
@@ -54,7 +67,7 @@ def annotate(doc: str = Document,
         for token_id, tagged_token in zip(sent, tagged_sent.strip().split(TOK_SEP)):
             tag = tagged_token.strip().split(TAG_SEP)[TAG_COLUMN]
             out_msd_annotation[token_id] = tag
-            out_pos_annotation[token_id] = util.msd_to_pos.convert(tag, lang)
+            out_pos_annotation[token_id] = util.convert_to_upos(tag, lang, TAG_SETS.get(lang))
     util.write_annotation(doc, out_msd, out_msd_annotation)
     util.write_annotation(doc, out_pos, out_pos_annotation)
 
