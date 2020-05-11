@@ -34,14 +34,13 @@ def main():
                                      formatter_class=CustomHelpFormatter)
 
     parser.add_argument("-v", "--version", action="version", version=f"Sparv Pipeline v{__version__}")
-    parser.add_argument("-d", "--dir", help="Specify corpus directory")
+    parser.add_argument("-d", "--dir", help="specify corpus directory")
     description = [
         "",
         "Annotating a corpus:",
         "   run              Annotate a corpus and generate export files",
         "   install          Annotate and install corpus on remote server",
         "   clean            Remove output directories",
-        "                    (by default only the annotations directory)",
         "",
         "Inspecting corpus details:",
         "   config           Display the corpus config",
@@ -49,7 +48,7 @@ def main():
         "",
         "Setting up the Sparv pipeline:",
         # "   create-config    Run config wizard to create a corpus config",
-        "   build-models     Download and build all Sparv models",
+        "   build-models     Download and build the Sparv models",
         # "   install-plugin   (?)",
         "",
         "Advanced commands:",
@@ -65,43 +64,50 @@ def main():
 
     # Annotate
     # TODO: Make it impossible to run anything else than exports?
-    run_parser = subparsers.add_parser("run", description="Annotate a corpus and generate export files")
-    run_parser.add_argument("-e", "--export", nargs="*", default=["xml_export:pretty"], metavar="<export>",
-                            help="The type of export format to generate")
-    run_parser.add_argument("--list-exports", action="store_true", help="List available export formats")
+    run_parser = subparsers.add_parser("run", description="Annotate a corpus and generate export files.")
+    run_parser.add_argument("-o", "--output", nargs="*", default=["xml_export:pretty"], metavar="<export>",
+                            help="the type of output format to generate")
+    run_parser.add_argument("-l", "--list", action="store_true", help="list available output formats")
 
     install_parser = subparsers.add_parser("install")
+    install_parser.add_argument("-l", "--list", action="store_true", help="list installations to be made")
 
-    clean_parser = subparsers.add_parser("clean")
-    clean_parser.add_argument("--export", action="store_true", help="Remove export directory")
-    clean_parser.add_argument("--all", action="store_true", help="Remove both annotations and export directories")
+    clean_parser = subparsers.add_parser("clean", description="Remove output directories (by default only the annotations directory).")
+    clean_parser.add_argument("--export", action="store_true", help="remove export directory")
+    clean_parser.add_argument("--all", action="store_true", help="remove both annotations and export directories")
 
     # Inspect
-    subparsers.add_parser("config")
-    subparsers.add_parser("files")
+    subparsers.add_parser("config", description="Display the corpus configuration.")
+    subparsers.add_parser("files", description="List available input files that can be annotated by Sparv.")
 
     # Setup
-    models_parser = subparsers.add_parser("build-models")
+    models_parser = subparsers.add_parser("build-models",
+                                          description=("Download and build the Sparv models. "
+                                                       "If this command is not run before annotating, "
+                                                       "the models will be downloaded and built as needed. "
+                                                       "This will make things slower when annotating a corpus for the first time."))
+    models_parser.add_argument("-l", "--list", action="store_true", help="list available models")
+    models_parser.add_argument("--force-all", action="store_true", help="build all models, including the optional ones")
 
     # Advanced commands
     subparsers.add_parser("run-module", add_help=False)
 
-    runrule_parser = subparsers.add_parser("run-rule")
-    runrule_parser.add_argument("targets", nargs="*", default=["list_targets"], help="Annotation(s) or annotation file(s) to create")
-    runrule_parser.add_argument("--list-targets", action="store_true", help="List available targets")
+    runrule_parser = subparsers.add_parser("run-rule", description="Create specified annotation(s).")
+    runrule_parser.add_argument("targets", nargs="*", default=["list"], help="annotation(s) or annotation file(s) to create")
+    runrule_parser.add_argument("-l", "--list", action="store_true", help="list available targets")
     # TODO: subparsers.add_parser("create-file")
-    subparsers.add_parser("annotations", help="List available annotations and classes")
+    subparsers.add_parser("annotations", description="List available annotations and classes.")
 
     # Add common arguments
     for subparser in [run_parser, install_parser, models_parser, runrule_parser]:
-        subparser.add_argument("-n", "--dry-run", action="store_true", help="Only dry-run the workflow")
-        subparser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel",
+        subparser.add_argument("-n", "--dry-run", action="store_true", help="only dry-run the workflow")
+        subparser.add_argument("-j", "--cores", type=int, metavar="N", help="use at most N cores in parallel",
                                default=1)
     for subparser in [run_parser, runrule_parser]:
         subparser.add_argument("-d", "--doc", nargs="+", default=[],
-                               help="When target is an annotation, only annotate specified input document(s)")
-        subparser.add_argument("-l", "--log", action="store_true", help="Show log instead of progress bar")
-        subparser.add_argument("--debug", action="store_true", help="Show debug messages")
+                               help="only annotate specified input document(s)")
+        subparser.add_argument("--log", action="store_true", help="show log instead of progress bar")
+        subparser.add_argument("--debug", action="store_true", help="show debug messages")
 
     # Parse arguments. We allow unknown arguments for the "run-module" command which is handled separately.
     args, unknown_args = parser.parse_known_args(args=None if sys.argv[1:] else ["--help"])
@@ -137,27 +143,36 @@ def main():
             "dryrun": args.dry_run,
             "cores": args.cores
         })
+        # Never show progress bar for list commands
+        if args.list:
+            simple_target = True
 
         # Command: run-rule
         if args.command == "run-rule":
             snakemake_args.update({"targets": args.targets})
-            if args.list_targets or snakemake_args["targets"] == ["list_targets"]:
+            if args.list or snakemake_args["targets"] == ["list"]:
                 snakemake_args["targets"] = ["list_targets"]
                 simple_target = True
         # Command: run
         elif args.command == "run":
-            if args.list_exports:
+            if args.list:
                 snakemake_args["targets"] = ["list_exports"]
-                simple_target = True
             else:
-                print("Exporting corpus to: %s" % ", ".join(args.export))
-                snakemake_args.update({"targets": args.export})
+                print("Exporting corpus to: %s" % ", ".join(args.output))
+                snakemake_args.update({"targets": args.output})
         # Command: install
         elif args.command == "install":
-            snakemake_args.update({"targets": ["install_annotated_corpus"]})
+            if args.list:
+                snakemake_args["targets"] = ["list_installs"]
+            else:
+                snakemake_args.update({"targets": ["install_annotated_corpus"]})
         # Command: build-models
         elif args.command == "build-models":
-            snakemake_args.update({"targets": ["build_models"]})
+            if args.list:
+                snakemake_args["targets"] = ["list_models"]
+            else:
+                snakemake_args.update({"targets": ["build_models"]})
+                config.update({"force_optional_models": args.force_all})
 
         # Command: run, run-rule
         if args.command in ("run", "run-rule"):

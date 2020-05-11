@@ -28,7 +28,7 @@ def install_timespan(sqlfile: str = ExportInput("korp_timespan/timespan.sql"),
     util.write_common_data(out, "")
 
 
-@exporter("Create timespan SQL data for use in Korp", config=[
+@exporter("Timespan SQL data for use in Korp", config=[
     Config("korp.timespan_db_name", default="timespan")
 ])
 def timespan_sql(corpus: str = Corpus,

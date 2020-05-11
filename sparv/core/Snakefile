@@ -145,7 +145,9 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
             model = util.get_model_path(registry.expand_variables(param.default))
             outputs.append(model)
             parameters[param_name] = model
-            model_outputs.append(model)
+            # Don't include model in model_outputs if it is optional
+            if modelbuilder and config.get("force_optional_models") or not annotator_info["optional"]:
+                model_outputs.append(model)
         # Annotation
         elif registry.dig(Annotation, param.default):
             param_value = registry.expand_variables(param.default)
@@ -311,7 +313,7 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
         elif installer:
             install_targets.append((target_name, description))
         elif modelbuilder:
-            model_targets.append((target_name, description))
+            model_targets.append((target_name, description, annotator_info["optional"]))
         else:
             named_targets.append((target_name, description))
         @workflow.rule(name=target_name)
@@ -372,7 +374,7 @@ rule config:
 rule annotations:
     run:
         max_len = max(len(a[0]) for m in all_annotations for f in all_annotations[m]
-                      for a in all_annotations[m][f]["annotations"]) + 8
+                      for a in all_annotations[m][f]["annotations"]) + 4
         print()
         print("Available modules, annotators and annotations")
         print("=============================================\n")
@@ -410,6 +412,7 @@ rule annotations:
             print("        {}{:{}}    {}{}".format(util.Color.ITALIC, "Class", max_len, "Annotation", util.Color.RESET))
             for cls, ann in registry.annotation_classes["config_classes"].items():
                 print("        {:{}}    {}".format(cls, max_len, ann))
+        print()
 
 
 rule list_targets:
@@ -431,7 +434,7 @@ rule list_targets:
             print("        {:{}}    {}".format(target, max_len, desc))
         print()
         print("    MODEL BUILDERS")
-        for target, desc in sorted(model_targets):
+        for target, desc, _optional in sorted(model_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
 
 
@@ -439,12 +442,12 @@ rule list_exports:
     run:
         max_len = max(len(t[0]) for t in export_targets) + 4
         print()
-        print("Available corpus export formats")
-        print("===============================")
+        print("Available corpus output formats (exports)")
+        print("=========================================")
         for target, desc in sorted(export_targets):
             print("    {:{}}    {}".format(target, max_len, desc))
         print()
-        print("Default export: xml_export:pretty")
+        print("Default: xml_export:pretty")
         print()
 
 
@@ -482,6 +485,23 @@ rule clean:
                 print("Nothing to remove")
 
 
+rule list_installs:
+    run:
+        max_len = max(len(t[0]) for t in install_targets) + 4
+        print()
+        print("Installations to be made")
+        print("========================")
+        for target, desc in sorted(install_targets):
+            if target in sparv_config.get("install", []):
+                print("    {:{}}    {}".format(target, max_len, desc))
+        print()
+        print("Other available installations")
+        print("=============================")
+        for target, desc in sorted(install_targets):
+            if target not in sparv_config.get("install", []):
+                print("    {:{}}    {}".format(target, max_len, desc))
+        print()
+
 # Collect files to be created for all installations listed in config.install
 install_inputs = []
 for installation in sparv_config.get("install", []):
@@ -493,6 +513,25 @@ rule install_annotated_corpus:
         install_inputs
 
 
+rule list_models:
+    run:
+        max_len = max(len(t[0]) for t in model_targets) + 4
+        print()
+        print("Available models")
+        print("================")
+        for target, desc, optional in sorted(model_targets):
+            if not optional:
+                print("    {:{}}    {}".format(target, max_len, desc))
+        print()
+        print("Optional models (only built when needed)")
+        print("========================================")
+        for target, desc, optional in sorted(model_targets):
+            if optional:
+                print("    {:{}}    {}".format(target, max_len, desc))
+        print()
+
+
+# Build all models. Build even the non-optional ones if force_optional_models = True.
 rule build_models:
     input:
         model_outputs

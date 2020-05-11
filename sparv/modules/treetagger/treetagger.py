@@ -67,50 +67,50 @@ def annotate(doc: str = Document,
     util.write_annotation(doc, out_baseform, out_lemma_annotation)
 
 
-@modelbuilder("Bulgarian TreeTagger model")
-def fetch_bul_model(out: str = ModelOutput("treetagger/bul.par")):
+@modelbuilder("TreeTagger model for Bulgarian", optional=True)
+def get_bul_model(out: str = ModelOutput("treetagger/bul.par")):
     """Download TreeTagger language model."""
     util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/bulgarian.par.gz", out)
 
 
-@modelbuilder("Estonian TreeTagger model")
-def fetch_est_model(out: str = ModelOutput("treetagger/est.par")):
+@modelbuilder("TreeTagger model for Estonian", optional=True)
+def get_est_model(out: str = ModelOutput("treetagger/est.par")):
     """Download TreeTagger language model."""
     util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/estonian.par.gz", out)
 
 
-@modelbuilder("Finnish TreeTagger model")
-def fetch_fin_model(out: str = ModelOutput("treetagger/fin.par")):
+@modelbuilder("TreeTagger model for Finnish", optional=True)
+def get_fin_model(out: str = ModelOutput("treetagger/fin.par")):
     """Download TreeTagger language model."""
     util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/finnish.par.gz", out)
 
 
-@modelbuilder("Latin TreeTagger model")
-def fetch_lat_model(out: str = ModelOutput("treetagger/lat.par")):
+@modelbuilder("TreeTagger model for Latin", optional=True)
+def get_lat_model(out: str = ModelOutput("treetagger/lat.par")):
     """Download TreeTagger language model."""
     util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/latin.par.gz", out)
 
 
-@modelbuilder("Dutch TreeTagger model")
-def fetch_nld_model(out: str = ModelOutput("treetagger/nld.par")):
+@modelbuilder("TreeTagger model for Dutch", optional=True)
+def get_nld_model(out: str = ModelOutput("treetagger/nld.par")):
     """Download TreeTagger language model."""
     util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/dutch.par.gz", out)
 
 
-@modelbuilder("Polish TreeTagger model")
-def fetch_pol_model(out: str = ModelOutput("treetagger/pol.par")):
+@modelbuilder("TreeTagger model for Polish", optional=True)
+def get_pol_model(out: str = ModelOutput("treetagger/pol.par")):
     """Download TreeTagger language model."""
     util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/polish.par.gz", out)
 
 
-@modelbuilder("Romanian TreeTagger model")
-def fetch_ron_model(out: str = ModelOutput("treetagger/ron.par")):
+@modelbuilder("TreeTagger model for Romanian", optional=True)
+def get_ron_model(out: str = ModelOutput("treetagger/ron.par")):
     """Download TreeTagger language model."""
     util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/romanian.par.gz", out)
 
 
-@modelbuilder("Slovak TreeTagger model")
-def fetch_slk_model(out: str = ModelOutput("treetagger/slk.par")):
+@modelbuilder("TreeTagger model for Slovak", optional=True)
+def get_slk_model(out: str = ModelOutput("treetagger/slk.par")):
     """Download TreeTagger language model."""
     util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/slovak.par.gz", out)
 
@@ -118,37 +118,37 @@ def fetch_slk_model(out: str = ModelOutput("treetagger/slk.par")):
 # These can also be processed with Freeling:
 
 
-@modelbuilder("Spanish TreeTagger model")
-def fetch_spa_model(out: str = ModelOutput("treetagger/spa.par")):
+@modelbuilder("TreeTagger model for Spanish", optional=True)
+def get_spa_model(out: str = ModelOutput("treetagger/spa.par")):
     """Download TreeTagger language model."""
     util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/spanish.par.gz", out)
 
 
-@modelbuilder("German TreeTagger model")
-def fetch_deu_model(out: str = ModelOutput("treetagger/deu.par")):
+@modelbuilder("TreeTagger model for German", optional=True)
+def get_deu_model(out: str = ModelOutput("treetagger/deu.par")):
     """Download TreeTagger language model."""
     util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/german.par.gz", out)
 
 
-@modelbuilder("English TreeTagger model")
-def fetch_eng_model(out: str = ModelOutput("treetagger/eng.par")):
+@modelbuilder("TreeTagger model for English", optional=True)
+def get_eng_model(out: str = ModelOutput("treetagger/eng.par")):
     """Download TreeTagger language model."""
     util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/english.par.gz", out)
 
 
-@modelbuilder("French TreeTagger model")
-def fetch_fra_model(out: str = ModelOutput("treetagger/fra.par")):
+@modelbuilder("TreeTagger model for French", optional=True)
+def get_fra_model(out: str = ModelOutput("treetagger/fra.par")):
     """Download TreeTagger language model."""
     util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/french.par.gz", out)
 
 
-@modelbuilder("Italian TreeTagger model")
-def fetch_ita_model(out: str = ModelOutput("treetagger/ita.par")):
+@modelbuilder("TreeTagger model for Italian", optional=True)
+def get_ita_model(out: str = ModelOutput("treetagger/ita.par")):
     """Download TreeTagger language model."""
     util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/italian.par.gz", out)
 
 
-@modelbuilder("Russian TreeTagger model")
-def fetch_rus_model(out: str = ModelOutput("treetagger/rus.par")):
+@modelbuilder("TreeTagger model for Russian", optional=True)
+def get_rus_model(out: str = ModelOutput("treetagger/rus.par")):
     """Download TreeTagger language model."""
     util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/russian.par.gz", out)

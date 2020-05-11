@@ -63,7 +63,8 @@ def find_modules(sparv_path, no_import=False) -> list:
 
 
 def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, source_type: Optional[str] = None,
-               outputs=(), language: Optional[List[str]] = None, config: Optional[List[Config]] = None):
+               outputs=(), language: Optional[List[str]] = None, config: Optional[List[Config]] = None,
+               optional: bool = False):
     """Return a decorator for annotator functions, adding them to annotator registry."""
     def decorator(f):
         """Add wrapped function to registry."""
@@ -77,7 +78,8 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
             "source_type": source_type,
             "outputs": outputs,
             "language": language,
-            "config": config
+            "config": config,
+            "optional": optional
         })
         return f
 
@@ -122,9 +124,10 @@ def installer(description: str, name: Optional[str] = None, config: Optional[Lis
     return _annotator(description=description, a_type=Annotator.installer, name=name, config=config)
 
 
-def modelbuilder(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None):
+def modelbuilder(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
+                 optional: bool = False):
     """Return a decorator for modelbuilder functions."""
-    return _annotator(description=description, a_type=Annotator.modelbuilder, name=name, config=config)
+    return _annotator(description=description, a_type=Annotator.modelbuilder, name=name, config=config, optional=optional)
 
 
 def _add_to_registry(annotator):

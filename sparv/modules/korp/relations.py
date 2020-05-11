@@ -258,7 +258,7 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
     return x_rel_y * math.log((rel * x_rel_y) / (x_rel * rel_y * 1.0), 2)
 
 
-@exporter("Create Word Picture SQL for Korp")
+@exporter("Word Picture SQL for use in Korp")
 def relations_sql(corpus: str = Corpus,
                   db_name: str = Config("korp.relations_db_name", "korp_relations"),
                   out: str = Export("korp_wordpicture/relations.sql"),
