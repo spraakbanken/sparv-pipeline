@@ -306,21 +306,28 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
             # We don't use "run:" since the whole Snakefile would have to be reloaded for every single job, due to how
             # Snakemake creates processes for run-jobs.
 
-    # Create rule to run this annotation on all input files, but skip rules containing wildcards
-    if not any(re.search(r"(?!{doc}){[^}]+}", o) for o in outputs):
-        if exporter:
-            export_targets.append((target_name, description))
-        elif installer:
-            install_targets.append((target_name, description))
-        elif modelbuilder:
-            model_targets.append((target_name, description, annotator_info["optional"]))
-        else:
-            named_targets.append((target_name, description))
+    # Add to rule lists
+    if exporter:
+        export_targets.append((target_name, description))
+    elif installer:
+        install_targets.append((target_name, description))
+    elif modelbuilder:
+        model_targets.append((target_name, description, annotator_info["optional"]))
+    else:
+        named_targets.append((target_name, description))
+
+    # Create rule to run this annotation on all input files
+
+    # Get user-supplied wildcard values
+    wildcards = dict(wc.split("=") for wc in config.get("wildcards", []))
+
+    # Create rule, but only when called
+    if target_name in config.get("targets", []):
         @workflow.rule(name=target_name)
         @workflow.input(expand([os.path.join(paths.annotation_dir, o)
                                 if not (o.startswith(paths.annotation_dir) or o.startswith(paths.export_dir))
                                 else o
-                                for o in outputs], doc=config.get("doc") or get_source_files()))
+                                for o in outputs], doc=config.get("doc") or get_source_files(), **wildcards))
         @workflow.run
         def __rule__(*_args, **_kwargs):
             pass

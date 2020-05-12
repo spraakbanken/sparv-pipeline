@@ -113,6 +113,8 @@ def main():
     runrule_parser.add_argument("targets", nargs="*", default=["list"],
                                 help="Annotation(s) or annotation file(s) to create")
     runrule_parser.add_argument("-l", "--list", action="store_true", help="List available targets")
+    runrule_parser.add_argument("-w", "--wildcards", nargs="*", metavar="WILDCARD",
+                                help="Supply values for wildcards using the format 'name=value'")
     # TODO: subparsers.add_parser("create-file")
     subparsers.add_parser("annotations", description="List available annotations and classes.")
 
@@ -173,6 +175,9 @@ def main():
         # Command: run-rule
         if args.command == "run-rule":
             snakemake_args.update({"targets": args.targets})
+            config["targets"] = args.targets
+            if args.wildcards:
+                config["wildcards"] = args.wildcards
             if args.list or snakemake_args["targets"] == ["list"]:
                 snakemake_args["targets"] = ["list_targets"]
                 simple_target = True

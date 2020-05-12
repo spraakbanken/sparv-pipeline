@@ -51,7 +51,7 @@ def doc_id(out: str = Output("misc.docid", cls="docid", data=True, all_docs=True
         util.write_data(doc, out, new_id)
 
 
-@annotator("Unique IDs for annotations")
+@annotator("Unique IDs for {annotation}")
 def ids(doc: str = Document,
         annotation: str = Annotation("{annotation}"),
         out: str = Output("{annotation}:misc.id", description="Unique ID for {annotation}"),
