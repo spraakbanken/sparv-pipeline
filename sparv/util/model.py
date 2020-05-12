@@ -4,7 +4,6 @@ import gzip
 import logging
 import os
 import pickle
-import shutil
 import urllib.request
 import zipfile
 

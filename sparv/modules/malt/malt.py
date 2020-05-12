@@ -5,7 +5,7 @@ import os
 import re
 
 import sparv.util as util
-from sparv import Annotation, Binary, Document, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv import Annotation, Binary, Config, Document, Model, ModelOutput, Output, annotator, modelbuilder
 
 log = logging.getLogger(__name__)
 
@@ -24,10 +24,13 @@ DEPREL_COLUMN = 7
 UNDEF = "_"
 
 
-@annotator("Dependency parsing using MALT Parser")
+@annotator("Dependency parsing using MALT Parser", language=["swe"],
+           config=[Config("malt.jar", default="maltparser-1.7.2/maltparser-1.7.2.jar"),
+                   Config("malt.model", default="malt/swemalt-1.7.2.mco")
+                   ])
 def annotate(doc: str = Document,
-             maltjar: str = Binary("[malt.jar=maltparser-1.7.2/maltparser-1.7.2.jar]"),
-             model: str = Model("[malt.model=malt/swemalt-1.7.2.mco]"),
+             maltjar: str = Binary("[malt.jar]"),
+             model: str = Model("[malt.model]"),
              out_dephead: str = Output("<token>:malt.dephead", description="Positions of the dependency heads"),
              out_dephead_ref: str = Output("<token>:malt.dephead_ref", description="Sentence-relative positions of the dependency heads"),
              out_deprel: str = Output("<token>:malt.deprel", description="Dependency relations to the head"),
@@ -155,7 +158,12 @@ def maltstart(maltjar, model, encoding, send_empty_sentence=False):
     return process
 
 
-@modelbuilder("Model for MALT Parser")
-def build_model(out: str = ModelOutput("malt/swemalt-1.7.2.mco")):
-    """Download model for MALT Parser."""
+@modelbuilder("Model for MALT Parser", optional=True,
+              config=[Config("malt.jar", default="maltparser-1.7.2/maltparser-1.7.2.jar")])
+def build_model(out: str = ModelOutput("malt/swemalt-1.7.2.mco"),
+                maltjar: str = Binary("[malt.jar]")):
+    """Download model for MALT Parser.
+
+    Won't download model unless maltjar has been installed.
+    """
     util.download_model("http://maltparser.org/mco/swedish_parser/swemalt-1.7.2.mco", out)
