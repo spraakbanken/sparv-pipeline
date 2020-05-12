@@ -24,12 +24,15 @@ TAG_SETS = {
     "slk": "SlovakNationalCorpus",
     "deu": "STTS",
     "eng": "Penn",
-    # TODO: Write tag translations for: spa, fra, ita, rus
+    "fra": "TreeTagger",
+    "spa": "TreeTagger",
+    "ita": "TreeTagger",
+    "rus": "TreeTagger",
 }
 
 
 @annotator("Part-of-speech tags and baseforms from TreeTagger",
-           language=["bul", "est", "fin", "lat", "nld", "pol", "ron", "slk", "eng"],
+           language=["bul", "est", "fin", "lat", "nld", "pol", "ron", "slk", "deu", "eng", "fra", "spa", "ita", "rus"],
            config=[
                Config("treetagger.binary", "treetagger/tree-tagger"),
                Config("treetagger.model", "treetagger/[language].par")

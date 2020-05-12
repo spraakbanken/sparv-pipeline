@@ -409,65 +409,188 @@ def _slk_SlovakNationalCorpus_convert(pos):
 def _deu_STTS_convert(pos):
     pos_dict = {
         # http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/stts_guide.pdf
-        "ADJA": "adjective",
-        "ADJD": "adjective",
-        "ADV": "adverb",
-        "APPR": "preposition",
-        "APPRART": "preposition",
-        "APPO": "postposition",
-        "APZR": "right circumposition",
-        "ART": "article",
-        "CARD": "cardinal number",
-        "FM": "foreign word",
-        "ITJ": "interjection",
-        "ORD": "ordinal number",
-        "KOUI": "subjunction",
-        "KOUS": "subjunction",
-        "KON": "conjunction",
-        "KOKOM": "conjunction",
-        "NN": "noun",
-        "NE": "proper name",
-        "PDS": "pronoun",
-        "PDAT": "pronoun",
-        "PIS": "pronoun",
-        "PIAT": "pronoun",
-        "PIDAT": "pronoun",
-        "PPER": "pronoun",
-        "PPOSS": "pronoun",
-        "PPOSAT": "pronoun",
-        "PRELS": "pronoun",
-        "PRELAT": "pronoun",
-        "PRF": "pronoun",
-        "PWS": "pronoun",
-        "PWAT": "pronoun",
-        "PWAV": "pronoun",
-        "PAV": "adverb",
-        "PTKZU": "infinitive marker 'zu'",
-        "PTKNEG": "negation particle",
-        "PTKVZ": "particle",
-        "PTKANT": "particle",
-        "PTKA": "particle",
-        "SGML": "SGML markup",
-        "SPELL": "spelling",
-        "TRUNC": "truncated word (first part)",
-        "VVFIN": "verb",
-        "VVIMP": "verb",
-        "VVINF": "verb",
-        "VVIZU": "verb",
-        "VVPP": "verb",
-        "VAFIN": "verb",
-        "VAIMP": "verb",
-        "VAINF": "verb",
-        "VAPP": "verb",
-        "VMFIN": "verb",
-        "VMINF": "verb",
-        "VMPP": "verb",
-        "XY": "non-word",
-        "$,": "punctuation",
-        "$.": "punctuation",
-        "$(": "punctuation"
+        "ADJA": "ADJ",
+        "ADJD": "ADJ",
+        "ADV": "ADV",
+        "APPR": "ADP",
+        "APPRART": "ADP",
+        "APPO": "ADP",
+        "APZR": "ADP",
+        "ART": "DET",
+        "CARD": "NUM",  # cardinal number
+        "FM": "X",  # foreign word
+        "ITJ": "INTJ",
+        "ORD": "NUM",  # ordinal number
+        "KOUI": "SCONJ",
+        "KOUS": "SCONJ",
+        "KON": "CONJ",
+        "KOKOM": "CONJ",
+        "NN": "NOUN",
+        "NE": "PROPN",
+        "PDS": "PRON",
+        "PDAT": "PRON",
+        "PIS": "PRON",
+        "PIAT": "PRON",
+        "PIDAT": "PRON",
+        "PPER": "PRON",
+        "PPOSS": "PRON",
+        "PPOSAT": "PRON",
+        "PRELS": "PRON",
+        "PRELAT": "PRON",
+        "PRF": "PRON",
+        "PWS": "PRON",
+        "PWAT": "PRON",
+        "PWAV": "PRON",
+        "PAV": "ADV",
+        "PTKZU": "PART",  # infinitive marker 'zu'
+        "PTKNEG": "PART",  # negation particle
+        "PTKVZ": "PART",
+        "PTKANT": "PART",
+        "PTKA": "PART",
+        "SGML": "X",  # SGML markup
+        "SPELL": "X",  # spelling
+        "TRUNC": "X",  # truncated word (first part)
+        "VVFIN": "VERB",
+        "VVIMP": "VERB",
+        "VVINF": "VERB",
+        "VVIZU": "VERB",
+        "VVPP": "VERB",
+        "VAFIN": "VERB",
+        "VAIMP": "VERB",
+        "VAINF": "VERB",
+        "VAPP": "VERB",
+        "VMFIN": "VERB",
+        "VMINF": "VERB",
+        "VMPP": "VERB",
+        "XY": "SYM",  # non-word
+        "$,": "PUNCT",
+        "$.": "PUNCT",
+        "$(": "PUNCT"
     }
     return pos_dict[pos]
+
+
+def _fra_TreeTagger_convert(pos):
+    pos_dict = {
+        # https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/french-tagset.html
+        "ABR": "X",  # abbreviation
+        "ADJ": "ADJ",
+        "ADV": "ADV",
+        "DET": "DET",
+        "INT": "INTJ",
+        "KON": "CONJ",
+        "NAM": "PROPN",
+        "NOM": "NOUN",
+        "NUM": "NUM",
+        "PRO": "PRON",
+        "PRP": "ADP",
+        "PUN": "PUNCT",
+        "SEN": "X",  # SENT: sentence tag
+        "SYM": "SYM",
+        "VER": "VERB"
+    }
+    if pos == "DET:POS":
+        return "PRON"
+    else:
+        return pos_dict.get(pos[:3], "X")
+
+
+def _spa_TreeTagger_convert(pos):
+    pos_dict = {
+        # https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/spanish-tagset.txt
+        "ADJ": "ADJ",
+        "ADV": "ADV",
+        "ART": "DET",
+        "CAR": "NUM",
+        "CC": "CONJ",  # Coordinating conjunction (y, o)
+        "CCA": "CONJ",  # Adversative coordinating conjunction (pero)
+        "CCN": "CONJ",  # Negative coordinating conjunction (ni)
+        "CQU": "SCONJ",  # que (as conjunction)
+        "CSU": "SCONJ",
+        "DM": "PRON",  # Demonstrative pronouns (ésas, ése, esta)
+        "INT": "PRON",  # Interrogative pronouns (quiénes, cuántas, cuánto)
+        "ITJ": "INTJ",
+        "NC": "NOUN",  # Common nouns (mesas, mesa, libro, ordenador)
+        "NME": "NOUN",  # measure noun (metros, litros)
+        "NMO": "NOUN",  # month name
+        "NP": "PROPN",
+        "ORD": "DET",  # Ordinals (primer, primeras, primera)
+        "PAL": "ADP",  # Portmanteau word formed by a and el
+        "PDE": "ADP",  # Portmanteau word formed by de and el
+        "PPC": "PRON",  # Clitic personal pronoun (le, les)
+        "PPO": "PRON",  # Possessive pronouns (mi, su, sus)
+        "PPX": "PRON",  # Clitics and personal pronouns (nos, me, nosotras, te, sí)
+        "PRE": "ADP",
+        "REL": "PRON",  # Relative pronouns (cuyas, cuyo)
+        "SE": "PART",  # Se (as particle)
+        "QU": "DET",  # Quantifiers (sendas, cada)
+        "BAC": "SYM",  # backslash (\)
+        "CM": "PUNCT",  # comma (,)
+        "COL": "PUNCT",  # colon (:)
+        "DAS": "PUNCT",  # dash (-)
+        "DOT": "PUNCT",  # POS tag for "..."
+        "FS": "PUNCT",  # Full stop punctuation marks
+        "SYM": "SYM",
+        "LP": "PUNCT",  # left parenthesis ("(", "[")
+        "QT": "PUNCT",  # quotation symbol (" ' `)
+        "RP": "PUNCT",  # right parenthesis (")", "]")
+        "SEM": "PUNCT",  # semicolon (;)
+        "SLA": "SYM",  # slash (/)
+        "PER": "SYM",  # percent sign (%)
+        # ACRNM	acronym (ISO, CEI)
+        # ALFP	Plural letter of the alphabet (As/Aes, bes)
+        # ALFS	Singular letter of the alphabet (A, b)
+        # CODE	Alphanumeric code
+        # PE	Foreign word
+        # FO	Formula
+        # PNC	Unclassified word
+        # NEG	Negation
+        # UMMX	measure unit (MHz, km, mA)
+    }
+    if pos.startswith("V"):
+        return "VERB"
+    return pos_dict.get(pos[:3], "X")
+
+
+def _ita_TreeTagger_convert(pos):
+    pos_dict = {
+        # https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/italian-tagset.txt
+        "ADJ": "ADJ",
+        "ADV": "ADV",
+        "CON": "CONJ",  # conjunction
+        "DET": "DET",
+        "INT": "INTJ",  # interjection
+        "LS": "SYM",  # list symbol
+        "NOM": "NOUN",
+        "NPR": "PROPN",
+        "NUM": "NUM",
+        "PON": "PUNCT",
+        "PRE": "ADP",
+        "PRO": "PRON",
+        "SYM": "SYM",
+        "VER": "VERB",
+        # "ABR": "",  # abbreviation
+        # "FW": "",  # foreign word
+        # "SENT": "",  # sentence marker
+    }
+    return pos_dict.get(pos[:3], "X")
+
+
+def _rus_TreeTagger_convert(pos):
+    pos_dict = {
+        # http://corpus.leeds.ac.uk/mocky/ru-table.tab
+        "A": "ADJ",
+        "C": "CONJ",
+        "I": "INTJ",
+        "M": "NUM",
+        "N": "NOUN",
+        "P": "PRON",
+        "Q": "PART",
+        "R": "ADV",
+        "S": "ADP",
+        "V": "VERB",
+    }
+    return pos_dict.get(pos[0], "X")
 
 
 ################################################################################
@@ -482,7 +605,7 @@ CONVERTERS = {
     # ("cy", "EAGLES"): _EAGLES_convert,  # Welsh, Not used yet, FreeLing dict is not working.
     ("deu", "EAGLES"): _EAGLES_convert,
     ("spa", "EAGLES"): _EAGLES_convert,
-    ("eng", "Penn"): _eng_Penn_convert,
+    ("eng", "Penn"): _eng_Penn_convert,  # Also used by Stanford Parser
     ("fra", "EAGLES"): _EAGLES_convert,
     ("glg", "EAGLES"): _EAGLES_convert,
     ("ita", "EAGLES"): _EAGLES_convert,
@@ -500,4 +623,8 @@ CONVERTERS = {
     ("ron", "MULTEXT"): _ron_MULTEXT_convert,
     ("slk", "SlovakNationalCorpus"): _slk_SlovakNationalCorpus_convert,
     ("deu", "STTS"): _deu_STTS_convert,
+    ("fra", "TreeTagger"): _fra_TreeTagger_convert,
+    ("spa", "TreeTagger"): _spa_TreeTagger_convert,
+    ("ita", "TreeTagger"): _ita_TreeTagger_convert,
+    ("rus", "TreeTagger"): _rus_TreeTagger_convert,
 }
