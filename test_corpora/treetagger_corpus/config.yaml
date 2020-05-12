@@ -1,13 +1,38 @@
+################################################################################
+# META DATA
+################################################################################
+
+# Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
 id: treetagger-corpus
+# Corpus name (human readable)
 name: TreeTagger test corpus
+# Language of the input documents, specified as ISO 639-3 code
 language: nld
+
+################################################################################
+# INPUT DESCRIPTION
+################################################################################
 
 # Elements and attributes from the source XML that we want to be available as input for other annotations
 xml_elements:
     - text
 
+# Chunk to use for automatic sentence segmentation
 sentence_chunk: <text>
 
+
+################################################################################
+# OUTPUT DESCRIPTION
+################################################################################
+
+# Class definitions
+classes:
+    text: text
+    "token:pos": <token>:treetagger.pos
+    "token:upos": <token>:treetagger.upos
+    "token:baseform": <token>:treetagger.baseform
+
+# Automatic annotations to be included in the export
 annotations:
     - text
     - <text>:readability.lix
@@ -16,10 +41,3 @@ annotations:
     - <token:pos>
     - <token:upos>
     - <token:baseform>
-
-classes:
-    text: text
-    token: segment.token
-    "token:pos": <token>:treetagger.pos
-    "token:upos": <token>:treetagger.upos
-    "token:baseform": <token>:treetagger.baseform

@@ -1,12 +1,14 @@
 """Model-related util functions like reading and writing data."""
 
+import gzip
 import logging
 import os
 import pickle
+import shutil
 import urllib.request
 import zipfile
 
-from sparv.core.paths import pipeline_path, models_dir
+from sparv.core.paths import models_dir, pipeline_path
 
 log = logging.getLogger(__name__)
 
@@ -84,6 +86,16 @@ def unzip_model(zip_file: str):
     with zipfile.ZipFile(file_path, "r") as z:
         z.extractall(out_dir)
     log.info("Successfully unzipped %s", file_path)
+
+
+def ungzip_model(gzip_file: str, out: str):
+    """Unzip gzip_file inside modeldir."""
+    file_path = get_model_path(gzip_file)
+    with gzip.open(file_path, "rb") as z:
+        data = z.read()
+        with open(out, "wb") as f:
+            f.write(data)
+    log.info("Successfully unzipped %s", out)
 
 
 def remove_model_files(files: list, raise_errors: bool = False):
