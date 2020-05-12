@@ -127,6 +127,11 @@ def main():
         subparser.add_argument("--log", action="store_true", help="Show log instead of progress bar")
         subparser.add_argument("--debug", action="store_true", help="Show debug messages")
 
+    # Backward compatibility
+    if len(sys.argv) > 1 and sys.argv[1] == "make":
+        print("No rule to make target")
+        sys.exit(1)
+
     # Parse arguments. We allow unknown arguments for the "run-module" command which is handled separately.
     args, unknown_args = parser.parse_known_args(args=None if sys.argv[1:] else ["--help"])
 
