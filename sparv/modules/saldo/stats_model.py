@@ -11,7 +11,7 @@ from sparv import Model, ModelOutput, modelbuilder
 log = logging.getLogger(__name__)
 
 
-@modelbuilder("Korp statistic model")
+@modelbuilder("Korp statistic model", language=["swe"])
 def build_korp_stats(out: str = ModelOutput("saldo/stats.pickle"),
                      saldom: str = Model("saldo/saldom.xml")):
     """Download Korp's word frequency file and convert it to a model."""

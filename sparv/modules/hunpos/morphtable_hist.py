@@ -11,7 +11,7 @@ SALDO_TO_SUC["pm"] = {"PM.NOM"}
 SALDO_TO_SUC["nl invar"] = {"NL.NOM"}
 
 
-@modelbuilder("Hunpos morphtable for Swedish historical resources")
+@modelbuilder("Hunpos morphtable for Swedish historical resources", language=["swe"])
 def hist_morphtable(out: str = ModelOutput("hunpos/hist/hunpos.dalinm-swedberg.saldo.suc-tags.morphtable"),
                     swedberg: str = Model("hunpos/hist/swedberg-gender.hunpos"),
                     dalin: str = Model("hunpos/hist/dalinm.hunpos"),

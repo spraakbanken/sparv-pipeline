@@ -104,7 +104,7 @@ def main():
                                                        "This will make things slower when annotating a corpus "
                                                        "for the first time."))
     models_parser.add_argument("-l", "--list", action="store_true", help="List available models")
-    models_parser.add_argument("--force-all", action="store_true", help="Build all models, including the optional ones")
+    models_parser.add_argument("--language", help="Language (ISO 639-3) if different from current corpus language")
 
     # Advanced commands
     subparsers.add_parser("run-module", no_help=True)
@@ -196,11 +196,11 @@ def main():
                 snakemake_args.update({"targets": ["install_annotated_corpus"]})
         # Command: build-models
         elif args.command == "build-models":
+            config["language"] = args.language
             if args.list:
                 snakemake_args["targets"] = ["list_models"]
             else:
                 snakemake_args.update({"targets": ["build_models"]})
-                config.update({"force_optional_models": args.force_all})
 
         # Command: run, run-rule
         if args.command in ("run", "run-rule"):

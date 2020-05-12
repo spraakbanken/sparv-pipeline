@@ -63,7 +63,7 @@ def annotate(doc: str = Document,
     util.write_annotation(doc, out_labels, result_labels)
 
 
-@modelbuilder("Sentiment model (SenSALDO)")
+@modelbuilder("Sentiment model (SenSALDO)", language=["swe"])
 def build_model(out: str = ModelOutput("sensaldo/sensaldo.pickle")):
     """Download and build SenSALDO model."""
     # Download and extract sensaldo-base-v02.txt

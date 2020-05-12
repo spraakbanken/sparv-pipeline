@@ -122,7 +122,7 @@ def annotate(doc: str = Document,
     util.write_annotation(doc, out_baseform, baseform_annotation)
 
 
-@modelbuilder("SALDO compound model")
+@modelbuilder("SALDO compound model", language=["swe"])
 def build_saldo_comp(out: str = ModelOutput("saldo/saldo.compound.pickle"),
                      saldom: str = Model("saldo/saldom.xml")):
     """Extract compound info from saldom.xml and save as a pickle file."""

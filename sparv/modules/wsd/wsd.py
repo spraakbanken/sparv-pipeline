@@ -78,7 +78,7 @@ def annotate(doc: str = Document,
     return
 
 
-@modelbuilder("WSD models")
+@modelbuilder("WSD models", language=["swe"])
 def build_model(sense_model: str = ModelOutput("wsd/ALL_512_128_w10_A2_140403_ctx1.bin"),
                 context_model: str = ModelOutput("wsd/lem_cbow0_s512_w10_NEW2_ctx.bin")):
     """Download models for SALDO-based word sense disambiguation."""

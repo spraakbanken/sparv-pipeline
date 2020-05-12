@@ -113,7 +113,7 @@ def do_segmentation(doc, out, segmenter, chunk=None, existing_segments=None, mod
     util.write_annotation(doc, out, segments)
 
 
-@modelbuilder("Token list for BetterTokenizer")
+@modelbuilder("Token list for BetterTokenizer", language=["swe"])
 def build_tokenlist(saldo_model: str = Model("saldo/saldo.pickle"),
                     out: str = ModelOutput("segment/bettertokenizer.sv.saldo-tokens"),
                     segmenter: str = Config("segment.token_wordlist_segmenter", "better_word"),

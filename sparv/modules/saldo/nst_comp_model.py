@@ -11,7 +11,7 @@ from sparv import Model, ModelOutput, modelbuilder
 log = logging.getLogger(__name__)
 
 
-@modelbuilder("Compound POS model")
+@modelbuilder("Compound POS model", language=["swe"])
 def build_nst_comp(out: str = ModelOutput("saldo/nst.comp.pos.pickle"),
                    nst_lexicon: str = Model("saldo/nst_utf8.txt")):
     """Download NST lexicon and convert it to a compound POS model.

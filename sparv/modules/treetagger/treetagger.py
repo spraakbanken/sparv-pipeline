@@ -75,7 +75,7 @@ def annotate(doc: str = Document,
     util.write_annotation(doc, out_baseform, out_lemma_annotation)
 
 
-@modelbuilder("TreeTagger model for Bulgarian", optional=True)
+@modelbuilder("TreeTagger model for Bulgarian", language=["bul"])
 def get_bul_model(out: str = ModelOutput("treetagger/bul.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
@@ -85,7 +85,7 @@ def get_bul_model(out: str = ModelOutput("treetagger/bul.par"),
     util.remove_model_files([gzip])
 
 
-@modelbuilder("TreeTagger model for Estonian", optional=True)
+@modelbuilder("TreeTagger model for Estonian", language=["est"])
 def get_est_model(out: str = ModelOutput("treetagger/est.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
@@ -95,7 +95,7 @@ def get_est_model(out: str = ModelOutput("treetagger/est.par"),
     util.remove_model_files([gzip])
 
 
-@modelbuilder("TreeTagger model for Finnish", optional=True)
+@modelbuilder("TreeTagger model for Finnish", language=["fin"])
 def get_fin_model(out: str = ModelOutput("treetagger/fin.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
@@ -105,7 +105,7 @@ def get_fin_model(out: str = ModelOutput("treetagger/fin.par"),
     util.remove_model_files([gzip])
 
 
-@modelbuilder("TreeTagger model for Latin", optional=True)
+@modelbuilder("TreeTagger model for Latin", language=["lat"])
 def get_lat_model(out: str = ModelOutput("treetagger/lat.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
@@ -115,7 +115,7 @@ def get_lat_model(out: str = ModelOutput("treetagger/lat.par"),
     util.remove_model_files([gzip])
 
 
-@modelbuilder("TreeTagger model for Dutch", optional=True)
+@modelbuilder("TreeTagger model for Dutch", language=["nld"])
 def get_nld_model(out: str = ModelOutput("treetagger/nld.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
@@ -125,7 +125,7 @@ def get_nld_model(out: str = ModelOutput("treetagger/nld.par"),
     util.remove_model_files([gzip])
 
 
-@modelbuilder("TreeTagger model for Polish", optional=True)
+@modelbuilder("TreeTagger model for Polish", language=["pol"])
 def get_pol_model(out: str = ModelOutput("treetagger/pol.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
@@ -135,7 +135,7 @@ def get_pol_model(out: str = ModelOutput("treetagger/pol.par"),
     util.remove_model_files([gzip])
 
 
-@modelbuilder("TreeTagger model for Romanian", optional=True)
+@modelbuilder("TreeTagger model for Romanian", language=["ron"])
 def get_ron_model(out: str = ModelOutput("treetagger/ron.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
@@ -145,7 +145,7 @@ def get_ron_model(out: str = ModelOutput("treetagger/ron.par"),
     util.remove_model_files([gzip])
 
 
-@modelbuilder("TreeTagger model for Slovak", optional=True)
+@modelbuilder("TreeTagger model for Slovak", language=["slk"])
 def get_slk_model(out: str = ModelOutput("treetagger/slk.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
@@ -158,7 +158,7 @@ def get_slk_model(out: str = ModelOutput("treetagger/slk.par"),
 # These can also be processed with Freeling:
 
 
-@modelbuilder("TreeTagger model for Spanish", optional=True)
+@modelbuilder("TreeTagger model for Spanish", language=["spa"])
 def get_spa_model(out: str = ModelOutput("treetagger/spa.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
@@ -168,7 +168,7 @@ def get_spa_model(out: str = ModelOutput("treetagger/spa.par"),
     util.remove_model_files([gzip])
 
 
-@modelbuilder("TreeTagger model for German", optional=True)
+@modelbuilder("TreeTagger model for German", language=["deu"])
 def get_deu_model(out: str = ModelOutput("treetagger/deu.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
@@ -178,7 +178,7 @@ def get_deu_model(out: str = ModelOutput("treetagger/deu.par"),
     util.remove_model_files([gzip])
 
 
-@modelbuilder("TreeTagger model for English", optional=True)
+@modelbuilder("TreeTagger model for English", language=["eng"])
 def get_eng_model(out: str = ModelOutput("treetagger/eng.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
@@ -188,7 +188,7 @@ def get_eng_model(out: str = ModelOutput("treetagger/eng.par"),
     util.remove_model_files([gzip])
 
 
-@modelbuilder("TreeTagger model for French", optional=True)
+@modelbuilder("TreeTagger model for French", language=["fra"])
 def get_fra_model(out: str = ModelOutput("treetagger/fra.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
@@ -198,7 +198,7 @@ def get_fra_model(out: str = ModelOutput("treetagger/fra.par"),
     util.remove_model_files([gzip])
 
 
-@modelbuilder("TreeTagger model for Italian", optional=True)
+@modelbuilder("TreeTagger model for Italian", language=["ita"])
 def get_ita_model(out: str = ModelOutput("treetagger/ita.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
@@ -208,7 +208,7 @@ def get_ita_model(out: str = ModelOutput("treetagger/ita.par"),
     util.remove_model_files([gzip])
 
 
-@modelbuilder("TreeTagger model for Russian", optional=True)
+@modelbuilder("TreeTagger model for Russian", language=["rus"])
 def get_rus_model(out: str = ModelOutput("treetagger/rus.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""

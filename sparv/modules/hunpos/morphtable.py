@@ -6,7 +6,7 @@ from sparv import Model, ModelOutput, modelbuilder
 from sparv.modules.saldo import saldo
 
 
-@modelbuilder("Hunpos-SALDO morphtable")
+@modelbuilder("Hunpos-SALDO morphtable", language=["swe"])
 def saldo_morphtable(out: str = ModelOutput("hunpos/hunpos.saldo.suc-tags.morphtable"),
                      saldo_model: str = Model("saldo/saldo.pickle"),
                      suc: str = Model("hunpos/suc3.morphtable.words"),

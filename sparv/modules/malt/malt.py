@@ -158,10 +158,10 @@ def maltstart(maltjar, model, encoding, send_empty_sentence=False):
     return process
 
 
-@modelbuilder("Model for MALT Parser", optional=True,
+@modelbuilder("Model for MALT Parser", language=["swe"],
               config=[Config("malt.jar", default="maltparser-1.7.2/maltparser-1.7.2.jar")])
 def build_model(out: str = ModelOutput("malt/swemalt-1.7.2.mco"),
-                maltjar: str = Binary("[malt.jar]")):
+                _maltjar: str = Binary("[malt.jar]")):
     """Download model for MALT Parser.
 
     Won't download model unless maltjar has been installed.

@@ -145,9 +145,7 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
             model = util.get_model_path(registry.expand_variables(param.default))
             outputs.append(model)
             parameters[param_name] = model
-            # Don't include model in model_outputs if it is optional
-            if modelbuilder and config.get("force_optional_models") or not annotator_info["optional"]:
-                model_outputs.append(model)
+            model_outputs.append(model)
         # Annotation
         elif registry.dig(Annotation, param.default):
             param_value = registry.expand_variables(param.default)
@@ -312,7 +310,7 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
     elif installer:
         install_targets.append((target_name, description))
     elif modelbuilder:
-        model_targets.append((target_name, description, annotator_info["optional"]))
+        model_targets.append((target_name, description, annotator_info["language"]))
     else:
         named_targets.append((target_name, description))
 
@@ -349,6 +347,10 @@ if os.path.isfile(corpus_config_file):
     registry.annotation_classes["config_classes"] = sparv_config.config.get("classes", {})
 else:
     config_missing = True
+
+# Some commands may override the corpus language
+if config.get("language"):
+    sparv_config.config["language"] = config["language"]
 
 # Find and load Sparv modules
 registry.find_modules(paths.sparv_path)
@@ -524,16 +526,16 @@ rule list_models:
     run:
         max_len = max(len(t[0]) for t in model_targets) + 4
         print()
-        print("Available models")
-        print("================")
-        for target, desc, optional in sorted(model_targets):
-            if not optional:
+        print("Models for current language ({})".format(sparv_config.get("language")))
+        print("=================================")
+        for target, desc, language in sorted(model_targets):
+            if language and sparv_config.get("language") in language:
                 print("    {:{}}    {}".format(target, max_len, desc))
         print()
-        print("Optional models (only built when needed)")
-        print("========================================")
-        for target, desc, optional in sorted(model_targets):
-            if optional:
+        print("Language-independent models")
+        print("===========================")
+        for target, desc, language in sorted(model_targets):
+            if not language:
                 print("    {:{}}    {}".format(target, max_len, desc))
         print()
 

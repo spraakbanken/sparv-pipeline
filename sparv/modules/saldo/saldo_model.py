@@ -17,13 +17,13 @@ PART_DELIM2 = "^2"
 PART_DELIM3 = "^3"
 
 
-@modelbuilder("SALDO morphology XML")
+@modelbuilder("SALDO morphology XML", language=["swe"])
 def download_saldo(out: str = ModelOutput("saldo/saldom.xml")):
     """Download SALDO morphology XML."""
     util.download_model("https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/saldom/saldom.xml", out)
 
 
-@modelbuilder("SALDO morphology model")
+@modelbuilder("SALDO morphology model", language=["swe"])
 def build_saldo(out: str = ModelOutput("saldo/saldo.pickle"),
                 saldom: str = Model("saldo/saldom.xml")):
     """Save SALDO morphology as a pickle file."""

@@ -18,7 +18,7 @@ CWB_DESCRIBE_EXECUTABLE = "cwb-describe-corpus"
 CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 
-@modelbuilder("Blingbring model")
+@modelbuilder("Blingbring model", language=["swe"])
 def blingbring_model(out: str = ModelOutput("lexical_classes/blingbring.pickle"),
                      classmap: str = Model("lexical_classes/roget_hierarchy.xml")):
     """Download and build Blingbring model."""
@@ -32,7 +32,7 @@ def blingbring_model(out: str = ModelOutput("lexical_classes/blingbring.pickle")
     util.remove_model_files([raw_file])
 
 
-@modelbuilder("SweFN model")
+@modelbuilder("SweFN model", language=["swe"])
 def swefn_model(out: str = ModelOutput("lexical_classes/swefn.pickle")):
     """Download and build SweFN model."""
     # Download swefn.xml and build swefn.pickle
