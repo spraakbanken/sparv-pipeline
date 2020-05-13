@@ -83,9 +83,8 @@ def get_bul_model(out: str = ModelOutput("treetagger/bul.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/bulgarian.par.gz"
-    util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/bulgarian.par.gz", out)
-    util.ungzip_model(gzip, out)
-    util.remove_model_files([gzip])
+    url = "http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/bulgarian.par.gz"
+    _download(url, gzip, out)
 
 
 @modelbuilder("TreeTagger model for Estonian", language=["est"])
@@ -93,9 +92,8 @@ def get_est_model(out: str = ModelOutput("treetagger/est.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/estonian.par.gz"
-    util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/estonian.par.gz", out)
-    util.ungzip_model(gzip, out)
-    util.remove_model_files([gzip])
+    url = "http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/estonian.par.gz"
+    _download(url, gzip, out)
 
 
 @modelbuilder("TreeTagger model for Finnish", language=["fin"])
@@ -103,9 +101,8 @@ def get_fin_model(out: str = ModelOutput("treetagger/fin.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/finnish.par.gz"
-    util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/finnish.par.gz", out)
-    util.ungzip_model(gzip, out)
-    util.remove_model_files([gzip])
+    url = "http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/finnish.par.gz"
+    _download(url, gzip, out)
 
 
 @modelbuilder("TreeTagger model for Latin", language=["lat"])
@@ -113,9 +110,8 @@ def get_lat_model(out: str = ModelOutput("treetagger/lat.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/latin.par.gz"
-    util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/latin.par.gz", out)
-    util.ungzip_model(gzip, out)
-    util.remove_model_files([gzip])
+    url = "http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/latin.par.gz"
+    _download(url, gzip, out)
 
 
 @modelbuilder("TreeTagger model for Dutch", language=["nld"])
@@ -123,9 +119,8 @@ def get_nld_model(out: str = ModelOutput("treetagger/nld.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/dutch.par.gz"
-    util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/dutch.par.gz", gzip)
-    util.ungzip_model(gzip, out)
-    util.remove_model_files([gzip])
+    url = "http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/dutch.par.gz"
+    _download(url, gzip, out)
 
 
 @modelbuilder("TreeTagger model for Polish", language=["pol"])
@@ -133,9 +128,8 @@ def get_pol_model(out: str = ModelOutput("treetagger/pol.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/polish.par.gz"
-    util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/polish.par.gz", out)
-    util.ungzip_model(gzip, out)
-    util.remove_model_files([gzip])
+    url = "http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/polish.par.gz"
+    _download(url, gzip, out)
 
 
 @modelbuilder("TreeTagger model for Romanian", language=["ron"])
@@ -143,9 +137,8 @@ def get_ron_model(out: str = ModelOutput("treetagger/ron.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/romanian.par.gz"
-    util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/romanian.par.gz", out)
-    util.ungzip_model(gzip, out)
-    util.remove_model_files([gzip])
+    url = "http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/romanian.par.gz"
+    _download(url, gzip, out)
 
 
 @modelbuilder("TreeTagger model for Slovak", language=["slk"])
@@ -153,9 +146,8 @@ def get_slk_model(out: str = ModelOutput("treetagger/slk.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/slovak.par.gz"
-    util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/slovak.par.gz", out)
-    util.ungzip_model(gzip, out)
-    util.remove_model_files([gzip])
+    url = "http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/slovak.par.gz"
+    _download(url, gzip, out)
 
 
 # These can also be processed with Freeling:
@@ -166,19 +158,16 @@ def get_spa_model(out: str = ModelOutput("treetagger/spa.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/spanish.par.gz"
-    util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/spanish.par.gz", out)
-    util.ungzip_model(gzip, out)
-    util.remove_model_files([gzip])
-
+    url = "http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/spanish.par.gz"
+    _download(url, gzip, out)
 
 @modelbuilder("TreeTagger model for German", language=["deu"])
 def get_deu_model(out: str = ModelOutput("treetagger/deu.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/german.par.gz"
-    util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/german.par.gz", out)
-    util.ungzip_model(gzip, out)
-    util.remove_model_files([gzip])
+    url = "http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/german.par.gz"
+    _download(url, gzip, out)
 
 
 @modelbuilder("TreeTagger model for English", language=["eng"])
@@ -186,9 +175,8 @@ def get_eng_model(out: str = ModelOutput("treetagger/eng.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/english.par.gz"
-    util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/english.par.gz", out)
-    util.ungzip_model(gzip, out)
-    util.remove_model_files([gzip])
+    url = "http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/english.par.gz"
+    _download(url, gzip, out)
 
 
 @modelbuilder("TreeTagger model for French", language=["fra"])
@@ -196,9 +184,8 @@ def get_fra_model(out: str = ModelOutput("treetagger/fra.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/french.par.gz"
-    util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/french.par.gz", out)
-    util.ungzip_model(gzip, out)
-    util.remove_model_files([gzip])
+    url = "http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/french.par.gz"
+    _download(url, gzip, out)
 
 
 @modelbuilder("TreeTagger model for Italian", language=["ita"])
@@ -206,9 +193,8 @@ def get_ita_model(out: str = ModelOutput("treetagger/ita.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/italian.par.gz"
-    util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/italian.par.gz", out)
-    util.ungzip_model(gzip, out)
-    util.remove_model_files([gzip])
+    url = "http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/italian.par.gz"
+    _download(url, gzip, out)
 
 
 @modelbuilder("TreeTagger model for Russian", language=["rus"])
@@ -216,6 +202,11 @@ def get_rus_model(out: str = ModelOutput("treetagger/rus.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/russian.par.gz"
-    util.download_model("http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/russian.par.gz", out)
+    url = "http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/russian.par.gz"
+    _download(url, gzip, out)
+
+
+def _download(url, gzip, out):
+    util.download_model(url, gzip)
     util.ungzip_model(gzip, out)
     util.remove_model_files([gzip])
