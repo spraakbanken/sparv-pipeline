@@ -11,7 +11,7 @@ TAG_SEP = "\t"
 TAG_COLUMN = 1
 
 
-@annotator("Part-of-speech annotation with morphological descriptions")
+@annotator("Part-of-speech annotation with morphological descriptions", language=["swe"])
 def msdtag(doc: str = Document,
            model: str = Model("hunpos/hunpos.suc3.suc-tags.default-setting.utf8.model"),
            out: str = Output("<token>:hunpos.msd", cls="token:msd", description="Part-of-speeches with morphological descriptions"),
@@ -62,7 +62,7 @@ def msdtag(doc: str = Document,
     util.write_annotation(doc, out, out_annotation)
 
 
-@annotator("Extract POS from MSD")
+@annotator("Extract POS from MSD", language=["swe"])
 def postag(doc: str = Document,
            out: str = Output("<token>:hunpos.pos", cls="token:pos", description="Part-of-speech tags"),
            msd: str = Annotation("<token>:hunpos.msd")):

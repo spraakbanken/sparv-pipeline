@@ -1,7 +1,6 @@
 """Word sense disambiguation based on SALDO annotation."""
 
 import logging
-import os
 
 import sparv.util as util
 from sparv import Annotation, Binary, Document, Model, ModelOutput, Output, annotator, modelbuilder
@@ -11,7 +10,7 @@ log = logging.getLogger(__name__)
 SENT_SEP = "$SENT$"
 
 
-@annotator("Word sense disambiguation")
+@annotator("Word sense disambiguation", language=["swe"])
 def annotate(doc: str = Document,
              wsdjar: str = Binary("[wsd.jar=wsd/saldowsd.jar]"),
              sense_model: str = Model("[wsd.sense_model=wsd/ALL_512_128_w10_A2_140403_ctx1.bin]"),

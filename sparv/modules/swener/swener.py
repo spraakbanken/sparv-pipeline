@@ -15,7 +15,7 @@ SENT_SEP = "\n"
 TOK_SEP = " "
 
 
-@annotator("Named entity tagging with SweNER")
+@annotator("Named entity tagging with SweNER", language=["swe"])
 def annotate(doc: str = Document,
              out_ne: str = Output("swener.ne", cls="named_entity", description="Named entity segments from SweNER"),
              out_ne_ex: str = Output("swener.ne:swener.ex", description="Named entity expressions from SweNER"),

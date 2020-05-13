@@ -10,7 +10,7 @@ from sparv import Annotation, Document, Model, Output, annotator
 log = logging.getLogger(__name__)
 
 
-@annotator("Annotate text chunks with Blingbring classes")
+@annotator("Annotate text chunks with Blingbring classes", language=["swe"])
 def blingbring_text(doc: str = Document,
                     out: str = Output("<text>:lexical_classes.blingbring",
                                       description="Lexical classes for text chunks from Blingbring"),
@@ -30,7 +30,7 @@ def blingbring_text(doc: str = Document,
                   decimals=decimals)
 
 
-@annotator("Annotate text chunks with SweFN classes")
+@annotator("Annotate text chunks with SweFN classes", language=["swe"])
 def swefn_text(doc: str = Document,
                out: str = Output("<text>:lexical_classes.swefn",
                                  description="Lexical classes for text chunks from SweFN"),

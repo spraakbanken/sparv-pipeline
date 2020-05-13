@@ -36,7 +36,7 @@ def install_relations(sqlfile: str = ExportInput("korp_wordpicture/relations.sql
     util.write_common_data(out, "")
 
 
-@annotator("Find dependencies for Korp's Word Picture")
+@annotator("Find dependencies for Korp's Word Picture", language=["swe"])
 def relations(doc: str = Document,
               out: str = Output("korp.relations", data=True),
               word: str = Annotation("<token:word>"),

@@ -9,7 +9,7 @@ from sparv import Annotation, Document, Model, Output, annotator
 log = logging.getLogger(__name__)
 
 
-@annotator("Annotate tokens with Blingbring classes")
+@annotator("Annotate tokens with Blingbring classes", language=["swe"])
 def blingbring_words(doc: str = Document,
                      out: str = Output("<token>:lexical_classes.blingbring",
                                        description="Lexical classes for tokens from Blingbring"),
@@ -49,7 +49,7 @@ def blingbring_words(doc: str = Document,
                    lexicon=lexicon)
 
 
-@annotator("Annotate tokens with Blingbring classes")
+@annotator("Annotate tokens with Blingbring classes", language=["swe"])
 def swefn_words(doc: str = Document,
                 out: str = Output("<token>:lexical_classes.swefn", description="Lexical classes for tokens from SweFN"),
                 model: str = Model("[lexical_classes.swefn_word_model=lexical_classes/swefn.pickle]"),

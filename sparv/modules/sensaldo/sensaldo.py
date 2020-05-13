@@ -14,7 +14,7 @@ SENTIMENT_LABLES = {
 }
 
 
-@annotator("Sentiment annotation per token using SenSALDO")
+@annotator("Sentiment annotation per token using SenSALDO", language=["swe"])
 def annotate(doc: str = Document,
              sense: str = Annotation("<token>:saldo.sense"),
              out_scores: str = Output("<token>:sensaldo.score", description="SenSALDO sentiment score"),

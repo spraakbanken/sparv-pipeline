@@ -1,19 +1,17 @@
 """Annotate geographical features."""
 
 import logging
-import os
 import pickle
 from collections import defaultdict
 
 import sparv.util as util
 from sparv import Annotation, Config, Document, Model, ModelOutput, Output, annotator, modelbuilder
-from sparv.core import paths
 
 log = logging.getLogger(__name__)
 
 
-@annotator("Annotate chunks with location data, based on locations contained within the text", config=[
-           Config("geo.context_chunk", default="<sentence>")])
+@annotator("Annotate chunks with location data, based on locations contained within the text", language=["swe"],
+           config=[Config("geo.context_chunk", default="<sentence>")])
 def contextual(doc: str = Document,
                out: str = Output("{chunk}:geo.geo_context", description="Geographical places with coordinates"),
                chunk: str = Annotation("{chunk}"),
