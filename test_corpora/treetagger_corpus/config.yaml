@@ -31,10 +31,8 @@ classes:
 
 # Automatic annotations to be included in the export
 annotations:
-    - text
     - <text>:readability.lix
     - <sentence>
-    - <token>
     - <token:pos>
     - <token:upos>
     - <token:baseform>
