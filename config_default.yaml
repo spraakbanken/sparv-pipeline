@@ -1,9 +1,36 @@
+#===============================================================================
+# Meta Data
+#===============================================================================
 
 # Language of the input documents, specified as ISO 639-3 code
 language: swe
 
 # File type of the input. Must be 'xml' or 'txt'.
 source_type: xml
+
+
+#===============================================================================
+# Output Description
+#===============================================================================
+
+# Set to false if annotation name spaces should be kept in the export
+remove_export_namespaces: true
+
+# Chunk to scramble the XML export on
+scramble_on: <sentence>
+
+# Class definitions
+classes:
+    token: segment.token
+    "token:word": <token>:misc.word
+    "token:sense": <token>:wsd.sense
+    sentence: segment.sentence
+    named_entity: swener.ne
+
+
+#===============================================================================
+# Module-specific Settings
+#===============================================================================
 
 # Chunk to use for automatic sentence segmentation (typically text or paragraph)
 sentence_chunk: <text>
@@ -13,27 +40,10 @@ token_chunk: <sentence>
 saldo:
     precision: ""
 
-# Class definitions
-classes:
-    token: segment.token
-    "token:word": <token>:misc.word
-    "token:sense": <token>:wsd.sense
-    sentence: segment.sentence
 
-################################################################################
-# XML EXPORT
-################################################################################
-
-# Set to false if annotation name spaces should be kept in the export
-remove_export_namespaces: true
-
-# Chunk to scramble the XML export on
-scramble_on: <sentence>
-
-
-################################################################################
-# KORP and INSTALLATION
-################################################################################
+#===============================================================================
+# Korp and Installation
+#===============================================================================
 
 # Korp: password protected corpus
 protected: false
@@ -61,3 +71,42 @@ install:
     - "korp:install_timespan"
     - "xml_export:install_original"
     - "xml_export:install_sentence_scrambled"
+
+
+#===============================================================================
+# Annotation Presets
+#===============================================================================
+presets:
+    hunpos_annotations:
+        - <token>:hunpos.pos
+        - <token>:hunpos.msd
+
+    saldo_annotations:
+        - <token>:saldo.baseform
+        - <token>:saldo.lemgram
+        - <token>:saldo.sense
+        - <token>:saldo.compwf
+        - <token>:saldo.complemgram
+
+    malt_annotations:
+        - <token>:malt.deprel
+        - <token>:malt.dephead_ref
+        - <token>:misc.number_rel_<sentence> as ref
+
+    swener_annotations:
+        - <named_entity>:swener.ex
+        - <named_entity>:swener.name
+        - <named_entity>:swener.type
+        - <named_entity>:swener.subtype
+
+    sentiment_annotations:
+        - <token>:sensaldo.score
+        - <token>:sensaldo.label
+
+
+    standard_swe_annotations:
+        - hunpos_annotations
+        - saldo_annotations
+        - malt_annotations
+        - sentiment_annotations
+        - swener_annotations

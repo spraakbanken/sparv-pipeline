@@ -50,11 +50,4 @@ annotations:
     - <text>:dateformat.timefrom
     - <text>:dateformat.timeto
     - <sentence>:geo.geo_context as geo
-    - <named_entity>:swener.ex
-    - <named_entity>:swener.name
-    - <named_entity>:swener.type
-    - <named_entity>:swener.subtype
-    - <token:pos>
-    - <token>:malt.deprel
-    - <token>:malt.dephead_ref
-    - <token>:misc.number_rel_<sentence> as ref
+    - standard_swe_annotations

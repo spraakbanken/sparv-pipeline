@@ -48,6 +48,11 @@ def load_config(config_file: str) -> None:
     global config
     config = _merge_dicts(combined_config, config)
 
+    # Resolve annotation presets
+    annotations = []
+    resolve_presets(config.get("annotations", []), config.get("presets", []), annotations)
+    config["annotations"] = annotations
+
 
 def _get(name: str):
     """Try to get value from config, raising an exception if key doesn't exist."""
@@ -104,3 +109,12 @@ def _merge_dicts(user, default):
             else:
                 user[k] = _merge_dicts(user[k], v)
     return user
+
+
+def resolve_presets(annotations, presets, resolved_values):
+    """Resolve annotation presets into actual annotations."""
+    for annotation in annotations:
+        if annotation in presets:
+            resolve_presets(presets[annotation], presets, resolved_values)
+        else:
+            resolved_values.append(annotation)
