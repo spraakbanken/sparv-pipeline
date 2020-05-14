@@ -35,6 +35,7 @@ classes:
     "token:upos": <token>:freeling.upos
     "token:pos": <token>:freeling.pos
     "token:baseform": <token>:freeling.baseform
+    "token:ne_type": <token>:freeling.ne_type
 
 # Automatic annotations to be included in the export
 annotations:
@@ -45,3 +46,4 @@ annotations:
     - <token:upos>
     - <token:pos>
     - <token:baseform>
+    - <token:ne_type>

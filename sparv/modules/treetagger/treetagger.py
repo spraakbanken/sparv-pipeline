@@ -161,6 +161,7 @@ def get_spa_model(out: str = ModelOutput("treetagger/spa.par"),
     url = "http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/spanish.par.gz"
     _download(url, gzip, out)
 
+
 @modelbuilder("TreeTagger model for German", language=["deu"])
 def get_deu_model(out: str = ModelOutput("treetagger/deu.par"),
                   tt_binary: str = Binary("[treetagger.binary]")):
