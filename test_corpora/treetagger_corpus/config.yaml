@@ -17,9 +17,6 @@ language: nld
 xml_elements:
     - text
 
-# Chunk to use for automatic sentence segmentation
-sentence_chunk: <text>
-
 
 ################################################################################
 # OUTPUT DESCRIPTION

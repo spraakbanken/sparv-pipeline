@@ -5,8 +5,8 @@ language: swe
 # File type of the input. Must be 'xml' or 'txt'.
 source_type: xml
 
-# Chunk to use for automatic sentence segmentation
-sentence_chunk: <paragraph>
+# Chunk to use for automatic sentence segmentation (typically text or paragraph)
+sentence_chunk: <text>
 # Chunk to use for automatic tokenisation
 token_chunk: <sentence>
 

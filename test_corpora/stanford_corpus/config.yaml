@@ -1,23 +1,29 @@
+################################################################################
+# META DATA
+################################################################################
+
+# Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
 id: stanford-corpus
+# Corpus name (human readable)
 name: Stanford Parser test corpus
+# Language of the input documents, specified as ISO 639-3 code
 language: eng
+
+
+################################################################################
+# INPUT DESCRIPTION
+################################################################################
 
 # Elements and attributes from the source XML that we want to be available as input for other annotations
 xml_elements:
     - text
 
-annotations:
-    - text
-    - <sentence>
-    - <token>
-    - <token:pos>
-    - <token:upos>
-    - <token:baseform>
-    - <token:ne>
-    - <token:dephead_ref>
-    - <token:deprel>
-    - <token:ref>
 
+################################################################################
+# OUTPUT DESCRIPTION
+################################################################################
+
+# Class definitions
 classes:
     text: text
     sentence: stanford.sentence
@@ -30,3 +36,16 @@ classes:
     "token:ne": <token>:stanford.ne_type
     "token:dephead_ref": <token>:stanford.dephead_ref
     "token:deprel": <token>:stanford.deprel
+
+# Automatic annotations to be included in the export
+annotations:
+    - text
+    - <sentence>
+    - <token>
+    - <token:pos>
+    - <token:upos>
+    - <token:baseform>
+    - <token:ne>
+    - <token:dephead_ref>
+    - <token:deprel>
+    - <token:ref>

@@ -14,9 +14,6 @@ language: eng
 # INPUT DESCRIPTION
 ################################################################################
 
-#TODO: This is needed because of a current bug
-sentence_chunk: None
-
 # Elements and attributes from the source XML that we want to be available as input for other annotations
 xml_elements:
     - text
