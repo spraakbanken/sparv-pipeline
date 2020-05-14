@@ -174,8 +174,7 @@ def main():
 
         # Command: run-rule
         if args.command == "run-rule":
-            snakemake_args.update({"targets": args.targets})
-            config["targets"] = args.targets
+            snakemake_args["targets"] = args.targets
             if args.wildcards:
                 config["wildcards"] = args.wildcards
             if args.list or snakemake_args["targets"] == ["list"]:
@@ -187,24 +186,24 @@ def main():
                 snakemake_args["targets"] = ["list_exports"]
             else:
                 print("Exporting corpus to: %s" % ", ".join(args.output))
-                snakemake_args.update({"targets": args.output})
+                snakemake_args["targets"] = args.output
         # Command: install
         elif args.command == "install":
             if args.list:
                 snakemake_args["targets"] = ["list_installs"]
             else:
-                snakemake_args.update({"targets": ["install_annotated_corpus"]})
+                snakemake_args["targets"] = ["install_annotated_corpus"]
         # Command: build-models
         elif args.command == "build-models":
             config["language"] = args.language
             if args.list:
                 snakemake_args["targets"] = ["list_models"]
             else:
-                snakemake_args.update({"targets": ["build_models"]})
+                snakemake_args["targets"] = ["build_models"]
 
         # Command: run, run-rule
         if args.command in ("run", "run-rule"):
-            config.update({"debug": args.debug, "doc": args.doc, "log": args.log})
+            config.update({"debug": args.debug, "doc": args.doc, "log": args.log, "targets": snakemake_args["targets"]})
             if args.log:
                 use_progressbar = False
 
