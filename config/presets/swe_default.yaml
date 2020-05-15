@@ -1,68 +1,77 @@
 #===============================================================================
 # Standard Swedish Annotation Presets
 #===============================================================================
+languages:
+    - swe
 
-all:
-    - token-annotations
-    - swener
-    - sentence
-    - lexical_class_text
-    - readability
 
-#====================================
-# Token Annotations
-#====================================
+classes:
+    sentence: segment.sentence
+    named_entity: swener.ne
 
-token-annotations:
-    - hunpos
-    - saldo
-    - malt
-    - sentiment
-    - lexical_class_token
 
-hunpos:
-    - <token>:hunpos.pos
-    - <token>:hunpos.msd
+presets:
+    all:
+        - token-annotations
+        - swener
+        - sentence
+        - lexical_class_text
+        - readability
 
-saldo:
-    - <token>:saldo.baseform
-    - <token>:saldo.lemgram
-    - <token>:wsd.sense
-    - <token>:saldo.compwf
-    - <token>:saldo.complemgram
+    #====================================
+    # Token Annotations
+    #====================================
 
-malt:
-    - <token>:malt.deprel
-    - <token>:malt.dephead_ref
-    - <token>:misc.number_rel_<sentence> as ref
+    token-annotations:
+        - hunpos
+        - saldo
+        - malt
+        - sentiment
+        - lexical_class_token
 
-sentiment:
-    - <token>:sensaldo.score
-    - <token>:sensaldo.label
+    hunpos:
+        - <token>:hunpos.pos
+        - <token>:hunpos.msd
 
-lexical_class_token:
-    - <token>:lexical_classes.blingbring
-    - <token>:lexical_classes.swefn
+    saldo:
+        - <token>:saldo.baseform
+        - <token>:saldo.lemgram
+        - <token>:wsd.sense
+        - <token>:saldo.compwf
+        - <token>:saldo.complemgram
 
-#====================================
-# Structural Annotations
-#====================================
+    malt:
+        - <token>:malt.deprel
+        - <token>:malt.dephead_ref
+        - <token>:misc.number_rel_<sentence> as ref
 
-swener:
-    - <named_entity>:swener.ex
-    - <named_entity>:swener.name
-    - <named_entity>:swener.type
-    - <named_entity>:swener.subtype
+    sentiment:
+        - <token>:sensaldo.score
+        - <token>:sensaldo.label
 
-sentence:
-    - <sentence>:misc.id
-    - <sentence>:geo.geo_context as geo
+    lexical_class_token:
+        - <token>:lexical_classes.blingbring
+        - <token>:lexical_classes.swefn
 
-lexical_class_text:
-    - <text>:lexical_classes.blingbring
-    - <text>:lexical_classes.swefn
+    #====================================
+    # Structural Annotations
+    #====================================
 
-readability:
-    - <text>:readability.lix
-    - <text>:readability.ovix
-    - <text>:readability.nk
+    swener:
+        - <named_entity>:swener.ex
+        - <named_entity>:swener.name
+        - <named_entity>:swener.type
+        - <named_entity>:swener.subtype
+
+    sentence:
+        - <sentence>:misc.id
+        - <sentence>:geo.geo_context as geo
+
+    lexical_class_text:
+        - <text>:lexical_classes.blingbring
+        - <text>:lexical_classes.swefn
+
+    readability:
+        - <text>:readability.lix
+        - <text>:readability.ovix
+        - <text>:readability.nk

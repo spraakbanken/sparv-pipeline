@@ -51,7 +51,7 @@ def load_config(config_file: str) -> None:
 
     # Load and resolve annotation presets
     global presets
-    presets = load_presets()
+    presets = load_presets(config.get("language", None))
     annotations = resolve_presets(config.get("annotations", []), presets)
     config["annotations"] = sorted(annotations)
 
@@ -113,7 +113,7 @@ def _merge_dicts(user, default):
     return user
 
 
-def load_presets():
+def load_presets(lang):
     """Read presets files and return all presets in one dictionary."""
     presets = {}
 
@@ -124,7 +124,15 @@ def load_presets():
         if ext == ".yaml":
             path = os.path.join(presets_dir, f)
             with open(path) as f:
-                p = yaml.load(f, Loader=yaml.FullLoader)
+                presets_yaml = yaml.load(f, Loader=yaml.FullLoader)
+
+                # Skip preset if it is not valid for lang
+                if lang:
+                    languages = presets_yaml.get("languages", [])
+                    if languages and lang not in languages:
+                        continue
+
+                p = presets_yaml.get("presets", {})
                 for key, value in p.items():
                     if isinstance(value, list):
                         for i, v in enumerate(value):

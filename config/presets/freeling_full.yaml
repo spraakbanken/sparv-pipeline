@@ -2,16 +2,30 @@
 # FreeLing Annotation Presets with named entities
 #===============================================================================
 
-all:
-    - token
-    - sentence
+languages:
+    - cat
+    - deu
+    - eng
+    - spa
+    - por
 
-token:
-    - freeling.token:freeling.word
-    - freeling.token:freeling.upos
-    - freeling.token:freeling.pos
-    - freeling.token:freeling.baseform
-    - freeling.token:freeling.ne_type
 
-sentence:
-    - freeling.sentence:misc.id
+classes:
+    sentence: freeling.sentence
+    token: freeling.token
+
+
+presets:
+    all:
+        - token
+        - sentence
+
+    token:
+        - freeling.token:freeling.word
+        - freeling.token:freeling.upos
+        - freeling.token:freeling.pos
+        - freeling.token:freeling.baseform
+        - freeling.token:freeling.ne_type
+
+    sentence:
+        - freeling.sentence:misc.id

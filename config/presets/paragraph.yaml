@@ -2,6 +2,7 @@
 # Paragraph Annotation Presets
 #===============================================================================
 
-all:
-    - <paragraph>:misc.id
-    - <paragraph>.geo.geo_context as geo
+presets:
+    all:
+        - <paragraph>:misc.id
+        - <paragraph>.geo.geo_context as geo
