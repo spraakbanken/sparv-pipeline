@@ -189,13 +189,14 @@ def get_annotation_names(doc, token_name, annotations, original_annotations=None
             original_annotations = misc.split_tuples_list(corpus.read_data(doc, "@structure"))
     annotations.extend(original_annotations)
 
-    # Add chunks to annotations if user has not done that
-    chunks = [a for a, _ in annotations if ":" not in a]
-    for a, _name in annotations.copy():
-        annotation_chunk = corpus.split_annotation(a)[0]
-        if annotation_chunk not in chunks and (annotation_chunk, None) not in annotations:
-            annotations.append((annotation_chunk, None))
-    annotations.sort()
+    # Add plain annotations (non-attribute annotations) to annotations if user has not done that
+    plain_annots = [a for a, _ in annotations if ":" not in a]
+    all_annotations = set(annotations)
+    for a, _name in annotations:
+        plain_annot = corpus.split_annotation(a)[0]
+        if plain_annot not in plain_annots:
+            all_annotations.add((plain_annot, None))
+    annotations = sorted(list(all_annotations))
 
     # Get the names of all token annotations (but not token itself)
     token_annotations = [corpus.split_annotation(i[0])[1] for i in annotations

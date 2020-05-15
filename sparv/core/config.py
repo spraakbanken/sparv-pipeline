@@ -49,8 +49,7 @@ def load_config(config_file: str) -> None:
     config = _merge_dicts(combined_config, config)
 
     # Resolve annotation presets
-    annotations = []
-    resolve_presets(config.get("annotations", []), config.get("presets", []), annotations)
+    annotations = resolve_presets(config.get("annotations", []), config.get("presets", []))
     config["annotations"] = annotations
 
 
@@ -111,10 +110,12 @@ def _merge_dicts(user, default):
     return user
 
 
-def resolve_presets(annotations, presets, resolved_values):
+def resolve_presets(annotations, presets):
     """Resolve annotation presets into actual annotations."""
+    result = []
     for annotation in annotations:
         if annotation in presets:
-            resolve_presets(presets[annotation], presets, resolved_values)
+            result.extend(resolve_presets(presets[annotation], presets))
         else:
-            resolved_values.append(annotation)
+            result.append(annotation)
+    return result
