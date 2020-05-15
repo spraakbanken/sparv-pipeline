@@ -1,9 +1,9 @@
 """Snakefile used by Snakemake."""
 import copy
 import inspect
-import os
 import re
 from collections import defaultdict
+from pathlib import Path
 
 import snakemake
 from snakemake.logging import logger
@@ -44,15 +44,15 @@ def get_source_path() -> str:
 def get_annotation_path(annotation, data=False, common=False):
     """Construct a path to an annotation file given a doc and annotation."""
     elem, attr = util.split_annotation(annotation)
+    path = Path(elem)
 
-    if data or common:
-        path = elem
-    else:
+    if not (data or common):
         if not attr:
             attr = util.SPAN_ANNOTATION
-        path = os.path.join(elem, attr)
+        path = path / attr
+
     if not common:
-        path = "{doc}/" + path
+        path = "{doc}" / path
     return path
 
 
@@ -61,7 +61,7 @@ def get_source_files() -> List[str]:
     global source_files
     if not source_files:
         source_files = [f[1][0] for f in snakemake.utils.listfiles(
-            os.path.join(get_source_path(), "{file}." + sparv_config.get("source_type", "xml")))]
+            Path(get_source_path(), "{file}." + sparv_config.get("source_type", "xml")))]
     return source_files
 
 
@@ -115,10 +115,10 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
         return
 
     if importer:
-        inputs.append(os.path.join(get_source_path(), "{doc}." + source_type))
+        inputs.append(Path(get_source_path(), "{doc}." + source_type))
         if source_type == sparv_config.get("source_type", "xml"):
             # Exports always generate corpus text file
-            outputs.append(os.path.join(paths.annotation_dir, "{doc}", util.TEXT_FILE))
+            outputs.append(paths.annotation_dir / "{doc}" / util.TEXT_FILE)
             # If importer guarantees other outputs, add them to outputs list
             if import_outputs:
                 if isinstance(import_outputs, Config):
@@ -128,13 +128,13 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
                     annotations_.add(annotation)
                     annotations_.add(util.split_annotation(annotation)[0])
                 for element in annotations_:
-                    outputs.append(os.path.join(paths.annotation_dir, get_annotation_path(element)))
+                    outputs.append(paths.annotation_dir / get_annotation_path(element))
 
     params = inspect.signature(annotator_info["function"]).parameters
 
     def escape_wildcards(s):
         """Escape all wildcards other than {doc}."""
-        return re.sub(r"(?!{doc})({[^}]+})", r"{\1}", s)
+        return re.sub(r"(?!{doc})({[^}]+})", r"{\1}", str(s))
 
     # Go though function parameters and handle based on type
     for param_name, param in params.items():
@@ -143,12 +143,12 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
             param_value = registry.expand_variables(param.default)
             ann_path = get_annotation_path(param_value, data=param.default.data, common=param.default.common)
             if param.default.all_docs:
-                outputs.extend(expand(escape_wildcards(os.path.join(paths.annotation_dir, ann_path)),
-                                      doc=get_source_files()))
+                outputs.extend(map(Path, expand(escape_wildcards(paths.annotation_dir / ann_path),
+                                      doc=get_source_files())))
             elif param.default.common:
-                outputs.append(os.path.join(paths.annotation_dir, ann_path))
+                outputs.append(paths.annotation_dir / ann_path)
                 if installer:
-                    install_outputs[target_name].append(os.path.join(paths.annotation_dir, ann_path))
+                    install_outputs[target_name].append(paths.annotation_dir / ann_path)
             else:
                 outputs.append(get_annotation_path(param_value, data=param.default.data))
             parameters[param_name] = param_value
@@ -161,7 +161,7 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
         elif isinstance(param.default, ModelOutput):
             model = util.get_model_path(registry.expand_variables(param.default))
             outputs.append(model)
-            parameters[param_name] = model
+            parameters[param_name] = str(model)
             model_outputs.append(model)
         # Annotation
         elif registry.dig(Annotation, param.default):
@@ -169,12 +169,12 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
             ann_path = get_annotation_path(param_value, data=param.default.data, common=param.default.common)
             if exporter or installer or param.default.all_docs:
                 if param.default.all_docs:
-                    inputs.extend(expand(escape_wildcards(os.path.join(paths.annotation_dir, ann_path)),
+                    inputs.extend(expand(escape_wildcards(paths.annotation_dir / ann_path),
                                          doc=get_source_files()))
                 else:
-                    inputs.append(os.path.join(paths.annotation_dir, ann_path))
+                    inputs.append(paths.annotation_dir / ann_path)
             elif param.default.common:
-                inputs.append(os.path.join(paths.annotation_dir, ann_path))
+                inputs.append(paths.annotation_dir / ann_path)
             else:
                 inputs.append(ann_path)
 
@@ -193,7 +193,7 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
                 annotation, _, new_name = annotation.partition(" as ")
                 param_value = registry.expand_variables(annotation)
                 if param.default.is_input:
-                    inputs.append(os.path.join(paths.annotation_dir, get_annotation_path(param_value)))
+                    inputs.append(paths.annotation_dir / get_annotation_path(param_value))
                 if new_name:
                     param_value = " as ".join((param_value, new_name))
                 parameters[param_name].append(param_value)
@@ -215,31 +215,32 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
                 if isinstance(param.default, Model):
                     model = util.get_model_path(registry.expand_variables(param.default))
                     inputs.append(model)
-                    parameters[param_name] = model
+                    parameters[param_name] = str(model)
                 elif isinstance(param.default, (list, tuple)):
                     parameters[param_name] = []
                     for model in param.default:
                         model = util.get_model_path(registry.expand_variables(model))
                         inputs.append(model)
-                        parameters[param_name].append(model)
+                        parameters[param_name].append(str(model))
         # Binary
         elif isinstance(param.default, Binary):
             binary = paths.get_bin_path(registry.expand_variables(param.default))
             inputs.append(binary)
-            parameters[param_name] = binary
+            parameters[param_name] = str(binary)
         # Source
         elif param.default == Source or isinstance(param.default, Source):
             parameters[param_name] = get_source_path()
         # Export
         elif param.default == Export or isinstance(param.default, Export):
+            param_value = registry.expand_variables(param.default)
             if param.default.absolute_path:
-                parameters[param_name] = registry.expand_variables(param.default)
+                export_path = Path(param_value)
             else:
-                parameters[param_name] = os.path.join(paths.export_dir, registry.expand_variables(param.default))
-            outputs.append(parameters[param_name])
+                export_path = paths.export_dir / param_value
+            outputs.append(export_path)
+            parameters[param_name] = str(export_path)
             if "{doc}" in parameters[param_name]:
                 doc_annotations.append(param_name)
-            param_value = registry.expand_variables(param.default)
             if "{" in param_value:
                 wildcard_annotations.append(param_name)
         # ExportInput
@@ -247,7 +248,7 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
             if param.default.absolute_path:
                 parameters[param_name] = registry.expand_variables(param.default)
             else:
-                parameters[param_name] = os.path.join(paths.export_dir, registry.expand_variables(param.default))
+                parameters[param_name] = str(paths.export_dir / registry.expand_variables(param.default))
             if param.default.all_docs:
                 inputs.extend(expand(escape_wildcards(parameters[param_name]), doc=get_source_files()))
             else:
@@ -281,7 +282,7 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
         doc = None
         if hasattr(wildcards, "doc"):
             if annotator:
-                doc = wildcards.doc[len(paths.annotation_dir) + 1:]
+                doc = wildcards.doc[len(str(paths.annotation_dir)) + 1:]
             else:
                 doc = wildcards.doc
         return doc
@@ -339,8 +340,8 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
     # Create rule, but only when called
     if target_name in config.get("targets", []):
         @workflow.rule(name=target_name)
-        @workflow.input(expand([os.path.join(paths.annotation_dir, o)
-                                if not (o.startswith(paths.annotation_dir) or o.startswith(paths.export_dir))
+        @workflow.input(expand([paths.annotation_dir / o
+                                if not (paths.annotation_dir in o.parents or paths.export_dir in o.parents)
                                 else o
                                 for o in outputs], doc=config.get("doc") or get_source_files(), **wildcards))
         @workflow.run
@@ -354,8 +355,8 @@ rule empty:
 
 
 # Find corpus config
-corpus_config_file = os.path.join(os.getcwd(), paths.config_file)
-if os.path.isfile(corpus_config_file):
+corpus_config_file = Path.cwd() / paths.config_file
+if corpus_config_file.is_file():
     config_missing = False
     # Read config
     sparv_config.load_config(corpus_config_file)
@@ -370,7 +371,7 @@ if config.get("language"):
     sparv_config.config["language"] = config["language"]
 
 # Find and load Sparv modules
-registry.find_modules(paths.sparv_path)
+registry.find_modules()
 
 # Create rules for all available annotation functions
 for module_name in registry.annotators:
@@ -496,8 +497,8 @@ rule clean:
 
             something_removed = False
             for d in to_remove:
-                full_path = os.path.join(os.getcwd(), d)
-                if os.path.isdir(full_path):
+                full_path = Path.cwd() / d
+                if full_path.is_dir():
                     shutil.rmtree(full_path)
                     print(d, "directory removed")
                     something_removed = True

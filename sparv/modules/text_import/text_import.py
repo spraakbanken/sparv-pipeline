@@ -1,7 +1,7 @@
 """Import module for plain text source files."""
 
-import os
 import unicodedata
+from pathlib import Path
 
 from sparv import importer, util
 from sparv.util.classes import Document, Source
@@ -26,12 +26,11 @@ def parse(doc: str = Document,
     # Source path
     if ":" in doc:
         doc, _, doc_chunk = doc.partition(":")
-        source_file = os.path.join(source_dir, doc, doc_chunk + ".txt")
+        source_file = Path(source_dir, doc, doc_chunk + ".txt")
     else:
-        source_file = os.path.join(source_dir, doc + ".txt")
+        source_file = Path(source_dir, doc + ".txt")
 
-    with open(source_file, encoding=encoding) as txt:
-        text = txt.read()
+    text = source_file.read_text(encoding=encoding)
 
     if normalize:
         text = unicodedata.normalize("NFC", text)

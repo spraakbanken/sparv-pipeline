@@ -13,13 +13,12 @@ log = logging.getLogger(__name__)
 
 
 def get_model_path(name: str):
-    """Get full path to model file (platform independent)."""
-    # Check name includes path to models dir
+    """Get full path to model file."""
+    # Check if name includes path to models dir
     if models_dir in name:
         return name
     else:
-        components = name.split("/")
-        return os.path.join(pipeline_path, models_dir, *components)
+        return pipeline_path / models_dir / name
 
 
 def write_model_data(name, data):

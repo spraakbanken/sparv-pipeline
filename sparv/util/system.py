@@ -10,11 +10,6 @@ import sys
 log = logging.getLogger(__name__)
 
 
-def dirname(file):
-    """Return the name of the parent directory of file."""
-    return os.path.dirname(file)
-
-
 def kill_process(process):
     """Kill a process, and ignore the error if it is already dead."""
     try:
@@ -52,7 +47,7 @@ def call_java(jar, arguments, options=[], stdin="", search_paths=(),
     # For WSD: use = instead of space in arguments
     # TODO: Remove when fixed!
     if isinstance(arguments[0], tuple):
-        arguments = [x + "=" + y for x, y in arguments]
+        arguments = ["{}={}".format(x, y) for x, y in arguments]
     java_args = list(options) + ["-jar", jarfile] + list(arguments)
     return call_binary("java", arguments=java_args, stdin=stdin,
                        search_paths=search_paths, encoding=encoding,
@@ -87,7 +82,7 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
         stdin = "\n".join(stdin)
     if encoding is not None and isinstance(stdin, str):
         stdin = unicode_convert.encode(stdin, encoding)
-    log.info("CALL: %s", " ".join(command) if not raw_command else command)
+    log.info("CALL: %s", " ".join(str(c) for c in command) if not raw_command else command)
     command = Popen(command, shell=use_shell,
                     stdin=PIPE, stdout=PIPE,
                     stderr=(None if verbose else PIPE),

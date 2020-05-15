@@ -2,7 +2,6 @@
 
 import copy
 import logging
-import os
 from functools import reduce
 from typing import Any
 
@@ -12,8 +11,8 @@ from sparv.core import paths
 
 log = logging.getLogger(__name__)
 
-DEFAULT_CONFIG = os.path.join(paths.sparv_path, "..", paths.default_config_file)
-PRESETS_DIR = os.path.join(paths.sparv_path, "..", paths.presets_dir)
+DEFAULT_CONFIG = paths.pipeline_path / paths.default_config_file
+PRESETS_DIR = paths.pipeline_path / paths.presets_dir
 
 config = {}  # Dict holding full configuration
 config_undeclared = set()  # Config variables collected from use but not declared anywhere
@@ -27,7 +26,7 @@ def load_config(config_file: str) -> None:
         config_file: Path to corpus config file.
     """
     # Read default config
-    if os.path.isfile(DEFAULT_CONFIG):
+    if DEFAULT_CONFIG.is_file():
         with open(DEFAULT_CONFIG) as f:
             default_config = yaml.load(f, Loader=yaml.FullLoader)
     else:
@@ -115,39 +114,34 @@ def _merge_dicts(user, default):
 
 def load_presets(lang):
     """Read presets files and return all presets in one dictionary."""
-    presets = {}
+    presets_ = {}
 
-    presets_dir = os.fsencode(PRESETS_DIR)
-    for f in os.listdir(presets_dir):
-        filename = os.fsdecode(f)
-        basename, ext = os.path.splitext(filename)
-        if ext == ".yaml":
-            path = os.path.join(presets_dir, f)
-            with open(path) as f:
-                presets_yaml = yaml.load(f, Loader=yaml.FullLoader)
+    for f in PRESETS_DIR.rglob("*.yaml"):
+        with open(f) as ff:
+            presets_yaml = yaml.load(ff, Loader=yaml.FullLoader)
 
-                # Skip preset if it is not valid for lang
-                if lang:
-                    languages = presets_yaml.get("languages", [])
-                    if languages and lang not in languages:
-                        continue
+            # Skip preset if it is not valid for lang
+            if lang:
+                languages = presets_yaml.get("languages", [])
+                if languages and lang not in languages:
+                    continue
 
-                p = presets_yaml.get("presets", {})
-                for key, value in p.items():
-                    if isinstance(value, list):
-                        for i, v in enumerate(value):
-                            if v in p:
-                                value[i] = f"{basename}.{v}"
-                    presets[f"{basename}.{key}"] = value
-    return presets
+            p = presets_yaml.get("presets", {})
+            for key, value in p.items():
+                if isinstance(value, list):
+                    for i, v in enumerate(value):
+                        if v in p:
+                            value[i] = f"{f.stem}.{v}"
+                presets_[f"{f.stem}.{key}"] = value
+    return presets_
 
 
-def resolve_presets(annotations, presets):
+def resolve_presets(annotations, presets_):
     """Resolve annotation presets into actual annotations."""
     result = []
     for annotation in annotations:
-        if annotation in presets:
-            result.extend(resolve_presets(presets[annotation], presets))
+        if annotation in presets_:
+            result.extend(resolve_presets(presets_[annotation], presets_))
         else:
             result.append(annotation)
     return result

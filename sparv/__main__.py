@@ -1,8 +1,8 @@
 """Main Sparv executable."""
 
 import argparse
-import os
 import sys
+from pathlib import Path
 
 import snakemake
 from snakemake.logging import logger
@@ -149,7 +149,7 @@ def main():
 
     # Check that a corpus config file is available in the working dir
     if args.command not in ("create-config", "build-models"):
-        if not os.path.isfile(os.path.join(args.dir or os.getcwd(), paths.config_file)):
+        if not Path(args.dir or Path.cwd(), paths.config_file).is_file():
             print(f"No config file ({paths.config_file}) found in working directory.")
             sys.exit(1)
 
@@ -226,7 +226,7 @@ def main():
         snakemake_args["log_handler"] = [progressbar.minimal_log_handler]
 
     # Run Snakemake
-    snakemake.snakemake(os.path.join(sparv_path, "core", "Snakefile"), config=config, **snakemake_args)
+    snakemake.snakemake(sparv_path / "core" / "Snakefile", config=config, **snakemake_args)
 
     if use_progressbar:
         progress.stop()

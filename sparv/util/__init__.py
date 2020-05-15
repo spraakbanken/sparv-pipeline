@@ -8,4 +8,4 @@ from .model import (download_model, get_model_path, read_model_data, read_model_
                     ungzip_model, unzip_model, write_model_data, write_model_pickle)
 from .parent import get_children, get_parents
 from .pos_to_upos import convert_to_upos
-from .system import call_binary, call_java, clear_directory, dirname, find_binary, kill_process, rsync
+from .system import call_binary, call_java, clear_directory, find_binary, kill_process, rsync

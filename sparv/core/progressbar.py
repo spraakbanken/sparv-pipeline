@@ -1,6 +1,6 @@
 """Handler for Snakemake log messages."""
-import os
 import sys
+from pathlib import Path
 
 from alive_progress import alive_bar
 from snakemake import logger
@@ -76,9 +76,9 @@ class ProgressLogger:
             self.stopped = True
 
             # Remove Snakemake log file if empty (which it will be unless errors occurred)
-            log_file = logger.get_logfile()
-            if os.path.isfile(log_file) and os.path.getsize(log_file) == 0:
-                os.remove(log_file)
+            log_file = Path(logger.get_logfile())
+            if log_file.is_file() and log_file.stat().st_size == 0:
+                log_file.unlink()
 
             print()
 

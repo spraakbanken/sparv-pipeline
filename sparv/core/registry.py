@@ -1,7 +1,6 @@
 """Builds a registry of all available annotator functions in Sparv modules."""
 import importlib
 import inspect
-import os
 import pkgutil
 import re
 from collections import defaultdict
@@ -39,20 +38,19 @@ annotation_classes = {
 }
 
 
-def find_modules(sparv_path, no_import=False) -> list:
+def find_modules(no_import=False) -> list:
     """Find Sparv modules and optionally import them.
 
     By importing a module containing annotator functions, the functions will automatically be
     added to the registry.
 
     Args:
-        sparv_path: Path to sparv package.
         no_import: Set to True to disable importing of modules.
 
     Returns:
         A list of available module names.
     """
-    modules_full_path = os.path.join(sparv_path, paths.modules_dir)
+    modules_full_path = paths.sparv_path / paths.modules_dir
     found_modules = pkgutil.iter_modules([modules_full_path])
     modules = []
     for module in found_modules:
