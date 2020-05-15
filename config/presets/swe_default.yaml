@@ -1,0 +1,60 @@
+#===============================================================================
+# Standard Swedish Annotation Presets
+#===============================================================================
+
+all:
+    - hunpos
+    - saldo
+    - malt
+    - sentiment
+    - lexical_class_token
+    - swener
+    - lexical_class_doc
+    - readability
+
+#====================================
+# Token Annotations
+#====================================
+
+hunpos:
+    - <token>:hunpos.pos
+    - <token>:hunpos.msd
+
+saldo:
+    - <token>:saldo.baseform
+    - <token>:saldo.lemgram
+    - <token>:wsd.sense
+    - <token>:saldo.compwf
+    - <token>:saldo.complemgram
+
+malt:
+    - <token>:malt.deprel
+    - <token>:malt.dephead_ref
+    - <token>:misc.number_rel_<sentence> as ref
+
+sentiment:
+    - <token>:sensaldo.score
+    - <token>:sensaldo.label
+
+lexical_class_token:
+    - <token>:lexical_classes.blingbring
+    - <token>:lexical_classes.swefn
+
+#====================================
+# Structural Annotations
+#====================================
+
+swener:
+    - <named_entity>:swener.ex
+    - <named_entity>:swener.name
+    - <named_entity>:swener.type
+    - <named_entity>:swener.subtype
+
+lexical_class_doc:
+    - <text>:lexical_classes.blingbring
+    - <text>:lexical_classes.swefn
+
+readability:
+    - <text>:readability.lix
+    - <text>:readability.ovix
+    - <text>:readability.nk

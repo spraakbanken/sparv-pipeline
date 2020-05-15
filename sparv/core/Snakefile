@@ -373,9 +373,6 @@ rule config:
                 """Force indentation."""
                 return super(MyDumper, self).increase_indent(flow, False)
 
-        # Do not print annotation presets
-        sparv_config.config.pop("presets")
-
         yaml_str = yaml.dump(sparv_config.config, default_flow_style=False, Dumper=MyDumper, indent=4)
         # Colorize keys for easier reading
         yaml_str = re.sub(r"^(\s*[\S]+):", util.Color.BLUE + r"\1" + util.Color.RESET + ":", yaml_str,

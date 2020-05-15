@@ -10,7 +10,7 @@ source_type: xml
 
 
 #===============================================================================
-# Output Description
+# Output Settings
 #===============================================================================
 
 # Set to false if annotation name spaces should be kept in the export
@@ -71,42 +71,3 @@ install:
     - "korp:install_timespan"
     - "xml_export:install_original"
     - "xml_export:install_sentence_scrambled"
-
-
-#===============================================================================
-# Annotation Presets
-#===============================================================================
-presets:
-    hunpos_annotations:
-        - <token>:hunpos.pos
-        - <token>:hunpos.msd
-
-    saldo_annotations:
-        - <token>:saldo.baseform
-        - <token>:saldo.lemgram
-        - <token>:saldo.sense
-        - <token>:saldo.compwf
-        - <token>:saldo.complemgram
-
-    malt_annotations:
-        - <token>:malt.deprel
-        - <token>:malt.dephead_ref
-        - <token>:misc.number_rel_<sentence> as ref
-
-    swener_annotations:
-        - <named_entity>:swener.ex
-        - <named_entity>:swener.name
-        - <named_entity>:swener.type
-        - <named_entity>:swener.subtype
-
-    sentiment_annotations:
-        - <token>:sensaldo.score
-        - <token>:sensaldo.label
-
-
-    standard_swe_annotations:
-        - hunpos_annotations
-        - saldo_annotations
-        - malt_annotations
-        - sentiment_annotations
-        - swener_annotations

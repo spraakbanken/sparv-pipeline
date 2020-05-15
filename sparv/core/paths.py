@@ -6,6 +6,7 @@ sparv_path = Path(__file__).parent.parent
 pipeline_path = Path(sparv_path).parent
 
 # Internal paths
+config_dir = "config"
 modules_dir = "modules"
 models_dir = "models"
 bin_dir = "bin"
@@ -16,7 +17,9 @@ annotation_dir = "annotations"
 source_dir = "original"
 export_dir = "export"
 config_file = "config.yaml"
-default_config_file = "config_default.yaml"
+
+default_config_file = os.path.join(config_dir, "config_default.yaml")
+presets_dir = os.path.join(config_dir, "presets")
 
 # CWB variables
 cwb_encoding = os.environ.get("CWB_ENCODING", "utf8")

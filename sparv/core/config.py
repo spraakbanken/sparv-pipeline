@@ -13,6 +13,7 @@ from sparv.core import paths
 log = logging.getLogger(__name__)
 
 DEFAULT_CONFIG = os.path.join(paths.sparv_path, "..", paths.default_config_file)
+PRESETS_DIR = os.path.join(paths.sparv_path, "..", paths.presets_dir)
 
 # Dict holding full configuration
 config = {}
@@ -48,9 +49,10 @@ def load_config(config_file: str) -> None:
     global config
     config = _merge_dicts(combined_config, config)
 
-    # Resolve annotation presets
-    annotations = resolve_presets(config.get("annotations", []), config.get("presets", []))
-    config["annotations"] = annotations
+    # Load and resolve annotation presets
+    presets = load_presets()
+    annotations = resolve_presets(config.get("annotations", []), presets)
+    config["annotations"] = sorted(annotations)
 
 
 def _get(name: str):
@@ -108,6 +110,27 @@ def _merge_dicts(user, default):
             else:
                 user[k] = _merge_dicts(user[k], v)
     return user
+
+
+def load_presets():
+    """Read presets files and return all presets in one dictionary."""
+    presets = {}
+
+    presets_dir = os.fsencode(PRESETS_DIR)
+    for f in os.listdir(presets_dir):
+        filename = os.fsdecode(f)
+        basename, ext = os.path.splitext(filename)
+        if ext == ".yaml":
+            path = os.path.join(presets_dir, f)
+            with open(path) as f:
+                p = yaml.load(f, Loader=yaml.FullLoader)
+                for key, value in p.items():
+                    if isinstance(value, list):
+                        for i, v in enumerate(value):
+                            if v in p:
+                                value[i] = f"{basename}.{v}"
+                    presets[f"{basename}.{key}"] = value
+    return presets
 
 
 def resolve_presets(annotations, presets):

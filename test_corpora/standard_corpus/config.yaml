@@ -1,6 +1,6 @@
-################################################################################
-# META DATA
-################################################################################
+#===============================================================================
+# Meta Data
+#===============================================================================
 
 # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
 id: testkorpus
@@ -8,21 +8,17 @@ id: testkorpus
 name: Testkorpus
 
 
-################################################################################
-# INPUT DESCRIPTION
-################################################################################
-
-# Annotations to keep from original documents. If nothing is specified, everything is kept.
-original_annotations:
-    - dokument as document
-    - text:id
-    - text:date
-    - text:forfattare as author
-    - i
+#===============================================================================
+# Annotation Settings (???)
+#===============================================================================
 
 # Elements and attributes from the source XML that we want to be available as input for other annotations
 xml_elements:
     - text:date
+
+# Class definitions
+classes:
+    text: text
 
 # Chunk to use for automatic sentence segmentation
 sentence_chunk: <text>
@@ -34,20 +30,23 @@ dateformat:
     datetime_informat: "%Y-%m-%d"
 
 
-################################################################################
-# OUTPUT DESCRIPTION
-################################################################################
+#===============================================================================
+# Output (Export) Settings
+#===============================================================================
 
-# Class definitions
-classes:
-    text: text
+# Annotations from original documents to include in the output. If nothing is specified, everything is kept.
+original_annotations:
+    - dokument as document
+    - text:id
+    - text:date
+    - text:forfattare as author
+    - i
 
 # Automatic annotations to be included in the export
 annotations:
-    - <text>:readability.lix
     - <text>:dateformat.datefrom
     - <text>:dateformat.dateto
     - <text>:dateformat.timefrom
     - <text>:dateformat.timeto
     - <sentence>:geo.geo_context as geo
-    - standard_swe_annotations
+    - swe_default.all
