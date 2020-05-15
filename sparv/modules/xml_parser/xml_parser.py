@@ -186,4 +186,4 @@ class SparvXMLParser:
                 util.write_annotation(self.doc, "{}:{}".format(full_element, full_attr), attributes[attr])
                 structure.append("{}:{}".format(full_element, full_attr))
 
-        util.write_data(self.doc, "@structure", "\n".join(structure))
+        util.write_data(self.doc, util.corpus.STRUCTURE_FILE, "\n".join(structure))

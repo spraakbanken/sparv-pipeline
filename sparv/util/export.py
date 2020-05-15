@@ -180,13 +180,13 @@ def get_annotation_names(doc, token_name, annotations, original_annotations=None
     annotations = misc.split_tuples_list(annotations)
     original_annotations = misc.split_tuples_list(original_annotations)
     if not original_annotations:
-        # Get original_annotations from @structure
+        # Get original_annotations from STRUCTURE_FILE
         if isinstance(doc, list):
             original_annotations = []
             for d in doc:
-                original_annotations.extend(misc.split_tuples_list(corpus.read_data(d, "@structure")))
+                original_annotations.extend(misc.split_tuples_list(corpus.read_data(d, corpus.STRUCTURE_FILE)))
         else:
-            original_annotations = misc.split_tuples_list(corpus.read_data(doc, "@structure"))
+            original_annotations = misc.split_tuples_list(corpus.read_data(doc, corpus.STRUCTURE_FILE))
     annotations.extend(original_annotations)
 
     # Add plain annotations (non-attribute annotations) to annotations if user has not done that

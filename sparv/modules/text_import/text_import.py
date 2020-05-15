@@ -3,8 +3,7 @@
 import os
 import unicodedata
 
-from sparv import importer
-from sparv import util
+from sparv import importer, util
 from sparv.util.classes import Document, Source
 
 
@@ -42,4 +41,4 @@ def parse(doc: str = Document,
     # Make up a text annotation surrounding the whole file
     text_annotation = "{}.text".format(prefix) if prefix else "text"
     util.write_annotation(doc, text_annotation, [(0, len(text))])
-    util.write_data(doc, "@structure", "")
+    util.write_data(doc, util.corpus.STRUCTURE_FILE, "")

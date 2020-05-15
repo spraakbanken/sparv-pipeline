@@ -15,6 +15,7 @@ DOC_CHUNK_DELIM = ":"
 ELEM_ATTR_DELIM = ":"
 SPAN_ANNOTATION = "@span"
 TEXT_FILE = "@text"
+STRUCTURE_FILE = "@structure"
 DEFAULT_CORPUS_DIR = ""
 
 
