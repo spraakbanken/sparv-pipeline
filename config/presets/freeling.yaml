@@ -1,0 +1,16 @@
+#===============================================================================
+# FreeLing Annotation Presets
+#===============================================================================
+
+all:
+    - token
+    - sentence
+
+token:
+    - freeling.token:freeling.word
+    - freeling.token:freeling.upos
+    - freeling.token:freeling.pos
+    - freeling.token:freeling.baseform
+
+sentence:
+    - freeling.sentence:misc.id

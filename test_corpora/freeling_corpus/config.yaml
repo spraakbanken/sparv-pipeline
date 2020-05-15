@@ -1,6 +1,6 @@
-################################################################################
-# META DATA
-################################################################################
+#===============================================================================
+# Meta Data
+#===============================================================================
 
 # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
 id: freeling-corpus
@@ -10,35 +10,26 @@ name: FreeLing test corpus
 language: eng
 
 
-################################################################################
-# INPUT DESCRIPTION
-################################################################################
+#===============================================================================
+# Annotation Settings
+#===============================================================================
 
 # Elements and attributes from the source XML that we want to be available as input for other annotations
 xml_elements:
     - text
-
-
-################################################################################
-# OUTPUT DESCRIPTION
-################################################################################
 
 # Class definitions
 classes:
     text: text
     sentence: freeling.sentence
     token: freeling.token
-    "token:word": <token>:freeling.word
-    "token:upos": <token>:freeling.upos
-    "token:pos": <token>:freeling.pos
-    "token:baseform": <token>:freeling.baseform
-    "token:ne_type": <token>:freeling.ne_type
+
+
+#===============================================================================
+# Output (Export) Settings
+#===============================================================================
 
 # Automatic annotations to be included in the export
 annotations:
     - <text>:readability.lix
-    - <sentence>
-    - <token:upos>
-    - <token:pos>
-    - <token:baseform>
-    - <token:ne_type>
+    - freeling_full.all

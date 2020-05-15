@@ -1,0 +1,9 @@
+#===============================================================================
+# Date/Time Annotation Presets
+#===============================================================================
+
+all:
+    - <text>:dateformat.datefrom
+    - <text>:dateformat.dateto
+    - <text>:dateformat.timefrom
+    - <text>:dateformat.timeto

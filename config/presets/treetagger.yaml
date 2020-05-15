@@ -1,0 +1,15 @@
+#===============================================================================
+# TreeTagger Annotation Presets
+#===============================================================================
+
+all:
+    - token
+    - sentence
+
+token:
+    - <token>:treetagger.pos
+    - <token>:treetagger.upos
+    - <token>:treetagger.baseform
+
+sentence:
+    - <sentence>:misc.id

@@ -20,7 +20,7 @@ xml_elements:
 classes:
     text: text
 
-# Chunk to use for automatic sentence segmentation
+# Chunk to use for automatic sentence segmentation (typically text or paragraph)
 sentence_chunk: <text>
 
 # Description of the date/time input format
@@ -44,9 +44,5 @@ original_annotations:
 
 # Automatic annotations to be included in the export
 annotations:
-    - <text>:dateformat.datefrom
-    - <text>:dateformat.dateto
-    - <text>:dateformat.timefrom
-    - <text>:dateformat.timeto
-    - <sentence>:geo.geo_context as geo
     - swe_default.all
+    - datetime.all

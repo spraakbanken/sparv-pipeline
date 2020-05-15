@@ -1,6 +1,6 @@
-################################################################################
-# META DATA
-################################################################################
+#===============================================================================
+# Meta Data
+#===============================================================================
 
 # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
 id: stanford-corpus
@@ -10,40 +10,25 @@ name: Stanford Parser test corpus
 language: eng
 
 
-################################################################################
-# INPUT DESCRIPTION
-################################################################################
+#===============================================================================
+# Annotation Settings
+#===============================================================================
 
 # Elements and attributes from the source XML that we want to be available as input for other annotations
 xml_elements:
     - text
-
-
-################################################################################
-# OUTPUT DESCRIPTION
-################################################################################
 
 # Class definitions
 classes:
     text: text
     sentence: stanford.sentence
     token: stanford.token
-    "token:word": <token>:stanford.word
-    "token:ref": <token>:stanford.ref
-    "token:pos": <token>:stanford.pos
-    "token:upos": <token>:stanford.upos
-    "token:baseform": <token>:stanford.baseform
-    "token:ne": <token>:stanford.ne_type
-    "token:dephead_ref": <token>:stanford.dephead_ref
-    "token:deprel": <token>:stanford.deprel
+
+
+#===============================================================================
+# Output (Export) Settings
+#===============================================================================
 
 # Automatic annotations to be included in the export
 annotations:
-    - <sentence>
-    - <token:pos>
-    - <token:upos>
-    - <token:baseform>
-    - <token:ne>
-    - <token:dephead_ref>
-    - <token:deprel>
-    - <token:ref>
+    - stanford.all

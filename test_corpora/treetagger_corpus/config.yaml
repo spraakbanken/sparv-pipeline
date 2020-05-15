@@ -1,6 +1,6 @@
-################################################################################
-# META DATA
-################################################################################
+#===============================================================================
+# Meta Data
+#===============================================================================
 
 # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
 id: treetagger-corpus
@@ -9,30 +9,24 @@ name: TreeTagger test corpus
 # Language of the input documents, specified as ISO 639-3 code
 language: nld
 
-################################################################################
-# INPUT DESCRIPTION
-################################################################################
+#===============================================================================
+# Annotation Settings
+#===============================================================================
 
 # Elements and attributes from the source XML that we want to be available as input for other annotations
 xml_elements:
     - text
 
-
-################################################################################
-# OUTPUT DESCRIPTION
-################################################################################
-
 # Class definitions
 classes:
     text: text
-    "token:pos": <token>:treetagger.pos
-    "token:upos": <token>:treetagger.upos
-    "token:baseform": <token>:treetagger.baseform
+
+
+#===============================================================================
+# Output (Export) Settings
+#===============================================================================
 
 # Automatic annotations to be included in the export
 annotations:
-    - <text>:readability.lix
-    - <sentence>
-    - <token:pos>
-    - <token:upos>
-    - <token:baseform>
+    - text:readability.lix
+    - treetagger.all

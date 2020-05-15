@@ -3,18 +3,22 @@
 #===============================================================================
 
 all:
-    - hunpos
-    - saldo
-    - malt
-    - sentiment
-    - lexical_class_token
+    - token-annotations
     - swener
-    - lexical_class_doc
+    - sentence
+    - lexical_class_text
     - readability
 
 #====================================
 # Token Annotations
 #====================================
+
+token-annotations:
+    - hunpos
+    - saldo
+    - malt
+    - sentiment
+    - lexical_class_token
 
 hunpos:
     - <token>:hunpos.pos
@@ -50,7 +54,11 @@ swener:
     - <named_entity>:swener.type
     - <named_entity>:swener.subtype
 
-lexical_class_doc:
+sentence:
+    - <sentence>:misc.id
+    - <sentence>:geo.geo_context as geo
+
+lexical_class_text:
     - <text>:lexical_classes.blingbring
     - <text>:lexical_classes.swefn
 
