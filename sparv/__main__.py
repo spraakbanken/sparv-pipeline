@@ -70,6 +70,7 @@ def main():
         "   create-file      Create specified annotation file(s)",
         "   run-module       Run annotator module independently",
         "   annotations      (?) List available modules and annotations",
+        "   presets          List available annotation presets",
         "",
         "See 'sparv <command> -h' for help with a specific command"
     ]
@@ -117,6 +118,7 @@ def main():
                                 help="Supply values for wildcards using the format 'name=value'")
     # TODO: subparsers.add_parser("create-file")
     subparsers.add_parser("annotations", description="List available annotations and classes.")
+    subparsers.add_parser("presets", description="Display all available annotation presets.")
 
     # Add common arguments
     for subparser in [run_parser, install_parser, models_parser, runrule_parser]:
@@ -156,7 +158,7 @@ def main():
     use_progressbar = True
     simple_target = False
 
-    if args.command in ("annotations", "config", "files", "clean"):
+    if args.command in ("annotations", "config", "files", "clean", "presets"):
         snakemake_args["targets"] = [args.command]
         simple_target = True
         if args.command == "clean":

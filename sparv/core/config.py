@@ -15,9 +15,9 @@ log = logging.getLogger(__name__)
 DEFAULT_CONFIG = os.path.join(paths.sparv_path, "..", paths.default_config_file)
 PRESETS_DIR = os.path.join(paths.sparv_path, "..", paths.presets_dir)
 
-# Dict holding full configuration
-config = {}
+config = {}  # Dict holding full configuration
 config_undeclared = set()  # Config variables collected from use but not declared anywhere
+presets = {}  # Dict holding annotation presets
 
 
 def load_config(config_file: str) -> None:
@@ -50,6 +50,7 @@ def load_config(config_file: str) -> None:
     config = _merge_dicts(combined_config, config)
 
     # Load and resolve annotation presets
+    global presets
     presets = load_presets()
     annotations = resolve_presets(config.get("annotations", []), presets)
     config["annotations"] = sorted(annotations)

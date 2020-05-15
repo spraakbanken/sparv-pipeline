@@ -65,6 +65,23 @@ def get_source_files() -> List[str]:
     return source_files
 
 
+def prettify_config(in_config):
+    """Prettify a yaml config string."""
+    import yaml
+    class MyDumper(yaml.Dumper):
+        """Customized YAML dumper that indents lists."""
+
+        def increase_indent(self, flow=False, indentless=False):
+            """Force indentation."""
+            return super(MyDumper, self).increase_indent(flow, False)
+
+    yaml_str = yaml.dump(in_config, default_flow_style=False, Dumper=MyDumper, indent=4)
+    # Colorize keys for easier reading
+    yaml_str = re.sub(r"^(\s*[\S]+):", util.Color.BLUE + r"\1" + util.Color.RESET + ":", yaml_str,
+                    flags=re.MULTILINE)
+    return yaml_str
+
+
 def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missing: bool = False) -> None:
     """Build Snakemake rules."""
     # Build input, output and parameter list
@@ -365,19 +382,7 @@ for module_name in registry.annotators:
 # Rule to list all config options and their current values
 rule config:
     run:
-        import yaml
-        class MyDumper(yaml.Dumper):
-            """Customized YAML dumper that indents lists."""
-
-            def increase_indent(self, flow=False, indentless=False):
-                """Force indentation."""
-                return super(MyDumper, self).increase_indent(flow, False)
-
-        yaml_str = yaml.dump(sparv_config.config, default_flow_style=False, Dumper=MyDumper, indent=4)
-        # Colorize keys for easier reading
-        yaml_str = re.sub(r"^(\s*[\S]+):", util.Color.BLUE + r"\1" + util.Color.RESET + ":", yaml_str,
-                          flags=re.MULTILINE)
-        print(yaml_str)
+        print(prettify_config(sparv_config.config))
 
 
 rule annotations:
@@ -422,6 +427,12 @@ rule annotations:
             for cls, ann in registry.annotation_classes["config_classes"].items():
                 print("        {:{}}    {}".format(cls, max_len, ann))
         print()
+
+
+# Rule to list all annotation presets
+rule presets:
+    run:
+        print(prettify_config(sparv_config.presets))
 
 
 rule list_targets:
