@@ -178,10 +178,6 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
             else:
                 inputs.append(ann_path)
 
-                # Add @text as requirement for all rules with non-data Annotation dependencies
-                text_file = get_annotation_path(util.TEXT_FILE, data=True)
-                if not param.default.data and not text_file in inputs:
-                    inputs.append(text_file)
             parameters[param_name] = param_value
             if "{" in param_value:
                 wildcard_annotations.append(param_name)
