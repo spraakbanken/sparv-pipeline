@@ -19,8 +19,8 @@ def vrt(doc: str = Document,
         token: str = Annotation("<token>"),
         word: str = Annotation("<token:word>"),
         annotations: list = ExportAnnotations,
-        original_annotations: Optional[list] = Config("original_annotations"),
-        remove_namespaces: bool = Config("remove_export_namespaces", False)):
+        original_annotations: Optional[list] = Config("export.original_annotations"),
+        remove_namespaces: bool = Config("export.remove_export_namespaces", False)):
     """Export annotations to vrt in export_dir.
 
     - doc: name of the original document

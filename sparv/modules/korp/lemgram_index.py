@@ -18,7 +18,7 @@ CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
 def install_lemgrams(sqlfile: str = ExportInput("korp_lemgramindex/lemgram_index.sql"),
                      out: str = Output("korp.time_install_lemgram", data=True, common=True),
                      db_name: str = Config("korp.mysql_dbname", ""),
-                     host: str = Config("remote_host", "")):
+                     host: str = Config("korp.remote_host", "")):
     """Install lemgram SQL on remote host.
 
     Args:
@@ -27,7 +27,7 @@ def install_lemgrams(sqlfile: str = ExportInput("korp_lemgramindex/lemgram_index
         out (str, optional): Timestamp file to be written.
             Defaults to Output("korp.time_install_lemgram", data=True, common=True).
         db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname", "").
-        host (str, optional): Remote host to install to. Defaults to Config("remote_host", "").
+        host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host", "").
     """
     util.install_mysql(host, db_name, sqlfile)
     util.write_common_data(out, "")

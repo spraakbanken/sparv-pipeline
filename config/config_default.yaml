@@ -13,11 +13,12 @@ source_type: xml
 # Output Settings
 #===============================================================================
 
-# Set to false if annotation name spaces should be kept in the export
-remove_export_namespaces: true
-
-# Chunk to scramble the XML export on
-scramble_on: <sentence>
+# Common settings for exporters
+export:
+    # Set to false if annotation name spaces should be kept in the export
+    remove_export_namespaces: true
+    # Chunk to scramble the XML export on
+    scramble_on: <sentence>
 
 # Class definitions
 classes:
@@ -48,30 +49,31 @@ saldo:
 #===============================================================================
 # Korp and Installation
 #===============================================================================
+xml_export:
+    # Export hosts and paths (targets for install_export and install_export_original)
+    export_host: ""
+    export_path: ""
+    export_original_host: ""
+    export_original_path: ""
 
-# Korp: password protected corpus
-protected: false
+korp:
+    # Korp: password protected corpus
+    protected: false
 
-# Remote host name for installation of both corpus data and database
-remote_host: ""
+    # Remote host name for installation of both corpus data and database
+    remote_host: ""
 
-# Paths on remote server (targets for install_corpus)
-remote_cwb_datadir: ""
-remote_corpus_registry: ""
+    # Paths on remote server (targets for install_corpus)
+    remote_cwb_datadir: ""
+    remote_corpus_registry: ""
 
-# Export hosts and paths (targets for install_export and install_export_original)
-export_host: ""
-export_path: ""
-export_original_host: ""
-export_original_path: ""
+    # Database name for relations, lemgram index and timespan
+    mysql_dbname: ""
 
-# Database name for relations, lemgram index and timespan
-mysql_dbname: ""
-
-# Installations to be made when running `sparv install`
-install:
-    - "korp:install_corpus"
-    - "korp:install_relations"
-    - "korp:install_timespan"
-    - "xml_export:install_original"
-    - "xml_export:install_sentence_scrambled"
+    # Installations to be made when running `sparv install`
+    install:
+        - "korp:install_corpus"
+        - "korp:install_relations"
+        - "korp:install_timespan"
+        - "xml_export:install_original"
+        - "xml_export:install_sentence_scrambled"

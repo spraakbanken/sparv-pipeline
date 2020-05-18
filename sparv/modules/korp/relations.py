@@ -22,7 +22,7 @@ MAX_POS_LENGTH = 5
 def install_relations(sqlfile: str = ExportInput("korp_wordpicture/relations.sql"),
                       out: str = Output("korp.time_install_relations", data=True, common=True),
                       db_name: str = Config("korp.mysql_dbname", ""),
-                      host: str = Config("remote_host", "")):
+                      host: str = Config("korp.remote_host", "")):
     """Install Korp's Word Picture SQL on remote host.
 
     Args:
@@ -30,7 +30,7 @@ def install_relations(sqlfile: str = ExportInput("korp_wordpicture/relations.sql
         out (str, optional): Timestamp file to be written.
             Defaults to Output("korp.time_install_relations", data=True, common=True).
         db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname", "").
-        host (str, optional): Remote host to install to. Defaults to Config("remote_host", "").
+        host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host", "").
     """
     util.install_mysql(host, db_name, sqlfile)
     util.write_common_data(out, "")

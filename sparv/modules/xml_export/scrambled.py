@@ -17,13 +17,13 @@ log = logging.getLogger(__name__)
 def scrambled(doc: str = Document,
               docid: str = Annotation("<docid>", data=True),
               out: str = Export("xml_scrambled/[xml_export.filename]"),
-              chunk: str = Annotation("[scramble_on]"),
-              chunk_order: str = Annotation("[scramble_on]:misc.number_random"),
+              chunk: str = Annotation("[xml_export.scramble_on]"),
+              chunk_order: str = Annotation("[xml_export.scramble_on]:misc.number_random"),
               token: str = Annotation("<token>"),
               word: str = Annotation("<token:word>"),
               annotations: list = ExportAnnotations,
-              original_annotations: Optional[list] = Config("original_annotations"),
-              remove_namespaces: bool = Config("remove_export_namespaces", False)):
+              original_annotations: Optional[list] = Config("export.original_annotations"),
+              remove_namespaces: bool = Config("export.remove_export_namespaces", False)):
     """Export annotations to scrambled XML."""
     # Create export dir
     os.makedirs(os.path.dirname(out), exist_ok=True)
@@ -77,8 +77,8 @@ def compressed_scrambled(out: str = Export("[id]_scrambled.xml.bz2"),
 def install_scrambled(corpus: Corpus,
                       xmlfile: str = ExportInput("[id]_scrambled.xml"),
                       out: str = Output("xml_export.time_install_export", data=True, common=True),
-                      export_path: str = Config("export_path", ""),
-                      host: str = Config("export_host", "")):
+                      export_path: str = Config("xml_export.export_path", ""),
+                      host: str = Config("xml_export.export_host", "")):
     """Copy compressed combined scrambled XML to remote host."""
     xml_utils.install_compressed_xml(corpus, xmlfile, out, export_path, host)
 

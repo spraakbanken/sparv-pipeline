@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 def install_timespan(sqlfile: str = ExportInput("korp_timespan/timespan.sql"),
                      out: str = Output("korp.time_install_timespan", data=True, common=True),
                      db_name: str = Config("korp.mysql_dbname", ""),
-                     host: str = Config("remote_host", "")):
+                     host: str = Config("korp.remote_host", "")):
     """Install timespan SQL on remote host.
 
     Args:
@@ -22,7 +22,7 @@ def install_timespan(sqlfile: str = ExportInput("korp_timespan/timespan.sql"),
         out (str, optional): Timestamp file to be written.
             Defaults to Output("korp.time_install_relations", data=True, common=True).
         db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname", "").
-        host (str, optional): Remote host to install to. Defaults to Config("remote_host", "").
+        host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host", "").
     """
     util.install_mysql(host, db_name, sqlfile)
     util.write_common_data(out, "")

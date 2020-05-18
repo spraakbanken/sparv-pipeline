@@ -8,8 +8,7 @@ from typing import Optional
 
 import sparv.modules.xml_export.xml_utils as xml_utils
 import sparv.util as util
-from sparv import (AllDocuments, Annotation, Config, Corpus, Document, Export, ExportAnnotations, ExportInput, Output,
-                   exporter, installer)
+from sparv import Annotation, Config, Document, Export, ExportAnnotations, exporter
 
 log = logging.getLogger(__name__)
 
@@ -22,8 +21,8 @@ def preserved_format(doc: str = Document,
                      out: str = Export("xml_preserve_formatting/[xml_export.filename_formatted]"),
                      token: str = Annotation("<token>"),
                      annotations: list = ExportAnnotations,
-                     original_annotations: Optional[list] = Config("original_annotations"),
-                     remove_namespaces: bool = Config("remove_export_namespaces", False)):
+                     original_annotations: Optional[list] = Config("export.original_annotations"),
+                     remove_namespaces: bool = Config("export.remove_export_namespaces", False)):
     """Export annotations to xml in export_dir and keep whitespaces and indentation from original file.
 
     - doc: name of the original document

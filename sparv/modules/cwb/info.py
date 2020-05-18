@@ -16,7 +16,7 @@ def info(out: str = Export("[cwb.cwb_datadir]/[id]/.info", absolute_path=True),
          sentences: str = Annotation("cwb.sentencecount", data=True, common=True),
          firstdate: str = Annotation("cwb.datefirst", data=True, common=True),
          lastdate: str = Annotation("cwb.datelast", data=True, common=True),
-         protected: bool = Config("protected", False)):
+         protected: bool = Config("korp.protected", False)):
     """Save information to the file specified by 'out'."""
     content = []
     protected = str(util.strtobool(protected)).lower()

@@ -21,8 +21,8 @@ def pretty(doc: str = Document,
            token: str = Annotation("<token>"),
            word: str = Annotation("<token:word>"),
            annotations: list = ExportAnnotations,
-           original_annotations: Optional[list] = Config("original_annotations"),
-           remove_namespaces: bool = Config("remove_export_namespaces", False)):
+           original_annotations: Optional[list] = Config("export.original_annotations"),
+           remove_namespaces: bool = Config("export.remove_export_namespaces", False)):
     """Export annotations to xml in export_dir.
 
     - doc: name of the original document
@@ -74,7 +74,7 @@ def compressed(out: str = Export("[xml_export.filename_compressed]"),
 def install_original(corpus: str = Corpus,
                      xmlfile: str = ExportInput("[xml_export.filename_compressed]"),
                      out: str = Output("xml_export.time_install_export", data=True, common=True),
-                     export_path: str = Config("export_path", ""),
-                     host: str = Config("export_host", "")):
+                     export_path: str = Config("xml_export.export_original_path", ""),
+                     host: str = Config("xml_export.export_original_host", "")):
     """Copy compressed combined unscrambled XML to remote host."""
     xml_utils.install_compressed_xml(corpus, xmlfile, out, export_path, host)
