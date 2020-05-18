@@ -94,7 +94,8 @@ def main():
     clean_parser.add_argument("--all", action="store_true", help="Remove both annotations and export directories")
 
     # Inspect
-    subparsers.add_parser("config", description="Display the corpus configuration.")
+    conifg_parser = subparsers.add_parser("config", description="Display the corpus configuration.")
+    conifg_parser.add_argument("options", nargs="*", default=[], help="Specific options(s) in config to display.")
     subparsers.add_parser("files", description="List available input files that can be annotated by Sparv.")
 
     # Setup
@@ -164,6 +165,8 @@ def main():
         if args.command == "clean":
             config["export"] = args.export
             config["all"] = args.all
+        if args.command == "config" and args.options:
+            config["options"] = args.options
 
     elif args.command in ("run-rule", "run", "install", "build-models"):
         snakemake_args.update({

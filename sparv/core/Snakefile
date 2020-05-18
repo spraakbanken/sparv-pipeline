@@ -379,7 +379,13 @@ for module_name in registry.annotators:
 # Rule to list all config options and their current values
 rule config:
     run:
-        print(prettify_config(sparv_config.config))
+        if config.get("options"):
+            out_conf = {}
+            for k in config["options"]:
+                out_conf[k] = sparv_config.config.get(k)
+        else:
+            out_conf = sparv_config.config
+        print(prettify_config(out_conf))
 
 
 rule annotations:
