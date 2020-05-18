@@ -32,14 +32,15 @@ def load_config(config_file: str) -> None:
     else:
         log.warning("Default config file is missing: " + DEFAULT_CONFIG)
         default_config = {}
+    default_classes = default_config.get("classes", {})
 
     # Read corpus config
     user_config = {}
-
     with open(config_file) as f:
         loaded_config = yaml.load(f, Loader=yaml.FullLoader)
         if loaded_config:
             user_config = loaded_config
+    user_classes = user_config.get("classes", {})
 
     # Merge default and corpus config
     combined_config = _merge_dicts(copy.deepcopy(user_config), default_config)
@@ -49,12 +50,15 @@ def load_config(config_file: str) -> None:
     config = _merge_dicts(combined_config, config)
 
     # Load and resolve annotation presets
-    preset_classes = load_presets(config.get("language", None))
+    class_dict = load_presets(config.get("language", None))
     annotations = resolve_presets(config.get("annotations", []))
 
-    # Update/override classes and annotations from presets
-    override_classes(config.get("annotations", []), config.get("classes", {}), preset_classes)
+    # Update classes and annotations from presets
+    preset_classes = collect_classes(config.get("annotations", []), class_dict)
     config["annotations"] = sorted(annotations)
+    combined_classes = _merge_dicts(preset_classes, default_classes)
+    classes = _merge_dicts(user_classes, combined_classes)
+    config["classes"] = classes
 
 
 def _get(name: str):
@@ -158,7 +162,9 @@ def resolve_presets(annotations):
     return result
 
 
-def override_classes(user_annotations, user_classes, preset_classes):
-    """Update/override user and default classes with classes from chosen presets."""
+def collect_classes(user_annotations, class_dict):
+    """Collect classes from chosen presets."""
+    result = {}
     for annotation in user_annotations:
-        user_classes.update(preset_classes.get(annotation, {}))
+        result.update(class_dict.get(annotation, {}))
+    return result
