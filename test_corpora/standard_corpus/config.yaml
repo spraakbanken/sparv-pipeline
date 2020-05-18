@@ -16,8 +16,9 @@ name: Testkorpus
 xml_elements:
     - text:date
 
-# Chunk to use for automatic sentence segmentation (typically text or paragraph)
-sentence_chunk: <text>
+segment:
+    # Chunk to use for automatic sentence segmentation (typically text or paragraph)
+    sentence_chunk: <paragraph>
 
 # Description of the date/time input format
 dateformat:

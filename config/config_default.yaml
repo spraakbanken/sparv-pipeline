@@ -19,7 +19,7 @@ remove_export_namespaces: true
 # Chunk to scramble the XML export on
 scramble_on: <sentence>
 
-# Class definitions. NB: When using presets, these may be overridden!
+# Class definitions
 classes:
     text: text
     sentence: segment.sentence
@@ -31,12 +31,15 @@ classes:
 # Module-specific Settings
 #===============================================================================
 
-# Chunk to use for automatic sentence segmentation (typically text or None)
-# paragraph_chunk: None
-# Chunk to use for automatic sentence segmentation (typically text or paragraph)
-sentence_chunk: <text>
-# Chunk to use for automatic tokenisation
-token_chunk: <sentence>
+segment:
+    # Chunk to use for automatic sentence segmentation (typically <text> or nothing)
+    paragraph_chunk: <text>
+    # How to do automatic paragraph segmentation. Valid values: blanklines, linebreaks, whitespace, fsv_paragraph
+    paragraph_segmenter: blanklines
+    # Chunk to use for automatic sentence segmentation (typically <text> or <paragraph>)
+    sentence_chunk: <text>
+    # Chunk to use for automatic tokenisation
+    token_chunk: <sentence>
 
 saldo:
     precision: ""

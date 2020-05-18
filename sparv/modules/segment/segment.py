@@ -22,11 +22,12 @@ log = logging.getLogger(__name__)
 
 @annotator("Automatic tokenization", config=[
     Config("segment.token_segmenter", default="better_word"),
+    Config("segment.token_chunk", default="<sentence>"),
     Config("segment.existing_tokens")
 ])
 def tokenize(doc: str = Document,
              out: str = Output("segment.token", cls="token", description="Token segments"),
-             chunk: str = Annotation("[token_chunk]"),
+             chunk: str = Annotation("[segment.token_chunk]"),
              segmenter: str = Config("segment.token_segmenter"),
              existing_segments: str = Config("segment.existing_tokens"),
              model: Optional[str] = Model("segment/bettertokenizer.sv"),
@@ -38,16 +39,34 @@ def tokenize(doc: str = Document,
 
 @annotator("Automatic segmentation of sentences", config=[
     Config("segment.sentence_segmenter", default="punkt_sentence"),
+    Config("segment.sentence_chunk", default="<text>"),
     Config("segment.existing_sentences")
 ])
 def sentence(doc: str = Document,
              out: str = Output("segment.sentence", cls="sentence", description="Sentence segments"),
-             chunk: Optional[str] = Annotation("[sentence_chunk]"),
+             chunk: Optional[str] = Annotation("[segment.sentence_chunk]"),
              segmenter: str = Config("segment.sentence_segmenter"),
              existing_segments: str = Config("segment.existing_sentences"),
              model: Optional[str] = None,
              pickled_model: bool = False):
     """Split text into sentences."""
+    do_segmentation(doc=doc, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,
+                    model=model, pickled_model=pickled_model)
+
+
+@annotator("Automatic segmentation of paragraphs", config=[
+    Config("segment.paragraph_segmenter", default="blanklines"),
+    Config("segment.paragraph_chunk", default="<text>"),
+    Config("segment.existing_paragraphs")
+])
+def paragraph(doc: str = Document,
+              out: str = Output("segment.paragraph", cls="paragraph", description="Paragraph segments"),
+              chunk: Optional[str] = Annotation("[segment.paragraph_chunk]"),
+              segmenter: str = Config("segment.paragraph_segmenter"),
+              existing_segments: str = Config("segment.existing_paragraphs"),
+              model: Optional[str] = None,
+              pickled_model: bool = False):
+    """Split text into paragraphs."""
     do_segmentation(doc=doc, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,
                     model=model, pickled_model=pickled_model)
 
