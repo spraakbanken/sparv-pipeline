@@ -49,9 +49,11 @@ def load_config(config_file: str) -> None:
     config = _merge_dicts(combined_config, config)
 
     # Load and resolve annotation presets
-    global presets
-    presets = load_presets(config.get("language", None))
-    annotations = resolve_presets(config.get("annotations", []), presets)
+    preset_classes = load_presets(config.get("language", None))
+    annotations = resolve_presets(config.get("annotations", []))
+
+    # Update/override classes and annotations from presets
+    override_classes(config.get("annotations", []), config.get("classes", {}), preset_classes)
     config["annotations"] = sorted(annotations)
 
 
@@ -114,7 +116,8 @@ def _merge_dicts(user, default):
 
 def load_presets(lang):
     """Read presets files and return all presets in one dictionary."""
-    presets_ = {}
+    global presets
+    class_dict = {}
 
     for f in PRESETS_DIR.rglob("*.yaml"):
         with open(f) as ff:
@@ -126,22 +129,36 @@ def load_presets(lang):
                 if languages and lang not in languages:
                     continue
 
+            # Make sure preset names are upper case
+            p_name = (f.stem).upper()
+            c = presets_yaml.get("classes", {})
             p = presets_yaml.get("presets", {})
             for key, value in p.items():
                 if isinstance(value, list):
+                    # Prefix all preset keys with preset name
                     for i, v in enumerate(value):
                         if v in p:
-                            value[i] = f"{f.stem}.{v}"
-                presets_[f"{f.stem}.{key}"] = value
-    return presets_
+                            value[i] = f"{p_name}.{v}"
+                # Extend presets and class_dict
+                k_name = f"{p_name}.{key}"
+                presets[k_name] = value
+                if c:
+                    class_dict[k_name] = c
+    return class_dict
 
 
-def resolve_presets(annotations, presets_):
+def resolve_presets(annotations):
     """Resolve annotation presets into actual annotations."""
     result = []
     for annotation in annotations:
-        if annotation in presets_:
-            result.extend(resolve_presets(presets_[annotation], presets_))
+        if annotation in presets:
+            result.extend(resolve_presets(presets[annotation]))
         else:
             result.append(annotation)
     return result
+
+
+def override_classes(user_annotations, user_classes, preset_classes):
+    """Update/override user and default classes with classes from chosen presets."""
+    for annotation in user_annotations:
+        user_classes.update(preset_classes.get(annotation, {}))

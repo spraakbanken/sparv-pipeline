@@ -16,10 +16,6 @@ name: Testkorpus
 xml_elements:
     - text:date
 
-# Class definitions
-classes:
-    text: text
-
 # Chunk to use for automatic sentence segmentation (typically text or paragraph)
 sentence_chunk: <text>
 
@@ -44,5 +40,5 @@ original_annotations:
 
 # Automatic annotations to be included in the export
 annotations:
-    - swe_default.all
-    - datetime.all
+    - SWE_DEFAULT.all
+    - DATETIME.all

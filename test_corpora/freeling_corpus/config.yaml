@@ -18,12 +18,6 @@ language: eng
 xml_elements:
     - text
 
-# Class definitions
-classes:
-    text: text
-    sentence: freeling.sentence
-    token: freeling.token
-
 
 #===============================================================================
 # Output (Export) Settings
@@ -32,4 +26,4 @@ classes:
 # Automatic annotations to be included in the export
 annotations:
     - <text>:readability.lix
-    - freeling_full.all
+    - FREELING_FULL.all

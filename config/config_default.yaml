@@ -19,14 +19,13 @@ remove_export_namespaces: true
 # Chunk to scramble the XML export on
 scramble_on: <sentence>
 
-# Class definitions
+# Class definitions. NB: When using presets, these may be overridden!
 classes:
     text: text
     sentence: segment.sentence
-    named_entity: swener.ne
     token: segment.token
     "token:word": <token>:misc.word
-    "token:sense": <token>:wsd.sense
+
 
 #===============================================================================
 # Module-specific Settings

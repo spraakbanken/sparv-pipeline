@@ -8,7 +8,9 @@ languages:
 classes:
     sentence: segment.sentence
     named_entity: swener.ne
-
+    token: segment.token
+    "token:word": <token>:misc.word
+    "token:sense": <token>:wsd.sense
 
 presets:
     all:
@@ -58,10 +60,10 @@ presets:
     #====================================
 
     swener:
-        - <named_entity>:swener.ex
-        - <named_entity>:swener.name
-        - <named_entity>:swener.type
-        - <named_entity>:swener.subtype
+        - swener.ne:swener.ex
+        - swener.ne:swener.name
+        - swener.ne:swener.type
+        - swener.ne:swener.subtype
 
     sentence:
         - <sentence>:misc.id

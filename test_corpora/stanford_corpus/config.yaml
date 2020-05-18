@@ -18,12 +18,6 @@ language: eng
 xml_elements:
     - text
 
-# Class definitions
-classes:
-    text: text
-    sentence: stanford.sentence
-    token: stanford.token
-
 
 #===============================================================================
 # Output (Export) Settings
@@ -31,4 +25,4 @@ classes:
 
 # Automatic annotations to be included in the export
 annotations:
-    - stanford.all
+    - STANFORD.all

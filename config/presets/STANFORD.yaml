@@ -9,6 +9,7 @@ languages:
 classes:
     sentence: stanford.sentence
     token: stanford.token
+    "token:word": stanford.token:stanford.word
 
 
 presets:

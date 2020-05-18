@@ -1,18 +1,21 @@
 #===============================================================================
-# FreeLing Annotation Presets with named entities
+# FreeLing Annotation Presets
 #===============================================================================
 
 languages:
-    - cat
-    - deu
-    - eng
-    - spa
-    - por
+    - ast
+    - fra"
+    - glg
+    - ita
+    - nob
+    - rus
+    - slv
 
 
 classes:
     sentence: freeling.sentence
     token: freeling.token
+    "token:word": freeling.token:freeling.word
 
 
 presets:
@@ -25,7 +28,6 @@ presets:
         - freeling.token:freeling.upos
         - freeling.token:freeling.pos
         - freeling.token:freeling.baseform
-        - freeling.token:freeling.ne_type
 
     sentence:
         - freeling.sentence:misc.id
