@@ -5,7 +5,7 @@ import os
 from collections import defaultdict
 from typing import Optional
 
-import sparv.modules.xml_export.xml_utils as xml_utils
+from . import xml_utils
 import sparv.util as util
 from sparv import (AllDocuments, Annotation, Config, Corpus, Document, Export, ExportAnnotations, ExportInput, Output,
                    exporter, installer)
