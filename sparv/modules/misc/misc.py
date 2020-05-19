@@ -78,6 +78,19 @@ def translate_tag(tag, out, mapping):
                                 for (n, t) in util.read_annotation_iteritems(tag)))
 
 
+@annotator("Convert {struct}:{attr} into a token annotation")
+def struct_to_token(doc: str = Document,
+                    struct: str = Annotation("{struct}"),
+                    attr: str = Annotation("{struct}:{attr}"),
+                    token: str = Annotation("<token>"),
+                    out: str = Output("<token>:misc.from_struct_{struct}_{attr}")):
+    """Convert a structural annotation into a token annotation."""
+    token_parents = util.get_parents(doc, attr, token)
+    attr_values = list(util.read_annotation(doc, attr))
+    out_values = [attr_values[p] if p else "" for p in token_parents]
+    util.write_annotation(doc, out, out_values)
+
+
 def chain(out, annotations, default=None):
     """Create a functional composition of a list of annotations.
 
