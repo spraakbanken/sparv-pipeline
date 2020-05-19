@@ -17,12 +17,12 @@ log = logging.getLogger(__name__)
 def scrambled(doc: str = Document,
               docid: str = Annotation("<docid>", data=True),
               out: str = Export("xml_scrambled/[xml_export.filename]"),
-              chunk: str = Annotation("[xml_export.scramble_on]"),
-              chunk_order: str = Annotation("[xml_export.scramble_on]:misc.number_random"),
+              chunk: str = Annotation("[export.scramble_on]"),
+              chunk_order: str = Annotation("[export.scramble_on]:misc.number_random"),
               token: str = Annotation("<token>"),
               word: str = Annotation("<token:word>"),
-              annotations: list = ExportAnnotations,
-              original_annotations: Optional[list] = Config("export.original_annotations"),
+              annotations: list = ExportAnnotations(export_type="xml_export"),
+              original_annotations: Optional[list] = Config("xml_export.original_annotations"),
               remove_namespaces: bool = Config("export.remove_export_namespaces", False)):
     """Export annotations to scrambled XML."""
     # Create export dir

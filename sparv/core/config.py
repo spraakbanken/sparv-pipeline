@@ -49,16 +49,8 @@ def load_config(config_file: str) -> None:
     global config
     config = _merge_dicts(combined_config, config)
 
-    # Load and resolve annotation presets
-    class_dict = load_presets(config.get("language", None))
-    annotations = resolve_presets(config.get("annotations", []))
-
-    # Update classes and annotations from presets
-    preset_classes = collect_classes(config.get("annotations", []), class_dict)
-    config["annotations"] = sorted(annotations)
-    combined_classes = _merge_dicts(preset_classes, default_classes)
-    classes = _merge_dicts(user_classes, combined_classes)
-    config["classes"] = classes
+    # Set correct classes and annotations from presets
+    apply_presets(user_classes, default_classes)
 
 
 def _get(name: str):
@@ -162,9 +154,41 @@ def resolve_presets(annotations):
     return result
 
 
-def collect_classes(user_annotations, class_dict):
+def apply_presets(user_classes, default_classes):
+    """Set correct classes and annotations from presets."""
+    # Load annotation presets and classes
+    class_dict = load_presets(config.get("language", None))
+    annotation_elems = _find_annotations("", config)
+    preset_classes = {}
+
+    for a in annotation_elems:
+        # Update annotations
+        preset_classes.update(_collect_classes(get(a), class_dict))
+        annotations = resolve_presets(get(a))
+        _set(a, sorted(annotations), overwrite=True)
+
+    # Update classes
+    combined_classes = _merge_dicts(preset_classes, default_classes)
+    classes = _merge_dicts(user_classes, combined_classes)
+    config["classes"] = classes
+
+
+def _collect_classes(user_annotations, class_dict):
     """Collect classes from chosen presets."""
     result = {}
     for annotation in user_annotations:
         result.update(class_dict.get(annotation, {}))
+    return result
+
+
+def _find_annotations(name, config_obj):
+    """Return a list of config objects containing an 'annotations' element."""
+    result = []
+    if isinstance(config_obj, dict):
+        if "annotations" in config_obj:
+            result.append(f"{name}.annotations")
+        else:
+            for k, v in config_obj.items():
+                new_name = f"{name}.{k}" if name else k
+                result.extend(_find_annotations(new_name, v))
     return result

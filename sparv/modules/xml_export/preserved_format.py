@@ -20,8 +20,8 @@ def preserved_format(doc: str = Document,
                      docid: str = Annotation("<docid>", data=True),
                      out: str = Export("xml_preserve_formatting/[xml_export.filename_formatted]"),
                      token: str = Annotation("<token>"),
-                     annotations: list = ExportAnnotations,
-                     original_annotations: Optional[list] = Config("export.original_annotations"),
+                     annotations: list = ExportAnnotations(export_type="xml_export"),
+                     original_annotations: Optional[list] = Config("xml_export.original_annotations"),
                      remove_namespaces: bool = Config("export.remove_export_namespaces", False)):
     """Export annotations to xml in export_dir and keep whitespaces and indentation from original file.
 

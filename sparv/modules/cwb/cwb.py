@@ -18,8 +18,8 @@ def vrt(doc: str = Document,
         out: str = Export("vrt/{doc}.vrt"),
         token: str = Annotation("<token>"),
         word: str = Annotation("<token:word>"),
-        annotations: list = ExportAnnotations,
-        original_annotations: Optional[list] = Config("export.original_annotations"),
+        annotations: list = ExportAnnotations(export_type="vrt_export"),
+        original_annotations: Optional[list] = Config("vrt_export.original_annotations"),
         remove_namespaces: bool = Config("export.remove_export_namespaces", False)):
     """Export annotations to vrt in export_dir.
 
@@ -103,8 +103,8 @@ def make_token_line(word, token, token_annotations, annotation_dict, index):
     Config("cwb.skip_validation", False)
 ])
 def encode(corpus: str = Corpus,
-           annotations: str = ExportAnnotations(is_input=False),
-           original_annotations: Optional[list] = Config("original_annotations"),
+           annotations: str = ExportAnnotations(export_type="vrt_export", is_input=False),
+           original_annotations: Optional[list] = Config("vrt_export.original_annotations"),
            docs: list = AllDocuments,
            words: str = Annotation("<token:word>", all_docs=True),
            vrtfiles: str = ExportInput("vrt/{doc}.vrt", all_docs=True),

@@ -109,8 +109,9 @@ class ExportAnnotations(list):
 
     is_input = True
 
-    def __init__(self, items=(), is_input: bool = True):
+    def __init__(self, export_type: str, items=(), is_input: bool = True):
         list.__init__(self, items)
+        self.export_type = export_type
         self.is_input = is_input
 
 

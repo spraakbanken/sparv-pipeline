@@ -183,8 +183,9 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
                 wildcard_annotations.append(param_name)
         # ExportAnnotations
         elif param.default == ExportAnnotations or isinstance(param.default, ExportAnnotations):
+            export_type = param.default.export_type
             parameters[param_name] = []
-            export_annotations = sparv_config.get("annotations", [])
+            export_annotations = sparv_config.get(f"{export_type}.annotations", [])
             for annotation in export_annotations:
                 annotation, _, new_name = annotation.partition(" as ")
                 param_value = registry.expand_variables(annotation)

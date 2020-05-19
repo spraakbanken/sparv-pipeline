@@ -31,15 +31,29 @@ dateformat:
 # Output (Export) Settings
 #===============================================================================
 
-# Annotations from original documents to include in the output. If nothing is specified, everything is kept.
-original_annotations:
-    - dokument as document
-    - text:id
-    - text:date
-    - text:forfattare as author
-    - i
+xml_export:
+    # Annotations from original documents to include in the output. If nothing is specified, everything is kept.
+    original_annotations:
+        - dokument as document
+        - text:id
+        - text:date
+        - text:forfattare as author
+        - i
+    # Automatic annotations to be included in the export
+    annotations:
+        - SWE_DEFAULT.all
+        - DATETIME.all
 
-# Automatic annotations to be included in the export
-annotations:
-    - SWE_DEFAULT.all
-    - DATETIME.all
+
+vrt_export:
+    # Annotations from original documents to include in the output. If nothing is specified, everything is kept.
+    original_annotations:
+        - dokument as document
+        - text:id
+        - text:date
+        - text:forfattare as author
+        - i
+    # Automatic annotations to be included in the export
+    annotations:
+        - SWE_DEFAULT.all
+        - DATETIME.all
