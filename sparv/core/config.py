@@ -165,7 +165,7 @@ def apply_presets(user_classes, default_classes):
         # Update annotations
         preset_classes.update(_collect_classes(get(a), class_dict))
         annotations = resolve_presets(get(a))
-        _set(a, sorted(annotations), overwrite=True)
+        _set(a, annotations, overwrite=True)
 
     # Update classes
     combined_classes = _merge_dicts(preset_classes, default_classes)

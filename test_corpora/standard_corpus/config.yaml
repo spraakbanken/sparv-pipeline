@@ -57,3 +57,15 @@ vrt_export:
     annotations:
         - SWE_DEFAULT.all
         - DATETIME.all
+
+csv_export:
+    # Annotations from original documents to include in the output. If nothing is specified, everything is kept.
+    original_annotations:
+        - text:id
+        - text:date
+        - text:forfattare as author
+    # Automatic annotations to be included in the export
+    annotations:
+        - <text>:readability.lix
+        - SWE_DEFAULT.sentence
+        - SWE_DEFAULT.token-annotations

@@ -191,12 +191,10 @@ def get_annotation_names(doc, token_name, annotations, original_annotations=None
 
     # Add plain annotations (non-attribute annotations) to annotations if user has not done that
     plain_annots = [a for a, _ in annotations if ":" not in a]
-    all_annotations = set(annotations)
     for a, _name in annotations:
         plain_annot = corpus.split_annotation(a)[0]
-        if plain_annot not in plain_annots:
-            all_annotations.add((plain_annot, None))
-    annotations = sorted(list(all_annotations))
+        if (plain_annot not in plain_annots) and ((plain_annot, None) not in annotations):
+            annotations.append((plain_annot, None))
 
     # Get the names of all token annotations (but not token itself)
     token_annotations = [corpus.split_annotation(i[0])[1] for i in annotations
@@ -212,7 +210,7 @@ def _create_export_names(annotations, token_name, remove_namespaces, keep_struct
     if remove_namespaces:
         short_names = [name.split(".")[-1] for name, new_name in annotations if not new_name]
         export_names = {}
-        for name, new_name in annotations:
+        for name, new_name in sorted(annotations):
             if not new_name:
                 # Skip if there is no name space
                 if "." not in name:
