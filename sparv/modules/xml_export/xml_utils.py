@@ -1,15 +1,17 @@
 """Util functions for XML export."""
 
 import bz2
+import io
 import logging
 import os
-import xml.dom.minidom
 import xml.etree.ElementTree as etree
 from collections import defaultdict
 
 import sparv.util as util
 
 log = logging.getLogger(__name__)
+
+INDENTATION = "  "
 
 
 def make_pretty_xml(span_positions, annotation_dict, export_names, token, word_annotation, docid):
@@ -51,11 +53,33 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token, word_a
                 total_overlaps = handle_overlaps(span, node_stack, docid, overlap_ids, total_overlaps, annotation_dict,
                                                  export_names)
 
-    # Pretty formatting through minidom
-    xmlstr = xml.dom.minidom.parseString(
-        etree.tostring(root_span.node, method="xml", encoding=util.UTF8)).toprettyxml(
-        indent="  ", encoding=util.UTF8).decode()
-    return xmlstr
+    # Pretty formatting of XML tree
+    indent(root_span.node)
+
+    # We use write() instead of tostring() here to be able to get an XML declaration
+    stream = io.StringIO()
+    etree.ElementTree(root_span.node).write(stream, encoding="unicode", method="xml", xml_declaration=True)
+    return stream.getvalue()
+
+
+def indent(elem, level=0) -> None:
+    """Add pretty-print indentation to XML tree.
+
+    From http://effbot.org/zone/element-lib.htm#prettyprint
+    """
+    i = "\n" + level * INDENTATION
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + INDENTATION
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for elem in elem:
+            indent(elem, level + 1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
 
 
 def valid_root(first_item, last_item):
