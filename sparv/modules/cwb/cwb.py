@@ -21,10 +21,8 @@ def vrt(doc: str = Document,
         annotations: list = ExportAnnotations(export_type="vrt_export"),
         original_annotations: Optional[list] = Config("vrt_export.original_annotations"),
         remove_namespaces: bool = Config("export.remove_export_namespaces", False)):
-    """Export annotations to vrt in export_dir.
+    """Export annotations to vrt.
 
-    - doc: name of the original document
-    - word: annotation containing the token strings.
     - annotations: list of elements:attributes (annotations) to include.
     - original_annotations: list of elements:attributes from the original document
       to be kept. If not specified, everything will be kept.
@@ -40,59 +38,47 @@ def vrt(doc: str = Document,
                                                                              original_annotations, remove_namespaces)
     span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names)
 
-    # Go through spans_dict and add to vrt, line by line
-    vrt = []
-    for _pos, instruction, span in span_positions:
-        # Create token line
-        if span.name == token and instruction == "open":
-            vrt.append(make_token_line(word_annotation[span.index], token, token_annotations, annotation_dict,
-                                       span.index))
-
-        # Create line with structural annotation
-        elif span.name != token:
-            # Open structural element
-            if instruction == "open":
-                attrs = make_attr_str(span.name, annotation_dict, export_names, span.index)
-                if attrs:
-                    vrt.append("<%s %s>" % (span.export, attrs))
-                else:
-                    vrt.append("<%s>" % span.export)
-            # Close element
-            else:
-                vrt.append("</%s>" % span.export)
+    create_vrt(span_positions, token, word_annotation, token_annotations, annotation_dict, export_names)
 
     # Write result to file
-    vrt = "\n".join(vrt)
     with open(out, "w") as f:
         f.write(vrt)
     log.info("Exported: %s", out)
 
 
-def make_attr_str(annotation, annotation_dict, export_names, index):
-    """Create a string with attributes and values for a struct element."""
-    attrs = []
-    for name, annot in annotation_dict[annotation].items():
-        export_name = export_names.get(":".join([annotation, name]), name)
-        # Escape special characters in value
-        value = annot[index].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
-        attrs.append('%s="%s"' % (export_name, value))
-    return " ".join(attrs)
+@exporter("Scrambled VRT export")
+def vrt_scrambled(doc: str = Document,
+                  out: str = Export("vrt_scrambled/{doc}.vrt"),
+                  chunk: str = Annotation("[export.scramble_on]"),
+                  chunk_order: str = Annotation("[export.scramble_on]:misc.number_random"),
+                  token: str = Annotation("<token>"),
+                  word: str = Annotation("<token:word>"),
+                  annotations: list = ExportAnnotations(export_type="vrt_export"),
+                  original_annotations: Optional[list] = Config("vrt_export.original_annotations"),
+                  remove_namespaces: bool = Config("export.remove_export_namespaces", False)):
+    """Export annotations to vrt in scrambled order."""
+    # Create export dir
+    os.makedirs(os.path.dirname(out), exist_ok=True)
 
+    # Read words and document ID
+    word_annotation = list(util.read_annotation(doc, word))
+    chunk_order = list(util.read_annotation(doc, chunk_order))
 
-def make_token_line(word, token, token_annotations, annotation_dict, index):
-    """Create a string with the token and its annotations.
+    # Get annotation spans, annotations list etc.
+    annotations, token_annotations, export_names = util.get_annotation_names(doc, token, annotations,
+                                                                             original_annotations, remove_namespaces)
+    span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names)
 
-    Whitespace and / need to be replaced for CQP parsing to work. / is only allowed in the word itself.
-    """
-    line = [word.replace(" ", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")]
-    for attr in token_annotations:
-        if attr not in annotation_dict[token]:
-            attr_str = util.UNDEF
-        else:
-            attr_str = annotation_dict[token][attr][index]
-        line.append(attr_str.replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
-    line = "\t".join(line)
-    return util.remove_control_characters(line)
+    # Reorder chunks and open/close tags in correct order
+    new_span_positions = util.scramble_spans(span_positions, chunk, chunk_order)
+
+    # Make vrt format
+    vrt = create_vrt(new_span_positions, token, word_annotation, token_annotations, annotation_dict, export_names)
+
+    # Write result to file
+    with open(out, "w") as f:
+        f.write(vrt)
+    log.info("Exported: %s", out)
 
 
 @exporter("CWB encode", config=[
@@ -236,6 +222,63 @@ def cwb_align(corpus, other, link, aligndir="annotations/align", encoding: str =
     log.info("%s", result.strip())
 
 
+################################################################################
+# Auxiliaries
+################################################################################
+
+
+def create_vrt(span_positions, token, word_annotation, token_annotations, annotation_dict, export_names):
+    """Go through span_positions and create vrt, line by line."""
+    vrt = []
+    for _pos, instruction, span in span_positions:
+        # Create token line
+        if span.name == token and instruction == "open":
+            vrt.append(make_token_line(word_annotation[span.index], token, token_annotations, annotation_dict,
+                                       span.index))
+
+        # Create line with structural annotation
+        elif span.name != token:
+            # Open structural element
+            if instruction == "open":
+                attrs = make_attr_str(span.name, annotation_dict, export_names, span.index)
+                if attrs:
+                    vrt.append("<%s %s>" % (span.export, attrs))
+                else:
+                    vrt.append("<%s>" % span.export)
+            # Close element
+            else:
+                vrt.append("</%s>" % span.export)
+
+    return"\n".join(vrt)
+
+
+def make_attr_str(annotation, annotation_dict, export_names, index):
+    """Create a string with attributes and values for a struct element."""
+    attrs = []
+    for name, annot in annotation_dict[annotation].items():
+        export_name = export_names.get(":".join([annotation, name]), name)
+        # Escape special characters in value
+        value = annot[index].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+        attrs.append('%s="%s"' % (export_name, value))
+    return " ".join(attrs)
+
+
+def make_token_line(word, token, token_annotations, annotation_dict, index):
+    """Create a string with the token and its annotations.
+
+    Whitespace and / need to be replaced for CQP parsing to work. / is only allowed in the word itself.
+    """
+    line = [word.replace(" ", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")]
+    for attr in token_annotations:
+        if attr not in annotation_dict[token]:
+            attr_str = util.UNDEF
+        else:
+            attr_str = annotation_dict[token][attr][index]
+        line.append(attr_str.replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
+    line = "\t".join(line)
+    return util.remove_control_characters(line)
+
+
 def parse_structural_attributes(structural_atts):
     """Parse a list of annotations (element:attribute) into a list of tuples.
 
@@ -262,7 +305,3 @@ def parse_structural_attributes(structural_atts):
                 order.append(elem)
             structs[elem].append((attr, n))
     return [(elem, structs[elem]) for elem in order]
-
-
-if __name__ == "__main__":
-    util.run.main(align=cwb_align)
