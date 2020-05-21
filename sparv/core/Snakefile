@@ -321,7 +321,7 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
 
     # Add to rule lists
     if exporter:
-        export_targets.append((target_name, description))
+        export_targets.append((target_name, description, annotator_info["language"]))
     elif installer:
         install_targets.append((target_name, description))
     elif modelbuilder:
@@ -448,7 +448,7 @@ rule list_targets:
         print("Available targets")
         print("=================\n")
         print("    EXPORTS")
-        for target, desc in sorted(export_targets):
+        for target, desc, _lang in sorted(export_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
         print()
         print("    INSTALLERS")
@@ -460,7 +460,7 @@ rule list_targets:
             print("        {:{}}    {}".format(target, max_len, desc))
         print()
         print("    MODEL BUILDERS")
-        for target, desc, _optional in sorted(model_targets):
+        for target, desc, _lang in sorted(model_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
 
 
@@ -470,8 +470,9 @@ rule list_exports:
         print()
         print("Available corpus output formats (exports)")
         print("=========================================")
-        for target, desc in sorted(export_targets):
-            print("    {:{}}    {}".format(target, max_len, desc))
+        for target, desc, language in sorted(export_targets):
+            if not language or sparv_config.get("language") in language:
+                print("    {:{}}    {}".format(target, max_len, desc))
         print()
         print("Default: xml_export:pretty")
         print()

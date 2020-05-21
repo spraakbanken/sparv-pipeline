@@ -110,9 +110,10 @@ def importer(description: str, source_type: str, name: Optional[str] = None, out
                       outputs=outputs, config=config)
 
 
-def exporter(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None):
+def exporter(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
+             language: Optional[List[str]] = None):
     """Return a decorator for exporter functions."""
-    return _annotator(description=description, a_type=Annotator.exporter, name=name, config=config)
+    return _annotator(description=description, a_type=Annotator.exporter, name=name, config=config, language=language)
 
 
 def installer(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None):

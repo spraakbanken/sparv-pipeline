@@ -10,10 +10,10 @@ from sparv import AllDocuments, Annotation, Corpus, Export, exporter, Config
 log = logging.getLogger(__name__)
 
 
-@exporter("Corpus word frequency list", config=[
-    Config("stats_export.delimiter", default="\t"),
-    Config("stats_export.cutoff", default=1),
-    Config("stats_export.include_all_compounds", default=False)])
+@exporter("Corpus word frequency list", language=["swe"],
+          config=[Config("stats_export.delimiter", default="\t"),
+                  Config("stats_export.cutoff", default=1),
+                  Config("stats_export.include_all_compounds", default=False)])
 def freq_list(corpus: str = Corpus,
               docs: list = AllDocuments,
               word: str = Annotation("<token:word>", all_docs=True),
