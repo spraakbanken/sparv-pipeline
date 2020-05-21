@@ -51,7 +51,7 @@ def scrambled(doc: str = Document,
 
 @exporter("Combined scrambled XML export")
 def combined_scrambled(corpus: str = Corpus,
-                       out: str = Export("[meta_data.id]_scrambled.xml"),
+                       out: str = Export("[metadata.id]_scrambled.xml"),
                        docs: list = AllDocuments,
                        xml_input: str = ExportInput("xml_scrambled/[xml_export.filename]", all_docs=True)):
     """Combine XML export files into a single XML file."""
@@ -59,15 +59,15 @@ def combined_scrambled(corpus: str = Corpus,
 
 
 @exporter("Compressed combined scrambled XML export")
-def compressed_scrambled(out: str = Export("[meta_data.id]_scrambled.xml.bz2"),
-                         xmlfile: str = ExportInput("[meta_data.id]_scrambled.xml")):
+def compressed_scrambled(out: str = Export("[metadata.id]_scrambled.xml.bz2"),
+                         xmlfile: str = ExportInput("[metadata.id]_scrambled.xml")):
     """Compress combined XML export."""
     xml_utils.compress(xmlfile, out)
 
 
 @installer("Copy compressed scrambled XML to remote host")
 def install_scrambled(corpus: Corpus,
-                      xmlfile: str = ExportInput("[meta_data.id]_scrambled.xml"),
+                      xmlfile: str = ExportInput("[metadata.id]_scrambled.xml"),
                       out: str = Output("xml_export.time_install_export", data=True, common=True),
                       export_path: str = Config("xml_export.export_path", ""),
                       host: str = Config("xml_export.export_host", "")):

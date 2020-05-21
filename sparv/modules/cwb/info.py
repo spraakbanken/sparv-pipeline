@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 
 @exporter("CWB .info file")
-def info(out: str = Export("[cwb.cwb_datadir]/[meta_data.id]/.info", absolute_path=True),
+def info(out: str = Export("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_path=True),
          sentences: str = Annotation("cwb.sentencecount", data=True, common=True),
          firstdate: str = Annotation("cwb.datefirst", data=True, common=True),
          lastdate: str = Annotation("cwb.datelast", data=True, common=True),
@@ -65,7 +65,7 @@ def info_sentences(out: str = Output("cwb.sentencecount", data=True, common=True
 def info_date(corpus: str = Corpus,
               out_datefirst: str = Output("cwb.datefirst", data=True, common=True),
               out_datelast: str = Output("cwb.datelast", data=True, common=True),
-              corpus_data_file: str = ExportInput("[cwb.corpus_registry]/[meta_data.id]"),
+              corpus_data_file: str = ExportInput("[cwb.corpus_registry]/[metadata.id]"),
               datefrom: str = Annotation("[dateformat.out_annotation=<text>]:dateformat.datefrom", all_docs=True),
               dateto: str = Annotation("[dateformat.out_annotation=<text>]:dateformat.dateto", all_docs=True),
               timefrom: str = Annotation("[dateformat.out_annotation=<text>]:dateformat.timefrom", all_docs=True),

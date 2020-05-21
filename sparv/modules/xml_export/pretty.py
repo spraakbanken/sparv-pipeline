@@ -51,7 +51,7 @@ def pretty(doc: str = Document,
 
 
 @exporter("Combined XML export (all results in one file)", config=[
-    Config("xml_export.filename_combined", default="[meta_data.id].xml")
+    Config("xml_export.filename_combined", default="[metadata.id].xml")
 ])
 def combined(corpus: str = Corpus,
              out: str = Export("[xml_export.filename_combined]"),
@@ -62,7 +62,7 @@ def combined(corpus: str = Corpus,
 
 
 @exporter("Compressed combined XML export", config=[
-    Config("xml_export.filename_compressed", default="[meta_data.id].xml.bz2")
+    Config("xml_export.filename_compressed", default="[metadata.id].xml.bz2")
 ])
 def compressed(out: str = Export("[xml_export.filename_compressed]"),
                xmlfile: str = ExportInput("[xml_export.filename_combined]")):

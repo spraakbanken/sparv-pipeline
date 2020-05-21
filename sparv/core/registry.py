@@ -136,7 +136,7 @@ def _add_to_registry(annotator):
     if annotator["config"]:
         # Only add config for relevant languages
         if not annotator["language"] or (
-                annotator["language"] and sparv_config.get("language") in annotator["language"]):
+                annotator["language"] and sparv_config.get("metadata.language") in annotator["language"]):
             for c in annotator["config"]:
                 if not c.name.startswith(module_name + "."):
                     raise ValueError("Config option '{}' in module '{}' doesn't include module "
@@ -163,7 +163,7 @@ def _add_to_registry(annotator):
             if cls:
                 # Only add classes for relevant languages
                 if not annotator["language"] or (
-                        annotator["language"] and sparv_config.get("language") in annotator["language"]):
+                        annotator["language"] and sparv_config.get("metadata.language") in annotator["language"]):
                     if ":" in cls and not cls.startswith(":") and ann_name and attr:
                         annotation_classes["module_classes"][cls].append(ann)
                     elif cls.startswith(":") and attr:

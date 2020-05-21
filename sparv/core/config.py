@@ -157,7 +157,7 @@ def resolve_presets(annotations):
 def apply_presets(user_classes, default_classes):
     """Set correct classes and annotations from presets."""
     # Load annotation presets and classes
-    class_dict = load_presets(get("meta_data.language", None))
+    class_dict = load_presets(get("metadata.language", None))
     annotation_elems = _find_annotations("", config)
     preset_classes = {}
 

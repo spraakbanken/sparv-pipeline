@@ -22,7 +22,7 @@ def freq_list(corpus: str = Corpus,
               sense: str = Annotation("<token:sense>", all_docs=True),
               lemgram: str = Annotation("<token>:saldo.lemgram", all_docs=True),
               complemgram: str = Annotation("<token>:saldo.complemgram", all_docs=True),
-              out: str = Export("frequency_list/stats_[meta_data.id].csv"),
+              out: str = Export("frequency_list/stats_[metadata.id].csv"),
               delimiter: str = Config("stats_export.delimiter"),
               cutoff: int = Config("stats_export.cutoff"),
               include_all_compounds: bool = Config("stats_export.include_all_compounds")):
@@ -38,7 +38,7 @@ def freq_list(corpus: str = Corpus,
         lemgram (str, optional): Lemgram annotations. Defaults to Annotation("<token>:saldo.lemgram", all_docs=True).
         complemgram (str, optional): Compound lemgram annotations.
             Defaults to Annotation("<token>:saldo.complemgram", all_docs=True).
-        out (str, optional): The output word frequency file. Defaults to Export("frequency_list/[meta_data.id].csv").
+        out (str, optional): The output word frequency file. Defaults to Export("frequency_list/[metadata.id].csv").
         delimiter (str, optional): Column delimiter to use in the csv. Defaults to Config("stats_export.delimiter").
         cutoff (int, optional): The minimum frequency a word must have in order to be included in the result.
             Defaults to Config("stats_export.cutoff").
