@@ -2,10 +2,11 @@
 # Meta Data
 #===============================================================================
 
-# Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
-id: testkorpus
-# Corpus name (human readable)
-name: Testkorpus
+meta_data:
+    # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
+    id: testkorpus
+    # Corpus name (human readable)
+    name: Testkorpus
 
 
 #===============================================================================
@@ -31,7 +32,7 @@ dateformat:
 # Output (Export) Settings
 #===============================================================================
 
-xml_export:
+xml_export: &xml
     # Annotations from original documents to include in the output. If nothing is specified, everything is kept.
     original_annotations:
         - dokument as document
@@ -45,18 +46,8 @@ xml_export:
         - DATETIME.all
 
 
-vrt_export:
-    # Annotations from original documents to include in the output. If nothing is specified, everything is kept.
-    original_annotations:
-        - dokument as document
-        - text:id
-        - text:date
-        - text:forfattare as author
-        - i
-    # Automatic annotations to be included in the export
-    annotations:
-        - SWE_DEFAULT.all
-        - DATETIME.all
+vrt_export: *xml
+
 
 csv_export:
     # Annotations from original documents to include in the output. If nothing is specified, everything is kept.

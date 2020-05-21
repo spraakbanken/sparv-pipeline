@@ -2,12 +2,13 @@
 # Meta Data
 #===============================================================================
 
-# Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
-id: freeling-corpus
-# Corpus name (human readable)
-name: FreeLing test corpus
-# Language of the input documents, specified as ISO 639-3 code
-language: eng
+meta_data:
+    # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
+    id: freeling-corpus
+    # Corpus name (human readable)
+    name: FreeLing test corpus
+    # Language of the input documents, specified as ISO 639-3 code
+    language: eng
 
 
 #===============================================================================
@@ -23,7 +24,10 @@ xml_elements:
 # Output (Export) Settings
 #===============================================================================
 
-# Automatic annotations to be included in the export
-annotations:
-    - <text>:readability.lix
-    - FREELING_FULL.all
+xml_export: &xml
+    # Automatic annotations to be included in the export
+    annotations:
+        - <text>:readability.lix
+        - FREELING_FULL.all
+
+vrt_export: *xml

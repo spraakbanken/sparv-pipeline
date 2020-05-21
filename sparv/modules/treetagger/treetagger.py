@@ -35,7 +35,7 @@ TAG_SETS = {
            language=["bul", "est", "fin", "lat", "nld", "pol", "ron", "slk", "deu", "eng", "fra", "spa", "ita", "rus"],
            config=[
                Config("treetagger.binary", "treetagger/tree-tagger"),
-               Config("treetagger.model", "treetagger/[language].par")
+               Config("treetagger.model", "treetagger/[meta_data.language].par")
            ])
 def annotate(doc: str = Document,
              lang: str = Language,

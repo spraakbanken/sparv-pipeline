@@ -2,11 +2,12 @@
 # Meta Data
 #===============================================================================
 
-# Language of the input documents, specified as ISO 639-3 code
-language: swe
+meta_data:
+    # Language of the input documents, specified as ISO 639-3 code
+    language: swe
 
-# File type of the input. Must be 'xml' or 'txt'.
-source_type: xml
+    # File type of the input. Must be 'xml' or 'txt'.
+    source_type: xml
 
 
 #===============================================================================

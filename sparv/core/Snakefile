@@ -111,7 +111,7 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
         return
 
     # Skip any annotator that is not available for the selected corpus language
-    if annotator_info["language"] and sparv_config.get("language") not in annotator_info["language"]:
+    if annotator_info["language"] and sparv_config.get("meta_data.language") not in annotator_info["language"]:
         return
 
     if importer:
@@ -196,10 +196,10 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
                 parameters[param_name].append(param_value)
         # Corpus
         elif param.default == Corpus or isinstance(param.default, Corpus):
-            parameters[param_name] = sparv_config.get("id")
+            parameters[param_name] = sparv_config.get("meta_data.id")
         # Language
         elif param.default == Language or isinstance(param.default, Language):
-            parameters[param_name] = sparv_config.get("language")
+            parameters[param_name] = sparv_config.get("meta_data.language")
         # Document
         elif param.default == Document or isinstance(param.default, Document):
             docs.append(param_name)
@@ -365,7 +365,7 @@ else:
 
 # Some commands may override the corpus language
 if config.get("language"):
-    sparv_config.config["language"] = config["language"]
+    sparv_config.config["meta_data"]["language"] = config["language"]
 
 # Find and load Sparv modules
 registry.find_modules()
@@ -471,7 +471,7 @@ rule list_exports:
         print("Available corpus output formats (exports)")
         print("=========================================")
         for target, desc, language in sorted(export_targets):
-            if not language or sparv_config.get("language") in language:
+            if not language or sparv_config.get("meta_data.language") in language:
                 print("    {:{}}    {}".format(target, max_len, desc))
         print()
         print("Default: xml_export:pretty")
@@ -547,7 +547,7 @@ rule list_models:
         print("Models for current language ({})".format(sparv_config.get("language")))
         print("=================================")
         for target, desc, language in sorted(model_targets):
-            if language and sparv_config.get("language") in language:
+            if language and sparv_config.get("meta_data.language") in language:
                 print("    {:{}}    {}".format(target, max_len, desc))
         print()
         print("Language-independent models")
