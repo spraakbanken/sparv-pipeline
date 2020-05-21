@@ -98,7 +98,7 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
 
 
 # Find and load corpus config
-corpus_config_file, config_missing = snake_utils.load_config(config)
+config_missing = snake_utils.load_config(config)
 
 # Find and load Sparv modules
 registry.find_modules()
@@ -232,7 +232,7 @@ rule files:
 rule clean:
     run:
         # Only run if corpus config is found in same dir
-        if corpus_config_file is None:
+        if config_missing:
             print("No corpus config found. Not removing anything.")
         else:
             import shutil
