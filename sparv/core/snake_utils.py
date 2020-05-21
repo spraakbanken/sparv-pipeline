@@ -79,7 +79,7 @@ def rule_helper(module_name: str, f_name: str, annotator_info: dict, config: dic
         return
 
     # Skip any annotator that is not available for the selected corpus language
-    if annotator_info["language"] and sparv_config.get("meta_data.language") not in annotator_info["language"]:
+    if annotator_info["language"] and sparv_config.get("metadata.language") not in annotator_info["language"]:
         return
 
     if rule.importer:
@@ -161,10 +161,10 @@ def rule_helper(module_name: str, f_name: str, annotator_info: dict, config: dic
                 rule.parameters[param_name].append(param_value)
         # Corpus
         elif param.default == Corpus or isinstance(param.default, Corpus):
-            rule.parameters[param_name] = sparv_config.get("meta_data.id")
+            rule.parameters[param_name] = sparv_config.get("metadata.id")
         # Language
         elif param.default == Language or isinstance(param.default, Language):
-            rule.parameters[param_name] = sparv_config.get("meta_data.language")
+            rule.parameters[param_name] = sparv_config.get("metadata.language")
         # Document
         elif param.default == Document or isinstance(param.default, Document):
             rule.docs.append(param_name)
