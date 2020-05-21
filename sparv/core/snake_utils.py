@@ -317,3 +317,32 @@ def get_doc_value(wildcards, annotator):
         else:
             doc = wildcards.doc
     return doc
+
+
+def load_config(snakemake_config):
+    """Load corpus config and override the corpus language (if needed)."""
+    # Find corpus config
+    corpus_config_file = Path.cwd() / paths.config_file
+    if corpus_config_file.is_file():
+        config_missing = False
+        # Read config
+        sparv_config.load_config(corpus_config_file)
+
+        # Add classes from config to registry
+        registry.annotation_classes["config_classes"] = sparv_config.config.get("classes", {})
+    else:
+        config_missing = True
+
+    # Some commands may override the corpus language
+    if snakemake_config.get("language"):
+        sparv_config.config["metadata"]["language"] = snakemake_config["language"]
+
+    return config_missing
+
+
+def get_install_targets(install_outputs):
+    """Collect files to be created for all installations listed in config.install."""
+    install_inputs = []
+    for installation in sparv_config.get("korp.install", []):
+        install_inputs.extend(install_outputs[installation])
+    return install_inputs
