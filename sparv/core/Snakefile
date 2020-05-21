@@ -1,8 +1,5 @@
 """Snakefile used by Snakemake."""
 import copy
-import inspect
-import re
-from collections import defaultdict
 from pathlib import Path
 
 import snakemake
@@ -10,341 +7,81 @@ from snakemake.logging import logger
 
 from sparv import util
 from sparv.core import config as sparv_config
-from sparv.core import paths, registry
+from sparv.core import paths, registry, snake_utils
 from sparv.util.classes import *
 
-# All output annotations available, used for printing a list
-all_annotations = {}
-
-# All named targets available, used in list_targets
-named_targets = []
-export_targets = []
-install_targets = []
-model_targets = []
-
-# Outputs from modelbuilders, used in build_models
-model_outputs = []
-
-# Outputs from all installers, used in install_annotated_corpus
-install_outputs = defaultdict(list)
-
-# List which will contain all source files
-source_files = []
 
 # Remove Snakemake's default log handler
 if config.get("run_by_sparv") and logger.log_handler and logger.log_handler[0] == logger.text_handler:
     logger.log_handler = []
 
-
-def get_source_path() -> str:
-    """Get path to source files."""
-    return sparv_config.get("source_dir", paths.source_dir)
-
-
-def get_annotation_path(annotation, data=False, common=False):
-    """Construct a path to an annotation file given a doc and annotation."""
-    elem, attr = util.split_annotation(annotation)
-    path = Path(elem)
-
-    if not (data or common):
-        if not attr:
-            attr = util.SPAN_ANNOTATION
-        path = path / attr
-
-    if not common:
-        path = "{doc}" / path
-    return path
-
-
-def get_source_files() -> List[str]:
-    """Get list of all available source files"""
-    global source_files
-    if not source_files:
-        source_files = [f[1][0] for f in snakemake.utils.listfiles(
-            Path(get_source_path(), "{file}." + sparv_config.get("source_type", "xml")))]
-    return source_files
-
-
-def prettify_config(in_config):
-    """Prettify a yaml config string."""
-    import yaml
-    class MyDumper(yaml.Dumper):
-        """Customized YAML dumper that indents lists."""
-
-        def increase_indent(self, flow=False, indentless=False):
-            """Force indentation."""
-            return super(MyDumper, self).increase_indent(flow, False)
-
-    yaml_str = yaml.dump(in_config, default_flow_style=False, Dumper=MyDumper, indent=4)
-    # Colorize keys for easier reading
-    yaml_str = re.sub(r"^(\s*[\S]+):", util.Color.BLUE + r"\1" + util.Color.RESET + ":", yaml_str,
-                    flags=re.MULTILINE)
-    return yaml_str
+# Init the storage for some essential variables
+storage = snake_utils.SnakeStorage()
 
 
 def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missing: bool = False) -> None:
     """Build Snakemake rules."""
-    # Build input, output and parameter list
-    if config.get("debug"):
-        print()
-        print("{}{}:{} {}".format(util.Color.BOLD, module_name.upper(), util.Color.RESET, f_name))
-        print()
-    inputs = []
-    outputs = []
-    parameters = {}
-    docs = []  # List of parameters referring to Document
-    doc_annotations = []  # List of parameters containing the {doc} wildcard
-    wildcard_annotations = []  # List of parameters containing other wildcards
-    target_name = module_name + ":" + f_name
-    full_module_name = f"{module_name}.{f_name}"
-
-    annotator = annotator_info["type"] is registry.Annotator.annotator
-    importer = annotator_info["type"] is registry.Annotator.importer
-    exporter = annotator_info["type"] is registry.Annotator.exporter
-    installer = annotator_info["type"] is registry.Annotator.installer
-    modelbuilder = annotator_info["type"] is registry.Annotator.modelbuilder
-    description = annotator_info["description"]
-    source_type = annotator_info["source_type"]
-    import_outputs = annotator_info["outputs"]
-
-    # Only create certain rules when config is missing
-    if config_missing and not modelbuilder:
-        return
-
-    # Skip any annotator that is not available for the selected corpus language
-    if annotator_info["language"] and sparv_config.get("metadata.language") not in annotator_info["language"]:
-        return
-
-    if importer:
-        inputs.append(Path(get_source_path(), "{doc}." + source_type))
-        if source_type == sparv_config.get("source_type", "xml"):
-            # Exports always generate corpus text file
-            outputs.append(paths.annotation_dir / "{doc}" / util.TEXT_FILE)
-            # If importer guarantees other outputs, add them to outputs list
-            if import_outputs:
-                if isinstance(import_outputs, Config):
-                    import_outputs = sparv_config.get(import_outputs, import_outputs.default)
-                annotations_ = set()
-                for annotation in import_outputs:
-                    annotations_.add(annotation)
-                    annotations_.add(util.split_annotation(annotation)[0])
-                for element in annotations_:
-                    outputs.append(paths.annotation_dir / get_annotation_path(element))
-
-    params = inspect.signature(annotator_info["function"]).parameters
-
-    def escape_wildcards(s):
-        """Escape all wildcards other than {doc}."""
-        return re.sub(r"(?!{doc})({[^}]+})", r"{\1}", str(s))
-
-    # Go though function parameters and handle based on type
-    for param_name, param in params.items():
-        # Output
-        if isinstance(param.default, Output):
-            param_value = registry.expand_variables(param.default, full_module_name)
-            ann_path = get_annotation_path(param_value, data=param.default.data, common=param.default.common)
-            if param.default.all_docs:
-                outputs.extend(map(Path, expand(escape_wildcards(paths.annotation_dir / ann_path),
-                                      doc=get_source_files())))
-            elif param.default.common:
-                outputs.append(paths.annotation_dir / ann_path)
-                if installer:
-                    install_outputs[target_name].append(paths.annotation_dir / ann_path)
-            else:
-                outputs.append(get_annotation_path(param_value, data=param.default.data))
-            parameters[param_name] = param_value
-            if "{" in param_value:
-                wildcard_annotations.append(param_name)
-            all_annotations.setdefault(module_name, {}).setdefault(f_name, {"description": description,
-                                                                            "annotations": []})
-            all_annotations[module_name][f_name]["annotations"].append((param.default, param.default.description))
-        # ModelOutput
-        elif isinstance(param.default, ModelOutput):
-            model = util.get_model_path(registry.expand_variables(param.default, full_module_name))
-            outputs.append(model)
-            parameters[param_name] = str(model)
-            model_outputs.append(model)
-        # Annotation
-        elif registry.dig(Annotation, param.default):
-            param_value = registry.expand_variables(param.default, full_module_name)
-            ann_path = get_annotation_path(param_value, data=param.default.data, common=param.default.common)
-            if exporter or installer or param.default.all_docs:
-                if param.default.all_docs:
-                    inputs.extend(expand(escape_wildcards(paths.annotation_dir / ann_path),
-                                         doc=get_source_files()))
-                else:
-                    inputs.append(paths.annotation_dir / ann_path)
-            elif param.default.common:
-                inputs.append(paths.annotation_dir / ann_path)
-            else:
-                inputs.append(ann_path)
-
-            parameters[param_name] = param_value
-            if "{" in param_value:
-                wildcard_annotations.append(param_name)
-        # ExportAnnotations
-        elif param.default == ExportAnnotations or isinstance(param.default, ExportAnnotations):
-            export_type = param.default.export_type
-            parameters[param_name] = []
-            export_annotations = sparv_config.get(f"{export_type}.annotations", [])
-            for annotation in export_annotations:
-                annotation, _, new_name = annotation.partition(" as ")
-                param_value = registry.expand_variables(annotation, full_module_name)
-                if param.default.is_input:
-                    inputs.append(paths.annotation_dir / get_annotation_path(param_value))
-                if new_name:
-                    param_value = " as ".join((param_value, new_name))
-                parameters[param_name].append(param_value)
-        # Corpus
-        elif param.default == Corpus or isinstance(param.default, Corpus):
-            parameters[param_name] = sparv_config.get("metadata.id")
-        # Language
-        elif param.default == Language or isinstance(param.default, Language):
-            parameters[param_name] = sparv_config.get("metadata.language")
-        # Document
-        elif param.default == Document or isinstance(param.default, Document):
-            docs.append(param_name)
-        # AllDocuments (all source documents)
-        elif registry.dig(AllDocuments, param.default):
-            parameters[param_name] = get_source_files()
-        # Model
-        elif registry.dig(Model, param.default):
-            if param.default is not None:
-                if isinstance(param.default, Model):
-                    model = util.get_model_path(registry.expand_variables(param.default, full_module_name))
-                    inputs.append(model)
-                    parameters[param_name] = str(model)
-                elif isinstance(param.default, (list, tuple)):
-                    parameters[param_name] = []
-                    for model in param.default:
-                        model = util.get_model_path(registry.expand_variables(model, full_module_name))
-                        inputs.append(model)
-                        parameters[param_name].append(str(model))
-        # Binary
-        elif isinstance(param.default, Binary):
-            binary = paths.get_bin_path(registry.expand_variables(param.default, full_module_name))
-            inputs.append(binary)
-            parameters[param_name] = str(binary)
-        # Source
-        elif param.default == Source or isinstance(param.default, Source):
-            parameters[param_name] = get_source_path()
-        # Export
-        elif param.default == Export or isinstance(param.default, Export):
-            param_value = registry.expand_variables(param.default, full_module_name)
-            if param.default.absolute_path:
-                export_path = Path(param_value)
-            else:
-                export_path = paths.export_dir / param_value
-            outputs.append(export_path)
-            parameters[param_name] = str(export_path)
-            if "{doc}" in parameters[param_name]:
-                doc_annotations.append(param_name)
-            if "{" in param_value:
-                wildcard_annotations.append(param_name)
-        # ExportInput
-        elif isinstance(param.default, ExportInput):
-            if param.default.absolute_path:
-                parameters[param_name] = registry.expand_variables(param.default, full_module_name)
-            else:
-                parameters[param_name] = str(paths.export_dir / registry.expand_variables(param.default, full_module_name))
-            if param.default.all_docs:
-                inputs.extend(expand(escape_wildcards(parameters[param_name]), doc=get_source_files()))
-            else:
-                inputs.append(parameters[param_name])
-            if "{" in parameters[param_name]:
-                wildcard_annotations.append(param_name)
-        # Config
-        elif isinstance(param.default, Config):
-            parameters[param_name] = sparv_config.get(param.default, param.default.default)
-        # Everything else with a default value
-        elif param.default is not None:
-            parameters[param_name] = param.default
-
-    if config.get("debug"):
-        print("    " + util.Color.BOLD + "INPUTS" + util.Color.RESET)
-        for i in inputs:
-            print("        {}".format(i))
-        print()
-        print("    " + util.Color.BOLD + "OUTPUTS" + util.Color.RESET)
-        for o in outputs:
-            print("        {}".format(o))
-        print()
-        print("    " + util.Color.BOLD + "PARAMETERS" + util.Color.RESET)
-        for p in parameters:
-            print("        {} = {!r}".format(p, parameters[p]))
-        print()
-        print()
-
-    def get_doc_value(wildcards):
-        """Extract the {doc} part from full annotation path."""
-        doc = None
-        if hasattr(wildcards, "doc"):
-            if annotator:
-                doc = wildcards.doc[len(str(paths.annotation_dir)) + 1:]
-            else:
-                doc = wildcards.doc
-        return doc
+    # Init rule storage
+    rule_params = snake_utils.rule_helper(module_name, f_name, annotator_info, config, storage, config_missing)
 
     def get_parameters(wildcards):
         """Extend function parameters with doc names and replace wildcards."""
-        doc = get_doc_value(wildcards)
+        doc = snake_utils.get_doc_value(wildcards, rule_params.annotator)
         # We need to make a copy of the parameters, since the rule might be used for multiple documents
-        _parameters = copy.deepcopy(parameters)
-        _parameters.update({name: doc for name in docs})
+        _parameters = copy.deepcopy(rule_params.parameters)
+        _parameters.update({name: doc for name in rule_params.docs})
 
         # Replace {doc} wildcard in parameters
-        for name in doc_annotations:
+        for name in rule_params.doc_annotations:
             _parameters[name] = _parameters[name].replace("{doc}", doc)
 
         # Replace wildcards (other than {doc}) in parameters
-        for name in wildcard_annotations:
+        for name in rule_params.wildcard_annotations:
             wcs = re.finditer(r"(?!{doc}){([^}]+)}", _parameters[name])
             for wc in wcs:
                 _parameters[name] = _parameters[name].replace(wc.group(), wildcards.get(wc.group(1)))
         return _parameters
 
-    rule:
-        message:
-            "{}:{}".format(module_name, f_name)
-        input:
-            inputs
-        output:
-            outputs
-        params:
-            module_name = module_name,
-            f_name = f_name,
-            parameters = get_parameters,
-            log = config.get("log")
-        script:
-            "run_snake.py"
-            # We don't use "run:" since the whole Snakefile would have to be reloaded for every single job, due to how
-            # Snakemake creates processes for run-jobs.
+    # Don't continue if this rule was skipped
+    if rule_params:
 
-    # Add to rule lists
-    if exporter:
-        export_targets.append((target_name, description, annotator_info["language"]))
-    elif installer:
-        install_targets.append((target_name, description))
-    elif modelbuilder:
-        model_targets.append((target_name, description, annotator_info["language"]))
-    else:
-        named_targets.append((target_name, description))
+        # Create rule for current annotation
+        rule:
+            message:
+                "{}:{}".format(module_name, f_name)
+            input:
+                rule_params.inputs
+            output:
+                rule_params.outputs
+            params:
+                module_name = module_name,
+                f_name = f_name,
+                parameters = get_parameters,
+                log = config.get("log")
+            script:
+                "run_snake.py"
+                # We don't use "run:" since the whole Snakefile would have to be reloaded for every single job,
+                # due to how Snakemake creates processes for run-jobs.
 
-    # Create rule to run this annotation on all input files
+        # Add to rule lists in storage
+        snake_utils.add_to_storage(storage, rule_params, annotator_info)
 
-    # Get user-supplied wildcard values
-    wildcards = dict(wc.split("=") for wc in config.get("wildcards", []))
+        # Create rule to run this annotation on all input files
 
-    # Create rule, but only when called
-    if target_name in config.get("targets", []):
-        @workflow.rule(name=target_name)
-        @workflow.input(expand([paths.annotation_dir / o
-                                if not (paths.annotation_dir in o.parents or paths.export_dir in o.parents)
-                                else o
-                                for o in outputs], doc=config.get("doc") or get_source_files(), **wildcards))
-        @workflow.run
-        def __rule__(*_args, **_kwargs):
-            pass
+        # Get user-supplied wildcard values
+        wildcards = dict(wc.split("=") for wc in config.get("wildcards", []))
+
+        # Create rule, but only when called
+        if rule_params.target_name in config.get("targets", []):
+            @workflow.rule(name=rule_params.target_name)
+            @workflow.input(expand([paths.annotation_dir / o
+                                    if not (paths.annotation_dir in o.parents or paths.export_dir in o.parents)
+                                    else o
+                                    for o in rule_params.outputs], doc=config.get("doc")
+                            or get_source_files(storage.source_files), **wildcards))
+            @workflow.run
+            def __rule__(*_args, **_kwargs):
+                pass
 
 
 rule empty:
@@ -387,11 +124,12 @@ rule config:
                 out_conf[k] = sparv_config.get(k)
         else:
             out_conf = sparv_config.config
-        print(prettify_config(out_conf))
+        print(snake_utils.prettify_config(out_conf))
 
 
 rule annotations:
     run:
+        all_annotations = storage.all_annotations
         max_len = max(len(a[0]) for m in all_annotations for f in all_annotations[m]
                       for a in all_annotations[m][f]["annotations"]) + 4
         print()
@@ -417,7 +155,7 @@ rule annotations:
 
         print("Available classes")
         print("=================\n")
-        print(util.Color.BOLD + "    Classes defined by pipeline modules"+ util.Color.RESET)
+        print(util.Color.BOLD + "    Classes defined by pipeline modules" + util.Color.RESET)
         print("        {}{:{}}    {}{}".format(util.Color.ITALIC, "Class", max_len, "Annotation", util.Color.RESET))
         for cls, anns in registry.annotation_classes["module_classes"].items():
             print("        {:{}}    {}".format(cls, max_len, anns[0]))
@@ -439,35 +177,36 @@ rule presets:
     run:
         resolved_presets = dict(
             (i, sparv_config.resolve_presets(sparv_config.presets[i])) for i in sparv_config.presets)
-        print(prettify_config(resolved_presets))
+        print(snake_utils.prettify_config(resolved_presets))
 
 
 rule list_targets:
     run:
-        max_len = max(len(t[0]) for t in named_targets + export_targets + install_targets + model_targets) + 4
+        max_len = max(len(t[0]) for t in storage.named_targets + storage.export_targets
+                      + storage.install_targets + storage.model_targets) + 4
         print()
         print("Available targets")
         print("=================\n")
         print("    EXPORTS")
-        for target, desc, _lang in sorted(export_targets):
+        for target, desc, _lang in sorted(storage.export_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
         print()
         print("    INSTALLERS")
-        for target, desc in sorted(install_targets):
+        for target, desc in sorted(storage.install_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
         print()
         print("    ANNOTATIONS")
-        for target, desc in sorted(named_targets):
+        for target, desc in sorted(storage.named_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
         print()
         print("    MODEL BUILDERS")
-        for target, desc, _lang in sorted(model_targets):
+        for target, desc, _lang in sorted(storage.model_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
 
 
 rule list_exports:
     run:
-        max_len = max(len(t[0]) for t in export_targets) + 4
+        max_len = max(len(t[0]) for t in storage.export_targets) + 4
         print()
         print("Available corpus output formats (exports)")
         print("=========================================")
@@ -483,7 +222,7 @@ rule files:
     # List all input files
     run:
         print("Available input files:\n")
-        print(", ".join(get_source_files()))
+        print(", ".join(snake_utils.get_source_files(storage.source_files)))
 
 
 rule clean:
@@ -515,17 +254,17 @@ rule clean:
 
 rule list_installs:
     run:
-        max_len = max(len(t[0]) for t in install_targets) + 4
+        max_len = max(len(t[0]) for t in storage.install_targets) + 4
         print()
         print("Installations to be made")
         print("========================")
-        for target, desc in sorted(install_targets):
+        for target, desc in sorted(storage.install_targets):
             if target in sparv_config.get("install", []):
                 print("    {:{}}    {}".format(target, max_len, desc))
         print()
         print("Other available installations")
         print("=============================")
-        for target, desc in sorted(install_targets):
+        for target, desc in sorted(storage.install_targets):
             if target not in sparv_config.get("install", []):
                 print("    {:{}}    {}".format(target, max_len, desc))
         print()
@@ -533,7 +272,7 @@ rule list_installs:
 # Collect files to be created for all installations listed in config.install
 install_inputs = []
 for installation in sparv_config.get("install", []):
-    install_inputs.extend(install_outputs[installation])
+    install_inputs.extend(storage.install_outputs[installation])
 
 
 rule install_annotated_corpus:
@@ -543,7 +282,7 @@ rule install_annotated_corpus:
 
 rule list_models:
     run:
-        max_len = max(len(t[0]) for t in model_targets) + 4
+        max_len = max(len(t[0]) for t in storage.model_targets) + 4
         print()
         print("Models for current language ({})".format(sparv_config.get("metadata.language")))
         print("=================================")
@@ -553,7 +292,7 @@ rule list_models:
         print()
         print("Language-independent models")
         print("===========================")
-        for target, desc, language in sorted(model_targets):
+        for target, desc, language in sorted(storage.model_targets):
             if not language:
                 print("    {:{}}    {}".format(target, max_len, desc))
         print()
@@ -562,4 +301,4 @@ rule list_models:
 # Build all models. Build even the non-optional ones if force_optional_models = True.
 rule build_models:
     input:
-        model_outputs
+        storage.model_outputs
