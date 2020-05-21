@@ -203,7 +203,7 @@ def _expand_class(cls):
     return annotation
 
 
-def expand_variables(string):
+def expand_variables(string, module_name):
     """Take a string and replace <class> references with real annotations, and [config] references with config values.
 
     Return the resulting string.
@@ -218,7 +218,7 @@ def expand_variables(string):
             if cfg_value is not None:
                 string = string.replace(cfg.group(), cfg_value)
             else:
-                print("WARNING: Could not convert " + cfg.group() + " into config value.")
+                print("WARNING: Could not convert " + cfg.group() + " into config value (used in " + module_name + ").")
                 break
         else:
             # No break occurred, continue outer loop
@@ -232,7 +232,7 @@ def expand_variables(string):
             break
         for cls in clss:
             real_ann = _expand_class(cls.group(1))
-            assert real_ann, "Could not convert " + cls.group() + " into a real annotation."
+            assert real_ann, "Could not convert " + cls.group() + " into a real annotation (used in " + module_name + ")."
             string = string.replace(cls.group(), real_ann)
 
     return string

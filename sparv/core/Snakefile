@@ -96,6 +96,7 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
     doc_annotations = []  # List of parameters containing the {doc} wildcard
     wildcard_annotations = []  # List of parameters containing other wildcards
     target_name = module_name + ":" + f_name
+    full_module_name = f"{module_name}.{f_name}"
 
     annotator = annotator_info["type"] is registry.Annotator.annotator
     importer = annotator_info["type"] is registry.Annotator.importer
@@ -140,7 +141,7 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
     for param_name, param in params.items():
         # Output
         if isinstance(param.default, Output):
-            param_value = registry.expand_variables(param.default)
+            param_value = registry.expand_variables(param.default, full_module_name)
             ann_path = get_annotation_path(param_value, data=param.default.data, common=param.default.common)
             if param.default.all_docs:
                 outputs.extend(map(Path, expand(escape_wildcards(paths.annotation_dir / ann_path),
@@ -159,13 +160,13 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
             all_annotations[module_name][f_name]["annotations"].append((param.default, param.default.description))
         # ModelOutput
         elif isinstance(param.default, ModelOutput):
-            model = util.get_model_path(registry.expand_variables(param.default))
+            model = util.get_model_path(registry.expand_variables(param.default, full_module_name))
             outputs.append(model)
             parameters[param_name] = str(model)
             model_outputs.append(model)
         # Annotation
         elif registry.dig(Annotation, param.default):
-            param_value = registry.expand_variables(param.default)
+            param_value = registry.expand_variables(param.default, full_module_name)
             ann_path = get_annotation_path(param_value, data=param.default.data, common=param.default.common)
             if exporter or installer or param.default.all_docs:
                 if param.default.all_docs:
@@ -188,7 +189,7 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
             export_annotations = sparv_config.get(f"{export_type}.annotations", [])
             for annotation in export_annotations:
                 annotation, _, new_name = annotation.partition(" as ")
-                param_value = registry.expand_variables(annotation)
+                param_value = registry.expand_variables(annotation, full_module_name)
                 if param.default.is_input:
                     inputs.append(paths.annotation_dir / get_annotation_path(param_value))
                 if new_name:
@@ -210,18 +211,18 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
         elif registry.dig(Model, param.default):
             if param.default is not None:
                 if isinstance(param.default, Model):
-                    model = util.get_model_path(registry.expand_variables(param.default))
+                    model = util.get_model_path(registry.expand_variables(param.default, full_module_name))
                     inputs.append(model)
                     parameters[param_name] = str(model)
                 elif isinstance(param.default, (list, tuple)):
                     parameters[param_name] = []
                     for model in param.default:
-                        model = util.get_model_path(registry.expand_variables(model))
+                        model = util.get_model_path(registry.expand_variables(model, full_module_name))
                         inputs.append(model)
                         parameters[param_name].append(str(model))
         # Binary
         elif isinstance(param.default, Binary):
-            binary = paths.get_bin_path(registry.expand_variables(param.default))
+            binary = paths.get_bin_path(registry.expand_variables(param.default, full_module_name))
             inputs.append(binary)
             parameters[param_name] = str(binary)
         # Source
@@ -229,7 +230,7 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
             parameters[param_name] = get_source_path()
         # Export
         elif param.default == Export or isinstance(param.default, Export):
-            param_value = registry.expand_variables(param.default)
+            param_value = registry.expand_variables(param.default, full_module_name)
             if param.default.absolute_path:
                 export_path = Path(param_value)
             else:
@@ -243,9 +244,9 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
         # ExportInput
         elif isinstance(param.default, ExportInput):
             if param.default.absolute_path:
-                parameters[param_name] = registry.expand_variables(param.default)
+                parameters[param_name] = registry.expand_variables(param.default, full_module_name)
             else:
-                parameters[param_name] = str(paths.export_dir / registry.expand_variables(param.default))
+                parameters[param_name] = str(paths.export_dir / registry.expand_variables(param.default, full_module_name))
             if param.default.all_docs:
                 inputs.extend(expand(escape_wildcards(parameters[param_name]), doc=get_source_files()))
             else:
