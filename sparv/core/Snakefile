@@ -384,7 +384,7 @@ rule config:
         if config.get("options"):
             out_conf = {}
             for k in config["options"]:
-                out_conf[k] = sparv_config.config.get(k)
+                out_conf[k] = sparv_config.get(k)
         else:
             out_conf = sparv_config.config
         print(prettify_config(out_conf))
