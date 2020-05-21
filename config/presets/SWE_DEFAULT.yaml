@@ -10,6 +10,9 @@ classes:
     named_entity: swener.ne
     token: segment.token
     "token:word": <token>:misc.word
+    "token:pos": <token>:hunpos.pos
+    "token:msd": <token>:hunpos.msd
+    "token:baseform": <token>:saldo.baseform
     "token:sense": <token>:wsd.sense
 
 presets:

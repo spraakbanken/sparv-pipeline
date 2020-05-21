@@ -10,6 +10,8 @@ classes:
     sentence: stanford.sentence
     token: stanford.token
     "token:word": stanford.token:stanford.word
+    "token:pos": stanford.token:stanford.pos
+    "token:baseform": stanford.token:stanford.baseform
 
 
 presets:
