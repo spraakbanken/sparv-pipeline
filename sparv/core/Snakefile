@@ -1,5 +1,4 @@
 """Snakefile used by Snakemake."""
-import copy
 from pathlib import Path
 import re
 
@@ -37,24 +36,6 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
     # Init rule storage
     rule_params = snake_utils.rule_helper(module_name, f_name, annotator_info, config, storage, config_missing)
 
-    def get_parameters(wildcards):
-        """Extend function parameters with doc names and replace wildcards."""
-        doc = snake_utils.get_doc_value(wildcards, rule_params.annotator)
-        # We need to make a copy of the parameters, since the rule might be used for multiple documents
-        _parameters = copy.deepcopy(rule_params.parameters)
-        _parameters.update({name: doc for name in rule_params.docs})
-
-        # Replace {doc} wildcard in parameters
-        for name in rule_params.doc_annotations:
-            _parameters[name] = _parameters[name].replace("{doc}", doc)
-
-        # Replace wildcards (other than {doc}) in parameters
-        for name in rule_params.wildcard_annotations:
-            wcs = re.finditer(r"(?!{doc}){([^}]+)}", _parameters[name])
-            for wc in wcs:
-                _parameters[name] = _parameters[name].replace(wc.group(), wildcards.get(wc.group(1)))
-        return _parameters
-
     # Don't continue if this rule was skipped
     if rule_params:
 
@@ -69,7 +50,7 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
             params:
                 module_name = module_name,
                 f_name = f_name,
-                parameters = get_parameters,
+                parameters = snake_utils.get_parameters(rule_params),
                 log = config.get("log")
             script:
                 "run_snake.py"

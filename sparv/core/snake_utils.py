@@ -1,5 +1,6 @@
 """Util functions for Snakefile."""
 
+import copy
 import inspect
 import re
 from collections import defaultdict
@@ -242,6 +243,27 @@ def rule_helper(module_name: str, f_name: str, annotator_info: dict, config: dic
         print()
 
     return rule
+
+
+def get_parameters(rule_params):
+    """Extend function parameters with doc names and replace wildcards."""
+    def get_params(wildcards):
+        doc = get_doc_value(wildcards, rule_params.annotator)
+        # We need to make a copy of the parameters, since the rule might be used for multiple documents
+        _parameters = copy.deepcopy(rule_params.parameters)
+        _parameters.update({name: doc for name in rule_params.docs})
+
+        # Replace {doc} wildcard in parameters
+        for name in rule_params.doc_annotations:
+            _parameters[name] = _parameters[name].replace("{doc}", doc)
+
+        # Replace wildcards (other than {doc}) in parameters
+        for name in rule_params.wildcard_annotations:
+            wcs = re.finditer(r"(?!{doc}){([^}]+)}", _parameters[name])
+            for wc in wcs:
+                _parameters[name] = _parameters[name].replace(wc.group(), wildcards.get(wc.group(1)))
+        return _parameters
+    return get_params
 
 
 def add_to_storage(storage, rule_params, annotator_info):
