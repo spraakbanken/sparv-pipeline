@@ -337,7 +337,7 @@ def load_config(snakemake_config):
     if snakemake_config.get("language"):
         sparv_config.config["metadata"]["language"] = snakemake_config["language"]
 
-    return config_missing
+    return corpus_config_file, config_missing
 
 
 def get_install_targets(install_outputs):

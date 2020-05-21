@@ -1,6 +1,7 @@
 """Snakefile used by Snakemake."""
 import copy
 from pathlib import Path
+import re
 
 import snakemake
 from snakemake.logging import logger
@@ -90,14 +91,14 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
                                     if not (paths.annotation_dir in o.parents or paths.export_dir in o.parents)
                                     else o
                                     for o in rule_params.outputs], doc=config.get("doc")
-                            or get_source_files(storage.source_files), **wildcards))
+                            or snake_utils.get_source_files(storage.source_files), **wildcards))
             @workflow.run
             def __rule__(*_args, **_kwargs):
                 pass
 
 
 # Find and load corpus config
-config_missing = snake_utils.load_config(config)
+corpus_config_file, config_missing = snake_utils.load_config(config)
 
 # Find and load Sparv modules
 registry.find_modules()
@@ -212,7 +213,7 @@ rule list_exports:
         print()
         print("Available corpus output formats (exports)")
         print("=========================================")
-        for target, desc, language in sorted(export_targets):
+        for target, desc, language in sorted(storage.export_targets):
             if not language or sparv_config.get("metadata.language") in language:
                 print("    {:{}}    {}".format(target, max_len, desc))
         print()
@@ -286,7 +287,7 @@ rule list_models:
         print()
         print("Models for current language ({})".format(sparv_config.get("metadata.language")))
         print("=================================")
-        for target, desc, language in sorted(model_targets):
+        for target, desc, language in sorted(storage.model_targets):
             if language and sparv_config.get("metadata.language") in language:
                 print("    {:{}}    {}".format(target, max_len, desc))
         print()
