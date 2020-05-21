@@ -1,15 +1,11 @@
 """Snakefile used by Snakemake."""
 from pathlib import Path
-import re
 
-import snakemake
 from snakemake.logging import logger
 
 from sparv import util
 from sparv.core import config as sparv_config
 from sparv.core import paths, registry, snake_utils
-from sparv.util.classes import *
-
 
 # Remove Snakemake's default log handler
 if config.get("run_by_sparv") and logger.log_handler and logger.log_handler[0] == logger.text_handler:

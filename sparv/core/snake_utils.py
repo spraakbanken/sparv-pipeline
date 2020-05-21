@@ -5,7 +5,7 @@ import inspect
 import re
 from collections import defaultdict
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import snakemake
 from snakemake.io import expand
@@ -63,7 +63,7 @@ class RuleStorage(object):
 
 
 def rule_helper(module_name: str, f_name: str, annotator_info: dict, config: dict, storage: SnakeStorage,
-                config_missing: bool = False) -> RuleStorage:
+                config_missing: bool = False) -> Optional[RuleStorage]:
     """Build Snakemake rules."""
     # Build input, output and parameter list
     if config.get("debug"):
@@ -91,9 +91,9 @@ def rule_helper(module_name: str, f_name: str, annotator_info: dict, config: dic
             # If importer guarantees other outputs, add them to outputs list
             if rule.import_outputs:
                 if isinstance(rule.import_outputs, Config):
-                    import_outputs = sparv_config.get(rule.import_outputs, rule.import_outputs.default)
+                    rule.import_outputs = sparv_config.get(rule.import_outputs, rule.import_outputs.default)
                 annotations_ = set()
-                for annotation in import_outputs:
+                for annotation in rule.import_outputs:
                     annotations_.add(annotation)
                     annotations_.add(util.split_annotation(annotation)[0])
                 for element in annotations_:
