@@ -3,7 +3,7 @@
 import logging
 import os
 from glob import glob
-from typing import Optional
+from typing import List, Optional
 
 import sparv.util as util
 from sparv import (AllDocuments, Annotation, Config, Corpus, Document, Export, ExportAnnotations, ExportInput,
@@ -18,7 +18,7 @@ def vrt(doc: str = Document,
         out: str = Export("vrt/{doc}.vrt"),
         token: str = Annotation("<token>"),
         word: str = Annotation("<token:word>"),
-        annotations: list = ExportAnnotations(export_type="vrt_export"),
+        annotations: List[str] = ExportAnnotations(export_type="vrt_export"),
         original_annotations: Optional[list] = Config("vrt_export.original_annotations"),
         remove_namespaces: bool = Config("export.remove_export_namespaces", False)):
     """Export annotations to vrt.
@@ -38,11 +38,11 @@ def vrt(doc: str = Document,
                                                                              original_annotations, remove_namespaces)
     span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names)
 
-    create_vrt(span_positions, token, word_annotation, token_annotations, annotation_dict, export_names)
+    vrt_data = create_vrt(span_positions, token, word_annotation, token_annotations, annotation_dict, export_names)
 
     # Write result to file
     with open(out, "w") as f:
-        f.write(vrt)
+        f.write(vrt_data)
     log.info("Exported: %s", out)
 
 
@@ -53,7 +53,7 @@ def vrt_scrambled(doc: str = Document,
                   chunk_order: str = Annotation("[export.scramble_on]:misc.number_random"),
                   token: str = Annotation("<token>"),
                   word: str = Annotation("<token:word>"),
-                  annotations: list = ExportAnnotations(export_type="vrt_export"),
+                  annotations: List[str] = ExportAnnotations(export_type="vrt_export"),
                   original_annotations: Optional[list] = Config("vrt_export.original_annotations"),
                   remove_namespaces: bool = Config("export.remove_export_namespaces", False)):
     """Export annotations to vrt in scrambled order."""
@@ -73,11 +73,11 @@ def vrt_scrambled(doc: str = Document,
     new_span_positions = util.scramble_spans(span_positions, chunk, chunk_order)
 
     # Make vrt format
-    vrt = create_vrt(new_span_positions, token, word_annotation, token_annotations, annotation_dict, export_names)
+    vrt_data = create_vrt(new_span_positions, token, word_annotation, token_annotations, annotation_dict, export_names)
 
     # Write result to file
     with open(out, "w") as f:
-        f.write(vrt)
+        f.write(vrt_data)
     log.info("Exported: %s", out)
 
 
@@ -89,7 +89,7 @@ def vrt_scrambled(doc: str = Document,
     Config("cwb.skip_validation", False)
 ])
 def encode(corpus: str = Corpus,
-           annotations: str = ExportAnnotations(export_type="vrt_export", is_input=False),
+           annotations: List[str] = ExportAnnotations(export_type="vrt_export", is_input=False),
            original_annotations: Optional[list] = Config("vrt_export.original_annotations"),
            docs: list = AllDocuments,
            words: str = Annotation("<token:word>", all_docs=True),
@@ -135,8 +135,8 @@ def encode(corpus: str = Corpus,
                    "-x"
                    ]
 
-    for vrt in vrtfiles:
-        encode_args += ["-f", vrt]
+    for vrtfile in vrtfiles:
+        encode_args += ["-f", vrtfile]
 
     for col in columns:
         if col != "-":
@@ -203,7 +203,7 @@ def cwb_align(corpus, other, link, aligndir="annotations/align", encoding: str =
     # Add alignment parameter to registry
     # cwb-regedit is not installed by default, so we skip it and modify the regfile directly instead:
     regfile = os.path.join(os.environ["CORPUS_REGISTRY"], corpus)
-    with open(regfile, "r") as F:
+    with open(regfile) as F:
         skip_align = ("ALIGNED %s" % other) in F.read()
 
     if not skip_align:
@@ -229,12 +229,12 @@ def cwb_align(corpus, other, link, aligndir="annotations/align", encoding: str =
 
 def create_vrt(span_positions, token, word_annotation, token_annotations, annotation_dict, export_names):
     """Go through span_positions and create vrt, line by line."""
-    vrt = []
+    vrt_lines = []
     for _pos, instruction, span in span_positions:
         # Create token line
         if span.name == token and instruction == "open":
-            vrt.append(make_token_line(word_annotation[span.index], token, token_annotations, annotation_dict,
-                                       span.index))
+            vrt_lines.append(make_token_line(word_annotation[span.index], token, token_annotations, annotation_dict,
+                                             span.index))
 
         # Create line with structural annotation
         elif span.name != token:
@@ -242,14 +242,14 @@ def create_vrt(span_positions, token, word_annotation, token_annotations, annota
             if instruction == "open":
                 attrs = make_attr_str(span.name, annotation_dict, export_names, span.index)
                 if attrs:
-                    vrt.append("<%s %s>" % (span.export, attrs))
+                    vrt_lines.append("<%s %s>" % (span.export, attrs))
                 else:
-                    vrt.append("<%s>" % span.export)
+                    vrt_lines.append("<%s>" % span.export)
             # Close element
             else:
-                vrt.append("</%s>" % span.export)
+                vrt_lines.append("</%s>" % span.export)
 
-    return"\n".join(vrt)
+    return "\n".join(vrt_lines)
 
 
 def make_attr_str(annotation, annotation_dict, export_names, index):
@@ -274,7 +274,8 @@ def make_token_line(word, token, token_annotations, annotation_dict, index):
             attr_str = util.UNDEF
         else:
             attr_str = annotation_dict[token][attr][index]
-        line.append(attr_str.replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
+        line.append(
+            attr_str.replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
     line = "\t".join(line)
     return util.remove_control_characters(line)
 
