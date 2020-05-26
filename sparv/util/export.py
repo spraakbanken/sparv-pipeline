@@ -239,22 +239,30 @@ def _create_export_names(annotations, token_name, remove_namespaces: bool, keep_
         export_names = {}
         for name, new_name in sorted(annotations):
             if not new_name:
-                # Skip if there is no namespace
-                if "." not in name:
-                    continue
-                # Don't use short name unless it is unique
-                if short_names_count[shorten(name)] == 1:
+                # Only use short name if it's unique
+                if "." in name and short_names_count[shorten(name)] == 1:
                     new_name = short_names[name]
                 else:
-                    continue
+                    new_name = name.split(":")[-1]
+
             if keep_struct_refs:
                 # Keep reference (the part before ":") if this is not a token attribute
-                if ":" in name and new_name != name and not name.startswith(token_name):
+                if ":" in name and not name.startswith(token_name):
                     ref, _ = corpus.split_annotation(name)
                     new_name = corpus.join_annotation(export_names.get(ref, ref), new_name)
             export_names[name] = new_name
     else:
-        export_names = {name: new_name for name, new_name in annotations if new_name}
+        if keep_struct_refs:
+            export_names = {}
+            for name, new_name in sorted(annotations):
+                if not new_name:
+                    new_name = name.split(":")[-1]
+                if ":" in name and not name.startswith(token_name):
+                    ref, _ = corpus.split_annotation(name)
+                    new_name = corpus.join_annotation(export_names.get(ref, ref), new_name)
+                export_names[name] = new_name
+        else:
+            export_names = {name: new_name for name, new_name in annotations if new_name}
 
     return export_names
 
