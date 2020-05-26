@@ -61,7 +61,8 @@ def find_modules(no_import=False) -> list:
 
 
 def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, source_type: Optional[str] = None,
-               outputs=(), language: Optional[List[str]] = None, config: Optional[List[Config]] = None):
+               outputs=(), language: Optional[List[str]] = None, config: Optional[List[Config]] = None,
+               order: Optional[int] = None):
     """Return a decorator for annotator functions, adding them to annotator registry."""
     def decorator(f):
         """Add wrapped function to registry."""
@@ -75,7 +76,8 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
             "source_type": source_type,
             "outputs": outputs,
             "language": language,
-            "config": config
+            "config": config,
+            "order": order
         })
         return f
 
@@ -83,10 +85,10 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
 
 
 def annotator(description: str, name: Optional[str] = None, language: Optional[List[str]] = None,
-              config: Optional[List[Config]] = None):
+              config: Optional[List[Config]] = None, order: Optional[int] = None):
     """Return a decorator for annotator functions, adding them to the annotator registry."""
     return _annotator(description=description, a_type=Annotator.annotator, name=name, language=language,
-                      config=config)
+                      config=config, order=order)
 
 
 def importer(description: str, source_type: str, name: Optional[str] = None, outputs=None,
@@ -111,9 +113,10 @@ def importer(description: str, source_type: str, name: Optional[str] = None, out
 
 
 def exporter(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
-             language: Optional[List[str]] = None):
+             language: Optional[List[str]] = None, order: Optional[int] = None):
     """Return a decorator for exporter functions."""
-    return _annotator(description=description, a_type=Annotator.exporter, name=name, config=config, language=language)
+    return _annotator(description=description, a_type=Annotator.exporter, name=name, config=config, language=language,
+                      order=order)
 
 
 def installer(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None):

@@ -6,7 +6,6 @@ from datetime import datetime
 
 import sparv.util as util
 from sparv import AllDocuments, Annotation, Config, Corpus, Export, ExportInput, Output, annotator, exporter
-from sparv.core import paths
 
 log = logging.getLogger(__name__)
 
@@ -58,10 +57,9 @@ def info_sentences(out: str = Output("cwb.sentencecount", data=True, common=True
 
     # Write sentencecount data
     util.write_common_data(out, str(sentence_count))
-    log.info("Wrote: %s", out)
 
 
-@annotator("datefirst and datelast files for .info")
+@annotator("datefirst and datelast files for .info", order=1)
 def info_date(corpus: str = Corpus,
               out_datefirst: str = Output("cwb.datefirst", data=True, common=True),
               out_datelast: str = Output("cwb.datelast", data=True, common=True),
@@ -70,7 +68,7 @@ def info_date(corpus: str = Corpus,
               dateto: str = Annotation("[dateformat.out_annotation=<text>]:dateformat.dateto", all_docs=True),
               timefrom: str = Annotation("[dateformat.out_annotation=<text>]:dateformat.timefrom", all_docs=True),
               timeto: str = Annotation("[dateformat.out_annotation=<text>]:dateformat.timeto", all_docs=True),
-              remove_namespaces: bool = Config("remove_export_namespaces", False),
+              remove_namespaces: bool = Config("export.remove_export_namespaces", False),
               registry: str = Config("cwb.corpus_registry")):
     """Create datefirst and datelast file (needed for .info file)."""
     def _fix_name(name: str):
@@ -89,7 +87,7 @@ def info_date(corpus: str = Corpus,
         values = sorted([datetime.strptime(v, "%Y%m%d %H%M%S") for v in values])
         return [v.strftime("%Y-%m-%d %H:%M:%S") for v in values]
 
-    # Get datefrom and timefrom annotation names
+    # Get date and time annotation names
     datefrom = _fix_name(datefrom)
     timefrom = _fix_name(timefrom)
     dateto = _fix_name(dateto)
@@ -100,29 +98,20 @@ def info_date(corpus: str = Corpus,
     datefirst_out, _ = util.system.call_binary("cwb-scan-corpus", datefirst_args)
     datefirst = _parse_cwb_output(datefirst_out)[0]
     util.write_common_data(out_datefirst, str(datefirst))
-    log.info("Wrote: %s", out_datefirst)
 
     # Get datelast and write to file
     datelast_args = ["-r", registry, "-q", corpus, dateto, timeto]
     datelast_out, _ = util.system.call_binary("cwb-scan-corpus", datelast_args)
     datelast = _parse_cwb_output(datelast_out)[-1]
     util.write_common_data(out_datelast, str(datelast))
-    log.info("Wrote: %s", out_datelast)
 
 
-# TODO: This rule should activate if the above info_date cannot be run (due to lacking date info in corpus)
-# @exporter("empty datefirst and datelast files for .info", ruleorder=1)
-# def info_date_unknown(out_datefirst: str = Export("info/datefirst"),
-#                       out_datelast: str = Export("info/datelast")):
-#     """Create empty datefirst and datelast file (needed for .info file) if corpus has no date information."""
-#     log.info("No date information found in corpus")
+@annotator("empty datefirst and datelast files for .info", order=2)
+def info_date_unknown(out_datefirst: str = Output("cwb.datefirst", data=True, common=True),
+                      out_datelast: str = Output("cwb.datelast", data=True, common=True)):
+    """Create empty datefirst and datelast file (needed for .info file) if corpus has no date information."""
+    log.info("No date information found in corpus")
 
-#     # Write datefirst file
-#     with open(out_datefirst, "w") as f:
-#         f.write("")
-#     log.info("Exported: %s", out_datefirst)
-
-#     # Write datelast file
-#     with open(out_datelast, "w") as f:
-#         f.write("")
-#     log.info("Exported: %s", out_datelast)
+    # Write datefirst and datelast files
+    util.write_common_data(out_datefirst, "")
+    util.write_common_data(out_datelast, "")

@@ -18,7 +18,7 @@ from sparv.util.classes import (AllDocuments, Annotation, Binary, Config, Corpus
 
 
 class SnakeStorage(object):
-    """Object to store..."""
+    """Object to store variables involving all rules."""
 
     def __init__(self):
         """Init attributes."""
@@ -31,12 +31,11 @@ class SnakeStorage(object):
         self.install_targets = []
         self.model_targets = []
 
-        # Outputs from modelbuilders, used in build_models
-        self.model_outputs = []
-        # Outputs from all installers, used in install_annotated_corpus
-        self.install_outputs = defaultdict(list)
-        # List which will contain all source files
-        self.source_files = []
+        self.model_outputs = []  # Outputs from modelbuilders, used in build_models
+        self.install_outputs = defaultdict(list)  # Outputs from all installers, used in install_annotated_corpus
+        self.source_files = []  # List which will contain all source files
+        self.all_rules = []  # List containing all rules created
+        self.ordered_rules = []  # List of rules containing rule order
 
 
 class RuleStorage(object):
@@ -44,7 +43,12 @@ class RuleStorage(object):
 
     def __init__(self, module_name, f_name, annotator_info):
         """Init attributes."""
+        self.module_name = module_name
+        self.f_name = f_name
+        self.annotator_info = annotator_info
         self.target_name = module_name + ":" + f_name
+        self.rule_name = "{}::{}".format(module_name, f_name)
+        self.full_module_name = f"{module_name}.{f_name}"
         self.inputs = []
         self.outputs = []
         self.parameters = {}
@@ -60,28 +64,30 @@ class RuleStorage(object):
         self.description = annotator_info["description"]
         self.source_type = annotator_info["source_type"]
         self.import_outputs = annotator_info["outputs"]
+        self.order = annotator_info["order"]
+
+    def __hash__(self):
+        """Hash method for determining equality of two rule objects."""
+        return hash(self.full_module_name)
 
 
-def rule_helper(module_name: str, f_name: str, annotator_info: dict, config: dict, storage: SnakeStorage,
-                config_missing: bool = False) -> Optional[RuleStorage]:
-    """Build Snakemake rules."""
-    # Build input, output and parameter list
+def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_missing: bool = False
+                ) -> Optional[RuleStorage]:
+    """Build Snakemake rule with input, output and parameter list."""
     if config.get("debug"):
         print()
-        print("{}{}:{} {}".format(util.Color.BOLD, module_name.upper(), util.Color.RESET, f_name))
+        print("{}{}:{} {}".format(util.Color.BOLD, rule.module_name.upper(), util.Color.RESET, rule.f_name))
         print()
-
-    rule = RuleStorage(module_name, f_name, annotator_info)
-
-    full_module_name = f"{module_name}.{f_name}"
 
     # Only create certain rules when config is missing
     if config_missing and not rule.modelbuilder:
         return
 
     # Skip any annotator that is not available for the selected corpus language
-    if annotator_info["language"] and sparv_config.get("metadata.language") not in annotator_info["language"]:
+    if rule.annotator_info["language"] and sparv_config.get("metadata.language") not in rule.annotator_info["language"]:
         return
+
+    storage.all_rules.append(rule)
 
     if rule.importer:
         rule.inputs.append(Path(get_source_path(), "{doc}." + rule.source_type))
@@ -99,20 +105,19 @@ def rule_helper(module_name: str, f_name: str, annotator_info: dict, config: dic
                 for element in annotations_:
                     rule.outputs.append(paths.annotation_dir / get_annotation_path(element))
 
-    params = inspect.signature(annotator_info["function"]).parameters
+    params = inspect.signature(rule.annotator_info["function"]).parameters
 
     # Go though function parameters and handle based on type
     for param_name, param in params.items():
         # Output
         if isinstance(param.default, Output):
-            param_value = registry.expand_variables(param.default, full_module_name)
+            param_value = registry.expand_variables(param.default, rule.full_module_name)
             ann_path = get_annotation_path(param_value, data=param.default.data, common=param.default.common)
             if param.default.all_docs:
                 rule.outputs.extend(map(Path, expand(escape_wildcards(paths.annotation_dir / ann_path),
                                                      doc=get_source_files(storage.source_files))))
             elif param.default.common:
                 rule.outputs.append(paths.annotation_dir / ann_path)
-                param_value = str(Path(paths.annotation_dir / ann_path))
                 if rule.installer:
                     storage.install_outputs[rule.target_name].append(paths.annotation_dir / ann_path)
             else:
@@ -120,19 +125,20 @@ def rule_helper(module_name: str, f_name: str, annotator_info: dict, config: dic
             rule.parameters[param_name] = param_value
             if "{" in param_value:
                 rule.wildcard_annotations.append(param_name)
-            storage.all_annotations.setdefault(module_name, {}).setdefault(f_name, {"description": rule.description,
-                                                                                    "annotations": []})
-            storage.all_annotations[module_name][f_name]["annotations"].append((param.default,
-                                                                                param.default.description))
+            storage.all_annotations.setdefault(rule.module_name, {}).setdefault(rule.f_name,
+                                                                                {"description": rule.description,
+                                                                                 "annotations": []})
+            storage.all_annotations[rule.module_name][rule.f_name]["annotations"].append((param.default,
+                                                                                          param.default.description))
         # ModelOutput
         elif isinstance(param.default, ModelOutput):
-            model = util.get_model_path(registry.expand_variables(param.default, full_module_name))
+            model = util.get_model_path(registry.expand_variables(param.default, rule.full_module_name))
             rule.outputs.append(model)
             rule.parameters[param_name] = str(model)
             storage.model_outputs.append(model)
         # Annotation
         elif registry.dig(Annotation, param.default):
-            param_value = registry.expand_variables(param.default, full_module_name)
+            param_value = registry.expand_variables(param.default, rule.full_module_name)
             ann_path = get_annotation_path(param_value, data=param.default.data, common=param.default.common)
             if rule.exporter or rule.installer or param.default.all_docs:
                 if param.default.all_docs:
@@ -155,7 +161,7 @@ def rule_helper(module_name: str, f_name: str, annotator_info: dict, config: dic
             export_annotations = sparv_config.get(f"{export_type}.annotations", [])
             for annotation in export_annotations:
                 annotation, _, new_name = annotation.partition(" as ")
-                param_value = registry.expand_variables(annotation, full_module_name)
+                param_value = registry.expand_variables(annotation, rule.full_module_name)
                 if param.default.is_input:
                     rule.inputs.append(paths.annotation_dir / get_annotation_path(param_value))
                 if new_name:
@@ -177,18 +183,18 @@ def rule_helper(module_name: str, f_name: str, annotator_info: dict, config: dic
         elif registry.dig(Model, param.default):
             if param.default is not None:
                 if isinstance(param.default, Model):
-                    model = util.get_model_path(registry.expand_variables(param.default, full_module_name))
+                    model = util.get_model_path(registry.expand_variables(param.default, rule.full_module_name))
                     rule.inputs.append(model)
                     rule.parameters[param_name] = str(model)
                 elif isinstance(param.default, (list, tuple)):
                     rule.parameters[param_name] = []
                     for model in param.default:
-                        model = util.get_model_path(registry.expand_variables(model, full_module_name))
+                        model = util.get_model_path(registry.expand_variables(model, rule.full_module_name))
                         rule.inputs.append(model)
                         rule.parameters[param_name].append(str(model))
         # Binary
         elif isinstance(param.default, Binary):
-            binary = paths.get_bin_path(registry.expand_variables(param.default, full_module_name))
+            binary = paths.get_bin_path(registry.expand_variables(param.default, rule.full_module_name))
             rule.inputs.append(binary)
             rule.parameters[param_name] = str(binary)
         # Source
@@ -196,7 +202,7 @@ def rule_helper(module_name: str, f_name: str, annotator_info: dict, config: dic
             rule.parameters[param_name] = get_source_path()
         # Export
         elif param.default == Export or isinstance(param.default, Export):
-            param_value = registry.expand_variables(param.default, full_module_name)
+            param_value = registry.expand_variables(param.default, rule.full_module_name)
             if param.default.absolute_path:
                 export_path = Path(param_value)
             else:
@@ -210,10 +216,10 @@ def rule_helper(module_name: str, f_name: str, annotator_info: dict, config: dic
         # ExportInput
         elif isinstance(param.default, ExportInput):
             if param.default.absolute_path:
-                rule.parameters[param_name] = registry.expand_variables(param.default, full_module_name)
+                rule.parameters[param_name] = registry.expand_variables(param.default, rule.full_module_name)
             else:
                 rule.parameters[param_name] = str(paths.export_dir / registry.expand_variables(param.default,
-                                                                                               full_module_name))
+                                                                                               rule.full_module_name))
             if param.default.all_docs:
                 rule.inputs.extend(expand(escape_wildcards(rule.parameters[param_name]),
                                           doc=get_source_files(storage.source_files)))
@@ -227,6 +233,9 @@ def rule_helper(module_name: str, f_name: str, annotator_info: dict, config: dic
         # Everything else with a default value
         elif param.default is not None:
             rule.parameters[param_name] = param.default
+
+    # Add to rule lists in storage
+    update_storage(storage, rule)
 
     if config.get("debug"):
         print("    " + util.Color.BOLD + "INPUTS" + util.Color.RESET)
@@ -244,6 +253,34 @@ def rule_helper(module_name: str, f_name: str, annotator_info: dict, config: dic
         print()
 
     return rule
+
+
+def check_ruleorder(storage):
+    """Order rules where necessary and print warning if rule order is missing."""
+    ruleorder_pairs = set()
+    ordered_rules = set()
+    # Find rules that have common outputs and therefore need to be ordered
+    for rule in storage.all_rules:
+        for other_rule in storage.all_rules:
+            if rule != other_rule:
+                common_outputs = tuple(sorted(set(rule.outputs).intersection(set(other_rule.outputs))))
+                if common_outputs:
+                    # Check if a rule is lacking ruleorder or if two rules have the same order attribute
+                    if any(i is None for i in [rule.order, other_rule.order]) or rule.order == other_rule.order:
+                        ruleorder_pairs.add((tuple(set([rule, other_rule])), common_outputs))
+                    # Sort ordered rules
+                    else:
+                        ordered_rules.add(tuple(sorted([rule, other_rule], key=lambda i: i.order)))
+
+    # Print warning if rule order is lacking somewhere
+    for rules, common_outputs in ruleorder_pairs:
+        rule1 = rules[0].full_module_name
+        rule2 = rules[1].full_module_name
+        common_outputs = ", ".join(str(i) for i in common_outputs)
+        print(f"WARNING: The annotators {rule1} and {rule2} have common outputs ({common_outputs}). "
+              "Please make sure to set their 'order' arguments to different values.")
+
+    return ordered_rules
 
 
 def get_parameters(rule_params):
@@ -267,17 +304,20 @@ def get_parameters(rule_params):
     return get_params
 
 
-def add_to_storage(storage, rule_params, annotator_info):
-    """Add info to snake storage."""
-    if rule_params.exporter:
-        storage.export_targets.append((rule_params.target_name, rule_params.description,
-                                       annotator_info["language"]))
-    elif rule_params.installer:
-        storage.install_targets.append((rule_params.target_name, rule_params.description))
-    elif rule_params.modelbuilder:
-        storage.model_targets.append((rule_params.target_name, rule_params.description, annotator_info["language"]))
+def update_storage(storage, rule):
+    """Update info to snake storage with different targets."""
+    if rule.exporter:
+        storage.export_targets.append((rule.target_name, rule.description,
+                                       rule.annotator_info["language"]))
+    elif rule.installer:
+        storage.install_targets.append((rule.target_name, rule.description))
+    elif rule.modelbuilder:
+        storage.model_targets.append((rule.target_name, rule.description, rule.annotator_info["language"]))
     else:
-        storage.named_targets.append((rule_params.target_name, rule_params.description))
+        storage.named_targets.append((rule.target_name, rule.description))
+
+    if rule.annotator_info.get("order") is not None:
+        storage.ordered_rules.append((rule.rule_name, rule.annotator_info))
 
 
 def get_source_path() -> str:

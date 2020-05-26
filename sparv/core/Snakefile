@@ -1,4 +1,5 @@
 """Snakefile used by Snakemake."""
+
 from pathlib import Path
 
 from snakemake.logging import logger
@@ -11,15 +12,13 @@ from sparv.core import paths, registry, snake_utils
 if config.get("run_by_sparv") and logger.log_handler and logger.log_handler[0] == logger.text_handler:
     logger.log_handler = []
 
-
 # Don't do anything if no rule was specified
 rule empty:
     shell:
         "echo"
 
-
-# Init the storage for some essential variables
-storage = snake_utils.SnakeStorage()
+# Init the storage for some essential variables involving all rules
+snake_storage = snake_utils.SnakeStorage()
 
 
 # ==============================================================================
@@ -30,48 +29,79 @@ storage = snake_utils.SnakeStorage()
 def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missing: bool = False) -> None:
     """Build Snakemake rules."""
     # Init rule storage
-    rule_params = snake_utils.rule_helper(module_name, f_name, annotator_info, config, storage, config_missing)
+    rule_storage = snake_utils.RuleStorage(module_name, f_name, annotator_info)
 
-    # Don't continue if this rule was skipped
-    if rule_params:
+    # Process rule parameters and update rule storage
+    snake_utils.rule_helper(rule_storage, config, snake_storage, config_missing)
 
-        # Create rule for current annotation
-        rule:
-            message:
-                "{}:{}".format(module_name, f_name)
-            input:
-                rule_params.inputs
-            output:
-                rule_params.outputs
-            params:
-                module_name = module_name,
-                f_name = f_name,
-                parameters = snake_utils.get_parameters(rule_params),
-                log = config.get("log")
-            script:
-                "run_snake.py"
-                # We don't use "run:" since the whole Snakefile would have to be reloaded for every single job,
-                # due to how Snakemake creates processes for run-jobs.
+    if rule_storage:
 
-        # Add to rule lists in storage
-        snake_utils.add_to_storage(storage, rule_params, annotator_info)
+        # Create anonymous or named rule for current annotation
+        if rule_storage.order is not None:
+            make_named_rule(rule_storage)
+        else:
+            make_anonymous_rule(rule_storage)
 
         # Create rule to run this annotation on all input files
+        make_all_files_rule(rule_storage, snake_storage)
 
-        # Get user-supplied wildcard values
-        wildcards = dict(wc.split("=") for wc in config.get("wildcards", []))
 
-        # Create rule, but only when called
-        if rule_params.target_name in config.get("targets", []):
-            @workflow.rule(name=rule_params.target_name)
-            @workflow.input(expand([paths.annotation_dir / o
-                                    if not (paths.annotation_dir in o.parents or paths.export_dir in o.parents)
-                                    else o
-                                    for o in rule_params.outputs], doc=config.get("doc")
-                            or snake_utils.get_source_files(storage.source_files), **wildcards))
-            @workflow.run
-            def __rule__(*_args, **_kwargs):
-                pass
+def make_anonymous_rule(rule_storage):
+    """Create an unnamed snakemake rule for current annotation."""
+    rule:
+        message:
+            rule_storage.target_name
+        input:
+            rule_storage.inputs
+        output:
+            rule_storage.outputs
+        params:
+            module_name = rule_storage.module_name,
+            f_name = rule_storage.f_name,
+            parameters = snake_utils.get_parameters(rule_storage),
+            log = config.get("log")
+        script:
+            "run_snake.py"
+            # We don't use "run:" since the whole Snakefile would have to be reloaded for every single job,
+            # due to how Snakemake creates processes for run-jobs.
+
+
+def make_named_rule(rule_storage):
+    """Create a named snakemake rule (unfortunately we cannot use the normal snakemake syntax for this)."""
+    @workflow.rule(name=rule_storage.rule_name)
+    @workflow.message(rule_storage.target_name)
+    @workflow.input(rule_storage.inputs)
+    @workflow.output(rule_storage.outputs)
+    @workflow.params(module_name=rule_storage.module_name,
+                     f_name=rule_storage.f_name,
+                     parameters=snake_utils.get_parameters(rule_storage),
+                     log=config.get("log"))
+    @workflow.script("run_snake.py")
+    @workflow.run
+    def __rule__(input, output, params, wildcards, threads, resources, log, version, rule, conda_env, container_img,
+                 singularity_args, use_singularity, env_modules, bench_record, jobid, is_shell, bench_iteration,
+                 cleanup_scripts, shadow_dir):
+        script("run_snake.py", Path(paths.sparv_path) / "core", input, output, params,
+               wildcards, threads, resources, log, config, rule, conda_env, container_img, singularity_args,
+               env_modules, bench_record, jobid, bench_iteration, cleanup_scripts, shadow_dir)
+
+
+def make_all_files_rule(rule_storage, snake_storage):
+    """Create named rule to run an annotation on all input files."""
+    # Get user-supplied wildcard values
+    wildcards = dict(wc.split("=") for wc in config.get("wildcards", []))
+
+    # Create rule, but only when called
+    if rule_storage.target_name in config.get("targets", []):
+        @workflow.rule(name=rule_storage.target_name)
+        @workflow.input(expand([paths.annotation_dir / o
+                                if not (paths.annotation_dir in o.parents or paths.export_dir in o.parents)
+                                else o
+                                for o in rule_storage.outputs], doc=config.get("doc")
+                        or snake_utils.get_source_files(snake_storage.source_files), **wildcards))
+        @workflow.run
+        def __rule__(*_args, **_kwargs):
+            pass
 
 
 # Find and load corpus config
@@ -85,6 +115,12 @@ for module_name in registry.annotators:
     for f_name in registry.annotators[module_name]:
         annotator = registry.annotators[module_name][f_name]
         make_rule(module_name, f_name, annotator, config_missing)
+
+# Check and set rule orders
+ordered_rules = snake_utils.check_ruleorder(snake_storage)
+for rule1, rule2 in ordered_rules:
+    workflow.ruleorder(rule1.rule_name, rule2.rule_name)
+    # ruleorder:  rule1.rule_name > rule2.rule_name
 
 
 # ==============================================================================
@@ -107,7 +143,7 @@ rule config:
 # Rule to list all annotations
 rule annotations:
     run:
-        all_annotations = storage.all_annotations
+        all_annotations = snake_storage.all_annotations
         max_len = max(len(a[0]) for m in all_annotations for f in all_annotations[m]
                       for a in all_annotations[m][f]["annotations"]) + 4
         print()
@@ -161,36 +197,36 @@ rule presets:
 # Rule to list all targets
 rule list_targets:
     run:
-        max_len = max(len(t[0]) for t in storage.named_targets + storage.export_targets
-                      + storage.install_targets + storage.model_targets) + 4
+        max_len = max(len(t[0]) for t in snake_storage.named_targets + snake_storage.export_targets
+                      + snake_storage.install_targets + snake_storage.model_targets) + 4
         print()
         print("Available targets")
         print("=================\n")
         print("    EXPORTS")
-        for target, desc, _lang in sorted(storage.export_targets):
+        for target, desc, _lang in sorted(snake_storage.export_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
         print()
         print("    INSTALLERS")
-        for target, desc in sorted(storage.install_targets):
+        for target, desc in sorted(snake_storage.install_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
         print()
         print("    ANNOTATIONS")
-        for target, desc in sorted(storage.named_targets):
+        for target, desc in sorted(snake_storage.named_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
         print()
         print("    MODEL BUILDERS")
-        for target, desc, _lang in sorted(storage.model_targets):
+        for target, desc, _lang in sorted(snake_storage.model_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
 
 
 # Rule to list all exports
 rule list_exports:
     run:
-        max_len = max(len(t[0]) for t in storage.export_targets) + 4
+        max_len = max(len(t[0]) for t in snake_storage.export_targets) + 4
         print()
         print("Available corpus output formats (exports)")
         print("=========================================")
-        for target, desc, language in sorted(storage.export_targets):
+        for target, desc, language in sorted(snake_storage.export_targets):
             if not language or sparv_config.get("metadata.language") in language:
                 print("    {:{}}    {}".format(target, max_len, desc))
         print()
@@ -202,7 +238,7 @@ rule list_exports:
 rule files:
     run:
         print("Available input files:\n")
-        print(", ".join(snake_utils.get_source_files(storage.source_files)))
+        print(", ".join(snake_utils.get_source_files(snake_storage.source_files)))
 
 
 # Rule to remove annotations dir
@@ -235,17 +271,17 @@ rule clean:
 # Rule to list all installations that will be made when running `sparv install`
 rule list_installs:
     run:
-        max_len = max(len(t[0]) for t in storage.install_targets) + 4
+        max_len = max(len(t[0]) for t in snake_storage.install_targets) + 4
         print()
         print("Installations to be made")
         print("========================")
-        for target, desc in sorted(storage.install_targets):
+        for target, desc in sorted(snake_storage.install_targets):
             if target in sparv_config.get("korp.install", []):
                 print("    {:{}}    {}".format(target, max_len, desc))
         print()
         print("Other available installations")
         print("=============================")
-        for target, desc in sorted(storage.install_targets):
+        for target, desc in sorted(snake_storage.install_targets):
             if target not in sparv_config.get("korp.install", []):
                 print("    {:{}}    {}".format(target, max_len, desc))
         print()
@@ -254,23 +290,23 @@ rule list_installs:
 # Rule for making installations
 rule install_annotated_corpus:
     input:
-        snake_utils.get_install_targets(storage.install_outputs)
+        snake_utils.get_install_targets(snake_storage.install_outputs)
 
 
 # Rule to list all models that can be built/downloaded
 rule list_models:
     run:
-        max_len = max(len(t[0]) for t in storage.model_targets) + 4
+        max_len = max(len(t[0]) for t in snake_storage.model_targets) + 4
         print()
         print("Models for current language ({})".format(sparv_config.get("metadata.language")))
         print("=================================")
-        for target, desc, language in sorted(storage.model_targets):
+        for target, desc, language in sorted(snake_storage.model_targets):
             if language and sparv_config.get("metadata.language") in language:
                 print("    {:{}}    {}".format(target, max_len, desc))
         print()
         print("Language-independent models")
         print("===========================")
-        for target, desc, language in sorted(storage.model_targets):
+        for target, desc, language in sorted(snake_storage.model_targets):
             if not language:
                 print("    {:{}}    {}".format(target, max_len, desc))
         print()
@@ -279,4 +315,4 @@ rule list_models:
 # Build all models. Build even the non-optional ones if force_optional_models = True.
 rule build_models:
     input:
-        storage.model_outputs
+        snake_storage.model_outputs

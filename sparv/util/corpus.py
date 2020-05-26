@@ -214,6 +214,7 @@ def read_data(doc, name):
 def write_common_data(name, value, append=False):
     """Write arbitrary corpus level string data to file in annotations directory."""
     write_data(None, name, value, append)
+    _log.info("Wrote: %s", name)
 
 
 def read_common_data(name):
