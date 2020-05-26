@@ -4,6 +4,7 @@ import logging
 import xml.etree.ElementTree as etree
 from collections import defaultdict
 from itertools import combinations
+from typing import List, Union
 
 from sparv.util import corpus, misc, parent
 
@@ -169,11 +170,11 @@ def calculate_element_hierarchy(doc, spans_list):
     return hierarchy
 
 
-def get_annotation_names(doc, token_name, annotations, original_annotations=None, remove_namespaces=False,
-                         keep_struct_refs=False):
+def get_annotation_names(doc: Union[str, List[str]], token_name: str, annotations: List[str], original_annotations=None,
+                         remove_namespaces=False, keep_struct_refs=False):
     """Get a list of annotations, token annotations and a dictionary for renamed annotations.
 
-    remove_namespaces: remove all name spaces in export_names unless names are ambiguous.
+    remove_namespaces: remove all namespaces in export_names unless names are ambiguous.
     keep_struct_refs: for structural attributes, include everything before ":" in export_names (used in cwb encode)
     """
     # Combine annotations and original_annotations
@@ -205,30 +206,55 @@ def get_annotation_names(doc, token_name, annotations, original_annotations=None
     return [i[0] for i in annotations], token_annotations, export_names
 
 
-def _create_export_names(annotations, token_name, remove_namespaces, keep_struct_refs):
+def _create_export_names(annotations, token_name, remove_namespaces: bool, keep_struct_refs: bool):
     """Create dictionary for renamed annotations."""
     if remove_namespaces:
-        short_names = [name.split(".")[-1] for name, new_name in annotations if not new_name]
+        def shorten(_name):
+            """Shorten annotation name or attribute name.
+
+            For example:
+                segment.token -> token
+                segment.token:saldo.baseform -> segment.token:baseform
+            """
+            annotation, attribute = corpus.split_annotation(_name)
+            if attribute:
+                short = corpus.join_annotation(annotation, attribute.split(".")[-1])
+            else:
+                short = corpus.join_annotation(annotation.split(".")[-1], None)
+            return short
+
+        # Create short names dictionary and count
+        short_names_count = defaultdict(int)
+        short_names = {}
+        for name, new_name in annotations:
+            short_name = shorten(name)
+            if new_name:
+                if ":" in name:
+                    short_name = corpus.join_annotation(corpus.split_annotation(name)[0], new_name)
+                else:
+                    short_name = new_name
+            short_names_count[short_name] += 1
+            short_names[name] = short_name.split(":")[-1]
+
         export_names = {}
         for name, new_name in sorted(annotations):
             if not new_name:
-                # Skip if there is no name space
+                # Skip if there is no namespace
                 if "." not in name:
                     continue
-                # Don't use short_name unless it is unique
-                short_name = name.split(".")[-1]
-                if short_names.count(short_name) == 1:
-                    new_name = short_name
+                # Don't use short name unless it is unique
+                if short_names_count[shorten(name)] == 1:
+                    new_name = short_names[name]
                 else:
                     continue
             if keep_struct_refs:
                 # Keep reference (the part before ":") if this is not a token attribute
                 if ":" in name and new_name != name and not name.startswith(token_name):
-                    ref = name[0:name.find(":")]
-                    new_name = export_names.get(ref, ref) + ":" + new_name
+                    ref, _ = corpus.split_annotation(name)
+                    new_name = corpus.join_annotation(export_names.get(ref, ref), new_name)
             export_names[name] = new_name
     else:
-        export_names = dict((a, b) for a, b in annotations if b)
+        export_names = {name: new_name for name, new_name in annotations if new_name}
 
     return export_names
 
