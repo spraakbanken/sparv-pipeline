@@ -99,7 +99,7 @@ def encode(corpus: str = Corpus,
            encoding: str = Config("cwb.encoding"),
            datadir: str = Config("cwb.cwb_datadir"),
            registry: str = Config("cwb.corpus_registry"),
-           remove_namespaces: bool = Config("remove_export_namespaces", False),
+           remove_namespaces: bool = Config("export.remove_export_namespaces", False),
            skip_compression: Optional[bool] = Config("cwb.skip_compression"),
            skip_validation: Optional[bool] = Config("cwb.skip_validation")):
     """Encode a number of vrt files, by calling cwb-encode."""

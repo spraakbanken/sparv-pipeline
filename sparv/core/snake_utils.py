@@ -112,6 +112,7 @@ def rule_helper(module_name: str, f_name: str, annotator_info: dict, config: dic
                                                      doc=get_source_files(storage.source_files))))
             elif param.default.common:
                 rule.outputs.append(paths.annotation_dir / ann_path)
+                param_value = str(Path(paths.annotation_dir / ann_path))
                 if rule.installer:
                     storage.install_outputs[rule.target_name].append(paths.annotation_dir / ann_path)
             else:
