@@ -13,21 +13,33 @@ if config.get("run_by_sparv") and logger.log_handler and logger.log_handler[0] =
     logger.log_handler = []
 
 # Don't do anything if no rule was specified
-rule empty:
-    shell:
-        "echo"
-
-# Init the storage for some essential variables involving all rules
-snake_storage = snake_utils.SnakeStorage()
-
+rule do_nothing:
+    input: []
 
 # ==============================================================================
 # Dynamic Creation of Snakemake Rules
 # ==============================================================================
 
+def make_rules(config_missing: bool) -> None:
+    """Load all Sparv modules and create Snakemake rules."""
+    # Find and load Sparv modules
+    registry.find_modules()
+
+    # Create rules for all available annotation functions
+    for module_name in registry.annotators:
+        for f_name in registry.annotators[module_name]:
+            annotator = registry.annotators[module_name][f_name]
+            make_rule(module_name, f_name, annotator, config_missing)
+
+    # Check and set rule orders
+    ordered_rules = snake_utils.check_ruleorder(snake_storage)
+    for rule1, rule2 in ordered_rules:
+        workflow.ruleorder(rule1.rule_name, rule2.rule_name)
+        # ruleorder:  rule1.rule_name > rule2.rule_name
+
 
 def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missing: bool = False) -> None:
-    """Build Snakemake rules."""
+    """Create single Snakemake rule."""
     # Init rule storage
     rule_storage = snake_utils.RuleStorage(module_name, f_name, annotator_info)
 
@@ -35,58 +47,31 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
     snake_utils.rule_helper(rule_storage, config, snake_storage, config_missing)
 
     if rule_storage:
-
-        # Create anonymous or named rule for current annotation
-        if rule_storage.order is not None:
-            make_named_rule(rule_storage)
-        else:
-            make_anonymous_rule(rule_storage)
+        # Create a named Snakemake rule for annotator (unfortunately we cannot use the regular snakemake syntax for this)
+        @workflow.rule(name=rule_storage.rule_name)
+        @workflow.message(rule_storage.target_name)
+        @workflow.input(rule_storage.inputs)
+        @workflow.output(rule_storage.outputs)
+        @workflow.params(module_name=rule_storage.module_name,
+                         f_name=rule_storage.f_name,
+                         parameters=snake_utils.get_parameters(rule_storage),
+                         log=config.get("log"))
+        # We use "script" instead of "run" since with "run" the whole Snakefile would have to be reloaded for every
+        # single job, due to how Snakemake creates processes for run-jobs.
+        @workflow.script("run_snake.py")
+        @workflow.run
+        def __rule__(input_, output, params, wildcards, threads, resources, log, version, rule, conda_env, container_img,
+                     singularity_args, use_singularity, env_modules, bench_record, jobid, is_shell, bench_iteration,
+                     cleanup_scripts, shadow_dir):
+            script("run_snake.py", paths.sparv_path / "core", input_, output, params,
+                   wildcards, threads, resources, log, config, rule, conda_env, container_img, singularity_args,
+                   env_modules, bench_record, jobid, bench_iteration, cleanup_scripts, shadow_dir)
 
         # Create rule to run this annotation on all input files
-        make_all_files_rule(rule_storage, snake_storage)
+        make_all_files_rule(rule_storage)
 
 
-def make_anonymous_rule(rule_storage):
-    """Create an unnamed snakemake rule for current annotation."""
-    rule:
-        message:
-            rule_storage.target_name
-        input:
-            rule_storage.inputs
-        output:
-            rule_storage.outputs
-        params:
-            module_name = rule_storage.module_name,
-            f_name = rule_storage.f_name,
-            parameters = snake_utils.get_parameters(rule_storage),
-            log = config.get("log")
-        script:
-            "run_snake.py"
-            # We don't use "run:" since the whole Snakefile would have to be reloaded for every single job,
-            # due to how Snakemake creates processes for run-jobs.
-
-
-def make_named_rule(rule_storage):
-    """Create a named snakemake rule (unfortunately we cannot use the normal snakemake syntax for this)."""
-    @workflow.rule(name=rule_storage.rule_name)
-    @workflow.message(rule_storage.target_name)
-    @workflow.input(rule_storage.inputs)
-    @workflow.output(rule_storage.outputs)
-    @workflow.params(module_name=rule_storage.module_name,
-                     f_name=rule_storage.f_name,
-                     parameters=snake_utils.get_parameters(rule_storage),
-                     log=config.get("log"))
-    @workflow.script("run_snake.py")
-    @workflow.run
-    def __rule__(input, output, params, wildcards, threads, resources, log, version, rule, conda_env, container_img,
-                 singularity_args, use_singularity, env_modules, bench_record, jobid, is_shell, bench_iteration,
-                 cleanup_scripts, shadow_dir):
-        script("run_snake.py", Path(paths.sparv_path) / "core", input, output, params,
-               wildcards, threads, resources, log, config, rule, conda_env, container_img, singularity_args,
-               env_modules, bench_record, jobid, bench_iteration, cleanup_scripts, shadow_dir)
-
-
-def make_all_files_rule(rule_storage, snake_storage):
+def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
     """Create named rule to run an annotation on all input files."""
     # Get user-supplied wildcard values
     wildcards = dict(wc.split("=") for wc in config.get("wildcards", []))
@@ -104,29 +89,19 @@ def make_all_files_rule(rule_storage, snake_storage):
             pass
 
 
+# Init the storage for some essential variables involving all rules
+snake_storage = snake_utils.SnakeStorage()
+
 # Find and load corpus config
 config_missing = snake_utils.load_config(config)
 
-# Find and load Sparv modules
-registry.find_modules()
-
-# Create rules for all available annotation functions
-for module_name in registry.annotators:
-    for f_name in registry.annotators[module_name]:
-        annotator = registry.annotators[module_name][f_name]
-        make_rule(module_name, f_name, annotator, config_missing)
-
-# Check and set rule orders
-ordered_rules = snake_utils.check_ruleorder(snake_storage)
-for rule1, rule2 in ordered_rules:
-    workflow.ruleorder(rule1.rule_name, rule2.rule_name)
-    # ruleorder:  rule1.rule_name > rule2.rule_name
+# Load modules and create automatic rules
+make_rules(config_missing)
 
 
 # ==============================================================================
 # Static Snakemake Rules
 # ==============================================================================
-
 
 # Rule to list all config options and their current values
 rule config:
