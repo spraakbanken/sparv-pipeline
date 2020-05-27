@@ -3,11 +3,11 @@
 import logging
 import os
 from glob import glob
+from pathlib import Path
 from typing import List, Optional
 
 import sparv.util as util
-from sparv import (AllDocuments, Annotation, Config, Corpus, Document, Export, ExportAnnotations, ExportInput,
-                   exporter)
+from sparv import AllDocuments, Annotation, Config, Corpus, Document, Export, ExportAnnotations, ExportInput, exporter
 from sparv.core import paths
 
 log = logging.getLogger(__name__)
@@ -81,7 +81,7 @@ def vrt_scrambled(doc: str = Document,
     log.info("Exported: %s", out)
 
 
-@exporter("CWB encode", config=[
+@exporter("CWB encode", order=2, config=[
     Config("cwb.corpus_registry", default=paths.corpus_registry),
     Config("cwb.cwb_datadir", default=paths.cwb_datadir),
     Config("cwb.encoding", default=paths.cwb_encoding),
@@ -95,6 +95,7 @@ def encode(corpus: str = Corpus,
            words: str = Annotation("<token:word>", all_docs=True),
            vrtfiles: str = ExportInput("vrt/{doc}.vrt", all_docs=True),
            out: str = Export("[cwb.corpus_registry]/[metadata.id]", absolute_path=True),
+           out_time: str = Export("[cwb.cwb_datadir]/[metadata.id]/.time_original", absolute_path=True),
            token: str = Annotation("<token>", all_docs=True),
            encoding: str = Config("cwb.encoding"),
            datadir: str = Config("cwb.cwb_datadir"),
@@ -102,6 +103,40 @@ def encode(corpus: str = Corpus,
            remove_namespaces: bool = Config("export.remove_export_namespaces", False),
            skip_compression: Optional[bool] = Config("cwb.skip_compression"),
            skip_validation: Optional[bool] = Config("cwb.skip_validation")):
+    """Do cwb encoding with vrt files in original order."""
+    cwb_encode(corpus, annotations, original_annotations, docs, words, vrtfiles, out, out_time, token, encoding,
+               datadir, registry, remove_namespaces, skip_compression, skip_validation)
+
+
+@exporter("CWB encode, scrambled", order=1, config=[
+    Config("cwb.corpus_registry", default=paths.corpus_registry),
+    Config("cwb.cwb_datadir", default=paths.cwb_datadir),
+    Config("cwb.encoding", default=paths.cwb_encoding),
+    Config("cwb.skip_compression", False),
+    Config("cwb.skip_validation", False)
+])
+def encode_scrambled(corpus: str = Corpus,
+                     annotations: List[str] = ExportAnnotations(export_type="vrt_export", is_input=False),
+                     original_annotations: Optional[list] = Config("vrt_export.original_annotations"),
+                     docs: list = AllDocuments,
+                     words: str = Annotation("<token:word>", all_docs=True),
+                     vrtfiles: str = ExportInput("vrt_scrambled/{doc}.vrt", all_docs=True),
+                     out: str = Export("[cwb.corpus_registry]/[metadata.id]", absolute_path=True),
+                     out_time: str = Export("[cwb.cwb_datadir]/[metadata.id]/.time_scrambled", absolute_path=True),
+                     token: str = Annotation("<token>", all_docs=True),
+                     encoding: str = Config("cwb.encoding"),
+                     datadir: str = Config("cwb.cwb_datadir"),
+                     registry: str = Config("cwb.corpus_registry"),
+                     remove_namespaces: bool = Config("export.remove_export_namespaces", False),
+                     skip_compression: Optional[bool] = Config("cwb.skip_compression"),
+                     skip_validation: Optional[bool] = Config("cwb.skip_validation")):
+    """Do cwb encoding with vrt files in scrambled order."""
+    cwb_encode(corpus, annotations, original_annotations, docs, words, vrtfiles, out, out_time, token, encoding,
+               datadir, registry, remove_namespaces, skip_compression, skip_validation)
+
+
+def cwb_encode(corpus, annotations, original_annotations, docs, words, vrtfiles, out, out_time, token, encoding,
+               datadir, registry, remove_namespaces, skip_compression, skip_validation):
     """Encode a number of vrt files, by calling cwb-encode."""
     assert datadir, "CWB_DATADIR not specified"
     assert registry, "CORPUS_REGISTRY not specified"
@@ -174,6 +209,9 @@ def encode(corpus: str = Corpus,
         for f in glob(os.path.join(corpus_datadir, "*.corpus.rdx")):
             os.remove(f)
         log.info("Compression done.")
+
+    # Write timestamp file
+    Path(out_time).touch()
 
 
 # TODO: Add snake-support!
