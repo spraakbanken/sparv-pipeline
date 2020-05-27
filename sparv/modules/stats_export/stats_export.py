@@ -10,7 +10,7 @@ from sparv import AllDocuments, Annotation, Corpus, Export, exporter, Config
 log = logging.getLogger(__name__)
 
 
-@exporter("Corpus word frequency list", language=["swe"],
+@exporter("Corpus word frequency list", language=["swe"], order=1,
           config=[Config("stats_export.delimiter", default="\t"),
                   Config("stats_export.cutoff", default=1),
                   Config("stats_export.include_all_compounds", default=False)])
@@ -52,6 +52,51 @@ def freq_list(corpus: str = Corpus,
         tokens = util.read_annotation_attributes(doc, [word, msd, baseform, sense, lemgram, complemgram])
         update_freqs(tokens, freq_dict, include_all_compounds)
 
+    write_csv(out, freq_dict, delimiter, cutoff)
+
+
+@exporter("Corpus word frequency list (withouth Swedish annotations)", order=2,
+          config=[Config("stats_export.delimiter", default="\t"),
+                  Config("stats_export.cutoff", default=1)])
+def freq_list_simple(corpus: str = Corpus,
+                     docs: list = AllDocuments,
+                     word: str = Annotation("<token:word>", all_docs=True),
+                     pos: str = Annotation("<token:pos>", all_docs=True),
+                     baseform: str = Annotation("<token:baseform>", all_docs=True),
+                     out: str = Export("frequency_list/stats_[metadata.id].csv"),
+                     delimiter: str = Config("stats_export.delimiter"),
+                     cutoff: int = Config("stats_export.cutoff")):
+    """Create a word frequency list for a corpus without sense, lemgram and complemgram annotations."""
+    freq_dict = defaultdict(int)
+
+    for doc in docs:
+        simple_tokens = util.read_annotation_attributes(doc, [word, pos, baseform])
+
+        # Add empty annotations for sense, lemgram and complemgram
+        tokens = []
+        for w, p, b in simple_tokens:
+            tokens.append((w, p, b, "|", "|", "|"))
+        update_freqs(tokens, freq_dict)
+
+    write_csv(out, freq_dict, delimiter, cutoff)
+
+
+def update_freqs(tokens, freq_dict, include_all_compounds=False):
+    """Extract annotation info and update frequencies."""
+    for word, msd, baseform, sense, lemgram, complemgram in tokens:
+        if "|" in baseform:
+            baseform = baseform.split("|")[1]
+        sense = sense.split("|")[1].split(":")[0]
+        lemgram = lemgram.split("|")[1].split(":")[0]
+        complemgram = complemgram.split("|")[1].split(":")[0]
+        if not include_all_compounds:
+            if sense:
+                complemgram = ""
+        freq_dict[(word, msd, baseform, sense, lemgram, complemgram)] += 1
+
+
+def write_csv(out, freq_dict, delimiter, cutoff):
+    """Write csv file."""
     with open(out, "w") as csvfile:
         csv_writer = csv.writer(csvfile, delimiter=delimiter)
         csv_writer.writerow(["token", "POS", "lemma", "SALDO sense", "lemgram", "compound", "count"])
@@ -60,16 +105,3 @@ def freq_list(corpus: str = Corpus,
                 break
             csv_writer.writerow([wordform, msd, lemma, sense, lemgram, complemgram, freq])
     log.info("Exported: %s", out)
-
-
-def update_freqs(tokens, freq_dict, include_all_compounds):
-    """Extract annotation info and update frequencies."""
-    for word, msd, baseform, sense, lemgram, complemgram in tokens:
-        baseform = baseform.split("|")[1]
-        sense = sense.split("|")[1].split(":")[0]
-        lemgram = lemgram.split("|")[1].split(":")[0]
-        complemgram = complemgram.split("|")[1].split(":")[0]
-        if not include_all_compounds:
-            if sense:
-                complemgram = ""
-        freq_dict[(word, msd, baseform, sense, lemgram, complemgram)] += 1
