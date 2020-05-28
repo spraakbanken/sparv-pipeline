@@ -354,6 +354,8 @@ def prettify_config(in_config):
             """Force indentation."""
             return super(MyDumper, self).increase_indent(flow, False)
 
+    # Resolve aliases and replace them with their anchors' contents
+    yaml.Dumper.ignore_aliases = lambda *args: True
     yaml_str = yaml.dump(in_config, default_flow_style=False, Dumper=MyDumper, indent=4)
     # Colorize keys for easier reading
     yaml_str = re.sub(r"^(\s*[\S]+):", util.Color.BLUE + r"\1" + util.Color.RESET + ":", yaml_str,
