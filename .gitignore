@@ -15,7 +15,7 @@ models/hist/diapivot.pickle
 models/hist/swedberg.pickle
 models/hunpos
 models/lexical_classes
-models/malt/swemalt-1.7.2.mco
+models/malt
 models/saldo/nst_utf8.txt
 models/saldo/saldo.compound.pickle
 models/saldo/saldo.pickle
