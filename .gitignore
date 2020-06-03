@@ -16,11 +16,7 @@ models/hist/swedberg.pickle
 models/hunpos
 models/lexical_classes
 models/malt
-models/saldo/nst_utf8.txt
-models/saldo/saldo.compound.pickle
-models/saldo/saldo.pickle
-models/saldo/saldom.xml
-models/saldo/stats.pickle
+models/saldo
 models/segment
 models/sensaldo
 models/treetagger

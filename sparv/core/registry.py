@@ -125,10 +125,10 @@ def installer(description: str, name: Optional[str] = None, config: Optional[Lis
 
 
 def modelbuilder(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
-                 language: Optional[List[str]] = None):
+                 language: Optional[List[str]] = None, order: Optional[int] = None):
     """Return a decorator for modelbuilder functions."""
     return _annotator(description=description, a_type=Annotator.modelbuilder, name=name, config=config,
-                      language=language)
+                      language=language, order=order)
 
 
 def _add_to_registry(annotator):
