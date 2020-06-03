@@ -3,7 +3,7 @@
 import re
 
 import sparv.util as util
-from sparv import Annotation, Document, Model, Output, annotator
+from sparv import Annotation, Config, Document, Model, ModelOutput, Output, annotator, modelbuilder
 
 SENT_SEP = "\n\n"
 TOK_SEP = "\n"
@@ -11,15 +11,19 @@ TAG_SEP = "\t"
 TAG_COLUMN = 1
 
 
-@annotator("Part-of-speech annotation with morphological descriptions", language=["swe"])
+@annotator("Part-of-speech annotation with morphological descriptions", language=["swe"], config=[
+           Config("hunpos.model", default="hunpos/hunpos.suc3.suc-tags.default-setting.utf8.model"),
+           Config("hunpos.morphtable", default="hunpos/hunpos.saldo.suc-tags.morphtable"),
+           Config("hunpos.patterns", default="hunpos/hunpos.suc.patterns")
+           ])
 def msdtag(doc: str = Document,
-           model: str = Model("hunpos/hunpos.suc3.suc-tags.default-setting.utf8.model"),
            out: str = Output("<token>:hunpos.msd", cls="token:msd", description="Part-of-speeches with morphological descriptions"),
            word: str = Annotation("<token:word>"),
            sentence: str = Annotation("<sentence>"),
+           model: str = Model("[hunpos.model]"),
+           morphtable: str = Model("[hunpos.morphtable]"),
+           patterns: str = Model("[hunpos.patterns]"),
            tag_mapping=None,
-           morphtable: str = Model("hunpos/hunpos.saldo.suc-tags.morphtable"),
-           patterns: str = Model("hunpos/hunpos.suc.patterns"),
            encoding: str = util.UTF8):
     """POS/MSD tag using the Hunpos tagger."""
     if isinstance(tag_mapping, str) and tag_mapping:
@@ -69,3 +73,11 @@ def postag(doc: str = Document,
     """Extract POS from MSD."""
     from sparv.modules.misc import misc
     misc.select(doc, out, msd, index=0, separator=".")
+
+
+@modelbuilder("Hunpos model", language=["swe"])
+def hunpos_model(model: str = ModelOutput("hunpos/hunpos.suc3.suc-tags.default-setting.utf8.model")):
+    """Download the Hunpos model."""
+    util.download_model(
+        "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/hunpos.suc3.suc-tags.default-setting.utf8.model",
+        model)

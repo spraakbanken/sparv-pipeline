@@ -2,8 +2,27 @@
 
 from collections import defaultdict
 
+import sparv.util as util
 from sparv import Model, ModelOutput, modelbuilder
 from sparv.modules.saldo import saldo
+
+
+@modelbuilder("Hunpos morphtable input files", language=["swe"])
+def morphtable_inputs(suc: str = ModelOutput("hunpos/suc3.morphtable.words"),
+                      morphtable_base: str = ModelOutput("hunpos/hunpos.suc.morphtable"),
+                      morphtable_patterns: str = ModelOutput("hunpos/hunpos.suc.patterns")):
+    """Download the files needed to build the SALDO morphtable."""
+    util.download_model(
+        "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc3.morphtable.words",
+        suc)
+
+    util.download_model(
+        "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/hunpos.suc.morphtable",
+        morphtable_base)
+
+    util.download_model(
+        "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/hunpos.suc.patterns",
+        morphtable_patterns)
 
 
 @modelbuilder("Hunpos-SALDO morphtable", language=["swe"])

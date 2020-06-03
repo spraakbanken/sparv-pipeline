@@ -13,8 +13,7 @@ models/geo
 models/hist/dalin.pickle
 models/hist/diapivot.pickle
 models/hist/swedberg.pickle
-models/hunpos/hist/hunpos.dalinm-swedberg.saldo.suc-tags.morphtable
-models/hunpos/hunpos.saldo.suc-tags.morphtable
+models/hunpos
 models/lexical_classes/blingbring.pickle
 models/lexical_classes/swefn.pickle
 models/malt/swemalt-1.7.2.mco
