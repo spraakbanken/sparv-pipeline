@@ -23,7 +23,7 @@ models/saldo/saldo.compound.pickle
 models/saldo/saldo.pickle
 models/saldo/saldom.xml
 models/saldo/stats.pickle
-models/segment/bettertokenizer.sv.saldo-tokens
+models/segment
 models/sensaldo
 models/treetagger
 models/wsd
