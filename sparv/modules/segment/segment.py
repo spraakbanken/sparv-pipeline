@@ -1,9 +1,9 @@
 """Segmentation mostly based on NLTK."""
 
 import logging
-import os.path
 import pickle
 import re
+from pathlib import Path
 from typing import Optional
 
 import nltk
@@ -23,35 +23,37 @@ log = logging.getLogger(__name__)
 @annotator("Automatic tokenization", config=[
     Config("segment.token_segmenter", default="better_word"),
     Config("segment.token_chunk", default="<sentence>"),
-    Config("segment.existing_tokens")
+    Config("segment.existing_tokens"),
+    Config("segment.tokenizer_config", default="segment/bettertokenizer.sv"),
+    Config("segment.token_list", default="segment/bettertokenizer.sv.saldo-tokens")
 ])
 def tokenize(doc: str = Document,
              out: str = Output("segment.token", cls="token", description="Token segments"),
              chunk: str = Annotation("[segment.token_chunk]"),
              segmenter: str = Config("segment.token_segmenter"),
              existing_segments: str = Config("segment.existing_tokens"),
-             model: Optional[str] = Model("segment/bettertokenizer.sv"),
-             pickled_model: bool = False):
+             model: Optional[str] = Model("[segment.tokenizer_config]"),
+             token_list: Optional[str] = Model("[segment.token_list]")):
     """Tokenize text."""
     do_segmentation(doc=doc, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,
-                    model=model, pickled_model=pickled_model)
+                    model=model, token_list=token_list)
 
 
 @annotator("Automatic segmentation of sentences", config=[
     Config("segment.sentence_segmenter", default="punkt_sentence"),
     Config("segment.sentence_chunk", default="<text>"),
-    Config("segment.existing_sentences")
+    Config("segment.existing_sentences"),
+    Config("segment.sentence_model", default="segment/punkt-nltk-svenska.pickle")
 ])
 def sentence(doc: str = Document,
              out: str = Output("segment.sentence", cls="sentence", description="Sentence segments"),
              chunk: Optional[str] = Annotation("[segment.sentence_chunk]"),
              segmenter: str = Config("segment.sentence_segmenter"),
              existing_segments: str = Config("segment.existing_sentences"),
-             model: Optional[str] = None,
-             pickled_model: bool = False):
+             model: Optional[str] = Model("[segment.sentence_model]")):
     """Split text into sentences."""
     do_segmentation(doc=doc, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,
-                    model=model, pickled_model=pickled_model)
+                    model=model)
 
 
 @annotator("Automatic segmentation of paragraphs", config=[
@@ -64,26 +66,24 @@ def paragraph(doc: str = Document,
               chunk: Optional[str] = Annotation("[segment.paragraph_chunk]"),
               segmenter: str = Config("segment.paragraph_segmenter"),
               existing_segments: str = Config("segment.existing_paragraphs"),
-              model: Optional[str] = None,
-              pickled_model: bool = False):
+              model: Optional[str] = None):
     """Split text into paragraphs."""
     do_segmentation(doc=doc, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,
-                    model=model, pickled_model=pickled_model)
+                    model=model)
 
 
-def do_segmentation(doc, out, segmenter, chunk=None, existing_segments=None, model=None, pickled_model=False):
+def do_segmentation(doc, out, segmenter, chunk=None, existing_segments=None, model=None, token_list=None):
     """Segment all chunks (e.g. sentences) into smaller "tokens" (e.g. words), and annotate them as "element" (e.g. w).
 
     Segmentation is done by the given "segmenter"; some segmenters take
     an extra argument which is a pickled "model" object.
     """
+    segmenter_args = []
     if model:
-        if pickled_model:
+        if Path(model).suffix in ["pickle", "pkl"]:
             with open(model, "rb") as M:
                 model = pickle.load(M, encoding="UTF-8")
-        segmenter_args = (model,)
-    else:
-        segmenter_args = ()
+        segmenter_args.append(model)
     assert segmenter in SEGMENTERS, "Available segmenters: %s" % ", ".join(sorted(SEGMENTERS))
     segmenter = SEGMENTERS[segmenter]
     segmenter = segmenter(*segmenter_args)
@@ -132,20 +132,34 @@ def do_segmentation(doc, out, segmenter, chunk=None, existing_segments=None, mod
     util.write_annotation(doc, out, segments)
 
 
-@modelbuilder("Token list for BetterTokenizer", language=["swe"])
+@modelbuilder("Model for PunktSentenceTokenizer", language=["swe"])
+def download_punkt_model(out: str = ModelOutput("segment/punkt-nltk-svenska.pickle")):
+    """Download model for use with PunktSentenceTokenizer."""
+    util.download_model(
+        "https://github.com/spraakbanken/sparv-models/raw/master/segment/punkt-nltk-svenska.pickle",
+        out)
+
+
+@modelbuilder("Model for BetterWordTokenizer", language=["swe"])
+def download_bettertokenizer(out: str = ModelOutput("segment/bettertokenizer.sv")):
+    """Download model for use with BetterWordTokenizer."""
+    util.download_model(
+        "https://github.com/spraakbanken/sparv-models/raw/master/segment/bettertokenizer.sv",
+        out)
+
+
+@modelbuilder("Token list for BetterWordTokenizer", language=["swe"])
 def build_tokenlist(saldo_model: str = Model("saldo/saldo.pickle"),
                     out: str = ModelOutput("segment/bettertokenizer.sv.saldo-tokens"),
                     segmenter: str = Config("segment.token_wordlist_segmenter", "better_word"),
-                    model: str = Model("segment/bettertokenizer.sv"),
-                    no_pickled_model: bool = True):
-    """Build a list of words from a SALDO model, to help BetterTokenizer."""
+                    model: str = Model("segment/bettertokenizer.sv")):
+    """Build a list of words from a SALDO model, to help BetterWordTokenizer."""
+    segmenter_args = []
     if model:
-        if not no_pickled_model:
-            with open(model, "rb") as M:
-                model = pickle.load(M)
-        segmenter_args = (model, True)
-    else:
-        segmenter_args = ()
+        if Path(model).suffix in ["pickle", "pkl"]:
+            with open(model, "rb") as m:
+                model = pickle.load(m)
+        segmenter_args.append(model)
     assert segmenter in SEGMENTERS, "Available segmenters: %s" % ", ".join(sorted(SEGMENTERS))
     segmenter = SEGMENTERS[segmenter]
     segmenter = segmenter(*segmenter_args)
@@ -167,6 +181,7 @@ def build_tokenlist(saldo_model: str = Model("saldo/saldo.pickle"),
 
     util.write_model_data(out, "\n".join(sorted(wordforms)))
 
+
 ######################################################################
 # Punkt word tokenizer
 
@@ -185,6 +200,7 @@ class ModifiedLanguageVars(nltk.tokenize.punkt.PunktLanguageVars):
     re_boundary_realignment = re.compile(r'[“”"\')\]}]+?(?:\s+|(?=--)|$)', re.MULTILINE)
 
     def __init__(self):
+        """Initialize class."""
         pass
 
 
@@ -260,7 +276,10 @@ def train_punkt_segmenter(textfiles, modelfile, encoding=util.UTF8, protocol=-1)
 ######################################################################
 
 class LinebreakTokenizer(nltk.RegexpTokenizer):
+    """Tokenizer that separates tokens by line breaks (based on NLTK's RegexpTokenizer)."""
+
     def __init__(self):
+        """Initialize class."""
         nltk.RegexpTokenizer.__init__(self, r"\s*\n\s*", gaps=True)
 
 
@@ -271,9 +290,11 @@ class PunctuationTokenizer(nltk.RegexpTokenizer):
     """
 
     def __init__(self):
+        """Initialize class."""
         nltk.RegexpTokenizer.__init__(self, r"[\.!\?]\s*", gaps=True)
 
     def span_tokenize(self, s):
+        """Tokenize s and return list with tokens."""
         result = []
         spans = nltk.RegexpTokenizer.span_tokenize(self, s)
         first = True
@@ -324,13 +345,18 @@ class BetterWordTokenizer(object):
 
     re_punctuated_token = re.compile(r"\w.*\.$", re.UNICODE)
 
-    def __init__(self, configuration_file, skip_tokenlist=False):
-        # Parse configuration file
+    def __init__(self, model, token_list=None):
+        """Parse configuration file (model) and token_list (if supplied)."""
         self.case_sensitive = False
         self.patterns = {"misc": [], "tokens": []}
         self.abbreviations = set()
         in_abbr = False
-        with open(configuration_file, encoding="UTF-8") as conf:
+
+        if token_list:
+            with open(token_list, encoding="UTF-8") as saldotokens:
+                self.patterns["tokens"] = [re.escape(t.strip()) for t in saldotokens.readlines()]
+
+        with open(model, encoding="UTF-8") as conf:
             for line in conf:
                 if line.startswith("#") or not line.strip():
                     continue
@@ -346,14 +372,7 @@ class BetterWordTokenizer(object):
                             raise e
                         key = key[:-1]
 
-                        if key == "token_list":
-                            if skip_tokenlist:
-                                continue
-                            if not val.startswith("/"):
-                                val = os.path.join(os.path.dirname(configuration_file), val)
-                            with open(val, encoding="UTF-8") as saldotokens:
-                                self.patterns["tokens"] = [re.escape(t.strip()) for t in saldotokens.readlines()]
-                        elif key == "case_sensitive":
+                        if key == "case_sensitive":
                             self.case_sensitive = (val.lower() == "true")
                         elif key.startswith("misc_"):
                             self.patterns["misc"].append(val)
@@ -361,6 +380,9 @@ class BetterWordTokenizer(object):
                             self.patterns[key] = re.escape(val)
                         elif key in ("multi", "number"):
                             self.patterns[key] = val
+                        # For backwards compatibility
+                        elif key == "token_list":
+                            pass
                         else:
                             raise ValueError("Unknown option: %s" % key)
                 else:
@@ -410,6 +432,7 @@ class BetterWordTokenizer(object):
         return words
 
     def span_tokenize(self, s):
+        """Tokenize s."""
         begin = 0
         for w in self.word_tokenize(s):
             begin = s.find(w, begin)
@@ -424,9 +447,11 @@ class CRFTokenizer(object):
     """
 
     def __init__(self, model):
+        """Initialize class."""
         self.model = model
 
     def span_tokenize(self, s):
+        """Tokenize s and return list with tokens."""
         return crf.segment(s, self.model)
 
 
@@ -434,15 +459,17 @@ class FSVParagraphSplitter(object):
     """A paragraph splitter for old Swedish."""
 
     def __init__(self):
+        """Initialize class."""
         pass
 
     def span_tokenize(self, s):
+        """Tokenize s and return list with tokens."""
         spans = []
         temp = [0, 0]
         first = True
         for i in range(len(s)):
             if not first:
-                new_para = re.search(u"^\.*§", s[i:])
+                new_para = re.search(r"^\.*§", s[i:])
                 if new_para:
                     spans.append((temp[0], i))
                     temp[0] = i
@@ -466,7 +493,7 @@ SEGMENTERS = dict(whitespace=nltk.WhitespaceTokenizer,
                   punkt_word=ModifiedPunktWordTokenizer,
                   punctuation=PunctuationTokenizer,
                   better_word=BetterWordTokenizer,
-                  crf=CRFTokenizer,
+                  crf_tokenizer=CRFTokenizer,
                   simple_word_punkt=nltk.WordPunctTokenizer,
                   fsv_paragraph=FSVParagraphSplitter
                   )
@@ -474,9 +501,3 @@ SEGMENTERS = dict(whitespace=nltk.WhitespaceTokenizer,
 if not do_segmentation.__doc__:
     do_segmentation.__doc__ = ""
 do_segmentation.__doc__ += "The following segmenters are available: %s" % ", ".join(sorted(SEGMENTERS))
-
-
-if __name__ == "__main__":
-    util.run.main(do_segmentation,
-                  train_punkt_segmenter=train_punkt_segmenter,
-                  build_token_wordlist=build_token_wordlist)

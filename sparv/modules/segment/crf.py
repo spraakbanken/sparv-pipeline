@@ -1,7 +1,6 @@
-# -*- coding: utf-8 -*-
-
 """
 Tokenization based on Conditional Random Fields, implemented for Old Swedish.
+
 Used by segment.CRFTokenizer.
 Requires installation of crfpp (https://taku910.github.io/crfpp/).
 """
@@ -43,14 +42,14 @@ def segment(sentence, model):
             last_span = str(last_span[0]), str(last_span[0])
 
             # add context
-            for i, (w, span) in enumerate(words):
+            for i, (w, _span) in enumerate(words):
                 nextline = '\t'.join((next(raws),) + l_features(w, u'LF%s' % (i,))).encode('utf-8')
                 tagger.add(nextline)
 
                 if i >= 1:
                     break
 
-            for w, span in words:
+            for w, _span in words:
                 # s_span = (str(span[0]), str(span[1]))
                 nextline = '\t'.join((next(raws),) + l_features(w, u'MID')).encode('utf-8')
                 tagger.add(nextline)
@@ -80,7 +79,7 @@ def crf_anchors(tagger, enumerated_sent):
 
     for i in range(0, size):
         label = tagger.y2(i)
-        w, span = next(words)
+        _w, span = next(words)
         # print w,span
 
         if label == 'SNG':
