@@ -19,9 +19,14 @@ CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 
 @modelbuilder("Blingbring model", language=["swe"])
-def blingbring_model(out: str = ModelOutput("lexical_classes/blingbring.pickle"),
-                     classmap: str = Model("lexical_classes/roget_hierarchy.xml")):
+def blingbring_model(out: str = ModelOutput("lexical_classes/blingbring.pickle")):
     """Download and build Blingbring model."""
+    # Download roget hierarchy
+    classmap = "lexical_classes/roget_hierarchy.xml"
+    util.download_model(
+        "https://github.com/spraakbanken/sparv-models/raw/master/lexical_classes/roget_hierarchy.xml",
+        classmap)
+
     # Download blingbring.txt and build blingbring.pickle
     raw_file = "lexical_classes/blingbring.txt"
     util.download_model("https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/bring/blingbring.txt", raw_file)
@@ -29,7 +34,7 @@ def blingbring_model(out: str = ModelOutput("lexical_classes/blingbring.pickle")
     util.write_model_pickle(out, lexicon)
 
     # Clean up
-    util.remove_model_files([raw_file])
+    util.remove_model_files([raw_file, classmap])
 
 
 @modelbuilder("SweFN model", language=["swe"])
@@ -43,6 +48,23 @@ def swefn_model(out: str = ModelOutput("lexical_classes/swefn.pickle")):
 
     # Clean up
     util.remove_model_files([raw_file])
+
+
+@modelbuilder("Blingbring frequency model", language=["swe"])
+def blingbring_freq_model(out: str = ModelOutput("lexical_classes/blingbring.freq.gp2008+suc3+romi.pickle")):
+    """Download Blingbring frequency model."""
+    util.download_model(
+        "https://github.com/spraakbanken/sparv-models/raw/master/lexical_classes/blingbring.freq.gp2008+suc3+romi.pickle",
+        out)
+
+
+@modelbuilder("Blingbring frequency model", language=["swe"])
+def swefn_freq_model(out: str = ModelOutput("lexical_classes/swefn.freq.gp2008+suc3+romi.pickle")):
+    """Download SweFN frequency model."""
+    util.download_model(
+        "https://github.com/spraakbanken/sparv-models/raw/master/lexical_classes/swefn.freq.gp2008+suc3+romi.pickle",
+        out)
+
 
 
 def read_blingbring(tsv, classmap, verbose=True):
