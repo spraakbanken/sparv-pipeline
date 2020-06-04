@@ -226,7 +226,7 @@ def main():
         snakemake_args["log_handler"] = [progress.log_handler]
     else:
         # Use minimal log handler
-        progress = log_handler.LogHandler()
+        progress = log_handler.LogHandler(summary=not simple_target)
         snakemake_args["log_handler"] = [progress.log_handler]
 
     # Run Snakemake

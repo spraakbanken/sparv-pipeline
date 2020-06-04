@@ -17,13 +17,14 @@ class LogHandler:
 
     icon = "\U0001f426"
 
-    def __init__(self, progressbar=False):
+    def __init__(self, progressbar=False, summary=False):
         """Initialize log handler.
 
         Args:
             progressbar: Set to True to enable progress bar. Disabled by default.
         """
         self.use_progressbar = progressbar
+        self.show_summary = summary
         self.finished = False
         self.messages = []
         self.real_errors = []
@@ -133,18 +134,18 @@ class LogHandler:
 
             # Print user-friendly error messages
             if self.messages:
-                logger.error("Job execution failed with the following message{}:".format(
+                logger.logger.error("Job execution failed with the following message{}:".format(
                     "s" if len(self.messages) > 1 else ""))
                 for message in self.messages:
                     (_message_type, module_name, f_name), msg = message
-                    logger.error("\n[{}:{}]\n{}".format(module_name, f_name, msg))
+                    logger.logger.error("\n[{}:{}]\n{}".format(module_name, f_name, msg))
             # Defer to Snakemake's default log handler for other errors
             elif self.real_errors:
                 for error in self.real_errors:
                     logger.text_handler(error)
 
-            if not self.use_progressbar:
+            if self.show_summary:
                 if self.messages or self.real_errors:
                     print()
                 elapsed = round(time.time() - self.start_time)
-                logger.info("Time elapsed: {}".format(timedelta(seconds=elapsed)))
+                logger.logger.info("Time elapsed: {}".format(timedelta(seconds=elapsed)))
