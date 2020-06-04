@@ -12,21 +12,21 @@ SALDO_TO_SUC["nl invar"] = {"NL.NOM"}
 
 
 @modelbuilder("Hunpos morphtable for Swedish historical resources", language=["swe"])
-def hist_morphtable(out: str = ModelOutput("hunpos/hist/hunpos.dalinm-swedberg.saldo.suc-tags.morphtable"),
+def hist_morphtable(out: str = ModelOutput("hunpos/hist/dalinm-swedberg_saldo_suc-tags.morphtable"),
                     swedberg: str = Model("hunpos/hist/swedberg-gender.hunpos"),
                     dalin: str = Model("hunpos/hist/dalinm.hunpos"),
-                    saldosuc_morphtable: str = Model("hunpos/hunpos.saldo.suc-tags.morphtable")):
+                    saldosuc_morphtable: str = Model("hunpos/saldo_suc-tags.morphtable")):
     """Read files and make a morphtable together with the information from SALDO (saldosuc_morphtable).
 
     Args:
         out (str, optional): Resulting morphtable file to be written.
-            Defaults to ModelOutput("hunpos/hist/hunpos.dalinm-swedberg.saldo.suc-tags.morphtable").
+            Defaults to ModelOutput("hunpos/hist/dalinm-swedberg_saldo_suc-tags.morphtable").
         swedberg (str, optional): Wordlist from Swedberg and corresponding SALDO MSD-tags.
             Defaults to Model("hunpos/hist/swedberg-gender.hunpos").
         dalin (str, optional): Wordlist from Dalin and corresponding SALDO MSD-tags.
             Defaults to Model("hunpos/hist/dalinm.hunpos").
         saldosuc_morphtable (str, optional): SALDO Hunpos morphtable.
-            Defaults to Model("hunpos/hunpos.saldo.suc-tags.morphtable").
+            Defaults to Model("hunpos/saldo_suc-tags.morphtable").
     """
     words = {}
     _read_saldosuc(words, saldosuc_morphtable)

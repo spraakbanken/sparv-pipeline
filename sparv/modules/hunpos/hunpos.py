@@ -12,9 +12,9 @@ TAG_COLUMN = 1
 
 
 @annotator("Part-of-speech annotation with morphological descriptions", language=["swe"], config=[
-           Config("hunpos.model", default="hunpos/hunpos.suc3.suc-tags.default-setting.utf8.model"),
-           Config("hunpos.morphtable", default="hunpos/hunpos.saldo.suc-tags.morphtable"),
-           Config("hunpos.patterns", default="hunpos/hunpos.suc.patterns")
+           Config("hunpos.model", default="hunpos/suc3_suc-tags_default-setting_utf8.model"),
+           Config("hunpos.morphtable", default="hunpos/saldo_suc-tags.morphtable"),
+           Config("hunpos.patterns", default="hunpos/suc.patterns")
            ])
 def msdtag(doc: str = Document,
            out: str = Output("<token>:hunpos.msd", cls="token:msd", description="Part-of-speeches with morphological descriptions"),
@@ -76,8 +76,8 @@ def postag(doc: str = Document,
 
 
 @modelbuilder("Hunpos model", language=["swe"])
-def hunpos_model(model: str = ModelOutput("hunpos/hunpos.suc3.suc-tags.default-setting.utf8.model")):
+def hunpos_model(model: str = ModelOutput("hunpos/suc3_suc-tags_default-setting_utf8.model")):
     """Download the Hunpos model."""
     util.download_model(
-        "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/hunpos.suc3.suc-tags.default-setting.utf8.model",
+        "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc3_suc-tags_default-setting_utf8.model",
         model)
