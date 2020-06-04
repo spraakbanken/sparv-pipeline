@@ -8,21 +8,9 @@ sparv/util/__pycache__/
 venv/
 *.pyc
 
-# Models
-models/geo
-models/hist/dalin.pickle
-models/hist/diapivot.pickle
-models/hist/swedberg.pickle
-models/hunpos
-models/lexical_classes
-models/malt
-models/saldo
-models/segment
-models/sensaldo
-models/treetagger
-models/wsd
 
-# Bin
+# models & bin
+models
 bin/maltparser-1.7.2/
 bin/wsd/
 bin/word_alignment/
