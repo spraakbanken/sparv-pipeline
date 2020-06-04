@@ -8,7 +8,7 @@ import snakemake
 from snakemake.logging import logger
 
 from sparv import __version__
-from sparv.core import progressbar, paths
+from sparv.core import log_handler, paths
 from sparv.core.paths import sparv_path
 
 # Check Python version
@@ -222,17 +222,17 @@ def main():
 
     if use_progressbar:
         # Use progress bar log handler
-        progress = progressbar.ProgressLogger()
+        progress = log_handler.LogHandler(progressbar=True)
         snakemake_args["log_handler"] = [progress.log_handler]
     else:
         # Use minimal log handler
-        snakemake_args["log_handler"] = [progressbar.minimal_log_handler]
+        progress = log_handler.LogHandler()
+        snakemake_args["log_handler"] = [progress.log_handler]
 
     # Run Snakemake
     snakemake.snakemake(sparv_path / "core" / "Snakefile", config=config, **snakemake_args)
 
-    if use_progressbar:
-        progress.stop()
+    progress.stop()
 
 
 if __name__ == "__main__":

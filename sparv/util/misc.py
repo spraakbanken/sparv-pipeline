@@ -1,6 +1,11 @@
 """Misc util functions."""
 
 
+class SparvErrorMessage(Exception):
+    """Exception used to notify users of errors in a friendly way without displaying traceback."""
+    pass
+
+
 def _safe_join(sep, elems):
     """Join a list of strings (elems), using (sep) as separator.
 

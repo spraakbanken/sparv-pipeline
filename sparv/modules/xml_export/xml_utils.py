@@ -20,7 +20,10 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token, word_a
     Used by pretty and sentence_scrambled.
     """
     # Root tag sanity check
-    assert valid_root(span_positions[0], span_positions[-1]), "Root tag is missing!"
+    if not valid_root(span_positions[0], span_positions[-1]):
+        raise util.SparvErrorMessage("Root tag is missing! If you have manually specified which elements to include, "
+                                     "make sure to include an element that encloses all other included elements and "
+                                     "text content.")
 
     # Create root node
     root_span = span_positions[0][2]

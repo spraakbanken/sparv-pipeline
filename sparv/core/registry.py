@@ -211,6 +211,7 @@ def expand_variables(string, module_name):
 
     Return the resulting string.
     """
+    rest = []
     # Convert config keys to config values
     while True:
         cfgs = list(re.finditer(r"\[([^\]=[]+)(?:=([^\][]+))?\]", string))
@@ -221,7 +222,7 @@ def expand_variables(string, module_name):
             if cfg_value is not None:
                 string = string.replace(cfg.group(), cfg_value)
             else:
-                print("WARNING: Could not convert " + cfg.group() + " into config value (used in " + module_name + ").")
+                rest.append(cfg.group()[1:-1])
                 break
         else:
             # No break occurred, continue outer loop
@@ -238,7 +239,7 @@ def expand_variables(string, module_name):
             assert real_ann, "Could not convert " + cls.group() + " into a real annotation (used in " + module_name + ")."
             string = string.replace(cls.group(), real_ann)
 
-    return string
+    return string, rest
 
 
 def dig(needle, haystack):

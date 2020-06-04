@@ -2,6 +2,7 @@
 
 import copy
 import inspect
+import os
 import re
 from collections import defaultdict
 from itertools import combinations
@@ -56,6 +57,7 @@ class RuleStorage(object):
         self.docs = []  # List of parameters referring to Document
         self.doc_annotations = []  # List of parameters containing the {doc} wildcard
         self.wildcard_annotations = []  # List of parameters containing other wildcards
+        self.missing_config = set()
 
         self.annotator = annotator_info["type"] is registry.Annotator.annotator
         self.importer = annotator_info["type"] is registry.Annotator.importer
@@ -84,8 +86,6 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
     if rule.annotator_info["language"] and sparv_config.get("metadata.language") not in rule.annotator_info["language"]:
         return
 
-    storage.all_rules.append(rule)
-
     if rule.importer:
         rule.inputs.append(Path(get_source_path(), "{doc}." + rule.source_type))
         if rule.source_type == sparv_config.get("source_type", "xml"):
@@ -108,7 +108,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
     for param_name, param in params.items():
         # Output
         if isinstance(param.default, Output):
-            param_value = registry.expand_variables(param.default, rule.full_name)
+            param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
+            rule.missing_config.update(missing_configs)
             ann_path = get_annotation_path(param_value, data=param.default.data, common=param.default.common)
             if param.default.all_docs:
                 rule.outputs.extend(map(Path, expand(escape_wildcards(paths.annotation_dir / ann_path),
@@ -129,13 +130,16 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                                                                                           param.default.description))
         # ModelOutput
         elif isinstance(param.default, ModelOutput):
-            model = util.get_model_path(registry.expand_variables(param.default, rule.full_name))
+            param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
+            rule.missing_config.update(missing_configs)
+            model = util.get_model_path(param_value)
             rule.outputs.append(model)
             rule.parameters[param_name] = str(model)
             storage.model_outputs.append(model)
         # Annotation
         elif registry.dig(Annotation, param.default):
-            param_value = registry.expand_variables(param.default, rule.full_name)
+            param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
+            rule.missing_config.update(missing_configs)
             ann_path = get_annotation_path(param_value, data=param.default.data, common=param.default.common)
             if rule.exporter or rule.installer or param.default.all_docs:
                 if param.default.all_docs:
@@ -158,7 +162,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             export_annotations = sparv_config.get(f"{export_type}.annotations", [])
             for annotation in export_annotations:
                 annotation, _, new_name = annotation.partition(" as ")
-                param_value = registry.expand_variables(annotation, rule.full_name)
+                param_value, missing_configs = registry.expand_variables(annotation, rule.full_name)
+                rule.missing_config.update(missing_configs)
                 if param.default.is_input:
                     rule.inputs.append(paths.annotation_dir / get_annotation_path(param_value))
                 if new_name:
@@ -180,18 +185,24 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         elif registry.dig(Model, param.default):
             if param.default is not None:
                 if isinstance(param.default, Model):
-                    model = util.get_model_path(registry.expand_variables(param.default, rule.full_name))
+                    param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
+                    rule.missing_config.update(missing_configs)
+                    model = util.get_model_path(param_value)
                     rule.inputs.append(model)
                     rule.parameters[param_name] = str(model)
                 elif isinstance(param.default, (list, tuple)):
                     rule.parameters[param_name] = []
                     for model in param.default:
-                        model = util.get_model_path(registry.expand_variables(model, rule.full_name))
+                        param_value, missing_configs = registry.expand_variables(model, rule.full_name)
+                        rule.missing_config.update(missing_configs)
+                        model = util.get_model_path(param_value)
                         rule.inputs.append(model)
                         rule.parameters[param_name].append(str(model))
         # Binary
         elif isinstance(param.default, Binary):
-            binary = paths.get_bin_path(registry.expand_variables(param.default, rule.full_name))
+            param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
+            rule.missing_config.update(missing_configs)
+            binary = paths.get_bin_path(param_value)
             rule.inputs.append(binary)
             rule.parameters[param_name] = str(binary)
         # Source
@@ -199,7 +210,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             rule.parameters[param_name] = get_source_path()
         # Export
         elif param.default == Export or isinstance(param.default, Export):
-            param_value = registry.expand_variables(param.default, rule.full_name)
+            param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
+            rule.missing_config.update(missing_configs)
             if param.default.absolute_path:
                 export_path = Path(param_value)
             else:
@@ -212,11 +224,12 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 rule.wildcard_annotations.append(param_name)
         # ExportInput
         elif isinstance(param.default, ExportInput):
+            param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
+            rule.missing_config.update(missing_configs)
             if param.default.absolute_path:
-                rule.parameters[param_name] = registry.expand_variables(param.default, rule.full_name)
+                rule.parameters[param_name] = param_value
             else:
-                rule.parameters[param_name] = str(paths.export_dir / registry.expand_variables(param.default,
-                                                                                               rule.full_name))
+                rule.parameters[param_name] = str(paths.export_dir / param_value)
             if param.default.all_docs:
                 rule.inputs.extend(expand(escape_wildcards(rule.parameters[param_name]),
                                           doc=get_source_files(storage.source_files)))
@@ -231,8 +244,17 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         elif param.default is not None:
             rule.parameters[param_name] = param.default
 
+    storage.all_rules.append(rule)
+
     # Add to rule lists in storage
     update_storage(storage, rule)
+
+    if rule.missing_config:
+        log_file = paths.log_dir / "{}.load_error.{}.log".format(os.getpid(), rule.full_name.replace(":", "."))
+        log_file.parent.mkdir(parents=True, exist_ok=True)
+        log_file.write_text("The following config variable{} need{} to be set:\n- {}".format(
+            *("s", "") if len(rule.missing_config) > 1 else ("", "s"),
+            "\n- ".join(rule.missing_config)))
 
     if config.get("debug"):
         print("    " + util.Color.BOLD + "INPUTS" + util.Color.RESET)

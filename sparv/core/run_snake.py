@@ -2,9 +2,12 @@
 
 import importlib
 import logging
+import os
+import sys
 
 from sparv.core import paths, log
 from sparv.core.registry import annotators
+from sparv.util import SparvErrorMessage
 
 # The snakemake variable is provided by Snakemake. The below is just to get fewer errors in editor.
 try:
@@ -26,4 +29,11 @@ logger = logging.getLogger("sparv")
 logger.info("RUN: %s(%s)", f_name, ", ".join("%s=%s" % (i[0], repr(i[1])) for i in list(parameters.items())))
 
 # Execute function
-annotators[module_name][f_name]["function"](**parameters)
+try:
+    annotators[module_name][f_name]["function"](**parameters)
+except SparvErrorMessage as e:
+    # Save error messages to file, to be read by log handler
+    log_file = paths.log_dir / "{}.{}.error.{}.{}.log".format(snakemake.params.pid, os.getpid(), module_name, f_name)
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+    log_file.write_text(str(e))
+    sys.exit(123)
