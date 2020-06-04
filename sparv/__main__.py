@@ -230,9 +230,11 @@ def main():
         snakemake_args["log_handler"] = [progress.log_handler]
 
     # Run Snakemake
-    snakemake.snakemake(sparv_path / "core" / "Snakefile", config=config, **snakemake_args)
+    success = snakemake.snakemake(sparv_path / "core" / "Snakefile", config=config, **snakemake_args)
 
     progress.stop()
+
+    sys.exit(0 if success else 1)
 
 
 if __name__ == "__main__":
