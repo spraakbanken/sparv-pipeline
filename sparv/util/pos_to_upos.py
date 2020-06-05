@@ -36,6 +36,42 @@ def convert_to_upos(pos, lang, tagset):
 
 
 ################################################################################
+# SUC POS
+################################################################################
+
+def _swe_SUC_convert(pos):
+    """Convert SUC tags to UPOS."""
+    pos_dict = {
+        "NN": "NOUN",
+        "PM": "PROPN",
+        "VB": "VERB",  # "AUX" ?
+        "IE": "PART",
+        "PC": "VERB",  # No ADJ?
+        "PL": "PART",  # No ADV, ADP?
+        "PN": "PRON",
+        "PS": "DET",  # No PRON?
+        "HP": "PRON",
+        "HS": "DET",  # No PRON?
+        "DT": "DET",
+        "HD": "DET",
+        "JJ": "ADJ",
+        "AB": "ADV",
+        "HA": "ADV",
+        "KN": "CONJ",
+        "SN": "SCONJ",
+        "PP": "ADP",
+        "RG": "NUM",
+        "RO": "ADJ",  # No NUM?
+        "IN": "INTJ",
+        "UO": "X",  # Could be any PoS, most probably a noun /ljo
+        "MAD": "PUNCT",
+        "MID": "PUNCT",
+        "PAD": "PUNCT"
+    }
+    return pos_dict.get(pos, FALLBACK)
+
+
+################################################################################
 # EAGLES/FreeLing
 ################################################################################
 
@@ -599,6 +635,8 @@ def _rus_TreeTagger_convert(pos):
 
 
 CONVERTERS = {
+    # Swedish:
+    ("swe", "SUC"): _swe_SUC_convert,
     # FreeLing:
     ("ast", "EAGLES"): _EAGLES_convert,
     ("cat", "EAGLES"): _EAGLES_convert,
