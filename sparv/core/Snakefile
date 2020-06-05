@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 
+import snakemake.io
 from snakemake.logging import logger
 
 from sparv import util
@@ -74,20 +75,35 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
 
 def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
     """Create named rule to run an annotation on all input files."""
+    # Only create rule when explicitly called
+    if config.get("run_by_sparv") and rule_storage.target_name not in config.get("targets", []):
+        return
+
     # Get user-supplied wildcard values
     wildcards = dict(wc.split("=") for wc in config.get("wildcards", []))
 
-    # Create rule, but only when called
-    if rule_storage.target_name in config.get("targets", []):
-        @workflow.rule(name=rule_storage.target_name)
-        @workflow.input(expand([paths.annotation_dir / o
-                                if not (paths.annotation_dir in o.parents or paths.export_dir in o.parents)
-                                else o
-                                for o in rule_storage.outputs], doc=config.get("doc")
-                        or snake_utils.get_source_files(snake_storage.source_files), **wildcards))
-        @workflow.run
-        def __rule__(*_args, **_kwargs):
-            pass
+    # Get Snakemake rule object
+    sm_rule = getattr(rules, rule_storage.rule_name).rule
+
+    # Prepend annotation dir to paths if needed (usually included in the {doc} wildcard but here it needs to be explicit)
+    rule_outputs = [paths.annotation_dir / o if not (paths.annotation_dir in o.parents or paths.export_dir in o.parents)
+                    else o
+                    for o in rule_storage.outputs]
+
+    # Expand {doc} wildcard to every corpus document
+    rule_outputs = expand(rule_outputs,
+                          doc=config.get("doc") or snake_utils.get_source_files(snake_storage.source_files),
+                          **wildcards)
+
+    # Convert paths to IOFile objects so Snakemake knows which rule they come from (in case of ambiguity)
+    rule_outputs = [snakemake.io.IOFile(f, rule=sm_rule) for f in rule_outputs]
+
+    @workflow.rule(name=rule_storage.target_name)
+    @workflow.input(rule_outputs)
+    @workflow.norun()
+    @workflow.run
+    def __rule__(*_args, **_kwargs):
+        pass
 
 
 # Init the storage for some essential variables involving all rules
