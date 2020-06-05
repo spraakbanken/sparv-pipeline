@@ -2,6 +2,7 @@
 
 import logging
 import os
+import re
 from glob import glob
 from pathlib import Path
 from typing import List, Optional
@@ -153,10 +154,14 @@ def cwb_encode(corpus, annotations, original_annotations, docs, words, vrtfiles,
                                                                              original_annotations, remove_namespaces,
                                                                              keep_struct_refs=True)
 
-    # Get VRT columns and structs
+    # Get VRT columns
     token_annotations = [(token + ":" + i) for i in token_annotations]
-    columns = [export_names.get(i, i) for i in token_annotations]
-    struct_annotations = [export_names.get(i, i) for i in annotations if not i.startswith(token)]
+    # First column must be called "word"
+    token_annotations[0] = "word"
+    columns = [cwb_escape(export_names.get(i, i)) for i in token_annotations]
+
+    # Get VRT structs
+    struct_annotations = [cwb_escape(export_names.get(i, i)) for i in annotations if not i.startswith(token)]
     structs = parse_structural_attributes(struct_annotations)
 
     corpus_registry = os.path.join(registry, corpus)
@@ -276,16 +281,17 @@ def create_vrt(span_positions, token, word_annotation, token_annotations, annota
 
         # Create line with structural annotation
         elif span.name != token:
+            cwb_span_name = cwb_escape(span.export)
             # Open structural element
             if instruction == "open":
                 attrs = make_attr_str(span.name, annotation_dict, export_names, span.index)
                 if attrs:
-                    vrt_lines.append("<%s %s>" % (span.export, attrs))
+                    vrt_lines.append("<%s %s>" % (cwb_span_name, attrs))
                 else:
-                    vrt_lines.append("<%s>" % span.export)
+                    vrt_lines.append("<%s>" % cwb_span_name)
             # Close element
             else:
-                vrt_lines.append("</%s>" % span.export)
+                vrt_lines.append("</%s>" % cwb_span_name)
 
     return "\n".join(vrt_lines)
 
@@ -295,6 +301,7 @@ def make_attr_str(annotation, annotation_dict, export_names, index):
     attrs = []
     for name, annot in annotation_dict[annotation].items():
         export_name = export_names.get(":".join([annotation, name]), name)
+        export_name = cwb_escape(export_name)
         # Escape special characters in value
         value = annot[index].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
         attrs.append('%s="%s"' % (export_name, value))
@@ -330,8 +337,9 @@ def parse_structural_attributes(structural_atts):
     order = []
     for n, struct in enumerate(structural_atts):
 
-        # Why did we not allow "." before? I can see no problems with CWB, so let's allow "." for now.
-        # assert not struct or struct == "-" or "." not in struct, "Struct should contain ':' or be equal to '-': %s" % struct
+        # From the CWB documentation: "By convention, all attribute names must be lowercase
+        # (more precisely, they may only contain the characters a-z, 0-9, -, and _, and may not start with a digit)"
+        assert not struct or struct == "-" or "." not in struct, "Struct should contain ':' or be equal to '-': %s" % struct
 
         if ":" in struct:
             elem, attr = struct.split(":")
@@ -344,3 +352,8 @@ def parse_structural_attributes(structural_atts):
                 order.append(elem)
             structs[elem].append((attr, n))
     return [(elem, structs[elem]) for elem in order]
+
+
+def cwb_escape(inname):
+    """Replace dots with "-" for CWB compatibility."""
+    return re.sub(r"\.", "-", inname)
