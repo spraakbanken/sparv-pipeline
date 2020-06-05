@@ -24,6 +24,10 @@ def scrambled(doc: str = Document,
               original_annotations: Optional[list] = Config("xml_export.original_annotations"),
               remove_namespaces: bool = Config("export.remove_export_namespaces", False)):
     """Export annotations to scrambled XML."""
+    if chunk not in annotations:
+        raise util.SparvErrorMessage(
+            "The annotation used for scrambling ({}) needs to be included in the output.".format(chunk))
+
     # Create export dir
     os.makedirs(os.path.dirname(out), exist_ok=True)
 
