@@ -22,32 +22,32 @@ def text_spans(doc: str = Document,
         return out_annotation
 
 
-def text_headtail(text, chunk, order, out_head, out_tail):
+@annotator("Head and tail whitespace characters for tokens")
+def text_headtail(doc: str = Document,
+                  chunk: str = Annotation("<token>"),
+                  out_head: str = Output("<token>:misc.head"),
+                  out_tail: str = Output("<token>:misc.tail")):
     """Extract "head" and "tail" whitespace characters for tokens."""
     def escape(t):
+        """Escape whitespace characters."""
         return t.replace(" ", "\\s").replace("\n", "\\n").replace("\t", "\\t")
 
-    if isinstance(text, str):
-        text = util.corpus.read_corpus_text(text)
-    if isinstance(chunk, str):
-        chunk = util.read_annotation_iterkeys(chunk)
-    if isinstance(order, str):
-        order = util.read_annotation(order)
-    corpus_text, anchor2pos, _pos2anchor = text
-    OUT_HEAD = {}
-    OUT_TAIL = {}
-    head_text = None
-    sorted_chunk = sorted(chunk, key=lambda x: order[x])
+    text = util.corpus.read_corpus_text(doc)
+    chunk = list(util.read_annotation(doc, chunk))
 
-    for i, edge in enumerate(sorted_chunk):
+    out_head_annotation = util.create_empty_attribute(doc, chunk)
+    out_tail_annotation = util.create_empty_attribute(doc, chunk)
+    head_text = None
+
+    for i, span in enumerate(chunk):
         if head_text:
-            OUT_HEAD[edge] = escape(head_text)
+            out_head_annotation[i] = escape(head_text)
             head_text = None
 
-        if i < len(sorted_chunk) - 1:
-            tail_start = anchor2pos[util.edgeEnd(edge)]
-            tail_end = anchor2pos[util.edgeStart(sorted_chunk[i + 1])]
-            tail_text = corpus_text[tail_start:tail_end]
+        if i < len(chunk) - 1:
+            tail_start = span[1][0]
+            tail_end = chunk[i + 1][0][0]
+            tail_text = text[tail_start:tail_end]
 
             try:
                 n_pos = tail_text.rindex("\n")
@@ -58,13 +58,10 @@ def text_headtail(text, chunk, order, out_head, out_tail):
                 tail_text = tail_text[:n_pos + 1]
 
             if tail_text:
-                OUT_TAIL[edge] = escape(tail_text)
+                out_tail_annotation[i] = escape(tail_text)
 
-    if out_head and out_tail:
-        util.write_annotation(out_head, OUT_HEAD)
-        util.write_annotation(out_tail, OUT_TAIL)
-    else:
-        return OUT_HEAD, OUT_TAIL
+    util.write_annotation(doc, out_head, out_head_annotation)
+    util.write_annotation(doc, out_tail, out_tail_annotation)
 
 
 def translate_tag(tag, out, mapping):
