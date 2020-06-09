@@ -58,6 +58,7 @@ class RuleStorage(object):
         self.doc_annotations = []  # List of parameters containing the {doc} wildcard
         self.wildcard_annotations = []  # List of parameters containing other wildcards
         self.missing_config = set()
+        self.exit_message = None
 
         self.annotator = annotator_info["type"] is registry.Annotator.annotator
         self.importer = annotator_info["type"] is registry.Annotator.importer
@@ -103,6 +104,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                     rule.outputs.append(paths.annotation_dir / get_annotation_path(element))
 
     params = inspect.signature(rule.annotator_info["function"]).parameters
+    output_dirs = set()
 
     # Go though function parameters and handle based on type
     for param_name, param in params.items():
@@ -216,6 +218,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 export_path = Path(param_value)
             else:
                 export_path = paths.export_dir / param_value
+            output_dirs.add(export_path.parent)
             rule.outputs.append(export_path)
             rule.parameters[param_name] = str(export_path)
             if "{doc}" in rule.parameters[param_name]:
@@ -248,6 +251,11 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
     # Add to rule lists in storage
     update_storage(storage, rule)
+
+    # Add exporter message
+    if rule.exporter:
+        rule.exit_message = "EXIT_MESSAGE: The exported files can be found in the following location{}:\n{}".format(
+            "s" if len(output_dirs) > 1 else "", "\n".join(str(p / "_")[:-1] for p in output_dirs))
 
     if rule.missing_config:
         log_file = paths.log_dir / "{}.load_error.{}.log".format(os.getpid(), rule.full_name.replace(":", "."))

@@ -99,6 +99,7 @@ def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
     rule_outputs = [snakemake.io.IOFile(f, rule=sm_rule) for f in rule_outputs]
 
     @workflow.rule(name=rule_storage.target_name)
+    @workflow.message(rule_storage.exit_message)
     @workflow.input(rule_outputs)
     @workflow.norun()
     @workflow.run

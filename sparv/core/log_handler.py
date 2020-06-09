@@ -31,6 +31,7 @@ class LogHandler:
         self.load_errors = None
         self.handled_load_errors = set()
         self.start_time = time.time()
+        self.exit_message = None
 
         # Progress bar related variables
         self.bar_mgr = None
@@ -77,8 +78,11 @@ class LogHandler:
 
         elif level == "job_info" and self.use_progressbar:
             if msg["msg"] and self.bar is not None:
-                # Only update status message, don't advance progress
-                self.bar(text=LogHandler.icon + "  " + msg["msg"], incr=0)
+                if msg["msg"].startswith("EXIT_MESSAGE: "):
+                    self.exit_message = msg["msg"][14:]
+                else:
+                    # Only update status message, don't advance progress
+                    self.bar(text=LogHandler.icon + "  " + msg["msg"], incr=0)
 
         elif level == "info":
             if msg["msg"] == "Nothing to be done.":
@@ -145,6 +149,9 @@ class LogHandler:
             elif self.real_errors:
                 for error in self.real_errors:
                     logger.text_handler(error)
+
+            if self.exit_message:
+                logger.logger.info(self.exit_message)
 
             if self.show_summary:
                 if self.messages or self.real_errors:
