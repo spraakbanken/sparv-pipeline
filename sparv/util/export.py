@@ -20,6 +20,16 @@ def gather_annotations(doc, annotations, export_names, flatten=True):
     """
     class Span(object):
         """Object to store span information."""
+        __slots__ = [
+            "name",
+            "index",
+            "start",
+            "end",
+            "start_sub",
+            "end_sub",
+            "export",
+            "node"
+        ]
 
         def __init__(self, name, index, start, end, export_names):
             """Set attributes."""
