@@ -3,6 +3,7 @@
 import heapq
 import logging
 import os
+import re
 
 from .classes import Annotation
 
@@ -38,7 +39,7 @@ def clear_annotation(doc, annotation):
         os.remove(annotation_path)
 
 
-def write_annotation(doc, annotation, values, append=False):
+def write_annotation(doc, annotation, values, append=False, allow_newlines=False):
     """Write an annotation to one or more files. The file is overwritten if it exists.
 
     The annotation should be a list of values.
@@ -50,7 +51,7 @@ def write_annotation(doc, annotation, values, append=False):
 
     if len(annotation) == 1:
         # Handle single annotation
-        _write_single_annotation(doc, annotation[0], values, append)
+        _write_single_annotation(doc, annotation[0], values, append, allow_newlines)
     else:
         elem_attrs = dict(split_annotation(ann) for ann in annotation)
         # Handle multiple annotations used as one
@@ -65,10 +66,10 @@ def write_annotation(doc, annotation, values, append=False):
 
         for annotation_name in annotation_values:
             _write_single_annotation(doc, join_annotation(annotation_name, elem_attrs[annotation_name]),
-                                     annotation_values[annotation_name], append)
+                                     annotation_values[annotation_name], append, allow_newlines)
 
 
-def _write_single_annotation(doc, annotation, values, append):
+def _write_single_annotation(doc, annotation, values, append, allow_newlines=False):
     """Write an annotation to a file."""
     is_span = not split_annotation(annotation)[1]
 
@@ -93,9 +94,12 @@ def _write_single_annotation(doc, annotation, values, append):
                 start_subpos = ".{}".format(start_subpos) if start_subpos is not None else ""
                 end_subpos = ".{}".format(end_subpos) if end_subpos is not None else ""
                 value = "{}{}-{}{}".format(start, start_subpos, end, end_subpos)
+            elif allow_newlines:
+                # Replace line breaks with "\n"
+                value = value.replace("\\", r"\\").replace("\n", r"\n").replace("\r", "")
             else:
-                # value = value.replace("\\", r"\\").replace("\n", r"\n").replace("\r", "")  # Use if we allow linebreaks in values
-                value = value.replace("\n", "").replace("\r", "")  # Don't allow linebreaks in values
+                # Remove line breaks entirely
+                value = value.replace("\n", "").replace("\r", "")
             print(value, file=f)
             ctr += 1
     # Update file modification time even if nothing was written
@@ -111,6 +115,8 @@ def create_empty_attribute(doc, annotation):
     - a list (i.e. an annotation that has already been loaded)
     - an integer
     """
+    assert isinstance(annotation, (Annotation, str, list, int))
+
     if isinstance(annotation, Annotation):
         annotation = str(annotation)
 
@@ -136,7 +142,7 @@ def read_annotation_spans(doc, annotation, decimals=False, with_annotation_name=
             yield span
 
 
-def read_annotation(doc, annotation, with_annotation_name=False):
+def read_annotation(doc, annotation, with_annotation_name=False, allow_newlines=False):
     """Yield each line from an annotation file."""
     if isinstance(annotation, Annotation):
         annotation = str(annotation).split()
@@ -144,7 +150,7 @@ def read_annotation(doc, annotation, with_annotation_name=False):
         annotation = annotation.split()
     if len(annotation) == 1:
         # Handle single annotation
-        yield from _read_single_annotation(doc, annotation[0], with_annotation_name)
+        yield from _read_single_annotation(doc, annotation[0], with_annotation_name, allow_newlines)
     else:
         # Handle multiple annotations used as one
 
@@ -154,25 +160,27 @@ def read_annotation(doc, annotation, with_annotation_name=False):
                                                                    "annotation is not allowed."
 
         # Get iterators for all annotations
-        all_annotations = {split_annotation(ann)[0]: _read_single_annotation(doc, ann, with_annotation_name)
+        all_annotations = {split_annotation(ann)[0]: _read_single_annotation(doc, ann, with_annotation_name,
+                                                                             allow_newlines)
                            for ann in annotation}
 
         # We need to read the annotation spans to be able to interleave the values in the correct order
-        for _, ann in heapq.merge(*[_read_single_annotation(doc, split_annotation(ann)[0], with_annotation_name=True)
+        for _, ann in heapq.merge(*[_read_single_annotation(doc, split_annotation(ann)[0], with_annotation_name=True,
+                                                            allow_newlines=allow_newlines)
                                     for ann in annotation]):
             yield next(all_annotations[ann])
 
 
-def read_annotation_attributes(doc, annotations, with_annotation_name=False):
+def read_annotation_attributes(doc, annotations, with_annotation_name=False, allow_newlines=False):
     """Yield tuples of multiple annotations."""
     assert isinstance(annotations, (tuple, list)), "'annotations' argument must be tuple or list"
     assert len(set(split_annotation(annotation)[0] for annotation in annotations)), "All attributes need to be for " \
                                                                                     "the same annotation spans"
-    return zip(*[read_annotation(doc, annotation, with_annotation_name)
+    return zip(*[read_annotation(doc, annotation, with_annotation_name, allow_newlines)
                  for annotation in annotations])
 
 
-def _read_single_annotation(doc, annotation, with_annotation_name):
+def _read_single_annotation(doc, annotation, with_annotation_name, allow_newlines=False):
     """Read a single annotation file."""
     ann_file = get_annotation_path(doc, annotation)
 
@@ -182,7 +190,9 @@ def _read_single_annotation(doc, annotation, with_annotation_name):
             value = line.rstrip("\n\r")
             if not split_annotation(annotation)[1]:  # If this is a span annotation
                 value = tuple(tuple(map(int, pos.split("."))) for pos in value.split("-"))
-            # value = re.sub(r"((?<!\\)(?:\\\\)*)\\n", "\1\n", value).replace(r"\\", "\\")  # Replace literal "\n" with linebreak (only needed if we allow "\n" in values)
+            elif allow_newlines:
+                # Replace literal "\n" with line break (if we allow "\n" in values)
+                value = re.sub(r"((?<!\\)(?:\\\\)*)\\n", r"\1\n", value).replace(r"\\", "\\")
             yield value if not with_annotation_name else (value, annotation)
             ctr += 1
     _log.info("Read %d items: %s/%s", ctr, doc, annotation)
