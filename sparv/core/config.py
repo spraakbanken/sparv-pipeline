@@ -7,6 +7,7 @@ from typing import Any
 
 import yaml
 
+from sparv import util
 from sparv.core import paths
 
 log = logging.getLogger(__name__)
@@ -19,6 +20,17 @@ config_undeclared = set()  # Config variables collected from use but not declare
 presets = {}  # Dict holding annotation presets
 
 
+def read_yaml(yaml_file):
+    """Read YAML file and handle errors."""
+    try:
+        with open(yaml_file) as f:
+            data = yaml.load(f, Loader=yaml.FullLoader)
+    except yaml.scanner.ScannerError as e:
+        raise util.SparvErrorMessage("An error occurred while reading the configuration file:\n" + str(e))
+
+    return data
+
+
 def load_config(config_file: str) -> None:
     """Load both default config and corpus config and merge into one config structure.
 
@@ -27,8 +39,7 @@ def load_config(config_file: str) -> None:
     """
     # Read default config
     if DEFAULT_CONFIG.is_file():
-        with open(DEFAULT_CONFIG) as f:
-            default_config = yaml.load(f, Loader=yaml.FullLoader)
+        default_config = read_yaml(DEFAULT_CONFIG)
     else:
         log.warning("Default config file is missing: " + DEFAULT_CONFIG)
         default_config = {}
@@ -36,10 +47,9 @@ def load_config(config_file: str) -> None:
 
     # Read corpus config
     user_config = {}
-    with open(config_file) as f:
-        loaded_config = yaml.load(f, Loader=yaml.FullLoader)
-        if loaded_config:
-            user_config = loaded_config
+    loaded_config = read_yaml(config_file)
+    if loaded_config:
+        user_config = loaded_config
     user_classes = user_config.get("classes", {})
 
     # Merge default and corpus config
@@ -116,30 +126,29 @@ def load_presets(lang):
     class_dict = {}
 
     for f in PRESETS_DIR.rglob("*.yaml"):
-        with open(f) as ff:
-            presets_yaml = yaml.load(ff, Loader=yaml.FullLoader)
+        presets_yaml = read_yaml(f)
 
-            # Skip preset if it is not valid for lang
-            if lang:
-                languages = presets_yaml.get("languages", [])
-                if languages and lang not in languages:
-                    continue
+        # Skip preset if it is not valid for lang
+        if lang:
+            languages = presets_yaml.get("languages", [])
+            if languages and lang not in languages:
+                continue
 
-            # Make sure preset names are upper case
-            p_name = (f.stem).upper()
-            c = presets_yaml.get("classes", {})
-            p = presets_yaml.get("presets", {})
-            for key, value in p.items():
-                if isinstance(value, list):
-                    # Prefix all preset keys with preset name
-                    for i, v in enumerate(value):
-                        if v in p:
-                            value[i] = f"{p_name}.{v}"
-                # Extend presets and class_dict
-                k_name = f"{p_name}.{key}"
-                presets[k_name] = value
-                if c:
-                    class_dict[k_name] = c
+        # Make sure preset names are upper case
+        p_name = f.stem.upper()
+        c = presets_yaml.get("classes", {})
+        p = presets_yaml.get("presets", {})
+        for key, value in p.items():
+            if isinstance(value, list):
+                # Prefix all preset keys with preset name
+                for i, v in enumerate(value):
+                    if v in p:
+                        value[i] = f"{p_name}.{v}"
+            # Extend presets and class_dict
+            k_name = f"{p_name}.{key}"
+            presets[k_name] = value
+            if c:
+                class_dict[k_name] = c
     return class_dict
 
 
@@ -157,7 +166,7 @@ def resolve_presets(annotations):
 def apply_presets(user_classes, default_classes):
     """Set correct classes and annotations from presets."""
     # Load annotation presets and classes
-    class_dict = load_presets(get("metadata.language", None))
+    class_dict = load_presets(get("metadata.language"))
     annotation_elems = _find_annotations("", config)
     preset_classes = {}
 

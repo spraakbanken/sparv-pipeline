@@ -82,9 +82,11 @@ class LogHandler:
 
         elif level == "info":
             if msg["msg"] == "Nothing to be done.":
-                print(msg["msg"])
+                logger.text_handler(msg)
 
-        elif level == "error" and "exit status 123" in msg["msg"]:
+        elif level == "error" and ("exit status 123" in msg["msg"] or (
+            "SystemExit" in msg["msg"] and "123" in msg["msg"]
+        )):
             # Exit status 123 means a SparvErrorMessage exception
             # Find log files tied to this process
             for log_file in paths.log_dir.glob("{}.*".format(os.getpid())):
@@ -149,3 +151,11 @@ class LogHandler:
                     print()
                 elapsed = round(time.time() - self.start_time)
                 logger.logger.info("Time elapsed: {}".format(timedelta(seconds=elapsed)))
+
+
+def exit_with_message(error, snakemake_pid, pid, module_name, function_name):
+    """Save error message to temporary file (to be read by log handler) and exit."""
+    log_file = paths.log_dir / "{}.{}.error.{}.{}.log".format(snakemake_pid, pid or 0, module_name, function_name)
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+    log_file.write_text(str(error))
+    sys.exit(123)

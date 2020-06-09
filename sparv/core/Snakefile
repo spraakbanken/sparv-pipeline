@@ -7,7 +7,7 @@ from snakemake.logging import logger
 
 from sparv import util
 from sparv.core import config as sparv_config
-from sparv.core import paths, registry, snake_utils
+from sparv.core import log_handler, paths, registry, snake_utils
 
 # Remove Snakemake's default log handler
 if config.get("run_by_sparv") and logger.log_handler and logger.log_handler[0] == logger.text_handler:
@@ -110,10 +110,13 @@ def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
 snake_storage = snake_utils.SnakeStorage()
 
 # Find and load corpus config
-config_missing = snake_utils.load_config(config)
-
-# Load modules and create automatic rules
-make_rules(config_missing)
+try:
+    config_missing = snake_utils.load_config(config)
+except util.SparvErrorMessage as e:
+    log_handler.exit_with_message(e, os.getpid(), None, "sparv", "config")
+else:
+    # Load modules and create automatic rules
+    make_rules(config_missing)
 
 
 # ==============================================================================
