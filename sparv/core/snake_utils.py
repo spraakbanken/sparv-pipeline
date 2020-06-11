@@ -4,7 +4,7 @@ import copy
 import inspect
 import os
 import re
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from itertools import combinations
 from pathlib import Path
 from typing import List, Optional, Set, Tuple
@@ -65,6 +65,7 @@ class RuleStorage(object):
         self.exporter = annotator_info["type"] is registry.Annotator.exporter
         self.installer = annotator_info["type"] is registry.Annotator.installer
         self.modelbuilder = annotator_info["type"] is registry.Annotator.modelbuilder
+        self.custom_annotator = annotator_info["type"] is registry.Annotator.custom_annotator
         self.description = annotator_info["description"]
         self.source_type = annotator_info["source_type"]
         self.import_outputs = annotator_info["outputs"]
@@ -103,8 +104,30 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 for element in annotations_:
                     rule.outputs.append(paths.annotation_dir / get_annotation_path(element))
 
-    params = inspect.signature(rule.annotator_info["function"]).parameters
+    params = OrderedDict(inspect.signature(rule.annotator_info["function"]).parameters)
     output_dirs = set()
+
+    if rule.custom_annotator:
+        sparv_name = f"sparv:{rule.full_name}"
+        # TODO: do something smart to expand annotators defined by the user
+        if sparv_name in sparv_config.get("custom_annotations"):
+            rule_info = sparv_config.get("custom_annotations").get(sparv_name)
+            for param_name, param in params.items():
+                # Expand output params
+                if param.default in [Output, ModelOutput, Export]:
+                    out = rule_info["output"].get(param_name)
+                    params[param_name] = param.replace(default=param.default(out))
+                # Expand other sparv params
+                elif param.default in [Annotation, Binary, Config, ExportAnnotations, ExportInput, Model]:
+                    value = rule_info["params"].get(param_name)
+                    params[param_name] = param.replace(default=param.default(value))
+                # Expand remaining params
+                elif rule_info["params"].get(param_name):
+                    value = rule_info["params"].get(param_name)
+                    params[param_name] = param.replace(default=value)
+        else:
+            # This custom rule is not being used, so don't process it
+            return
 
     # Go though function parameters and handle based on type
     for param_name, param in params.items():
@@ -311,7 +334,7 @@ def check_ruleorder(storage: SnakeStorage) -> Set[Tuple[RuleStorage, RuleStorage
 def get_parameters(rule_params):
     """Extend function parameters with doc names and replace wildcards."""
     def get_params(wildcards):
-        doc = get_doc_value(wildcards, rule_params.annotator)
+        doc = get_doc_value(wildcards, rule_params.annotator or rule_params.custom_annotator)
         # We need to make a copy of the parameters, since the rule might be used for multiple documents
         _parameters = copy.deepcopy(rule_params.parameters)
         _parameters.update({name: doc for name in rule_params.docs})

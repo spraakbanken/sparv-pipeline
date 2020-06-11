@@ -23,6 +23,7 @@ class Annotator(Enum):
     exporter = 3
     installer = 4
     modelbuilder = 5
+    custom_annotator = 6
 
 
 # All available annotator functions
@@ -129,6 +130,14 @@ def modelbuilder(description: str, name: Optional[str] = None, config: Optional[
     """Return a decorator for modelbuilder functions."""
     return _annotator(description=description, a_type=Annotator.modelbuilder, name=name, config=config,
                       language=language, order=order)
+
+
+def custom_annotator(description: Optional[str] = None, name: Optional[str] = None,
+                     config: Optional[List[Config]] = None, language: Optional[List[str]] = None,
+                     order: Optional[int] = None):
+    """Return a decorator for custom_annotator functions."""
+    return _annotator(description=description, a_type=Annotator.custom_annotator, name=name, config=config, language=language,
+                      order=order)
 
 
 def _add_to_registry(annotator):

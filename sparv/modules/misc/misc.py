@@ -1,8 +1,9 @@
 """Small annotators that don't fit as standalone python files."""
 
 import re
+from typing import Optional
 
-from sparv import Annotation, Document, Output, annotator, util
+from sparv import Annotation, Document, Output, annotator, custom_annotator, util
 
 
 @annotator("Text value of a span (usually a token)")
@@ -121,9 +122,14 @@ def constant(chunk, out, value=None):
     util.write_annotation(out, ((key, value if value else value) for key in util.read_annotation_iterkeys(chunk)))
 
 
-def affix(chunk, out, prefix="", suffix=""):
+@custom_annotator("Add prefix and/or suffix to an annotation.")
+def affix(doc: str = Document,
+          chunk: str = Annotation,
+          out: str = Output,
+          prefix: Optional[str] = "",
+          suffix: Optional[str] = ""):
     """Add prefix and/or suffix to annotation."""
-    util.write_annotation(out, ((key, prefix + val + suffix) for (key, val) in util.read_annotation_iteritems(chunk)))
+    util.write_annotation(doc, out, [(prefix + val + suffix) for val in util.read_annotation(doc, chunk)])
 
 
 def replace(chunk, out, find, sub=""):
