@@ -4,6 +4,7 @@ import bz2
 import io
 import logging
 import os
+import re
 import xml.etree.ElementTree as etree
 from collections import defaultdict
 
@@ -35,6 +36,16 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token, word_a
 
     # Go through span_positions and build xml tree
     for _pos, instruction, span in span_positions[1:]:
+        # Handle headers
+        if span.is_header:
+            if instruction == "open":
+                header = annotation_dict[span.name][util.HEADER_CONTENT][span.index]
+                # Replace any leading tabs with spaces
+                header = re.sub(r"^\t+", lambda m: INDENTATION * len(m.group()), header, flags=re.MULTILINE)
+                header_xml = etree.fromstring(header)
+                header_xml.tag = span.export  # Rename element if needed
+                node_stack[-1].node.append(header_xml)
+            continue
 
         # Create child node under the top stack node
         if instruction == "open":
@@ -95,9 +106,9 @@ def valid_root(first_item, last_item):
 
 def add_attrs(node, annotation, annotation_dict, export_names, index):
     """Add attributes from annotation_dict to node."""
-    for name, annot in annotation_dict[annotation].items():
-        export_name = export_names.get(":".join([annotation, name]), name)
-        node.set(export_name, annot[index])
+    for attrib_name, attrib_values in annotation_dict[annotation].items():
+        export_name = export_names.get(":".join([annotation, attrib_name]), attrib_name)
+        node.set(export_name, attrib_values[index])
 
 
 def handle_overlaps(span, node_stack, docid, overlap_ids, total_overlaps, annotation_dict, export_names):

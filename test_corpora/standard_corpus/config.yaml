@@ -14,8 +14,9 @@ metadata:
 #===============================================================================
 
 # Elements and attributes from the source XML that we want to be available as input for other annotations
-xml_elements:
-    - text:date
+xml_parser:
+    elements:
+        - text:date
 
 segment:
     # Chunk to use for automatic sentence segmentation (typically text or paragraph)

@@ -4,22 +4,23 @@ import logging
 import xml.etree.ElementTree as etree
 from collections import defaultdict
 from itertools import combinations
-from typing import List, Union
+from typing import List, Optional, Union
 
 from sparv.util import corpus, misc, parent
 
 log = logging.getLogger(__name__)
 
 
-def gather_annotations(doc, annotations, export_names, flatten=True):
+def gather_annotations(doc, annotations, export_names, flatten=True, header_annotations=None):
     """Calculate the span hierarchy and the annotation_dict containing all annotation elements and attributes.
 
     - doc: the name of the document
     - annotations: list of annotations to include
     - annotation_names: dictionary that maps from annotation names to export names
     """
-    class Span(object):
+    class Span:
         """Object to store span information."""
+
         __slots__ = [
             "name",
             "index",
@@ -28,10 +29,11 @@ def gather_annotations(doc, annotations, export_names, flatten=True):
             "start_sub",
             "end_sub",
             "export",
-            "node"
+            "node",
+            "is_header"
         ]
 
-        def __init__(self, name, index, start, end, export_names):
+        def __init__(self, name, index, start, end, export_names, is_header):
             """Set attributes."""
             self.name = name
             self.index = index
@@ -41,9 +43,10 @@ def gather_annotations(doc, annotations, export_names, flatten=True):
             self.end_sub = end[1] if len(end) > 1 else False
             self.export = export_names.get(self.name, self.name)
             self.node = None
+            self.is_header = is_header
 
         def set_node(self, parent_node=None):
-            """Create an xml node under parent_node."""
+            """Create an XML node under parent_node."""
             if parent_node is not None:
                 self.node = etree.SubElement(parent_node, self.export)
             else:
@@ -67,9 +70,9 @@ def gather_annotations(doc, annotations, export_names, flatten=True):
                 """Return a sort key for span which makes span comparison possible."""
                 hierarchy_index = elem_hierarchy.index(span.name) if span.name in elem_hierarchy else -1
                 if sub_positions:
-                    return ((span.start, span.start_sub), (- span.end, - span.end_sub), hierarchy_index)
+                    return (span.start, span.start_sub), (-span.end, -span.end_sub), hierarchy_index
                 else:
-                    return (span.start, - span.end, hierarchy_index)
+                    return span.start, -span.end, hierarchy_index
 
             # Both spans have sub positions
             if self.start_sub and other_span.start_sub:
@@ -84,25 +87,31 @@ def gather_annotations(doc, annotations, export_names, flatten=True):
                 return True
             return False
 
+    if header_annotations is None:
+        header_annotations = []
+
     # Collect annotation information and list of all annotation spans
     annotation_dict = defaultdict(dict)
     spans_list = []
-    for annotation_pointer in annotations:
-        span_name, attr = corpus.split_annotation(annotation_pointer)
-        if span_name not in annotation_dict:
-            annotation_dict[span_name] = {}  # span_name needs to be in the dictionary
-            try:
-                for i, s in enumerate(corpus.read_annotation_spans(doc, span_name, decimals=True)):
-                    spans_list.append(Span(span_name, i, s[0], s[1], export_names))
-            except FileNotFoundError:
-                log.info("Element %s not present in %s. Skipping." % (span_name, doc))
-        # TODO: assemble all attrs first and use read_annotation_attributes
-        if attr and not annotation_dict[span_name].get(attr):
-            try:
-                a = list(corpus.read_annotation(doc, annotation_pointer))
-                annotation_dict[span_name][attr] = a
-            except FileNotFoundError:
-                log.info("Attribute %s not present in %s. Skipping." % (annotation_pointer, doc))
+    for annots, is_header in ((annotations, False), (header_annotations, True)):
+        for annotation_pointer in annots:
+            span_name, attr = corpus.split_annotation(annotation_pointer)
+            if span_name not in annotation_dict:
+                annotation_dict[span_name] = {}  # span_name needs to be in the dictionary
+                try:
+                    for i, s in enumerate(corpus.read_annotation_spans(doc, span_name, decimals=True)):
+                        spans_list.append(Span(span_name, i, s[0], s[1], export_names, is_header))
+                except FileNotFoundError:
+                    log.info("Element %s not present in %s. Skipping." % (span_name, doc))
+            # TODO: assemble all attrs first and use read_annotation_attributes
+            if attr and not annotation_dict[span_name].get(attr):
+                try:
+                    annotation_dict[span_name][attr] = list(corpus.read_annotation(doc, annotation_pointer))
+                except FileNotFoundError:
+                    log.info("Attribute %s not present in %s. Skipping." % (annotation_pointer, doc))
+            elif is_header:
+                annotation_dict[span_name][corpus.HEADER_CONTENT] = list(
+                    corpus.read_annotation(doc, f"{span_name}:{corpus.HEADER_CONTENT}", allow_newlines=True))
 
     # Calculate hierarchy (if needed) and sort the span objects
     elem_hierarchy = calculate_element_hierarchy(doc, spans_list)
@@ -180,7 +189,7 @@ def calculate_element_hierarchy(doc, spans_list):
     return hierarchy
 
 
-def get_annotation_names(doc: Union[str, List[str]], token_name: str, annotations: List[str], original_annotations=None,
+def get_annotation_names(doc: Union[str, List[str]], token_name: Optional[str], annotations: List[str], original_annotations=None,
                          remove_namespaces=False, keep_struct_refs=False):
     """Get a list of annotations, token annotations and a dictionary for renamed annotations.
 
@@ -207,13 +216,34 @@ def get_annotation_names(doc: Union[str, List[str]], token_name: str, annotation
         if (plain_annot not in plain_annots) and ((plain_annot, None) not in annotations):
             annotations.append((plain_annot, None))
 
-    # Get the names of all token annotations (but not token itself)
-    token_annotations = [corpus.split_annotation(i[0])[1] for i in annotations
-                         if corpus.split_annotation(i[0])[0] == token_name and i[0] != token_name]
+    if token_name:
+        # Get the names of all token annotations (but not token itself)
+        token_annotations = [corpus.split_annotation(i[0])[1] for i in annotations
+                             if corpus.split_annotation(i[0])[0] == token_name and i[0] != token_name]
+    else:
+        token_annotations = []
 
     export_names = _create_export_names(annotations, token_name, remove_namespaces, keep_struct_refs)
 
     return [i[0] for i in annotations], token_annotations, export_names
+
+
+def get_header_names(doc: Union[str, List[str]], header_annotations, remove_namespaces=False):
+    """Get a list of header annotations and a dictionary for renamed annotations."""
+    header_annotations = misc.split_tuples_list(header_annotations)
+    if not header_annotations:
+        # Get header_annotations from HEADERS_FILE if it exists
+        if isinstance(doc, list):
+            header_annotations = []
+            for d in doc:
+                if corpus.data_exists(d, corpus.HEADERS_FILE):
+                    header_annotations.extend(misc.split_tuples_list(corpus.read_data(d, corpus.HEADERS_FILE)))
+        elif corpus.data_exists(doc, corpus.HEADERS_FILE):
+            header_annotations = misc.split_tuples_list(corpus.read_data(doc, corpus.HEADERS_FILE))
+
+    export_names = _create_export_names(header_annotations, None, remove_namespaces, keep_struct_refs=False)
+
+    return [a[0] for a in header_annotations], export_names
 
 
 def _create_export_names(annotations, token_name, remove_namespaces: bool, keep_struct_refs: bool):
