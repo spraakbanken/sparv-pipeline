@@ -13,6 +13,7 @@ from sparv.util import split_annotation
 from sparv.util.classes import Config, ModelOutput, Output
 
 modules_path = ".".join(("sparv", paths.modules_dir))
+custom_name = "custom"
 
 
 class Annotator(Enum):
@@ -39,7 +40,7 @@ annotation_classes = {
 }
 
 
-def find_modules(no_import=False) -> list:
+def find_modules(no_import=False, find_custom=False) -> list:
     """Find Sparv modules and optionally import them.
 
     By importing a module containing annotator functions, the functions will automatically be
@@ -58,6 +59,19 @@ def find_modules(no_import=False) -> list:
         modules.append(module.name)
         if not no_import:
             importlib.import_module(".".join((modules_path, module.name)))
+
+    if find_custom:
+        # Also search for modules in corpus dir
+        custom_modules = pkgutil.iter_modules([paths.corpus_dir])
+        for module in custom_modules:
+            module_name = f"{custom_name}.{module.name}"
+            modules.append(module_name)
+            if not no_import:
+                module_path = paths.corpus_dir.resolve() / f"{module.name}.py"
+                spec = importlib.util.spec_from_file_location(module_name, module_path)
+                m = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(m)
+
     return modules
 
 
@@ -68,6 +82,8 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
     def decorator(f):
         """Add wrapped function to registry."""
         module_name = f.__module__[len(modules_path) + 1:].split(".")[0]
+        if not module_name and a_type == Annotator.custom_annotator:
+            module_name = f.__module__
         _add_to_registry({
             "module_name": module_name,
             "description": description,

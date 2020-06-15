@@ -24,7 +24,7 @@ rule do_nothing:
 def make_rules(config_missing: bool) -> None:
     """Load all Sparv modules and create Snakemake rules."""
     # Find and load Sparv modules
-    registry.find_modules()
+    registry.find_modules(find_custom=sparv_config.get("custom_annotations"))
 
     # Create rules for all available annotation functions
     for module_name in registry.annotators:

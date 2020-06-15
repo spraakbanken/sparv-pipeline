@@ -14,7 +14,7 @@ from snakemake.io import expand
 
 from sparv import util
 from sparv.core import config as sparv_config
-from sparv.core import paths, registry
+from sparv.core import paths, registry, log_handler
 from sparv.util.classes import (AllDocuments, Annotation, Binary, Config, Corpus, Document, Export, ExportAnnotations,
                                 ExportInput, Language, Model, ModelOutput, Output, Source)
 
@@ -108,23 +108,21 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
     output_dirs = set()
 
     if rule.custom_annotator:
-        sparv_name = f"sparv:{rule.full_name}"
-        # TODO: do something smart to expand annotators defined by the user
-        if sparv_name in sparv_config.get("custom_annotations"):
-            rule_info = sparv_config.get("custom_annotations").get(sparv_name)
+        if rule.full_name in sparv_config.get("custom_annotations"):
+            rule_info = sparv_config.get("custom_annotations").get(rule.full_name, {})
+            for out_param in rule_info.get("output", []):
+                expand_custom_param(params, out_param, rule_info, rule.full_name)
+            for param in rule_info.get("params", []):
+                expand_custom_param(params, param, rule_info, rule.full_name)
+            # Check if all parameters have received their values
             for param_name, param in params.items():
-                # Expand output params
-                if param.default in [Output, ModelOutput, Export]:
-                    out = rule_info["output"].get(param_name)
-                    params[param_name] = param.replace(default=param.default(out))
-                # Expand other sparv params
-                elif param.default in [Annotation, Binary, Config, ExportAnnotations, ExportInput, Model]:
-                    value = rule_info["params"].get(param_name)
-                    params[param_name] = param.replace(default=param.default(value))
-                # Expand remaining params
-                elif rule_info["params"].get(param_name):
-                    value = rule_info["params"].get(param_name)
-                    params[param_name] = param.replace(default=value)
+                try:
+                    if param.default in [Annotation, Binary, Config, ExportAnnotations, ExportInput, Model, Output,
+                                         ModelOutput, Export]:
+                        registry.expand_variables(param.default, rule.full_name)
+                except Exception:
+                    error = f"Parameter '{param_name}' in custom rule '{rule.full_name}' has no value!"
+                    log_handler.exit_with_message(error, os.getpid(), None, "sparv", "config")
         else:
             # This custom rule is not being used, so don't process it
             return
@@ -325,8 +323,8 @@ def check_ruleorder(storage: SnakeStorage) -> Set[Tuple[RuleStorage, RuleStorage
         rule1 = rules[0].full_name
         rule2 = rules[1].full_name
         common_outputs = ", ".join(map(str, common_outputs))
-        print(f"WARNING: The annotators {rule1} and {rule2} have common outputs ({common_outputs}). "
-              "Please make sure to set their 'order' arguments to different values.")
+        print(f"{util.Color.YELLOW}WARNING: The annotators {rule1} and {rule2} have common outputs ({common_outputs}). "
+              f"Please make sure to set their 'order' arguments to different values.{util.Color.RESET}")
 
     return ordered_rules
 
@@ -459,3 +457,24 @@ def get_install_targets(install_outputs):
     for installation in sparv_config.get("korp.install", []):
         install_inputs.extend(install_outputs[installation])
     return install_inputs
+
+
+def expand_custom_param(params, param_name, rule_info, rulename):
+    """Expand a custom rule parameter with default values."""
+    if not params.get(param_name):
+        print(f"{util.Color.YELLOW}WARNING: The parameter {param_name} used in one of your custom rules "
+              f"does not exist in {rulename}{util.Color.RESET}")
+    else:
+        param = params[param_name]
+        # Expand output params
+        if param.default in [Output, ModelOutput, Export]:
+            out = rule_info["output"].get(param_name)
+            params[param_name] = param.replace(default=param.default(out))
+        # Expand other sparv params
+        elif param.default in [Annotation, Binary, Config, ExportAnnotations, ExportInput, Model]:
+            value = rule_info["params"].get(param_name)
+            params[param_name] = param.replace(default=param.default(value))
+        # Expand remaining params
+        elif rule_info["params"].get(param_name):
+            value = rule_info["params"].get(param_name)
+            params[param_name] = param.replace(default=value)

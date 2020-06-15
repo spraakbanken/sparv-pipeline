@@ -45,7 +45,8 @@ xml_export: &xml
     annotations:
         - SWE_DEFAULT.all
         - DATETIME.all
-        # - <token>:misc.word.affixed
+        - <token>:misc.word.affixed
+        - <token>:custom.convert.upper
 
 
 vrt_export: *xml
@@ -68,10 +69,12 @@ csv_export:
 # Custom Annotations
 #===============================================================================
 custom_annotations:
-    sparv:misc:affix:
+    misc:affix:
         output:
             out: <token>:misc.word.affixed
         params:
             chunk: <token:word>
             prefix: "|"
             suffix: "|"
+
+    custom.convert:uppercase: {}
