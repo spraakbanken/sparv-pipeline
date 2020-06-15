@@ -3,7 +3,6 @@
 import logging
 import os
 import xml.etree.ElementTree as etree
-from collections import defaultdict
 from typing import Optional
 
 import sparv.util as util
@@ -20,7 +19,7 @@ log = logging.getLogger(__name__)
 ])
 def preserved_format(doc: str = Document,
                      docid: str = Annotation("<docid>", data=True),
-                     out: str = Export("xml_preserve_formatting/[xml_export.filename_formatted]"),
+                     out: str = Export("xml_preserved_formatting/[xml_export.filename_formatted]"),
                      annotations: list = ExportAnnotations(export_type="xml_export"),
                      original_annotations: Optional[list] = Config("xml_export.original_annotations"),
                      header_annotations: Optional[list] = Config("xml_export.header_annotations"),
@@ -57,7 +56,7 @@ def preserved_format(doc: str = Document,
     h_annotations, h_export_names = util.get_header_names(doc, header_annotations, remove_namespaces)
     export_names.update(h_export_names)
     span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names, flatten=False,
-                                                              header_annotations=h_annotations)
+                                                              split_overlaps=True, header_annotations=h_annotations)
     sorted_positions = [(pos, span[0], span[1]) for pos, spans in sorted(span_positions.items()) for span in spans]
 
     # Root tag sanity check
@@ -71,8 +70,6 @@ def preserved_format(doc: str = Document,
     root_span.set_node()
     node_stack = []
     last_pos = 0  # Keeps track of the position of the processed text
-    overlap_ids = defaultdict(int)  # Keeps track of which overlapping spans belong together
-    total_overlaps = 0
 
     for x, (_pos, instruction, span) in enumerate(sorted_positions):
         # Open node: Create child node under the top stack node
@@ -96,6 +93,8 @@ def preserved_format(doc: str = Document,
                     span.set_node(parent_node=node_stack[-1].node)
 
                 xml_utils.add_attrs(span.node, span.name, annotation_dict, export_names, span.index)
+                if span.overlap_id:
+                    span.node.set("_overlap", f"{docid}-{span.overlap_id}")
                 node_stack.append(span)
 
                 # Set text if there should be any between this node and the next one
@@ -119,13 +118,10 @@ def preserved_format(doc: str = Document,
                     tail_span.node.tail = corpus_text[last_pos:span.end]
                 last_pos = span.end
 
-            # Closing node == top stack node: pop stack and move on to next span
-            if span == node_stack[-1]:
-                node_stack.pop()
-            # Handle overlapping spans
-            else:
-                total_overlaps = xml_utils.handle_overlaps(span, node_stack, docid, overlap_ids, total_overlaps,
-                                                           annotation_dict, export_names)
+            # Make sure closing node == top stack node
+            assert span == node_stack[-1], "Overlapping elements found: {}".format(node_stack[-2:])
+            # Pop stack and move on to next span
+            node_stack.pop()
 
     # Write xml to file
     etree.ElementTree(root_span.node).write(out, xml_declaration=False, method="xml", encoding=util.UTF8)

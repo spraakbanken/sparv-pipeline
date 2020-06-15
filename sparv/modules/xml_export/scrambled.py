@@ -39,7 +39,7 @@ def scrambled(doc: str = Document,
     # Get annotation spans, annotations list etc.
     annotations, _, export_names = util.get_annotation_names(doc, token, annotations, original_annotations,
                                                              remove_namespaces)
-    span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names)
+    span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names, split_overlaps=True)
 
     # Reorder chunks
     new_span_positions = util.scramble_spans(span_positions, chunk, chunk_order)

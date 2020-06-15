@@ -54,7 +54,7 @@ def pretty(doc: str = Document,
                                                              remove_namespaces)
     h_annotations, h_export_names = util.get_header_names(doc, header_annotations, remove_namespaces)
     export_names.update(h_export_names)
-    span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names,
+    span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names, split_overlaps=True,
                                                               header_annotations=h_annotations)
     xmlstr = xml_utils.make_pretty_xml(span_positions, annotation_dict, export_names, token, word_annotation, docid)
 

@@ -3,6 +3,7 @@
 import logging
 import xml.etree.ElementTree as etree
 from collections import defaultdict
+from copy import deepcopy
 from itertools import combinations
 from typing import List, Optional, Union
 
@@ -11,7 +12,8 @@ from sparv.util import corpus, misc, parent
 log = logging.getLogger(__name__)
 
 
-def gather_annotations(doc, annotations, export_names, flatten=True, header_annotations=None):
+def gather_annotations(doc: str, annotations, export_names, flatten: bool = True, split_overlaps: bool = False,
+                       header_annotations=None):
     """Calculate the span hierarchy and the annotation_dict containing all annotation elements and attributes.
 
     - doc: the name of the document
@@ -29,8 +31,9 @@ def gather_annotations(doc, annotations, export_names, flatten=True, header_anno
             "start_sub",
             "end_sub",
             "export",
+            "is_header",
             "node",
-            "is_header"
+            "overlap_id"
         ]
 
         def __init__(self, name, index, start, end, export_names, is_header):
@@ -42,8 +45,9 @@ def gather_annotations(doc, annotations, export_names, flatten=True, header_anno
             self.start_sub = start[1] if len(start) > 1 else False
             self.end_sub = end[1] if len(end) > 1 else False
             self.export = export_names.get(self.name, self.name)
-            self.node = None
             self.is_header = is_header
+            self.node = None
+            self.overlap_id = None
 
         def set_node(self, parent_node=None):
             """Create an XML node under parent_node."""
@@ -87,6 +91,10 @@ def gather_annotations(doc, annotations, export_names, flatten=True, header_anno
                 return True
             return False
 
+        def same(self, other):
+            """Return True if name and index are the same for two Span objects."""
+            return self.name == other.name and self.index == other.index
+
     if header_annotations is None:
         header_annotations = []
 
@@ -128,6 +136,10 @@ def gather_annotations(doc, annotations, export_names, flatten=True, header_anno
             spans_dict[span.start].append(("open", span))
             spans_dict[span.end].insert(0, ("close", span))
 
+    # Should overlapping spans be split?
+    if split_overlaps:
+        _handle_overlaps(spans_dict)
+
     # Return the span_dict without converting to list first
     if not flatten:
         return spans_dict, annotation_dict
@@ -135,6 +147,46 @@ def gather_annotations(doc, annotations, export_names, flatten=True, header_anno
     # Flatten structure
     span_positions = [(pos, span[0], span[1]) for pos, spans in sorted(spans_dict.items()) for span in spans]
     return span_positions, annotation_dict
+
+
+def _handle_overlaps(spans_dict):
+    """Split overlapping spans and give them unique IDs to preserve their original connection."""
+    span_stack = []
+    total_overlaps = 0
+    overlap_ids = defaultdict(int)  # Keeps track of which overlapping spans belong together
+    for position in sorted(spans_dict):
+        for subposition, (event, span) in enumerate(spans_dict[position].copy()):
+            subposition_shift = 0
+            if event == "open":
+                span_stack.append(span)
+            elif event == "close":
+                closing_span = span_stack.pop()
+                if closing_span.same(span):
+                    # Has this span been split due to overlapping? If so, replace it with the new overlap span
+                    if not closing_span == span:
+                        spans_dict[position][subposition + subposition_shift] = ("close", closing_span)
+                else:
+                    # Overlapping spans found
+                    overlap_stack = []
+
+                    # Close all overlapping spans and add an overlap ID to them
+                    while not closing_span.same(span):
+                        total_overlaps += 1
+                        overlap_ids[closing_span.name] = total_overlaps
+                        closing_span.overlap_id = overlap_ids[closing_span.name]
+                        overlap_stack.append(deepcopy(closing_span))
+                        closing_span.end = span.end
+                        spans_dict[position].insert(subposition + subposition_shift, ("close", closing_span))
+                        subposition_shift += 1
+                        closing_span = span_stack.pop()
+
+                    # Re-open overlapping spans
+                    while overlap_stack:
+                        overlap_span = overlap_stack.pop()
+                        span_stack.append(overlap_span)
+                        overlap_span.start = span.end
+                        spans_dict[position].insert(subposition + subposition_shift + 1, ("open", overlap_span))
+                        subposition_shift += 1
 
 
 def calculate_element_hierarchy(doc, spans_list):
