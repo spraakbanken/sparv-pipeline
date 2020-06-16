@@ -20,7 +20,7 @@ presets:
         - token-annotations
         - swener
         - sentence
-        - lexical_class_text
+        - text-lexical-class
         - readability
 
     #====================================
@@ -32,7 +32,7 @@ presets:
         - saldo
         - malt
         - sentiment
-        - lexical_class_token
+        - token-lexical-class
 
     hunpos:
         - <token>:hunpos.pos
@@ -54,7 +54,7 @@ presets:
         - <token>:sensaldo.score
         - <token>:sensaldo.label
 
-    lexical_class_token:
+    token-lexical-class:
         - <token>:lexical_classes.blingbring
         - <token>:lexical_classes.swefn
 
@@ -72,7 +72,7 @@ presets:
         - <sentence>:misc.id
         - <sentence>:geo.geo_context as geo
 
-    lexical_class_text:
+    text-lexical-class:
         - <text>:lexical_classes.blingbring
         - <text>:lexical_classes.swefn
 
