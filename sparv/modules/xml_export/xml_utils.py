@@ -6,7 +6,6 @@ import logging
 import os
 import re
 import xml.etree.ElementTree as etree
-from collections import defaultdict
 
 import sparv.util as util
 
@@ -45,6 +44,23 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token, word_a
                 node_stack[-1].node.append(header_xml)
             continue
 
+    last_start_pos = None
+    last_end_pos = -1
+    current_token_text = None
+    last_node = None
+    inside_token = False
+
+    def handle_subtoken_text(position, last_start_position, last_end_position, node, token_text):
+        """Handle text for subtoken elements."""
+        if last_start_position < last_end_position < position:
+            node.tail = token_text[:position - last_end_position]
+            token_text = token_text[position - last_end_position:]
+        elif position > last_start_position:
+            node.text = token_text[:position - last_start_position]
+            token_text = token_text[position - last_start_position:]
+        return token_text
+
+    for pos, instruction, span in span_positions[1:]:
         # Create child node under the top stack node
         if instruction == "open":
             span.set_node(parent_node=node_stack[-1].node)
@@ -54,10 +70,27 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token, word_a
                 span.node.set("_overlap", f"{docid}-{span.overlap_id}")
             # Add text if this node is a token
             if span.name == token:
-                span.node.text = word_annotation[span.index]
+                inside_token = True
+                # Save text until later
+                last_start_pos = pos
+                current_token_text = word_annotation[span.index]
+
+            if inside_token and current_token_text:
+                current_token_text = handle_subtoken_text(pos, last_start_pos, last_end_pos, last_node,
+                                                          current_token_text)
+                last_start_pos = pos
+                last_node = span.node
 
         # Close node
         else:
+            if inside_token and current_token_text:
+                current_token_text = handle_subtoken_text(pos, last_start_pos, last_end_pos, last_node,
+                                                          current_token_text)
+                last_end_pos = pos
+                last_node = span.node
+            if span.name == token:
+                inside_token = False
+
             # Make sure closing node == top stack node
             assert span == node_stack[-1], "Overlapping elements found: {}".format(node_stack[-2:])
             # Pop stack and move on to next span
