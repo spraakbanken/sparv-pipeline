@@ -6,6 +6,7 @@ import os
 import re
 
 from .classes import Annotation
+from sparv.core import paths
 
 _log = logging.getLogger(__name__)
 
@@ -19,7 +20,6 @@ TEXT_FILE = "@text"
 STRUCTURE_FILE = "@structure"
 HEADERS_FILE = "@headers"
 HEADER_CONTENT = "contents"
-DEFAULT_CORPUS_DIR = ""
 
 
 def annotation_exists(doc, annotation):
@@ -252,18 +252,16 @@ def get_annotation_path(doc, annotation, data=False):
     if doc:
         doc, _, chunk = doc.partition(DOC_CHUNK_DELIM)
     elem, attr = split_annotation(annotation)
-    corpus_dir = os.environ.get("CORPUS_DIR", DEFAULT_CORPUS_DIR)
-    annotation_dir = os.path.join(corpus_dir, "annotations")
 
     if data:
         if doc:
-            path = os.path.join(annotation_dir, doc, chunk, elem)
+            path = os.path.join(paths.annotation_dir, doc, chunk, elem)
         else:
-            path = os.path.join(annotation_dir, elem)
+            path = os.path.join(paths.annotation_dir, elem)
     else:
         if not attr:
             attr = SPAN_ANNOTATION
-        path = os.path.join(annotation_dir, doc, chunk, elem, attr)
+        path = os.path.join(paths.annotation_dir, doc, chunk, elem, attr)
     return path
 
 
