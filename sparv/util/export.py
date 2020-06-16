@@ -275,12 +275,12 @@ def get_annotation_names(doc: Union[str, List[str]], token_name: Optional[str], 
     else:
         token_annotations = []
 
-    export_names = _create_export_names(annotations, token_name, remove_namespaces, keep_struct_refs)
+    export_names = _create_export_names(annotations, token_name, remove_namespaces, keep_struct_refs, original_annotations)
 
     return [i[0] for i in annotations], token_annotations, export_names
 
 
-def get_header_names(doc: Union[str, List[str]], header_annotations, remove_namespaces=False):
+def get_header_names(doc: Union[str, List[str]], header_annotations):
     """Get a list of header annotations and a dictionary for renamed annotations."""
     header_annotations = misc.split_tuples_list(header_annotations)
     if not header_annotations:
@@ -293,12 +293,13 @@ def get_header_names(doc: Union[str, List[str]], header_annotations, remove_name
         elif corpus.data_exists(doc, corpus.HEADERS_FILE):
             header_annotations = misc.split_tuples_list(corpus.read_data(doc, corpus.HEADERS_FILE))
 
-    export_names = _create_export_names(header_annotations, None, remove_namespaces, keep_struct_refs=False)
+    export_names = _create_export_names(header_annotations, None, False, keep_struct_refs=False)
 
     return [a[0] for a in header_annotations], export_names
 
 
-def _create_export_names(annotations, token_name, remove_namespaces: bool, keep_struct_refs: bool):
+def _create_export_names(annotations, token_name, remove_namespaces: bool, keep_struct_refs: bool,
+                         original_annotations: list = []):
     """Create dictionary for renamed annotations."""
     if remove_namespaces:
         def shorten(_name):
@@ -319,7 +320,11 @@ def _create_export_names(annotations, token_name, remove_namespaces: bool, keep_
         short_names_count = defaultdict(int)
         short_names = {}
         for name, new_name in annotations:
-            short_name = shorten(name)
+            # Don't remove namespaces from elements and attributes contained in the original documents
+            if (name, new_name) in original_annotations:
+                short_name = name
+            else:
+                short_name = shorten(name)
             if new_name:
                 if ":" in name:
                     short_name = corpus.join_annotation(corpus.split_annotation(name)[0], new_name)
@@ -355,7 +360,6 @@ def _create_export_names(annotations, token_name, remove_namespaces: bool, keep_
                 export_names[name] = new_name
         else:
             export_names = {name: new_name for name, new_name in annotations if new_name}
-
     return export_names
 
 

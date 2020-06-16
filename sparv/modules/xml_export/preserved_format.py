@@ -53,7 +53,7 @@ def preserved_format(doc: str = Document,
     # Get annotation spans, annotations list etc.
     annotations, _, export_names = util.get_annotation_names(doc, None, annotations, original_annotations,
                                                              remove_namespaces)
-    h_annotations, h_export_names = util.get_header_names(doc, header_annotations, remove_namespaces)
+    h_annotations, h_export_names = util.get_header_names(doc, header_annotations)
     export_names.update(h_export_names)
     span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names, flatten=False,
                                                               split_overlaps=True, header_annotations=h_annotations)
