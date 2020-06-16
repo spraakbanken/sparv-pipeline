@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 ])
 def preserved_format(doc: str = Document,
                      docid: str = Annotation("<docid>", data=True),
-                     out: str = Export("xml_preserved_formatting/[xml_export.filename_formatted]"),
+                     out: str = Export("xml_preserved_format/[xml_export.filename_formatted]"),
                      annotations: list = ExportAnnotations(export_type="xml_export"),
                      original_annotations: Optional[list] = Config("xml_export.original_annotations"),
                      header_annotations: Optional[list] = Config("xml_export.header_annotations"),
@@ -124,5 +124,5 @@ def preserved_format(doc: str = Document,
             node_stack.pop()
 
     # Write xml to file
-    etree.ElementTree(root_span.node).write(out, xml_declaration=False, method="xml", encoding=util.UTF8)
+    etree.ElementTree(root_span.node).write(out, encoding="unicode", method="xml", xml_declaration=True)
     log.info("Exported: %s", out)
