@@ -91,10 +91,6 @@ def gather_annotations(doc: str, annotations, export_names, flatten: bool = True
                 return True
             return False
 
-        def same(self, other):
-            """Return True if name and index are the same for two Span objects."""
-            return self.name == other.name and self.index == other.index
-
     if header_annotations is None:
         header_annotations = []
 
@@ -152,8 +148,7 @@ def gather_annotations(doc: str, annotations, export_names, flatten: bool = True
 def _handle_overlaps(spans_dict):
     """Split overlapping spans and give them unique IDs to preserve their original connection."""
     span_stack = []
-    total_overlaps = 0
-    overlap_ids = defaultdict(int)  # Keeps track of which overlapping spans belong together
+    overlap_count = 0
     for position in sorted(spans_dict):
         for subposition, (event, span) in enumerate(spans_dict[position].copy()):
             subposition_shift = 0
@@ -161,30 +156,36 @@ def _handle_overlaps(spans_dict):
                 span_stack.append(span)
             elif event == "close":
                 closing_span = span_stack.pop()
-                if closing_span.same(span):
-                    # Has this span been split due to overlapping? If so, replace it with the new overlap span
-                    if not closing_span == span:
-                        spans_dict[position][subposition + subposition_shift] = ("close", closing_span)
-                else:
+                if not closing_span == span:
                     # Overlapping spans found
                     overlap_stack = []
 
                     # Close all overlapping spans and add an overlap ID to them
-                    while not closing_span.same(span):
-                        total_overlaps += 1
-                        overlap_ids[closing_span.name] = total_overlaps
-                        closing_span.overlap_id = overlap_ids[closing_span.name]
-                        overlap_stack.append(deepcopy(closing_span))
+                    while not closing_span == span:
+                        overlap_count += 1
+                        closing_span.overlap_id = overlap_count
+
+                        # Create a copy of this span, to be reopened after we close this one
+                        new_span = deepcopy(closing_span)
+                        new_span.start = span.end
+                        overlap_stack.append(new_span)
+
+                        # Replace the original overlapping span with the new copy
+                        end_subposition = spans_dict[closing_span.end].index(("close", closing_span))
+                        spans_dict[closing_span.end][end_subposition] = ("close", new_span)
+
+                        # Close this overlapping span
                         closing_span.end = span.end
                         spans_dict[position].insert(subposition + subposition_shift, ("close", closing_span))
                         subposition_shift += 1
+
+                        # Fetch a new closing span from the stack
                         closing_span = span_stack.pop()
 
                     # Re-open overlapping spans
                     while overlap_stack:
                         overlap_span = overlap_stack.pop()
                         span_stack.append(overlap_span)
-                        overlap_span.start = span.end
                         spans_dict[position].insert(subposition + subposition_shift + 1, ("open", overlap_span))
                         subposition_shift += 1
 
