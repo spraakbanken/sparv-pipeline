@@ -8,7 +8,7 @@ import xml.etree.ElementTree as etree
 from collections import defaultdict
 
 import sparv.util as util
-from sparv import Model, ModelOutput, modelbuilder
+from sparv import ModelOutput, modelbuilder
 
 log = logging.getLogger(__name__)
 
@@ -64,7 +64,6 @@ def swefn_freq_model(out: str = ModelOutput("lexical_classes/swefn.freq.gp2008+s
     util.download_model(
         "https://github.com/spraakbanken/sparv-models/raw/master/lexical_classes/swefn.freq.gp2008+suc3+romi.pickle",
         out)
-
 
 
 def read_blingbring(tsv, classmap, verbose=True):

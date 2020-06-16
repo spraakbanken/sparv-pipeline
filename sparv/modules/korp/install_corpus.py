@@ -6,7 +6,6 @@ import re
 
 import sparv.util as util
 from sparv import Config, Corpus, ExportInput, Output, installer
-from sparv.core import paths
 
 log = logging.getLogger(__name__)
 
