@@ -372,7 +372,6 @@ def _create_export_names(annotations, token_name, remove_namespaces: bool, keep_
 def scramble_spans(span_positions, chunk, chunk_order):
     """Reorder chunks and open/close tags in correct order."""
     new_s_order = _reorder_spans(span_positions, chunk, chunk_order)
-    _fix_dangling_elems(new_s_order, chunk)
     _fix_parents(new_s_order, chunk)
 
     # Reformat span positions
@@ -387,54 +386,51 @@ def _reorder_spans(span_positions, chunk_name, chunk_order):
     """Scramble chunks according to the chunk_order."""
     new_s_order = defaultdict(list)
     parent_stack = []
-    current_s_index = -1
+    temp_stack = []
+    current_s_index = None
+    last_s_index = None
 
     for _pos, instruction, span in span_positions:
         if instruction == "open":
             if span.name == chunk_name:
                 current_s_index = int(chunk_order[span.index])
-                new_s_order[current_s_index].extend(parent_stack)
+
+                for temp_instruction, temp_span in temp_stack:
+                    if current_s_index == last_s_index:
+                        # Continuing split annotation
+                        new_s_order[current_s_index].append((temp_instruction, temp_span))
+
+                    if temp_instruction == "open":
+                        parent_stack.append((temp_instruction, temp_span))
+                    elif temp_instruction == "close" and parent_stack[-1][1] == temp_span:
+                        parent_stack.pop()
+
+                temp_stack = []
+
+                # If this is the start of this chunk, add all open parents first
+                if not new_s_order[current_s_index]:
+                    new_s_order[current_s_index].extend(parent_stack)
                 new_s_order[current_s_index].append((instruction, span))
             else:
-                if current_s_index == -1:
-                    # Encountered parent to chunk
-                    parent_stack.append((instruction, span))
-                else:
+                if current_s_index is not None:
                     # Encountered child to chunk
                     new_s_order[current_s_index].append((instruction, span))
+                else:
+                    # Encountered parent to chunk
+                    temp_stack.append((instruction, span))
 
-        if instruction == "close":
-            if parent_stack and parent_stack[-1][1] == span:
-                if current_s_index != -1:
-                    new_s_order[current_s_index].append((instruction, span))
-                parent_stack.pop()
-            else:
+        elif instruction == "close":
+            if current_s_index is not None:
+                # Encountered child to chunk
                 new_s_order[current_s_index].append((instruction, span))
                 if span.name == chunk_name:
-                    current_s_index = -1
+                    last_s_index = current_s_index
+                    current_s_index = None
+            else:
+                # Encountered parent to chunk
+                temp_stack.append((instruction, span))
 
     return new_s_order
-
-
-def _fix_dangling_elems(new_s_order, chunk_name):
-    """Fix child spans to chunk that are not being opened or closed."""
-    for chunk in new_s_order.values():
-        is_parent = True
-        for instruction, span in chunk:
-            if instruction == "open":
-                if span.name == chunk_name:
-                    is_parent = False
-                    chunk_span = span
-                elif not is_parent:
-                    if ("close", span) not in chunk:
-                        # This child span has no closing tag. Close it!
-                        close_s_indx = chunk.index(("close", chunk_span))
-                        chunk.insert(close_s_indx, ("close", span))
-            elif instruction == "close" and span.name != chunk_name:
-                if ("open", span) not in chunk:
-                    # This child span has no opening tag. Open it!
-                    open_s_indx = chunk.index(("open", chunk_span))
-                    chunk.insert(open_s_indx + 1, ("open", span))
 
 
 def _fix_parents(new_s_order, chunk_name):
@@ -448,7 +444,14 @@ def _fix_parents(new_s_order, chunk_name):
                     is_parent = False
                 elif is_parent:
                     open_parents.append((instruction, span))
-        # Check next chunk: close parents that are not opened again and remove already opened parents
+            else:
+                if span.name == chunk_name:
+                    is_parent = True
+                elif is_parent:
+                    if open_parents[-1][1] == span:
+                        open_parents.pop()
+        # Check next chunk: close parents in current chunk that are not part of next chunk and
+        # remove already opened parents from next chunk
         next_chunk = new_s_order.get(s_index + 1, [])
         for p in reversed(open_parents):
             if p in next_chunk:
