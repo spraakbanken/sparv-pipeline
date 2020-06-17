@@ -242,8 +242,8 @@ def calculate_element_hierarchy(doc, spans_list):
     return hierarchy
 
 
-def get_annotation_names(doc: Union[str, List[str]], token_name: Optional[str], annotations: List[str], original_annotations=None,
-                         remove_namespaces=False, keep_struct_refs=False):
+def get_annotation_names(doc: Union[str, List[str]], token_name: Optional[str], annotations: List[str],
+                         original_annotations=None, remove_namespaces=False, keep_struct_refs=False):
     """Get a list of annotations, token annotations and a dictionary for renamed annotations.
 
     remove_namespaces: remove all namespaces in export_names unless names are ambiguous.
@@ -252,14 +252,22 @@ def get_annotation_names(doc: Union[str, List[str]], token_name: Optional[str], 
     # Combine annotations and original_annotations
     annotations = misc.split_tuples_list(annotations)
     original_annotations = misc.split_tuples_list(original_annotations)
+    available_original_annotations = set()
+
+    # Get list of available original annotations from STRUCTURE_FILE
+    if isinstance(doc, list):
+        for d in doc:
+            available_original_annotations.update(misc.split_tuples_list(corpus.read_data(d, corpus.STRUCTURE_FILE)))
+    else:
+        available_original_annotations.update(misc.split_tuples_list(corpus.read_data(doc, corpus.STRUCTURE_FILE)))
+
     if not original_annotations:
-        # Get original_annotations from STRUCTURE_FILE
-        if isinstance(doc, list):
-            original_annotations = []
-            for d in doc:
-                original_annotations.extend(misc.split_tuples_list(corpus.read_data(d, corpus.STRUCTURE_FILE)))
-        else:
-            original_annotations = misc.split_tuples_list(corpus.read_data(doc, corpus.STRUCTURE_FILE))
+        # Include all available annotations from source
+        original_annotations = list(available_original_annotations)
+    else:
+        # Make sure original_annotations doesn't include annotations not in source
+        original_annotations = list(set(original_annotations).intersection(available_original_annotations))
+
     annotations.extend(original_annotations)
 
     # Add plain annotations (non-attribute annotations) to annotations if user has not done that
