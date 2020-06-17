@@ -15,7 +15,8 @@ log = logging.getLogger(__name__)
 @exporter("XML export with one token element per line", config=[
     Config("xml_export.filename", default="{doc}_export.xml"),
     Config("xml_export.original_annotations"),
-    Config("xml_export.header_annotations")
+    Config("xml_export.header_annotations"),
+    Config("xml_export.include_empty_attributes", False)
 ])
 def pretty(doc: str = Document,
            docid: str = Annotation("<docid>", data=True),
@@ -25,7 +26,8 @@ def pretty(doc: str = Document,
            annotations: list = ExportAnnotations(export_type="xml_export"),
            original_annotations: Optional[list] = Config("xml_export.original_annotations"),
            header_annotations: Optional[list] = Config("xml_export.header_annotations"),
-           remove_namespaces: bool = Config("export.remove_export_namespaces", False)):
+           remove_namespaces: bool = Config("export.remove_export_namespaces", False),
+           include_empty_attributes: bool = Config("xml_export.include_empty_attributes")):
     """Export annotations to pretty XML in export_dir.
 
     Args:
@@ -41,6 +43,7 @@ def pretty(doc: str = Document,
             in the export. If not specified, all headers will be kept.
         remove_namespaces: Whether to remove module "namespaces" from element and attribute names.
             Disabled by default.
+        include_empty_attributes: Whether to include attributes even when they are empty. Disabled by default.
     """
     # Create export dir
     os.makedirs(os.path.dirname(out), exist_ok=True)
@@ -56,7 +59,8 @@ def pretty(doc: str = Document,
     export_names.update(h_export_names)
     span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names, split_overlaps=True,
                                                               header_annotations=h_annotations)
-    xmlstr = xml_utils.make_pretty_xml(span_positions, annotation_dict, export_names, token, word_annotation, docid)
+    xmlstr = xml_utils.make_pretty_xml(span_positions, annotation_dict, export_names, token, word_annotation, docid,
+                                       include_empty_attributes)
 
     # Write XML to file
     with open(out, mode="w") as outfile:

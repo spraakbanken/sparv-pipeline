@@ -14,7 +14,8 @@ log = logging.getLogger(__name__)
 INDENTATION = "  "
 
 
-def make_pretty_xml(span_positions, annotation_dict, export_names, token, word_annotation, docid):
+def make_pretty_xml(span_positions, annotation_dict, export_names, token, word_annotation, docid,
+                    include_empty_attributes: bool):
     """Create a pretty formatted XML string from span_positions.
 
     Used by pretty and sentence_scrambled.
@@ -28,7 +29,7 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token, word_a
     # Create root node
     root_span = span_positions[0][2]
     root_span.set_node()
-    add_attrs(root_span.node, root_span.name, annotation_dict, export_names, 0)
+    add_attrs(root_span.node, root_span.name, annotation_dict, export_names, 0, include_empty_attributes)
     node_stack = [root_span]
 
     # Go through span_positions and build xml tree
@@ -65,7 +66,7 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token, word_a
         if instruction == "open":
             span.set_node(parent_node=node_stack[-1].node)
             node_stack.append(span)
-            add_attrs(span.node, span.name, annotation_dict, export_names, span.index)
+            add_attrs(span.node, span.name, annotation_dict, export_names, span.index, include_empty_attributes)
             if span.overlap_id:
                 span.node.set("_overlap", f"{docid}-{span.overlap_id}")
             # Add text if this node is a token
@@ -133,11 +134,12 @@ def valid_root(first_item, last_item):
             and first_item[2].index == last_item[2].index)
 
 
-def add_attrs(node, annotation, annotation_dict, export_names, index):
+def add_attrs(node, annotation, annotation_dict, export_names, index, include_empty_attributes: bool):
     """Add attributes from annotation_dict to node."""
     for attrib_name, attrib_values in annotation_dict[annotation].items():
         export_name = export_names.get(":".join([annotation, attrib_name]), attrib_name)
-        node.set(export_name, attrib_values[index])
+        if attrib_values[index] or include_empty_attributes:
+            node.set(export_name, attrib_values[index])
 
 
 def combine(corpus, out, docs, xml_input):

@@ -15,7 +15,8 @@ log = logging.getLogger(__name__)
 @exporter("XML export preserving whitespaces from source file", config=[
     Config("xml_export.filename_formatted", default="{doc}_export.xml"),
     Config("xml_export.original_annotations"),
-    Config("xml_export.header_annotations")
+    Config("xml_export.header_annotations"),
+    Config("xml_export.include_empty_attributes", False)
 ])
 def preserved_format(doc: str = Document,
                      docid: str = Annotation("<docid>", data=True),
@@ -23,7 +24,8 @@ def preserved_format(doc: str = Document,
                      annotations: list = ExportAnnotations(export_type="xml_export"),
                      original_annotations: Optional[list] = Config("xml_export.original_annotations"),
                      header_annotations: Optional[list] = Config("xml_export.header_annotations"),
-                     remove_namespaces: bool = Config("export.remove_export_namespaces", False)):
+                     remove_namespaces: bool = Config("export.remove_export_namespaces", False),
+                     include_empty_attributes: bool = Config("xml_export.include_empty_attributes")):
     """Export annotations to XML in export_dir and keep whitespaces and indentation from original file.
 
     Args:
@@ -37,6 +39,7 @@ def preserved_format(doc: str = Document,
             in the export. If not specified, all headers will be kept.
         remove_namespaces: Whether to remove module "namespaces" from element and attribute names.
             Disabled by default.
+        include_empty_attributes: Whether to include attributes even when they are empty. Disabled by default.
 
     - doc: name of the original document
     - annotations: list of elements:attributes (annotations) to include.
@@ -92,7 +95,8 @@ def preserved_format(doc: str = Document,
                 if node_stack:  # Don't create root node, it already exists
                     span.set_node(parent_node=node_stack[-1].node)
 
-                xml_utils.add_attrs(span.node, span.name, annotation_dict, export_names, span.index)
+                xml_utils.add_attrs(span.node, span.name, annotation_dict, export_names, span.index,
+                                    include_empty_attributes)
                 if span.overlap_id:
                     span.node.set("_overlap", f"{docid}-{span.overlap_id}")
                 node_stack.append(span)

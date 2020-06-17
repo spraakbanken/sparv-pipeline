@@ -22,7 +22,8 @@ def scrambled(doc: str = Document,
               word: str = Annotation("<token:word>"),
               annotations: list = ExportAnnotations(export_type="xml_export"),
               original_annotations: Optional[list] = Config("xml_export.original_annotations"),
-              remove_namespaces: bool = Config("export.remove_export_namespaces", False)):
+              remove_namespaces: bool = Config("export.remove_export_namespaces", False),
+              include_empty_attributes: bool = Config("xml_export.include_empty_attributes")):
     """Export annotations to scrambled XML."""
     if chunk not in annotations:
         raise util.SparvErrorMessage(
@@ -45,7 +46,8 @@ def scrambled(doc: str = Document,
     new_span_positions = util.scramble_spans(span_positions, chunk, chunk_order)
 
     # Construct XML string
-    xmlstr = xml_utils.make_pretty_xml(new_span_positions, annotation_dict, export_names, token, word_annotation, docid)
+    xmlstr = xml_utils.make_pretty_xml(new_span_positions, annotation_dict, export_names, token, word_annotation, docid,
+                                       include_empty_attributes)
 
     # Write XML to file
     with open(out, mode="w") as outfile:
