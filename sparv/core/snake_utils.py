@@ -7,7 +7,7 @@ import re
 from collections import defaultdict, OrderedDict
 from itertools import combinations
 from pathlib import Path
-from typing import List, Optional, Set, Tuple
+from typing import List, Set, Tuple
 
 import snakemake
 from snakemake.io import expand
@@ -65,16 +65,19 @@ class RuleStorage(object):
         self.exporter = annotator_info["type"] is registry.Annotator.exporter
         self.installer = annotator_info["type"] is registry.Annotator.installer
         self.modelbuilder = annotator_info["type"] is registry.Annotator.modelbuilder
-        self.custom_annotator = annotator_info["type"] is registry.Annotator.custom_annotator
         self.description = annotator_info["description"]
         self.source_type = annotator_info["source_type"]
         self.import_outputs = annotator_info["outputs"]
         self.order = annotator_info["order"]
 
 
-def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_missing: bool = False
-                ) -> Optional[RuleStorage]:
-    """Build Snakemake rule with input, output and parameter list."""
+def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_missing: bool = False,
+                custom_rule_obj: dict = None) -> bool:
+    """
+    Populate rule with Snakemake input, output and parameter list.
+
+    Return True if a Snakemake rule should be created.
+    """
     if config.get("debug"):
         print()
         print("{}{}:{} {}".format(util.Color.BOLD, rule.module_name.upper(), util.Color.RESET, rule.f_name))
@@ -82,11 +85,11 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
     # Only create certain rules when config is missing
     if config_missing and not rule.modelbuilder:
-        return
+        return False
 
     # Skip any annotator that is not available for the selected corpus language
     if rule.annotator_info["language"] and sparv_config.get("metadata.language") not in rule.annotator_info["language"]:
-        return
+        return False
 
     if rule.importer:
         rule.inputs.append(Path(get_source_path(), "{doc}." + rule.source_type))
@@ -107,25 +110,16 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
     params = OrderedDict(inspect.signature(rule.annotator_info["function"]).parameters)
     output_dirs = set()
 
-    if rule.custom_annotator:
-        if rule.full_name in sparv_config.get("custom_annotations"):
-            rule_info = sparv_config.get("custom_annotations").get(rule.full_name, {})
-            for out_param in rule_info.get("output", []):
-                expand_custom_param(params, out_param, rule_info, rule.full_name)
-            for param in rule_info.get("params", []):
-                expand_custom_param(params, param, rule_info, rule.full_name)
-            # Check if all parameters have received their values
-            for param_name, param in params.items():
-                try:
-                    if param.default in [Annotation, Binary, Config, ExportAnnotations, ExportInput, Model, Output,
-                                         ModelOutput, Export]:
-                        registry.expand_variables(param.default, rule.full_name)
-                except Exception:
-                    error = f"Parameter '{param_name}' in custom rule '{rule.full_name}' has no value!"
-                    log_handler.exit_with_message(error, os.getpid(), None, "sparv", "config")
+    if custom_rule_obj:
+        if custom_rule_obj.get("output") or custom_rule_obj.get("params"):
+            populate_custom_rule(rule, params, storage, custom_rule_obj)
         else:
-            # This custom rule is not being used, so don't process it
-            return
+            # This rule has already been populated, so don't process it again
+            return False
+    else:
+        if missing_defaults(params, rule) is not None:
+            # This is probably an unused custom rule, so don't process it
+            return False
 
     # Go though function parameters and handle based on type
     for param_name, param in params.items():
@@ -300,7 +294,40 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         print()
         print()
 
-    return rule
+    return True
+
+
+def missing_defaults(params, rule):
+    """Check if all parameters that need default values actually have default values."""
+    for param_name, param in params.items():
+        try:
+            if param.default in [Annotation, Binary, Config, ExportAnnotations, ExportInput, Model, Output,
+                                 ModelOutput, Export]:
+                registry.expand_variables(param.default, rule.full_name)
+        except Exception:
+            return param_name
+    return None
+
+
+def populate_custom_rule(rule, params, storage, custom_rule_obj):
+    """Populate rule with default values from custom_rule_obj."""
+    # If rule name already exists, create a new name
+    existing_rules = [r.rule_name for r in storage.all_rules]
+    if rule.rule_name in existing_rules:
+        rule.rule_name = create_new_rulename(rule.rule_name, existing_rules)
+        rule.target_name = create_new_rulename(rule.target_name, [r.target_name for r in storage.all_rules])
+
+    # Populate rule with custom values from config
+    for out_param in custom_rule_obj.get("output", []):
+        expand_custom_param(params, out_param, custom_rule_obj, rule.full_name)
+    for param in custom_rule_obj.get("params", []):
+        expand_custom_param(params, param, custom_rule_obj, rule.full_name)
+
+    # Check if all parameters have received their values
+    missing_default_param = missing_defaults(params, rule)
+    if missing_default_param:
+        error = f"Parameter '{missing_default_param}' in custom rule '{rule.full_name}' has no value!"
+        log_handler.exit_with_message(error, os.getpid(), None, "sparv", "config")
 
 
 def check_ruleorder(storage: SnakeStorage) -> Set[Tuple[RuleStorage, RuleStorage]]:
@@ -332,7 +359,7 @@ def check_ruleorder(storage: SnakeStorage) -> Set[Tuple[RuleStorage, RuleStorage
 def get_parameters(rule_params):
     """Extend function parameters with doc names and replace wildcards."""
     def get_params(wildcards):
-        doc = get_doc_value(wildcards, rule_params.annotator or rule_params.custom_annotator)
+        doc = get_doc_value(wildcards, rule_params.annotator)
         # We need to make a copy of the parameters, since the rule might be used for multiple documents
         _parameters = copy.deepcopy(rule_params.parameters)
         _parameters.update({name: doc for name in rule_params.docs})
@@ -478,3 +505,13 @@ def expand_custom_param(params, param_name, rule_info, rulename):
         elif rule_info["params"].get(param_name):
             value = rule_info["params"].get(param_name)
             params[param_name] = param.replace(default=value)
+
+
+def create_new_rulename(name, existing_names):
+    """Create a new rule name by appending a number to it."""
+    i = 2
+    new_name = name + str(i)
+    while new_name in existing_names:
+        i += 1
+        new_name = name + str(i)
+    return new_name

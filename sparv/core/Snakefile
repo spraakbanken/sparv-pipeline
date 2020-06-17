@@ -31,6 +31,12 @@ def make_rules(config_missing: bool) -> None:
         for f_name in registry.annotators[module_name]:
             annotator = registry.annotators[module_name][f_name]
             make_rule(module_name, f_name, annotator, config_missing)
+    
+    # Create custom rules
+    for n, custom_rule_obj in enumerate(sparv_config.get("custom_annotations")):
+        module_name, f_name = custom_rule_obj["name"].split(":")
+        annotator = registry.annotators[module_name][f_name]
+        make_rule(module_name, f_name, annotator, config_missing, custom_rule_obj)
 
     # Check and set rule orders
     ordered_rules = snake_utils.check_ruleorder(snake_storage)
@@ -39,15 +45,16 @@ def make_rules(config_missing: bool) -> None:
         # ruleorder:  rule1.rule_name > rule2.rule_name
 
 
-def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missing: bool = False) -> None:
+def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missing: bool = False,
+              custom_rule_obj: dict = None) -> None:
     """Create single Snakemake rule."""
     # Init rule storage
     rule_storage = snake_utils.RuleStorage(module_name, f_name, annotator_info)
 
     # Process rule parameters and update rule storage
-    snake_utils.rule_helper(rule_storage, config, snake_storage, config_missing)
+    create_rule = snake_utils.rule_helper(rule_storage, config, snake_storage, config_missing, custom_rule_obj)
 
-    if rule_storage:
+    if create_rule:
         # Create a named Snakemake rule for annotator (unfortunately we cannot use the regular snakemake syntax for this)
         @workflow.rule(name=rule_storage.rule_name)
         @workflow.message(rule_storage.target_name)

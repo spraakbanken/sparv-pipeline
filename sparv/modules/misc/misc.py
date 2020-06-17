@@ -3,7 +3,7 @@
 import re
 from typing import Optional
 
-from sparv import Annotation, Document, Output, annotator, custom_annotator, util
+from sparv import Annotation, Document, Output, annotator, util
 
 
 @annotator("Text value of a span (usually a token)")
@@ -122,7 +122,7 @@ def constant(chunk, out, value=None):
     util.write_annotation(out, ((key, value if value else value) for key in util.read_annotation_iterkeys(chunk)))
 
 
-@custom_annotator("Add prefix and/or suffix to an annotation.")
+@annotator("Add prefix and/or suffix to an annotation.")
 def affix(doc: str = Document,
           chunk: str = Annotation,
           out: str = Output,

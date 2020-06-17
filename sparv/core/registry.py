@@ -24,7 +24,6 @@ class Annotator(Enum):
     exporter = 3
     installer = 4
     modelbuilder = 5
-    custom_annotator = 6
 
 
 # All available annotator functions
@@ -82,7 +81,8 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
     def decorator(f):
         """Add wrapped function to registry."""
         module_name = f.__module__[len(modules_path) + 1:].split(".")[0]
-        if not module_name and a_type == Annotator.custom_annotator:
+        if not module_name:
+            # This is probably a custom user module
             module_name = f.__module__
         _add_to_registry({
             "module_name": module_name,
@@ -146,14 +146,6 @@ def modelbuilder(description: str, name: Optional[str] = None, config: Optional[
     """Return a decorator for modelbuilder functions."""
     return _annotator(description=description, a_type=Annotator.modelbuilder, name=name, config=config,
                       language=language, order=order)
-
-
-def custom_annotator(description: Optional[str] = None, name: Optional[str] = None,
-                     config: Optional[List[Config]] = None, language: Optional[List[str]] = None,
-                     order: Optional[int] = None):
-    """Return a decorator for custom_annotator functions."""
-    return _annotator(description=description, a_type=Annotator.custom_annotator, name=name, config=config, language=language,
-                      order=order)
 
 
 def _add_to_registry(annotator):
