@@ -257,16 +257,16 @@ def get_annotation_names(doc: Union[str, List[str]], token_name: Optional[str], 
     # Get list of available original annotations from STRUCTURE_FILE
     if isinstance(doc, list):
         for d in doc:
-            available_original_annotations.update(misc.split_tuples_list(corpus.read_data(d, corpus.STRUCTURE_FILE)))
+            available_original_annotations.update(corpus.read_data(d, corpus.STRUCTURE_FILE).split())
     else:
-        available_original_annotations.update(misc.split_tuples_list(corpus.read_data(doc, corpus.STRUCTURE_FILE)))
+        available_original_annotations.update(corpus.read_data(doc, corpus.STRUCTURE_FILE).split())
 
     if not original_annotations:
         # Include all available annotations from source
-        original_annotations = list(available_original_annotations)
+        original_annotations = [(a, None) for a in available_original_annotations]
     else:
         # Make sure original_annotations doesn't include annotations not in source
-        original_annotations = list(set(original_annotations).intersection(available_original_annotations))
+        original_annotations = [a for a in original_annotations if a[0] in available_original_annotations]
 
     annotations.extend(original_annotations)
 
