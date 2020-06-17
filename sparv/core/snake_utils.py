@@ -502,7 +502,7 @@ def expand_custom_param(params, param_name, rule_info, rulename):
             value = rule_info["params"].get(param_name)
             params[param_name] = param.replace(default=param.default(value))
         # Expand remaining params
-        elif rule_info["params"].get(param_name):
+        elif rule_info["params"].get(param_name) is not None:
             value = rule_info["params"].get(param_name)
             params[param_name] = param.replace(default=value)
 
