@@ -1,7 +1,7 @@
 """Small annotators that don't fit as standalone python files."""
 
 import re
-from typing import Optional
+from typing import List, Optional
 
 from sparv import Annotation, Document, Output, annotator, util
 
@@ -65,15 +65,19 @@ def text_headtail(doc: str = Document,
     util.write_annotation(doc, out_tail, out_tail_annotation)
 
 
-def translate_tag(tag, out, mapping):
+@annotator("Convert part-of-speech tags, specified by the mapping")
+def translate_tag(doc: str = Document,
+                  out: str = Output,
+                  tag: str = Annotation,
+                  mapping: dict = {}):
     """Convert part-of-speech tags, specified by the mapping.
 
     Example mappings: parole_to_suc, suc_to_simple, ...
     """
     if isinstance(mapping, str):
         mapping = util.tagsets.__dict__[mapping]
-    util.write_annotation(out, ((n, mapping.get(t, t))
-                                for (n, t) in util.read_annotation_iteritems(tag)))
+    util.write_annotation(doc, out, (mapping.get(t, t)
+                                     for t in util.read_annotation(doc, tag)))
 
 
 @annotator("Convert {struct}:{attr} into a token annotation")
@@ -89,23 +93,32 @@ def struct_to_token(doc: str = Document,
     util.write_annotation(doc, out, out_values)
 
 
-def chain(out, annotations, default=None):
+# TODO: Do we still need this? struct_to_token probably mostly replaces it
+def chain(doc, out, annotations, default=None):
     """Create a functional composition of a list of annotations.
 
     E.g., token.sentence + sentence.id -> token.sentence-id
     """
     if isinstance(annotations, str):
         annotations = annotations.split()
-    annotations = [util.read_annotation(a) for a in annotations]
-    util.write_annotation(out, util.corpus.chain(annotations, default))
+    annotations = [util.read_annotation(doc, a) for a in annotations]
+    util.write_annotation(doc, out, util.corpus.chain(annotations, default))
 
 
-def span_as_value(out, keys):
-    """Create new annotation, with edge span as value."""
-    util.write_annotation(out, ((key, util.edgeStart(key) + "-" + util.edgeEnd(key)) for key in util.read_annotation(keys)))
+@annotator("Create new annotation, with spans as values")
+def span_as_value(doc: str = Document,
+                  chunk: str = Annotation,
+                  out: str = Output):
+    """Create new annotation, with spans as values."""
+    util.write_annotation(doc, out, (f"{start}-{end}" for start, end in util.read_annotation_spans(doc, chunk)))
 
 
-def select(doc, out, annotation, index, separator=None):
+@annotator("Select a specific index from the values of an annotation")
+def select(doc: str = Document,
+           out: str = Output,
+           annotation: str = Annotation,
+           index: Optional[int] = 0,
+           separator: Optional[str] = " "):
     """Select a specific index from the values of an annotation.
 
     The given annotation values are separated by 'separator',
@@ -117,12 +130,16 @@ def select(doc, out, annotation, index, separator=None):
                                      for value in util.read_annotation(doc, annotation)))
 
 
-def constant(chunk, out, value=None):
-    """Create an annotation with a constant value for each key."""
-    util.write_annotation(out, ((key, value if value else value) for key in util.read_annotation_iterkeys(chunk)))
+@annotator("Create an annotation with a constant value")
+def constant(doc: str = Document,
+             chunk: str = Annotation,
+             out: str = Output,
+             value: str = ""):
+    """Create an annotation with a constant value."""
+    util.write_annotation(doc, out, (value for _ in util.read_annotation(doc, chunk)))
 
 
-@annotator("Add prefix and/or suffix to an annotation.")
+@annotator("Add prefix and/or suffix to an annotation")
 def affix(doc: str = Document,
           chunk: str = Annotation,
           out: str = Output,
@@ -132,12 +149,22 @@ def affix(doc: str = Document,
     util.write_annotation(doc, out, [(prefix + val + suffix) for val in util.read_annotation(doc, chunk)])
 
 
-def replace(chunk, out, find, sub=""):
-    """Find and replace annotation. Find string must match whole annotation."""
-    util.write_annotation(out, ((key, sub if val == find else val) for (key, val) in util.read_annotation_iteritems(chunk)))
+@annotator("Find and replace whole annotation")
+def replace(doc: str = Document,
+            chunk: str = Annotation,
+            out: str = Output,
+            find: str = "",
+            sub: Optional[str] = ""):
+    """Find and replace whole annotation. Find string must match whole annotation."""
+    util.write_annotation(doc, out, (sub if val == find else val for val in util.read_annotation(doc, chunk)))
 
 
-def replace_list(chunk, out, find, sub=""):
+@annotator("Find and replace whole annotation values")
+def replace_list(doc: str = Document,
+                 chunk: str = Annotation,
+                 out: str = Output,
+                 find: str = "",
+                 sub: str = ""):
     """Find and replace annotations.
 
     Find string must match whole annotation.
@@ -145,75 +172,96 @@ def replace_list(chunk, out, find, sub=""):
     """
     find = find.split()
     sub = sub.split()
-    assert len(find) == len(sub), "find and len must have the same number of words."
+    if len(find) != len(sub):
+        raise util.SparvErrorMessage("Find and sub must have the same number of words.")
     translate = dict((f, s) for (f, s) in zip(find, sub))
-    util.write_annotation(out, ((key, translate.get(val, val)) for (key, val) in util.read_annotation_iteritems(chunk)))
+    util.write_annotation(doc, out, (translate.get(val, val) for val in util.read_annotation(doc, chunk)))
 
 
-def find_replace(chunk, out, find, sub=""):
+@annotator("Find and replace parts of or whole annotation")
+def find_replace(doc: str = Document,
+                 chunk: str = Annotation,
+                 out: str = Output,
+                 find: str = "",
+                 sub: str = ""):
     """Find and replace parts of or whole annotation."""
-    util.write_annotation(out, ((key, val.replace(find, sub)) for (key, val) in util.read_annotation_iteritems(chunk)))
+    util.write_annotation(doc, out, (val.replace(find, sub) for val in util.read_annotation(doc, chunk)))
 
 
-def find_replace_regex(chunk, out, find, sub=""):
-    """Find and replace parts of or whole annotation."""
-    util.write_annotation(out, ((key, re.sub(find, sub, val)) for (key, val) in util.read_annotation_iteritems(chunk)))
+@annotator("Do find and replace in values of annotation using a regular expressions")
+def find_replace_regex(doc: str = Document,
+                       chunk: str = Annotation,
+                       out: str = Output,
+                       find: str = "",
+                       sub: str = ""):
+    """
+    Do find and replace in values of annotation using a regular expressions.
+
+    N.B: When writing regular expressions in YAML they should be enclosed in single quotes.
+    """
+    util.write_annotation(doc, out, (re.sub(find, sub, val) for val in util.read_annotation(doc, chunk)))
 
 
-def concat(out, left, right, separator="", merge_twins=""):
+@annotator("Concatenate values from two annotations, with an optional separator")
+def concat(doc: str = Document,
+           out: str = Output,
+           left: str = Annotation,
+           right: str = Annotation,
+           separator: str = "",
+           merge_twins: bool = False):
     """Concatenate values from two annotations, with an optional separator.
 
     If merge_twins is set to True, no concatenation will be done on identical values.
     """
-    merge_twins = merge_twins.lower() == "true"
-    b = util.read_annotation(right)
-    util.write_annotation(out, ((key_a, u"%s%s%s" % (val_a, separator, b[key_a]) if not (merge_twins and val_a == b[key_a]) else val_a) for (key_a, val_a) in util.read_annotation_iteritems(left)))
+    b = list(util.read_annotation(doc, right))
+    util.write_annotation(doc, out, (f"{val_a}{separator}{b[n]}" if not (merge_twins and val_a == b[n]) else val_a
+                                     for (n, val_a) in enumerate(util.read_annotation(doc, left))))
 
 
-def concat2(out, annotations, separator=""):
+# TODO: not working yet because we cannot handle lists of annotations as input
+# @annotator("Concatenate two or more annotations, with an optional separator")
+def concat2(doc: str = Document,
+            out: str = Output,
+            annotations: List[str] = [Annotation],
+            separator: str = ""):
     """Concatenate two or more annotations, with an optional separator."""
-    if isinstance(annotations, str):
-        annotations = annotations.split()
-
-    annotations = [util.read_annotation(a) for a in annotations]
-    util.write_annotation(out, [(k, separator.join([a[k] for a in annotations])) for k in annotations[0]])
+    annotations = [list(util.read_annotation(doc, a)) for a in annotations]
+    util.write_annotation(doc, out, [separator.join([a[n] for a in annotations]) for (n, _) in enumerate(annotations[0])])
 
 
-def merge(out, main, backoff, encoding=util.UTF8):
-    """Take two annotations, and for keys without values in 'main', use value from 'backoff'."""
-    backoff = util.read_annotation(backoff)
-    util.write_annotation(out, ((key, val) if val else (key, backoff[key]) for (key, val) in util.read_annotation_iteritems(main)))
+@annotator("Replace empty values in 'chunk' with values from 'backoff'")
+def backoff(doc: str = Document,
+            chunk: str = Annotation,
+            backoff: str = Annotation,
+            out: str = Output):
+    """Replace empty values in 'chunk' with values from 'backoff'."""
+    # Function was called 'merge' before.
+    backoff = list(util.read_annotation(doc, backoff))
+    util.write_annotation(doc, out, (val if val else backoff[n] for (n, val) in enumerate(util.read_annotation(doc, chunk))))
 
 
-def override(out, main, repl, encoding=util.UTF8):
-    """Take two annotations, and for keys that have values in 'repl', use value from 'repl'."""
-    repl = util.read_annotation(repl)
-    util.write_annotation(out, ((key, repl[key]) if repl.get(key) else (key, val) for (key, val) in util.read_annotation_iteritems(main)))
+@annotator("Replace values in 'chunk' with non empty values from 'repl'")
+def override(doc: str = Document,
+             chunk: str = Annotation,
+             repl: str = Annotation,
+             out: str = Output):
+    """Replace values in 'chunk' with non empty values from 'repl'."""
+    def empty(val):
+        if not val:
+            return True
+        return val == "|"
+
+    repl = list(util.read_annotation(doc, repl))
+    util.write_annotation(doc, out, (
+        repl[n] if not empty(repl[n]) else val for (n, val) in enumerate(util.read_annotation(doc, chunk))))
 
 
-def roundfloat(chunk, out, decimals):
+@annotator("Round floats to the given number of decimals")
+def roundfloat(doc: str = Document,
+               chunk: str = Annotation,
+               out: str = Output,
+               decimals: int = 2):
     """Round floats to the given number of decimals."""
     decimals = int(decimals)
     strformat = "%." + str(decimals) + "f"
-    util.write_annotation(out, ((key, strformat % round(float(val), decimals)) for (key, val) in util.read_annotation_iteritems(chunk)))
-
-
-if __name__ == '__main__':
-    util.run.main(text_spans=text_spans,
-                  text_headtail=text_headtail,
-                  translate_tag=translate_tag,
-                  chain=chain,
-                  select=select,
-                  constant=constant,
-                  affix=affix,
-                  replace=replace,
-                  replace_list=replace_list,
-                  find_replace=find_replace,
-                  find_replace_regex=find_replace_regex,
-                  span_as_value=span_as_value,
-                  concat=concat,
-                  concat2=concat2,
-                  merge=merge,
-                  override=override,
-                  roundfloat=roundfloat
-                  )
+    util.write_annotation(doc, out, (strformat % round(float(val), decimals) for val in util.read_annotation(doc, chunk)))
