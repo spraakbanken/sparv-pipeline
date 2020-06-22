@@ -166,7 +166,15 @@ rule annotations:
                     if f_ann[0].cls:
                         print(util.Color.ITALIC + "          <{}>".format(f_ann[0].cls) + util.Color.RESET)
                 print()
-            print("\n")
+
+        print()
+        print("Available custom annotation functions")
+        print("=====================================\n")
+        print(util.Color.BOLD + "    Functions that can be used as custom_annotations" + util.Color.RESET)
+        max_len = max(len(t) for t, _ in snake_storage.custom_targets) + 4
+        for target, desc in sorted(snake_storage.custom_targets):
+            print("        {:{}}    {}".format(target, max_len, desc))
+        print("\n")
 
         max_len = max(len(cls) for cls in registry.annotation_classes["module_classes"]) + 8
 
@@ -201,24 +209,28 @@ rule presets:
 rule list_targets:
     run:
         max_len = max(len(t[0]) for t in snake_storage.named_targets + snake_storage.export_targets
-                      + snake_storage.install_targets + snake_storage.model_targets) + 4
+                      + snake_storage.install_targets + snake_storage.model_targets + snake_storage.custom_targets)
         print()
         print("Available targets")
         print("=================\n")
-        print("    EXPORTS")
+        print(util.Color.BOLD + "    Exports" + util.Color.RESET)
         for target, desc, _lang in sorted(snake_storage.export_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
         print()
-        print("    INSTALLERS")
+        print(util.Color.BOLD + "    Installers" + util.Color.RESET)
         for target, desc in sorted(snake_storage.install_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
         print()
-        print("    ANNOTATIONS")
+        print(util.Color.BOLD + "    Annotations" + util.Color.RESET)
         for target, desc in sorted(snake_storage.named_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
         print()
-        print("    MODEL BUILDERS")
+        print(util.Color.BOLD + "    Model Builders" + util.Color.RESET)
         for target, desc, _lang in sorted(snake_storage.model_targets):
+            print("        {:{}}    {}".format(target, max_len, desc))
+        print()
+        print(util.Color.BOLD + "    Custom Targets" + util.Color.RESET)
+        for target, desc in sorted(snake_storage.custom_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
 
 

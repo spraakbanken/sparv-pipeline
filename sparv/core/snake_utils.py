@@ -32,6 +32,7 @@ class SnakeStorage(object):
         self.export_targets = []
         self.install_targets = []
         self.model_targets = []
+        self.custom_targets = []
 
         self.model_outputs = []  # Outputs from modelbuilders, used in build_models
         self.install_outputs = defaultdict(list)  # Outputs from all installers, used in install_annotated_corpus
@@ -120,6 +121,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
     else:
         if missing_defaults(params, rule) is not None:
             # This is probably an unused custom rule, so don't process it
+            storage.custom_targets.append((rule.target_name, rule.description))
             return False
 
     # Go though function parameters and handle based on type
