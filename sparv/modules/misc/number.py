@@ -45,15 +45,27 @@ def number_random(doc: str = Document,
     _read_chunks_and_write_new_ordering(doc, out, chunk, _order, prefix, zfill, start)
 
 
-def renumber_by_attribute(doc, out, chunk, prefix="", zfill=False, start=START_DEFAULT):
-    """Renumber chunks, with the order determined by an attribute."""
+@annotator("Number chunk, with the order determined by an attribute")
+def number_by_attribute(doc: str = Document,
+                        out: str = Output,
+                        chunk: str = Annotation,
+                        prefix: str = "",
+                        zfill: bool = False,
+                        start: int = START_DEFAULT):
+    """Number chunks, with the order determined by an attribute."""
     def _order(_index, value):
         return _natural_sorting(value)
 
     _read_chunks_and_write_new_ordering(doc, out, chunk, _order, prefix, zfill, start)
 
 
-def renumber_by_shuffle(doc, out, chunk, prefix="", zfill=False, start=START_DEFAULT):
+@annotator("Renumber already numbered chunk, in new random order")
+def renumber_by_shuffle(doc: str = Document,
+                        out: str = Output,
+                        chunk: str = Annotation,
+                        prefix: str = "",
+                        zfill: bool = False,
+                        start: int = START_DEFAULT):
     """Renumber already numbered chunks, in new random order.
 
     Retains the connection between parallelly numbered chunks by using the values as random seed.
@@ -65,8 +77,15 @@ def renumber_by_shuffle(doc, out, chunk, prefix="", zfill=False, start=START_DEF
     _read_chunks_and_write_new_ordering(doc, out, chunk, _order, prefix, zfill, start)
 
 
-def number_by_parent(doc, out, chunk, parent_order, prefix="", zfill=False, start=START_DEFAULT):
-    """Number chunks by (parent order, chunk order)."""
+@annotator("Number chunk by (parent_order, chunk order)")
+def number_by_parent(doc: str = Document,
+                     out: str = Output,
+                     chunk: str = Annotation,
+                     parent_order: str = Annotation,
+                     prefix: str = "",
+                     zfill: bool = False,
+                     start: int = START_DEFAULT):
+    """Number chunks by (parent_order, chunk order)."""
     parent_children, _orphans = util.get_children(doc, parent_order, chunk)
 
     child_order = {child_index: (parent_nr, child_index)
@@ -123,12 +142,3 @@ def _read_chunks_and_write_new_ordering(doc, out, chunk, order, prefix="", zfill
 def _natural_sorting(astr):
     """Convert a string into a naturally sortable tuple."""
     return tuple(int(s) if s.isdigit() else s for s in re.split(r"(\d+)", astr))
-
-
-######################################################################
-
-if __name__ == "__main__":
-    util.run.main(attribute=renumber_by_attribute,
-                  shuffle=renumber_by_shuffle,
-                  parent_annotation=number_by_parent
-                  )
