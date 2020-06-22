@@ -1,9 +1,16 @@
 """Misc util functions."""
 
+from .constants import Color
+
 
 class SparvErrorMessage(Exception):
     """Exception used to notify users of errors in a friendly way without displaying traceback."""
     pass
+
+
+def sparv_warning(msg):
+    """Format msg into a Sparv warning message."""
+    return f"{Color.YELLOW}WARNING: {msg}{Color.RESET}"
 
 
 def _safe_join(sep, elems):

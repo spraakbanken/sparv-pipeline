@@ -67,7 +67,7 @@ def main():
         "",
         "Advanced commands:",
         "   run-rule         Create specified annotation(s)",
-        "   create-file      Create specified annotation file(s)",
+        "   create-file      Create specified file(s)",
         "   run-module       Run annotator module independently",
         "   annotations      (?) List available modules and annotations",
         "   presets          List available annotation presets",
@@ -116,10 +116,10 @@ def main():
     runrule_parser.add_argument("-l", "--list", action="store_true", help="List available targets")
     runrule_parser.add_argument("-w", "--wildcards", nargs="*", metavar="WILDCARD",
                                 help="Supply values for wildcards using the format 'name=value'")
-    createfile_parser = subparsers.add_parser("create-file", description=("Create specified annotation file(s). "
-                                              "The full path must be supplied."))
-    createfile_parser.add_argument("targets", nargs="*", default=["list"], help="Annotation file(s) to create")
-    createfile_parser.add_argument("-l", "--list", action="store_true", help="List available files to create")
+    createfile_parser = subparsers.add_parser("create-file", description=("Create specified file(s). "
+                                              "The full path must be supplied and wildcards must be replaced."))
+    createfile_parser.add_argument("targets", nargs="*", default=["list"], help="File(s) to create")
+    createfile_parser.add_argument("-l", "--list", action="store_true", help="List available files that can be created")
     subparsers.add_parser("annotations", description="List available annotations and classes.")
     subparsers.add_parser("presets", description="Display all available annotation presets.")
 
@@ -192,7 +192,6 @@ def main():
             snakemake_args["targets"] = args.targets
             if args.list or snakemake_args["targets"] == ["list"]:
                 snakemake_args["targets"] = ["list_files"]
-                print(f"{util.Color.RED}No file listing implemented yet{util.Color.RESET}")
                 simple_target = True
         # Command: run
         elif args.command == "run":

@@ -60,6 +60,7 @@ class RuleStorage(object):
         self.missing_config = set()
         self.exit_message = None
 
+        self.type = annotator_info["type"].name
         self.annotator = annotator_info["type"] is registry.Annotator.annotator
         self.importer = annotator_info["type"] is registry.Annotator.importer
         self.exporter = annotator_info["type"] is registry.Annotator.exporter
@@ -350,8 +351,8 @@ def check_ruleorder(storage: SnakeStorage) -> Set[Tuple[RuleStorage, RuleStorage
         rule1 = rules[0].full_name
         rule2 = rules[1].full_name
         common_outputs = ", ".join(map(str, common_outputs))
-        print(f"{util.Color.YELLOW}WARNING: The annotators {rule1} and {rule2} have common outputs ({common_outputs}). "
-              f"Please make sure to set their 'order' arguments to different values.{util.Color.RESET}")
+        print(util.sparv_warning(f"The annotators {rule1} and {rule2} have common outputs ({common_outputs}). "
+              "Please make sure to set their 'order' arguments to different values."))
 
     return ordered_rules
 
@@ -489,8 +490,8 @@ def get_install_targets(install_outputs):
 def expand_custom_param(params, param_name, rule_info, rulename):
     """Expand a custom rule parameter with default values."""
     if not params.get(param_name):
-        print(f"{util.Color.YELLOW}WARNING: The parameter {param_name} used in one of your custom rules "
-              f"does not exist in {rulename}{util.Color.RESET}")
+        print(util.sparv_warning(f"The parameter '{param_name}'' used in one of your custom rules "
+              f"does not exist in {rulename}"))
     else:
         param = params[param_name]
         # Expand output params

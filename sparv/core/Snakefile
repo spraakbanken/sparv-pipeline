@@ -315,6 +315,37 @@ rule list_models:
         print()
 
 
+# Rule to list all annotations files that can be created
+rule list_files:
+    run:
+        outputs = []
+        [outputs.extend([(rule.type, o) for o in rule.outputs]) for rule in snake_storage.all_rules]
+        
+        print()
+        print("This is a list of files than can be created by Sparv. Please note that wildcards must be replaced "
+              "with paths.")
+        print()
+        print("Annotation files")
+        print("================")
+        for i in sorted(o for t, o in outputs if t in ("annotator", "importer")):
+            print("    {}".format(i))
+        print()
+        print("Export files")
+        print("============")
+        for i in sorted(o for t, o in outputs if t == "exporter"):
+            print("    {}".format(i))
+        print()
+        print("Model files")
+        print("===========")
+        for i in sorted(o for t, o in outputs if t == "modelbuilder"):
+            print("    {}".format(i))
+        print()
+        print("Installation files")
+        print("==================")
+        for i in sorted(o for t, o in outputs if t == "installer"):
+            print("    {}".format(i))
+
+
 # Build all models. Build even the non-optional ones if force_optional_models = True.
 rule build_models:
     input:
