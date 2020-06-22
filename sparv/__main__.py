@@ -7,7 +7,7 @@ from pathlib import Path
 import snakemake
 from snakemake.logging import logger
 
-from sparv import __version__
+from sparv import __version__, util
 from sparv.core import log_handler, paths
 from sparv.core.paths import sparv_path
 
@@ -79,7 +79,6 @@ def main():
     subparsers.required = True
 
     # Annotate
-    # TODO: Make it impossible to run anything else than exports?
     run_parser = subparsers.add_parser("run", description="Annotate a corpus and generate export files.")
     run_parser.add_argument("-o", "--output", nargs="*", default=["xml_export:pretty"], metavar="<output>",
                             help="The type of output format to generate")
@@ -113,22 +112,25 @@ def main():
 
     runrule_parser = subparsers.add_parser("run-rule", description="Create specified annotation(s).")
     runrule_parser.add_argument("targets", nargs="*", default=["list"],
-                                help="Annotation(s) or annotation file(s) to create")
+                                help="Annotation(s) to create")
     runrule_parser.add_argument("-l", "--list", action="store_true", help="List available targets")
     runrule_parser.add_argument("-w", "--wildcards", nargs="*", metavar="WILDCARD",
                                 help="Supply values for wildcards using the format 'name=value'")
-    # TODO: subparsers.add_parser("create-file")
+    createfile_parser = subparsers.add_parser("create-file", description=("Create specified annotation file(s). "
+                                              "The full path must be supplied."))
+    createfile_parser.add_argument("targets", nargs="*", default=["list"], help="Annotation file(s) to create")
+    createfile_parser.add_argument("-l", "--list", action="store_true", help="List available files to create")
     subparsers.add_parser("annotations", description="List available annotations and classes.")
     subparsers.add_parser("presets", description="Display all available annotation presets.")
 
     # Add common arguments
-    for subparser in [run_parser, install_parser, models_parser, runrule_parser]:
+    for subparser in [run_parser, install_parser, models_parser, runrule_parser, createfile_parser]:
         subparser.add_argument("-n", "--dry-run", action="store_true", help="Only dry-run the workflow")
         subparser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel",
                                default=1)
     for subparser in [run_parser, runrule_parser]:
-        subparser.add_argument("-d", "--doc", nargs="+", default=[],
-                               help="Only annotate specified input document(s)")
+        subparser.add_argument("-d", "--doc", nargs="+", default=[], help="Only annotate specified input document(s)")
+    for subparser in [run_parser, runrule_parser, createfile_parser]:
         subparser.add_argument("--log", action="store_true", help="Show log instead of progress bar")
         subparser.add_argument("--debug", action="store_true", help="Show debug messages")
 
@@ -168,7 +170,7 @@ def main():
         if args.command == "config" and args.options:
             config["options"] = args.options
 
-    elif args.command in ("run-rule", "run", "install", "build-models"):
+    elif args.command in ("run-rule", "create-file", "run", "install", "build-models"):
         snakemake_args.update({
             "dryrun": args.dry_run,
             "cores": args.cores
@@ -185,12 +187,19 @@ def main():
             if args.list or snakemake_args["targets"] == ["list"]:
                 snakemake_args["targets"] = ["list_targets"]
                 simple_target = True
+        # Command: create-file
+        if args.command == "create-file":
+            snakemake_args["targets"] = args.targets
+            if args.list or snakemake_args["targets"] == ["list"]:
+                snakemake_args["targets"] = ["list_files"]
+                print(f"{util.Color.RED}No file listing implemented yet{util.Color.RESET}")
+                simple_target = True
         # Command: run
         elif args.command == "run":
             if args.list:
                 snakemake_args["targets"] = ["list_exports"]
             else:
-                print("Exporting corpus to: %s" % ", ".join(args.output))
+                print(f"{util.Color.GREEN}Exporting corpus to {', '.join(args.output)}{util.Color.RESET}")
                 snakemake_args["targets"] = args.output
         # Command: install
         elif args.command == "install":
@@ -206,9 +215,10 @@ def main():
             else:
                 snakemake_args["targets"] = ["build_models"]
 
-        # Command: run, run-rule
-        if args.command in ("run", "run-rule"):
-            config.update({"debug": args.debug, "doc": args.doc, "log": args.log, "targets": snakemake_args["targets"]})
+        # Command: run, run-rule, create-file
+        if args.command in ("run", "run-rule", "create-file"):
+            config.update({"debug": args.debug, "doc": vars(args).get("doc", []), "log": args.log,
+                           "targets": snakemake_args["targets"]})
             if args.log:
                 use_progressbar = False
 

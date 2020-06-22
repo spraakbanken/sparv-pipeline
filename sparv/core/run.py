@@ -18,7 +18,7 @@ def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
 
-    available_modules = sorted(registry.find_modules(no_import=True))
+    available_modules = sorted(registry.find_modules(no_import=True, find_custom=True))
 
     module_parser = argparse.ArgumentParser(prog="sparv run-module")
     subparsers = module_parser.add_subparsers(dest="module")
