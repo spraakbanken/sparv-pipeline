@@ -68,6 +68,12 @@ def cwbset(values, delimiter="|", affix="|", sort=False, maxlength=4095, encodin
     return affix if not values else affix + delimiter.join(values) + affix
 
 
+def cwbset_to_list(cwbset, delimiter="|", affix="|"):
+    """Turn a cwbset string into a list."""
+    cwbset = cwbset.strip(affix)
+    return cwbset.split(delimiter)
+
+
 def truncateset(string, maxlength=4095, delimiter="|", affix="|", encoding="UTF-8"):
     """Truncate a Corpus Workbench set to a maximum length."""
     if len(string) <= maxlength or string == "|":

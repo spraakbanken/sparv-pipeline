@@ -101,6 +101,39 @@ def timeformat(doc: str = Document,
     _formatter(doc, in_from, in_to, out_from, out_to, informat, outformat, splitter, regex)
 
 
+@annotator("Get datetime resolutions from informat")
+def resolution(out_resolution: str = Output("dateformat.resolution", data=True, common=True),
+               informat: str = Config("dateformat.datetime_informat")):
+    """Get the datetime resolution from the informat defined in the corpus config."""
+    resolutions = []
+
+    if informat:
+        informats = util.cwbset_to_list(informat)
+        for i in informats:
+            res = []
+            if any(s in i for s in ["%Y", "%y"]):
+                res.append("Y")
+            if any(s in i for s in ["%b", "%B", "%m"]):
+                res.append("M")
+            if any(s in i for s in ["%a", "%A", "%w", "%d"]):
+                res.append("D")
+            if any(s in i for s in ["%H", "%I"]):
+                res.append("h")
+            if "%M" in i:
+                res.append("m")
+            if "%S" in i:
+                res.append("s")
+            resolutions.append("".join(res))
+
+        # Sort with more fine-grained resolutions first
+        resolutions.sort(key=len, reverse=True)
+
+    resolutions = util.cwbset(resolutions)
+
+    # Write timeresolution file
+    util.write_common_data(out_resolution, resolutions)
+
+
 def _formatter(doc, in_from, in_to, out_from, out_to, informat, outformat, splitter, regex):
     """Take existing dates/times and input formats and convert to specified output format."""
     def get_smallest_unit(informat):

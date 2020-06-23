@@ -15,6 +15,7 @@ def info(out: str = Export("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_pat
          sentences: str = Annotation("cwb.sentencecount", data=True, common=True),
          firstdate: str = Annotation("cwb.datefirst", data=True, common=True),
          lastdate: str = Annotation("cwb.datelast", data=True, common=True),
+         resolution: str = Annotation("dateformat.resolution", data=True, common=True),
          protected: bool = Config("korp.protected", False)):
     """Save information to the file specified by 'out'."""
     content = []
@@ -23,10 +24,13 @@ def info(out: str = Export("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_pat
     for key, value_obj, is_annotation in [("Sentences", sentences, True),
                                           ("FirstDate", firstdate, True),
                                           ("LastDate", lastdate, True),
+                                          ("DateResolution", resolution, True),
                                           ("Updated", time.strftime("%Y-%m-%d"), False),
                                           ("Protected", protected, False)]:
         if is_annotation:
             value = util.read_common_data(value_obj)
+            if key == "DateResolution":
+                value = "|".join(util.cwbset_to_list(value))
         else:
             value = value_obj
 
@@ -106,7 +110,7 @@ def info_date(corpus: str = Corpus,
     util.write_common_data(out_datelast, str(datelast))
 
 
-@annotator("empty datefirst and datelast files for .info", order=2)
+@annotator("Empty datefirst and datelast files for .info", order=2)
 def info_date_unknown(out_datefirst: str = Output("cwb.datefirst", data=True, common=True),
                       out_datelast: str = Output("cwb.datelast", data=True, common=True)):
     """Create empty datefirst and datelast file (needed for .info file) if corpus has no date information."""
