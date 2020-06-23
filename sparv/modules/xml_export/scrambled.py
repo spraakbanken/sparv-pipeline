@@ -25,22 +25,18 @@ def scrambled(doc: str = Document,
               remove_namespaces: bool = Config("export.remove_export_namespaces", False),
               include_empty_attributes: bool = Config("xml_export.include_empty_attributes")):
     """Export annotations to scrambled XML."""
+    # Get annotation spans, annotations list etc.
+    annotations, _, export_names = util.get_annotation_names(doc, token, annotations, original_annotations,
+                                                             remove_namespaces)
     if chunk not in annotations:
         raise util.SparvErrorMessage(
             "The annotation used for scrambling ({}) needs to be included in the output.".format(chunk))
-
-    # Create export dir
-    os.makedirs(os.path.dirname(out), exist_ok=True)
+    span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names, split_overlaps=True)
 
     # Read words and document ID
     word_annotation = list(util.read_annotation(doc, word))
     chunk_order = list(util.read_annotation(doc, chunk_order))
     docid = util.read_data(doc, docid)
-
-    # Get annotation spans, annotations list etc.
-    annotations, _, export_names = util.get_annotation_names(doc, token, annotations, original_annotations,
-                                                             remove_namespaces)
-    span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names, split_overlaps=True)
 
     # Reorder chunks
     new_span_positions = util.scramble_spans(span_positions, chunk, chunk_order)
@@ -48,6 +44,9 @@ def scrambled(doc: str = Document,
     # Construct XML string
     xmlstr = xml_utils.make_pretty_xml(new_span_positions, annotation_dict, export_names, token, word_annotation, docid,
                                        include_empty_attributes)
+
+    # Create export dir
+    os.makedirs(os.path.dirname(out), exist_ok=True)
 
     # Write XML to file
     with open(out, mode="w") as outfile:

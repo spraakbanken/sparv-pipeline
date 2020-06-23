@@ -58,27 +58,26 @@ def vrt_scrambled(doc: str = Document,
                   original_annotations: Optional[list] = Config("vrt_export.original_annotations"),
                   remove_namespaces: bool = Config("export.remove_export_namespaces", False)):
     """Export annotations to vrt in scrambled order."""
+    # Get annotation spans, annotations list etc.
+    annotations, token_annotations, export_names = util.get_annotation_names(doc, token, annotations,
+                                                                             original_annotations, remove_namespaces)
     if chunk not in annotations:
         raise util.SparvErrorMessage(
             "The annotation used for scrambling ({}) needs to be included in the output.".format(chunk))
-
-    # Create export dir
-    os.makedirs(os.path.dirname(out), exist_ok=True)
+    span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names)
 
     # Read words and document ID
     word_annotation = list(util.read_annotation(doc, word))
     chunk_order = list(util.read_annotation(doc, chunk_order))
-
-    # Get annotation spans, annotations list etc.
-    annotations, token_annotations, export_names = util.get_annotation_names(doc, token, annotations,
-                                                                             original_annotations, remove_namespaces)
-    span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names)
 
     # Reorder chunks and open/close tags in correct order
     new_span_positions = util.scramble_spans(span_positions, chunk, chunk_order)
 
     # Make vrt format
     vrt_data = create_vrt(new_span_positions, token, word_annotation, token_annotations, annotation_dict, export_names)
+
+    # Create export dir
+    os.makedirs(os.path.dirname(out), exist_ok=True)
 
     # Write result to file
     with open(out, "w") as f:
