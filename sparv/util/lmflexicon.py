@@ -108,7 +108,7 @@ def read_lmf(xml, annotation_elements=("writtenForm", "lemgram"), tagset="SUC", 
         testwords = ["äplebuske",
                      "stöpljus",
                      "katt"]
-        util.test_annotations(lexicon, testwords)
+        util.test_lexicon(lexicon, testwords)
         log.info("OK, read")
     return lexicon
 

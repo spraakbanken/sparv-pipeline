@@ -137,7 +137,7 @@ def read_xml(xml):
     testwords = ["tigerhjerta..nn.1",
                  "lågland..nn.1",
                  "gud..nn.1"]
-    util.test_annotations(lexicon, testwords)
+    util.test_lexicon(lexicon, testwords)
 
     log.info("OK, read")
     return lexicon

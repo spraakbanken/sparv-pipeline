@@ -118,7 +118,7 @@ def read_blingbring(tsv, classmap, verbose=True):
                  "behjälplig..1",
                  "köra_ner..1"
                  ]
-    util.test_annotations(lexicon, testwords)
+    util.test_lexicon(lexicon, testwords)
 
     if verbose:
         log.info("OK, read")
@@ -148,7 +148,7 @@ def read_rogetmap(xml, verbose=True):
                  "Health",
                  "Amusement",
                  "Marriage"]
-    util.test_annotations(lexicon, testwords)
+    util.test_lexicon(lexicon, testwords)
 
     if verbose:
         log.info("OK, read.")
@@ -186,7 +186,7 @@ def read_swefn(xml, verbose=True):
                  "granne..1",
                  "sisådär..1",
                  "mjölkcentral..1"]
-    util.test_annotations(lexicon, testwords)
+    util.test_lexicon(lexicon, testwords)
 
     if verbose:
         log.info("OK, read.")

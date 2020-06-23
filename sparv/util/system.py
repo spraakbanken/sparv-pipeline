@@ -38,7 +38,6 @@ def call_java(jar, arguments, options=[], stdin="", search_paths=(),
     If the verbose flag is True, pipes all stderr output to stderr,
     and an empty string is returned as the stderr component.
 
-    *** for maltparser: ***
     If return_command is set, then the process is returned.
     """
     assert isinstance(arguments, (list, tuple))
@@ -59,10 +58,9 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
                 use_shell=False, allow_error=False, return_command=False):
     """Call a binary with arguments and stdin, return a pair (stdout, stderr).
 
-    If the verbose flag is True, pipes all stderr output to stdout,
-    and an empty string is returned as the stderr component.
+    If the verbose flag is True, pipes all stderr output from the subprocess to
+    stderr in the terminal, and an empty string is returned as the stderr component.
 
-    *** for maltparser: ***
     If return_command is set, then the process is returned.
     """
     from . import unicode_convert

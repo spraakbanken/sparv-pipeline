@@ -299,7 +299,7 @@ def chain(annotations, default=None):
     return ((key, follow(key)) for key in annotations[0])
 
 
-def test_annotations(lexicon, testwords):
+def test_lexicon(lexicon, testwords):
     """Test the validity of a lexicon.
 
     Takes a dictionary (lexicon) and a list of test words.

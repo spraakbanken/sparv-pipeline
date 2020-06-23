@@ -106,7 +106,7 @@ def read_sensaldo(tsv, verbose=True):
                  "ödmjukhet..1",
                  "handla..1"
                  ]
-    util.test_annotations(lexicon, testwords)
+    util.test_lexicon(lexicon, testwords)
 
     if verbose:
         log.info("OK, read")

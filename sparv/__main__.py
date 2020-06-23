@@ -20,6 +20,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
     """ArgumentParser with custom help message."""
 
     def __init__(self, *args, **kwargs):
+        """Init parser."""
         no_help = kwargs.pop("no_help", False)
         # Don't add default help message
         kwargs["add_help"] = False
@@ -31,6 +32,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
 
 class CustomHelpFormatter(argparse.RawDescriptionHelpFormatter):
     """Custom help formatter for argparse, silencing subparser lists."""
+
     def _format_action(self, action):
         result = super()._format_action(action)
         if isinstance(action, argparse._SubParsersAction):
@@ -40,7 +42,6 @@ class CustomHelpFormatter(argparse.RawDescriptionHelpFormatter):
 
 def main():
     """Run Sparv pipeline (main entry point for Sparv)."""
-
     # Set up command line arguments
     parser = CustomArgumentParser(prog="sparv",
                                   description="Sparv Pipeline",
@@ -69,7 +70,7 @@ def main():
         "   run-rule         Run specified rule(s) for creating annotations",
         "   create-file      Create specified file(s)",
         "   run-module       Run annotator module independently",
-        "   annotations      List available modules, annotations and classes",
+        "   annotations      List available modules, annotations, and classes",
         "   presets          List available annotation presets",
         "",
         "See 'sparv <command> -h' for help with a specific command"

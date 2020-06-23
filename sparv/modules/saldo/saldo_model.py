@@ -225,7 +225,7 @@ def read_lmf(xml, annotation_elements=("gf", "lem", "saldo"), tagset="SUC", verb
                  "formar",
                  "in",
                  "datorrelaterade"]
-    util.test_annotations(lexicon, testwords)
+    util.test_lexicon(lexicon, testwords)
 
     if verbose:
         log.info("OK, read")
