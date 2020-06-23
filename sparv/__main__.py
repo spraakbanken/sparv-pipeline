@@ -58,7 +58,7 @@ def main():
         "",
         "Inspecting corpus details:",
         "   config           Display the corpus config",
-        "   files            List available input files",
+        "   files            List available corpus documents (input for Sparv)",
         "",
         "Setting up the Sparv pipeline:",
         # "   create-config    Run config wizard to create a corpus config",
@@ -66,10 +66,10 @@ def main():
         # "   install-plugin   (?)",
         "",
         "Advanced commands:",
-        "   run-rule         Create specified annotation(s)",
+        "   run-rule         Run specified rule(s) for creating annotations",
         "   create-file      Create specified file(s)",
         "   run-module       Run annotator module independently",
-        "   annotations      (?) List available modules and annotations",
+        "   annotations      List available modules, annotations and classes",
         "   presets          List available annotation presets",
         "",
         "See 'sparv <command> -h' for help with a specific command"
@@ -95,7 +95,7 @@ def main():
     # Inspect
     conifg_parser = subparsers.add_parser("config", description="Display the corpus configuration.")
     conifg_parser.add_argument("options", nargs="*", default=[], help="Specific options(s) in config to display.")
-    subparsers.add_parser("files", description="List available input files that can be annotated by Sparv.")
+    subparsers.add_parser("files", description="List available corpus documents that can be annotated by Sparv.")
 
     # Setup
     models_parser = subparsers.add_parser("build-models",
@@ -110,10 +110,10 @@ def main():
     # Advanced commands
     subparsers.add_parser("run-module", no_help=True)
 
-    runrule_parser = subparsers.add_parser("run-rule", description="Create specified annotation(s).")
+    runrule_parser = subparsers.add_parser("run-rule", description="Run specified rule(s) for creating annotations.")
     runrule_parser.add_argument("targets", nargs="*", default=["list"],
                                 help="Annotation(s) to create")
-    runrule_parser.add_argument("-l", "--list", action="store_true", help="List available targets")
+    runrule_parser.add_argument("-l", "--list", action="store_true", help="List available rules")
     runrule_parser.add_argument("-w", "--wildcards", nargs="*", metavar="WILDCARD",
                                 help="Supply values for wildcards using the format 'name=value'")
     createfile_parser = subparsers.add_parser("create-file", description=("Create specified file(s). "

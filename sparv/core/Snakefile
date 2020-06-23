@@ -211,8 +211,8 @@ rule list_targets:
         max_len = max(len(t[0]) for t in snake_storage.named_targets + snake_storage.export_targets
                       + snake_storage.install_targets + snake_storage.model_targets + snake_storage.custom_targets)
         print()
-        print("Available targets")
-        print("=================\n")
+        print("Available rules")
+        print("===============\n")
         print(util.Color.BOLD + "    Exports" + util.Color.RESET)
         for target, desc, _lang in sorted(snake_storage.export_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
@@ -229,7 +229,9 @@ rule list_targets:
         for target, desc, _lang in sorted(snake_storage.model_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
         print()
-        print(util.Color.BOLD + "    Custom Targets" + util.Color.RESET)
+        print(util.Color.BOLD + "    Custom Rules" + util.Color.RESET)
+        print(util.Color.ITALIC + "        Custom rules cannot be run directly but they can be used in the"
+              "'custom_annotations' section in the corpus configuration." + util.Color.RESET)
         for target, desc in sorted(snake_storage.custom_targets):
             print("        {:{}}    {}".format(target, max_len, desc))
 
@@ -261,7 +263,7 @@ rule clean:
     run:
         # Only run if corpus config is found in same dir
         if config_missing:
-            print("No corpus config found. Not removing anything.")
+            print(util.sparv_warning("No corpus config found. Not removing anything."))
         else:
             import shutil
             to_remove = []
@@ -277,10 +279,10 @@ rule clean:
                 full_path = Path.cwd() / d
                 if full_path.is_dir():
                     shutil.rmtree(full_path)
-                    print(d, "directory removed")
+                    print(util.sparv_info(f"{d} directory removed"))
                     something_removed = True
             if not something_removed:
-                print("Nothing to remove")
+                print(util.sparv_info("Nothing to remove"))
 
 
 # Rule to list all installations that will be made when running `sparv install`

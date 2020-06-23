@@ -13,6 +13,11 @@ def sparv_warning(msg):
     return f"{Color.YELLOW}WARNING: {msg}{Color.RESET}"
 
 
+def sparv_info(msg):
+    """Format msg into a Sparv info message."""
+    return f"{Color.GREEN}{msg}{Color.RESET}"
+
+
 def _safe_join(sep, elems):
     """Join a list of strings (elems), using (sep) as separator.
 
