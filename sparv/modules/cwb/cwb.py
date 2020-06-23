@@ -190,12 +190,12 @@ def cwb_encode(corpus, annotations, original_annotations, docs, words, vrtfiles,
             attrs2 = "+" + attrs2
         encode_args += ["-S", "%s:0%s" % (struct, attrs2)]
 
-    util.system.call_binary("cwb-encode", encode_args, verbose=True)
+    util.system.call_binary("cwb-encode", encode_args)
     # Use xargs to avoid "Argument list too long" problems
-    # util.system.call_binary("cwb-encode", raw_command="cat %s | xargs cat | %%s %s" % (vrtfiles, " ".join(encode_args)), verbose=True, use_shell=True)
+    # util.system.call_binary("cwb-encode", raw_command="cat %s | xargs cat | %%s %s" % (vrtfiles, " ".join(encode_args)), use_shell=True)
 
     index_args = ["-V", "-r", registry, corpus.upper()]
-    util.system.call_binary("cwb-makeall", index_args, verbose=True)
+    util.system.call_binary("cwb-makeall", index_args)
     log.info("Encoded and indexed %d columns, %d structs", len(columns), len(structs))
 
     if not skip_compression:
@@ -237,7 +237,7 @@ def cwb_align(corpus, other, link, aligndir="annotations/align", encoding: str =
 
     # Align linked chunks
     args = ["-v", "-o", alignfile, "-V", link_attr, corpus, other, link_name]
-    result, _ = util.system.call_binary("cwb-align", args, encoding=encoding, verbose=True)
+    result, _ = util.system.call_binary("cwb-align", args, encoding=encoding)
     with open(alignfile + ".result", "w") as F:
         print(result, file=F)
     _, lastline = result.rsplit("Alignment complete.", 1)
@@ -259,12 +259,12 @@ def cwb_align(corpus, other, link, aligndir="annotations/align", encoding: str =
             print("ALIGNED", other, file=F)
         log.info("Added alignment to registry: %s", regfile)
     # args = [corpus, ":add", ":a", other]
-    # result, _ = util.system.call_binary("cwb-regedit", args, verbose=True)
+    # result, _ = util.system.call_binary("cwb-regedit", args)
     # log.info("%s", result.strip())
 
     # Encode the alignments into CWB
     args = ["-v", "-D", alignfile]
-    result, _ = util.system.call_binary("cwb-align-encode", args, encoding=encoding, verbose=True)
+    result, _ = util.system.call_binary("cwb-align-encode", args, encoding=encoding)
     log.info("%s", result.strip())
 
 

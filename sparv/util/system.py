@@ -59,7 +59,7 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
                 use_shell=False, allow_error=False, return_command=False):
     """Call a binary with arguments and stdin, return a pair (stdout, stderr).
 
-    If the verbose flag is True, pipes all stderr output to stderr,
+    If the verbose flag is True, pipes all stderr output to stdout,
     and an empty string is returned as the stderr component.
 
     *** for maltparser: ***
@@ -101,6 +101,8 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
             stdout = stdout.decode(encoding)
             if stderr:
                 stderr = stderr.decode(encoding)
+        if stderr:
+            log.warning(f"Error in {name}: {stderr}")
         return stdout, stderr
 
 
