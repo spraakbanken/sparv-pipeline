@@ -1,127 +1,112 @@
-# -*- coding: utf-8 -*-
-from collections import defaultdict
-import sparv.util as util
-import sys
+"""Module for converting malt dependencies to phrase structure trees."""
+
+import logging
 import pprint
+from collections import defaultdict
+
+import sparv.util as util
+from sparv import Annotation, Document, Output, annotator
+
+log = logging.getLogger(__name__)
 
 
-def annotate(out_phrase_name, out_phrase_func, word, sentence, pos, msd, ref, dephead_ref, deprel):
-    """ """
+@annotator("Convert malt dependencies into phrase structure", language=["swe"])
+def annotate(doc: str = Document,
+             out_phrase: str = Output("phrase_structure.phrase", description="Phrase segments"),
+             out_phrase_name: str = Output("phrase_structure.phrase:phrase_structure.name", description="Phrase names"),
+             out_phrase_func: str = Output("phrase_structure.phrase:phrase_structure.func",
+                                           description="Phrase functions"),
+             token: str = Annotation("<token>"),
+             word: str = Annotation("<token:word>"),
+             sentence: str = Annotation("<sentence>"),
+             pos: str = Annotation("<token>:hunpos.pos"),
+             msd: str = Annotation("<token>:hunpos.msd"),
+             ref: str = Annotation("<token>:misc.number_rel_<sentence>"),
+             dephead_ref: str = Annotation("<token>:malt.dephead_ref"),
+             deprel: str = Annotation("<token>:malt.deprel")):
+    """Annotate sentence with phrase structures."""
+    sentences, _orphans = util.parent.get_children(doc, sentence, word)
+    token_annotations = list(util.read_annotation_attributes(doc, [ref, word, pos, msd, dephead_ref, deprel]))
+    token_spans = list(util.read_annotation_spans(doc, token))
 
-    sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
-    word_dict = util.read_annotation(word)
-    ref_dict = util.read_annotation(ref)
-    pos_dict = util.read_annotation(pos)
-    msd_dict = util.read_annotation(msd)
-    dephead_ref_dict = util.read_annotation(dephead_ref)
-    deprel_dict = util.read_annotation(deprel)
+    def get_token_span(index):
+        return token_spans[index]
 
-    out_phrase_dict = {}
-    out_func_dict = {}
+    nodes = []
 
-    for n, s in enumerate(sentences):
-        c = 0
+    for s in sentences:
         tokenlist = [Token(None)]
-        for tokid in s:
-            tokenlist.append(Token([ref_dict[tokid], word_dict[tokid], pos_dict[tokid], msd_dict[tokid],
-                             dephead_ref_dict[tokid], deprel_dict[tokid]]))
+        for token_index in s:
+            token = token_annotations[token_index]
+            tokenlist.append(Token(token))
 
         # Get PS tree
         sen = Sentence(tokenlist)
         if not sen.is_cyclic():
-            print(pprint.pformat(convert_sentence(sen).top.to_tree_str()), file=sys.stderr)
-            continue
             tree = convert_sentence(sen).top.to_tree_str()
+            # print(pprint.pformat(tree), file=sys.stderr)
 
-            # # Make root
-            # update_dictionary(out_phrase_dict, extract_id(s[0]), extract_id(s[-1], start=False), "Root", c)
-            # update_dictionary(out_func_dict, extract_id(s[0]), extract_id(s[-1], start=False), "Root", c)
-            c += 1
-
-            # Make other nodes
+            # Make nodes
             children = flatten_tree(tree[1], [])
+            log.debug("\n\nSENTENCE:")
             position = 0
             open_elem_stack = []
-            # print
             for child in children:
-                if not child[0].startswith('WORD:'):
-                    open_elem_stack.append(child + (extract_id(s[position]),))
-                    # print "<ph name=", child[0], "func=", child[1], ">", extract_id(s[position])
+                if not child[0].startswith("WORD:"):
+                    start_pos = get_token_span(s[position])[0]
+                    open_elem_stack.append(child + (start_pos,))
+                    log.debug(f"<phrase name={child[0]} func={child[1]}> {s[position]}")
                 else:
+                    # Close nodes
                     while open_elem_stack[-1][2] == child[2]:
-                        start_id = open_elem_stack[-1][3]
-                        end_id = extract_id(s[position - 1], start=False)
-                        # update_dictionary(out_phrase_dict, start_id, end_id, open_elem_stack[-1][0], "name", c)
-                        # update_dictionary(out_func_dict, start_id, end_id, open_elem_stack[-1][1], "func", c)
-                        update_dictionary(out_phrase_dict, start_id, end_id, open_elem_stack[-1][0], open_elem_stack[-1][1], "name", c)
-                        # print "</ph name=", open_elem_stack[-1][0], "func=", open_elem_stack[-1][1], ">", "-".join([start_id, end_id])
-                        c += 1
+                        start_pos = open_elem_stack[-1][3]
+                        end_pos = get_token_span(s[position - 1])[1]
+                        nodes.append(((start_pos, end_pos), open_elem_stack[-1][0], open_elem_stack[-1][1]))
+                        log.debug(f"</phrase name={open_elem_stack[-1][0]} func={open_elem_stack[-1][1]}> {start_pos}-{end_pos}")
                         open_elem_stack.pop()
                     position += 1
-                    # print "   ", child[0]
+                    log.debug(f"   {child[0][5:]}")
 
-            # Close remaining elements
-            end_id = extract_id(s[-1], start=False)
+            # Close remaining open nodes
+            end_pos = get_token_span(s[-1])[1]
             for elem in reversed(open_elem_stack):
-                start_id = extract_id(elem[3])
-                # update_dictionary(out_phrase_dict, start_id, end_id, elem[0], "name", c)
-                # update_dictionary(out_func_dict, start_id, end_id, elem[1], "func", c)
-                update_dictionary(out_phrase_dict, start_id, end_id, elem[0], elem[1], "name", c)
-                # print "</ph name=", elem[0], "func=", elem[1], ">", "-".join([start_id, end_id])
-                c += 1
+                start_pos = elem[3]
+                nodes.append(((start_pos, end_pos), elem[0], elem[1]))
+                log.debug(f"</phrase name={elem[0]} func={elem[1]}> {start_pos}-{end_pos}")
 
-    util.write_annotation(out_phrase_name, out_phrase_dict)
-    util.write_annotation(out_phrase_func, out_func_dict)
+    # Sort nodes
+    sorted_nodes = sorted(nodes)
+
+    # Write annotations
+    util.write_annotation(doc, out_phrase, [i[0] for i in sorted_nodes])
+    util.write_annotation(doc, out_phrase_name, [i[1] for i in sorted_nodes])
+    util.write_annotation(doc, out_phrase_func, [i[2] for i in sorted_nodes])
 
 
-def log(f):
+def log_output(f):
     """
     Make a function write its input when called and output when finished.
 
-    >>> @log
+    >>> @log_output
     ... def test(x, *ys, **kws):
-    ...     return kws.get('c',0)+sum(x*y for y in ys)
+    ...     return kws.get("c",0)+sum(x*y for y in ys)
     >>> test(2, 3, 4, c=1) == 1+2*3+2*4
-    test(2, 3, 4, {'c': 1})
-    test(2, 3, 4, {'c': 1}) = 15
-    True
-    """
-    import sys
-    import functools
-
-    @functools.wraps(f)
-    def g(*args, **kws):
-        call = f.__name__ + pprint.pformat(args + (kws, ))
-        print(call, file=sys.stderr)
-        res = f(*args, **kws)
-        print(call + ' = ' + pprint.pformat(res), file=sys.stderr)
-        return res
-    return g
-
-
-def log(f):
-    """
-    Make a function write its input when called and output when finished.
-
-    >>> @log
-    ... def test(x, *ys, **kws):
-    ...     return kws.get('c',0)+sum(x*y for y in ys)
-    >>> test(2, 3, 4, c=1) == 1+2*3+2*4
-    test(2, 3, 4, {'c': 1})
-    test(2, 3, 4, {'c': 1}) = 15
+    test(2, 3, 4, {"c": 1})
+    test(2, 3, 4, {"c": 1}) = 15
     True
     """
     def g(*args, **kws):
         call = f.__name__ + pprint.pformat(args + (kws, ))
         print(call)
         res = f(*args, **kws)
-        print(call + ' = ' + pprint.pformat(res))
+        print(call + " = " + pprint.pformat(res))
         return res
     return g
 
 
-@log
+# @log_output
 def flatten_tree(tree, children=[]):
+    """Flatten a nested tree structure into a list of children."""
     for child in tree:
         if has_children(child):
             flatten_tree(child, children)
@@ -131,6 +116,7 @@ def flatten_tree(tree, children=[]):
 
 
 def has_children(elem):
+    """Check if elem has any child elements."""
     if type(elem) == list:
         return True
     try:
@@ -142,22 +128,13 @@ def has_children(elem):
     return False
 
 
-def extract_id(token, start=True):
-    if start:
-        return token.strip('w:').split('-')[0]
-    else:
-        return token.strip('w:').split('-')[1]
-
-
-def update_dictionary(phrase_dict, start_id, end_id, name, func, d_name, c):
-    phrase_dict[str(c) + ":" + "-".join([start_id, end_id])] = ":".join([name, func])
-
 ##############################################################################
-# from file "trees.py":
+# from file "trees.py" (Richard Johansson):
 
 
 class Token(object):
     """Token containing a list of attributes."""
+
     def __init__(self, t):
         if t:
             self.word = t[1]
@@ -169,7 +146,7 @@ class Token(object):
             self.depheadid = t[4]
             self.dephead = None
         else:
-            self.ref = '0'
+            self.ref = "0"
             self.position = 0
             self.deprel = None
             self.word = None
@@ -189,7 +166,7 @@ class Token(object):
         if self.position == 0:
             return "(ROOT)"
         else:
-            return "WORD:" + self.ustr(self.word)
+            return "WORD:" + self.word
 
     def is_cyclic(self):
         seen = {}
@@ -201,15 +178,10 @@ class Token(object):
             n = n.dephead
         return False
 
-    @staticmethod
-    def ustr(us):
-        if not us:
-            return "NONE"
-        return us.encode("utf-8")
-
 
 class Sentence(object):
     """Sentence containing a list of token objects."""
+
     def __init__(self, l):
         self.tokens = l
         table = {}
@@ -226,8 +198,8 @@ class Sentence(object):
     def length(self):
         return len(self.tokens)
 
-    # def __str__(self):
-    #     return "(Sen: " + str(self.tokens) + ")"
+    def __str__(self):
+        return "(Sen: " + str(self.tokens) + ")"
 
     def to_tree_str(self):
         return "\n".join([str(t) for t in self.tokens])
@@ -243,11 +215,12 @@ class Sentence(object):
         return any(n.is_cyclic() for n in self.tokens)
 
 ##############################################################################
-# from file "to_const.py":
+# from file "to_const.py" (Richard Johansson):
 
 
 class Terminal(object):
     """Class representing a terminal node of a phrase structure tree."""
+
     def __init__(self, fun, t):
         self.fun = fun
         self.t = t
@@ -263,7 +236,7 @@ class Terminal(object):
         return (str(self.t), str(self.fun), n)
 
     def to_word_str(self):
-        if self.t.pos == 'PM':
+        if self.t.pos == "PM":
             return self.t.word
         else:
             return self.t.word.lower()
@@ -272,10 +245,10 @@ class Terminal(object):
         return 1
 
     def is_punctuation(self):
-        return self.t.pos in ['MAD', 'MID', 'PAD']
+        return self.t.pos in ["MAD", "MID", "PAD"]
 
     def is_name(self):
-        return self.t.pos == 'PM'
+        return self.t.pos == "PM"
 
     def add_starts(self, starts):
         starts[self.start].append(self)
@@ -286,6 +259,7 @@ class Terminal(object):
 
 class Nonterminal(object):
     """Class representing a non-terminal node of a phrase structure tree."""
+
     def __init__(self, label, fun, headchild, children):
         self.label = label
         self.fun = fun
@@ -306,10 +280,10 @@ class Nonterminal(object):
         return children
 
     def to_word_str(self):
-        l = []
+        wordlist = []
         for c in self.children:
-            l.append(c.to_word_str())
-        return " ".join(l)
+            wordlist.append(c.to_word_str())
+        return " ".join(wordlist)
 
     def length(self):
         out = 0
@@ -338,6 +312,7 @@ class Nonterminal(object):
 
 class PSTree(object):
     """Class representing a phrase structure tree."""
+
     def __init__(self, top):
         self.top = top
         self.starts = defaultdict(list)
@@ -352,9 +327,11 @@ class PSTree(object):
 
 
 def convert_sentence(sen):
-    """Do a recursive analysis of sen.
-    Return a PSTree object (phrase structure tree)
-    if the analysis was successful."""
+    """
+    Do a recursive analysis of sen.
+
+    Return a PSTree object (phrase structure tree) if the analysis was successful.
+    """
     return PSTree(convert(sen.tokens[0]))
 
 
@@ -364,7 +341,7 @@ def convert(token):
 
     def nonterminal(label):
         head = Terminal("HEAD", token)
-        add_head(children, head)
+        _add_head(children, head)
         return Nonterminal(label, token.deprel, head, children)
     if token.position == 0:
         return Nonterminal("ROOT", "ROOT", token, children)
@@ -372,12 +349,12 @@ def convert(token):
         return Terminal(token.deprel, token)
     elif token.pos == "KN" or token.pos == "MID":
         if children:
-            lbl = get_coord_label(children)
+            lbl = _get_coord_label(children)
             return nonterminal(lbl)
         else:
             return Terminal(token.deprel, token)
     elif token.pos == "NN" or token.pos == "PN" or token.pos == "PM":
-        if starts_with_wh(token):
+        if _starts_with_wh(token):
             # "vars mamma" etc
             return nonterminal("NP-wh")
         else:
@@ -387,20 +364,20 @@ def convert(token):
             return Terminal(token.deprel, token)
         if any(c.fun == "UA" for c in children):
             return nonterminal("SBAR")
-        elif wh_after_prep(token):
+        elif _wh_after_prep(token):
             # "i vilken" etc
             return nonterminal("PrP-wh")
         else:
             return nonterminal("PrP")
     elif token.pos == "SN":
-        if children > 0:
+        if len(children) > 0:
             return nonterminal("SBAR")
         else:
             return Terminal(token.deprel, token)
     elif token.pos == "VB":
-        if has_subject(token):
-            if starts_with_wh(token):
-                if is_attributive_subclause(token):
+        if _has_subject(token):
+            if _starts_with_wh(token):
+                if _is_attributive_subclause(token):
                     label = "S-wh"
                 else:
                     # too unreliable...
@@ -412,7 +389,7 @@ def convert(token):
         elif "SUP" in token.msd:
             label = "VP-sup"
         else:
-            ie = find_first_by_pos(token.deps, "IE")
+            ie = _find_first_by_pos(token.deps, "IE")
             if ie and ie.dephead == token and ie.position < token.position:
                 label = "VP-att"
             elif "INF" in token.msd:
@@ -421,15 +398,15 @@ def convert(token):
                 label = "VP-fin"
         return nonterminal(label)
     elif token.pos == "IE":
-        vbc = find_first_by_pos(token.deps, "VB")
+        vbc = _find_first_by_pos(token.deps, "VB")
         if vbc:
             ds2 = token.deps + vbc.deps
             ds2.remove(vbc)
             c_ie = Terminal("IM-att", token)
             children = [convert(c) for c in ds2] + [c_ie]
-            sort_by_head_pos(children)
+            _sort_by_head_pos(children)
             head = Terminal("HEAD", vbc)
-            add_head(children, head)
+            _add_head(children, head)
             return Nonterminal("VP-att", token.deprel, head, children)
         elif children:
             return nonterminal("XX")
@@ -451,9 +428,11 @@ def convert(token):
         return Terminal(token.deprel, token)
 
 
-### The following functions belong to convert()
+################################################################################
+# Auxiliaries used by convert
+################################################################################
 
-def add_head(l, h):
+def _add_head(l, h):
     hp = h.head_position()
     for ix in range(len(l)):
         if hp < l[ix].head_position():
@@ -462,7 +441,7 @@ def add_head(l, h):
     l.append(h)
 
 
-def get_coord_label(l):
+def _get_coord_label(l):
     for c in l:
         if isinstance(c, Nonterminal) and c.fun == "CJ":
             return c.label
@@ -472,56 +451,50 @@ def get_coord_label(l):
     return "XX"
 
 
-def has_subject(token):
+def _has_subject(token):
     for c in token.deps:
         if c.deprel in ["SS", "ES", "FS"] and c.pos != "IE":
             return True
     return False
 
 
-def is_finite(token):
-    return ("PRS" in token.msd) or ("PRT" in token.msd)
+# def _is_finite(token):
+#     return ("PRS" in token.msd) or ("PRT" in token.msd)
 
 
-def find_first_by_pos(deps, pos):
+def _find_first_by_pos(deps, pos):
     for d in deps:
         if d.pos == pos:
             return d
     return None
 
 
-def starts_with_wh(token):
+def _starts_with_wh(token):
     for c in token.deps:
-        if (c.position < token.position) and (c.pos[0] == 'H'):
+        if (c.position < token.position) and (c.pos[0] == "H"):
             return True
-        if c.pos not in ['MAD', 'MID', 'PAD']:
+        if c.pos not in ["MAD", "MID", "PAD"]:
             return False
     return False
 
 
-def is_attributive_subclause(token):
+def _is_attributive_subclause(token):
     # we try to detect attributive subordinate clauses even though
     # they are often inconsistently handled by MaltParser...
     if token.deprel == "ET":
         return True
     for c in token.deps:
-        if c.pos[0] == 'H' and c.word.lower() == "som":
+        if c.pos[0] == "H" and c.word.lower() == "som":
             return True
     return False
 
 
-def wh_after_prep(token):
+def _wh_after_prep(token):
     for c in token.deps:
-        if c.pos == 'HP' and c.position > token.position and len(c.deps) == 0:
+        if c.pos == "HP" and c.position > token.position and len(c.deps) == 0:
             return True
     return False
 
 
-def sort_by_head_pos(l):
+def _sort_by_head_pos(l):
     l.sort(key=lambda x: x.head_position())
-
-
-##############################################################################
-
-if __name__ == '__main__':
-    util.run.main(annotate)
