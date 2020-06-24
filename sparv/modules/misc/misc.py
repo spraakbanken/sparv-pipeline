@@ -86,10 +86,10 @@ def struct_to_token(doc: str = Document,
                     attr: str = Annotation("{struct}:{attr}"),
                     token: str = Annotation("<token>"),
                     out: str = Output("<token>:misc.from_struct_{struct}_{attr}")):
-    """Convert a structural annotation into a token annotation."""
+    """Convert an attribute on a structural annotation into a token attribute."""
     token_parents = util.get_parents(doc, attr, token)
     attr_values = list(util.read_annotation(doc, attr))
-    out_values = [attr_values[p] if p else "" for p in token_parents]
+    out_values = [attr_values[p] if p is not None else "" for p in token_parents]
     util.write_annotation(doc, out, out_values)
 
 
