@@ -1,43 +1,66 @@
-# -*- coding: utf-8 -*-
-import sparv.util as util
-import sparv.cwb as cwb
+"""Topic modelling with vowpal wabbit.
+
+Public functions:
+- train
+- predict
+- word_weights
+- make_testdata
+
+Docstring testing:
+> import doctest
+> doctest.testmod(verbose=False)
+"""
+
 import itertools as it
-from collections import Counter, namedtuple, OrderedDict, defaultdict
-import sys
 import json
+import logging
+import sys
 import tempfile
-from vowpalwabbit import pyvw
+from collections import Counter, OrderedDict, defaultdict, namedtuple
+
 import pylibvw
+from vowpalwabbit import pyvw
+
+import sparv.util as util
+from sparv import Annotation, Config, Document, Model, ModelOutput, Output, annotator, modelbuilder
+
+log = logging.getLogger(__name__)
 
 
-def word_weights(model, word, pos, out):
+@annotator("Report the weight for each label for each word", config=[
+           Config("vw_topic_modelling.model", default="vw_topic_modelling/?.model")])
+def word_weights(doc: str = Document,
+                 model: str = Model("[vw_topic_modelling.model]"),
+                 word: str = Annotation("<token:word>"),
+                 pos: str = Annotation("<token:pos>"),
+                 out: str = Output("<token>:vw_topic_modelling:label_weights", description="Label weights per word")):
     """
     Report the weight for each label for each word.
 
     Both model and model.json must exist. See --train and --predict.
     """
-    m_json = json.load(open(model + '.json'))
-    index_to_label = m_json['index_to_label']
-    min_word_length = int(m_json['min_word_length'] or '0')
-    banned_pos = (m_json['banned_pos'] or '').split()
-    words = util.read_annotation(word)
-    poss = util.read_annotation(pos) if pos else {}
+    m_json = json.load(open(model + ".json"))
+    index_to_label = m_json["index_to_label"]
+    min_word_length = int(m_json["min_word_length"] or "0")
+    banned_pos = (m_json["banned_pos"] or "").split()
+    words = list(util.read_annotation(doc, word))
+    poss = util.read_annotation(doc, pos) if pos else []
     data = (Example(None, vw_normalize(word))
-            for span, word in list(words.items())
+            for n, word in enumerate(words)
             if len(word) >= min_word_length
-            if not pos or poss[span] not in banned_pos)
+            if not pos or poss[n] not in banned_pos)
     weights = defaultdict(list)
     with tempfile.NamedTemporaryFile() as tmp:
-        args = ['--initial_regressor', model, '--invert_hash', tmp.name]
+        args = ["--initial_regressor", model, "--invert_hash", tmp.name]
         for _ in vw_predict(args, data):
             pass
-        for line in open(tmp.name, 'r').readlines():
+        for line in open(tmp.name, "r").readlines():
             # allmänna[1]:14342849:0.0139527
-            colons = line.split(':')
+            colons = line.split(":")
             if len(colons) == 3:
                 word, _hash, weight = colons
-                if word[-1] == ']':
-                    bracesplit = word.rsplit('[', 1)
+                if word[-1] == "]":
+                    bracesplit = word.rsplit("[", 1)
                 else:
                     bracesplit = []
                 if len(bracesplit) == 2:
@@ -45,62 +68,69 @@ def word_weights(model, word, pos, out):
                     n = int(index[:-1]) + 1
                 else:
                     n = 1
-                weights[word].append(index_to_label[str(n)] + ':' + weight)
+                weights[word].append(index_to_label[str(n)] + ":" + weight)
     ws = (
-        (span, '|' + '|'.join(weights[vw_normalize(word)]) + '|')
-        for span, word in list(words.items())
+        util.cwbset(weights[vw_normalize(word)])
+        for word in words
         if vw_normalize(word) in weights
     )
-    util.write_annotation(out, ws)
+    util.write_annotation(doc, out, ws)
 
 
-def predict(model, order, struct, parent, word, out, pos, raw=False):
-    """
-    Predict a structural attribute.
+@annotator("Predict a structural attribute", config=[
+           Config("vw_topic_modelling.model", default="vw_topic_modelling/?.model"),
+           Config("vw_topic_modelling.modeljson", default="vw_topic_modelling/?.model.json")])
+def predict(doc: str = Document,
+            model: str = Model("[vw_topic_modelling.model]"),
+            modeljson: str = Model("[vw_topic_modelling.modeljson]"),
+            order,
+            struct,
+            parent: str = Annotation("{chunk}"),
+            word: str = Annotation("<token:word>"),
+            out: str = Output("{chunk}:vw_topic_modelling.prediction", description="Predicted attributes"),
+            pos: str = Annotation("<token:pos>"),
+            raw: bool = False):
+    """Predict a structural attribute."""
+    raw = raw == "true"
 
-    Both model and model.json must exist. See --train.
-    """
-
-    raw = raw == 'true'
-
-    m_json = json.load(open(model + '.json'))
+    m_json = json.load(open(modeljson))
 
     data = (
         Example(None, text.words, text.span)
         for text in texts([(order, struct, parent, word, pos)],
-                          map_label=lambda _: '?',
-                          min_word_length=m_json['min_word_length'],
-                          banned_pos=m_json['banned_pos'])
+                          map_label=lambda _: "?",
+                          min_word_length=m_json["min_word_length"],
+                          banned_pos=m_json["banned_pos"])
     )
 
-    index_to_label = m_json['index_to_label']
+    index_to_label = m_json["index_to_label"]
 
-    args = ['--initial_regressor', model]
+    args = ["--initial_regressor", model]
 
     if raw:
         predictions = (
-            (span, '|' + '|'.join(index_to_label[str(s)] + ':' + str(v) for s, v in ss) + '|')
-            for ss, span in vw_predict(args, data, raw=True)
+            util.cwbset_to_list(index_to_label[str(s)] + ":" + str(v) for s, v in ss)
+            for ss, _span in vw_predict(args, data, raw=True)
         )
     else:
         predictions = (
-            (span, index_to_label[str(s)])
-            for s, span in vw_predict(args, data)
+            index_to_label[str(s)]
+            for s, _span in vw_predict(args, data)
         )
 
-    util.write_annotation(out, predictions)
+    util.write_annotation(doc, out, predictions)
 
 
-def make_label_map(label_map_json):
+def _make_label_map(label_map_json):
     if label_map_json:
-        with open(label_map_json, 'r') as fp:
+        with open(label_map_json, "r") as fp:
             d = json.load(fp)
         return lambda label: d.get(label, None)
     else:
         return lambda label: label
 
 
-def take(bound, xs):
+def _take(bound, xs):
     if bound:
         i = 0
         for x in xs:
@@ -113,9 +143,16 @@ def take(bound, xs):
             yield x
 
 
-def train(file_list, outprefix,
-          dry_run_labels=False, label_map_json=None,
-          bound=None, min_word_length=0, banned_pos=''):
+@modelbuilder("Predict a structural attribute")
+def train(doc: str = Document,
+          file_list,
+          modelfile: str = ModelOutput("vw_topic_modelling/?.model"),
+          jsonfile: str = ModelOutput("vw_topic_modelling/?.model.json"),
+          dry_run_labels: bool = False,
+          label_map_json=None,
+          bound=None,
+          min_word_length: int = 0,
+          banned_pos=""):
     """
     Train a model using vowpal wabbit.
 
@@ -129,21 +166,18 @@ def train(file_list, outprefix,
      then N copies of: pos.
     """
 
-    modelfile = outprefix + '.model'
-    jsonfile = outprefix + '.model.json'
-
-    with open(file_list, 'r') as fp:
+    with open(file_list, "r") as fp:
         files = fp.read().split()
     order_struct_parent_word_pos = interleave(files, 5)
-    map_label = make_label_map(label_map_json)
+    map_label = _make_label_map(label_map_json)
     min_word_length = int(min_word_length) if min_word_length else 0
 
     # Look at the structs annotations to get the labels and their distribution:
     _, structs, _, _, _ = list(zip(*order_struct_parent_word_pos))
-    # todo: skip labels with very low occurrences
+    # TODO: skip labels with very low occurrences
     labels = Counter(map_label(label)
                      for annotfile in structs
-                     for _tok, label in util.read_annotation_iteritems(annotfile)
+                     for label in util.read_annotation(doc, annotfile)
                      if map_label(label))
     N = sum(labels.values())
     if bound:
@@ -155,27 +189,27 @@ def train(file_list, outprefix,
     answer = {}
     for i, (label, occurences) in enumerate(iter(list(labels.items())), start=1):
         w = float(N) / occurences
-        util.log.info('%s: occurences: %s, weight: %s', label, occurences, w)
-        answer[label] = ('%s:%s | ' % (i, w)).encode()
+        log.info(f"{label}: occurences: {occurences}, weight: {w}")
+        answer[label] = ("%s:%s | " % (i, w)).encode()
         label_to_index[label] = i
         index_to_label[i] = label
 
-    if dry_run_labels == 'true':
+    if dry_run_labels == "true":
         from pprint import pprint
         pprint(labels.most_common())
         print(json.dumps({l: l for l in labels}, indent=2))
-        util.log.info('texts: %s, labels: %s', N, k)
+        log.info(f"texts: {N}, labels: {k}")
         sys.exit()
 
     def itertexts():
-        return take(bound, texts(order_struct_parent_word_pos, map_label, min_word_length, banned_pos))
+        return _take(bound, texts(order_struct_parent_word_pos, map_label, min_word_length, banned_pos))
 
     # Train model
-    args = ['--oaa', str(k),
-            '--passes', '10',
-            '--cache', '--kill_cache',
-            '--bit_precision', '24',
-            '--final_regressor', modelfile]
+    args = ["--oaa", str(k),
+            "--passes", "10",
+            "--cache", "--kill_cache",
+            "--bit_precision", "24",
+            "--final_regressor", modelfile]
     data = (
         Example(answer[text.label], text.words)
         for text in every(10, itertexts(), invert=True)
@@ -183,14 +217,15 @@ def train(file_list, outprefix,
     vw_train(args, data)
 
     # Performance evaluation
-    args = ['--initial_regressor', modelfile]
+    args = ["--initial_regressor", modelfile]
     target = []
 
-    def data():
+    def data_iterator():
         for text in every(10, itertexts()):
             target.append(label_to_index[text.label])
             yield Example(None, text.words)
-    predicted = [int(s) for s, _tag in vw_predict(args, data())]
+
+    predicted = [int(s) for s, _tag in vw_predict(args, data_iterator())]
     N_eval = len(predicted)
 
     assert len(predicted) == len(target)
@@ -208,46 +243,46 @@ def train(file_list, outprefix,
                for i, p in
                list(multiclass_performance(target, predicted).items())},
         confusion_matrix=confusion_matrix(target, predicted, order))
-    with open(jsonfile, 'w') as f:
+    with open(jsonfile, "w") as f:
         json.dump(info, f, sort_keys=True, indent=2)
-    util.log.info('Wrote ' + jsonfile)
+    log.info(f"Wrote {jsonfile}")
 
 
-def make_testdata(corpus_desc='abcd abcd dcba cbad', docs=1000):
-    """
-    Write amazing test data on stdout.
-    """
+def make_testdata(corpus_desc="abcd abcd dcba cbad", docs=1000):
+    """Write amazing test data on stdout."""
     import random
     n_docs = int(docs)
     # make = lambda s: (s, triangulate(s))
-    corpuses = [(s, tuple(triangulate(s))) for s in corpus_desc.split()]
+    corpora = [(s, tuple(triangulate(s))) for s in corpus_desc.split()]
     for _ in range(n_docs):
-        corpus, freq = random.choice(corpuses)
-        print('<text label="' + corpus + '">')
+        _corpus, freq = random.choice(corpora)
+        print("<text label="" + corpus + "">")
         n_words = random.randint(12, 39)
-        print(' '.join(random.choice(freq) for _ in range(n_words)))
-        print('</text>')
+        print(" ".join(random.choice(freq) for _ in range(n_words)))
+        print("</text>")
 
 
-Text = namedtuple('Text', 'label span words')
+Text = namedtuple("Text", "label span words")
 
 
 def texts(order_struct_parent_word_pos, map_label, min_word_length, banned_pos):
     """
-    Get all the texts from an iterator of 5-tuples of annotations that
-    contain token order, the structural attribute (like a label),
+    Get all the texts from an iterator of 5-tuples of annotations.
+
+    The annotations contain token order, the structural attribute (like a label),
     its parenting of the words, and the words themselves.
     """
     X = 0
     S = 0
-    banned_pos = (banned_pos or '').split()
+    banned_pos = (banned_pos or "").split()
     for order, struct, parent, word, pos in order_struct_parent_word_pos:
         x = 0
         s = 0
-        util.log.info("Processing %s %s %s", struct, parent, word)
+        log.info(f"Processing {struct} {parent} {word}")
+        # TODO: needs re-writing! cwb.tokens_and_vrt and cwb.vrt_iterate don't exist anymore
         tokens, vrt = cwb.tokens_and_vrt(order, [(struct, parent)], [word] + ([pos] if pos else []))
         for (label, span), cols in cwb.vrt_iterate(tokens, vrt):
-            words = b' '.join(vw_normalize(col[0])
+            words = b" ".join(vw_normalize(col[0])
                               for col in cols
                               if len(col[0]) >= min_word_length
                               if not pos or col[1] not in banned_pos)
@@ -257,13 +292,13 @@ def texts(order_struct_parent_word_pos, map_label, min_word_length, banned_pos):
                 yield Text(mapped_label, span, words)
             else:
                 s += 1
-        util.log.info("Texts from %s: %s (skipped: %s)", struct, x, s)
+        log.info(f"Texts from {struct}: {x} (skipped: {s})")
         X += x
         S += s
-    util.log.info("Total texts: %s (skipped: %s)", X, S)
+    log.info(f"Total texts: {X} (skipped: {S})")
 
 
-Example = namedtuple('Example', 'label features tag')
+Example = namedtuple("Example", "label features tag")
 Example.__new__.__defaults__ = (None,)
 
 
@@ -297,27 +332,27 @@ def vw_predict(args, data, raw=False):
     """
     if raw:
         with tempfile.NamedTemporaryFile() as tmp:
-            more_args = ['--testonly', '-r', tmp.name]
+            more_args = ["--testonly", "-r", tmp.name]
             tags = []
             for _, tag in _vw_run(args + more_args, data, True):
                 tags.append(tag)
-            lines = open(tmp.name, 'r').read().rstrip().split('\n')
-            for line, tag in it.izip(lines, tags):
+            lines = open(tmp.name, "r").read().rstrip().split("\n")
+            for line, tag in zip(lines, tags):
                 def pred(label, raw_pred):
                     return (int(label), float(raw_pred))
-                preds = tuple(pred(*p.split(':')) for p in line.split())
+                preds = tuple(pred(*p.split(":")) for p in line.split())
                 yield preds, tag
     else:
-        more_args = ['--testonly']
+        more_args = ["--testonly"]
         for x in _vw_run(args + more_args, data, True):
             yield x
 
 
 def _vw_run(args, data, predict_and_yield):
-    vw = pyvw.vw(' '.join(args))
-    util.log.info('Running: vw ' + ' '.join(args))
+    vw = pyvw.vw(" ".join(args))
+    log.info("Running: vw " + " ".join(args))
     for d in data:
-        ex = vw.example((d.label or b'') + b' | ' + d.features + b'\n')
+        ex = vw.example((d.label or b"") + b" | " + d.features + b"\n")
         if predict_and_yield:
             yield vw.predict(ex, pylibvw.vw.lMulticlass), d.tag
         else:
@@ -326,57 +361,69 @@ def _vw_run(args, data, predict_and_yield):
 
 
 def vw_normalize(s):
-    u"""
+    """
     Normalize a string so it can be used as a VW feature.
 
     >>> print(vw_normalize(u'VW | abcåäö:123').decode('utf-8'))
     vwSISabcåäöCXXX
     """
-
-    return s.lower().translate(_escape_table).encode('utf-8')
+    return s.lower().translate(_escape_table).encode("utf-8")
 
 
 # Replace digits with X
-_escape_symbols = [(str(x), u'X') for x in range(10)]
+_escape_symbols = [(str(x), u"X") for x in range(10)]
 # Vowpal Wabbit needs these to be escaped:
-_escape_symbols += [(u' ', u'S'),  # separates features
-                    (u'|', u'I'),  # separates namespaces
-                    (u':', u'C')]  # separates feature and its value
+_escape_symbols += [(u" ", u"S"),  # separates features
+                    (u"|", u"I"),  # separates namespaces
+                    (u":", u"C")]  # separates feature and its value
 
 _escape_table = {ord(k): v for k, v in _escape_symbols}
 
 
-### Performance
+################################################################################
+# Performance
+################################################################################
 
 
 class Performance(object):
+    """Class for calculating performance measures."""
+
     def __init__(self, TP, TN, FP, FN):
         """
-        Performance measures from how many of true and false positives and negatives.
+        Calculate performance measures from true and false positives and negatives.
 
         https://en.wikipedia.org/wiki/Precision_and_recall
         """
-        div = lambda x, y: 0.0 if y == 0 else float(x) / float(y)
-        harmonic_mean = lambda x, y: div(2 * x * y, x + y)
         n = TP + TN + FP + FN
-        self.ACC = div(TP + TN, n)
-        self.PRE = div(TP, TP + FP)
-        self.REC = div(TP, TP + FN)
-        self.PRF = harmonic_mean(self.PRE, self.REC)
+        self.ACC = self.div(TP + TN, n)
+        self.PRE = self.div(TP, TP + FP)
+        self.REC = self.div(TP, TP + FN)
+        self.PRF = self.harmonic_mean(self.PRE, self.REC)
+
+    def div(self, x, y):
+        """Divide x/y, return 0 if divisor is 0."""
+        if y == 0:
+            return 0.0
+        return float(x) / float(y)
+
+    def harmonic_mean(self, x, y):
+        """Calculate the harmonic mean."""
+        return self.div(2 * x * y, x + y)
 
     def as_dict(self):
-        """Performance statistics in a dictionary."""
-        keys = 'ACC PRE REC PRF'.split()
+        """Store performance statistics in a dictionary."""
+        keys = "ACC PRE REC PRF".split()
         return OrderedDict((k, self.__dict__[k]) for k in keys)
 
     def __repr__(self):
-        perf = ', '.join('%s=%.3f' % kv for kv in list(self.as_dict().items()))
+        """Return a string representation of the performance measures."""
+        perf = ", ".join("%s=%.3f" % kv for kv in list(self.as_dict().items()))
         return "Performance(" + perf + ")"
 
 
 def binary_performance(target, predicted):
     """
-    Standard performance measures on the predictions of a binary classifier.
+    Calculate standard performance measures on the predictions of a binary classifier.
 
     >>> p = binary_performance([1,1,1,1,0,0,0,0],
     ...                        [1,1,1,0,0,1,1,0])
@@ -411,7 +458,7 @@ def multiclass_performance(target, predicted):
 
 def confusion_matrix(target, predicted, order):
     """
-    Confusion matrix with the target on the y-axis and rows on the x-axis.
+    Calculate confusion matrix with the target on the y-axis and rows on the x-axis.
 
     https://en.wikipedia.org/wiki/Confusion_matrix
 
@@ -422,12 +469,13 @@ def confusion_matrix(target, predicted, order):
      [1, 1, 0],
      [1, 0, 1]]
     """
-
     matrix = Counter(list(zip(target, predicted)))
     return [[matrix.get((t, p), 0) for p in order] for t in order]
 
 
-### Utility functions
+################################################################################
+# Auxiliaries
+################################################################################
 
 
 def triangulate(xs):
@@ -448,8 +496,7 @@ def triangulate(xs):
 
 def interleave(xs, k):
     """
-    Put the elements of xs in k-tuples, with the one same distance
-    between consecutive elements in every tuple.
+    Put the elements of xs in k-tuples, with the one same distance between consecutive elements in every tuple.
 
     Does not support infinite xs.
 
@@ -495,12 +542,3 @@ def nub(xs):
         if x not in seen:
             seen.add(x)
             yield x
-
-
-if __name__ == '__main__':
-    import doctest
-    util.run.main(train=train,
-                  predict=predict,
-                  make_testdata=make_testdata,
-                  word_weights=word_weights,
-                  test=lambda verbose=False: doctest.testmod(verbose=verbose))
