@@ -64,7 +64,7 @@ def vrt_scrambled(doc: str = Document,
     if chunk not in annotations:
         raise util.SparvErrorMessage(
             "The annotation used for scrambling ({}) needs to be included in the output.".format(chunk))
-    span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names)
+    span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names, split_overlaps=True)
 
     # Read words and document ID
     word_annotation = list(util.read_annotation(doc, word))
