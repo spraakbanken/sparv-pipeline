@@ -32,19 +32,6 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token, word_a
     add_attrs(root_span.node, root_span.name, annotation_dict, export_names, 0, include_empty_attributes)
     node_stack = [root_span]
 
-    # Go through span_positions and build xml tree
-    for _pos, instruction, span in span_positions[1:]:
-        # Handle headers
-        if span.is_header:
-            if instruction == "open":
-                header = annotation_dict[span.name][util.HEADER_CONTENT][span.index]
-                # Replace any leading tabs with spaces
-                header = re.sub(r"^\t+", lambda m: INDENTATION * len(m.group()), header, flags=re.MULTILINE)
-                header_xml = etree.fromstring(header)
-                header_xml.tag = span.export  # Rename element if needed
-                node_stack[-1].node.append(header_xml)
-            continue
-
     last_start_pos = None
     last_end_pos = -1
     current_token_text = None
@@ -61,7 +48,19 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token, word_a
             token_text = token_text[position - last_start_position:]
         return token_text
 
-    for pos, instruction, span in span_positions[1:]:
+    # Go through span_positions and build xml tree
+    for _pos, instruction, span in span_positions[1:]:
+        # Handle headers
+        if span.is_header:
+            if instruction == "open":
+                header = annotation_dict[span.name][util.HEADER_CONTENT][span.index]
+                # Replace any leading tabs with spaces
+                header = re.sub(r"^\t+", lambda m: INDENTATION * len(m.group()), header, flags=re.MULTILINE)
+                header_xml = etree.fromstring(header)
+                header_xml.tag = span.export  # Rename element if needed
+                node_stack[-1].node.append(header_xml)
+            continue
+
         # Create child node under the top stack node
         if instruction == "open":
             span.set_node(parent_node=node_stack[-1].node)
@@ -73,21 +72,21 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token, word_a
             if span.name == token:
                 inside_token = True
                 # Save text until later
-                last_start_pos = pos
+                last_start_pos = span.start
                 current_token_text = word_annotation[span.index]
 
             if inside_token and current_token_text:
-                current_token_text = handle_subtoken_text(pos, last_start_pos, last_end_pos, last_node,
+                current_token_text = handle_subtoken_text(span.start, last_start_pos, last_end_pos, last_node,
                                                           current_token_text)
-                last_start_pos = pos
+                last_start_pos = span.start
                 last_node = span.node
 
         # Close node
         else:
             if inside_token and current_token_text:
-                current_token_text = handle_subtoken_text(pos, last_start_pos, last_end_pos, last_node,
+                current_token_text = handle_subtoken_text(span.end, last_start_pos, last_end_pos, last_node,
                                                           current_token_text)
-                last_end_pos = pos
+                last_end_pos = span.end
                 last_node = span.node
             if span.name == token:
                 inside_token = False
