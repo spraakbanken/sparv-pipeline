@@ -35,7 +35,7 @@ dateformat:
 
 xml_export: &xml
     # Annotations from original documents to include in the output. If nothing is specified, everything is kept.
-    original_annotations:
+    source_annotations:
         - dokument as document
         - text:id
         - text:date
@@ -55,7 +55,7 @@ vrt_export: *xml
 
 csv_export:
     # Annotations from original documents to include in the output. If nothing is specified, everything is kept.
-    original_annotations:
+    source_annotations:
         - text:id
         - text:date
         - text:forfattare as author
@@ -71,17 +71,15 @@ csv_export:
 #===============================================================================
 custom_annotations:
     - name: misc:affix
-      output:
-          out: <token>:misc.word.affixed
       params:
+          out: <token>:misc.word.affixed
           chunk: <token:word>
           prefix: "|"
           suffix: "|"
 
     - name: misc:affix
-      output:
-          out: <token>:misc.word.affixed2
       params:
+          out: <token>:misc.word.affixed2
           chunk: <token:word>
           prefix: "-"
           suffix: "-"
