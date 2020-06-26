@@ -9,26 +9,27 @@ License for Stanford CoreNLP: GPL2 https://www.gnu.org/licenses/old-licenses/gpl
 import re
 
 import sparv.util as util
-from sparv import Annotation, Binary, Document, Language, Output, annotator
+from sparv import Annotation, Binary, Language, Output, Text, annotator
 
 
 @annotator("Parse and annotate with Stanford Parser", language=["eng"])
-def annotate(doc: str = Document,
-             lang: str = Language,
-             text: str = Annotation("<text>"),
-             out_sentence: str = Output("stanford.sentence", cls="sentence", description="Sentence segments"),
-             out_token: str = Output("stanford.token", cls="token", description="Token segments"),
-             out_word: str = Output("<token>:stanford.word", cls="token:word", description="Token strings"),
-             out_ref: str = Output("<token>:stanford.ref", description="Token ID relative to sentence"),
-             out_baseform: str = Output("<token>:stanford.baseform", description="Baseforms from Stanford Parser"),
-             out_upos: str = Output("<token>:stanford.upos", cls="token:upos", description="Part-of-speeches in UD"),
-             out_pos: str = Output("<token>:stanford.pos", cls="token:pos", description="Part-of-speeches from Stanford Parser"),
-             out_ne: str = Output("<token>:stanford.ne_type", cls="named_entity_type",
-                                  description="Named entitiy types from Stanford Parser"),
-             out_deprel: str = Output("<token>:stanford.deprel", description="Dependency relations to the head"),
-             out_dephead_ref: str = Output("<token>:stanford.dephead_ref",
-                                           description="Sentence-relative positions of the dependency heads"),
-             binary: str = Binary("[stanford.bin=stanford_parser]")):
+def annotate(corpus_text: Text = Text(),
+             lang: Language = Language(),
+             text: Annotation = Annotation("<text>"),
+             out_sentence: Output = Output("stanford.sentence", cls="sentence", description="Sentence segments"),
+             out_token: Output = Output("stanford.token", cls="token", description="Token segments"),
+             out_word: Output = Output("<token>:stanford.word", cls="token:word", description="Token strings"),
+             out_ref: Output = Output("<token>:stanford.ref", description="Token ID relative to sentence"),
+             out_baseform: Output = Output("<token>:stanford.baseform", description="Baseforms from Stanford Parser"),
+             out_upos: Output = Output("<token>:stanford.upos", cls="token:upos", description="Part-of-speeches in UD"),
+             out_pos: Output = Output("<token>:stanford.pos", cls="token:pos",
+                                      description="Part-of-speeches from Stanford Parser"),
+             out_ne: Output = Output("<token>:stanford.ne_type", cls="named_entity_type",
+                                     description="Named entitiy types from Stanford Parser"),
+             out_deprel: Output = Output("<token>:stanford.deprel", description="Dependency relations to the head"),
+             out_dephead_ref: Output = Output("<token>:stanford.dephead_ref",
+                                              description="Sentence-relative positions of the dependency heads"),
+             binary: Binary = Binary("[stanford.bin=stanford_parser]")):
     """Use Stanford Parser to parse and annotate text."""
     args = ["-cp", binary + "/*", "edu.stanford.nlp.pipeline.StanfordCoreNLP",
             "-annotators", "tokenize,ssplit,pos,lemma,depparse,ner",
@@ -36,15 +37,15 @@ def annotate(doc: str = Document,
     process = util.system.call_binary("java", arguments=args, return_command=True)
 
     # Read corpus_text and text_spans
-    corpus_text = util.read_corpus_text(doc)
-    text_spans = util.read_annotation_spans(doc, text)
+    text_data = corpus_text.read()
+    text_spans = text.read_spans(text)
 
     sentence_segments = []
     all_tokens = []
 
     # Go through text elements and parse them with Stanford Parser
     for text_span in text_spans:
-        inputtext = corpus_text[text_span[0]:text_span[1]]
+        inputtext = text_data[text_span[0]:text_span[1]]
         stdout, _ = process.communicate(inputtext.encode(util.UTF8))
         processed_sentences = _parse_output(stdout.decode(util.UTF8), lang)
 
@@ -65,16 +66,16 @@ def annotate(doc: str = Document,
             sentence_segments.append((sentence[0].start, sentence[-1].end))
 
     # Write annotations
-    util.write_annotation(doc, out_sentence, sentence_segments)
-    util.write_annotation(doc, out_token, [(t.start, t.end) for t in all_tokens])
-    util.write_annotation(doc, out_ref, [t.ref for t in all_tokens])
-    util.write_annotation(doc, out_word, [t.word for t in all_tokens])
-    util.write_annotation(doc, out_baseform, [t.baseform for t in all_tokens])
-    util.write_annotation(doc, out_upos, [t.upos for t in all_tokens])
-    util.write_annotation(doc, out_pos, [t.pos for t in all_tokens])
-    util.write_annotation(doc, out_ne, [t.ne for t in all_tokens])
-    util.write_annotation(doc, out_dephead_ref, [t.dephead_ref for t in all_tokens])
-    util.write_annotation(doc, out_deprel, [t.deprel for t in all_tokens])
+    out_sentence.write(sentence_segments)
+    out_token.write([(t.start, t.end) for t in all_tokens])
+    out_ref.write([t.ref for t in all_tokens])
+    out_word.write([t.word for t in all_tokens])
+    out_baseform.write([t.baseform for t in all_tokens])
+    out_upos.write([t.upos for t in all_tokens])
+    out_pos.write([t.pos for t in all_tokens])
+    out_ne.write([t.ne for t in all_tokens])
+    out_dephead_ref.write([t.dephead_ref for t in all_tokens])
+    out_deprel.write([t.deprel for t in all_tokens])
 
 
 def _parse_output(stdout, lang):

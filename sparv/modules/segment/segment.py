@@ -3,13 +3,12 @@
 import logging
 import pickle
 import re
-from pathlib import Path
 from typing import Optional
 
 import nltk
 
 import sparv.util as util
-from sparv import Annotation, Config, Document, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv import Annotation, Config, Model, ModelOutput, Output, Text, annotator, modelbuilder
 from sparv.modules.saldo.saldo_model import split_triple
 
 try:
@@ -27,15 +26,15 @@ log = logging.getLogger(__name__)
     Config("segment.tokenizer_config", default="segment/bettertokenizer.sv"),
     Config("segment.token_list", default="segment/bettertokenizer.sv.saldo-tokens")
 ])
-def tokenize(doc: str = Document,
-             out: str = Output("segment.token", cls="token", description="Token segments"),
-             chunk: str = Annotation("[segment.token_chunk]"),
+def tokenize(text: Text = Text(),
+             out: Output = Output("segment.token", cls="token", description="Token segments"),
+             chunk: Annotation = Annotation("[segment.token_chunk]"),
              segmenter: str = Config("segment.token_segmenter"),
              existing_segments: str = Config("segment.existing_tokens"),
-             model: Optional[str] = Model("[segment.tokenizer_config]"),
-             token_list: Optional[str] = Model("[segment.token_list]")):
+             model: Optional[Model] = Model("[segment.tokenizer_config]"),
+             token_list: Optional[Model] = Model("[segment.token_list]")):
     """Tokenize text."""
-    do_segmentation(doc=doc, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,
+    do_segmentation(text=text, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,
                     model=model, token_list=token_list)
 
 
@@ -45,14 +44,14 @@ def tokenize(doc: str = Document,
     Config("segment.existing_sentences"),
     Config("segment.sentence_model", default="segment/punkt-nltk-svenska.pickle")
 ])
-def sentence(doc: str = Document,
-             out: str = Output("segment.sentence", cls="sentence", description="Sentence segments"),
-             chunk: Optional[str] = Annotation("[segment.sentence_chunk]"),
+def sentence(text: Text = Text(),
+             out: Output = Output("segment.sentence", cls="sentence", description="Sentence segments"),
+             chunk: Optional[Annotation] = Annotation("[segment.sentence_chunk]"),
              segmenter: str = Config("segment.sentence_segmenter"),
              existing_segments: str = Config("segment.existing_sentences"),
-             model: Optional[str] = Model("[segment.sentence_model]")):
+             model: Optional[Model] = Model("[segment.sentence_model]")):
     """Split text into sentences."""
-    do_segmentation(doc=doc, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,
+    do_segmentation(text=text, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,
                     model=model)
 
 
@@ -61,18 +60,19 @@ def sentence(doc: str = Document,
     Config("segment.paragraph_chunk", default="<text>"),
     Config("segment.existing_paragraphs")
 ])
-def paragraph(doc: str = Document,
-              out: str = Output("segment.paragraph", cls="paragraph", description="Paragraph segments"),
-              chunk: Optional[str] = Annotation("[segment.paragraph_chunk]"),
+def paragraph(text: Text = Text(),
+              out: Output = Output("segment.paragraph", cls="paragraph", description="Paragraph segments"),
+              chunk: Optional[Annotation] = Annotation("[segment.paragraph_chunk]"),
               segmenter: str = Config("segment.paragraph_segmenter"),
               existing_segments: str = Config("segment.existing_paragraphs"),
-              model: Optional[str] = None):
+              model: Optional[Model] = None):
     """Split text into paragraphs."""
-    do_segmentation(doc=doc, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,
+    do_segmentation(text=text, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,
                     model=model)
 
 
-def do_segmentation(doc, out, segmenter, chunk=None, existing_segments=None, model=None, token_list=None):
+def do_segmentation(text: Text, out: Output, segmenter, chunk: Optional[Annotation] = None, existing_segments=None,
+                    model: Optional[Model] = None, token_list: Optional[Model] = None):
     """Segment all chunks (e.g. sentences) into smaller "tokens" (e.g. words), and annotate them as "element" (e.g. w).
 
     Segmentation is done by the given "segmenter"; some segmenters take
@@ -80,16 +80,18 @@ def do_segmentation(doc, out, segmenter, chunk=None, existing_segments=None, mod
     """
     segmenter_args = []
     if model:
-        if Path(model).suffix in ["pickle", "pkl"]:
+        if model.path.suffix in ["pickle", "pkl"]:
             with open(model, "rb") as M:
-                model = pickle.load(M, encoding="UTF-8")
-        segmenter_args.append(model)
+                model_arg = pickle.load(M, encoding="UTF-8")
+        else:
+            model_arg = str(model.path)
+        segmenter_args.append(model_arg)
     assert segmenter in SEGMENTERS, "Available segmenters: %s" % ", ".join(sorted(SEGMENTERS))
     segmenter = SEGMENTERS[segmenter]
     segmenter = segmenter(*segmenter_args)
     assert hasattr(segmenter, "span_tokenize"), "Segmenter needs a 'span_tokenize' method: %r" % segmenter
 
-    corpus_text = util.read_corpus_text(doc)
+    corpus_text = text.read()
 
     # First we read the chunks and partition the text into spans
     # E.g., "one two <s>three four</s> five <s>six</s>"
@@ -97,13 +99,13 @@ def do_segmentation(doc, out, segmenter, chunk=None, existing_segments=None, mod
     #   (but using spans (pairs of anchors) instead of strings)
 
     positions = set()
-    chunk_spans = util.read_annotation_spans(doc, chunk) if chunk else []
+    chunk_spans = chunk.read_spans() if chunk else []
     positions = positions.union(set(pos for span in chunk_spans for pos in span))
-    positions = sorted(set([0, len(corpus_text)]) | positions)
+    positions = sorted({0, len(corpus_text)} | positions)
     chunk_spans = list(zip(positions, positions[1:]))
 
     if existing_segments:
-        segments = list(util.read_annotation_spans(doc, existing_segments))
+        segments = list(existing_segments.read_spans())
         for n, (chunk_start, chunk_end) in enumerate(chunk_spans[:]):
             for segment_start, segment_end in segments:
                 if segment_end <= chunk_start:
@@ -129,11 +131,11 @@ def do_segmentation(doc, out, segmenter, chunk=None, existing_segments=None, mod
                 segments.append(span)
 
     segments.sort()
-    util.write_annotation(doc, out, segments)
+    out.write(segments)
 
 
 @modelbuilder("Model for PunktSentenceTokenizer", language=["swe"])
-def download_punkt_model(out: str = ModelOutput("segment/punkt-nltk-svenska.pickle")):
+def download_punkt_model(out: ModelOutput = ModelOutput("segment/punkt-nltk-svenska.pickle")):
     """Download model for use with PunktSentenceTokenizer."""
     util.download_model(
         "https://github.com/spraakbanken/sparv-models/raw/master/segment/punkt-nltk-svenska.pickle",
@@ -141,7 +143,7 @@ def download_punkt_model(out: str = ModelOutput("segment/punkt-nltk-svenska.pick
 
 
 @modelbuilder("Model for BetterWordTokenizer", language=["swe"])
-def download_bettertokenizer(out: str = ModelOutput("segment/bettertokenizer.sv")):
+def download_bettertokenizer(out: ModelOutput = ModelOutput("segment/bettertokenizer.sv")):
     """Download model for use with BetterWordTokenizer."""
     util.download_model(
         "https://github.com/spraakbanken/sparv-models/raw/master/segment/bettertokenizer.sv",
@@ -149,17 +151,19 @@ def download_bettertokenizer(out: str = ModelOutput("segment/bettertokenizer.sv"
 
 
 @modelbuilder("Token list for BetterWordTokenizer", language=["swe"])
-def build_tokenlist(saldo_model: str = Model("saldo/saldo.pickle"),
-                    out: str = ModelOutput("segment/bettertokenizer.sv.saldo-tokens"),
+def build_tokenlist(saldo_model: Model = Model("saldo/saldo.pickle"),
+                    out: ModelOutput = ModelOutput("segment/bettertokenizer.sv.saldo-tokens"),
                     segmenter: str = Config("segment.token_wordlist_segmenter", "better_word"),
-                    model: str = Model("segment/bettertokenizer.sv")):
+                    model: Model = Model("segment/bettertokenizer.sv")):
     """Build a list of words from a SALDO model, to help BetterWordTokenizer."""
     segmenter_args = []
     if model:
-        if Path(model).suffix in ["pickle", "pkl"]:
+        if model.path.suffix in ["pickle", "pkl"]:
             with open(model, "rb") as m:
-                model = pickle.load(m)
-        segmenter_args.append(model)
+                model_arg = pickle.load(m)
+        else:
+            model_arg = model.path
+        segmenter_args.append(model_arg)
     assert segmenter in SEGMENTERS, "Available segmenters: %s" % ", ".join(sorted(SEGMENTERS))
     segmenter = SEGMENTERS[segmenter]
     segmenter = segmenter(*segmenter_args)
@@ -169,7 +173,7 @@ def build_tokenlist(saldo_model: str = Model("saldo/saldo.pickle"),
 
     # Skip strings already handled by the tokenizer.
     # Also skip words ending in comma (used by some multi word expressions in SALDO).
-    with open(saldo_model, "rb") as F:
+    with open(saldo_model.path, "rb") as F:
         lexicon = pickle.load(F)
         for w in lexicon:
             w2 = list(map(split_triple, lexicon[w]))
@@ -179,7 +183,7 @@ def build_tokenlist(saldo_model: str = Model("saldo/saldo.pickle"),
                 if len(spans) > 1 and not wf.endswith(","):
                     wordforms.add(wf)
 
-    util.write_model_data(out, "\n".join(sorted(wordforms)))
+    util.write_model_data(out.path, "\n".join(sorted(wordforms)))
 
 
 ######################################################################

@@ -3,7 +3,7 @@
 import logging
 
 import sparv.util as util
-from sparv import Annotation, Document, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv import Annotation, Model, ModelOutput, Output, annotator, modelbuilder
 
 log = logging.getLogger(__name__)
 
@@ -15,11 +15,10 @@ SENTIMENT_LABLES = {
 
 
 @annotator("Sentiment annotation per token using SenSALDO", language=["swe"])
-def annotate(doc: str = Document,
-             sense: str = Annotation("<token>:saldo.sense"),
-             out_scores: str = Output("<token>:sensaldo.score", description="SenSALDO sentiment score"),
-             out_labels: str = Output("<token>:sensaldo.label", description="SenSALDO sentiment label"),
-             model: str = Model("[sensaldo.model=sensaldo/sensaldo.pickle]"),
+def annotate(sense: Annotation = Annotation("<token>:saldo.sense"),
+             out_scores: Output = Output("<token>:sensaldo.score", description="SenSALDO sentiment score"),
+             out_labels: Output = Output("<token>:sensaldo.label", description="SenSALDO sentiment label"),
+             model: Model = Model("[sensaldo.model=sensaldo/sensaldo.pickle]"),
              lexicon=None):
     """Assign sentiment values to tokens based on their sense annotation.
 
@@ -32,10 +31,10 @@ def annotate(doc: str = Document,
       but is used in the catapult. This argument must be last.
     """
     if not lexicon:
-        lexicon = util.PickledLexicon(model)
+        lexicon = util.PickledLexicon(model.path)
     # Otherwise use pre-loaded lexicon (from catapult)
 
-    sense = util.read_annotation(doc, sense)
+    sense = sense.read()
     result_scores = []
     result_labels = []
 
@@ -59,12 +58,12 @@ def annotate(doc: str = Document,
             result_scores.append(None)
             result_labels.append(None)
 
-    util.write_annotation(doc, out_scores, result_scores)
-    util.write_annotation(doc, out_labels, result_labels)
+    out_scores.write(result_scores)
+    out_labels.write(result_labels)
 
 
 @modelbuilder("Sentiment model (SenSALDO)", language=["swe"])
-def build_model(out: str = ModelOutput("sensaldo/sensaldo.pickle")):
+def build_model(out: ModelOutput = ModelOutput("sensaldo/sensaldo.pickle")):
     """Download and build SenSALDO model."""
     # Download and extract sensaldo-base-v02.txt
     zip_path = "sensaldo/sensaldo-v02.zip"
@@ -74,7 +73,7 @@ def build_model(out: str = ModelOutput("sensaldo/sensaldo.pickle")):
 
     # Read sensaldo tsv dictionary and save as a pickle file
     lexicon = read_sensaldo(tsv_path)
-    util.write_model_pickle(out, lexicon)
+    util.write_model_pickle(out.path, lexicon)
 
     # Clean up
     util.remove_model_files([

@@ -4,7 +4,7 @@ import logging
 import subprocess
 
 import sparv.util as util
-from sparv import Annotation, Config, Corpus, Export, ExportInput, Output, exporter, installer
+from sparv import AnnotationAllDocs, Config, Corpus, Export, ExportInput, OutputCommonData, exporter, installer
 from sparv.core import paths
 from sparv.util.mysql_wrapper import MySQL
 
@@ -15,8 +15,8 @@ CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
 
 
 # @installer("Install lemgram SQL on remote host")
-def install_lemgrams(sqlfile: str = ExportInput("korp_lemgramindex/lemgram_index.sql"),
-                     out: str = Output("korp.time_install_lemgram", data=True, common=True),
+def install_lemgrams(sqlfile: ExportInput = ExportInput("korp_lemgramindex/lemgram_index.sql"),
+                     out: OutputCommonData = OutputCommonData("korp.time_install_lemgram"),
                      db_name: str = Config("korp.mysql_dbname", ""),
                      host: str = Config("korp.remote_host", "")):
     """Install lemgram SQL on remote host.
@@ -25,20 +25,20 @@ def install_lemgrams(sqlfile: str = ExportInput("korp_lemgramindex/lemgram_index
         sqlfile (str, optional): SQL file to be installed.
             Defaults to ExportInput("korp_lemgramindex/lemgram_index.sql").
         out (str, optional): Timestamp file to be written.
-            Defaults to Output("korp.time_install_lemgram", data=True, common=True).
+            Defaults to OutputCommonData("korp.time_install_lemgram").
         db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname", "").
         host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host", "").
     """
     util.install_mysql(host, db_name, sqlfile)
-    util.write_common_data(out, "")
+    out.write("")
 
 
 # TODO: Korp search for complemgram needs to be fixed before this can be re-written
 # @exporter("Lemgram index SQL file for use in Korp")
-def lemgram_sql(corpus: str = Corpus,
-                out: str = Export("korp_lemgramindex/lemgram_index.sql"),
-                lemgram: str = Annotation("<token>:saldo.lemgram", all_docs=True),
-                complemgram: str = Annotation("<token>:saldo.complemgram", all_docs=True),
+def lemgram_sql(corpus: Corpus = Corpus(),
+                out: Export = Export("korp_lemgramindex/lemgram_index.sql"),
+                lemgram: AnnotationAllDocs = AnnotationAllDocs("<token>:saldo.lemgram"),
+                complemgram: AnnotationAllDocs = AnnotationAllDocs("<token>:saldo.complemgram"),
                 db_name: str = Config("korp.lemgram_db_name", "korp_lemgram"),
                 attributes: list = Config("lemgram_index_attributes", ["lemgram", "prefix", "suffix"]),  # ??
                 corpus_registry: str = Config("corpus_registry", paths.corpus_registry)):

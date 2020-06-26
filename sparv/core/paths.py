@@ -8,7 +8,7 @@ pipeline_path = Path(sparv_path).parent
 # Internal paths
 config_dir = Path("config")
 modules_dir = "modules"
-models_dir = "models"
+models_dir = Path("models")
 bin_dir = "bin"
 
 # Corpus relative paths

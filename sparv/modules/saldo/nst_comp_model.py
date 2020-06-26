@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 
 
 @modelbuilder("Compound POS model", language=["swe"], order=1)
-def download_nst_comp(out: str = ModelOutput("saldo/nst_comp_pos.pickle")):
+def download_nst_comp(out: ModelOutput = ModelOutput("saldo/nst_comp_pos.pickle")):
     """Download compound POS model from sparv-models repo."""
     util.download_model(
         "https://github.com/spraakbanken/sparv-models/raw/master/saldo/nst_comp_pos.pickle",
@@ -21,8 +21,8 @@ def download_nst_comp(out: str = ModelOutput("saldo/nst_comp_pos.pickle")):
 
 
 @modelbuilder("Compound POS model", language=["swe"], order=2)
-def build_nst_comp(out: str = ModelOutput("saldo/nst_comp_pos.pickle"),
-                   nst_lexicon: str = Model("saldo/nst_utf8.txt")):
+def build_nst_comp(out: ModelOutput = ModelOutput("saldo/nst_comp_pos.pickle"),
+                   nst_lexicon: Model = Model("saldo/nst_utf8.txt")):
     """Download NST lexicon and convert it to a compound POS model.
 
     The NST lexicon can be retrieved from SVN with credentials:

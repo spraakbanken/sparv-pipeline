@@ -8,7 +8,7 @@ from typing import Optional
 from dateutil.relativedelta import relativedelta
 
 import sparv.util as util
-from sparv import Annotation, Config, Document, Output, annotator
+from sparv import Annotation, Config, Output, OutputCommonData, annotator
 
 log = logging.getLogger(__name__)
 
@@ -22,23 +22,21 @@ log = logging.getLogger(__name__)
     Config("dateformat.date_outformat", default="%Y%m%d"),
     Config("dateformat.out_annotation", default="<text>")
 ])
-def dateformat(doc: str = Document,
-               in_from: str = Annotation("[dateformat.datetime_from]"),
-               in_to: Optional[str] = Annotation("[dateformat.datetime_to]"),
-               out_from: str = Output("[dateformat.out_annotation=<text>]:dateformat.datefrom",
-                                      description="From-dates"),
-               out_to: Optional[str] = Output("[dateformat.out_annotation]:dateformat.dateto",
-                                              description="To-dates"),
+def dateformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
+               in_to: Optional[Annotation] = Annotation("[dateformat.datetime_to]"),
+               out_from: Output = Output("[dateformat.out_annotation=<text>]:dateformat.datefrom",
+                                         description="From-dates"),
+               out_to: Optional[Output] = Output("[dateformat.out_annotation]:dateformat.dateto",
+                                                 description="To-dates"),
                informat: str = Config("dateformat.datetime_informat"),
                outformat: str = Config("dateformat.date_outformat"),
-               splitter: str = Config("dateformat.splitter", None),
-               regex: str = Config("dateformat.regex", None)):
+               splitter: Optional[str] = Config("dateformat.splitter", None),
+               regex: Optional[str] = Config("dateformat.regex", None)):
     """Convert existing dates/times to specified date output format.
 
     http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior
 
     Args:
-        doc (str, optional): Corpus document name. Defaults to Document.
         in_from (str, optional): Annotation containing from-dates (and times).
             Defaults to Annotation("[dateformat.datetime_from]").
         in_to (Optional[str], optional): Annotation containing to-dates.
@@ -58,27 +56,25 @@ def dateformat(doc: str = Document,
         regex (str, optional): Regular expression with a catching group whose content will be used in the parsing
             instead of the whole string. Defaults to Config("dateformat.regex", None).
     """
-    _formatter(doc, in_from, in_to, out_from, out_to, informat, outformat, splitter, regex)
+    _formatter(in_from, in_to, out_from, out_to, informat, outformat, splitter, regex)
 
 
 @annotator("Convert existing times to specified output format")
-def timeformat(doc: str = Document,
-               in_from: str = Annotation("[dateformat.datetime_from]"),
-               in_to: Optional[str] = Annotation("[dateformat.datetime_to]"),
-               out_from: str = Output("[dateformat.out_annotation=<text>]:dateformat.timefrom",
-                                      description="From-times"),
-               out_to: Optional[str] = Output("[dateformat.out_annotation=<text>]:dateformat.timeto",
-                                              description="To-times"),
+def timeformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
+               in_to: Optional[Annotation] = Annotation("[dateformat.datetime_to]"),
+               out_from: Output = Output("[dateformat.out_annotation=<text>]:dateformat.timefrom",
+                                         description="From-times"),
+               out_to: Optional[Output] = Output("[dateformat.out_annotation=<text>]:dateformat.timeto",
+                                                 description="To-times"),
                informat: str = Config("dateformat.datetime_informat"),
                outformat: str = Config("dateformat.time_outformat", "%H%M%S"),
-               splitter: str = Config("dateformat.splitter", None),
-               regex: str = Config("dateformat.regex", None)):
+               splitter: Optional[str] = Config("dateformat.splitter", None),
+               regex: Optional[str] = Config("dateformat.regex", None)):
     """Convert existing dates/times to specified time output format.
 
     http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior
 
     Args:
-        doc (str, optional): Corpus document name. Defaults to Document.
         in_from (str, optional): Annotation containing from-dates (and times).
             Defaults to Annotation("[dateformat.datetime_from]").
         in_to (Optional[str], optional): Annotation containing to-dates.
@@ -98,11 +94,11 @@ def timeformat(doc: str = Document,
         regex (str, optional): Regular expression with a catching group whose content will be used in the parsing
             instead of the whole string. Defaults to Config("dateformat.regex", None).
     """
-    _formatter(doc, in_from, in_to, out_from, out_to, informat, outformat, splitter, regex)
+    _formatter(in_from, in_to, out_from, out_to, informat, outformat, splitter, regex)
 
 
 @annotator("Get datetime resolutions from informat")
-def resolution(out_resolution: str = Output("dateformat.resolution", data=True, common=True),
+def resolution(out_resolution: OutputCommonData = OutputCommonData("dateformat.resolution"),
                informat: str = Config("dateformat.datetime_informat")):
     """Get the datetime resolution from the informat defined in the corpus config."""
     resolutions = []
@@ -131,10 +127,11 @@ def resolution(out_resolution: str = Output("dateformat.resolution", data=True, 
     resolutions = util.cwbset(resolutions)
 
     # Write timeresolution file
-    util.write_common_data(out_resolution, resolutions)
+    out_resolution.write(resolutions)
 
 
-def _formatter(doc, in_from, in_to, out_from, out_to, informat, outformat, splitter, regex):
+def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Output, out_to: Output,
+               informat: str, outformat: str, splitter: str, regex: str):
     """Take existing dates/times and input formats and convert to specified output format."""
     def get_smallest_unit(informat):
         smallest_unit = 0  # No date
@@ -192,8 +189,8 @@ def _formatter(doc, in_from, in_to, out_from, out_to, informat, outformat, split
     assert len(outformat) == 1 or (len(outformat) == len(informat)), "The number of out-formats must be equal to one " \
                                                                      "or the number of in-formats."
 
-    ifrom = list(util.read_annotation(doc, in_from))
-    ofrom = util.create_empty_attribute(doc, ifrom)
+    ifrom = list(in_from.read())
+    ofrom = util.create_empty_attribute(ifrom)
 
     for index, val in enumerate(ifrom):
         val = val.strip()
@@ -253,12 +250,12 @@ def _formatter(doc, in_from, in_to, out_from, out_to, informat, outformat, split
                     raise
                 continue
 
-    util.write_annotation(doc, out_from, ofrom)
+    out_from.write(ofrom)
     del ofrom
 
     if out_to:
-        ito = list(util.read_annotation(doc, in_to))
-        oto = util.create_empty_attribute(doc, in_to)
+        ito = list(in_to.read())
+        oto = util.create_empty_attribute(in_to)
 
         for index, val in enumerate(ito):
             if not val:
@@ -327,4 +324,4 @@ def _formatter(doc, in_from, in_to, out_from, out_to, informat, outformat, split
                         raise
                     continue
 
-        util.write_annotation(doc, out_to, oto)
+        out_to.write(oto)

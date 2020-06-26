@@ -3,10 +3,12 @@
 import heapq
 import logging
 import os
+import pathlib
 import re
+from typing import Union
 
-from .classes import Annotation
 from sparv.core import paths
+from .classes import BaseAnnotation, Model, AnnotationAllDocs, Annotation
 
 _log = logging.getLogger(__name__)
 
@@ -41,13 +43,18 @@ def clear_annotation(doc, annotation):
         os.remove(annotation_path)
 
 
+def has_attribute(annotation):
+    """Return True if annotation has an attribute."""
+    return ELEM_ATTR_DELIM in annotation
+
+
 def write_annotation(doc, annotation, values, append=False, allow_newlines=False):
     """Write an annotation to one or more files. The file is overwritten if it exists.
 
     The annotation should be a list of values.
     """
-    if isinstance(annotation, Annotation):
-        annotation = str(annotation).split()
+    if isinstance(annotation, BaseAnnotation):
+        annotation = annotation.name.split()
     elif isinstance(annotation, str):
         annotation = annotation.split()
 
@@ -109,7 +116,7 @@ def _write_single_annotation(doc, annotation, values, append, allow_newlines=Fal
     _log.info("Wrote %d items: %s/%s", ctr, doc, annotation)
 
 
-def create_empty_attribute(doc, annotation):
+def create_empty_attribute(annotation):
     """Return a list filled with None of the same size as 'annotation'.
 
     'annotation' can be either of the following:
@@ -117,13 +124,10 @@ def create_empty_attribute(doc, annotation):
     - a list (i.e. an annotation that has already been loaded)
     - an integer
     """
-    assert isinstance(annotation, (Annotation, str, list, int))
+    assert isinstance(annotation, (Annotation, AnnotationAllDocs, list, int))
 
-    if isinstance(annotation, Annotation):
-        annotation = str(annotation)
-
-    if isinstance(annotation, str):
-        length = len(list(read_annotation_spans(doc, annotation)))
+    if isinstance(annotation, (Annotation, AnnotationAllDocs)):
+        length = len(list(annotation.read_spans()))
     elif isinstance(annotation, list):
         length = len(annotation)
     elif isinstance(annotation, int):
@@ -133,8 +137,8 @@ def create_empty_attribute(doc, annotation):
 
 def read_annotation_spans(doc, annotation, decimals=False, with_annotation_name=False):
     """Iterate over the spans of an annotation."""
-    if isinstance(annotation, Annotation):
-        annotation = str(annotation)
+    if isinstance(annotation, BaseAnnotation):
+        annotation = annotation.name
     # Strip any annotation attributes
     annotation = [split_annotation(ann)[0] for ann in annotation.split()]
     for span in read_annotation(doc, annotation, with_annotation_name):
@@ -146,8 +150,8 @@ def read_annotation_spans(doc, annotation, decimals=False, with_annotation_name=
 
 def read_annotation(doc, annotation, with_annotation_name=False, allow_newlines=False):
     """Yield each line from an annotation file."""
-    if isinstance(annotation, Annotation):
-        annotation = str(annotation).split()
+    if isinstance(annotation, BaseAnnotation):
+        annotation = annotation.name.split()
     elif isinstance(annotation, str):
         annotation = annotation.split()
     if len(annotation) == 1:
@@ -174,7 +178,7 @@ def read_annotation(doc, annotation, with_annotation_name=False, allow_newlines=
 
 
 def read_annotation_attributes(doc, annotations, with_annotation_name=False, allow_newlines=False):
-    """Yield tuples of multiple annotations."""
+    """Yield tuples of multiple attributes on the same annotation."""
     assert isinstance(annotations, (tuple, list)), "'annotations' argument must be tuple or list"
     assert len(set(split_annotation(annotation)[0] for annotation in annotations)), "All attributes need to be for " \
                                                                                     "the same annotation spans"
@@ -186,7 +190,7 @@ def _read_single_annotation(doc, annotation, with_annotation_name, allow_newline
     """Read a single annotation file."""
     ann_file = get_annotation_path(doc, annotation)
 
-    with open(ann_file, "r") as f:
+    with open(ann_file) as f:
         ctr = 0
         for line in f:
             value = line.rstrip("\n\r")
@@ -217,7 +221,7 @@ def read_data(doc, name):
     """Read arbitrary string data from file in annotations directory."""
     file_path = get_annotation_path(doc, name, data=True)
 
-    with open(file_path, "r") as f:
+    with open(file_path) as f:
         data = f.read()
     _log.info("Read %d bytes: %s/%s", len(data), doc, name)
     return data
@@ -236,8 +240,8 @@ def read_common_data(name):
 
 def split_annotation(annotation):
     """Split annotation into annotation name and attribute."""
-    if isinstance(annotation, Annotation):
-        annotation = str(annotation)
+    if isinstance(annotation, BaseAnnotation):
+        annotation = annotation.name
     elem, _, attr = annotation.partition(ELEM_ATTR_DELIM)
     return elem, attr
 
@@ -313,12 +317,13 @@ def test_lexicon(lexicon, testwords):
 class PickledLexicon(object):
     """Read basic pickled lexicon and look up keys."""
 
-    def __init__(self, picklefile, verbose=True):
+    def __init__(self, picklefile: Union[pathlib.Path, Model], verbose=True):
         """Read lexicon from picklefile."""
         import pickle
+        picklefile_path: pathlib.Path = picklefile.path if isinstance(picklefile, Model) else picklefile
         if verbose:
             _log.info("Reading lexicon: %s", picklefile)
-        with open(picklefile, "rb") as F:
+        with open(picklefile_path, "rb") as F:
             self.lexicon = pickle.load(F)
         if verbose:
             _log.info("OK, read %d words", len(self.lexicon))
@@ -334,7 +339,7 @@ class PickledLexicon(object):
 def read_corpus_text(doc):
     """Read the text contents of a corpus and return as a string."""
     text_file = get_annotation_path(doc, TEXT_FILE, data=True)
-    with open(text_file, "r") as f:
+    with open(text_file) as f:
         text = f.read()
     _log.info("Read %d chars: %s", len(text), text_file)
     return text

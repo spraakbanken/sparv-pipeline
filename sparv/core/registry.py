@@ -5,12 +5,13 @@ import pkgutil
 import re
 from collections import defaultdict
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Tuple, TypeVar
+
+import typing_inspect
 
 from sparv.core import config as sparv_config
 from sparv.core import paths
-from sparv.util import split_annotation
-from sparv.util.classes import Config, ModelOutput, Output
+from sparv.util.classes import Config, ModelOutput, BaseOutput
 
 modules_path = ".".join(("sparv", paths.modules_dir))
 custom_name = "custom"
@@ -47,6 +48,7 @@ def find_modules(no_import=False, find_custom=False) -> list:
 
     Args:
         no_import: Set to True to disable importing of modules.
+        find_custom: Set to True to also look for scripts in corpus directory.
 
     Returns:
         A list of available module names.
@@ -164,10 +166,10 @@ def _add_to_registry(annotator):
                 sparv_config.set_default(c.name, c.default)
 
     for param, val in inspect.signature(annotator["function"]).parameters.items():
-        if isinstance(val.default, Output):
+        if isinstance(val.default, BaseOutput):
             ann = val.default
             cls = val.default.cls
-            ann_name, attr = split_annotation(ann)
+            ann_name, attr = ann.split()
 
             # Make sure annotation names include module names as prefix
             if not attr:
@@ -185,7 +187,7 @@ def _add_to_registry(annotator):
                 if not annotator["language"] or (
                         annotator["language"] and sparv_config.get("metadata.language") in annotator["language"]):
                     if ":" in cls and not cls.startswith(":") and ann_name and attr:
-                        annotation_classes["module_classes"][cls].append(ann)
+                        annotation_classes["module_classes"][cls].append(ann.name)
                     elif cls.startswith(":") and attr:
                         annotation_classes["module_classes"][cls].append(attr)
                     elif ":" not in cls:
@@ -194,7 +196,7 @@ def _add_to_registry(annotator):
                         print("Malformed class name: '{}'".format(cls))
 
         if isinstance(val.default, ModelOutput):
-            modeldir = val.default.split("/")[0]
+            modeldir = val.default.name.split("/")[0]
             if not modeldir.startswith(module_name):
                 raise ValueError("Output model '{}' in module '{}' doesn't include module "
                                  "name as sub directory.".format(ann, module_name))
@@ -226,7 +228,7 @@ def _expand_class(cls):
 def expand_variables(string, module_name):
     """Take a string and replace <class> references with real annotations, and [config] references with config values.
 
-    Return the resulting string.
+    Return the resulting string and a list of any unresolved config references.
     """
     rest = []
     # Convert config keys to config values
@@ -259,26 +261,36 @@ def expand_variables(string, module_name):
     return string, rest
 
 
-def dig(needle, haystack):
-    """Go though 'haystack' and return any objects of the type 'needle' found.
+def get_type_hint_type(type_hint):
+    optional = typing_inspect.is_optional_type(type_hint)
+    if optional:
+        type_hint = typing_inspect.get_args(type_hint)[0]
+    origin = typing_inspect.get_origin(type_hint)
 
-    The haystack may be a list, tuple, dict or a combination of the three. It may also be equal to or an instance of
-    the needle.
-    The needle can be any type except for list, tuple and dict.
+    is_list = False
+
+    if origin in (list, List, tuple, Tuple):
+        is_list = True
+        args = typing_inspect.get_args(type_hint)
+        if args and not type(args[0]) == TypeVar:
+            type_ = args[0]
+        else:
+            type_ = origin
+    else:
+        type_ = type_hint
+
+    return type_, is_list, optional
+
+
+def dig(type_, type_hint):
+    """Look for 'type' in type_hint and return 'type' if found.
+
+    'type' may be a list of types, in which case the first item found will be returned.
     """
-    needles = []
-    if isinstance(haystack, list):
-        for item in haystack:
-            found = dig(needle, item)
-            needles.extend(found)
+    types = [type_] if not isinstance(type_, (list, tuple)) else type_
 
-    elif isinstance(haystack, dict):
-        for key in haystack:
-            found = dig(needle, haystack[key])
-            needles.extend(found)
+    for t in types:
+        if t == type_hint or Optional[t] == type_hint or List[t] == type_hint:
+            return t
 
-    elif type(haystack) == needle or haystack == needle:
-        # We've found what we're looking for
-        return [haystack]
-
-    return needles
+    return None

@@ -2,6 +2,7 @@
 
 import itertools
 import logging
+import pathlib
 import pickle
 import re
 import time
@@ -9,7 +10,7 @@ import xml.etree.ElementTree as etree
 from functools import reduce
 
 import sparv.util as util
-from sparv import Annotation, Document, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv import Annotation, Model, ModelOutput, Output, annotator, modelbuilder
 
 log = logging.getLogger(__name__)
 
@@ -24,17 +25,17 @@ PART_DELIM3 = "^3"
 
 
 @annotator("Compound analysis", name="compound", language=["swe"])
-def annotate(doc: str = Document,
-             out_complemgrams: str = Output("<token>:saldo.complemgram", description="Compound analysis using lemgrams"),
-             out_compwf: str = Output("<token>:saldo.compwf", description="Compound analysis using wordforms"),
-             out_baseform: str = Output("<token>:saldo.baseform2",
-                                        description="Baseform including baseforms derived from compounds"),
-             word: str = Annotation("<token:word>"),
-             msd: str = Annotation("<token:msd>"),
-             baseform_tmp: str = Annotation("<token>:saldo.baseform"),
-             saldo_comp_model: str = Model("[saldo.comp_model=saldo/saldo.compound.pickle]"),
-             nst_model: str = Model("[saldo.comp_nst_model=saldo/nst_comp_pos.pickle]"),
-             stats_model: str = Model("[saldo.comp_stats_model=saldo/stats.pickle]"),
+def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
+                                               description="Compound analysis using lemgrams"),
+             out_compwf: Output = Output("<token>:saldo.compwf", description="Compound analysis using wordforms"),
+             out_baseform: Output = Output("<token>:saldo.baseform2",
+                                           description="Baseform including baseforms derived from compounds"),
+             word: Annotation = Annotation("<token:word>"),
+             msd: Annotation = Annotation("<token:msd>"),
+             baseform_tmp: Annotation = Annotation("<token>:saldo.baseform"),
+             saldo_comp_model: Model = Model("[saldo.comp_model=saldo/saldo.compound.pickle]"),
+             nst_model: Model = Model("[saldo.comp_nst_model=saldo/nst_comp_pos.pickle]"),
+             stats_model: Model = Model("[saldo.comp_stats_model=saldo/stats.pickle]"),
              complemgramfmt: str = util.SCORESEP + "%.3e",
              delimiter: str = util.DELIM,
              compdelim: str = util.COMPSEP,
@@ -62,15 +63,15 @@ def annotate(doc: str = Document,
     # Load models
     ##################
     if not saldo_comp_lexicon:
-        saldo_comp_lexicon = SaldoCompLexicon(saldo_comp_model)
+        saldo_comp_lexicon = SaldoCompLexicon(saldo_comp_model.path)
 
-    with open(nst_model, "rb") as f:
+    with open(nst_model.path, "rb") as f:
         nst_model = pickle.load(f)
 
     if not stats_lexicon:
-        stats_lexicon = StatsLexicon(stats_model)
+        stats_lexicon = StatsLexicon(stats_model.path)
 
-    word_msd_baseform_annotations = list(util.read_annotation_attributes(doc, (word, msd, baseform_tmp)))
+    word_msd_baseform_annotations = list(word.read_attributes((word, msd, baseform_tmp)))
 
     # Create alternative lexicon (for words within the file)
     altlexicon = InFileLexicon(word_msd_baseform_annotations)
@@ -117,17 +118,17 @@ def annotate(doc: str = Document,
         else:
             make_new_baseforms(baseform_annotation, msd, compounds, stats_lexicon, altlexicon, delimiter, affix)
 
-    util.write_annotation(doc, out_complemgrams, complem_annotation)
-    util.write_annotation(doc, out_compwf, compwf_annotation)
-    util.write_annotation(doc, out_baseform, baseform_annotation)
+    out_complemgrams.write(complem_annotation)
+    out_compwf.write(compwf_annotation)
+    out_baseform.write(baseform_annotation)
 
 
 @modelbuilder("SALDO compound model", language=["swe"])
-def build_saldo_comp(out: str = ModelOutput("saldo/saldo.compound.pickle"),
-                     saldom: str = Model("saldo/saldom.xml")):
+def build_saldo_comp(out: ModelOutput = ModelOutput("saldo/saldo.compound.pickle"),
+                     saldom: Model = Model("saldo/saldom.xml")):
     """Extract compound info from saldom.xml and save as a pickle file."""
-    xml_lexicon = read_lmf(saldom)
-    save_to_picklefile(out, xml_lexicon)
+    xml_lexicon = read_lmf(saldom.path)
+    save_to_picklefile(out.path, xml_lexicon)
 
 
 class SaldoCompLexicon(object):
@@ -136,7 +137,7 @@ class SaldoCompLexicon(object):
     It is initialized from a Pickled file.
     """
 
-    def __init__(self, saldofile, verbose=True):
+    def __init__(self, saldofile: pathlib.Path, verbose=True):
         """Load lexicon."""
         if verbose:
             log.info("Reading Saldo lexicon: %s", saldofile)
@@ -185,7 +186,7 @@ class StatsLexicon(object):
     It is initialized from a pickled file.
     """
 
-    def __init__(self, stats_model, verbose=True):
+    def __init__(self, stats_model: pathlib.Path, verbose=True):
         """Load lexicon."""
         if verbose:
             log.info("Reading statistics model: %s", stats_model)

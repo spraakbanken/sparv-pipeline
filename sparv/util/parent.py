@@ -2,13 +2,12 @@
 
 import logging
 
-from sparv.util import corpus
-from sparv.util.classes import Annotation
+from sparv.util import classes, corpus
 
 log = logging.getLogger(__name__)
 
 
-def get_parents(doc, parent, child, orphan_alert=False):
+def get_parents(doc, parent, child, orphan_alert: bool = False):
     """Return a list with n (= total number of children) elements where every element is an index in the parent annotation.
 
     Return None when no parent is found.
@@ -102,9 +101,9 @@ def read_parents_and_children(doc, parent, child):
 
     Reorder them according to span position, but keep original index information.
     """
-    if isinstance(parent, (Annotation, str)):
+    if isinstance(parent, (classes.Annotation, str)):
         parent = sorted(enumerate(corpus.read_annotation_spans(doc, parent, decimals=True)), key=lambda x: x[1])
-    if isinstance(child, (Annotation, str)):
+    if isinstance(child, (classes.Annotation, str)):
         child = sorted(enumerate(corpus.read_annotation_spans(doc, child, decimals=True)), key=lambda x: x[1])
 
     # Only use sub-positions if both parent and child have them

@@ -4,30 +4,29 @@ import logging
 import pprint
 from collections import defaultdict
 
-import sparv.util as util
-from sparv import Annotation, Document, Output, annotator
+from sparv import Annotation, Output, annotator
 
 log = logging.getLogger(__name__)
 
 
 @annotator("Convert malt dependencies into phrase structure", language=["swe"])
-def annotate(doc: str = Document,
-             out_phrase: str = Output("phrase_structure.phrase", description="Phrase segments"),
-             out_phrase_name: str = Output("phrase_structure.phrase:phrase_structure.name", description="Phrase names"),
-             out_phrase_func: str = Output("phrase_structure.phrase:phrase_structure.func",
-                                           description="Phrase functions"),
-             token: str = Annotation("<token>"),
-             word: str = Annotation("<token:word>"),
-             sentence: str = Annotation("<sentence>"),
-             pos: str = Annotation("<token>:hunpos.pos"),
-             msd: str = Annotation("<token>:hunpos.msd"),
-             ref: str = Annotation("<token>:misc.number_rel_<sentence>"),
-             dephead_ref: str = Annotation("<token>:malt.dephead_ref"),
-             deprel: str = Annotation("<token>:malt.deprel")):
+def annotate(out_phrase: Output = Output("phrase_structure.phrase", description="Phrase segments"),
+             out_phrase_name: Output = Output("phrase_structure.phrase:phrase_structure.name",
+                                              description="Phrase names"),
+             out_phrase_func: Output = Output("phrase_structure.phrase:phrase_structure.func",
+                                              description="Phrase functions"),
+             token: Annotation = Annotation("<token>"),
+             word: Annotation = Annotation("<token:word>"),
+             sentence: Annotation = Annotation("<sentence>"),
+             pos: Annotation = Annotation("<token>:hunpos.pos"),
+             msd: Annotation = Annotation("<token>:hunpos.msd"),
+             ref: Annotation = Annotation("<token>:misc.number_rel_<sentence>"),
+             dephead_ref: Annotation = Annotation("<token>:malt.dephead_ref"),
+             deprel: Annotation = Annotation("<token>:malt.deprel")):
     """Annotate sentence with phrase structures."""
-    sentences, _orphans = util.parent.get_children(doc, sentence, word)
-    token_annotations = list(util.read_annotation_attributes(doc, [ref, word, pos, msd, dephead_ref, deprel]))
-    token_spans = list(util.read_annotation_spans(doc, token))
+    sentences, _orphans = sentence.get_children(word)
+    token_annotations = list(ref.read_attributes([ref, word, pos, msd, dephead_ref, deprel]))
+    token_spans = list(token.read_spans())
 
     def get_token_span(index):
         return token_spans[index]
@@ -78,9 +77,9 @@ def annotate(doc: str = Document,
     sorted_nodes = sorted(nodes)
 
     # Write annotations
-    util.write_annotation(doc, out_phrase, [i[0] for i in sorted_nodes])
-    util.write_annotation(doc, out_phrase_name, [i[1] for i in sorted_nodes])
-    util.write_annotation(doc, out_phrase_func, [i[2] for i in sorted_nodes])
+    out_phrase.write([i[0] for i in sorted_nodes])
+    out_phrase_name.write([i[1] for i in sorted_nodes])
+    out_phrase_func.write([i[2] for i in sorted_nodes])
 
 
 def log_output(f):

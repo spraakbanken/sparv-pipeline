@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 INDENTATION = "  "
 
 
-def make_pretty_xml(span_positions, annotation_dict, export_names, token, word_annotation, docid,
+def make_pretty_xml(span_positions, annotation_dict, export_names, token_name: str, word_annotation, docid,
                     include_empty_attributes: bool):
     """Create a pretty formatted XML string from span_positions.
 
@@ -69,7 +69,7 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token, word_a
             if span.overlap_id:
                 span.node.set("_overlap", f"{docid}-{span.overlap_id}")
             # Add text if this node is a token
-            if span.name == token:
+            if span.name == token_name:
                 inside_token = True
                 # Save text until later
                 last_start_pos = span.start
@@ -88,7 +88,7 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token, word_a
                                                           current_token_text)
                 last_end_pos = span.end
                 last_node = span.node
-            if span.name == token:
+            if span.name == token_name:
                 inside_token = False
 
             # Make sure closing node == top stack node

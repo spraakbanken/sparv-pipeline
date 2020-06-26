@@ -5,53 +5,53 @@ from collections import defaultdict
 from typing import Optional
 
 import sparv.util as util
-from sparv import Annotation, Document, Model, Output, annotator
+from sparv import Annotation, Model, Output, annotator
 
 log = logging.getLogger(__name__)
 
 
 @annotator("Annotate text chunks with Blingbring classes", language=["swe"])
-def blingbring_text(doc: str = Document,
-                    out: str = Output("<text>:lexical_classes.blingbring",
-                                      description="Lexical classes for text chunks from Blingbring"),
-                    lexical_classes_token: str = Annotation("<token>:lexical_classes.blingbring"),
-                    text: str = Annotation("<text>"),
-                    token: str = Annotation("<token>"),
-                    saldoids: Optional[str] = Annotation("<token:sense>"),
+def blingbring_text(out: Output = Output("<text>:lexical_classes.blingbring",
+                                         description="Lexical classes for text chunks from Blingbring"),
+                    lexical_classes_token: Annotation = Annotation("<token>:lexical_classes.blingbring"),
+                    text: Annotation = Annotation("<text>"),
+                    token: Annotation = Annotation("<token>"),
+                    saldoids: Optional[Annotation] = Annotation("<token:sense>"),
                     cutoff: int = 3,
                     types: bool = False,
                     delimiter: str = util.DELIM,
                     affix: str = util.AFFIX,
-                    freq_model: str = Model("[lexical_classes.bb_freq_model=lexical_classes/blingbring.freq.gp2008+suc3+romi.pickle]"),
+                    freq_model: Model = Model(
+                        "[lexical_classes.bb_freq_model=lexical_classes/blingbring.freq.gp2008+suc3+romi.pickle]"),
                     decimals: int = 3):
     """Annotate text chunks with Blingbring classes."""
-    annotate_text(doc=doc, out=out, lexical_classes_token=lexical_classes_token, text=text, token=token,
-                  saldoids=saldoids, cutoff=cutoff, types=types, delimiter=delimiter, affix=affix, freq_model=freq_model,
-                  decimals=decimals)
+    annotate_text(out=out, lexical_classes_token=lexical_classes_token, text=text, token=token,
+                  saldoids=saldoids, cutoff=cutoff, types=types, delimiter=delimiter, affix=affix,
+                  freq_model=freq_model, decimals=decimals)
 
 
 @annotator("Annotate text chunks with SweFN classes", language=["swe"])
-def swefn_text(doc: str = Document,
-               out: str = Output("<text>:lexical_classes.swefn",
-                                 description="Lexical classes for text chunks from SweFN"),
-               lexical_classes_token: str = Annotation("<token>:lexical_classes.swefn"),
-               text: str = Annotation("<text>"),
-               token: str = Annotation("<token>"),
-               saldoids: Optional[str] = Annotation("<token:sense>"),
+def swefn_text(out: Output = Output("<text>:lexical_classes.swefn",
+                                    description="Lexical classes for text chunks from SweFN"),
+               lexical_classes_token: Annotation = Annotation("<token>:lexical_classes.swefn"),
+               text: Annotation = Annotation("<text>"),
+               token: Annotation = Annotation("<token>"),
+               saldoids: Optional[Annotation] = Annotation("<token:sense>"),
                cutoff: int = 3,
                types: bool = False,
                delimiter: str = util.DELIM,
                affix: str = util.AFFIX,
-               freq_model: str = Model("[lexical_classes.swefn_freq_model=lexical_classes/swefn.freq.gp2008+suc3+romi.pickle]"),
+               freq_model: Model = Model(
+                   "[lexical_classes.swefn_freq_model=lexical_classes/swefn.freq.gp2008+suc3+romi.pickle]"),
                decimals: int = 3):
     """Annotate text chunks with SweFN classes."""
-    annotate_text(doc=doc, out=out, lexical_classes_token=lexical_classes_token, text=text, token=token,
-                  saldoids=saldoids, cutoff=cutoff, types=types, delimiter=delimiter, affix=affix, freq_model=freq_model,
-                  decimals=decimals)
+    annotate_text(out=out, lexical_classes_token=lexical_classes_token, text=text, token=token,
+                  saldoids=saldoids, cutoff=cutoff, types=types, delimiter=delimiter, affix=affix,
+                  freq_model=freq_model, decimals=decimals)
 
 
-def annotate_text(doc, out, lexical_classes_token, text, token, saldoids, cutoff,
-                  types, delimiter, affix, freq_model, decimals):
+def annotate_text(out: Output, lexical_classes_token: Annotation, text: Annotation, token: Annotation,
+                  saldoids, cutoff, types, delimiter, affix, freq_model, decimals):
     """
     Annotate text chuncs with lexical classes.
 
@@ -70,14 +70,14 @@ def annotate_text(doc, out, lexical_classes_token, text, token, saldoids, cutoff
     """
     cutoff = int(cutoff)
     types = util.strtobool(types)
-    text_children, _orphans = util.get_children(doc, text, token, preserve_parent_annotation_order=True)
-    classes = list(util.read_annotation(doc, lexical_classes_token))
-    sense = list(util.read_annotation(doc, saldoids)) if types else None
+    text_children, _orphans = text.get_children(token, preserve_parent_annotation_order=True)
+    classes = list(lexical_classes_token.read())
+    sense = list(saldoids.read()) if types else None
 
     if freq_model:
-        freq_model = util.PickledLexicon(freq_model)
+        freq_model = util.PickledLexicon(freq_model.path)
 
-    out_annotation = util.create_empty_attribute(doc, text)
+    out_annotation = text.create_empty_attribute()
 
     for text_index, words in enumerate(text_children):
         seen_types = set()
@@ -123,4 +123,4 @@ def annotate_text(doc, out, lexical_classes_token, text, token, saldoids, cutoff
         ordered_words = [util.SCORESEP.join([word, str(round(freq, decimals))]) for word, freq in ordered_words]
         out_annotation[text_index] = util.cwbset(ordered_words, delimiter, affix) if ordered_words else affix
 
-    util.write_annotation(doc, out, out_annotation)
+    out.write(out_annotation)

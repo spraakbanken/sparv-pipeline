@@ -3,23 +3,22 @@
 from math import log
 
 import sparv.util as util
-from sparv import Annotation, Document, Output, annotator
+from sparv import Annotation, Output, annotator
 
 
 @annotator("Annotate text chunks with LIX values")
-def lix(doc: str = Document,
-        text: str = Annotation("<text>"),
-        sentence: str = Annotation("<sentence>"),
-        word: str = Annotation("<token:word>"),
-        pos: str = Annotation("<token:pos>"),
-        out: str = Output("<text>:readability.lix", description="LIX values for text chunks"),
+def lix(text: Annotation = Annotation("<text>"),
+        sentence: Annotation = Annotation("<sentence>"),
+        word: Annotation = Annotation("<token:word>"),
+        pos: Annotation = Annotation("<token:pos>"),
+        out: Output = Output("<text>:readability.lix", description="LIX values for text chunks"),
         skip_pos: list = ["MAD", "MID", "PAD"],
         fmt: str = "%.2f"):
     """Create LIX annotation for text."""
     # Read annotation files and get parent_children relations
-    text_children, _orphans = util.get_children(doc, text, sentence)
-    word_pos = list(util.read_annotation_attributes(doc, (word, pos)))
-    sentence_children, _orphans = util.get_children(doc, sentence, word)
+    text_children, _orphans = text.get_children(sentence)
+    word_pos = list(word.read_attributes((word, pos)))
+    sentence_children, _orphans = sentence.get_children(word)
     sentence_children = list(sentence_children)
 
     # Calculate LIX for every text element
@@ -31,7 +30,7 @@ def lix(doc: str = Document,
             in_sentences.append(list(actual_words([word_pos[token_index] for token_index in s], skip_pos)))
         lix_annotation.append(fmt % lix_calc(in_sentences))
 
-    util.write_annotation(doc, out, lix_annotation)
+    out.write(lix_annotation)
 
 
 def lix_calc(sentences):
@@ -58,16 +57,15 @@ def lix_calc(sentences):
 
 
 @annotator("Annotate text chunks with OVIX values")
-def ovix(doc: str = Document,
-         text: str = Annotation("<text>"),
-         word: str = Annotation("<token:word>"),
-         pos: str = Annotation("<token:pos>"),
-         out: str = Output("<text>:readability.ovix", description="OVIX values for text chunks"),
+def ovix(text: Annotation = Annotation("<text>"),
+         word: Annotation = Annotation("<token:word>"),
+         pos: Annotation = Annotation("<token:pos>"),
+         out: Output = Output("<text>:readability.ovix", description="OVIX values for text chunks"),
          skip_pos: list = ["MAD", "MID", "PAD"],
          fmt: str = "%.2f"):
     """Create OVIX annotation for text."""
-    text_children, _orphans = util.get_children(doc, text, word)
-    word_pos = list(util.read_annotation_attributes(doc, (word, pos)))
+    text_children, _orphans = text.get_children(word)
+    word_pos = list(word.read_attributes((word, pos)))
 
     # Calculate OVIX for every text element
     ovix_annotation = []
@@ -75,7 +73,7 @@ def ovix(doc: str = Document,
         in_words = list(actual_words([word_pos[token_index] for token_index in text], skip_pos))
         ovix_annotation.append(fmt % ovix_calc(in_words))
 
-    util.write_annotation(doc, out, ovix_annotation)
+    out.write(ovix_annotation)
 
 
 def ovix_calc(words):
@@ -110,23 +108,22 @@ def ovix_calc(words):
 
 
 @annotator("Annotate text chunks with nominal ratios")
-def nominal_ratio(doc: str = Document,
-                  text: str = Annotation("<text>"),
-                  pos: str = Annotation("<token:pos>"),
-                  out: str = Output("<text>:readability.nk", description="Nominal ratios for text chunks"),
+def nominal_ratio(text: Annotation = Annotation("<text>"),
+                  pos: Annotation = Annotation("<token:pos>"),
+                  out: Output = Output("<text>:readability.nk", description="Nominal ratios for text chunks"),
                   noun_pos: list = ["NN", "PP", "PC"],
                   verb_pos: list = ["PN", "AB", "VB"],
                   fmt: str = "%.2f"):
     """Create nominal ratio annotation for text."""
-    text_children, _orphans = util.get_children(doc, text, pos)
-    pos_annotation = list(util.read_annotation(doc, pos))
+    text_children, _orphans = text.get_children(pos)
+    pos_annotation = list(pos.read())
 
     # Calculate OVIX for every text element
     nk_annotation = []
     for text in text_children:
         in_pos = [pos_annotation[token_index] for token_index in text]
         nk_annotation.append(fmt % nominal_ratio_calc(in_pos, noun_pos, verb_pos))
-    util.write_annotation(doc, out, nk_annotation)
+    out.write(nk_annotation)
 
 
 def nominal_ratio_calc(pos, noun_pos, verb_pos):

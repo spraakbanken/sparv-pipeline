@@ -19,7 +19,7 @@ CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 
 
 @modelbuilder("Blingbring model", language=["swe"])
-def blingbring_model(out: str = ModelOutput("lexical_classes/blingbring.pickle")):
+def blingbring_model(out: ModelOutput = ModelOutput("lexical_classes/blingbring.pickle")):
     """Download and build Blingbring model."""
     # Download roget hierarchy
     classmap = "lexical_classes/roget_hierarchy.xml"
@@ -31,27 +31,27 @@ def blingbring_model(out: str = ModelOutput("lexical_classes/blingbring.pickle")
     raw_file = "lexical_classes/blingbring.txt"
     util.download_model("https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/bring/blingbring.txt", raw_file)
     lexicon = read_blingbring(util.get_model_path(raw_file), util.get_model_path(classmap))
-    util.write_model_pickle(out, lexicon)
+    util.write_model_pickle(out.path, lexicon)
 
     # Clean up
     util.remove_model_files([raw_file, classmap])
 
 
 @modelbuilder("SweFN model", language=["swe"])
-def swefn_model(out: str = ModelOutput("lexical_classes/swefn.pickle")):
+def swefn_model(out: ModelOutput = ModelOutput("lexical_classes/swefn.pickle")):
     """Download and build SweFN model."""
     # Download swefn.xml and build swefn.pickle
     raw_file = "lexical_classes/swefn.xml"
     util.download_model("https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/swefn/swefn.xml", raw_file)
     lexicon = read_swefn(util.get_model_path(raw_file))
-    util.write_model_pickle(out, lexicon)
+    util.write_model_pickle(out.path, lexicon)
 
     # Clean up
     util.remove_model_files([raw_file])
 
 
 @modelbuilder("Blingbring frequency model", language=["swe"])
-def blingbring_freq_model(out: str = ModelOutput("lexical_classes/blingbring.freq.gp2008+suc3+romi.pickle")):
+def blingbring_freq_model(out: ModelOutput = ModelOutput("lexical_classes/blingbring.freq.gp2008+suc3+romi.pickle")):
     """Download Blingbring frequency model."""
     util.download_model(
         "https://github.com/spraakbanken/sparv-models/raw/master/lexical_classes/blingbring.freq.gp2008+suc3+romi.pickle",
@@ -59,7 +59,7 @@ def blingbring_freq_model(out: str = ModelOutput("lexical_classes/blingbring.fre
 
 
 @modelbuilder("Blingbring frequency model", language=["swe"])
-def swefn_freq_model(out: str = ModelOutput("lexical_classes/swefn.freq.gp2008+suc3+romi.pickle")):
+def swefn_freq_model(out: ModelOutput = ModelOutput("lexical_classes/swefn.freq.gp2008+suc3+romi.pickle")):
     """Download SweFN frequency model."""
     util.download_model(
         "https://github.com/spraakbanken/sparv-models/raw/master/lexical_classes/swefn.freq.gp2008+suc3+romi.pickle",
@@ -229,16 +229,14 @@ def create_freq_pickle(corpus, annotation, filename, model, class_set=None, scor
 
         # Get frequency of annotation
         log.info("Getting frequencies from %s", c)
-        process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-r", CORPUS_REGISTRY, c] + [annotation],
+        process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-q", "-r", CORPUS_REGISTRY, c] + [annotation],
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         reply, error = process.communicate()
         reply = reply.decode()
         if error:
-            error = error.decode()
-            if "Error:" in error:  # We always get something back on stderror from cwb-scan-corpus, so we must check if it really is an error
-                if "Error: can't open attribute" in error:
-                    log.error("Annotation '%s' not found", annotation)
-                    sys.exit(1)
+            if "Error: can't open attribute" in error.decode():
+                log.error("Annotation '%s' not found", annotation)
+                sys.exit(1)
 
         for line in reply.splitlines():
             if not line.strip():

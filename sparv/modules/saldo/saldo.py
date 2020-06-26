@@ -2,7 +2,6 @@
 
 import itertools
 import logging
-import os
 import re
 from typing import List, Optional
 
@@ -17,16 +16,17 @@ PRECISION_DIFF = 0.01
 
 
 @annotator("SALDO annotations", language=["swe"])
-def annotate(doc: str = Document,
-             token: str = Annotation("<token>"),
-             word: str = Annotation("<token:word>"),
-             sentence: str = Annotation("<sentence>"),
-             reference: str = Annotation("<token>:misc.number_rel_<sentence>"),
-             out_sense: str = Output("<token>:saldo.sense", cls="token:sense", description="SALDO identifier"),
-             out_lemgram: str = Output("<token>:saldo.lemgram", description="SALDO lemgram"),
-             out_baseform: str = Output("<token>:saldo.baseform", cls="token:baseform", description="Baseform from SALDO"),
-             models: List[str] = [Model("[saldo.model=saldo/saldo.pickle]")],
-             msd: Optional[str] = Annotation("<token:msd>"),
+def annotate(doc: Document = Document(),
+             token: Annotation = Annotation("<token>"),
+             word: Annotation = Annotation("<token:word>"),
+             sentence: Annotation = Annotation("<sentence>"),
+             reference: Annotation = Annotation("<token>:misc.number_rel_<sentence>"),
+             out_sense: Output = Output("<token>:saldo.sense", cls="token:sense", description="SALDO identifier"),
+             out_lemgram: Output = Output("<token>:saldo.lemgram", description="SALDO lemgram"),
+             out_baseform: Output = Output("<token>:saldo.baseform", cls="token:baseform",
+                                           description="Baseform from SALDO"),
+             models: List[Model] = [Model("[saldo.model=saldo/saldo.pickle]")],
+             msd: Optional[Annotation] = Annotation("<token:msd>"),
              delimiter: str = util.DELIM,
              affix: str = util.AFFIX,
              precision: str = Config("saldo.precision", util.SCORESEP + "%.3f"),
@@ -59,18 +59,18 @@ def annotate(doc: str = Document,
       This argument must be last.
     """
     # Allow use of multiple lexicons
-    models = [(os.path.basename(m).rstrip(".pickle"), m) for m in util.split(models)]
+    models_list = [(m.path.stem, m) for m in models]
     if not lexicons:
-        lexicon_list = [(name, SaldoLexicon(lex)) for name, lex in models]
+        lexicon_list = [(name, SaldoLexicon(lex.path)) for name, lex in models_list]
     # Use pre-loaded lexicons (from catapult)
     else:
         lexicon_list = []
-        for name, _lex in models:
+        for name, _lex in models_list:
             assert lexicons.get(name, None) is not None, "Lexicon %s not found!" % name
             lexicon_list.append((name, lexicons[name]))
 
     # Maximum number of gaps in multi-word units.
-    # TODO: Set to 0 for hist-mode? since many (most?) multi-word in the old lexicons are unseparable (half öre etc)
+    # TODO: Set to 0 for hist-mode? since many (most?) multi-word in the old lexicons are inseparable (half öre etc)
     max_gaps = 1
 
     # Combine annotation names i SALDO lexicon with out annotations
@@ -94,15 +94,15 @@ def annotate(doc: str = Document,
     # allowed to span over other verbs)
     skip_pos_check = (min_precision == 0.0)
 
-    word_annotation = list(util.read_annotation(doc, word))
-    ref_annotation = list(util.read_annotation(doc, reference))
+    word_annotation = list(word.read())
+    ref_annotation = list(reference.read())
     if msd:
-        msd_annotation = list(util.read_annotation(doc, msd))
+        msd_annotation = list(msd.read())
 
     sentences, orphans = util.get_children(doc, sentence, token)
     sentences.append(orphans)
 
-    out_annotation = util.create_empty_attribute(doc, word_annotation)
+    out_annotation = word.create_empty_attribute()
 
     for sent in sentences:
         incomplete_multis = []  # [{annotation, words, [ref], is_particle, lastwordWasGap, numberofgaps}]
@@ -119,7 +119,7 @@ def annotate(doc: str = Document,
 
             # Support for multiple values of word
             if word_separator:
-                thewords = (w for w in theword.split(word_separator) if w)
+                thewords = [w for w in theword.split(word_separator) if w]
             else:
                 thewords = [theword]
 
@@ -141,13 +141,13 @@ def annotate(doc: str = Document,
         # Then save the rest of the multi word expressions in sentence_tokens
         save_multiwords(complete_multis, sentence_tokens)
 
-        for token in list(sentence_tokens.values()):
-            out_annotation[token["token_index"]] = _join_annotation(token["annotations"], delimiter, affix)
+        for tok in list(sentence_tokens.values()):
+            out_annotation[tok["token_index"]] = _join_annotation(tok["annotations"], delimiter, affix)
 
         # Loop to next sentence
 
-    for out_annotation_name, annotation_name in annotations:
-        util.write_annotation(doc, out_annotation_name, [v.get(annotation_name, delimiter) for v in out_annotation])
+    for out_annotation_obj, annotation_name in annotations:
+        out_annotation_obj.write([v.get(annotation_name, delimiter) for v in out_annotation])
 
 
 ################################################################################

@@ -7,8 +7,8 @@ from collections import defaultdict
 from typing import Optional
 
 import sparv.util as util
-from sparv import (AllDocuments, Annotation, Config, Corpus, Document, Export, ExportInput, Output, annotator, exporter,
-                   installer)
+from sparv import (AllDocuments, Annotation, AnnotationDataAllDocs, Config, Corpus, Document, Export, ExportInput,
+                   OutputCommonData, OutputData, annotator, exporter, installer)
 from sparv.util.mysql_wrapper import MySQL
 
 log = logging.getLogger(__name__)
@@ -19,8 +19,8 @@ MAX_POS_LENGTH = 5
 
 
 @installer("Install Korp's Word Picture SQL on remote host")
-def install_relations(sqlfile: str = ExportInput("korp_wordpicture/relations.sql"),
-                      out: str = Output("korp.time_install_relations", data=True, common=True),
+def install_relations(sqlfile: ExportInput = ExportInput("korp_wordpicture/relations.sql"),
+                      out: OutputCommonData = OutputCommonData("korp.time_install_relations"),
                       db_name: str = Config("korp.mysql_dbname", ""),
                       host: str = Config("korp.remote_host", "")):
     """Install Korp's Word Picture SQL on remote host.
@@ -28,27 +28,27 @@ def install_relations(sqlfile: str = ExportInput("korp_wordpicture/relations.sql
     Args:
         sqlfile (str, optional): SQL file to be installed. Defaults to ExportInput("korp_wordpicture/relations.sql").
         out (str, optional): Timestamp file to be written.
-            Defaults to Output("korp.time_install_relations", data=True, common=True).
+            Defaults to OutputCommonData("korp.time_install_relations").
         db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname", "").
         host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host", "").
     """
     util.install_mysql(host, db_name, sqlfile)
-    util.write_common_data(out, "")
+    out.write("")
 
 
 @annotator("Find dependencies for Korp's Word Picture", language=["swe"])
-def relations(doc: str = Document,
-              out: str = Output("korp.relations", data=True),
-              word: str = Annotation("<token:word>"),
-              pos: str = Annotation("<token:pos>"),
-              lemgram: str = Annotation("<token>:saldo.lemgram"),
-              dephead: str = Annotation("<token>:malt.dephead"),
-              deprel: str = Annotation("<token>:malt.deprel"),
-              sentence_id: str = Annotation("<sentence>:misc.id"),
-              ref: str = Annotation("<token>:misc.number_rel_<sentence>"),
-              baseform: str = Annotation("<token>:saldo.baseform")):
+def relations(doc: Document = Document(),
+              out: OutputData = OutputData("korp.relations"),
+              word: Annotation = Annotation("<token:word>"),
+              pos: Annotation = Annotation("<token:pos>"),
+              lemgram: Annotation = Annotation("<token>:saldo.lemgram"),
+              dephead: Annotation = Annotation("<token>:malt.dephead"),
+              deprel: Annotation = Annotation("<token>:malt.deprel"),
+              sentence_id: Annotation = Annotation("<sentence>:misc.id"),
+              ref: Annotation = Annotation("<token>:misc.number_rel_<sentence>"),
+              baseform: Annotation = Annotation("<token>:saldo.baseform")):
     """Find certain dependencies between words, to be used by the Word Picture feature in Korp."""
-    sentence_ids = util.read_annotation(doc, sentence_id)
+    sentence_ids = sentence_id.read()
     sentence_tokens, _ = util.get_children(doc, sentence_id, word)
 
     annotations = list(util.read_annotation_attributes(doc, (word, pos, lemgram, dephead, deprel, ref, baseform)))
@@ -185,7 +185,7 @@ def relations(doc: str = Document,
                                      str(bfdep), str(wfhead), str(wfdep))) for (
                           head, headpos, rel, dep, deppos, extra, sentid, refhead, refdep, bfhead, bfdep, wfhead, wfdep)
                           in triples])
-    util.write_data(doc, out, out_data)
+    out.write(out_data)
 
 
 def _mutate_triple(triple):
@@ -259,11 +259,11 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
 
 
 @exporter("Word Picture SQL for use in Korp")
-def relations_sql(corpus: str = Corpus,
+def relations_sql(corpus: Corpus = Corpus(),
                   db_name: str = Config("korp.relations_db_name", "korp_relations"),
-                  out: str = Export("korp_wordpicture/relations.sql"),
-                  relations: str = Annotation("korp.relations", data=True, all_docs=True),
-                  docs: Optional[list] = AllDocuments,
+                  out: Export = Export("korp_wordpicture/relations.sql"),
+                  relations: AnnotationDataAllDocs = AnnotationDataAllDocs("korp.relations"),
+                  docs: Optional[AllDocuments] = AllDocuments(),
                   doclist: str = "",
                   split: bool = False):
     """Calculate statistics of the dependencies and saves to SQL files.
@@ -318,8 +318,7 @@ def relations_sql(corpus: str = Corpus,
             head_rel_count = defaultdict(int)   # Frequency of (head, rel)
             dep_rel_count = defaultdict(int)    # Frequency of (rel, dep)
 
-        relations_data = util.read_data(doc, relations)
-        # basename = s.rsplit(".", 1)[0]
+        relations_data = relations.read(doc)
 
         for triple in relations_data.splitlines():
             head, headpos, rel, dep, deppos, extra, sid, refh, refd, bfhead, bfdep, wfhead, wfdep = triple.split(u"\t")

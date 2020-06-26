@@ -5,17 +5,18 @@ import time
 from datetime import datetime
 
 import sparv.util as util
-from sparv import AllDocuments, Annotation, Config, Corpus, Export, ExportInput, Output, annotator, exporter
+from sparv import (AllDocuments, Config, Corpus, Export, ExportInput, annotator, exporter,
+                   AnnotationAllDocs, OutputCommonData, AnnotationCommonData)
 
 log = logging.getLogger(__name__)
 
 
 @exporter("CWB .info file")
-def info(out: str = Export("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_path=True),
-         sentences: str = Annotation("cwb.sentencecount", data=True, common=True),
-         firstdate: str = Annotation("cwb.datefirst", data=True, common=True),
-         lastdate: str = Annotation("cwb.datelast", data=True, common=True),
-         resolution: str = Annotation("dateformat.resolution", data=True, common=True),
+def info(out: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_path=True),
+         sentences: AnnotationCommonData = AnnotationCommonData("cwb.sentencecount"),
+         firstdate: AnnotationCommonData = AnnotationCommonData("cwb.datefirst"),
+         lastdate: AnnotationCommonData = AnnotationCommonData("cwb.datelast"),
+         resolution: AnnotationCommonData = AnnotationCommonData("dateformat.resolution"),
          protected: bool = Config("korp.protected", False)):
     """Save information to the file specified by 'out'."""
     content = []
@@ -28,7 +29,7 @@ def info(out: str = Export("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_pat
                                           ("Updated", time.strftime("%Y-%m-%d"), False),
                                           ("Protected", protected, False)]:
         if is_annotation:
-            value = util.read_common_data(value_obj)
+            value = value_obj.read()
             if key == "DateResolution":
                 value = "|".join(util.cwbset_to_list(value))
         else:
@@ -44,15 +45,15 @@ def info(out: str = Export("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_pat
 
 
 @annotator("sentencecount file for .info")
-def info_sentences(out: str = Output("cwb.sentencecount", data=True, common=True),
-                   sentence: str = Annotation("<sentence>", all_docs=True),
-                   docs: list = AllDocuments):
+def info_sentences(out: OutputCommonData = OutputCommonData("cwb.sentencecount"),
+                   sentence: AnnotationAllDocs = AnnotationAllDocs("<sentence>"),
+                   docs: AllDocuments = AllDocuments()):
     """Determine how many sentences there are in the corpus."""
     # Read sentence annotation and count the sentences
     sentence_count = 0
     for doc in docs:
         try:
-            sentence_count += len(list(util.read_annotation_spans(doc, sentence)))
+            sentence_count += len(list(sentence.read_spans(doc)))
         except FileNotFoundError:
             pass
 
@@ -60,22 +61,22 @@ def info_sentences(out: str = Output("cwb.sentencecount", data=True, common=True
         log.info("No sentence information found in corpus")
 
     # Write sentencecount data
-    util.write_common_data(out, str(sentence_count))
+    out.write(str(sentence_count))
 
 
 @annotator("datefirst and datelast files for .info", order=1)
-def info_date(corpus: str = Corpus,
-              out_datefirst: str = Output("cwb.datefirst", data=True, common=True),
-              out_datelast: str = Output("cwb.datelast", data=True, common=True),
-              corpus_data_file: str = ExportInput("[cwb.corpus_registry]/[metadata.id]"),
-              datefrom: str = Annotation("[dateformat.out_annotation=<text>]:dateformat.datefrom", all_docs=True),
-              dateto: str = Annotation("[dateformat.out_annotation=<text>]:dateformat.dateto", all_docs=True),
-              timefrom: str = Annotation("[dateformat.out_annotation=<text>]:dateformat.timefrom", all_docs=True),
-              timeto: str = Annotation("[dateformat.out_annotation=<text>]:dateformat.timeto", all_docs=True),
+def info_date(corpus: Corpus = Corpus(),
+              out_datefirst: OutputCommonData = OutputCommonData("cwb.datefirst"),
+              out_datelast: OutputCommonData = OutputCommonData("cwb.datelast"),
+              corpus_data_file: ExportInput = ExportInput("[cwb.corpus_registry]/[metadata.id]"),
+              datefrom: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation=<text>]:dateformat.datefrom"),
+              dateto: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation=<text>]:dateformat.dateto"),
+              timefrom: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation=<text>]:dateformat.timefrom"),
+              timeto: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation=<text>]:dateformat.timeto"),
               remove_namespaces: bool = Config("export.remove_export_namespaces", False),
               registry: str = Config("cwb.corpus_registry")):
     """Create datefirst and datelast file (needed for .info file)."""
-    def _fix_name(name: str):
+    def fix_name(name: str):
         if remove_namespaces:
             prefix, part, suffix = name.partition(":")
             suffix = suffix.split(".")[-1]
@@ -92,30 +93,30 @@ def info_date(corpus: str = Corpus,
         return [v.strftime("%Y-%m-%d %H:%M:%S") for v in values]
 
     # Get date and time annotation names
-    datefrom = _fix_name(datefrom)
-    timefrom = _fix_name(timefrom)
-    dateto = _fix_name(dateto)
-    timeto = _fix_name(timeto)
+    datefrom_name = fix_name(datefrom.name)
+    timefrom_name = fix_name(timefrom.name)
+    dateto_name = fix_name(dateto.name)
+    timeto_name = fix_name(timeto.name)
 
     # Get datefirst and write to file
-    datefirst_args = ["-r", registry, "-q", corpus, datefrom, timefrom]
+    datefirst_args = ["-r", registry, "-q", corpus, datefrom_name, timefrom_name]
     datefirst_out, _ = util.system.call_binary("cwb-scan-corpus", datefirst_args)
     datefirst = _parse_cwb_output(datefirst_out)[0]
-    util.write_common_data(out_datefirst, str(datefirst))
+    out_datefirst.write(str(datefirst))
 
     # Get datelast and write to file
-    datelast_args = ["-r", registry, "-q", corpus, dateto, timeto]
+    datelast_args = ["-r", registry, "-q", corpus, dateto_name, timeto_name]
     datelast_out, _ = util.system.call_binary("cwb-scan-corpus", datelast_args)
     datelast = _parse_cwb_output(datelast_out)[-1]
-    util.write_common_data(out_datelast, str(datelast))
+    out_datelast.write(str(datelast))
 
 
 @annotator("Empty datefirst and datelast files for .info", order=2)
-def info_date_unknown(out_datefirst: str = Output("cwb.datefirst", data=True, common=True),
-                      out_datelast: str = Output("cwb.datelast", data=True, common=True)):
+def info_date_unknown(out_datefirst: OutputCommonData = OutputCommonData("cwb.datefirst"),
+                      out_datelast: OutputCommonData = OutputCommonData("cwb.datelast")):
     """Create empty datefirst and datelast file (needed for .info file) if corpus has no date information."""
     log.info("No date information found in corpus")
 
     # Write datefirst and datelast files
-    util.write_common_data(out_datefirst, "")
-    util.write_common_data(out_datelast, "")
+    out_datefirst.write("")
+    out_datelast.write("")

@@ -6,7 +6,7 @@ import xml.etree.ElementTree as etree
 import xml.sax.saxutils
 
 import sparv.util as util
-from sparv import Annotation, Document, Output, annotator
+from sparv import Annotation, Output, annotator
 
 log = logging.getLogger(__name__)
 
@@ -16,18 +16,17 @@ TOK_SEP = " "
 
 
 @annotator("Named entity tagging with SweNER", language=["swe"])
-def annotate(doc: str = Document,
-             out_ne: str = Output("swener.ne", cls="named_entity", description="Named entity segments from SweNER"),
-             out_ne_ex: str = Output("swener.ne:swener.ex", description="Named entity expressions from SweNER"),
-             out_ne_type: str = Output("swener.ne:swener.type", cls="named_entity_type",
-                                       description="Named entity types from SweNER"),
-             out_ne_subtype: str = Output("swener.ne:swener.subtype", cls="named_entity_subtype",
-                                          description="Named entity sub types from SweNER"),
-             out_ne_name: str = Output("swener.ne:swener.name", cls="named_entity_name",
-                                       description="Names in SweNER named entities"),
-             word: str = Annotation("<token:word>"),
-             sentence: str = Annotation("<sentence>"),
-             token: str = Annotation("<token>"),
+def annotate(out_ne: Output = Output("swener.ne", cls="named_entity", description="Named entity segments from SweNER"),
+             out_ne_ex: Output = Output("swener.ne:swener.ex", description="Named entity expressions from SweNER"),
+             out_ne_type: Output = Output("swener.ne:swener.type", cls="named_entity_type",
+                                          description="Named entity types from SweNER"),
+             out_ne_subtype: Output = Output("swener.ne:swener.subtype", cls="named_entity_subtype",
+                                             description="Named entity sub types from SweNER"),
+             out_ne_name: Output = Output("swener.ne:swener.name", cls="named_entity_name",
+                                          description="Names in SweNER named entities"),
+             word: Annotation = Annotation("<token:word>"),
+             sentence: Annotation = Annotation("<sentence>"),
+             token: Annotation = Annotation("<token>"),
              process_dict=None):
     """Tag named entities using HFST-SweNER.
 
@@ -48,10 +47,10 @@ def annotate(doc: str = Document,
     #         process_dict["process"] = process
 
     # Get sentence annotation
-    sentences, _orphans = util.get_children(doc, sentence, token, orphan_alert=True)
+    sentences, _orphans = sentence.get_children(token, orphan_alert=True)
 
     # Collect all text
-    word_annotation = list(util.read_annotation(doc, word))
+    word_annotation = list(word.read())
     stdin = SENT_SEP.join(TOK_SEP.join(word_annotation[token_index] for token_index in sent)
                           for sent in sentences)
     # Escape <, > and &
@@ -77,11 +76,12 @@ def annotate(doc: str = Document,
     stdout, _ = process.communicate(stdin.encode(util.UTF8))
     # log.info("STDOUT %s %s", type(stdout.decode(encoding)), stdout.decode(encoding))
 
-    parse_swener_output(doc, sentences, token, stdout.decode(util.UTF8), out_ne, out_ne_ex, out_ne_type, out_ne_subtype,
+    parse_swener_output(sentences, token, stdout.decode(util.UTF8), out_ne, out_ne_ex, out_ne_type, out_ne_subtype,
                         out_ne_name)
 
 
-def parse_swener_output(doc, sentences, token, output, out_ne, out_ne_ex, out_ne_type, out_ne_subtype, out_ne_name):
+def parse_swener_output(sentences: list, token: Annotation, output, out_ne: Output, out_ne_ex: Output,
+                        out_ne_type: Output, out_ne_subtype: Output, out_ne_name: Output):
     """Parse the SweNER output and write annotation files."""
     out_ne_spans = []
     out_ex = []
@@ -89,7 +89,7 @@ def parse_swener_output(doc, sentences, token, output, out_ne, out_ne_ex, out_ne
     out_subtype = []
     out_name = []
 
-    token_spans = list(util.read_annotation_spans(doc, token))
+    token_spans = list(token.read_spans())
 
     # Loop through the NE-tagged sentences and parse each one with ElemenTree
     for sent, tagged_sent in zip(sentences, output.strip().split(SENT_SEP)):
@@ -153,11 +153,11 @@ def parse_swener_output(doc, sentences, token, output, out_ne, out_ne_ex, out_ne
             continue
 
     # Write annotations
-    util.write_annotation(doc, out_ne, out_ne_spans)
-    util.write_annotation(doc, out_ne_ex, out_ex)
-    util.write_annotation(doc, out_ne_type, out_type)
-    util.write_annotation(doc, out_ne_subtype, out_subtype)
-    util.write_annotation(doc, out_ne_name, out_name)
+    out_ne.write(out_ne_spans)
+    out_ne_ex.write(out_ex)
+    out_ne_type.write(out_type)
+    out_ne_subtype.write(out_subtype)
+    out_ne_name.write(out_name)
 
 
 def swenerstart(stdin, encoding, verbose):

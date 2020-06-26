@@ -21,13 +21,13 @@ def kill_process(process):
             raise
 
 
-def clear_directory(dir):
+def clear_directory(path):
     """Create a new empty dir.
 
     Remove it's contents if it already exists.
     """
-    shutil.rmtree(dir, ignore_errors=True)
-    os.makedirs(dir, exist_ok=True)
+    shutil.rmtree(path, ignore_errors=True)
+    os.makedirs(path, exist_ok=True)
 
 
 def call_java(jar, arguments, options=[], stdin="", search_paths=(),
@@ -75,7 +75,7 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
         if arguments:
             command = " ".join([command] + arguments)
     else:
-        command = [binary] + list(arguments)
+        command = [binary] + [str(a) for a in arguments]
     if isinstance(stdin, (list, tuple)):
         stdin = "\n".join(stdin)
     if encoding is not None and isinstance(stdin, str):

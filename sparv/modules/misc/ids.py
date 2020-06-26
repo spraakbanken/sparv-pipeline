@@ -6,14 +6,14 @@ from binascii import hexlify
 from typing import Optional
 
 import sparv.util as util
-from sparv import AllDocuments, Annotation, Document, Output, annotator
+from sparv import AllDocuments, Annotation, AnnotationData, Document, Output, OutputDataAllDocs, annotator
 
 _ID_LENGTH = 10
 
 
 @annotator("Give every document a unique ID")
-def doc_id(out: str = Output("misc.docid", cls="docid", data=True, all_docs=True),
-           docs: Optional[list] = AllDocuments,
+def doc_id(out: OutputDataAllDocs = OutputDataAllDocs("misc.docid", cls="docid"),
+           docs: Optional[AllDocuments] = AllDocuments(),
            doclist: Optional[str] = None,
            prefix: str = "",
            add: bool = False):
@@ -26,7 +26,7 @@ def doc_id(out: str = Output("misc.docid", cls="docid", data=True, all_docs=True
     add = util.strtobool(add)
 
     if doclist:
-        with open(doclist, "r") as f:
+        with open(doclist) as f:
             docs = f.read().strip()
 
     docs = util.split(docs)
@@ -38,7 +38,7 @@ def doc_id(out: str = Output("misc.docid", cls="docid", data=True, all_docs=True
 
     if add:
         for doc in docs:
-            if util.data_exists(doc, out):
+            if out.exists(doc):
                 used_ids.add(util.read_data(doc, out))
                 docs_with_ids.add(doc)
 
@@ -48,27 +48,27 @@ def doc_id(out: str = Output("misc.docid", cls="docid", data=True, all_docs=True
         _reset_id(doc, numdocs)
         new_id = _make_id(prefix, used_ids)
         used_ids.add(new_id)
-        util.write_data(doc, out, new_id)
+        out.write(new_id, doc)
 
 
 @annotator("Unique IDs for {annotation}")
-def ids(doc: str = Document,
-        annotation: str = Annotation("{annotation}"),
-        out: str = Output("{annotation}:misc.id", description="Unique ID for {annotation}"),
-        docid: str = Annotation("<docid>", data=True),
+def ids(doc: Document = Document(),
+        annotation: Annotation = Annotation("{annotation}"),
+        out: Output = Output("{annotation}:misc.id", description="Unique ID for {annotation}"),
+        docid: AnnotationData = AnnotationData("<docid>"),
         prefix: str = ""):
     """Create unique IDs for every span of an existing annotation."""
-    docid = util.read_data(doc, docid)
+    docid = docid.read()
     prefix = prefix + docid
 
-    ann = list(util.read_annotation(doc, annotation))
+    ann = list(annotation.read())
     out_annotation = []
     # Use doc name and annotation name as seed for the IDs
     _reset_id("{}/{}".format(doc, annotation), len(ann))
     for _ in ann:
         new_id = _make_id(prefix, out_annotation)
         out_annotation.append(new_id)
-    util.write_annotation(doc, out, out_annotation)
+    out.write(out_annotation)
 
 
 def _reset_id(seed, max_ids=None):

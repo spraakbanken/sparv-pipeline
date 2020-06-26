@@ -6,25 +6,25 @@ from typing import Optional
 
 from . import xml_utils
 import sparv.util as util
-from sparv import (AllDocuments, Annotation, Config, Corpus, Document, Export, ExportAnnotations, ExportInput, Output,
-                   exporter, installer)
+from sparv import (AllDocuments, Annotation, AnnotationData, Config, Corpus, Document, Export, ExportAnnotations,
+                   OutputCommonData, ExportInput, exporter, installer)
 
 log = logging.getLogger(__name__)
 
 
 @exporter("XML export with one token element per line", config=[
     Config("xml_export.filename", default="{doc}_export.xml"),
-    Config("xml_export.original_annotations"),
+    Config("xml_export.source_annotations"),
     Config("xml_export.header_annotations"),
     Config("xml_export.include_empty_attributes", False)
 ])
-def pretty(doc: str = Document,
-           docid: str = Annotation("<docid>", data=True),
-           out: str = Export("xml/[xml_export.filename]"),
-           token: str = Annotation("<token>"),
-           word: str = Annotation("<token:word>"),
-           annotations: list = ExportAnnotations(export_type="xml_export"),
-           original_annotations: Optional[list] = Config("xml_export.original_annotations"),
+def pretty(doc: Document = Document(),
+           docid: AnnotationData = AnnotationData("<docid>"),
+           out: Export = Export("xml/[xml_export.filename]"),
+           token: Annotation = Annotation("<token>"),
+           word: Annotation = Annotation("<token:word>"),
+           annotations: ExportAnnotations = ExportAnnotations(export_type="xml_export"),
+           source_annotations: Optional[list] = Config("xml_export.source_annotations"),
            header_annotations: Optional[list] = Config("xml_export.header_annotations"),
            remove_namespaces: bool = Config("export.remove_export_namespaces", False),
            include_empty_attributes: bool = Config("xml_export.include_empty_attributes")):
@@ -37,7 +37,7 @@ def pretty(doc: str = Document,
         token: Annotation containing the token strings.
         word: Annotation containing the token strings.
         annotations: List of elements:attributes (annotations) to include.
-        original_annotations: List of elements:attributes from the original document
+        source_annotations: List of elements:attributes from the original document
             to be kept. If not specified, everything will be kept.
         header_annotations: List of header elements from the original document to include
             in the export. If not specified, all headers will be kept.
@@ -48,19 +48,22 @@ def pretty(doc: str = Document,
     # Create export dir
     os.makedirs(os.path.dirname(out), exist_ok=True)
 
+    token_name = token.name
+
     # Read words and document ID
-    word_annotation = list(util.read_annotation(doc, word))
-    docid = util.read_data(doc, docid)
+    word_annotation = list(word.read())
+    docid_annotation = docid.read()
 
     # Get annotation spans, annotations list etc.
-    annotations, _, export_names = util.get_annotation_names(doc, token, annotations, original_annotations,
-                                                             remove_namespaces)
-    h_annotations, h_export_names = util.get_header_names(doc, header_annotations)
+    annotation_list, _, export_names = util.get_annotation_names(annotations, source_annotations, doc=doc,
+                                                                 token_name=token_name,
+                                                                 remove_namespaces=remove_namespaces)
+    h_annotations, h_export_names = util.get_header_names(header_annotations, doc=doc)
     export_names.update(h_export_names)
-    span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names, split_overlaps=True,
-                                                              header_annotations=h_annotations)
-    xmlstr = xml_utils.make_pretty_xml(span_positions, annotation_dict, export_names, token, word_annotation, docid,
-                                       include_empty_attributes)
+    span_positions, annotation_dict = util.gather_annotations(annotation_list, export_names, h_annotations,
+                                                              doc=doc, split_overlaps=True)
+    xmlstr = xml_utils.make_pretty_xml(span_positions, annotation_dict, export_names, token_name, word_annotation,
+                                       docid_annotation, include_empty_attributes)
 
     # Write XML to file
     with open(out, mode="w") as outfile:
@@ -71,10 +74,10 @@ def pretty(doc: str = Document,
 @exporter("Combined XML export (all results in one file)", config=[
     Config("xml_export.filename_combined", default="[metadata.id].xml")
 ])
-def combined(corpus: str = Corpus,
-             out: str = Export("[xml_export.filename_combined]"),
-             docs: list = AllDocuments,
-             xml_input: str = ExportInput("xml/[xml_export.filename]", all_docs=True)):
+def combined(corpus: Corpus = Corpus(),
+             out: Export = Export("[xml_export.filename_combined]"),
+             docs: AllDocuments = AllDocuments(),
+             xml_input: ExportInput = ExportInput("xml/[xml_export.filename]", all_docs=True)):
     """Combine XML export files into a single XML file."""
     xml_utils.combine(corpus, out, docs, xml_input)
 
@@ -82,16 +85,16 @@ def combined(corpus: str = Corpus,
 @exporter("Compressed combined XML export", config=[
     Config("xml_export.filename_compressed", default="[metadata.id].xml.bz2")
 ])
-def compressed(out: str = Export("[xml_export.filename_compressed]"),
-               xmlfile: str = ExportInput("[xml_export.filename_combined]")):
+def compressed(out: Export = Export("[xml_export.filename_compressed]"),
+               xmlfile: ExportInput = ExportInput("[xml_export.filename_combined]")):
     """Compress combined XML export."""
     xml_utils.compress(xmlfile, out)
 
 
 @installer("Copy compressed unscrambled XML to remote host")
-def install_original(corpus: str = Corpus,
-                     xmlfile: str = ExportInput("[xml_export.filename_compressed]"),
-                     out: str = Output("xml_export.time_install_export_pretty", data=True, common=True),
+def install_original(corpus: Corpus = Corpus(),
+                     xmlfile: ExportInput = ExportInput("[xml_export.filename_compressed]"),
+                     out: OutputCommonData = OutputCommonData("xml_export.time_install_export_pretty"),
                      export_path: str = Config("xml_export.export_original_path", ""),
                      host: str = Config("xml_export.export_original_host", "")):
     """Copy compressed combined unscrambled XML to remote host."""

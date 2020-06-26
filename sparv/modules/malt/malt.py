@@ -1,11 +1,10 @@
 """Dependency parsing using MALT Parser."""
 
 import logging
-import os
 import re
 
 import sparv.util as util
-from sparv import Annotation, Binary, Config, Document, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv import Annotation, Binary, Config, Model, ModelOutput, Output, annotator, modelbuilder
 
 log = logging.getLogger(__name__)
 
@@ -28,18 +27,18 @@ UNDEF = "_"
            config=[Config("malt.jar", default="maltparser-1.7.2/maltparser-1.7.2.jar"),
                    Config("malt.model", default="malt/swemalt-1.7.2.mco")
                    ])
-def annotate(doc: str = Document,
-             maltjar: str = Binary("[malt.jar]"),
-             model: str = Model("[malt.model]"),
-             out_dephead: str = Output("<token>:malt.dephead", description="Positions of the dependency heads"),
-             out_dephead_ref: str = Output("<token>:malt.dephead_ref", description="Sentence-relative positions of the dependency heads"),
-             out_deprel: str = Output("<token>:malt.deprel", description="Dependency relations to the head"),
-             word: str = Annotation("<token:word>"),
-             pos: str = Annotation("<token:pos>"),
-             msd: str = Annotation("<token:msd>"),
-             ref: str = Annotation("<token>:misc.number_rel_<sentence>"),
-             sentence: str = Annotation("<sentence>"),
-             token: str = Annotation("<token>"),
+def annotate(maltjar: Binary = Binary("[malt.jar]"),
+             model: Model = Model("[malt.model]"),
+             out_dephead: Output = Output("<token>:malt.dephead", description="Positions of the dependency heads"),
+             out_dephead_ref: Output = Output("<token>:malt.dephead_ref",
+                                              description="Sentence-relative positions of the dependency heads"),
+             out_deprel: Output = Output("<token>:malt.deprel", description="Dependency relations to the head"),
+             word: Annotation = Annotation("<token:word>"),
+             pos: Annotation = Annotation("<token:pos>"),
+             msd: Annotation = Annotation("<token:msd>"),
+             ref: Annotation = Annotation("<token>:misc.number_rel_<sentence>"),
+             sentence: Annotation = Annotation("<sentence>"),
+             token: Annotation = Annotation("<token>"),
              encoding: str = util.UTF8,
              process_dict=None):
     """
@@ -57,13 +56,13 @@ def annotate(doc: str = Document,
             process = maltstart(maltjar, model, encoding, send_empty_sentence=True)
             process_dict["process"] = process
 
-    sentences, orphans = util.get_children(doc, sentence, token)
+    sentences, orphans = sentence.get_children(token)
     sentences.append(orphans)
 
-    word_annotation = list(util.read_annotation(doc, word))
-    pos_annotation = list(util.read_annotation(doc, pos))
-    msd_annotation = list(util.read_annotation(doc, msd))
-    ref_annotation = list(util.read_annotation(doc, ref))
+    word_annotation = list(word.read())
+    pos_annotation = list(pos.read())
+    msd_annotation = list(msd.read())
+    ref_annotation = list(ref.read())
 
     def conll_token(nr, token_index):
         form = word_annotation[token_index]
@@ -93,7 +92,7 @@ def annotate(doc: str = Document,
         malt_sentences = []
         for sent in sentences:
             malt_sent = []
-            for _tok in sent:
+            for _ in sent:
                 line = stdout_fd.readline()
                 if encoding:
                     line = line.decode(encoding)
@@ -109,9 +108,9 @@ def annotate(doc: str = Document,
         malt_sentences = (malt_sent.split(TOK_SEP)
                           for malt_sent in stdout.split(SENT_SEP))
 
-    out_dephead_annotation = util.create_empty_attribute(doc, word)
-    out_dephead_ref_annotation = util.create_empty_attribute(doc, word)
-    out_deprel_annotation = util.create_empty_attribute(doc, word)
+    out_dephead_annotation = util.create_empty_attribute(word_annotation)
+    out_dephead_ref_annotation = out_dephead_annotation.copy()
+    out_deprel_annotation = out_dephead_annotation.copy()
     for (sent, malt_sent) in zip(sentences, malt_sentences):
         for (token_index, malt_tok) in zip(sent, malt_sent):
             cols = [(None if col == UNDEF else col) for col in malt_tok.split(TAG_SEP)]
@@ -120,30 +119,29 @@ def annotate(doc: str = Document,
             out_dephead_annotation[token_index] = str(sent[head - 1]) if head else "-"
             out_dephead_ref_annotation[token_index] = str(ref_annotation[sent[head - 1]]) if head else ""
 
-    util.write_annotation(doc, out_dephead, out_dephead_annotation)
-    util.write_annotation(doc, out_dephead_ref, out_dephead_ref_annotation)
-    util.write_annotation(doc, out_deprel, out_deprel_annotation)
+    out_dephead.write(out_dephead_annotation)
+    out_dephead_ref.write(out_dephead_ref_annotation)
+    out_deprel.write(out_deprel_annotation)
 
 
 def maltstart(maltjar, model, encoding, send_empty_sentence=False):
     """Start a malt process and return it."""
     java_opts = ["-Xmx1024m"]
     malt_args = ["-ic", encoding, "-oc", encoding, "-m", "parse"]
-    if model.startswith("http://"):
-        malt_args += ["-u", model]
+    if str(model).startswith("http://") or str(model).startswith("https://"):
+        malt_args += ["-u", str(model)]
         log.info("Using MALT model from URL: %s", model)
     else:
-        modeldir, model = os.path.split(model)
-        if model.endswith(".mco"):
-            model, _ = os.path.splitext(model)
-        if modeldir:
-            malt_args += ["-w", modeldir]
-        malt_args += ["-c", model]
-        log.info("Using local MALT model: %s (in directory %s)", model, modeldir or ".")
+        model_dir = model.path.parent
+        model_file = model.path.name
+        if model.path.suffix == ".mco":
+            model_file = model.path.stem
+        if model_dir:
+            malt_args += ["-w", model_dir]
+        malt_args += ["-c", model_file]
+        log.info("Using local MALT model: %s (in directory %s)", model_file, model_dir or ".")
 
-    process = util.system.call_java(maltjar, malt_args, options=java_opts,
-                                    stdin="", encoding=encoding, verbose=False,
-                                    return_command=True)
+    process = util.system.call_java(maltjar, malt_args, options=java_opts, encoding=encoding, return_command=True)
 
     if send_empty_sentence:
         # Send a simple sentence to malt, this greatly enhances performance
@@ -160,8 +158,8 @@ def maltstart(maltjar, model, encoding, send_empty_sentence=False):
 
 @modelbuilder("Model for MALT Parser", language=["swe"],
               config=[Config("malt.jar", default="maltparser-1.7.2/maltparser-1.7.2.jar")])
-def build_model(out: str = ModelOutput("malt/swemalt-1.7.2.mco"),
-                _maltjar: str = Binary("[malt.jar]")):
+def build_model(out: ModelOutput = ModelOutput("malt/swemalt-1.7.2.mco"),
+                _maltjar: Binary = Binary("[malt.jar]")):
     """Download model for MALT Parser.
 
     Won't download model unless maltjar has been installed.

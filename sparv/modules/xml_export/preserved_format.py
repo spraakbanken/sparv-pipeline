@@ -6,7 +6,7 @@ import xml.etree.ElementTree as etree
 from typing import Optional
 
 import sparv.util as util
-from sparv import Annotation, Config, Document, Export, ExportAnnotations, exporter
+from sparv import AnnotationData, Config, Document, Export, ExportAnnotations, Text, exporter
 from . import xml_utils
 
 log = logging.getLogger(__name__)
@@ -14,15 +14,16 @@ log = logging.getLogger(__name__)
 
 @exporter("XML export preserving whitespaces from source file", config=[
     Config("xml_export.filename_formatted", default="{doc}_export.xml"),
-    Config("xml_export.original_annotations"),
+    Config("xml_export.source_annotations"),
     Config("xml_export.header_annotations"),
     Config("xml_export.include_empty_attributes", False)
 ])
-def preserved_format(doc: str = Document,
-                     docid: str = Annotation("<docid>", data=True),
-                     out: str = Export("xml_preserved_format/[xml_export.filename_formatted]"),
-                     annotations: list = ExportAnnotations(export_type="xml_export"),
-                     original_annotations: Optional[list] = Config("xml_export.original_annotations"),
+def preserved_format(doc: Document = Document(),
+                     text: Text = Text(),
+                     docid: AnnotationData = AnnotationData("<docid>"),
+                     out: Export = Export("xml_preserved_format/[xml_export.filename_formatted]"),
+                     annotations: ExportAnnotations = ExportAnnotations(export_type="xml_export"),
+                     source_annotations: Optional[list] = Config("xml_export.source_annotations"),
                      header_annotations: Optional[list] = Config("xml_export.header_annotations"),
                      remove_namespaces: bool = Config("export.remove_export_namespaces", False),
                      include_empty_attributes: bool = Config("xml_export.include_empty_attributes")):
@@ -30,10 +31,11 @@ def preserved_format(doc: str = Document,
 
     Args:
         doc: Name of the original document.
+        text: The corpus text.
         docid: Annotation with document IDs.
         out: Path and filename pattern for resulting file.
         annotations: List of elements:attributes (annotations) to include.
-        original_annotations: List of elements:attributes from the original document
+        source_annotations: List of elements:attributes from the original document
             to be kept. If not specified, everything will be kept.
         header_annotations: List of header elements from the original document to include
             in the export. If not specified, all headers will be kept.
@@ -43,23 +45,23 @@ def preserved_format(doc: str = Document,
 
     - doc: name of the original document
     - annotations: list of elements:attributes (annotations) to include.
-    - original_annotations: list of elements:attributes from the original document
+    - source_annotations: list of elements:attributes from the original document
       to be kept. If not specified, everything will be kept.
     """
     # Create export dir
     os.makedirs(os.path.dirname(out), exist_ok=True)
 
     # Read corpus text and document ID
-    corpus_text = util.read_corpus_text(doc)
-    docid = util.read_data(doc, docid)
+    corpus_text = text.read()
+    docid = docid.read()
 
     # Get annotation spans, annotations list etc.
-    annotations, _, export_names = util.get_annotation_names(doc, None, annotations, original_annotations,
-                                                             remove_namespaces)
-    h_annotations, h_export_names = util.get_header_names(doc, header_annotations)
+    annotation_list, _, export_names = util.get_annotation_names(annotations, source_annotations, doc=doc,
+                                                                 remove_namespaces=remove_namespaces)
+    h_annotations, h_export_names = util.get_header_names(header_annotations, doc=doc)
     export_names.update(h_export_names)
-    span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names, flatten=False,
-                                                              split_overlaps=True, header_annotations=h_annotations)
+    span_positions, annotation_dict = util.gather_annotations(annotation_list, export_names, h_annotations, doc=doc,
+                                                              flatten=False, split_overlaps=True)
     sorted_positions = [(pos, span[0], span[1]) for pos, spans in sorted(span_positions.items()) for span in spans]
 
     # Root tag sanity check

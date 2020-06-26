@@ -14,14 +14,14 @@ log = logging.getLogger(__name__)
 @importer("XML import", source_type="xml", outputs=Config("xml_parser.elements", []), config=[
     Config("xml_parser.elements", []),
     Config("xml_parser.skip", []),
-    Config("xml_parser.header_data", []),
     Config("xml_parser.header_elements", []),
+    Config("xml_parser.header_data", []),
     Config("xml_parser.prefix", ""),
     Config("xml_parser.encoding", util.UTF8),
     Config("xml_parser.normalize", "NFC")
 ])
-def parse(doc: str = Document,
-          source_dir: str = Source,
+def parse(doc: Document = Document(),
+          source_dir: Source = Source(),
           elements: list = Config("xml_parser.elements"),
           skip: list = Config("xml_parser.skip"),
           header_elements: list = Config("xml_parser.header_elements"),

@@ -1358,7 +1358,7 @@ saldo_to_parole = dict((saldotag, set(suc_to_parole[suctag] for suctag in suctag
 saldo_to_granska = dict((saldotag, set().union(*(suc_to_granska[suctag] for suctag in suctags)))
                         for saldotag, suctags in list(saldo_to_suc.items()))
 
-saldo_to_saldo = dict((saldotag, set([saldotag])) for saldotag in saldo_tags)
+saldo_to_saldo = dict((saldotag, {saldotag}) for saldotag in saldo_tags)
 
 
 def lag18002pos(tag):

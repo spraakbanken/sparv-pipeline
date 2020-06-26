@@ -1,13 +1,10 @@
 """Example for a custom annotator."""
 
-from typing import Optional
-
-from sparv import Annotation, Document, Output, annotator, util
+from sparv import Annotation, Output, annotator
 
 
 @annotator("Convert every word to uppercase.")
-def uppercase(doc: str = Document,
-              word: str = Annotation("<token:word>"),
-              out: str = Output("<token>:custom.convert.upper")):
-    """Add prefix and/or suffix to annotation."""
-    util.write_annotation(doc, out, [val.upper() for val in util.read_annotation(doc, word)])
+def uppercase(word: Annotation = Annotation("<token:word>"),
+              out: Output = Output("<token>:custom.convert.upper")):
+    """Convert to uppercase."""
+    out.write([val.upper() for val in word.read()])

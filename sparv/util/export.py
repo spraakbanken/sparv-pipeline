@@ -5,20 +5,29 @@ import xml.etree.ElementTree as etree
 from collections import defaultdict
 from copy import deepcopy
 from itertools import combinations
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Set, Tuple, Union
 
+from sparv.util.classes import ExportAnnotations, Annotation, AnnotationAllDocs, ExportAnnotationsAllDocs
 from sparv.util import corpus, misc, parent
 
 log = logging.getLogger(__name__)
 
 
-def gather_annotations(doc: str, annotations, export_names, flatten: bool = True, split_overlaps: bool = False,
-                       header_annotations=None):
+def gather_annotations(annotations: List[Annotation],
+                       export_names,
+                       header_annotations=None,
+                       doc: Optional[str] = None,
+                       flatten: bool = True,
+                       split_overlaps: bool = False):
     """Calculate the span hierarchy and the annotation_dict containing all annotation elements and attributes.
 
-    - doc: the name of the document
-    - annotations: list of annotations to include
-    - annotation_names: dictionary that maps from annotation names to export names
+    Args:
+        annotations: List of annotations to include
+        export_names: Dictionary that maps from annotation names to export names
+        header_annotations:
+        doc: The document name
+        flatten:
+        split_overlaps:
     """
     class Span:
         """Object to store span information."""
@@ -98,24 +107,18 @@ def gather_annotations(doc: str, annotations, export_names, flatten: bool = True
     annotation_dict = defaultdict(dict)
     spans_list = []
     for annots, is_header in ((annotations, False), (header_annotations, True)):
-        for annotation_pointer in annots:
-            span_name, attr = corpus.split_annotation(annotation_pointer)
-            if span_name not in annotation_dict:
-                annotation_dict[span_name] = {}  # span_name needs to be in the dictionary
-                try:
-                    for i, s in enumerate(corpus.read_annotation_spans(doc, span_name, decimals=True)):
-                        spans_list.append(Span(span_name, i, s[0], s[1], export_names, is_header))
-                except FileNotFoundError:
-                    log.info("Element %s not present in %s. Skipping." % (span_name, doc))
+        for annotation in sorted(annots):
+            base_name, attr = annotation.split()
+            if not attr:
+                annotation_dict[base_name] = {}
+                for i, s in enumerate(annotation.read_spans(decimals=True)):
+                    spans_list.append(Span(base_name, i, s[0], s[1], export_names, is_header))
             # TODO: assemble all attrs first and use read_annotation_attributes
-            if attr and not annotation_dict[span_name].get(attr):
-                try:
-                    annotation_dict[span_name][attr] = list(corpus.read_annotation(doc, annotation_pointer))
-                except FileNotFoundError:
-                    log.info("Attribute %s not present in %s. Skipping." % (annotation_pointer, doc))
+            if attr and not annotation_dict[base_name].get(attr):
+                annotation_dict[base_name][attr] = list(annotation.read())
             elif is_header:
-                annotation_dict[span_name][corpus.HEADER_CONTENT] = list(
-                    corpus.read_annotation(doc, f"{span_name}:{corpus.HEADER_CONTENT}", allow_newlines=True))
+                annotation_dict[base_name][corpus.HEADER_CONTENT] = list(
+                    corpus.read_annotation(doc, f"{base_name}:{corpus.HEADER_CONTENT}", allow_newlines=True))
 
     # Calculate hierarchy (if needed) and sort the span objects
     elem_hierarchy = calculate_element_hierarchy(doc, spans_list)
@@ -242,73 +245,112 @@ def calculate_element_hierarchy(doc, spans_list):
     return hierarchy
 
 
-def get_annotation_names(doc: Union[str, List[str]], token_name: Optional[str], annotations: List[str],
-                         original_annotations=None, remove_namespaces=False, keep_struct_refs=False):
-    """Get a list of annotations, token annotations and a dictionary for renamed annotations.
+def get_available_source_annotations(doc: Optional[str] = None, docs: Optional[List[str]] = None) -> Set[str]:
+    """Get the set of available annotations generated from the source, either for a single document or multiple."""
+    assert doc or docs, "Either 'doc' or 'docs' must be provided"
+    available_source_annotations = set()
+    if docs:
+        for d in docs:
+            available_source_annotations.update(corpus.read_data(d, corpus.STRUCTURE_FILE).split())
+    else:
+        available_source_annotations.update(corpus.read_data(doc, corpus.STRUCTURE_FILE).split())
 
-    remove_namespaces: remove all namespaces in export_names unless names are ambiguous.
-    keep_struct_refs: for structural attributes, include everything before ":" in export_names (used in cwb encode)
+    return available_source_annotations
+
+
+def get_source_annotations(source_annotation_names: Optional[List[str]], doc: Optional[str] = None,
+                           docs: Optional[List[str]] = None):
+    """Given a list of source annotation names (and possible export names), return a list of annotation objects.
+
+    If no names are provided all available source annotations will be returnd.
     """
-    # Combine annotations and original_annotations
-    annotations = misc.split_tuples_list(annotations)
-    original_annotations = misc.split_tuples_list(original_annotations)
-    available_original_annotations = set()
+    # Get list of available source annotation names
+    available_source_annotations = get_available_source_annotations(doc, docs)
 
-    # Get list of available original annotations from STRUCTURE_FILE
-    if isinstance(doc, list):
-        for d in doc:
-            available_original_annotations.update(corpus.read_data(d, corpus.STRUCTURE_FILE).split())
-    else:
-        available_original_annotations.update(corpus.read_data(doc, corpus.STRUCTURE_FILE).split())
+    # Parse list
+    annotation_names = misc.parse_annotation_list(source_annotation_names)
 
-    if not original_annotations:
+    if not annotation_names:
         # Include all available annotations from source
-        original_annotations = [(a, None) for a in available_original_annotations]
+        source_annotations = [(Annotation(a, doc) if doc else AnnotationAllDocs(a), None) for a in
+                              available_source_annotations]
     else:
-        # Make sure original_annotations doesn't include annotations not in source
-        original_annotations = [a for a in original_annotations if a[0] in available_original_annotations]
+        # Make sure source_annotations doesn't include annotations not in source
+        source_annotations = [(Annotation(a[0], doc) if doc else AnnotationAllDocs(a[0]), a[1]) for a in
+                              annotation_names if a[0] in available_source_annotations]
 
-    annotations.extend(original_annotations)
+    return source_annotations
 
-    # Add plain annotations (non-attribute annotations) to annotations if user has not done that
-    plain_annots = [a for a, _ in annotations if ":" not in a]
-    for a, _name in annotations:
-        plain_annot = corpus.split_annotation(a)[0]
-        if (plain_annot not in plain_annots) and ((plain_annot, None) not in annotations):
-            annotations.append((plain_annot, None))
+
+def get_annotation_names(annotations: Union[ExportAnnotations, ExportAnnotationsAllDocs],
+                         source_annotations=None,
+                         doc: Optional[str] = None, docs: Optional[List[str]] = None,
+                         token_name: Optional[str] = None,
+                         remove_namespaces=False, keep_struct_names=False):
+    """Get a list of annotations, token attributes and a dictionary for renamed annotations.
+
+    Args:
+        annotations:
+        source_annotations:
+        doc:
+        docs:
+        token_name:
+        remove_namespaces: Remove all namespaces in export_names unless names are ambiguous.
+        keep_struct_names: For structural attributes (anything other than token), include the annotation base name
+            (everything before ":") in export_names (used in cwb encode).
+
+    Returns:
+        A list of annotations, a list of token attribute names, a dictionary with translation from annotation names to
+        export names.
+    """
+    # Get source annotations
+    source_annotations = get_source_annotations(source_annotations, doc, docs)
+
+    # Combine all annotations
+    all_annotations = annotations + source_annotations
 
     if token_name:
-        # Get the names of all token annotations (but not token itself)
-        token_annotations = [corpus.split_annotation(i[0])[1] for i in annotations
-                             if corpus.split_annotation(i[0])[0] == token_name and i[0] != token_name]
+        # Get the names of all token attributes
+        token_attributes = [a[0].attribute_name() for a in all_annotations
+                            if a[0].annotation_name() == token_name and a[0].name != token_name]
     else:
-        token_annotations = []
+        token_attributes = []
 
-    export_names = _create_export_names(annotations, token_name, remove_namespaces, keep_struct_refs, original_annotations)
+    export_names = _create_export_names(all_annotations, token_name, remove_namespaces, keep_struct_names,
+                                        source_annotations)
 
-    return [i[0] for i in annotations], token_annotations, export_names
+    return [i[0] for i in all_annotations], token_attributes, export_names
 
 
-def get_header_names(doc: Union[str, List[str]], header_annotations):
+def get_header_names(header_annotation_names: Optional[List[str]],
+                     doc: Optional[str] = None,
+                     docs: Optional[List[str]] = None):
     """Get a list of header annotations and a dictionary for renamed annotations."""
-    header_annotations = misc.split_tuples_list(header_annotations)
-    if not header_annotations:
-        # Get header_annotations from HEADERS_FILE if it exists
-        if isinstance(doc, list):
-            header_annotations = []
-            for d in doc:
+    annotation_names = misc.parse_annotation_list(header_annotation_names)
+    if not annotation_names:
+        # Get header_annotation_names from HEADERS_FILE if it exists
+        if docs:
+            annotation_names = []
+            for d in docs:
                 if corpus.data_exists(d, corpus.HEADERS_FILE):
-                    header_annotations.extend(misc.split_tuples_list(corpus.read_data(d, corpus.HEADERS_FILE)))
+                    annotation_names.extend(
+                        misc.parse_annotation_list(corpus.read_data(d, corpus.HEADERS_FILE).splitlines()))
         elif corpus.data_exists(doc, corpus.HEADERS_FILE):
-            header_annotations = misc.split_tuples_list(corpus.read_data(doc, corpus.HEADERS_FILE))
+            annotation_names = misc.parse_annotation_list(corpus.read_data(doc, corpus.HEADERS_FILE).splitlines())
 
-    export_names = _create_export_names(header_annotations, None, False, keep_struct_refs=False)
+    header_annotations = [(Annotation(a[0], doc) if doc else AnnotationAllDocs(a[0]), a[1]) for a in
+                          annotation_names]
+
+    export_names = _create_export_names(header_annotations, None, False, keep_struct_names=False)
 
     return [a[0] for a in header_annotations], export_names
 
 
-def _create_export_names(annotations, token_name, remove_namespaces: bool, keep_struct_refs: bool,
-                         original_annotations: list = []):
+def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAllDocs], Any]],
+                         token_name: Optional[str],
+                         remove_namespaces: bool,
+                         keep_struct_names: bool,
+                         source_annotations: list = []):
     """Create dictionary for renamed annotations."""
     if remove_namespaces:
         def shorten(_name):
@@ -328,47 +370,54 @@ def _create_export_names(annotations, token_name, remove_namespaces: bool, keep_
         # Create short names dictionary and count
         short_names_count = defaultdict(int)
         short_names = {}
-        for name, new_name in annotations:
+        for annotation, new_name in annotations:
+            name = annotation.name
             # Don't remove namespaces from elements and attributes contained in the original documents
-            if (name, new_name) in original_annotations:
+            if (annotation, new_name) in source_annotations:
                 short_name = name
             else:
                 short_name = shorten(name)
             if new_name:
                 if ":" in name:
-                    short_name = corpus.join_annotation(corpus.split_annotation(name)[0], new_name)
+                    # Combine new attribute name with base annotation name
+                    short_name = corpus.join_annotation(annotation.annotation_name(), new_name)
                 else:
                     short_name = new_name
             short_names_count[short_name] += 1
-            short_names[name] = short_name.split(":")[-1]
+            base, attr = corpus.split_annotation(short_name)
+            short_names[name] = attr or base
 
         export_names = {}
-        for name, new_name in sorted(annotations):
+        for annotation, new_name in sorted(annotations):
+            name = annotation.name
             if not new_name:
                 # Only use short name if it's unique
                 if "." in name and short_names_count[shorten(name)] == 1:
                     new_name = short_names[name]
                 else:
-                    new_name = name.split(":")[-1]
+                    base, attr = corpus.split_annotation(name)
+                    new_name = attr or base
 
-            if keep_struct_refs:
-                # Keep reference (the part before ":") if this is not a token attribute
+            if keep_struct_names:
+                # Keep annotation base name (the part before ":") if this is not a token attribute
                 if ":" in name and not name.startswith(token_name):
-                    ref, _ = corpus.split_annotation(name)
-                    new_name = corpus.join_annotation(export_names.get(ref, ref), new_name)
+                    base_name = annotation.annotation_name()
+                    new_name = corpus.join_annotation(export_names.get(base_name, base_name), new_name)
             export_names[name] = new_name
     else:
-        if keep_struct_refs:
+        if keep_struct_names:
             export_names = {}
-            for name, new_name in sorted(annotations):
+            for annotation, new_name in sorted(annotations):
+                name = annotation.name
                 if not new_name:
-                    new_name = name.split(":")[-1]
+                    base, attr = corpus.split_annotation(name)
+                    new_name = attr or base
                 if ":" in name and not name.startswith(token_name):
-                    ref, _ = corpus.split_annotation(name)
-                    new_name = corpus.join_annotation(export_names.get(ref, ref), new_name)
+                    base_name = annotation.annotation_name()
+                    new_name = corpus.join_annotation(export_names.get(base_name, base_name), new_name)
                 export_names[name] = new_name
         else:
-            export_names = {name: new_name for name, new_name in annotations if new_name}
+            export_names = {annotation.name: new_name for annotation, new_name in annotations if new_name}
     return export_names
 
 
@@ -377,10 +426,10 @@ def _create_export_names(annotations, token_name, remove_namespaces: bool, keep_
 ################################################################################
 
 
-def scramble_spans(span_positions, chunk, chunk_order):
+def scramble_spans(span_positions, chunk_name: str, chunk_order):
     """Reorder chunks and open/close tags in correct order."""
-    new_s_order = _reorder_spans(span_positions, chunk, chunk_order)
-    _fix_parents(new_s_order, chunk)
+    new_s_order = _reorder_spans(span_positions, chunk_name, chunk_order)
+    _fix_parents(new_s_order, chunk_name)
 
     # Reformat span positions
     new_span_positions = [v for k, v in sorted(new_s_order.items())]  # Sort dict into list
@@ -390,7 +439,7 @@ def scramble_spans(span_positions, chunk, chunk_order):
     return new_span_positions
 
 
-def _reorder_spans(span_positions, chunk_name, chunk_order):
+def _reorder_spans(span_positions, chunk_name: str, chunk_order):
     """Scramble chunks according to the chunk_order."""
     new_s_order = defaultdict(list)
     parent_stack = []

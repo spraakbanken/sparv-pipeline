@@ -33,7 +33,8 @@ setuptools.setup(
         "nltk==3.5",
         "python-dateutil==2.8.1",
         "PyYAML==5.3.1",
-        "snakemake==5.15.0"
+        "snakemake==5.15.0",
+        "typing-inspect==0.6.0"
     ],
     entry_points={
         "console_scripts": [

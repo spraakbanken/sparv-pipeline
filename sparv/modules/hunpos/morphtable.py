@@ -8,9 +8,9 @@ from sparv.modules.saldo import saldo
 
 
 @modelbuilder("Hunpos morphtable input files", language=["swe"])
-def morphtable_inputs(suc: str = ModelOutput("hunpos/suc3_morphtable.words"),
-                      morphtable_base: str = ModelOutput("hunpos/suc.morphtable"),
-                      morphtable_patterns: str = ModelOutput("hunpos/suc.patterns")):
+def morphtable_inputs(suc: ModelOutput = ModelOutput("hunpos/suc3_morphtable.words"),
+                      morphtable_base: ModelOutput = ModelOutput("hunpos/suc.morphtable"),
+                      morphtable_patterns: ModelOutput = ModelOutput("hunpos/suc.patterns")):
     """Download the files needed to build the SALDO morphtable."""
     util.download_model(
         "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc3_morphtable.words",
@@ -26,11 +26,11 @@ def morphtable_inputs(suc: str = ModelOutput("hunpos/suc3_morphtable.words"),
 
 
 @modelbuilder("Hunpos-SALDO morphtable", language=["swe"])
-def saldo_morphtable(out: str = ModelOutput("hunpos/saldo_suc-tags.morphtable"),
-                     saldo_model: str = Model("saldo/saldo.pickle"),
-                     suc: str = Model("hunpos/suc3_morphtable.words"),
-                     morphtable_base: str = Model("hunpos/suc.morphtable"),
-                     morphtable_patterns: str = Model("hunpos/suc.patterns"),
+def saldo_morphtable(out: ModelOutput = ModelOutput("hunpos/saldo_suc-tags.morphtable"),
+                     saldo_model: Model = Model("saldo/saldo.pickle"),
+                     suc: Model = Model("hunpos/suc3_morphtable.words"),
+                     morphtable_base: Model = Model("hunpos/suc.morphtable"),
+                     morphtable_patterns: Model = Model("hunpos/suc.patterns"),
                      add_capitalized: bool = True,
                      add_lowercase: bool = False):
     """Create a morphtable file for use with Hunpos.
@@ -53,7 +53,7 @@ def saldo_morphtable(out: str = ModelOutput("hunpos/saldo_suc-tags.morphtable"),
         add_capitalized (bool, optional): Whether or not capitalized word forms should be added. Defaults to True.
         add_lowercase (bool, optional): Whether or not lower case word forms should be added. Defaults to False.
     """
-    lex = saldo.SaldoLexicon(saldo_model)
+    lex = saldo.SaldoLexicon(saldo_model.path)
     tags = defaultdict(set)
 
     # Get all wordforms from SALDO
@@ -79,7 +79,7 @@ def saldo_morphtable(out: str = ModelOutput("hunpos/saldo_suc-tags.morphtable"),
                                 tags[lower].add(msd)
 
     # Read SUC words
-    with open(suc, encoding="UTF-8") as suctags:
+    with open(suc.path, encoding="UTF-8") as suctags:
         for line in suctags:
             _, word, msd = line.strip("\n").split("\t")
 
@@ -93,15 +93,15 @@ def saldo_morphtable(out: str = ModelOutput("hunpos/saldo_suc-tags.morphtable"),
     # Read regular expressions from pattern file
     pattern_list = []
     if morphtable_patterns:
-        with open(morphtable_patterns, mode="r", encoding="UTF-8") as pat:
+        with open(morphtable_patterns.path, encoding="UTF-8") as pat:
             for line in pat:
                 if line.strip() and not line.startswith("#"):
                     pattern_name, _, pattern_tags = line.strip().split("\t", 2)
                     pattern_list.append("[[%s]]\t%s\n" % (pattern_name, pattern_tags))
 
-    with open(out, encoding="UTF-8", mode="w") as out:
+    with open(out.path, encoding="UTF-8", mode="w") as out:
         if morphtable_base:
-            with open(morphtable_base, encoding="UTF-8") as base:
+            with open(morphtable_base.path, encoding="UTF-8") as base:
                 for line in base:
                     out.write(line)
 

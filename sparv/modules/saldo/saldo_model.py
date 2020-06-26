@@ -1,6 +1,7 @@
 """SALDO Model builders."""
 
 import logging
+import pathlib
 import pickle
 import re
 import xml.etree.ElementTree as etree
@@ -18,16 +19,16 @@ PART_DELIM3 = "^3"
 
 
 @modelbuilder("SALDO morphology XML", language=["swe"])
-def download_saldo(out: str = ModelOutput("saldo/saldom.xml")):
+def download_saldo(out: ModelOutput = ModelOutput("saldo/saldom.xml")):
     """Download SALDO morphology XML."""
     util.download_model("https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/saldom/saldom.xml", out)
 
 
 @modelbuilder("SALDO morphology model", language=["swe"])
-def build_saldo(out: str = ModelOutput("saldo/saldo.pickle"),
-                saldom: str = Model("saldo/saldom.xml")):
+def build_saldo(out: ModelOutput = ModelOutput("saldo/saldo.pickle"),
+                saldom: Model = Model("saldo/saldom.xml")):
     """Save SALDO morphology as a pickle file."""
-    lmf_to_pickle(saldom, out)
+    lmf_to_pickle(saldom.path, out.path)
 
 
 class SaldoLexicon(object):
@@ -36,11 +37,11 @@ class SaldoLexicon(object):
     It is initialized from a Pickled file, or a space-separated text file.
     """
 
-    def __init__(self, saldofile, verbose=True):
+    def __init__(self, saldofile: pathlib.Path, verbose=True):
         """Read lexicon."""
         if verbose:
             log.info("Reading Saldo lexicon: %s", saldofile)
-        if saldofile.endswith(".pickle"):
+        if saldofile.suffix == ".pickle":
             with open(saldofile, "rb") as F:
                 self.lexicon = pickle.load(F)
         else:

@@ -3,7 +3,7 @@
 import logging
 
 import sparv.util as util
-from sparv import Annotation, Binary, Document, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv import Annotation, Binary, Model, ModelOutput, Output, annotator, modelbuilder
 
 log = logging.getLogger(__name__)
 
@@ -11,18 +11,18 @@ SENT_SEP = "$SENT$"
 
 
 @annotator("Word sense disambiguation", language=["swe"])
-def annotate(doc: str = Document,
-             wsdjar: str = Binary("[wsd.jar=wsd/saldowsd.jar]"),
-             sense_model: str = Model("[wsd.sense_model=wsd/ALL_512_128_w10_A2_140403_ctx1.bin]"),
-             context_model: str = Model("[wsd.context_model=wsd/lem_cbow0_s512_w10_NEW2_ctx.bin]"),
-             out: str = Output("<token>:wsd.sense", cls="token:sense", description="Sense disambiguated SALDO identifiers"),
-             sentence: str = Annotation("<sentence>"),
-             word: str = Annotation("<token:word>"),
-             ref: str = Annotation("<token>:misc.number_rel_<sentence>"),
-             lemgram: str = Annotation("<token>:saldo.lemgram"),
-             saldo: str = Annotation("<token>:saldo.sense"),
-             pos: str = Annotation("<token:pos>"),
-             token: str = Annotation("<token>"),
+def annotate(wsdjar: Binary = Binary("[wsd.jar=wsd/saldowsd.jar]"),
+             sense_model: Model = Model("[wsd.sense_model=wsd/ALL_512_128_w10_A2_140403_ctx1.bin]"),
+             context_model: Model = Model("[wsd.context_model=wsd/lem_cbow0_s512_w10_NEW2_ctx.bin]"),
+             out: Output = Output("<token>:wsd.sense", cls="token:sense",
+                                  description="Sense disambiguated SALDO identifiers"),
+             sentence: Annotation = Annotation("<sentence>"),
+             word: Annotation = Annotation("<token:word>"),
+             ref: Annotation = Annotation("<token>:misc.number_rel_<sentence>"),
+             lemgram: Annotation = Annotation("<token>:saldo.lemgram"),
+             saldo: Annotation = Annotation("<token>:saldo.sense"),
+             pos: Annotation = Annotation("<token:pos>"),
+             token: Annotation = Annotation("<token>"),
              sensefmt: str = util.SCORESEP + "%.3f",
              default_prob: float = -1.0,
              encoding: str = util.UTF8):
@@ -40,17 +40,17 @@ def annotate(doc: str = Document,
       - sensefmt is a format string for how to print the sense and its probability
       - default_prob is the default value for unanalyzed senses
     """
-    word_annotation = list(util.read_annotation(doc, word))
-    ref_annotation = list(util.read_annotation(doc, ref))
-    lemgram_annotation = list(util.read_annotation(doc, lemgram))
-    saldo_annotation = list(util.read_annotation(doc, saldo))
-    pos_annotation = list(util.read_annotation(doc, pos))
+    word_annotation = list(word.read())
+    ref_annotation = list(ref.read())
+    lemgram_annotation = list(lemgram.read())
+    saldo_annotation = list(saldo.read())
+    pos_annotation = list(pos.read())
 
-    sentences, orphans = util.get_children(doc, sentence, token)
+    sentences, orphans = sentence.get_children(token)
     sentences.append(orphans)
 
     # Start WSD process
-    process = wsd_start(wsdjar, sense_model, context_model, encoding)
+    process = wsd_start(wsdjar, sense_model.path, context_model.path, encoding)
 
     # Construct input and send to WSD
     stdin = build_input(sentences, word_annotation, ref_annotation, lemgram_annotation, saldo_annotation,
@@ -70,7 +70,7 @@ def annotate(doc: str = Document,
     if encoding:
         stdout = stdout.decode(encoding)
 
-    process_output(doc, word, out, stdout, sentences, saldo_annotation, sensefmt, default_prob)
+    process_output(word, out, stdout, sentences, saldo_annotation, sensefmt, default_prob)
 
     # Kill running subprocess
     util.system.kill_process(process)
@@ -78,8 +78,8 @@ def annotate(doc: str = Document,
 
 
 @modelbuilder("WSD models", language=["swe"])
-def build_model(sense_model: str = ModelOutput("wsd/ALL_512_128_w10_A2_140403_ctx1.bin"),
-                context_model: str = ModelOutput("wsd/lem_cbow0_s512_w10_NEW2_ctx.bin")):
+def build_model(sense_model: ModelOutput = ModelOutput("wsd/ALL_512_128_w10_A2_140403_ctx1.bin"),
+                context_model: ModelOutput = ModelOutput("wsd/lem_cbow0_s512_w10_NEW2_ctx.bin")):
     """Download models for SALDO-based word sense disambiguation."""
     # Download sense model
     util.download_model(
@@ -104,9 +104,7 @@ def wsd_start(wsdjar, sense_model, context_model, encoding):
                 ("-contextWidth", "10"),
                 ("-verbose", "false")]
 
-    process = util.system.call_java(wsdjar, wsd_args, options=java_opts,
-                                    stdin="", encoding=encoding,
-                                    return_command=True)
+    process = util.system.call_java(wsdjar, wsd_args, options=java_opts, encoding=encoding, return_command=True)
     return process
 
 
@@ -137,9 +135,9 @@ def build_input(sentences, word_annotation, ref_annotation, lemgram_annotation, 
     return "\n".join(rows)
 
 
-def process_output(doc, word, out, stdout, in_sentences, saldo_annotation, sensefmt, default_prob):
+def process_output(word: Annotation, out: Output, stdout, in_sentences, saldo_annotation, sensefmt, default_prob):
     """Parse WSD output and write annotation."""
-    out_annotation = util.create_empty_attribute(doc, word)
+    out_annotation = word.create_empty_attribute()
 
     # Split output into sentences
     out_sentences = stdout.strip()
@@ -170,7 +168,7 @@ def process_output(doc, word, out, stdout, in_sentences, saldo_annotation, sense
             new_saldo = sorted(new_saldo, key=lambda x: float(x.split(":")[-1]), reverse=True)
             out_annotation[in_tok] = util.cwbset(new_saldo)
 
-    util.write_annotation(doc, out, out_annotation)
+    out.write(out_annotation)
 
 
 def make_lemgram(lemgram, word, pos):

@@ -34,7 +34,8 @@ parameters = snakemake.params.parameters
 
 log.setup_logging(verbose=snakemake.params.log)
 logger = logging.getLogger("sparv")
-logger.info("RUN: %s(%s)", f_name, ", ".join("%s=%s" % (i[0], repr(i[1])) for i in list(parameters.items())))
+logger.info("RUN: %s:%s(%s)", module_name, f_name, ", ".join("%s=%s" % (i[0], repr(i[1])) for i in
+                                                             list(parameters.items())))
 
 # Execute function
 try:

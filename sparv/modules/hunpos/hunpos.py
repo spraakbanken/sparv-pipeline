@@ -3,7 +3,7 @@
 import re
 
 import sparv.util as util
-from sparv import Annotation, Config, Document, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv import Annotation, Config, Model, ModelOutput, Output, annotator, modelbuilder
 
 SENT_SEP = "\n\n"
 TOK_SEP = "\n"
@@ -16,13 +16,13 @@ TAG_COLUMN = 1
            Config("hunpos.morphtable", default="hunpos/saldo_suc-tags.morphtable"),
            Config("hunpos.patterns", default="hunpos/suc.patterns")
            ])
-def msdtag(doc: str = Document,
-           out: str = Output("<token>:hunpos.msd", cls="token:msd", description="Part-of-speeches with morphological descriptions"),
-           word: str = Annotation("<token:word>"),
-           sentence: str = Annotation("<sentence>"),
-           model: str = Model("[hunpos.model]"),
-           morphtable: str = Model("[hunpos.morphtable]"),
-           patterns: str = Model("[hunpos.patterns]"),
+def msdtag(out: Output = Output("<token>:hunpos.msd", cls="token:msd",
+                                description="Part-of-speeches with morphological descriptions"),
+           word: Annotation = Annotation("<token:word>"),
+           sentence: Annotation = Annotation("<sentence>"),
+           model: Model = Model("[hunpos.model]"),
+           morphtable: Model = Model("[hunpos.morphtable]"),
+           patterns: Model = Model("[hunpos.patterns]"),
            tag_mapping=None,
            encoding: str = util.UTF8):
     """POS/MSD tag using the Hunpos tagger."""
@@ -34,7 +34,7 @@ def msdtag(doc: str = Document,
     pattern_list = []
 
     if patterns:
-        with open(patterns, mode="r", encoding="utf-8") as pat:
+        with open(patterns.path, encoding="utf-8") as pat:
             for line in pat:
                 if line.strip() and not line.startswith("#"):
                     name, pattern, tags = line.strip().split("\t", 2)
@@ -47,50 +47,48 @@ def msdtag(doc: str = Document,
                 return "[[%s]]" % p[0]
         return w
 
-    sentences, _orphans = util.parent.get_children(doc, sentence, word)
-    token_word = list(util.read_annotation(doc, word))
+    sentences, _orphans = util.parent.get_children(sentence.doc, sentence, word)
+    token_word = list(word.read())
     stdin = SENT_SEP.join(TOK_SEP.join(replace_word(token_word[token_index]) for token_index in sent)
                           for sent in sentences)
-    args = [model]
+    args = [model.path]
     if morphtable:
-        args.extend(["-m", morphtable])
+        args.extend(["-m", morphtable.path])
     stdout, _ = util.system.call_binary("hunpos-tag", args, stdin, encoding=encoding)
 
-    out_annotation = util.create_empty_attribute(doc, word)
+    out_annotation = word.create_empty_attribute()
     for sent, tagged_sent in zip(sentences, stdout.strip().split(SENT_SEP)):
         for token_index, tagged_token in zip(sent, tagged_sent.strip().split(TOK_SEP)):
             tag = tagged_token.strip().split(TAG_SEP)[TAG_COLUMN]
             tag = tag_mapping.get(tag, tag)
             out_annotation[token_index] = tag
 
-    util.write_annotation(doc, out, out_annotation)
+    out.write(out_annotation)
 
 
 @annotator("Extract POS from MSD", language=["swe"])
-def postag(doc: str = Document,
-           out: str = Output("<token>:hunpos.pos", cls="token:pos", description="Part-of-speech tags"),
-           msd: str = Annotation("<token>:hunpos.msd")):
+def postag(out: Output = Output("<token>:hunpos.pos", cls="token:pos", description="Part-of-speech tags"),
+           msd: Annotation = Annotation("<token>:hunpos.msd")):
     """Extract POS from MSD."""
     from sparv.modules.misc import misc
-    misc.select(doc, out, msd, index=0, separator=".")
+    misc.select(out, msd, index=0, separator=".")
 
 
 @annotator("Convert hunpos SUC tags to UPOS", language=["swe"])
-def upostag(doc: str = Document,
-            out: str = Output("<token>:hunpos.upos", cls="token:upos", description="Part-of-speeches in UD"),
-            pos: str = Annotation("<token>:hunpos.pos")):
+def upostag(out: Output = Output("<token>:hunpos.upos", cls="token:upos", description="Part-of-speeches in UD"),
+            pos: Annotation = Annotation("<token>:hunpos.pos")):
     """Convert hunpos SUC tags to UPOS."""
-    pos_tags = util.read_annotation(doc, pos)
+    pos_tags = pos.read()
     out_annotation = []
 
     for tag in pos_tags:
         out_annotation.append(util.convert_to_upos(tag, "swe", "SUC"))
 
-    util.write_annotation(doc, out, out_annotation)
+    out.write(out_annotation)
 
 
 @modelbuilder("Hunpos model", language=["swe"])
-def hunpos_model(model: str = ModelOutput("hunpos/suc3_suc-tags_default-setting_utf8.model")):
+def hunpos_model(model: ModelOutput = ModelOutput("hunpos/suc3_suc-tags_default-setting_utf8.model")):
     """Download the Hunpos model."""
     util.download_model(
         "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc3_suc-tags_default-setting_utf8.model",

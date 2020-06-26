@@ -4,18 +4,17 @@ import logging
 from typing import List
 
 import sparv.util as util
-from sparv import Annotation, Document, Model, Output, annotator
+from sparv import Annotation, Model, Output, annotator
 
 log = logging.getLogger(__name__)
 
 
 @annotator("Annotate tokens with Blingbring classes", language=["swe"])
-def blingbring_words(doc: str = Document,
-                     out: str = Output("<token>:lexical_classes.blingbring",
-                                       description="Lexical classes for tokens from Blingbring"),
-                     model: str = Model("[lexical_classes.bb_word_model=lexical_classes/blingbring.pickle]"),
-                     saldoids: str = Annotation("<token:sense>"),
-                     pos: str = Annotation("<token:pos>"),
+def blingbring_words(out: Output = Output("<token>:lexical_classes.blingbring",
+                                          description="Lexical classes for tokens from Blingbring"),
+                     model: Model = Model("[lexical_classes.bb_word_model=lexical_classes/blingbring.pickle]"),
+                     saldoids: Annotation = Annotation("<token:sense>"),
+                     pos: Annotation = Annotation("<token:pos>"),
                      pos_limit: List[str] = ["NN", "VB", "JJ", "AB"],
                      class_set: str = "bring",
                      disambiguate: bool = True,
@@ -44,17 +43,17 @@ def blingbring_words(doc: str = Document,
                     rogetid = rogetid.union(lexicon.lookup(sid, default=dict()).get(class_set, set()))
         return sorted(rogetid)
 
-    annotate_words(doc, out, model, saldoids, pos, annotate_bring, pos_limit=pos_limit, disambiguate=disambiguate,
+    annotate_words(out, model, saldoids, pos, annotate_bring, pos_limit=pos_limit, disambiguate=disambiguate,
                    class_set=class_set, connect_ids=connect_ids, delimiter=delimiter, affix=affix, scoresep=scoresep,
                    lexicon=lexicon)
 
 
 @annotator("Annotate tokens with Blingbring classes", language=["swe"])
-def swefn_words(doc: str = Document,
-                out: str = Output("<token>:lexical_classes.swefn", description="Lexical classes for tokens from SweFN"),
-                model: str = Model("[lexical_classes.swefn_word_model=lexical_classes/swefn.pickle]"),
-                saldoids: str = Annotation("<token:sense>"),
-                pos: str = Annotation("<token:pos>"),
+def swefn_words(out: Output = Output("<token>:lexical_classes.swefn",
+                                     description="Lexical classes for tokens from SweFN"),
+                model: Model = Model("[lexical_classes.swefn_word_model=lexical_classes/swefn.pickle]"),
+                saldoids: Annotation = Annotation("<token:sense>"),
+                pos: Annotation = Annotation("<token:pos>"),
                 pos_limit: List[str] = ["NN", "VB", "JJ", "AB"],
                 disambiguate: bool = True,
                 connect_ids: bool = False,
@@ -77,11 +76,11 @@ def swefn_words(doc: str = Document,
                     swefnid = swefnid.union(lexicon.lookup(sid, default=set()))
         return sorted(swefnid)
 
-    annotate_words(doc, out, model, saldoids, pos, annotate_swefn, pos_limit=pos_limit, disambiguate=disambiguate,
+    annotate_words(out, model, saldoids, pos, annotate_swefn, pos_limit=pos_limit, disambiguate=disambiguate,
                    connect_ids=connect_ids, delimiter=delimiter, affix=affix, scoresep=scoresep, lexicon=lexicon)
 
 
-def annotate_words(doc, out, model, saldoids, pos, annotate, pos_limit, class_set=None, disambiguate=True,
+def annotate_words(out, model: Model, saldoids, pos, annotate, pos_limit, class_set=None, disambiguate=True,
                    connect_ids=False, delimiter=util.DELIM, affix=util.AFFIX, scoresep=util.SCORESEP, lexicon=None):
     """
     Annotate words with blingbring classes (rogetID).
@@ -104,12 +103,12 @@ def annotate_words(doc, out, model, saldoids, pos, annotate, pos_limit, class_se
       but is used in the catapult. This argument must be last.
     """
     if not lexicon:
-        lexicon = util.PickledLexicon(model)
+        lexicon = util.PickledLexicon(model.path)
     # Otherwise use pre-loaded lexicon (from catapult)
 
-    sense = util.read_annotation(doc, saldoids)
-    token_pos = list(util.read_annotation(doc, pos))
-    out_annotation = util.create_empty_attribute(doc, token_pos)
+    sense = saldoids.read()
+    token_pos = list(pos.read())
+    out_annotation = util.create_empty_attribute(token_pos)
 
     # Check if the saldo IDs are ranked (= word senses have been disambiguated)
     wsd = util.split_annotation(saldoids)[1].split(".")[0] == "wsd"
@@ -147,7 +146,7 @@ def annotate_words(doc, out, model, saldoids, pos, annotate, pos_limit, class_se
 
         result = annotate(saldo_ids, lexicon, connect_ids, scoresep)
         out_annotation[token_index] = util.cwbset(result, delimiter, affix) if result else affix
-    util.write_annotation(doc, out, out_annotation)
+    out.write(out_annotation)
 
 
 def pos_ok(token_pos, token_index, pos_limit):

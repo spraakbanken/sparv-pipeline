@@ -5,7 +5,7 @@ import pickle
 import xml.etree.ElementTree as etree
 
 import sparv.util as util
-from sparv import Annotation, Document, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv import Annotation, Model, ModelOutput, Output, annotator, modelbuilder
 
 log = logging.getLogger(__name__)
 
@@ -13,21 +13,19 @@ PART_DELIM1 = "^1"
 
 
 @annotator("Diapivot annotation", language=["swe-1800"])
-def diapivot_annotate(doc: str = Document,
-                      out: str = Output("<token>:hist.diapivot", description="SALDO IDs corresponding to lemgrams"),
-                      lemgram: str = Annotation("<token>:saldo.lemgram"),
-                      model: str = Model("hist/diapivot.pickle")):
+def diapivot_annotate(out: Output = Output("<token>:hist.diapivot", description="SALDO IDs corresponding to lemgrams"),
+                      lemgram: Annotation = Annotation("<token>:saldo.lemgram"),
+                      model: Model = Model("hist/diapivot.pickle")):
     """Annotate each lemgram with its corresponding saldo_id according to model.
 
     Args:
-        doc (str, optional): Document to be annotated. Defaults to Document.
         out (str, optional): Resulting annotation file.
             Defaults to Output("<token>:hist.diapivot", description="SALDO IDs corresponding to lemgrams").
         lemgram (str, optional): Existing lemgram annotation. Defaults to Annotation("<token>:saldo.lemgram").
         model (str, optional): Crosslink model. Defaults to Model("hist/diapivot.pickle").
     """
     lexicon = PivotLexicon(model)
-    lemgram_annotation = list(util.read_annotation(doc, lemgram))
+    lemgram_annotation = list(lemgram.read())
 
     out_annotation = []
 
@@ -39,11 +37,11 @@ def diapivot_annotate(doc: str = Document,
                 saldo_ids += [s_i]
         out_annotation.append(util.AFFIX + util.DELIM.join(set(saldo_ids)) + util.AFFIX if saldo_ids else util.AFFIX)
 
-    util.write_annotation(doc, out, out_annotation)
+    out.write(out_annotation)
 
 
 @modelbuilder("Diapivot model", language=["swe"])
-def build_diapivot(out: str = ModelOutput("hist/diapivot.pickle")):
+def build_diapivot(out: ModelOutput = ModelOutput("hist/diapivot.pickle")):
     """Download diapivot XML dictionary and save as a pickle file."""
     # Download diapivot.xml
     xml_path = "hist/diapivot.xml"

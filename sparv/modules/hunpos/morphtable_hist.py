@@ -12,10 +12,10 @@ SALDO_TO_SUC["nl invar"] = {"NL.NOM"}
 
 
 @modelbuilder("Hunpos morphtable for Swedish historical resources", language=["swe"])
-def hist_morphtable(out: str = ModelOutput("hunpos/hist/dalinm-swedberg_saldo_suc-tags.morphtable"),
-                    swedberg: str = Model("hunpos/hist/swedberg-gender.hunpos"),
-                    dalin: str = Model("hunpos/hist/dalinm.hunpos"),
-                    saldosuc_morphtable: str = Model("hunpos/saldo_suc-tags.morphtable")):
+def hist_morphtable(out: ModelOutput = ModelOutput("hunpos/hist/dalinm-swedberg_saldo_suc-tags.morphtable"),
+                    swedberg: Model = Model("hunpos/hist/swedberg-gender.hunpos"),
+                    dalin: Model = Model("hunpos/hist/dalinm.hunpos"),
+                    saldosuc_morphtable: Model = Model("hunpos/saldo_suc-tags.morphtable")):
     """Read files and make a morphtable together with the information from SALDO (saldosuc_morphtable).
 
     Args:
@@ -31,7 +31,7 @@ def hist_morphtable(out: str = ModelOutput("hunpos/hist/dalinm-swedberg_saldo_su
     words = {}
     _read_saldosuc(words, saldosuc_morphtable)
     for fil in [dalin, swedberg]:
-        for line in open(fil, "r", encoding="utf-8").readlines():
+        for line in open(fil, encoding="utf-8").readlines():
             if not line.strip():
                 continue
             xs = line.split("\t")
@@ -56,7 +56,7 @@ def hist_morphtable(out: str = ModelOutput("hunpos/hist/dalinm-swedberg_saldo_su
 
 
 def _read_saldosuc(words, saldosuc_morphtable):
-    for line in open(saldosuc_morphtable, "r", encoding="utf-8").readlines():
+    for line in open(saldosuc_morphtable, encoding="utf-8").readlines():
         xs = line.strip().split("\t")
         words.setdefault(xs[0], set()).update(set(xs[1:]))
 

@@ -8,8 +8,8 @@ from sparv.util.classes import Document, Source
 
 
 @importer("TXT import", source_type="txt", outputs=["text"])
-def parse(doc: str = Document,
-          source_dir: str = Source,
+def parse(doc: Document = Document(),
+          source_dir: Source = Source(),
           prefix: str = "",
           encoding: str = util.UTF8,
           normalize: str = "NFC") -> None:

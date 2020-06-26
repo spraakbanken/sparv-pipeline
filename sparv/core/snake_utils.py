@@ -7,7 +7,7 @@ import re
 from collections import defaultdict, OrderedDict
 from itertools import combinations
 from pathlib import Path
-from typing import List, Set, Tuple
+from typing import List, Set, Tuple, Any, Optional
 
 import snakemake
 from snakemake.io import expand
@@ -16,7 +16,8 @@ from sparv import util
 from sparv.core import config as sparv_config
 from sparv.core import paths, registry, log_handler
 from sparv.util.classes import (AllDocuments, Annotation, Binary, Config, Corpus, Document, Export, ExportAnnotations,
-                                ExportInput, Language, Model, ModelOutput, Output, Source)
+                                ExportInput, Language, Model, ModelOutput, Output, Source, BaseAnnotation, BaseOutput,
+                                OutputData, AnnotationData, Base, Text, AnnotationAllDocs, ExportAnnotationsAllDocs)
 
 
 class SnakeStorage(object):
@@ -74,7 +75,7 @@ class RuleStorage(object):
 
 
 def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_missing: bool = False,
-                custom_rule_obj: dict = None) -> bool:
+                custom_rule_obj: Optional[dict] = None) -> bool:
     """
     Populate rule with Snakemake input, output and parameter list.
 
@@ -103,71 +104,99 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 if isinstance(rule.import_outputs, Config):
                     rule.import_outputs = sparv_config.get(rule.import_outputs, rule.import_outputs.default)
                 annotations_ = set()
-                for annotation in rule.import_outputs:
-                    annotations_.add(annotation)
-                    annotations_.add(util.split_annotation(annotation)[0])
+                for export_annotation in rule.import_outputs:
+                    annotations_.add(export_annotation)
+                    annotations_.add(util.split_annotation(export_annotation)[0])
                 for element in annotations_:
                     rule.outputs.append(paths.annotation_dir / get_annotation_path(element))
 
     params = OrderedDict(inspect.signature(rule.annotator_info["function"]).parameters)
     output_dirs = set()
 
+    custom_params = set()
+
     if custom_rule_obj:
-        if custom_rule_obj.get("output") or custom_rule_obj.get("params"):
-            populate_custom_rule(rule, params, storage, custom_rule_obj)
+        if custom_rule_obj.get("params"):
+            name_custom_rule(rule, storage)
+            custom_params = set(custom_rule_obj.get("params").keys())
         else:
             # This rule has already been populated, so don't process it again
-            return False
-    else:
-        if missing_defaults(params, rule) is not None:
-            # This is probably an unused custom rule, so don't process it
-            storage.custom_targets.append((rule.target_name, rule.description))
             return False
 
     # Go though function parameters and handle based on type
     for param_name, param in params.items():
+        param_default_empty = param.default == inspect.Parameter.empty
+        param_value: Any = None
+
+        # Get parameter value, either from custom rule object or default value
+        if custom_rule_obj:
+            if param_name in custom_rule_obj["params"]:
+                param_value = custom_rule_obj["params"][param_name]
+                custom_params.remove(param_name)
+            elif not param_default_empty:
+                param_value = param.default
+            else:
+                error = f"Parameter '{param_name}' in custom rule '{rule.full_name}' has no value!"
+                log_handler.exit_with_message(error, os.getpid(), None, "sparv", "config")
+        else:
+            if param_default_empty:
+                # This is probably an unused custom rule, so don't process it
+                storage.custom_targets.append((rule.target_name, rule.description))
+                return False
+            else:
+                param_value = param.default
+
+        param_type, param_list, param_optional = registry.get_type_hint_type(param.annotation)
+
         # Output
-        if isinstance(param.default, Output):
-            param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
+        if issubclass(param_type, BaseOutput):
+            if not isinstance(param_value, BaseOutput):
+                if not param_value:
+                    return False
+                param_value = param_type(param_value)
+            missing_configs = param_value.expand_variables(rule.full_name)
             rule.missing_config.update(missing_configs)
-            ann_path = get_annotation_path(param_value, data=param.default.data, common=param.default.common)
-            if param.default.all_docs:
+            ann_path = get_annotation_path(param_value, data=param_type.data, common=param_type.common)
+            if param_type.all_docs:
                 rule.outputs.extend(map(Path, expand(escape_wildcards(paths.annotation_dir / ann_path),
                                                      doc=get_source_files(storage.source_files))))
-            elif param.default.common:
+            elif param_type.common:
                 rule.outputs.append(paths.annotation_dir / ann_path)
                 if rule.installer:
                     storage.install_outputs[rule.target_name].append(paths.annotation_dir / ann_path)
             else:
-                rule.outputs.append(get_annotation_path(param_value, data=param.default.data))
+                rule.outputs.append(get_annotation_path(param_value, data=param_type.data))
             rule.parameters[param_name] = param_value
             if "{" in param_value:
                 rule.wildcard_annotations.append(param_name)
             storage.all_annotations.setdefault(rule.module_name, {}).setdefault(rule.f_name,
                                                                                 {"description": rule.description,
                                                                                  "annotations": []})
-            storage.all_annotations[rule.module_name][rule.f_name]["annotations"].append((param.default,
-                                                                                          param.default.description))
+            storage.all_annotations[rule.module_name][rule.f_name]["annotations"].append((param_value,
+                                                                                          param_value.description))
         # ModelOutput
-        elif isinstance(param.default, ModelOutput):
-            param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
-            rule.missing_config.update(missing_configs)
-            model = util.get_model_path(param_value)
-            rule.outputs.append(model)
-            rule.parameters[param_name] = str(model)
-            storage.model_outputs.append(model)
+        elif registry.dig(ModelOutput, param.annotation):
+            rule.missing_config.update(param_value.expand_variables(rule.full_name))
+            model_path = param_value.path
+            rule.outputs.append(model_path)
+            rule.parameters[param_name] = ModelOutput(str(model_path))
+            storage.model_outputs.append(model_path)
         # Annotation
-        elif registry.dig(Annotation, param.default):
-            param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
+        elif issubclass(param_type, BaseAnnotation):
+            if not isinstance(param_value, BaseAnnotation):
+                if not param_value:
+                    return False
+                param_value = param_type(param_value)
+            missing_configs = param_value.expand_variables(rule.full_name)
             rule.missing_config.update(missing_configs)
-            ann_path = get_annotation_path(param_value, data=param.default.data, common=param.default.common)
-            if rule.exporter or rule.installer or param.default.all_docs:
-                if param.default.all_docs:
+            ann_path = get_annotation_path(param_value, data=param_type.data, common=param_type.common)
+            if rule.exporter or rule.installer or param_type.all_docs:
+                if param_type.all_docs:
                     rule.inputs.extend(expand(escape_wildcards(paths.annotation_dir / ann_path),
                                               doc=get_source_files(storage.source_files)))
                 else:
                     rule.inputs.append(paths.annotation_dir / ann_path)
-            elif param.default.common:
+            elif param_type.common:
                 rule.inputs.append(paths.annotation_dir / ann_path)
             else:
                 rule.inputs.append(ann_path)
@@ -176,60 +205,67 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             if "{" in param_value:
                 rule.wildcard_annotations.append(param_name)
         # ExportAnnotations
-        elif param.default == ExportAnnotations or isinstance(param.default, ExportAnnotations):
+        elif param_type in (ExportAnnotations, ExportAnnotationsAllDocs):
             export_type = param.default.export_type
-            rule.parameters[param_name] = []
-            export_annotations = sparv_config.get(f"{export_type}.annotations", [])
-            for annotation in export_annotations:
-                annotation, _, new_name = annotation.partition(" as ")
-                param_value, missing_configs = registry.expand_variables(annotation, rule.full_name)
-                rule.missing_config.update(missing_configs)
+            if not isinstance(param_value, param_type):
+                param_value = param_type(param_value)
+            rule.parameters[param_name] = param_value
+            export_annotations = util.parse_annotation_list(sparv_config.get(f"{export_type}.annotations", []))
+            for export_annotation_name, export_name in export_annotations:
+                if param_type == ExportAnnotations:
+                    annotation = Annotation(export_annotation_name)
+                else:
+                    annotation = AnnotationAllDocs(export_annotation_name)
+                rule.missing_config.update(annotation.expand_variables(rule.full_name))
                 if param.default.is_input:
-                    rule.inputs.append(paths.annotation_dir / get_annotation_path(param_value))
-                if new_name:
-                    param_value = " as ".join((param_value, new_name))
-                rule.parameters[param_name].append(param_value)
+                    if param_type == ExportAnnotationsAllDocs:
+                        rule.inputs.extend(
+                            expand(escape_wildcards(paths.annotation_dir / get_annotation_path(annotation.name)),
+                                   doc=get_source_files(storage.source_files)))
+                    else:
+                        rule.inputs.append(paths.annotation_dir / get_annotation_path(annotation.name))
+                rule.parameters[param_name].append((annotation, export_name))
         # Corpus
-        elif param.default == Corpus or isinstance(param.default, Corpus):
-            rule.parameters[param_name] = sparv_config.get("metadata.id")
+        elif param.annotation == Corpus:
+            rule.parameters[param_name] = Corpus(sparv_config.get("metadata.id"))
         # Language
-        elif param.default == Language or isinstance(param.default, Language):
-            rule.parameters[param_name] = sparv_config.get("metadata.language")
+        elif param.annotation == Language:
+            rule.parameters[param_name] = Language(sparv_config.get("metadata.language"))
         # Document
-        elif param.default == Document or isinstance(param.default, Document):
+        elif param.annotation == Document:
             rule.docs.append(param_name)
         # AllDocuments (all source documents)
-        elif registry.dig(AllDocuments, param.default):
-            rule.parameters[param_name] = get_source_files(storage.source_files)
+        elif registry.dig(AllDocuments, param.annotation):
+            rule.parameters[param_name] = AllDocuments(get_source_files(storage.source_files))
         # Model
-        elif registry.dig(Model, param.default):
-            if param.default is not None:
-                if isinstance(param.default, Model):
-                    param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
-                    rule.missing_config.update(missing_configs)
-                    model = util.get_model_path(param_value)
-                    rule.inputs.append(model)
-                    rule.parameters[param_name] = str(model)
-                elif isinstance(param.default, (list, tuple)):
+        elif param_type == Model:
+            if param_value is not None:
+                if param_list:
                     rule.parameters[param_name] = []
-                    for model in param.default:
-                        param_value, missing_configs = registry.expand_variables(model, rule.full_name)
-                        rule.missing_config.update(missing_configs)
-                        model = util.get_model_path(param_value)
-                        rule.inputs.append(model)
-                        rule.parameters[param_name].append(str(model))
+                    for model in param_value:
+                        if not isinstance(model, Model):
+                            model = Model(param_value)
+                        rule.missing_config.update(model.expand_variables(rule.full_name))
+                        rule.inputs.append(str(model.path))
+                        rule.parameters[param_name].append(Model(str(model.path)))
+                else:
+                    if not isinstance(param_value, Model):
+                        param_value = Model(param_value)
+                    rule.missing_config.update(param_value.expand_variables(rule.full_name))
+                    rule.inputs.append(str(param_value.path))
+                    rule.parameters[param_name] = Model(str(param_value.path))
         # Binary
-        elif isinstance(param.default, Binary):
+        elif param.annotation == Binary:
             param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
             rule.missing_config.update(missing_configs)
             binary = paths.get_bin_path(param_value)
             rule.inputs.append(binary)
-            rule.parameters[param_name] = str(binary)
+            rule.parameters[param_name] = Binary(binary)
         # Source
-        elif param.default == Source or isinstance(param.default, Source):
-            rule.parameters[param_name] = get_source_path()
+        elif param.annotation == Source:
+            rule.parameters[param_name] = Source(get_source_path())
         # Export
-        elif param.default == Export or isinstance(param.default, Export):
+        elif param.annotation == Export:
             param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
             rule.missing_config.update(missing_configs)
             if param.default.absolute_path:
@@ -238,19 +274,19 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 export_path = paths.export_dir / param_value
             output_dirs.add(export_path.parent)
             rule.outputs.append(export_path)
-            rule.parameters[param_name] = str(export_path)
+            rule.parameters[param_name] = Export(str(export_path))
             if "{doc}" in rule.parameters[param_name]:
                 rule.doc_annotations.append(param_name)
             if "{" in param_value:
                 rule.wildcard_annotations.append(param_name)
         # ExportInput
-        elif isinstance(param.default, ExportInput):
+        elif param.annotation == ExportInput:
             param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
             rule.missing_config.update(missing_configs)
             if param.default.absolute_path:
-                rule.parameters[param_name] = param_value
+                rule.parameters[param_name] = ExportInput(param_value)
             else:
-                rule.parameters[param_name] = str(paths.export_dir / param_value)
+                rule.parameters[param_name] = ExportInput(paths.export_dir / param_value)
             if param.default.all_docs:
                 rule.inputs.extend(expand(escape_wildcards(rule.parameters[param_name]),
                                           doc=get_source_files(storage.source_files)))
@@ -259,11 +295,20 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             if "{" in rule.parameters[param_name]:
                 rule.wildcard_annotations.append(param_name)
         # Config
-        elif isinstance(param.default, Config):
-            rule.parameters[param_name] = sparv_config.get(param.default, param.default.default)
-        # Everything else with a default value
-        elif param.default is not None:
-            rule.parameters[param_name] = param.default
+        elif isinstance(param_value, Config):
+            rule.parameters[param_name] = sparv_config.get(param_value, param_value.default)
+        # Everything else
+        else:
+            rule.parameters[param_name] = param_value
+
+    # For custom rules, warn the user of any unknown parameters
+    if custom_params:
+        print(util.sparv_warning("The parameter{} '{}' used in one of your custom rules "
+                                 "do{} not exist in {}.".format(
+                                                                "s" if len(custom_params) > 1 else "",
+                                                                "', '".join(custom_params),
+                                                                "es" if len(custom_params) == 1 else "",
+                                                                rule.full_name)))
 
     storage.all_rules.append(rule)
 
@@ -300,37 +345,23 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
     return True
 
 
-def missing_defaults(params, rule):
-    """Check if all parameters that need default values actually have default values."""
-    for param_name, param in params.items():
-        try:
-            if param.default in [Annotation, Binary, Config, ExportAnnotations, ExportInput, Model, Output,
-                                 ModelOutput, Export]:
-                registry.expand_variables(param.default, rule.full_name)
-        except Exception:
-            return param_name
-    return None
+def name_custom_rule(rule, storage):
+    """Create unique name for custom rule."""
 
+    def create_new_rulename(name, existing_names):
+        """Create a new rule name by appending a number to it."""
+        i = 2
+        new_name = name + str(i)
+        while new_name in existing_names:
+            i += 1
+            new_name = name + str(i)
+        return new_name
 
-def populate_custom_rule(rule, params, storage, custom_rule_obj):
-    """Populate rule with default values from custom_rule_obj."""
     # If rule name already exists, create a new name
     existing_rules = [r.rule_name for r in storage.all_rules]
     if rule.rule_name in existing_rules:
         rule.rule_name = create_new_rulename(rule.rule_name, existing_rules)
         rule.target_name = create_new_rulename(rule.target_name, [r.target_name for r in storage.all_rules])
-
-    # Populate rule with custom values from config
-    for out_param in custom_rule_obj.get("output", []):
-        expand_custom_param(params, out_param, custom_rule_obj, rule.full_name)
-    for param in custom_rule_obj.get("params", []):
-        expand_custom_param(params, param, custom_rule_obj, rule.full_name)
-
-    # Check if all parameters have received their values
-    missing_default_param = missing_defaults(params, rule)
-    if missing_default_param:
-        error = f"Parameter '{missing_default_param}' in custom rule '{rule.full_name}' has no value!"
-        log_handler.exit_with_message(error, os.getpid(), None, "sparv", "config")
 
 
 def check_ruleorder(storage: SnakeStorage) -> Set[Tuple[RuleStorage, RuleStorage]]:
@@ -338,6 +369,8 @@ def check_ruleorder(storage: SnakeStorage) -> Set[Tuple[RuleStorage, RuleStorage
     ruleorder_pairs = set()
     ordered_rules = set()
     # Find rules that have common outputs and therefore need to be ordered
+    rule: RuleStorage
+    other_rule: RuleStorage
     for rule, other_rule in combinations(storage.all_rules, 2):
         common_outputs = tuple(sorted(set(rule.outputs).intersection(set(other_rule.outputs))))
         if common_outputs:
@@ -365,17 +398,31 @@ def get_parameters(rule_params):
         doc = get_doc_value(wildcards, rule_params.annotator)
         # We need to make a copy of the parameters, since the rule might be used for multiple documents
         _parameters = copy.deepcopy(rule_params.parameters)
-        _parameters.update({name: doc for name in rule_params.docs})
+        _parameters.update({name: Document(doc) for name in rule_params.docs})
+
+        # Add document name to annotation and output parameters
+        for param in _parameters:
+            if isinstance(_parameters[param], (Annotation, AnnotationData, Output, OutputData, Text)):
+                _parameters[param].doc = doc
+            if isinstance(_parameters[param], ExportAnnotations):
+                for a in _parameters[param]:
+                    a[0].doc = doc
 
         # Replace {doc} wildcard in parameters
         for name in rule_params.doc_annotations:
-            _parameters[name] = _parameters[name].replace("{doc}", doc)
+            if isinstance(_parameters[name], Base):
+                _parameters[name].name = _parameters[name].name.replace("{doc}", doc)
+            else:
+                _parameters[name] = _parameters[name].replace("{doc}", doc)
 
         # Replace wildcards (other than {doc}) in parameters
         for name in rule_params.wildcard_annotations:
-            wcs = re.finditer(r"(?!{doc}){([^}]+)}", _parameters[name])
+            wcs = re.finditer(r"(?!{doc}){([^}]+)}", str(_parameters[name]))
             for wc in wcs:
-                _parameters[name] = _parameters[name].replace(wc.group(), wildcards.get(wc.group(1)))
+                if isinstance(_parameters[name], Base):
+                    _parameters[name].name = _parameters[name].name.replace(wc.group(), wildcards.get(wc.group(1)))
+                else:
+                    _parameters[name] = _parameters[name].replace(wc.group(), wildcards.get(wc.group(1)))
         return _parameters
     return get_params
 
@@ -487,34 +534,3 @@ def get_install_targets(install_outputs):
     for installation in sparv_config.get("korp.install", []):
         install_inputs.extend(install_outputs[installation])
     return install_inputs
-
-
-def expand_custom_param(params, param_name, rule_info, rulename):
-    """Expand a custom rule parameter with default values."""
-    if not params.get(param_name):
-        print(util.sparv_warning(f"The parameter '{param_name}'' used in one of your custom rules "
-              f"does not exist in {rulename}"))
-    else:
-        param = params[param_name]
-        # Expand output params
-        if param.default in [Output, ModelOutput, Export]:
-            out = rule_info["output"].get(param_name)
-            params[param_name] = param.replace(default=param.default(out))
-        # Expand other sparv params
-        elif param.default in [Annotation, Binary, Config, ExportAnnotations, ExportInput, Model]:
-            value = rule_info["params"].get(param_name)
-            params[param_name] = param.replace(default=param.default(value))
-        # Expand remaining params
-        elif rule_info["params"].get(param_name) is not None:
-            value = rule_info["params"].get(param_name)
-            params[param_name] = param.replace(default=value)
-
-
-def create_new_rulename(name, existing_names):
-    """Create a new rule name by appending a number to it."""
-    i = 2
-    new_name = name + str(i)
-    while new_name in existing_names:
-        i += 1
-        new_name = name + str(i)
-    return new_name

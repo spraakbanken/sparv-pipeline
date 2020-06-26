@@ -5,41 +5,43 @@ import os
 import re
 from glob import glob
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import sparv.util as util
-from sparv import AllDocuments, Annotation, Config, Corpus, Document, Export, ExportAnnotations, ExportInput, exporter
+from sparv import (AllDocuments, Annotation, AnnotationAllDocs, Config, Corpus, Document, Export, ExportAnnotations,
+                   ExportInput, exporter)
 from sparv.core import paths
 
 log = logging.getLogger(__name__)
 
 
 @exporter("VRT export")
-def vrt(doc: str = Document,
-        out: str = Export("vrt/{doc}.vrt"),
-        token: str = Annotation("<token>"),
-        word: str = Annotation("<token:word>"),
-        annotations: List[str] = ExportAnnotations(export_type="vrt_export"),
-        original_annotations: Optional[list] = Config("vrt_export.original_annotations"),
+def vrt(doc: Document = Document(),
+        out: Export = Export("vrt/{doc}.vrt"),
+        token: Annotation = Annotation("<token>"),
+        word: Annotation = Annotation("<token:word>"),
+        annotations: ExportAnnotations = ExportAnnotations(export_type="vrt_export"),
+        source_annotations: Optional[list] = Config("vrt_export.source_annotations"),
         remove_namespaces: bool = Config("export.remove_export_namespaces", False)):
     """Export annotations to vrt.
 
     - annotations: list of elements:attributes (annotations) to include.
-    - original_annotations: list of elements:attributes from the original document
+    - source_annotations: list of elements:attributes from the original document
       to be kept. If not specified, everything will be kept.
     """
     # Create export dir
     os.makedirs(os.path.dirname(out), exist_ok=True)
 
     # Read words
-    word_annotation = list(util.read_annotation(doc, word))
+    word_annotation = list(word.read())
 
     # Get annotation spans, annotations list etc.
-    annotations, token_annotations, export_names = util.get_annotation_names(doc, token, annotations,
-                                                                             original_annotations, remove_namespaces)
-    span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names)
-
-    vrt_data = create_vrt(span_positions, token, word_annotation, token_annotations, annotation_dict, export_names)
+    annotation_list, token_attributes, export_names = util.get_annotation_names(annotations, source_annotations,
+                                                                                doc=doc, token_name=token.name,
+                                                                                remove_namespaces=remove_namespaces)
+    span_positions, annotation_dict = util.gather_annotations(annotation_list, export_names, doc=doc)
+    vrt_data = create_vrt(span_positions, token.name, word_annotation, token_attributes, annotation_dict,
+                          export_names)
 
     # Write result to file
     with open(out, "w") as f:
@@ -48,33 +50,36 @@ def vrt(doc: str = Document,
 
 
 @exporter("Scrambled VRT export")
-def vrt_scrambled(doc: str = Document,
-                  out: str = Export("vrt_scrambled/{doc}.vrt"),
-                  chunk: str = Annotation("[export.scramble_on]"),
-                  chunk_order: str = Annotation("[export.scramble_on]:misc.number_random"),
-                  token: str = Annotation("<token>"),
-                  word: str = Annotation("<token:word>"),
-                  annotations: List[str] = ExportAnnotations(export_type="vrt_export"),
-                  original_annotations: Optional[list] = Config("vrt_export.original_annotations"),
+def vrt_scrambled(doc: Document = Document(),
+                  out: Export = Export("vrt_scrambled/{doc}.vrt"),
+                  chunk: Annotation = Annotation("[export.scramble_on]"),
+                  chunk_order: Annotation = Annotation("[export.scramble_on]:misc.number_random"),
+                  token: Annotation = Annotation("<token>"),
+                  word: Annotation = Annotation("<token:word>"),
+                  annotations: ExportAnnotations = ExportAnnotations(export_type="vrt_export"),
+                  source_annotations: Optional[list] = Config("vrt_export.source_annotations"),
                   remove_namespaces: bool = Config("export.remove_export_namespaces", False)):
     """Export annotations to vrt in scrambled order."""
     # Get annotation spans, annotations list etc.
-    annotations, token_annotations, export_names = util.get_annotation_names(doc, token, annotations,
-                                                                             original_annotations, remove_namespaces)
-    if chunk not in annotations:
+    annotation_list, token_attributes, export_names = util.get_annotation_names(annotations, source_annotations,
+                                                                                doc=doc, token_name=token.name,
+                                                                                remove_namespaces=remove_namespaces)
+    if chunk not in annotation_list:
         raise util.SparvErrorMessage(
             "The annotation used for scrambling ({}) needs to be included in the output.".format(chunk))
-    span_positions, annotation_dict = util.gather_annotations(doc, annotations, export_names, split_overlaps=True)
+    span_positions, annotation_dict = util.gather_annotations(annotation_list, export_names, doc=doc,
+                                                              split_overlaps=True)
 
     # Read words and document ID
-    word_annotation = list(util.read_annotation(doc, word))
-    chunk_order = list(util.read_annotation(doc, chunk_order))
+    word_annotation = list(word.read())
+    chunk_order_data = list(chunk_order.read())
 
     # Reorder chunks and open/close tags in correct order
-    new_span_positions = util.scramble_spans(span_positions, chunk, chunk_order)
+    new_span_positions = util.scramble_spans(span_positions, chunk.name, chunk_order_data)
 
     # Make vrt format
-    vrt_data = create_vrt(new_span_positions, token, word_annotation, token_annotations, annotation_dict, export_names)
+    vrt_data = create_vrt(new_span_positions, token.name, word_annotation, token_attributes, annotation_dict,
+                          export_names)
 
     # Create export dir
     os.makedirs(os.path.dirname(out), exist_ok=True)
@@ -92,15 +97,15 @@ def vrt_scrambled(doc: str = Document,
     Config("cwb.skip_compression", False),
     Config("cwb.skip_validation", False)
 ])
-def encode(corpus: str = Corpus,
-           annotations: List[str] = ExportAnnotations(export_type="vrt_export", is_input=False),
-           original_annotations: Optional[list] = Config("vrt_export.original_annotations"),
-           docs: list = AllDocuments,
-           words: str = Annotation("<token:word>", all_docs=True),
-           vrtfiles: str = ExportInput("vrt/{doc}.vrt", all_docs=True),
-           out: str = Export("[cwb.corpus_registry]/[metadata.id]", absolute_path=True),
-           out_time: str = Export("[cwb.cwb_datadir]/[metadata.id]/.time_original", absolute_path=True),
-           token: str = Annotation("<token>", all_docs=True),
+def encode(corpus: Corpus = Corpus(),
+           annotations: ExportAnnotations = ExportAnnotations(export_type="vrt_export", is_input=False),
+           source_annotations: Optional[list] = Config("vrt_export.source_annotations"),
+           docs: AllDocuments = AllDocuments(),
+           words: AnnotationAllDocs = AnnotationAllDocs("<token:word>"),
+           vrtfiles: ExportInput = ExportInput("vrt/{doc}.vrt", all_docs=True),
+           out: Export = Export("[cwb.corpus_registry]/[metadata.id]", absolute_path=True),
+           out_time: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.time_original", absolute_path=True),
+           token: AnnotationAllDocs = AnnotationAllDocs("<token>"),
            encoding: str = Config("cwb.encoding"),
            datadir: str = Config("cwb.cwb_datadir"),
            registry: str = Config("cwb.corpus_registry"),
@@ -108,8 +113,8 @@ def encode(corpus: str = Corpus,
            skip_compression: Optional[bool] = Config("cwb.skip_compression"),
            skip_validation: Optional[bool] = Config("cwb.skip_validation")):
     """Do cwb encoding with vrt files in original order."""
-    cwb_encode(corpus, annotations, original_annotations, docs, words, vrtfiles, out, out_time, token, encoding,
-               datadir, registry, remove_namespaces, skip_compression, skip_validation)
+    cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, out, out_time, token.name,
+               encoding, datadir, registry, remove_namespaces, skip_compression, skip_validation)
 
 
 @exporter("CWB encode, scrambled", order=1, config=[
@@ -119,15 +124,15 @@ def encode(corpus: str = Corpus,
     Config("cwb.skip_compression", False),
     Config("cwb.skip_validation", False)
 ])
-def encode_scrambled(corpus: str = Corpus,
-                     annotations: List[str] = ExportAnnotations(export_type="vrt_export", is_input=False),
-                     original_annotations: Optional[list] = Config("vrt_export.original_annotations"),
-                     docs: list = AllDocuments,
-                     words: str = Annotation("<token:word>", all_docs=True),
-                     vrtfiles: str = ExportInput("vrt_scrambled/{doc}.vrt", all_docs=True),
-                     out: str = Export("[cwb.corpus_registry]/[metadata.id]", absolute_path=True),
-                     out_time: str = Export("[cwb.cwb_datadir]/[metadata.id]/.time_scrambled", absolute_path=True),
-                     token: str = Annotation("<token>", all_docs=True),
+def encode_scrambled(corpus: Corpus = Corpus(),
+                     annotations: ExportAnnotations = ExportAnnotations(export_type="vrt_export", is_input=False),
+                     source_annotations: Optional[list] = Config("vrt_export.source_annotations"),
+                     docs: AllDocuments = AllDocuments(),
+                     words: AnnotationAllDocs = AnnotationAllDocs("<token:word>"),
+                     vrtfiles: ExportInput = ExportInput("vrt_scrambled/{doc}.vrt", all_docs=True),
+                     out: Export = Export("[cwb.corpus_registry]/[metadata.id]", absolute_path=True),
+                     out_time: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.time_scrambled", absolute_path=True),
+                     token: AnnotationAllDocs = AnnotationAllDocs("<token>"),
                      encoding: str = Config("cwb.encoding"),
                      datadir: str = Config("cwb.cwb_datadir"),
                      registry: str = Config("cwb.corpus_registry"),
@@ -135,12 +140,12 @@ def encode_scrambled(corpus: str = Corpus,
                      skip_compression: Optional[bool] = Config("cwb.skip_compression"),
                      skip_validation: Optional[bool] = Config("cwb.skip_validation")):
     """Do cwb encoding with vrt files in scrambled order."""
-    cwb_encode(corpus, annotations, original_annotations, docs, words, vrtfiles, out, out_time, token, encoding,
-               datadir, registry, remove_namespaces, skip_compression, skip_validation)
+    cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, out, out_time, token.name,
+               encoding, datadir, registry, remove_namespaces, skip_compression, skip_validation)
 
 
-def cwb_encode(corpus, annotations, original_annotations, docs, words, vrtfiles, out, out_time, token, encoding,
-               datadir, registry, remove_namespaces, skip_compression, skip_validation):
+def cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, out, out_time, token_name: str,
+               encoding, datadir, registry, remove_namespaces, skip_compression, skip_validation):
     """Encode a number of vrt files, by calling cwb-encode."""
     assert datadir, "CWB_DATADIR not specified"
     assert registry, "CORPUS_REGISTRY not specified"
@@ -150,21 +155,23 @@ def cwb_encode(corpus, annotations, original_annotations, docs, words, vrtfiles,
     vrtfiles.sort()
 
     # Word annotation should always be included in CWB export
-    annotations.insert(0, words)
+    annotations.insert(0, (words, None))
 
     # Get annotation names
-    annotations, token_annotations, export_names = util.get_annotation_names(docs, token, annotations,
-                                                                             original_annotations, remove_namespaces,
-                                                                             keep_struct_refs=True)
+    annotation_list, token_attributes, export_names = util.get_annotation_names(annotations, source_annotations,
+                                                                                docs=docs, token_name=token_name,
+                                                                                remove_namespaces=remove_namespaces,
+                                                                                keep_struct_names=True)
 
     # Get VRT columns
-    token_annotations = [(token + ":" + i) for i in token_annotations]
+    token_attributes = [(token_name + ":" + i) for i in token_attributes]
     # First column must be called "word"
-    token_annotations[0] = "word"
-    columns = [cwb_escape(export_names.get(i, i)) for i in token_annotations]
+    token_attributes[0] = "word"
+    columns = [cwb_escape(export_names.get(i, i)) for i in token_attributes]
 
     # Get VRT structs
-    struct_annotations = [cwb_escape(export_names.get(i, i)) for i in annotations if not i.startswith(token)]
+    struct_annotations = [cwb_escape(export_names.get(a.name, a.name)) for a in annotation_list if
+                          not a.annotation_name() == token_name]
     structs = parse_structural_attributes(struct_annotations)
 
     corpus_registry = os.path.join(registry, corpus)
@@ -190,7 +197,7 @@ def cwb_encode(corpus, annotations, original_annotations, docs, words, vrtfiles,
             attrs2 = "+" + attrs2
         encode_args += ["-S", "%s:0%s" % (struct, attrs2)]
 
-    util.system.call_binary("cwb-encode", encode_args)
+    util.system.call_binary("cwb-encode", encode_args, verbose=True)
     # Use xargs to avoid "Argument list too long" problems
     # util.system.call_binary("cwb-encode", raw_command="cat %s | xargs cat | %%s %s" % (vrtfiles, " ".join(encode_args)), use_shell=True)
 
@@ -273,17 +280,17 @@ def cwb_align(corpus, other, link, aligndir="annotations/align", encoding: str =
 ################################################################################
 
 
-def create_vrt(span_positions, token, word_annotation, token_annotations, annotation_dict, export_names):
+def create_vrt(span_positions, token_name: str, word_annotation, token_attributes, annotation_dict, export_names):
     """Go through span_positions and create vrt, line by line."""
     vrt_lines = []
     for _pos, instruction, span in span_positions:
         # Create token line
-        if span.name == token and instruction == "open":
-            vrt_lines.append(make_token_line(word_annotation[span.index], token, token_annotations, annotation_dict,
+        if span.name == token_name and instruction == "open":
+            vrt_lines.append(make_token_line(word_annotation[span.index], token_name, token_attributes, annotation_dict,
                                              span.index))
 
         # Create line with structural annotation
-        elif span.name != token:
+        elif span.name != token_name:
             cwb_span_name = cwb_escape(span.export)
             # Open structural element
             if instruction == "open":
@@ -311,13 +318,13 @@ def make_attr_str(annotation, annotation_dict, export_names, index):
     return " ".join(attrs)
 
 
-def make_token_line(word, token, token_annotations, annotation_dict, index):
+def make_token_line(word, token, token_attributes, annotation_dict, index):
     """Create a string with the token and its annotations.
 
     Whitespace and / need to be replaced for CQP parsing to work. / is only allowed in the word itself.
     """
     line = [word.replace(" ", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")]
-    for attr in token_annotations:
+    for attr in token_attributes:
         if attr not in annotation_dict[token]:
             attr_str = util.UNDEF
         else:
