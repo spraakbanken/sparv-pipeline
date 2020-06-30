@@ -4,10 +4,9 @@ import argparse
 import importlib
 import inspect
 import sys
-from typing import Union
 
 from sparv.core import log, paths, registry
-from sparv.util.classes import AllDocuments, Annotation, Binary, Config, Document, ExportAnnotations, Model, Output
+from sparv.util.classes import Annotation, AnnotationData, Config, Document, Output, OutputData
 
 
 def main(argv=None):
@@ -39,50 +38,71 @@ def main(argv=None):
     subparsers = parser.add_subparsers(dest="_annotator", help="Annotator function")
     subparsers.required = True
 
+    needs_doc_types = (Annotation, AnnotationData, Output, OutputData)  # Types that need a doc value
+
     for f_name in registry.annotators[module_name]:
         annotator = registry.annotators[module_name][f_name]
         f = annotator["function"]
-        # _description = annotator["description"]
-        subparser = subparsers.add_parser(f_name, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+        subparser = subparsers.add_parser(f_name, formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                          help=annotator["description"])
         subparser.set_defaults(f_=f)
         required_args = subparser.add_argument_group("required named arguments")
+        needs_doc = False
+        has_doc = False
         for parameter in inspect.signature(f).parameters.items():
             param_ann = parameter[1].annotation
+            param_default = parameter[1].default
+            is_optional = False
             if not param_ann == inspect.Parameter.empty:
-                arg_type = param_ann if param_ann in (str, int, bool) else None
+                arg_type, is_list, is_optional = registry.get_type_hint_type(param_ann)
+                # arg_type = arg_type if arg_type in (str, int, bool) else None
             else:
                 arg_type = None
-            required = parameter[1].default == inspect.Parameter.empty
+            if arg_type in needs_doc_types:
+                needs_doc = True
+            if arg_type == Document:
+                has_doc = True
+            required = param_default == inspect.Parameter.empty
             f_args = {"type": arg_type}
             if not required:
-                # Check if the default argument is of a type we can't handle when running a single module alone
-                for t in (Annotation, Output, Model, Binary, Config, Document, AllDocuments, ExportAnnotations):
-                    if registry.dig(t, parameter[1].default):
-                        # If the type hint is Optional, set default to None, otherwise make required
-                        # TODO: Replace the below with the following when upgrading to Python 3.8:
-                        #  typing.get_origin(param_ann) is typing.Union and \
-                        #             type(None) in typing.get_args(param_ann)
-                        if (getattr(param_ann, "__origin__", None) is Union and type(None) in getattr(param_ann,
-                                                                                                      "__args__",
-                                                                                                      ())):
-                            f_args["default"] = None
-                        else:
-                            required = True
-                        break
-                else:
-                    # If default argument is of a type we can handle
-                    f_args["default"] = parameter[1].default
-                    if arg_type == bool and parameter[1].default is False:
+                # Check if the default value is of a type we can handle when running a single module alone
+                if (arg_type in (str, int, bool) and not isinstance(param_default, Config)) or param_default is None:
+                    # We can handle this
+                    f_args["default"] = param_default
+                    if arg_type == bool and param_default is False:
                         f_args["action"] = "store_true"
                         del f_args["type"]
-
+                else:
+                    # We can't handle this type of default value
+                    # If the type hint is Optional, set default to None, otherwise make required
+                    if is_optional:
+                        f_args["default"] = None
+                    else:
+                        required = True
             if required:
                 required_args.add_argument("--" + parameter[0], required=True, **f_args)
             else:
                 subparser.add_argument("--" + parameter[0], help=" ", **f_args)
 
+        subparser.set_defaults(has_doc_=has_doc)
+        if not has_doc and needs_doc:
+            required_args.add_argument("--doc", required=True, type=str)
+
     args = parser.parse_args(rest_args)
-    arguments = {k: v for k, v in vars(args).items() if k not in ("f_", "_annotator")}
+
+    arguments = {}
+    doc = args.doc if "doc" in args else None
+    has_doc = args.has_doc_ if "has_doc_" in args else False
+    for k, v in vars(args).items():
+        if k in ("f_", "_annotator", "has_doc_"):
+            continue
+        if not has_doc and k in "doc":
+            continue
+        # Add doc value if the type requires it
+        if type(v) in needs_doc_types:
+            v.doc = doc
+        arguments[k] = v
+
     args.f_(**arguments)
 
 
