@@ -19,3 +19,6 @@ bin/stanford_parser/
 
 # Plugins
 freeling
+
+# Editor stuff
+.vscode
