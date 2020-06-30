@@ -175,7 +175,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             storage.all_annotations[rule.module_name][rule.f_name]["annotations"].append((param_value,
                                                                                           param_value.description))
         # ModelOutput
-        elif registry.dig(ModelOutput, param.annotation):
+        elif param_type == ModelOutput:
             rule.missing_config.update(param_value.expand_variables(rule.full_name))
             model_path = param_value.path
             rule.outputs.append(model_path)
@@ -235,7 +235,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         elif param.annotation == Document:
             rule.docs.append(param_name)
         # AllDocuments (all source documents)
-        elif registry.dig(AllDocuments, param.annotation):
+        elif param_type == AllDocuments:
             rule.parameters[param_name] = AllDocuments(get_source_files(storage.source_files))
         # Model
         elif param_type == Model:

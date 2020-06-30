@@ -262,6 +262,7 @@ def expand_variables(string, module_name):
 
 
 def get_type_hint_type(type_hint):
+    """Given a type hint, return the type, whether it's contained in a List and whether it's Optional."""
     optional = typing_inspect.is_optional_type(type_hint)
     if optional:
         type_hint = typing_inspect.get_args(type_hint)[0]
@@ -280,17 +281,3 @@ def get_type_hint_type(type_hint):
         type_ = type_hint
 
     return type_, is_list, optional
-
-
-def dig(type_, type_hint):
-    """Look for 'type' in type_hint and return 'type' if found.
-
-    'type' may be a list of types, in which case the first item found will be returned.
-    """
-    types = [type_] if not isinstance(type_, (list, tuple)) else type_
-
-    for t in types:
-        if t == type_hint or Optional[t] == type_hint or List[t] == type_hint:
-            return t
-
-    return None
