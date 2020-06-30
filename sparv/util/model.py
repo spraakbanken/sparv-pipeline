@@ -41,7 +41,7 @@ def write_model_data(name: Union[ModelOutput, str, pathlib.Path], data):
     log.info("Wrote %d bytes: %s", len(data), file_path)
 
 
-def read_model_data(name: Union[ModelOutput, str, pathlib.Path]):
+def read_model_data(name: Union[Model, str, pathlib.Path]):
     """Read arbitrary string data from file in models directory."""
     file_path = get_model_path(name)
 
@@ -63,7 +63,7 @@ def write_model_pickle(name: Union[ModelOutput, str, pathlib.Path], data, protoc
     log.info("Wrote %d bytes: %s", len(data), file_path)
 
 
-def read_model_pickle(name: Union[ModelOutput, str, pathlib.Path]):
+def read_model_pickle(name: Union[Model, str, pathlib.Path]):
     """Read pickled data from file in models directory."""
     file_path = get_model_path(name)
 
