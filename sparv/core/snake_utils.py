@@ -146,7 +146,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             else:
                 param_value = param.default
 
-        param_type, param_list, param_optional = registry.get_type_hint_type(param.annotation)
+        param_type, param_list, _param_optional = registry.get_type_hint_type(param.annotation)
 
         # Output
         if issubclass(param_type, BaseOutput):
@@ -304,8 +304,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
     # For custom rules, warn the user of any unknown parameters
     if custom_params:
         print(util.sparv_warning("The parameter{} '{}' used in one of your custom rules "
-                                 "do{} not exist in {}.".format(
-                                                                "s" if len(custom_params) > 1 else "",
+                                 "do{} not exist in {}.".format("s" if len(custom_params) > 1 else "",
                                                                 "', '".join(custom_params),
                                                                 "es" if len(custom_params) == 1 else "",
                                                                 rule.full_name)))
@@ -347,7 +346,6 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
 def name_custom_rule(rule, storage):
     """Create unique name for custom rule."""
-
     def create_new_rulename(name, existing_names):
         """Create a new rule name by appending a number to it."""
         i = 2

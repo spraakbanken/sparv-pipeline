@@ -1,7 +1,7 @@
 """Classes used as default input for annotator functions."""
 import pathlib
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional, Generic, Union, Tuple
+from typing import Any, List, Optional, Union, Tuple
 
 import sparv.core
 from sparv.util import corpus, parent as parents
