@@ -6,7 +6,7 @@ import re
 from typing import List, Optional
 
 import sparv.util as util
-from sparv import Annotation, Config, Document, Model, Output, annotator
+from sparv import Annotation, Config, Model, Output, annotator
 from sparv.modules.saldo.saldo_model import SaldoLexicon
 
 log = logging.getLogger(__name__)
@@ -16,8 +16,7 @@ PRECISION_DIFF = 0.01
 
 
 @annotator("SALDO annotations", language=["swe"])
-def annotate(doc: Document = Document(),
-             token: Annotation = Annotation("<token>"),
+def annotate(token: Annotation = Annotation("<token>"),
              word: Annotation = Annotation("<token:word>"),
              sentence: Annotation = Annotation("<sentence>"),
              reference: Annotation = Annotation("<token>:misc.number_rel_<sentence>"),
@@ -99,7 +98,7 @@ def annotate(doc: Document = Document(),
     if msd:
         msd_annotation = list(msd.read())
 
-    sentences, orphans = util.get_children(doc, sentence, token)
+    sentences, orphans = sentence.get_children(token)
     sentences.append(orphans)
 
     out_annotation = word.create_empty_attribute()

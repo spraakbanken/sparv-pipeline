@@ -47,7 +47,7 @@ def msdtag(out: Output = Output("<token>:hunpos.msd", cls="token:msd",
                 return "[[%s]]" % p[0]
         return w
 
-    sentences, _orphans = util.parent.get_children(sentence.doc, sentence, word)
+    sentences, _orphans = sentence.get_children(word)
     token_word = list(word.read())
     stdin = SENT_SEP.join(TOK_SEP.join(replace_word(token_word[token_index]) for token_index in sent)
                           for sent in sentences)

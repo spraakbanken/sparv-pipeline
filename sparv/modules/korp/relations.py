@@ -7,7 +7,7 @@ from collections import defaultdict
 from typing import Optional
 
 import sparv.util as util
-from sparv import (AllDocuments, Annotation, AnnotationDataAllDocs, Config, Corpus, Document, Export, ExportInput,
+from sparv import (AllDocuments, Annotation, AnnotationDataAllDocs, Config, Corpus, Export, ExportInput,
                    OutputCommonData, OutputData, annotator, exporter, installer)
 from sparv.util.mysql_wrapper import MySQL
 
@@ -37,8 +37,7 @@ def install_relations(sqlfile: ExportInput = ExportInput("korp_wordpicture/relat
 
 
 @annotator("Find dependencies for Korp's Word Picture", language=["swe"])
-def relations(doc: Document = Document(),
-              out: OutputData = OutputData("korp.relations"),
+def relations(out: OutputData = OutputData("korp.relations"),
               word: Annotation = Annotation("<token:word>"),
               pos: Annotation = Annotation("<token:pos>"),
               lemgram: Annotation = Annotation("<token>:saldo.lemgram"),
@@ -49,9 +48,9 @@ def relations(doc: Document = Document(),
               baseform: Annotation = Annotation("<token>:saldo.baseform")):
     """Find certain dependencies between words, to be used by the Word Picture feature in Korp."""
     sentence_ids = sentence_id.read()
-    sentence_tokens, _ = util.get_children(doc, sentence_id, word)
+    sentence_tokens, _ = sentence_id.get_children(word)
 
-    annotations = list(util.read_annotation_attributes(doc, (word, pos, lemgram, dephead, deprel, ref, baseform)))
+    annotations = list(word.read_attributes((word, pos, lemgram, dephead, deprel, ref, baseform)))
 
     # http://stp.ling.uu.se/~nivre/swedish_treebank/dep.html
     # Tuples with relations (head, rel, dep) to be found (with indexes) and an optional tuple specifying which info

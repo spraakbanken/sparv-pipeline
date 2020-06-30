@@ -3,7 +3,7 @@
 import logging
 
 import sparv.util as util
-from sparv import Annotation, Binary, Config, Document, Language, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv import Annotation, Binary, Config, Language, Model, ModelOutput, Output, annotator, modelbuilder
 
 log = logging.getLogger(__name__)
 
@@ -37,8 +37,7 @@ TAG_SETS = {
                Config("treetagger.binary", "treetagger/tree-tagger"),
                Config("treetagger.model", "treetagger/[metadata.language].par")
            ])
-def annotate(doc: Document = Document(),
-             lang: Language = Language(),
+def annotate(lang: Language = Language(),
              model: Model = Model("[treetagger.model]"),
              tt_binary: Binary = Binary("[treetagger.binary]"),
              out_upos: Output = Output("<token>:treetagger.upos", cls="token:upos",
@@ -50,7 +49,7 @@ def annotate(doc: Document = Document(),
              sentence: Annotation = Annotation("<sentence>"),
              encoding: str = util.UTF8):
     """POS/MSD tag and lemmatize using TreeTagger."""
-    sentences, _orphans = util.get_children(doc, sentence, word)
+    sentences, _orphans = sentence.get_children(word)
     word_annotation = list(word.read())
     stdin = SENT_SEP.join(TOK_SEP.join(word_annotation[token_index] for token_index in sent)
                           for sent in sentences)
