@@ -124,9 +124,9 @@ def create_empty_attribute(annotation):
     - a list (i.e. an annotation that has already been loaded)
     - an integer
     """
-    assert isinstance(annotation, (Annotation, AnnotationAllDocs, list, int))
+    assert isinstance(annotation, (Annotation, list, int))
 
-    if isinstance(annotation, (Annotation, AnnotationAllDocs)):
+    if isinstance(annotation, Annotation):
         length = len(list(annotation.read_spans()))
     elif isinstance(annotation, list):
         length = len(annotation)

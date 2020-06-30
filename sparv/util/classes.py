@@ -166,7 +166,7 @@ class AnnotationAllDocs(BaseAnnotation):
 
     def create_empty_attribute(self, doc: str):
         """Return a list filled with None of the same size as this annotation."""
-        return corpus.create_empty_attribute(self.name)
+        return corpus.create_empty_attribute(self.read_spans(doc))
 
     def exists(self, doc: str):
         """Return True if annotation file exists."""
