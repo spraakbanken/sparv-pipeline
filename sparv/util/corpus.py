@@ -314,7 +314,7 @@ def test_lexicon(lexicon, testwords):
         _log.info("  %s = %s", key, lexicon.get(key))
 
 
-class PickledLexicon(object):
+class PickledLexicon:
     """Read basic pickled lexicon and look up keys."""
 
     def __init__(self, picklefile: Union[pathlib.Path, Model], verbose=True):

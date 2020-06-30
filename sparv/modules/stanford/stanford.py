@@ -105,7 +105,7 @@ def _parse_output(stdout, lang):
     return sentences
 
 
-class Token(object):
+class Token:
     """Object to store annotation information for a token."""
 
     def __init__(self, ref, word, pos, upos, baseform, ne, dephead_ref, deprel, start=-1, end=-1):

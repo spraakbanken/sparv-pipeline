@@ -131,7 +131,7 @@ def build_saldo_comp(out: ModelOutput = ModelOutput("saldo/saldo.compound.pickle
     save_to_picklefile(out.path, xml_lexicon)
 
 
-class SaldoCompLexicon(object):
+class SaldoCompLexicon:
     """A lexicon for Saldo compound lookups.
 
     It is initialized from a Pickled file.
@@ -180,7 +180,7 @@ class SaldoCompLexicon(object):
         return lemgram, msds, pos, tags
 
 
-class StatsLexicon(object):
+class StatsLexicon:
     """A lexicon for probabilities of word forms and their POS tags.
 
     It is initialized from a pickled file.
@@ -204,7 +204,7 @@ class StatsLexicon(object):
         return self.lexicon.freqdist()[(word, tag)]
 
 
-class InFileLexicon(object):
+class InFileLexicon:
     """A dictionary of all words occuring in the input file.
 
     keys = words, values =  MSD tags

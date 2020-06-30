@@ -131,7 +131,7 @@ def has_children(elem):
 # from file "trees.py" (Richard Johansson):
 
 
-class Token(object):
+class Token:
     """Token containing a list of attributes."""
 
     def __init__(self, t):
@@ -178,15 +178,15 @@ class Token(object):
         return False
 
 
-class Sentence(object):
+class Sentence:
     """Sentence containing a list of token objects."""
 
-    def __init__(self, l):
-        self.tokens = l
+    def __init__(self, token_list):
+        self.tokens = token_list
         table = {}
-        for t in l:
+        for t in token_list:
             table[t.ref] = t
-        for n in l:
+        for n in token_list:
             if n.deprel:
                 if n.depheadid:
                     n.dephead = table[n.depheadid]
@@ -217,7 +217,7 @@ class Sentence(object):
 # from file "to_const.py" (Richard Johansson):
 
 
-class Terminal(object):
+class Terminal:
     """Class representing a terminal node of a phrase structure tree."""
 
     def __init__(self, fun, t):
@@ -256,7 +256,7 @@ class Terminal(object):
         pass
 
 
-class Nonterminal(object):
+class Nonterminal:
     """Class representing a non-terminal node of a phrase structure tree."""
 
     def __init__(self, label, fun, headchild, children):
@@ -309,7 +309,7 @@ class Nonterminal(object):
             c.set_parents()
 
 
-class PSTree(object):
+class PSTree:
     """Class representing a phrase structure tree."""
 
     def __init__(self, top):
@@ -431,20 +431,20 @@ def convert(token):
 # Auxiliaries used by convert
 ################################################################################
 
-def _add_head(l, h):
+def _add_head(in_list, h):
     hp = h.head_position()
-    for ix in range(len(l)):
-        if hp < l[ix].head_position():
-            l.insert(ix, h)
+    for ix in range(len(in_list)):
+        if hp < in_list[ix].head_position():
+            in_list.insert(ix, h)
             return
-    l.append(h)
+    in_list.append(h)
 
 
-def _get_coord_label(l):
-    for c in l:
+def _get_coord_label(in_list):
+    for c in in_list:
         if isinstance(c, Nonterminal) and c.fun == "CJ":
             return c.label
-    for c in l:
+    for c in in_list:
         if c.fun == "MS" and isinstance(c, Nonterminal):
             return c.label
     return "XX"
@@ -495,5 +495,5 @@ def _wh_after_prep(token):
     return False
 
 
-def _sort_by_head_pos(l):
-    l.sort(key=lambda x: x.head_position())
+def _sort_by_head_pos(in_list):
+    in_list.sort(key=lambda x: x.head_position())

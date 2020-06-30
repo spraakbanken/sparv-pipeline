@@ -31,7 +31,7 @@ def build_saldo(out: ModelOutput = ModelOutput("saldo/saldo.pickle"),
     lmf_to_pickle(saldom.path, out.path)
 
 
-class SaldoLexicon(object):
+class SaldoLexicon:
     """A lexicon for Saldo lookups.
 
     It is initialized from a Pickled file, or a space-separated text file.

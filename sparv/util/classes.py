@@ -72,8 +72,8 @@ class BaseAnnotation(Base):
         return self.split()[1] or None
 
     def __eq__(self, other):
-        return (type(self) == type(other) and self.name == other.name and self.doc == other.doc and
-                self.data == other.data and self.all_docs == other.all_docs and self.common == other.common)
+        return (type(self) == type(other) and self.name == other.name and self.doc == other.doc
+                and self.data == other.data and self.all_docs == other.all_docs and self.common == other.common)
 
 
 class Annotation(BaseAnnotation):

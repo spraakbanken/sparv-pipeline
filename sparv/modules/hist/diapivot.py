@@ -68,7 +68,7 @@ def build_diapivot(out: ModelOutput = ModelOutput("hist/diapivot.pickle")):
 ################################################################################
 
 
-class PivotLexicon(object):
+class PivotLexicon:
     """A lexicon for old swedish SALDO lookups.
 
     It is initialized from a pickled file.

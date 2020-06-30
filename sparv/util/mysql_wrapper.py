@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 MAX_ALLOWED_PACKET = 900000
 
 
-class MySQL(object):
+class MySQL:
     binaries = ("mysql", "mysql5")
 
     def __init__(self, database, username=None, password=None, encoding="UTF-8", output="", append=False):

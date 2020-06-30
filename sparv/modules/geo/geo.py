@@ -96,7 +96,7 @@ def metadata(out: Output = Output("{chunk}:geo.geo_metadata", description="Geogr
             location_source = source_annotation[i]
         else:
             location_source = source_annotation[target_source_parents[i]] if target_source_parents[
-                                                                                 i] is not None else None
+                i] is not None else None
 
         if location_source:
             location_data = geomodel.get(location_source.strip().lower())
@@ -210,8 +210,8 @@ def most_populous(locations):
     for chunk in locations:
         new_locations[chunk] = set()
 
-        for l in locations[chunk]:
-            biggest = (l[0], sorted(l[1], key=lambda x: -int(x[-1]))[0])
+        for loc in locations[chunk]:
+            biggest = (loc[0], sorted(loc[1], key=lambda x: -int(x[-1]))[0])
             new_locations[chunk].add(biggest)
     return new_locations
 

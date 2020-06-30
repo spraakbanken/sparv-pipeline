@@ -385,7 +385,7 @@ _escape_table = {ord(k): v for k, v in _escape_symbols}
 ################################################################################
 
 
-class Performance(object):
+class Performance:
     """Class for calculating performance measures."""
 
     def __init__(self, TP, TN, FP, FN):

@@ -208,7 +208,7 @@ class ModifiedLanguageVars(nltk.tokenize.punkt.PunktLanguageVars):
         pass
 
 
-class ModifiedPunktWordTokenizer(object):
+class ModifiedPunktWordTokenizer:
     def __init__(self):
         self.lang_vars = ModifiedLanguageVars()
         self.is_post_sentence_token = self.lang_vars.re_boundary_realignment
@@ -317,7 +317,7 @@ class PunctuationTokenizer(nltk.RegexpTokenizer):
         return result
 
 
-class BetterWordTokenizer(object):
+class BetterWordTokenizer:
     """A word tokenizer based on the PunktWordTokenizer code.
 
     Heavily modified to add support for custom regular expressions, wordlists, and external configuration files.
@@ -444,7 +444,7 @@ class BetterWordTokenizer(object):
             begin += len(w)
 
 
-class CRFTokenizer(object):
+class CRFTokenizer:
     """Tokenization based on Conditional Random Fields.
 
     Implemented for Old Swedish, see crf.py for more details.
@@ -459,7 +459,7 @@ class CRFTokenizer(object):
         return crf.segment(s, self.model)
 
 
-class FSVParagraphSplitter(object):
+class FSVParagraphSplitter:
     """A paragraph splitter for old Swedish."""
 
     def __init__(self):

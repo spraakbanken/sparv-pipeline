@@ -20,7 +20,7 @@ from sparv.util.classes import (AllDocuments, Annotation, Binary, Config, Corpus
                                 OutputData, AnnotationData, Base, Text, AnnotationAllDocs, ExportAnnotationsAllDocs)
 
 
-class SnakeStorage(object):
+class SnakeStorage:
     """Object to store variables involving all rules."""
 
     def __init__(self):
@@ -42,7 +42,7 @@ class SnakeStorage(object):
         self.ordered_rules = []  # List of rules containing rule order
 
 
-class RuleStorage(object):
+class RuleStorage:
     """Object to store parameters for a snake rule."""
 
     def __init__(self, module_name, f_name, annotator_info):
