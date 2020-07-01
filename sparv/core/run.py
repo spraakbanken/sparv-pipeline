@@ -9,9 +9,9 @@ from sparv.core import log, paths, registry
 from sparv.util.classes import Annotation, AnnotationData, Config, Document, Output, OutputData
 
 
-def main(argv=None):
+def main(argv=None, log_level="info"):
     """Parse command line arguments and execute the requested Sparv module."""
-    log.setup_logging(verbose=True)
+    log.setup_logging(log_level)
     modules_path = ".".join(("sparv", paths.modules_dir))
 
     if argv is None:

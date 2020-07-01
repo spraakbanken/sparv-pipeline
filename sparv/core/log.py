@@ -2,14 +2,17 @@
 
 import copy
 import logging
+from typing import Optional
 
 from sparv import util
 
 FORMAT = "%(asctime)s - %(name)s (%(process)d) - %(levelname)s - %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 LOG_COLORS = {
+    logging.CRITICAL: util.Color.RED,
     logging.ERROR: util.Color.RED,
-    logging.WARNING: util.Color.YELLOW
+    logging.WARNING: util.Color.YELLOW,
+    logging.DEBUG: util.Color.CYAN
 }
 
 
@@ -31,9 +34,13 @@ class ColorFormatter(logging.Formatter):
         return super(ColorFormatter, self).format(new_record, *args, **kwargs)
 
 
-def setup_logging(verbose=False):
+def setup_logging(log_level: Optional[str] = "info"):
     """Set up logging with custom formatter."""
-    log_level = logging.INFO if verbose else logging.CRITICAL
+    if not log_level:
+        log_level = "critical"
+    if log_level not in ["debug", "info", "warning", "error", "critical"]:
+        log_level = "info"
+    log_level = logging.getLevelName(log_level.upper())
 
     # "Simple" logging without custom formatting
     # logging.basicConfig(format=FORMAT, datefmt=DATE_FORMAT, level=log_level)

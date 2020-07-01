@@ -109,7 +109,9 @@ def main():
     models_parser.add_argument("--language", help="Language (ISO 639-3) if different from current corpus language")
 
     # Advanced commands
-    subparsers.add_parser("run-module", no_help=True)
+    runmodule = subparsers.add_parser("run-module", no_help=True)
+    runmodule.add_argument("--log", metavar="LOGLEVEL", help="Set the log level", default="info",
+                           choices=["debug", "info", "warning", "error", "critical"])
 
     runrule_parser = subparsers.add_parser("run-rule", description="Run specified rule(s) for creating annotations.")
     runrule_parser.add_argument("targets", nargs="*", default=["list"],
@@ -132,7 +134,8 @@ def main():
     for subparser in [run_parser, runrule_parser]:
         subparser.add_argument("-d", "--doc", nargs="+", default=[], help="Only annotate specified input document(s)")
     for subparser in [run_parser, runrule_parser, createfile_parser]:
-        subparser.add_argument("--log", action="store_true", help="Show log instead of progress bar")
+        subparser.add_argument("--log", metavar="LOGLEVEL", const="info", help="Show log instead of progress bar",
+                               nargs="?", choices=["debug", "info", "warning", "error", "critical"])
         subparser.add_argument("--debug", action="store_true", help="Show debug messages")
 
     # Backward compatibility
@@ -146,7 +149,7 @@ def main():
     # The "run-module" command is handled by a separate script
     if args.command == "run-module":
         from sparv.core import run
-        run.main(unknown_args)
+        run.main(unknown_args, log_level=args.log)
         sys.exit()
     else:
         args = parser.parse_args()
