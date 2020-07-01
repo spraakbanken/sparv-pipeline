@@ -146,7 +146,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             else:
                 param_value = param.default
 
-        param_type, param_list, _param_optional = registry.get_type_hint_type(param.annotation)
+        param_type, param_list, param_optional = registry.get_type_hint_type(param.annotation)
 
         # Output
         if issubclass(param_type, BaseOutput):
@@ -188,6 +188,9 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                     return False
                 param_value = param_type(param_value)
             missing_configs = param_value.expand_variables(rule.full_name)
+            if (not param_value or missing_configs) and param_optional:
+                rule.parameters[param_name] = None
+                continue
             rule.missing_config.update(missing_configs)
             ann_path = get_annotation_path(param_value, data=param_type.data, common=param_type.common)
             if rule.exporter or rule.installer or param_type.all_docs:
