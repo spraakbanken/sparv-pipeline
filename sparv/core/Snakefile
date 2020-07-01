@@ -41,8 +41,14 @@ def make_rules(config_missing: bool) -> None:
     # Check and set rule orders
     ordered_rules = snake_utils.check_ruleorder(snake_storage)
     for rule1, rule2 in ordered_rules:
-        workflow.ruleorder(rule1.rule_name, rule2.rule_name)
         # ruleorder:  rule1.rule_name > rule2.rule_name
+        workflow.ruleorder(rule1.rule_name, rule2.rule_name)
+    # Print ordered rules when in debug mode
+    if config.get("debug") and ordered_rules:
+        print("\n\n\n{}ORDERED RULES:{}".format(util.Color.BOLD, util.Color.RESET))
+        for rule1, rule2 in ordered_rules:
+            print("    • {} > {}".format(rule1.rule_name, rule2.rule_name))
+        print()
 
 
 def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missing: bool = False,
