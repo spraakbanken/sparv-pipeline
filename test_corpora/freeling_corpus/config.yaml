@@ -16,8 +16,9 @@ metadata:
 #===============================================================================
 
 # Elements and attributes from the source XML that we want to be available as input for other annotations
-xml_elements:
-    - text
+xml_parser:
+    elements:
+        - text
 
 
 #===============================================================================
@@ -27,7 +28,7 @@ xml_elements:
 xml_export: &xml
     # Automatic annotations to be included in the export
     annotations:
-        - <text>:readability.lix
+        # - <text>:readability.lix
         - FREELING_FULL.all
 
 vrt_export: *xml

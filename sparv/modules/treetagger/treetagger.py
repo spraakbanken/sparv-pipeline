@@ -53,7 +53,7 @@ def annotate(lang: Language = Language(),
     word_annotation = list(word.read())
     stdin = SENT_SEP.join(TOK_SEP.join(word_annotation[token_index] for token_index in sent)
                           for sent in sentences)
-    args = ["-token", "-lemma", "-cap-heuristics", "-no-unknown", "-eos-tag", "<eos>", model]
+    args = ["-token", "-lemma", "-cap-heuristics", "-no-unknown", "-eos-tag", "<eos>", model.path]
 
     stdout, stderr = util.system.call_binary(tt_binary, args, stdin, encoding=encoding)
     log.debug("Message from TreeTagger:\n%s", stderr)

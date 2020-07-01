@@ -38,7 +38,7 @@ def annotate(corpus_text: Text = Text(),
 
     # Read corpus_text and text_spans
     text_data = corpus_text.read()
-    text_spans = text.read_spans(text)
+    text_spans = text.read_spans()
 
     sentence_segments = []
     all_tokens = []
