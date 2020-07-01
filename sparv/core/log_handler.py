@@ -22,6 +22,7 @@ class LogHandler:
 
         Args:
             progressbar: Set to True to enable progress bar. Disabled by default.
+            summary: Set to True to write a final summary (elapsed time). Disabled by default.
         """
         self.use_progressbar = progressbar
         self.show_summary = summary
