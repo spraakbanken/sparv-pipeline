@@ -2,13 +2,14 @@
 
 import copy
 import logging
+import os
 from functools import reduce
 from typing import Any
 
 import yaml
 
 from sparv import util
-from sparv.core import paths
+from sparv.core import log_handler, paths
 
 log = logging.getLogger(__name__)
 
@@ -61,6 +62,8 @@ def load_config(config_file: str) -> None:
 
     # Set correct classes and annotations from presets
     apply_presets(user_classes, default_classes)
+
+    fix_document_element()
 
 
 def _get(name: str):
@@ -201,3 +204,27 @@ def _find_annotations(name, config_obj):
                 new_name = f"{name}.{k}" if name else k
                 result.extend(_find_annotations(new_name, v))
     return result
+
+
+def fix_document_element():
+    """Do special treatment for document element."""
+    # Check that classes.text is not set
+    if get("classes.text") is not None:
+        error = "The config value 'classes.text' cannot be set manually. Use 'xml_parser.document_element' instead!"
+        log_handler.exit_with_message(error, os.getpid(), None, "sparv", "config")
+
+    # Check that xml_parser.document_element is set
+    doc_elem = get("xml_parser.document_element")
+    if doc_elem is None:
+        error = "The config value 'xml_parser.document_element' must be set!"
+        log_handler.exit_with_message(error, os.getpid(), None, "sparv", "config")
+
+    # Set classes.text and
+    set_default("classes.text", doc_elem)
+
+    # Add doc_elem to xml_parser.elements
+    xml_parser_elems = get("xml_parser.elements")
+    if xml_parser_elems is None:
+        set_default("xml_parser.elements", [doc_elem])
+    elif doc_elem not in xml_parser_elems:
+        xml_parser_elems.append(doc_elem)

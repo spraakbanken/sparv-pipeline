@@ -15,10 +15,9 @@ metadata:
 # Annotation Settings
 #===============================================================================
 
-# Elements and attributes from the source XML that we want to be available as input for other annotations
 xml_parser:
-    elements:
-        - text
+    # The element representing one text document. Text-level annotations will be made on this element.
+    document_element: text
 
 
 #===============================================================================

@@ -23,7 +23,6 @@ export:
 
 # Class definitions
 classes:
-    text: text
     sentence: segment.sentence
     token: segment.token
     "token:word": <token>:misc.word
