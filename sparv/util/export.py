@@ -307,7 +307,7 @@ def get_annotation_names(annotations: Union[ExportAnnotations, ExportAnnotations
     source_annotations = get_source_annotations(source_annotations, doc, docs)
 
     # Combine all annotations
-    all_annotations = annotations + source_annotations
+    all_annotations = _remove_duplicates(annotations + source_annotations)
 
     if token_name:
         # Get the names of all token attributes
@@ -344,6 +344,17 @@ def get_header_names(header_annotation_names: Optional[List[str]],
     export_names = _create_export_names(header_annotations, None, False, keep_struct_names=False)
 
     return [a[0] for a in header_annotations], export_names
+
+
+def _remove_duplicates(annotation_tuples):
+    """Remove duplicates from annotation_tuples without changing the order."""
+    new_annotations = []
+    new_annotations_set = set()
+    for a, new_name in annotation_tuples:
+        if (a.name, new_name) not in new_annotations_set:
+            new_annotations.append((a, new_name))
+            new_annotations_set.add((a.name, new_name))
+    return new_annotations
 
 
 def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAllDocs], Any]],
