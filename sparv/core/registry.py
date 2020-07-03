@@ -8,13 +8,15 @@ from enum import Enum
 from typing import List, Optional, Tuple, TypeVar
 
 import typing_inspect
+from pkg_resources import iter_entry_points
 
 from sparv.core import config as sparv_config
 from sparv.core import paths
-from sparv.util.classes import Config, ModelOutput, BaseOutput
+from sparv.util.classes import BaseOutput, Config, ModelOutput
 
 modules_path = ".".join(("sparv", paths.modules_dir))
 custom_name = "custom"
+plugin_name = "plugin"
 
 
 class Annotator(Enum):
@@ -73,6 +75,11 @@ def find_modules(no_import=False, find_custom=False) -> list:
                 m = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(m)
 
+    # Search for installed plugins
+    for entry_point in iter_entry_points("sparv.plugin"):
+        entry_point.load()
+        modules.append(entry_point.name)
+
     return modules
 
 
@@ -82,7 +89,11 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
     """Return a decorator for annotator functions, adding them to annotator registry."""
     def decorator(f):
         """Add wrapped function to registry."""
-        module_name = f.__module__[len(modules_path) + 1:].split(".")[0]
+        if f.__module__.split(".")[0] == plugin_name:
+            # Importing an annotator from a plugin
+            module_name = ".".join(f.__module__.split(".")[:-1])
+        else:
+            module_name = f.__module__[len(modules_path) + 1:].split(".")[0]
         if not module_name:
             # This is probably a custom user module
             module_name = f.__module__
@@ -153,6 +164,7 @@ def modelbuilder(description: str, name: Optional[str] = None, config: Optional[
 def _add_to_registry(annotator):
     """Add function to annotator registry. Used by annotator."""
     module_name = annotator["module_name"]
+    stripped_model_name = re.sub(r"plugin\.", "", module_name)
 
     # Add config variables to config
     if annotator["config"]:
@@ -160,7 +172,7 @@ def _add_to_registry(annotator):
         if not annotator["language"] or (
                 annotator["language"] and sparv_config.get("metadata.language") in annotator["language"]):
             for c in annotator["config"]:
-                if not c.name.startswith(module_name + "."):
+                if not c.name.startswith(stripped_model_name + "."):
                     raise ValueError("Config option '{}' in module '{}' doesn't include module "
                                      "name as prefix.".format(c.name, module_name))
                 sparv_config.set_default(c.name, c.default)
@@ -173,11 +185,11 @@ def _add_to_registry(annotator):
 
             # Make sure annotation names include module names as prefix
             if not attr:
-                if not ann_name.startswith(module_name + "."):
+                if not ann_name.startswith(stripped_model_name + "."):
                     raise ValueError("Output annotation '{}' in module '{}' doesn't include module "
                                      "name as prefix.".format(ann_name, module_name))
             else:
-                if not attr.startswith(module_name + "."):
+                if not attr.startswith(stripped_model_name + "."):
                     raise ValueError("Output annotation '{}' in module '{}' doesn't include module "
                                      "name as prefix in attribute.".format(ann, module_name))
 
@@ -197,9 +209,9 @@ def _add_to_registry(annotator):
 
         if isinstance(val.default, ModelOutput):
             modeldir = val.default.name.split("/")[0]
-            if not modeldir.startswith(module_name):
+            if not modeldir.startswith(stripped_model_name):
                 raise ValueError("Output model '{}' in module '{}' doesn't include module "
-                                 "name as sub directory.".format(ann, module_name))
+                                 "name as sub directory.".format(val.default, module_name))
 
     annotators.setdefault(module_name, {})
     f_name = annotator["function"].__name__ if not annotator["name"] else annotator["name"]
