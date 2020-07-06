@@ -276,7 +276,7 @@ class SparvXMLParser:
                     structure.append("{}:{}".format(full_element, full_attr))
 
         # Save list of all elements and attributes to a file (needed for export)
-        util.write_data(self.doc, util.corpus.STRUCTURE_FILE, "\n".join(structure))
+        util.write_structure(self.doc, structure)
 
         if header_elements:
             # Save list of all header elements to a file

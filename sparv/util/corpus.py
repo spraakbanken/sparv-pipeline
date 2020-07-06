@@ -238,6 +238,15 @@ def read_common_data(name):
     return read_data(None, name)
 
 
+def write_structure(doc, structure):
+    """Sort the document's structural elements and write structure file."""
+    file_path = get_annotation_path(doc, STRUCTURE_FILE, data=True)
+    structure.sort()
+    with open(file_path, "w") as f:
+        f.write("\n".join(structure))
+    _log.info("Wrote: %s", file_path)
+
+
 def split_annotation(annotation):
     """Split annotation into annotation name and attribute."""
     if isinstance(annotation, BaseAnnotation):
