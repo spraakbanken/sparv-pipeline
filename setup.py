@@ -29,11 +29,11 @@ setuptools.setup(
     zip_safe=False,
     python_requires=">=3.6",
     install_requires=[
-        "alive-progress==1.4.4",
+        "alive-progress==1.5.1",
         "nltk==3.5",
         "python-dateutil==2.8.1",
         "PyYAML==5.3.1",
-        "snakemake==5.15.0",
+        "snakemake==5.19.3",
         "typing-inspect==0.6.0"
     ],
     entry_points={

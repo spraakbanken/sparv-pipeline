@@ -77,7 +77,7 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
         @workflow.run
         def __rule__(input_, output, params, wildcards, threads, resources, log, version, rule, conda_env, container_img,
                      singularity_args, use_singularity, env_modules, bench_record, jobid, is_shell, bench_iteration,
-                     cleanup_scripts, shadow_dir):
+                     cleanup_scripts, shadow_dir, edit_notebook):
             script("run_snake.py", paths.sparv_path / "core", input_, output, params,
                    wildcards, threads, resources, log, config, rule, conda_env, container_img, singularity_args,
                    env_modules, bench_record, jobid, bench_iteration, cleanup_scripts, shadow_dir)
