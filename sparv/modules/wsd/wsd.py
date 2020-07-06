@@ -3,7 +3,7 @@
 import logging
 
 import sparv.util as util
-from sparv import Annotation, Binary, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv import Annotation, Binary, Config, Model, ModelOutput, Output, annotator, modelbuilder
 
 log = logging.getLogger(__name__)
 
@@ -23,8 +23,8 @@ def annotate(wsdjar: Binary = Binary("[wsd.jar=wsd/saldowsd.jar]"),
              saldo: Annotation = Annotation("<token>:saldo.sense"),
              pos: Annotation = Annotation("<token:pos>"),
              token: Annotation = Annotation("<token>"),
-             sensefmt: str = util.SCORESEP + "%.3f",
-             default_prob: float = -1.0,
+             prob_format: str = Config("wsd.prob_format", util.SCORESEP + "%.3f"),
+             default_prob: float = Config("wsd.default_prob", -1.0),
              encoding: str = util.UTF8):
     """Run the word sense disambiguation tool (saldowsd.jar) to add probabilities to the saldo annotation.
 
@@ -37,7 +37,7 @@ def annotate(wsdjar: Binary = Binary("[wsd.jar=wsd/saldowsd.jar]"),
       - ref is an existing annotation for word references
       - lemgram and saldo are existing annotations for inflection tables and meanings
       - pos is an existing annotations for part-of-speech
-      - sensefmt is a format string for how to print the sense and its probability
+      - prob_format is a format string for how to print the sense probability
       - default_prob is the default value for unanalyzed senses
     """
     word_annotation = list(word.read())
@@ -70,7 +70,7 @@ def annotate(wsdjar: Binary = Binary("[wsd.jar=wsd/saldowsd.jar]"),
     if encoding:
         stdout = stdout.decode(encoding)
 
-    process_output(word, out, stdout, sentences, saldo_annotation, sensefmt, default_prob)
+    process_output(word, out, stdout, sentences, saldo_annotation, prob_format, default_prob)
 
     # Kill running subprocess
     util.system.kill_process(process)
@@ -135,7 +135,7 @@ def build_input(sentences, word_annotation, ref_annotation, lemgram_annotation, 
     return "\n".join(rows)
 
 
-def process_output(word: Annotation, out: Output, stdout, in_sentences, saldo_annotation, sensefmt, default_prob):
+def process_output(word: Annotation, out: Output, stdout, in_sentences, saldo_annotation, prob_format, default_prob):
     """Parse WSD output and write annotation."""
     out_annotation = word.create_empty_attribute()
 
@@ -158,14 +158,16 @@ def process_output(word: Annotation, out: Output, stdout, in_sentences, saldo_an
                 for meaning in saldo:
                     if meaning in out_meanings:
                         i = out_meanings.index(meaning)
-                        new_saldo.append(meaning + sensefmt % float(out_prob[i]))
+                        new_saldo.append((meaning, float(out_prob[i])))
                     else:
-                        new_saldo.append(meaning + sensefmt % default_prob)
+                        new_saldo.append((meaning, default_prob))
             else:
-                new_saldo = [meaning + sensefmt % default_prob for meaning in saldo]
+                new_saldo = [(meaning, default_prob) for meaning in saldo]
 
             # Sort by probability
-            new_saldo = sorted(new_saldo, key=lambda x: float(x.split(":")[-1]), reverse=True)
+            new_saldo = sorted(new_saldo, key=lambda x: x[1], reverse=True)
+            # Format probability according to prob_format
+            new_saldo = [saldo + prob_format % prob if prob_format else saldo for saldo, prob in new_saldo]
             out_annotation[in_tok] = util.cwbset(new_saldo)
 
     out.write(out_annotation)
@@ -174,7 +176,7 @@ def process_output(word: Annotation, out: Output, stdout, in_sentences, saldo_an
 def make_lemgram(lemgram, word, pos):
     """Construct lemgram and simple_lemgram format."""
     lemgram = lemgram.strip(util.AFFIX) if lemgram != util.AFFIX else "_"
-    simple_lemgram = util.DELIM.join(set((l[:l.rfind(".")] for l in lemgram.split(util.DELIM))))
+    simple_lemgram = util.DELIM.join(set((lem[:lem.rfind(".")] for lem in lemgram.split(util.DELIM))))
 
     # Fix simple lemgram for tokens without lemgram (word + pos)
     if not simple_lemgram:
