@@ -29,18 +29,20 @@ if module_name.startswith(custom_name):
     spec = importlib.util.spec_from_file_location(module_name, module_path)
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
-# Import plugin module
-elif module_name.startswith(plugin_name):
-    entry_points = dict((e.name, e) for e in iter_entry_points(f"sparv.{plugin_name}"))
-    entry_point = entry_points.get(module_name)
-    if entry_point:
-        entry_point.load()
-    else:
-        e = f"Couldn't load plugin '{module_name}'. Please make sure it was installed correctly."
-        log_handler.exit_with_message(e, snakemake.params.pid, os.getpid(), "sparv", "run")
-# Import standard sparv module
 else:
-    module = importlib.import_module(".".join((modules_path, module_name)))
+    try:
+        # Try to import standard Sparv module
+        module = importlib.import_module(".".join((modules_path, module_name)))
+    except ModuleNotFoundError:
+        # Try to find plugin module
+        entry_points = dict((e.name, e) for e in iter_entry_points(f"sparv.{plugin_name}"))
+        entry_point = entry_points.get(module_name)
+        if entry_point:
+            entry_point.load()
+        else:
+            e = f"Couldn't load plugin '{module_name}'. Please make sure it was installed correctly."
+            log_handler.exit_with_message(e, snakemake.params.pid, os.getpid(), "sparv", "run")
+
 
 # Get function name and parameters
 f_name = snakemake.params.f_name
