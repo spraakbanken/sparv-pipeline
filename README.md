@@ -56,5 +56,5 @@ pip install -e .[dev]
 Now with the virtual environment activated you can run the tests using `pytest`:
 
 ```
-pytest -s -v
+pytest -s -v --tb=no
 ```

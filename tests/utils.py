@@ -15,7 +15,7 @@ def run_sparv(gold_corpus_dir: pathlib.Path,
               tmp_path: pathlib.Path,
               targets: list = ["xml_export:pretty"]):
     """Run Sparv on corpus in gold_corpus_dir and return the directory of the test corpus."""
-    corpus_name = gold_corpus_dir.parts[-1]
+    corpus_name = gold_corpus_dir.name
     new_corpus_dir = tmp_path / pathlib.Path(corpus_name)
     new_corpus_dir.mkdir()
 
@@ -35,7 +35,7 @@ def run_sparv(gold_corpus_dir: pathlib.Path,
               "log": "error",
               "targets": snakemake_args["targets"]
               }
-    assert snakemake.snakemake(paths.sparv_path / "core" / "Snakefile", config=config, **snakemake_args) is True,\
+    assert snakemake.snakemake(paths.sparv_path / "core" / "Snakefile", config=config, **snakemake_args),\
         "corpus could not be annotated"
 
     return new_corpus_dir
@@ -49,7 +49,7 @@ def cmp_annotations(gold_corpus_dir: pathlib.Path,
     assert _cmp_dirs(gold_corpus_dir / paths.annotation_dir,
                      test_corpus_dir / paths.annotation_dir,
                      ignore=ignore
-                     ) is True, "annotations dir did not match the gold standard"
+                     ), "annotations dir did not match the gold standard"
 
 
 def cmp_export(gold_corpus_dir: pathlib.Path,
@@ -60,7 +60,7 @@ def cmp_export(gold_corpus_dir: pathlib.Path,
     assert _cmp_dirs(gold_corpus_dir / paths.export_dir,
                      test_corpus_dir / paths.export_dir,
                      ignore=ignore
-                     ) is True, "export dir did not match the gold standard"
+                     ), "export dir did not match the gold standard"
 
 
 def is_program(program: str):
