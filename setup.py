@@ -36,6 +36,11 @@ setuptools.setup(
         "snakemake==5.19.3",
         "typing-inspect==0.6.0"
     ],
+    extras_require={
+        "dev": [
+            "pytest==5.4.3",
+        ]
+    },
     entry_points={
         "console_scripts": [
             "sparv=sparv.__main__:main"

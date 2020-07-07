@@ -41,3 +41,20 @@ pipx install -e sparv-pipeline
 ## Installation of additional software
 
 The Sparv Pipeline can be used together with several plugins and third-party software. Please check [Språkbanken's homepage](https://spraakbanken.gu.se/verktyg/sparv/importkedja/installation) for more details!
+
+
+## Running tests
+
+Setup a virtual environment, activate it and install the dev dependencies listed in `setup.py`:
+
+```
+python3 -m venv venv
+source venv/bin/activate
+pip install -e .[dev]
+```
+
+Now with the virtual environment activated you can run the tests using `pytest`:
+
+```
+pytest -s -v
+```
