@@ -45,7 +45,7 @@ The Sparv Pipeline can be used together with several plugins and third-party sof
 
 ## Running tests
 
-Setup a virtual environment, activate it and install the dev dependencies listed in `setup.py`:
+Setup a virtual environment, activate it and install the dependencies (including the dev dependencies) listed in `setup.py`:
 
 ```
 python3 -m venv venv
@@ -53,8 +53,4 @@ source venv/bin/activate
 pip install -e .[dev]
 ```
 
-Now with the virtual environment activated you can run the tests using `pytest`:
-
-```
-pytest -s -v --tb=no
-```
+Now with the virtual environment activated you can run `pytest` from the sparv-pipeline directory.
