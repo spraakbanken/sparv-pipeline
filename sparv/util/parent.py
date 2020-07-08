@@ -101,9 +101,9 @@ def read_parents_and_children(doc, parent, child):
 
     Reorder them according to span position, but keep original index information.
     """
-    if isinstance(parent, (classes.Annotation, str)):
+    if isinstance(parent, (classes.BaseAnnotation, str)):
         parent = sorted(enumerate(corpus.read_annotation_spans(doc, parent, decimals=True)), key=lambda x: x[1])
-    if isinstance(child, (classes.Annotation, str)):
+    if isinstance(child, (classes.BaseAnnotation, str)):
         child = sorted(enumerate(corpus.read_annotation_spans(doc, child, decimals=True)), key=lambda x: x[1])
 
     # Only use sub-positions if both parent and child have them
