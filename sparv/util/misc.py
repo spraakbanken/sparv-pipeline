@@ -49,7 +49,8 @@ def parse_annotation_list(annotation_names: Optional[List[str]], add_plain_annot
     Each list item will be split into a tuple by the string ' as '.
     Each tuple will contain 2 elements. If there is no ' as ' in the string, the second element will be None.
 
-    Plain annotations (without attributes) will be added if needed.
+    Plain annotations (without attributes) will be added if needed, unless add_plain_annotations is set to False.
+    Make sure to disable add_plain_annotations if the annotation names may include classes or config variables.
     """
     if not annotation_names:
         return []
@@ -61,12 +62,12 @@ def parse_annotation_list(annotation_names: Optional[List[str]], add_plain_annot
         plain_name, attr = corpus.split_annotation(name)
         if not attr:
             plain_annotations.add(name)
-        possible_plain_annotations.add(plain_name)
+        else:
+            possible_plain_annotations.add(plain_name)
         result.append((name, export_name or None))
 
     if add_plain_annotations:
-        missing_plain_annotations = possible_plain_annotations.difference(plain_annotations)
-        for a in missing_plain_annotations:
+        for a in possible_plain_annotations.difference(plain_annotations):
             result.append((a, None))
 
     return result

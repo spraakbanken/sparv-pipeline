@@ -213,13 +213,25 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             if not isinstance(param_value, param_type):
                 param_value = param_type(param_value)
             rule.parameters[param_name] = param_value
-            export_annotations = util.parse_annotation_list(sparv_config.get(f"{export_type}.annotations", []))
-            for export_annotation_name, export_name in export_annotations:
-                if param_type == ExportAnnotations:
-                    annotation = Annotation(export_annotation_name)
-                else:
-                    annotation = AnnotationAllDocs(export_annotation_name)
+            export_annotations = util.parse_annotation_list(sparv_config.get(f"{export_type}.annotations", []),
+                                                            add_plain_annotations=False)
+            annotation_type = Annotation if param_type == ExportAnnotations else AnnotationAllDocs
+            plain_annotations = set()
+            possible_plain_annotations = set()
+            for i, (export_annotation_name, export_name) in enumerate(export_annotations):
+                annotation = annotation_type(export_annotation_name)
                 rule.missing_config.update(annotation.expand_variables(rule.full_name))
+                export_annotations[i] = (annotation, export_name)
+                plain_name, attr = annotation.split()
+                if not attr:
+                    plain_annotations.add(plain_name)
+                else:
+                    possible_plain_annotations.add(plain_name)
+            # Add plain annotations where needed
+            for a in possible_plain_annotations.difference(plain_annotations):
+                export_annotations.append((annotation_type(a), None))
+
+            for annotation, export_name in export_annotations:
                 if param.default.is_input:
                     if param_type == ExportAnnotationsAllDocs:
                         rule.inputs.extend(
