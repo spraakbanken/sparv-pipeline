@@ -285,7 +285,7 @@ rule clean:
                 full_path = Path.cwd() / d
                 if full_path.is_dir():
                     shutil.rmtree(full_path)
-                    print(util.sparv_info(f"{d} directory removed"))
+                    print(util.sparv_info(f"'{d}' directory removed"))
                     something_removed = True
             if not something_removed:
                 print(util.sparv_info("Nothing to remove"))

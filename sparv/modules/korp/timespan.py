@@ -42,7 +42,7 @@ def timespan_sql(corpus: Corpus = Corpus(),
                  timefrom: AnnotationAllDocs = AnnotationAllDocs("<text>:dateformat.timefrom"),
                  timeto: AnnotationAllDocs = AnnotationAllDocs("<text>:dateformat.timeto")):
     """Create timespan SQL data for use in Korp."""
-    corpus = corpus.upper()
+    corpus_name = corpus.upper()
     datespans = defaultdict(int)
     datetimespans = defaultdict(int)
 
@@ -61,7 +61,7 @@ def timespan_sql(corpus: Corpus = Corpus(),
 
     for span in datespans:
         rows_date.append({
-            "corpus": corpus,
+            "corpus": corpus_name,
             "datefrom": span[0],
             "dateto": span[1],
             "tokens": datespans[span]
@@ -69,7 +69,7 @@ def timespan_sql(corpus: Corpus = Corpus(),
 
     for span in datetimespans:
         rows_datetime.append({
-            "corpus": corpus,
+            "corpus": corpus_name,
             "datefrom": span[0],
             "dateto": span[1],
             "tokens": datetimespans[span]
@@ -79,8 +79,8 @@ def timespan_sql(corpus: Corpus = Corpus(),
     mysql = MySQL(db_name, encoding=util.UTF8, output=out)
     mysql.create_table(MYSQL_TABLE, drop=False, **MYSQL_TIMESPAN)
     mysql.create_table(MYSQL_TABLE_DATE, drop=False, **MYSQL_TIMESPAN_DATE)
-    mysql.delete_rows(MYSQL_TABLE, {"corpus": corpus})
-    mysql.delete_rows(MYSQL_TABLE_DATE, {"corpus": corpus})
+    mysql.delete_rows(MYSQL_TABLE, {"corpus": corpus_name})
+    mysql.delete_rows(MYSQL_TABLE_DATE, {"corpus": corpus_name})
     mysql.set_names()
 
     mysql.add_row(MYSQL_TABLE, rows_datetime)

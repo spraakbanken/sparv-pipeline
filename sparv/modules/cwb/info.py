@@ -20,15 +20,15 @@ def info(out: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_
          protected: bool = Config("korp.protected", False)):
     """Save information to the file specified by 'out'."""
     content = []
-    protected = str(util.strtobool(protected)).lower()
+    protected_str = str(util.strtobool(protected)).lower()
 
-    for key, value_obj, is_annotation in [("Sentences", sentences, True),
-                                          ("FirstDate", firstdate, True),
-                                          ("LastDate", lastdate, True),
-                                          ("DateResolution", resolution, True),
-                                          ("Updated", time.strftime("%Y-%m-%d"), False),
-                                          ("Protected", protected, False)]:
-        if is_annotation:
+    for key, value_obj in [("Sentences", sentences),
+                           ("FirstDate", firstdate),
+                           ("LastDate", lastdate),
+                           ("DateResolution", resolution),
+                           ("Updated", time.strftime("%Y-%m-%d")),
+                           ("Protected", protected_str)]:
+        if isinstance(value_obj, AnnotationCommonData):
             value = value_obj.read()
             if key == "DateResolution":
                 value = "|".join(util.cwbset_to_list(value))
@@ -77,6 +77,7 @@ def info_date(corpus: Corpus = Corpus(),
               registry: str = Config("cwb.corpus_registry")):
     """Create datefirst and datelast file (needed for .info file)."""
     def fix_name(name: str):
+        """Remove invalid characters from annotation names and optionally remove namespaces."""
         if remove_namespaces:
             prefix, part, suffix = name.partition(":")
             suffix = suffix.split(".")[-1]

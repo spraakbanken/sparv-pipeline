@@ -42,7 +42,7 @@ def load_config(config_file: str) -> None:
     if DEFAULT_CONFIG.is_file():
         default_config = read_yaml(DEFAULT_CONFIG)
     else:
-        log.warning("Default config file is missing: " + DEFAULT_CONFIG)
+        log.warning("Default config file is missing: {}".format(DEFAULT_CONFIG))
         default_config = {}
     default_classes = default_config.get("classes", {})
 
