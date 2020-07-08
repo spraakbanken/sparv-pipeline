@@ -165,7 +165,7 @@ def process_output(word: Annotation, out: Output, stdout, in_sentences, saldo_an
                 new_saldo = [(meaning, default_prob) for meaning in saldo]
 
             # Sort by probability
-            new_saldo = sorted(new_saldo, key=lambda x: x[1], reverse=True)
+            new_saldo.sort(key=lambda x: (-x[1], x[0]))
             # Format probability according to prob_format
             new_saldo = [saldo + prob_format % prob if prob_format else saldo for saldo, prob in new_saldo]
             out_annotation[in_tok] = util.cwbset(new_saldo)

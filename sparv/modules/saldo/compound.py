@@ -405,9 +405,8 @@ def rank_compounds(compounds, nst_model, stats_lexicon):
             tag_prob = max(nst_model.prob("+".join(t)) for t in tags)
             score = word_probs * tag_prob
             ranklist.append((score, c))
-    ranklist = sorted(ranklist, key=lambda x: x[0], reverse=True)
-    # Sort according to length
-    ranklist = sorted(ranklist, key=lambda x: len(x[1]))
+    # Sort according to length and probability
+    ranklist.sort(key=lambda x: (len(x[1]), -x[0], x[1]))
     return ranklist
 
 
