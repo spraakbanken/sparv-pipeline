@@ -15,7 +15,7 @@ bin_dir = "bin"
 corpus_dir = Path(os.environ.get("CORPUS_DIR", ""))
 annotation_dir = Path("annotations")
 log_dir = annotation_dir / ".log"
-source_dir = "original"
+source_dir = "source"
 export_dir = Path("export")
 config_file = "config.yaml"
 
