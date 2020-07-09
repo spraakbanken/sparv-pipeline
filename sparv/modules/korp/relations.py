@@ -178,7 +178,7 @@ def relations(out: OutputData = OutputData("korp.relations"),
                             v["ref"], v["ref"])
                         triples.extend(_mutate_triple(triple))
 
-    triples = set(triples)
+    triples = sorted(set(triples))
 
     out_data = "\n".join(["\t".join((head, headpos, rel, dep, deppos, extra, sentid, refhead, refdep, str(bfhead),
                                      str(bfdep), str(wfhead), str(wfdep))) for (
@@ -404,7 +404,7 @@ def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_coun
 
     rows = []
 
-    for string, index in list(strings.items()):
+    for string, index in sorted(strings.items()):
         if len(string) == 3:
             string, pos, stringextra = string
         else:
@@ -421,9 +421,9 @@ def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_coun
 
     sentence_rows = []
     rows = []
-    for head, rels in list(freq.items()):
-        for rel, deps in list(rels.items()):
-            for dep, dep2 in list(deps.items()):
+    for head, rels in sorted(freq.items()):
+        for rel, deps in sorted(rels.items()):
+            for dep, dep2 in sorted(deps.items()):
                 index, count, bfwf = dep2
 
                 row = {
@@ -442,7 +442,7 @@ def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_coun
     mysql.add_row(temp_db_table, rows, update_freq)
 
     rows = []
-    for rel, freq in list(rel_count.items()):
+    for rel, freq in sorted(rel_count.items()):
         row = {
             "rel": rel,
             "freq": freq}
@@ -451,7 +451,7 @@ def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_coun
     mysql.add_row(temp_db_table + "_rel", rows, update_freq)
 
     rows = []
-    for head_rel, freq in list(head_rel_count.items()):
+    for head_rel, freq in sorted(head_rel_count.items()):
         head, rel = head_rel
         row = {
             "head": head,
@@ -462,7 +462,7 @@ def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_coun
     mysql.add_row(temp_db_table + "_head_rel", rows, update_freq)
 
     rows = []
-    for dep_rel, freq in list(dep_rel_count.items()):
+    for dep_rel, freq in sorted(dep_rel_count.items()):
         dep, rel = dep_rel
         row = {
             "dep": dep,
@@ -472,8 +472,8 @@ def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_coun
 
     mysql.add_row(temp_db_table + "_dep_rel", rows, update_freq)
 
-    for index, sentenceset in list(sentences.items()):
-        for sentence in sentenceset:
+    for index, sentenceset in sorted(sentences.items()):
+        for sentence in sorted(sentenceset):
             srow = {
                 "id": index,
                 "sentence": sentence[0],
