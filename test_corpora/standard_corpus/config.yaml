@@ -10,12 +10,14 @@ metadata:
 
 
 #===============================================================================
-# Annotation Settings (???)
+# Annotation Settings
 #===============================================================================
 
-xml_parser:
+import:
     # The element representing one text document. Text-level annotations will be made on this element.
     document_element: text
+
+xml_parser:
     # Elements and attributes from the source XML that we want to be available as input for other annotations
     elements:
         - text:date

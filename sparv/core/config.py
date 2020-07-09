@@ -213,10 +213,10 @@ def fix_document_element():
         error = "The config value 'classes.text' cannot be set manually. Use 'xml_parser.document_element' instead!"
         log_handler.exit_with_message(error, os.getpid(), None, "sparv", "config")
 
-    # Check that xml_parser.document_element is set
-    doc_elem = get("xml_parser.document_element")
+    # Check that import.document_element is set
+    doc_elem = get("import.document_element")
     if doc_elem is None:
-        error = "The config value 'xml_parser.document_element' must be set!"
+        error = "The config value 'import.document_element' must be set!"
         log_handler.exit_with_message(error, os.getpid(), None, "sparv", "config")
 
     # Set classes.text and

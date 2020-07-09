@@ -15,7 +15,7 @@ metadata:
 # Annotation Settings
 #===============================================================================
 
-xml_parser:
+import:
     # The element representing one text document. Text-level annotations will be made on this element.
     document_element: text
 

@@ -11,6 +11,21 @@ metadata:
 
 
 #===============================================================================
+# General Settings
+#===============================================================================
+
+import:
+    # The element representing one text document. Text-level annotations will be made on this element.
+    document_element: text
+
+# Class definitions
+classes:
+    sentence: segment.sentence
+    token: segment.token
+    "token:word": <token>:misc.word
+
+
+#===============================================================================
 # Output Settings
 #===============================================================================
 
@@ -20,12 +35,6 @@ export:
     remove_export_namespaces: true
     # Chunk to scramble the XML export on
     scramble_on: <sentence>
-
-# Class definitions
-classes:
-    sentence: segment.sentence
-    token: segment.token
-    "token:word": <token>:misc.word
 
 
 #===============================================================================
