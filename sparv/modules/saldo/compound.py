@@ -294,8 +294,6 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
             # Abort if current compound contains an affix known to be invalid
             abort = False
             for ii, s in enumerate(spans):
-                if s not in valid_spans and s not in invalid_spans:
-                    break
                 if s in invalid_spans:
                     if not s[1] is None:
                         # Skip any combination of spans following the invalid span
@@ -306,48 +304,74 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
             if abort:
                 continue
 
-            # Expand prefixes if possible
+            # Expand spans with additional consonants where possible
             comps = three_consonant_rule([w[i:j] for i, j in spans])
-            for comp in comps:
+            for comp_i, comp in enumerate(comps):
+                multicomp = len(comps) > 1
+                # Check if prefix is valid
+                this_span = (spans[0], comp_i) if multicomp else spans[0]
+                if this_span not in valid_spans:
+                    if this_span in invalid_spans:
+                        continue
+                    else:
+                        if not (saldo_lexicon.get_prefixes(comp[0]) or altlexicon.get_prefixes(comp[0])):
+                            invalid_spans.add(this_span)
+                            if multicomp:
+                                if all((spans[0], i) in invalid_spans for i in range(len(comps))):
+                                    invalid_spans.add(spans[0])
+                            continue
+                        else:
+                            valid_spans.add(this_span)
+
+                # Check if suffix is valid
+                this_span = (spans[-1], comp_i) if multicomp else spans[-1]
+                if this_span not in valid_spans:
+                    if this_span in invalid_spans:
+                        continue
+                    else:
+                        # Is there a possible suffix analysis?
+                        if exception(comp[-1]) or not (saldo_lexicon.get_suffixes(comp[-1], msd)
+                                                       or altlexicon.get_suffixes(comp[-1], msd)):
+                            invalid_spans.add(this_span)
+                            if multicomp:
+                                if all((spans[-1], i) in invalid_spans for i in range(len(comps))):
+                                    invalid_spans.add(spans[-1])
+                            continue
+                        else:
+                            valid_spans.add(this_span)
+
+                # Check if other spans are valid
                 abort = False
-                # Have we analyzed this prefix yet?
-                if not spans[0] in valid_spans:
-                    if not (saldo_lexicon.get_prefixes(comp[0]) or altlexicon.get_prefixes(comp[0])):
-                        invalid_spans.add(spans[0])
-                        abort = True
-                    else:
-                        valid_spans.add(spans[0])
-
-                # Have we analyzed this suffix yet?
-                if not spans[-1] in valid_spans:
-                    # Is there a possible suffix analysis?
-                    if exception(comp[-1]) or not (
-                            saldo_lexicon.get_suffixes(comp[-1], msd) or altlexicon.get_suffixes(comp[-1], msd)):
-                        invalid_spans.add(spans[-1])
-                        abort = True
-                    else:
-                        valid_spans.add(spans[-1])
-
                 for k, infix in enumerate(comp[1:-1], start=1):
-                    # Have we analyzed this infix yet?
-                    if not spans[k] in valid_spans:
-                        if exception(infix) or not (saldo_lexicon.get_infixes(infix) or altlexicon.get_prefixes(infix)):
-                            invalid_spans.add(spans[k])
+                    this_span = (spans[k], comp_i) if multicomp else spans[k]
+                    if this_span not in valid_spans:
+                        if this_span in invalid_spans:
                             abort = True
-                            # Skip any combination of spans following the invalid span
-                            for j in range(k + 1, n):
-                                indices[j] = j + nn - n
                             break
                         else:
-                            valid_spans.add(spans[k])
+                            if exception(infix) or not (saldo_lexicon.get_infixes(infix)
+                                                        or altlexicon.get_prefixes(infix)):
+                                invalid_spans.add(this_span)
+                                if multicomp:
+                                    if all((spans[k], i) in invalid_spans for i in range(len(comps))):
+                                        invalid_spans.add(spans[k])
+                                abort = True
+                                # Skip any combination of spans following the invalid span
+                                for j in range(k + 1, n):
+                                    indices[j] = j + nn - n
+                                break
+                            else:
+                                valid_spans.add(this_span)
 
-                if not abort:
-                    counter += 1
-                    if counter > SPLIT_LIMIT:
-                        giveup = True
-                        log.info("Too many possible compounds for word '%s'" % w)
-                        break
-                    yield comp
+                if abort:
+                    continue
+
+                counter += 1
+                if counter > SPLIT_LIMIT:
+                    giveup = True
+                    log.info("Too many possible compounds for word '%s'" % w)
+                    break
+                yield comp
 
             if giveup:
                 break
@@ -367,12 +391,12 @@ def exception(w):
 
 
 def three_consonant_rule(compound):
-    """Expand prefix if its last letter == first letter of suffix.
+    """Expand each stem if its last letter equals the first letter of the following stem.
 
     ("glas", "skål") --> ("glas", "skål"), ("glass", "skål")
     """
     combinations = []
-    suffix = compound[len(compound) - 1]
+    suffix = compound[-1]
     for index in range(len(compound) - 1):
         current_prefix = compound[index]
         current_suffix = compound[index + 1]
@@ -382,7 +406,7 @@ def three_consonant_rule(compound):
         else:
             combinations.append((current_prefix, current_prefix))
     combinations.append((suffix, suffix))
-    return [list(i) for i in list(set(itertools.product(*combinations)))]
+    return [list(i) for i in sorted(set(itertools.product(*combinations)))]
 
 
 def rank_compounds(compounds, nst_model, stats_lexicon):
