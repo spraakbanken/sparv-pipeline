@@ -33,7 +33,7 @@ def build_korp_stats(out: ModelOutput = ModelOutput("saldo/stats.pickle"),
         download_stats_file("https://svn.spraakdata.gu.se/sb-arkiv/pub/frekvens/stats_all.txt", txt_path)
 
         log.info("Building frequency model...")
-        make_model(util.get_model_path(txt_path), out)
+        make_model(util.get_model_path(txt_path), out.path)
     finally:
         # Clean up
         util.remove_model_files([txt_path])
