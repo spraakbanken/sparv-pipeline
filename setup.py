@@ -39,6 +39,7 @@ setuptools.setup(
     extras_require={
         "dev": [
             "pytest==5.4.3",
+            "pytest-sugar==0.9.4"
         ]
     },
     entry_points={

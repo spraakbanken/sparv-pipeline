@@ -10,6 +10,8 @@ import snakemake
 from sparv.core import paths
 from sparv.util import Color
 
+GOLD_PREFIX = "gold_"
+
 
 def run_sparv(gold_corpus_dir: pathlib.Path,
               tmp_path: pathlib.Path,
@@ -17,11 +19,11 @@ def run_sparv(gold_corpus_dir: pathlib.Path,
     """Run Sparv on corpus in gold_corpus_dir and return the directory of the test corpus."""
     corpus_name = gold_corpus_dir.name
     new_corpus_dir = tmp_path / pathlib.Path(corpus_name)
-    new_corpus_dir.mkdir()
 
-    # Copy original dir and corpus config
-    shutil.copytree(str(gold_corpus_dir / paths.source_dir), str(new_corpus_dir / paths.source_dir))
-    shutil.copy(str(gold_corpus_dir / paths.config_file), str(new_corpus_dir / paths.config_file))
+    # Copy everything but the output
+    shutil.copytree(str(gold_corpus_dir), str(new_corpus_dir), ignore=shutil.ignore_patterns(
+        str(paths.annotation_dir), GOLD_PREFIX + str(paths.annotation_dir),
+        str(paths.export_dir), GOLD_PREFIX + str(paths.export_dir)))
 
     # Annotate corpus
     snakemake_args = {"workdir": new_corpus_dir,
@@ -46,7 +48,7 @@ def cmp_annotations(gold_corpus_dir: pathlib.Path,
                     ignore: list = []):
     """Recursively compare the annotation directories of gold_corpus and test_corpus."""
     ignore.append(".log")
-    assert _cmp_dirs(gold_corpus_dir / paths.annotation_dir,
+    assert _cmp_dirs(gold_corpus_dir / pathlib.Path(GOLD_PREFIX + str(paths.annotation_dir)),
                      test_corpus_dir / paths.annotation_dir,
                      ignore=ignore
                      ), "annotations dir did not match the gold standard"
@@ -57,7 +59,7 @@ def cmp_export(gold_corpus_dir: pathlib.Path,
                ignore: list = []):
     """Recursively compare the export directories of gold_corpus and test_corpus."""
     ignore.append(".log")
-    assert _cmp_dirs(gold_corpus_dir / paths.export_dir,
+    assert _cmp_dirs(gold_corpus_dir / pathlib.Path(GOLD_PREFIX + str(paths.export_dir)),
                      test_corpus_dir / paths.export_dir,
                      ignore=ignore
                      ), "export dir did not match the gold standard"

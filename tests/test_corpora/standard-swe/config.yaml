@@ -8,6 +8,12 @@ metadata:
     # Corpus name (human readable)
     name: Swedish standard test corpus
 
+    description-en: |
+        This test corpus includes:
+        - all Swedish standard token and text-level annotations except wsd
+        - custom annotations
+        - all kinds of exports except the combined and compressed variants
+
 
 #===============================================================================
 # Annotation Settings
@@ -57,7 +63,23 @@ xml_export: &xml
         - <token>:saldo.lemgram
         - <token>:saldo.compwf
         - <token>:saldo.complemgram
+        - <token>:misc.word.affixed
+        - <token>:custom.convert.upper
 
 csv_export: *xml
 
 vrt_export: *xml
+
+
+#===============================================================================
+# Custom Annotations
+#===============================================================================
+custom_annotations:
+    - name: misc:affix
+      params:
+          out: <token>:misc.word.affixed
+          chunk: <token:word>
+          prefix: "|"
+          suffix: "|"
+
+    - name: custom.convert:uppercase
