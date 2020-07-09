@@ -11,24 +11,24 @@ from sparv import Config, Document, Source, importer, util
 log = logging.getLogger(__name__)
 
 
-@importer("XML import", source_type="xml", outputs=Config("xml_parser.elements", []), config=[
-    Config("xml_parser.elements", []),
-    Config("xml_parser.skip", []),
-    Config("xml_parser.header_elements", []),
-    Config("xml_parser.header_data", []),
-    Config("xml_parser.prefix", ""),
-    Config("xml_parser.encoding", util.UTF8),
-    Config("xml_parser.normalize", "NFC")
+@importer("XML import", source_type="xml", outputs=Config("xml_import.elements", []), config=[
+    Config("xml_import.elements", []),
+    Config("xml_import.skip", []),
+    Config("xml_import.header_elements", []),
+    Config("xml_import.header_data", []),
+    Config("xml_import.prefix", ""),
+    Config("xml_import.encoding", util.UTF8),
+    Config("xml_import.normalize", "NFC")
 ])
 def parse(doc: Document = Document(),
           source_dir: Source = Source(),
-          elements: list = Config("xml_parser.elements"),
-          skip: list = Config("xml_parser.skip"),
-          header_elements: list = Config("xml_parser.header_elements"),
-          header_data: list = Config("xml_parser.header_data"),
-          prefix: str = Config("xml_parser.prefix"),
-          encoding: str = Config("xml_parser.encoding"),
-          normalize: str = Config("xml_parser.normalize")):
+          elements: list = Config("xml_import.elements"),
+          skip: list = Config("xml_import.skip"),
+          header_elements: list = Config("xml_import.header_elements"),
+          header_data: list = Config("xml_import.header_data"),
+          prefix: str = Config("xml_import.prefix"),
+          encoding: str = Config("xml_import.encoding"),
+          normalize: str = Config("xml_import.normalize")):
     """Parse XML source file and create annotation files.
 
     Args:
