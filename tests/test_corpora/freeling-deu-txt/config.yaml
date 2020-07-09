@@ -4,11 +4,14 @@
 
 metadata:
     # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
-    id: treetagger-corpus
+    id: freeling-deu
     # Corpus name (human readable)
-    name: TreeTagger test corpus
+    name: German FreeLing test corpus
     # Language of the input documents, specified as ISO 639-3 code
-    language: nld
+    lang: deu
+    # File type of the input. Must be 'xml' or 'txt'.
+    source_type: txt
+
 
 #===============================================================================
 # Annotation Settings
@@ -18,7 +21,6 @@ import:
     # The element representing one text document. Text-level annotations will be made on this element.
     document_element: text
 
-
 #===============================================================================
 # Output (Export) Settings
 #===============================================================================
@@ -26,7 +28,8 @@ import:
 xml_export: &xml
     # Automatic annotations to be included in the export
     annotations:
-        - text:readability.lix
-        - TREETAGGER.all
+        - FREELING.all
+
+csv_export: *xml
 
 vrt_export: *xml

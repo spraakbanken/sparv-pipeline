@@ -4,9 +4,9 @@
 
 metadata:
     # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
-    id: freeling-corpus
+    id: stanford-eng
     # Corpus name (human readable)
-    name: FreeLing test corpus
+    name: Stanford Parser test corpus
     # Language of the input documents, specified as ISO 639-3 code
     language: eng
 
@@ -15,7 +15,7 @@ metadata:
 # Annotation Settings
 #===============================================================================
 
-xml_import:
+import:
     # The element representing one text document. Text-level annotations will be made on this element.
     document_element: text
 
@@ -27,7 +27,6 @@ xml_import:
 xml_export: &xml
     # Automatic annotations to be included in the export
     annotations:
-        # - <text>:readability.lix
-        - FREELING_FULL.all
+        - STANFORD.all
 
 vrt_export: *xml

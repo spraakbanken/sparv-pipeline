@@ -4,9 +4,9 @@
 
 metadata:
     # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
-    id: stanford-corpus
+    id: freeling-eng-slevel
     # Corpus name (human readable)
-    name: Stanford Parser test corpus
+    name: FreeLing test corpus
     # Language of the input documents, specified as ISO 639-3 code
     language: eng
 
@@ -15,10 +15,26 @@ metadata:
 # Annotation Settings
 #===============================================================================
 
+classes:
+    sentence: s
+
 import:
     # The element representing one text document. Text-level annotations will be made on this element.
     document_element: text
 
+xml_import:
+    elements:
+        - s
+        - text:date
+
+freeling:
+    slevel: s
+
+# Description of the date/time input format
+dateformat:
+    datetime_from: <text>:date
+    datetime_to: <text>:date
+    datetime_informat: "%Y-%m-%d"
 
 #===============================================================================
 # Output (Export) Settings
@@ -27,6 +43,11 @@ import:
 xml_export: &xml
     # Automatic annotations to be included in the export
     annotations:
-        - STANFORD.all
+        - <text>:readability.lix
+        - DATETIME.all
+        - s:misc.id
+        - FREELING_FULL.token
 
 vrt_export: *xml
+
+csv_export: *xml
