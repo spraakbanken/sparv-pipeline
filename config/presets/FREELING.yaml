@@ -26,7 +26,6 @@ presets:
         - sentence
 
     token:
-        - freeling.token:freeling.word
         - freeling.token:freeling.upos
         - freeling.token:freeling.pos
         - freeling.token:freeling.baseform

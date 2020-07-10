@@ -20,7 +20,6 @@ presets:
         - sentence
 
     token:
-        - stanford.token:stanford.word
         - stanford.token:stanford.ref
         - stanford.token:stanford.pos
         - stanford.token:stanford.upos
