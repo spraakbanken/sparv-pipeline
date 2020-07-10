@@ -4,12 +4,17 @@
 
 metadata:
     # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
-    id: freeling-deu
+    id: freeling-fra-txt
     # Corpus name (human readable)
-    name: German FreeLing test corpus
+    name: French FreeLing test corpus
     # Language of the input documents, specified as ISO 639-3 code
-    lang: deu
+    language: fra
 
+    description-en: |
+        This test corpus includes:
+        - the FreeLing annotations from the FREELING preset
+        - input files in txt format
+        - some exports
 
 #===============================================================================
 # Annotation Settings
