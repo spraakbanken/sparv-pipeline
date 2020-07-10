@@ -9,8 +9,6 @@ metadata:
     name: German FreeLing test corpus
     # Language of the input documents, specified as ISO 639-3 code
     lang: deu
-    # File type of the input. Must be 'xml' or 'txt'.
-    source_type: txt
 
 
 #===============================================================================
@@ -18,6 +16,8 @@ metadata:
 #===============================================================================
 
 import:
+    # File type of the input. Must be 'xml' or 'txt'.
+    source_type: txt
     # The element representing one text document. Text-level annotations will be made on this element.
     document_element: text
 

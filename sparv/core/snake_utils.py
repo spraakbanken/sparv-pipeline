@@ -96,7 +96,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
     if rule.importer:
         rule.inputs.append(Path(get_source_path(), "{doc}." + rule.source_type))
-        if rule.source_type == sparv_config.get("source_type", "xml"):
+        if rule.source_type == sparv_config.get("import.source_type", "xml"):
             # Exports always generate corpus text file
             rule.outputs.append(paths.annotation_dir / "{doc}" / util.TEXT_FILE)
             # If importer guarantees other outputs, add them to outputs list
@@ -480,7 +480,7 @@ def get_source_files(source_files) -> List[str]:
     """Get list of all available source files."""
     if not source_files:
         source_files = [f[1][0] for f in snakemake.utils.listfiles(
-            Path(get_source_path(), "{file}." + sparv_config.get("source_type", "xml")))]
+            Path(get_source_path(), "{file}." + sparv_config.get("import.source_type", "xml")))]
     return source_files
 
 

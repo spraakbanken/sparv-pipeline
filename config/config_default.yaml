@@ -6,15 +6,14 @@ metadata:
     # Language of the input documents, specified as ISO 639-3 code
     language: swe
 
-    # File type of the input. Must be 'xml' or 'txt'.
-    source_type: xml
-
 
 #===============================================================================
 # General Settings
 #===============================================================================
 
 import:
+    # File type of the input. Must be 'xml' or 'txt'.
+    source_type: xml
     # The element representing one text document. Text-level annotations will be made on this element.
     document_element: text
 
