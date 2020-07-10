@@ -30,3 +30,5 @@ xml_export: &xml
         - STANFORD.all
 
 vrt_export: *xml
+
+csv_export: *xml
