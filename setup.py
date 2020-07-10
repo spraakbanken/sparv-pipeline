@@ -33,7 +33,7 @@ setuptools.setup(
         "nltk==3.5",
         "python-dateutil==2.8.1",
         "PyYAML==5.3.1",
-        "snakemake==5.19.3",
+        "snakemake==5.20.1",
         "typing-inspect==0.6.0"
     ],
     extras_require={

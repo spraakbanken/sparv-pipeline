@@ -105,7 +105,7 @@ class LogHandler:
             # Save other errors and warnings for later
             self.real_errors.append(msg)
 
-        elif level == "dag_debug":
+        elif level == "dag_debug" and "job" in msg:
             # If a module can't be used due to missing config variables, a log is created. Read those log files and
             # save to a dictionary.
             if self.load_errors is None:
