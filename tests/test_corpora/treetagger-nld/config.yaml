@@ -10,6 +10,11 @@ metadata:
     # Language of the input documents, specified as ISO 639-3 code
     language: nld
 
+    description-en: |
+        This test corpus includes:
+        - the Treetagger annotations from the TREETAGGER preset
+        - some exports
+
 #===============================================================================
 # Annotation Settings
 #===============================================================================
@@ -26,7 +31,10 @@ import:
 xml_export: &xml
     # Automatic annotations to be included in the export
     annotations:
+        - <text>:misc.id
         - text:readability.lix
         - TREETAGGER.all
+
+csv_export: *xml
 
 vrt_export: *xml
