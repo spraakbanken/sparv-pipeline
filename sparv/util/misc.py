@@ -1,14 +1,22 @@
 """Misc util functions."""
 
+import logging
 from typing import List, Optional
 
-from .constants import Color
 from . import corpus
+from .constants import Color
 
 
 class SparvErrorMessage(Exception):
     """Exception used to notify users of errors in a friendly way without displaying traceback."""
     pass
+
+
+def get_logger(name):
+    """Get a logger that is a child of 'sparv.modules'."""
+    if not name.startswith("sparv.modules"):
+        name = "sparv.modules." + name
+    return logging.getLogger(name)
 
 
 def sparv_warning(msg):
