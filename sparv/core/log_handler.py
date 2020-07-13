@@ -15,9 +15,7 @@ from sparv.core import paths
 class LogHandler:
     """Class providing a log handler for Snakemake."""
 
-    # The second unicode character below is a zero width space, needed for the progressbar to calculate the correct
-    # width. It uses len() which doesn't take into account that the bird character takes up two columns when printed.
-    icon = "\U0001f426\U0000200b"
+    icon = "\U0001f426"
 
     def __init__(self, progressbar=False, summary=False):
         """Initialize log handler.

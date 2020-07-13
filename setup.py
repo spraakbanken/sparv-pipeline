@@ -29,7 +29,7 @@ setuptools.setup(
     zip_safe=False,
     python_requires=">=3.6",
     install_requires=[
-        "alive-progress==1.6.0",
+        "alive-progress==1.6.1",
         "nltk==3.5",
         "python-dateutil==2.8.1",
         "PyYAML==5.3.1",
