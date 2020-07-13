@@ -53,12 +53,9 @@ def load_config(config_file: str) -> None:
         user_config = loaded_config
     user_classes = user_config.get("classes", {})
 
-    # Merge default and corpus config
-    combined_config = _merge_dicts(copy.deepcopy(user_config), default_config)
-
-    # Merge with config, overriding existing values
+    # Merge default and corpus config and save to global config variable
     global config
-    config = _merge_dicts(combined_config, config)
+    config = _merge_dicts(copy.deepcopy(user_config), default_config)
 
     # Set correct classes and annotations from presets
     apply_presets(user_classes, default_classes)
