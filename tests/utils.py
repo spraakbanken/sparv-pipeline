@@ -4,6 +4,7 @@ import difflib
 import filecmp
 import pathlib
 import shutil
+import subprocess
 
 import snakemake
 
@@ -25,21 +26,9 @@ def run_sparv(gold_corpus_dir: pathlib.Path,
         str(paths.annotation_dir), GOLD_PREFIX + str(paths.annotation_dir),
         str(paths.export_dir), GOLD_PREFIX + str(paths.export_dir)))
 
-    # Annotate corpus
-    snakemake_args = {"workdir": new_corpus_dir,
-                      "dryrun": False,
-                      "cores": 1,
-                      "targets": targets
-                      }
-    config = {"run_by_sparv": True,
-              "debug": False,
-              "doc": [],
-              "log": "error",
-              "targets": snakemake_args["targets"]
-              }
-    assert snakemake.snakemake(paths.sparv_path / "core" / "Snakefile", config=config, **snakemake_args),\
-        "corpus could not be annotated"
-
+    args = ["sparv", "-d", str(new_corpus_dir), "run", "-o", *targets]
+    process = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    assert process.returncode == 0, "corpus could not be annotated"
     return new_corpus_dir
 
 
