@@ -99,8 +99,6 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
             stdout = stdout.decode(encoding)
             if stderr:
                 stderr = stderr.decode(encoding)
-        if stderr:
-            log.warning(f"Error in {name}: {stderr}")
         return stdout, stderr
 
 
