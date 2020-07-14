@@ -209,5 +209,5 @@ def get_rus_model(out: ModelOutput = ModelOutput("treetagger/rus.par"),
 
 def _download(url, gzip, out):
     util.download_model(url, gzip)
-    util.ungzip_model(gzip, out)
+    util.ungzip_model(gzip, out.path)
     util.remove_model_files([gzip])
