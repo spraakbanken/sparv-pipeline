@@ -3,13 +3,15 @@ import os
 import re
 import sys
 import time
-from pathlib import Path
+from collections import defaultdict
 from datetime import timedelta
+from pathlib import Path
 
 from alive_progress import alive_bar
 from snakemake import logger
 
 from sparv.core import paths
+from sparv.util.misc import SparvErrorMessage
 
 
 class LogHandler:
@@ -27,12 +29,12 @@ class LogHandler:
         self.use_progressbar = progressbar
         self.show_summary = summary
         self.finished = False
-        self.messages = []
-        self.real_errors = []
-        self.load_errors = None
-        self.handled_load_errors = set()
+        self.messages = defaultdict(list)
+        self.missing_configs = None
+        self.missing_configs_re = None
+        self.missing_configs_annotators = defaultdict(list)
+        self.handled_missing_configs = set()
         self.start_time = time.time()
-        self.exit_message = None
 
         # Progress bar related variables
         self.bar_mgr = None
@@ -49,6 +51,16 @@ class LogHandler:
 
     def log_handler(self, msg):
         """Log handler for Snakemake displaying a progress bar."""
+        def read_log_files(log_type: str):
+            """Find log files tied to this process and return log messages."""
+            messages = []
+            for log_file in paths.log_dir.glob("{}.*.{}.*".format(os.getpid(), log_type)):
+                log_info = re.match(r"\d+\.\d+\." + log_type + r"\.([^.]+)\.([^.]+)", log_file.stem)
+                assert log_info, "Could not parse log file name: {}".format(log_file)
+                messages.append((*log_info.groups(), log_file.read_text()))
+                log_file.unlink()
+            return messages
+
         level = msg["level"]
 
         if level == "run_info" and self.use_progressbar:
@@ -80,7 +92,7 @@ class LogHandler:
         elif level == "job_info" and self.use_progressbar:
             if msg["msg"] and self.bar is not None:
                 if msg["msg"].startswith("EXIT_MESSAGE: "):
-                    self.exit_message = msg["msg"][14:]
+                    self.messages["final"].append(msg["msg"][14:])
                 else:
                     # Only update status message, don't advance progress
                     self.bar.text(msg["msg"])
@@ -89,38 +101,64 @@ class LogHandler:
             if msg["msg"] == "Nothing to be done.":
                 logger.text_handler(msg)
 
-        elif level == "error" and ("exit status 123" in msg["msg"] or (
-            "SystemExit" in msg["msg"] and "123" in msg["msg"]
-        )):
-            # Exit status 123 means a SparvErrorMessage exception
-            # Find log files tied to this process
-            for log_file in paths.log_dir.glob("{}.*".format(os.getpid())):
-                log_info = re.match(r"[^.]+\.[^.]+\.([^.]+)\.([^.]+)\.([^.]+)", log_file.stem)
-                self.messages.append((log_info.groups(), log_file.read_text()))
-                log_file.unlink()
+        elif level == "error":
+            handled = False
 
-        elif level in ("warning", "error", "job_error"):
+            # SparvErrorMessage exception from pipeline core
+            if "SparvErrorMessage" in msg["msg"]:
+                # Parse error message
+                message = re.search(
+                    r"{}([^\n]*)\n([^\n]*)\n(.*?){}".format(SparvErrorMessage.start_marker,
+                                                            SparvErrorMessage.end_marker),
+                    msg["msg"])
+                if message:
+                    self.messages["error"].append(message.groups())
+                    handled = True
+
+            # Exit status 123 means a SparvErrorMessage exception saved to file
+            elif "exit status 123" in msg["msg"] or ("SystemExit" in msg["msg"] and "123" in msg["msg"]):
+                self.messages["error"].extend(read_log_files("error"))
+                handled = True
+
+            # Errors due to missing config variables
+            elif "MissingInputException" in msg["msg"] or "MissingOutputException" in msg["msg"]:
+                config_variable = self.missing_configs_re.search(msg["msg"])
+                if config_variable:
+                    handled = True
+                    annotator = self.missing_configs[config_variable.group(1)]
+                    if annotator not in self.handled_missing_configs:
+                        self.handled_missing_configs.add(annotator)
+                        for message in self.missing_configs_annotators[annotator]:
+                            self.messages["error"].append((*annotator, message))
+
+            # Unhandled errors
+            if not handled:
+                self.messages["real_error"].append(msg)
+
+        elif level in ("warning", "job_error"):
             # Save other errors and warnings for later
-            self.real_errors.append(msg)
+            self.messages["real_error"].append(msg)
 
         elif level == "dag_debug" and "job" in msg:
             # If a module can't be used due to missing config variables, a log is created. Read those log files and
             # save to a dictionary.
-            if self.load_errors is None:
-                self.load_errors = {}
-                for log_file in paths.log_dir.glob("{}.load_error.*".format(os.getpid())):
-                    annotator_name = log_file.stem.split(".", 2)[2].replace(".", "::")
-                    self.load_errors.setdefault(annotator_name, [])
-                    self.load_errors[annotator_name].append(log_file.read_text())
-                    log_file.unlink()
+            if self.missing_configs is None:
+                self.missing_configs = {}
+                for log in read_log_files("missing_config"):
+                    annotator = tuple(log[0:2])
+                    for line in log[2].splitlines()[1:]:
+                        self.missing_configs[line.lstrip("- ")] = annotator
+                    self.missing_configs_annotators[annotator].append(log[2])
+
+            self.missing_configs_re = re.compile(r"\[({})\]".format("|".join(self.missing_configs.keys())))
 
             # Check the rules used by the current operation, and see if any is unusable
-            if msg["status"] == "candidate":
-                job_name = str(msg["job"])
-                if job_name in self.load_errors and job_name not in self.handled_load_errors:
-                    self.handled_load_errors.add(job_name)
-                    for error_message in self.load_errors[job_name]:
-                        self.messages.append((["error"] + job_name.split("::"), error_message))
+            if msg["status"] == "selected":
+                job_name = tuple(str(msg["job"]).split("::"))
+                if job_name in self.missing_configs_annotators and job_name not in self.handled_missing_configs:
+                    self.handled_missing_configs.add(job_name)
+                    for error_message in self.missing_configs_annotators[job_name]:
+                        self.messages["error"].append(*job_name, error_message)
 
     def stop(self):
         """Stop the progress bar and output any error messages."""
@@ -142,30 +180,22 @@ class LogHandler:
             print()
 
             # Print user-friendly error messages
-            if self.messages:
+            if self.messages["error"]:
                 logger.logger.error("Job execution failed with the following message{}:".format(
                     "s" if len(self.messages) > 1 else ""))
-                for message in self.messages:
-                    (_message_type, module_name, f_name), msg = message
+                for message in self.messages["error"]:
+                    module_name, f_name, msg = message
                     logger.logger.error("\n[{}:{}]\n{}".format(module_name, f_name, msg))
             # Defer to Snakemake's default log handler for other errors
-            elif self.real_errors:
-                for error in self.real_errors:
+            elif self.messages["real_error"]:
+                for error in self.messages["real_error"]:
                     logger.text_handler(error)
-
-            if self.exit_message:
-                logger.logger.info(self.exit_message)
+            elif self.messages["final"]:
+                for message in self.messages["final"]:
+                    logger.logger.info(message)
 
             if self.show_summary:
-                if self.messages or self.real_errors:
+                if self.messages:
                     print()
                 elapsed = round(time.time() - self.start_time)
                 logger.logger.info("Time elapsed: {}".format(timedelta(seconds=elapsed)))
-
-
-def exit_with_message(error, snakemake_pid, pid, module_name, function_name):
-    """Save error message to temporary file (to be read by log handler) and exit."""
-    log_file = paths.log_dir / "{}.{}.error.{}.{}.log".format(snakemake_pid, pid or 0, module_name, function_name)
-    log_file.parent.mkdir(parents=True, exist_ok=True)
-    log_file.write_text(str(error))
-    sys.exit(123)

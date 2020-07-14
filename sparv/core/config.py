@@ -2,14 +2,13 @@
 
 import copy
 import logging
-import os
 from functools import reduce
 from typing import Any
 
 import yaml
 
 from sparv import util
-from sparv.core import log_handler, paths
+from sparv.core import paths
 
 log = logging.getLogger(__name__)
 
@@ -207,14 +206,14 @@ def fix_document_element():
     """Do special treatment for document element."""
     # Check that classes.text is not set
     if get("classes.text") is not None:
-        error = "The config value 'classes.text' cannot be set manually. Use 'import.document_element' instead!"
-        log_handler.exit_with_message(error, os.getpid(), None, "sparv", "config")
+        raise util.SparvErrorMessage(
+            "The config value 'classes.text' cannot be set manually. Use 'import.document_element' instead!",
+            "sparv", "config")
 
     # Check that import.document_element is set
     doc_elem = get("import.document_element")
     if doc_elem is None:
-        error = "The config value 'import.document_element' must be set!"
-        log_handler.exit_with_message(error, os.getpid(), None, "sparv", "config")
+        raise util.SparvErrorMessage("The config value 'import.document_element' must be set!", "sparv", "config")
 
     # Set classes.text and
     set_default("classes.text", doc_elem)

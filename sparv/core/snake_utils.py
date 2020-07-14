@@ -14,7 +14,7 @@ from snakemake.io import expand
 
 from sparv import util
 from sparv.core import config as sparv_config
-from sparv.core import paths, registry, log_handler
+from sparv.core import paths, registry
 from sparv.util.classes import (AllDocuments, Annotation, Binary, Config, Corpus, Document, Export, ExportAnnotations,
                                 ExportInput, Language, Model, ModelOutput, Output, Source, BaseAnnotation, BaseOutput,
                                 OutputData, AnnotationData, Base, Text, AnnotationAllDocs, ExportAnnotationsAllDocs)
@@ -136,8 +136,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             elif not param_default_empty:
                 param_value = param.default
             else:
-                error = f"Parameter '{param_name}' in custom rule '{rule.full_name}' has no value!"
-                log_handler.exit_with_message(error, os.getpid(), None, "sparv", "config")
+                raise util.SparvErrorMessage(
+                    f"Parameter '{param_name}' in custom rule '{rule.full_name}' has no value!", "sparv", "config")
         else:
             if param_default_empty:
                 # This is probably an unused custom rule, so don't process it
@@ -335,7 +335,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             "s" if len(output_dirs) > 1 else "", "\n".join(str(p / "_")[:-1] for p in output_dirs))
 
     if rule.missing_config:
-        log_file = paths.log_dir / "{}.load_error.{}.log".format(os.getpid(), rule.full_name.replace(":", "."))
+        log_file = paths.log_dir / "{}.0.missing_config.{}.log".format(os.getpid(), rule.full_name.replace(":", "."))
         log_file.parent.mkdir(parents=True, exist_ok=True)
         log_file.write_text("The following config variable{} need{} to be set:\n- {}".format(
             *("s", "") if len(rule.missing_config) > 1 else ("", "s"),
