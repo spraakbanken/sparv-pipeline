@@ -6,8 +6,6 @@ import pathlib
 import shutil
 import subprocess
 
-import snakemake
-
 from sparv.core import paths
 from sparv.util import Color
 
