@@ -33,6 +33,7 @@ class LogHandler:
         self.missing_configs = None
         self.missing_configs_re = None
         self.missing_configs_annotators = defaultdict(list)
+        self.export_dirs = []
         self.handled_missing_configs = set()
         self.start_time = time.time()
 
@@ -91,8 +92,8 @@ class LogHandler:
 
         elif level == "job_info" and self.use_progressbar:
             if msg["msg"] and self.bar is not None:
-                if msg["msg"].startswith("EXIT_MESSAGE: "):
-                    self.messages["final"].append(msg["msg"][14:])
+                if msg["msg"].startswith("EXPORT_DIRS:"):
+                    self.export_dirs.extend(msg["msg"].splitlines()[1:])
                 else:
                     # Only update status message, don't advance progress
                     self.bar.text(msg["msg"])
@@ -128,8 +129,11 @@ class LogHandler:
                     annotator = self.missing_configs[config_variable.group(1)]
                     if annotator not in self.handled_missing_configs:
                         self.handled_missing_configs.add(annotator)
-                        for message in self.missing_configs_annotators[annotator]:
-                            self.messages["error"].append((*annotator, message))
+                        variables = self.missing_configs_annotators[annotator]
+                        message = "The following config variable{} need{} to be set:\n- {}".format(
+                            *("s", "") if len(variables) > 1 else ("", "s"),
+                            "\n- ".join(variables))
+                        self.messages["error"].append((*annotator, message))
 
             # Unhandled errors
             if not handled:
@@ -146,9 +150,9 @@ class LogHandler:
                 self.missing_configs = {}
                 for log in read_log_files("missing_config"):
                     annotator = tuple(log[0:2])
-                    for line in log[2].splitlines()[1:]:
-                        self.missing_configs[line.lstrip("- ")] = annotator
-                    self.missing_configs_annotators[annotator].append(log[2])
+                    for variable in log[2].splitlines():
+                        self.missing_configs[variable] = annotator
+                        self.missing_configs_annotators[annotator].append(variable)
 
             self.missing_configs_re = re.compile(r"\[({})\]".format("|".join(self.missing_configs.keys())))
 
@@ -190,9 +194,9 @@ class LogHandler:
             elif self.messages["real_error"]:
                 for error in self.messages["real_error"]:
                     logger.text_handler(error)
-            elif self.messages["final"]:
-                for message in self.messages["final"]:
-                    logger.logger.info(message)
+            elif self.export_dirs:
+                logger.logger.info("The exported files can be found in the following location{}:\n- {}".format(
+                    "s" if len(self.export_dirs) > 1 else "", "\n- ".join(self.export_dirs)))
 
             if self.show_summary:
                 if self.messages:
