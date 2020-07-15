@@ -34,7 +34,9 @@ export:
     remove_export_namespaces: true
     # Chunk to scramble the XML export on
     scramble_on: <sentence>
-
+    # Exports to create by default when running 'sparv run'
+    default:
+        - xml_export:pretty
 
 #===============================================================================
 # Module-specific Settings

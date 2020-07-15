@@ -36,7 +36,7 @@ class SnakeStorage:
         self.custom_targets = []
 
         self.model_outputs = []  # Outputs from modelbuilders, used in build_models
-        self.install_outputs = defaultdict(list)  # Outputs from all installers, used in install_annotated_corpus
+        self.install_outputs = defaultdict(list)  # Outputs from all installers, used in rule install_annotated_corpus
         self.source_files = []  # List which will contain all source files
         self.all_rules: List[RuleStorage] = []  # List containing all rules created
         self.ordered_rules = []  # List of rules containing rule order
@@ -481,6 +481,16 @@ def get_source_files(source_files) -> List[str]:
     return source_files
 
 
+def get_doc_values(config, snake_storage):
+    """Get a list of files represeted by the doc wildcard."""
+    return config.get("doc") or get_source_files(snake_storage.source_files)
+
+
+def get_wildcard_values(config):
+    """Get user-supplied wildcard values."""
+    return dict(wc.split("=") for wc in config.get("wildcards", []))
+
+
 def prettify_config(in_config):
     """Prettify a yaml config string."""
     import yaml
@@ -544,3 +554,10 @@ def get_install_targets(install_outputs):
     for installation in sparv_config.get("korp.install", []):
         install_inputs.extend(install_outputs[installation])
     return install_inputs
+
+
+def get_export_targets(snake_storage):
+    """Get export targets to be created, either from snakemake_config or (if none supplied) from sparv_config."""
+    export_rules = [rule for rule in snake_storage.all_rules if rule.type == "exporter"
+                    and rule.target_name in sparv_config.get("export.default", [])]
+    return [o for rule in export_rules for o in rule.outputs]

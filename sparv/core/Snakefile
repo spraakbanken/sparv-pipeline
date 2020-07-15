@@ -92,9 +92,6 @@ def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
     if config.get("run_by_sparv") and rule_storage.target_name not in config.get("targets", []):
         return
 
-    # Get user-supplied wildcard values
-    wildcards = dict(wc.split("=") for wc in config.get("wildcards", []))
-
     # Get Snakemake rule object
     sm_rule = getattr(rules, rule_storage.rule_name).rule
 
@@ -105,8 +102,8 @@ def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
 
     # Expand {doc} wildcard to every corpus document
     rule_outputs = expand(rule_outputs,
-                          doc=config.get("doc") or snake_utils.get_source_files(snake_storage.source_files),
-                          **wildcards)
+                          doc=snake_utils.get_doc_values(config, snake_storage),
+                          **snake_utils.get_wildcard_values(config))
 
     # Convert paths to IOFile objects so Snakemake knows which rule they come from (in case of ambiguity)
     rule_outputs = [snakemake.io.IOFile(f, rule=sm_rule) for f in rule_outputs]
@@ -305,6 +302,14 @@ rule list_installs:
             if target not in sparv_config.get("korp.install", []):
                 print("    {:{}}    {}".format(target, max_len, desc))
         print()
+
+
+# Rule for making exports
+rule export_corpus:
+    input:
+        expand(snake_utils.get_export_targets(snake_storage),
+               doc=snake_utils.get_doc_values(config, snake_storage),
+               **snake_utils.get_wildcard_values(config))
 
 
 # Rule for making installations

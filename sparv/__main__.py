@@ -7,7 +7,7 @@ from pathlib import Path
 import snakemake
 from snakemake.logging import logger
 
-from sparv import __version__, util
+from sparv import __version__
 from sparv.core import log_handler, paths
 from sparv.core.paths import sparv_path
 
@@ -54,7 +54,7 @@ def main():
         "",
         "Annotating a corpus:",
         "   run              Annotate a corpus and generate export files",
-        "   install          Annotate and install corpus on remote server",
+        "   install          Annotate and install a corpus on remote server",
         "   clean            Remove output directories",
         "",
         "Inspecting corpus details:",
@@ -64,7 +64,6 @@ def main():
         "Setting up the Sparv pipeline:",
         # "   create-config    Run config wizard to create a corpus config",
         "   build-models     Download and build the Sparv models",
-        # "   install-plugin   (?)",
         "",
         "Advanced commands:",
         "   run-rule         Run specified rule(s) for creating annotations",
@@ -81,11 +80,10 @@ def main():
 
     # Annotate
     run_parser = subparsers.add_parser("run", description="Annotate a corpus and generate export files.")
-    run_parser.add_argument("-o", "--output", nargs="*", default=["xml_export:pretty"], metavar="<output>",
-                            help="The type of output format to generate")
+    run_parser.add_argument("output", nargs="*", default=[], help="The type of output format to generate")
     run_parser.add_argument("-l", "--list", action="store_true", help="List available output formats")
 
-    install_parser = subparsers.add_parser("install")
+    install_parser = subparsers.add_parser("install", description="Annotate and install a corpus on remote server.")
     install_parser.add_argument("-l", "--list", action="store_true", help="List installations to be made")
 
     clean_parser = subparsers.add_parser("clean", description="Remove output directories (by default only the "
@@ -201,9 +199,10 @@ def main():
         elif args.command == "run":
             if args.list:
                 snakemake_args["targets"] = ["list_exports"]
-            else:
-                print(f"{util.Color.GREEN}Exporting corpus to {', '.join(args.output)}{util.Color.RESET}")
+            elif args.output:
                 snakemake_args["targets"] = args.output
+            else:
+                snakemake_args["targets"] = ["export_corpus"]
         # Command: install
         elif args.command == "install":
             if args.list:
@@ -220,7 +219,7 @@ def main():
 
         # Command: run, run-rule, create-file
         if args.command in ("run", "run-rule", "create-file"):
-            config.update({"debug": args.debug, "doc": vars(args).get("doc", []), "log": args.log,
+            config.update({"debug": args.debug, "doc": vars(args).get("doc", []), "log": args.log or "",
                            "targets": snakemake_args["targets"]})
             if args.log:
                 use_progressbar = False
