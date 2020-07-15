@@ -4,8 +4,8 @@ import logging
 from collections import defaultdict
 
 import sparv.util as util
-from sparv import (AllDocuments, AnnotationAllDocs, Config, Corpus, Export, ExportInput, OutputCommonData, exporter,
-                   installer)
+from sparv import (AllDocuments, AnnotationAllDocs, Config, Corpus, Export, ExportInput, OutputCommonData, annotator,
+                   exporter, installer)
 from sparv.util.mysql_wrapper import MySQL
 
 log = logging.getLogger(__name__)
@@ -29,18 +29,24 @@ def install_timespan(sqlfile: ExportInput = ExportInput("korp_timespan/timespan.
     out.write("")
 
 
-@exporter("Timespan SQL data for use in Korp", config=[
+@exporter("Timespan SQL data for use in Korp", abstract=True)
+def timespan_sql(_sql: ExportInput = ExportInput("korp_timespan/timespan.sql")):
+    """Create timespan SQL data for use in Korp."""
+    pass
+
+
+@annotator("Timespan SQL data for use in Korp", order=1, config=[
     Config("korp.timespan_db_name", default="timespan")
 ])
-def timespan_sql(corpus: Corpus = Corpus(),
-                 db_name: str = Config("korp.timespan_db_name"),
-                 out: Export = Export("korp_timespan/timespan.sql"),
-                 docs: AllDocuments = AllDocuments(),
-                 token: AnnotationAllDocs = AnnotationAllDocs("<token>"),
-                 datefrom: AnnotationAllDocs = AnnotationAllDocs("<text>:dateformat.datefrom"),
-                 dateto: AnnotationAllDocs = AnnotationAllDocs("<text>:dateformat.dateto"),
-                 timefrom: AnnotationAllDocs = AnnotationAllDocs("<text>:dateformat.timefrom"),
-                 timeto: AnnotationAllDocs = AnnotationAllDocs("<text>:dateformat.timeto")):
+def timespan_sql_with_dateinfo(corpus: Corpus = Corpus(),
+                               db_name: str = Config("korp.timespan_db_name"),
+                               out: Export = Export("korp_timespan/timespan.sql"),
+                               docs: AllDocuments = AllDocuments(),
+                               token: AnnotationAllDocs = AnnotationAllDocs("<token>"),
+                               datefrom: AnnotationAllDocs = AnnotationAllDocs("<text>:dateformat.datefrom"),
+                               dateto: AnnotationAllDocs = AnnotationAllDocs("<text>:dateformat.dateto"),
+                               timefrom: AnnotationAllDocs = AnnotationAllDocs("<text>:dateformat.timefrom"),
+                               timeto: AnnotationAllDocs = AnnotationAllDocs("<text>:dateformat.timeto")):
     """Create timespan SQL data for use in Korp."""
     corpus_name = corpus.upper()
     datespans = defaultdict(int)
@@ -75,6 +81,43 @@ def timespan_sql(corpus: Corpus = Corpus(),
             "tokens": datetimespans[span]
         })
 
+    create_sql(corpus_name, db_name, out, rows_date, rows_datetime)
+
+
+@annotator("Timespan SQL data for use in Korp, for when the corpus has no date metadata.", order=2, config=[
+    Config("korp.timespan_db_name", default="timespan")
+])
+def timespan_sql_no_dateinfo(corpus: Corpus = Corpus(),
+                             db_name: str = Config("korp.timespan_db_name"),
+                             out: Export = Export("korp_timespan/timespan.sql"),
+                             docs: AllDocuments = AllDocuments(),
+                             token: AnnotationAllDocs = AnnotationAllDocs("<token>")):
+    """Create timespan SQL data for use in Korp."""
+    corpus_name = corpus.upper()
+    token_count = 0
+
+    for doc in docs:
+        tokens = token.read_spans(doc)
+        token_count += len(list(tokens))
+
+    rows_date = [{
+        "corpus": corpus_name,
+        "datefrom": "0" * 8,
+        "dateto": "0" * 8,
+        "tokens": token_count
+    }]
+    rows_datetime = [{
+            "corpus": corpus_name,
+            "datefrom": "0" * 14,
+            "dateto": "0" * 14,
+            "tokens": token_count
+        }]
+
+    create_sql(corpus_name, db_name, out, rows_date, rows_datetime)
+
+
+def create_sql(corpus_name: str, db_name: str, out: Export, rows_date, rows_datetime):
+    """Create timespans SQL file."""
     log.info("Creating SQL")
     mysql = MySQL(db_name, encoding=util.UTF8, output=out)
     mysql.create_table(MYSQL_TABLE, drop=False, **MYSQL_TIMESPAN)
@@ -82,7 +125,6 @@ def timespan_sql(corpus: Corpus = Corpus(),
     mysql.delete_rows(MYSQL_TABLE, {"corpus": corpus_name})
     mysql.delete_rows(MYSQL_TABLE_DATE, {"corpus": corpus_name})
     mysql.set_names()
-
     mysql.add_row(MYSQL_TABLE, rows_datetime)
     mysql.add_row(MYSQL_TABLE_DATE, rows_date)
 
