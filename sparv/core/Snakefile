@@ -342,9 +342,8 @@ rule list_models:
 # Rule to list all annotations files that can be created
 rule list_files:
     run:
-        outputs = []
-        [outputs.extend([(rule.type, o) for o in rule.outputs]) for rule in snake_storage.all_rules]
-        [outputs.extend([(rule.type, i) for i in rule.inputs]) for rule in snake_storage.all_rules if rule.abstract]
+        outputs = set([(rule.type, o) for rule in snake_storage.all_rules
+                       for o in (rule.outputs if not rule.abstract else rule.inputs)])
 
         print()
         print("This is a list of files than can be created by Sparv. Please note that wildcards must be replaced "

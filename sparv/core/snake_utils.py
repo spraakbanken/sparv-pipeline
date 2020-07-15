@@ -194,13 +194,10 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 continue
             rule.missing_config.update(missing_configs)
             ann_path = get_annotation_path(param_value, data=param_type.data, common=param_type.common)
-            if rule.exporter or rule.installer or param_type.all_docs:
-                if param_type.all_docs:
-                    rule.inputs.extend(expand(escape_wildcards(paths.annotation_dir / ann_path),
-                                              doc=get_source_files(storage.source_files)))
-                else:
-                    rule.inputs.append(paths.annotation_dir / ann_path)
-            elif param_type.common:
+            if param_type.all_docs:
+                rule.inputs.extend(expand(escape_wildcards(paths.annotation_dir / ann_path),
+                                          doc=get_source_files(storage.source_files)))
+            elif rule.exporter or rule.installer or param_type.common:
                 rule.inputs.append(paths.annotation_dir / ann_path)
             else:
                 rule.inputs.append(ann_path)
@@ -563,8 +560,5 @@ def get_export_targets(snake_storage):
     """Get export targets to be created, either from snakemake_config or (if none supplied) from sparv_config."""
     export_rules = [rule for rule in snake_storage.all_rules if rule.type == "exporter"
                     and rule.target_name in sparv_config.get("export.default", [])]
-    # Collect all output files from relevant rules
-    rule_outputs = [o for rule in export_rules for o in rule.outputs]
-    # Collect all input files from abstract rules
-    rule_outputs.extend(i for rule in export_rules for i in rule.inputs if rule.abstract)
-    return rule_outputs
+    # Return all output files from relevant rules (and input files from abstract rules)
+    return [o for rule in export_rules for o in (rule.outputs if not rule.abstract else rule.inputs)]
