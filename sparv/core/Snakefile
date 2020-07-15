@@ -95,10 +95,12 @@ def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
     # Get Snakemake rule object
     sm_rule = getattr(rules, rule_storage.rule_name).rule
 
+    dependencies = rule_storage.outputs if not rule_storage.abstract else rule_storage.inputs
+
     # Prepend annotation dir to paths if needed (usually included in the {doc} wildcard but here it needs to be explicit)
     rule_outputs = [paths.annotation_dir / o if not (paths.annotation_dir in o.parents or paths.export_dir in o.parents)
                     else o
-                    for o in rule_storage.outputs]
+                    for o in dependencies]
 
     # Expand {doc} wildcard to every corpus document
     rule_outputs = expand(rule_outputs,

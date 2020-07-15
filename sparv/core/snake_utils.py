@@ -72,6 +72,7 @@ class RuleStorage:
         self.source_type = annotator_info["source_type"]
         self.import_outputs = annotator_info["outputs"]
         self.order = annotator_info["order"]
+        self.abstract = annotator_info["abstract"]
 
 
 def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_missing: bool = False,
@@ -261,13 +262,13 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                         if not isinstance(model, Model):
                             model = Model(param_value)
                         rule.missing_config.update(model.expand_variables(rule.full_name))
-                        rule.inputs.append(str(model.path))
+                        rule.inputs.append(model.path)
                         rule.parameters[param_name].append(Model(str(model.path)))
                 else:
                     if not isinstance(param_value, Model):
                         param_value = Model(param_value)
                     rule.missing_config.update(param_value.expand_variables(rule.full_name))
-                    rule.inputs.append(str(param_value.path))
+                    rule.inputs.append(param_value.path)
                     rule.parameters[param_name] = Model(str(param_value.path))
         # Binary
         elif param.annotation == Binary:
@@ -306,7 +307,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 rule.inputs.extend(expand(escape_wildcards(rule.parameters[param_name]),
                                           doc=get_source_files(storage.source_files)))
             else:
-                rule.inputs.append(rule.parameters[param_name])
+                rule.inputs.append(Path(rule.parameters[param_name]))
             if "{" in rule.parameters[param_name]:
                 rule.wildcard_annotations.append(param_name)
         # Config
@@ -331,6 +332,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
     # Add exporter message
     if rule.exporter:
+        if rule.abstract:
+            output_dirs = set([p.parent for p in rule.inputs])
         rule.exit_message = "EXPORT_DIRS:\n{}".format("\n".join(str(p / "_")[:-1] for p in output_dirs))
 
     if rule.missing_config:
