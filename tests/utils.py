@@ -5,6 +5,7 @@ import filecmp
 import pathlib
 import shutil
 import subprocess
+from typing import Optional
 
 from sparv.core import paths
 from sparv.util import Color
@@ -14,7 +15,7 @@ GOLD_PREFIX = "gold_"
 
 def run_sparv(gold_corpus_dir: pathlib.Path,
               tmp_path: pathlib.Path,
-              targets: list = ["xml_export:pretty"]):
+              targets: Optional[list] = []):
     """Run Sparv on corpus in gold_corpus_dir and return the directory of the test corpus."""
     corpus_name = gold_corpus_dir.name
     new_corpus_dir = tmp_path / pathlib.Path(corpus_name)
@@ -24,7 +25,7 @@ def run_sparv(gold_corpus_dir: pathlib.Path,
         str(paths.annotation_dir), GOLD_PREFIX + str(paths.annotation_dir),
         str(paths.export_dir), GOLD_PREFIX + str(paths.export_dir)))
 
-    args = ["sparv", "-d", str(new_corpus_dir), "run", "-o", *targets]
+    args = ["sparv", "-d", str(new_corpus_dir), "run", *targets]
     process = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     assert process.returncode == 0, "corpus could not be annotated"
     return new_corpus_dir

@@ -30,6 +30,18 @@ import:
 # Output (Export) Settings
 #===============================================================================
 
+export:
+    # Exports to create by default when running 'sparv run'
+    default:
+        - korp:timespan_sql
+        - cwb:info
+        - csv_export:csv
+        - cwb:vrt
+        - cwb:vrt_scrambled
+        - stats_export:freq_list_simple
+        - xml_export:pretty
+        - xml_export:preserved_format
+
 xml_export: &xml
     # Automatic annotations to be included in the export
     annotations:
