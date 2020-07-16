@@ -6,6 +6,7 @@ import pytest
 
 import utils
 from sparv.core import paths
+from sparv.util.system import find_binary
 
 
 @pytest.mark.swe
@@ -18,7 +19,7 @@ def test_standard_swe(tmp_path):
 
 
 @pytest.mark.freeling
-@pytest.mark.skipif(not utils.is_program("analyze"), reason="FreeLing is not installed")
+@pytest.mark.skipif(not find_binary("analyze"), reason="FreeLing is not installed")
 def test_freeling_eng_slevel(tmp_path):
     """Run corpus freeling-eng-slevel and compare the annotations and exports to gold standard."""
     gold_corpus_dir = pathlib.Path("tests/test_corpora/freeling-eng-slevel")
@@ -28,7 +29,7 @@ def test_freeling_eng_slevel(tmp_path):
 
 
 @pytest.mark.freeling
-@pytest.mark.skipif(not utils.is_program("analyze"), reason="FreeLing is not installed")
+@pytest.mark.skipif(not find_binary("analyze"), reason="FreeLing is not installed")
 def test_freeling_fra_txt(tmp_path):
     """Run corpus freeling-fra-txt and compare the annotations and exports to gold standard."""
     gold_corpus_dir = pathlib.Path("tests/test_corpora/freeling-fra-txt")
@@ -38,7 +39,7 @@ def test_freeling_fra_txt(tmp_path):
 
 
 @pytest.mark.treetagger
-@pytest.mark.skipif(not paths.get_bin_path("treetagger").exists(), reason="Treetagger is not available")
+@pytest.mark.skipif(not find_binary("tree-tagger"), reason="Treetagger is not available")
 def test_treetagger_nld(tmp_path):
     """Run corpus treetagger-nld and compare the annotations and exports to gold standard."""
     gold_corpus_dir = pathlib.Path("tests/test_corpora/treetagger-nld")

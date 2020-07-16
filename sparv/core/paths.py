@@ -28,6 +28,6 @@ cwb_datadir = os.environ.get("CWB_DATADIR")
 corpus_registry = os.environ.get("CORPUS_REGISTRY")
 
 
-def get_bin_path(name: str):
+def get_bin_path(name: str = ""):
     """Get full path to binary file."""
     return pipeline_path / bin_dir / name

@@ -38,8 +38,7 @@ class MySQL:
                 outfile.write(sql + "\n")
         else:
             # Execute SQL statement
-            out, err = system.call_binary(self.binaries[0], self.arguments, sql % args,
-                                          binary_names=self.binaries, encoding=self.encoding)
+            out, err = system.call_binary(self.binaries, self.arguments, sql % args, encoding=self.encoding)
             if out:
                 log.info("MySQL: %s", out)
             if err:

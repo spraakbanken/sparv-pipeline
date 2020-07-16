@@ -3,7 +3,7 @@
 import re
 
 import sparv.util as util
-from sparv import Annotation, Config, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv import Annotation, Binary, Config, Model, ModelOutput, Output, annotator, modelbuilder
 
 SENT_SEP = "\n\n"
 TOK_SEP = "\n"
@@ -12,6 +12,7 @@ TAG_COLUMN = 1
 
 
 @annotator("Part-of-speech annotation with morphological descriptions", language=["swe"], config=[
+           Config("hunpos.binary", default="hunpos-tag"),
            Config("hunpos.model", default="hunpos/suc3_suc-tags_default-setting_utf8.model"),
            Config("hunpos.morphtable", default="hunpos/saldo_suc-tags.morphtable"),
            Config("hunpos.patterns", default="hunpos/suc.patterns")
@@ -20,6 +21,7 @@ def msdtag(out: Output = Output("<token>:hunpos.msd", cls="token:msd",
                                 description="Part-of-speeches with morphological descriptions"),
            word: Annotation = Annotation("<token:word>"),
            sentence: Annotation = Annotation("<sentence>"),
+           binary: Binary = Binary("[hunpos.binary]"),
            model: Model = Model("[hunpos.model]"),
            morphtable: Model = Model("[hunpos.morphtable]"),
            patterns: Model = Model("[hunpos.patterns]"),
@@ -54,7 +56,7 @@ def msdtag(out: Output = Output("<token>:hunpos.msd", cls="token:msd",
     args = [model.path]
     if morphtable:
         args.extend(["-m", morphtable.path])
-    stdout, _ = util.system.call_binary("hunpos-tag", args, stdin, encoding=encoding)
+    stdout, _ = util.system.call_binary(binary, args, stdin, encoding=encoding)
 
     out_annotation = word.create_empty_attribute()
     for sent, tagged_sent in zip(sentences, stdout.strip().split(SENT_SEP)):

@@ -1,6 +1,7 @@
 """Create or edit .info file."""
 
 import logging
+import os
 import time
 from datetime import datetime
 
@@ -74,6 +75,7 @@ def info_date(corpus: Corpus = Corpus(),
               timefrom: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation=<text>]:dateformat.timefrom"),
               timeto: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation=<text>]:dateformat.timeto"),
               remove_namespaces: bool = Config("export.remove_export_namespaces", False),
+              cwb_bin_path: Config = Config("cwb.bin_path", ""),
               registry: str = Config("cwb.corpus_registry")):
     """Create datefirst and datelast file (needed for .info file)."""
     def fix_name(name: str):
@@ -101,13 +103,13 @@ def info_date(corpus: Corpus = Corpus(),
 
     # Get datefirst and write to file
     datefirst_args = ["-r", registry, "-q", corpus, datefrom_name, timefrom_name]
-    datefirst_out, _ = util.system.call_binary("cwb-scan-corpus", datefirst_args)
+    datefirst_out, _ = util.system.call_binary(os.path.join(cwb_bin_path, "cwb-scan-corpus"), datefirst_args)
     datefirst = _parse_cwb_output(datefirst_out)[0]
     out_datefirst.write(str(datefirst))
 
     # Get datelast and write to file
     datelast_args = ["-r", registry, "-q", corpus, dateto_name, timeto_name]
-    datelast_out, _ = util.system.call_binary("cwb-scan-corpus", datelast_args)
+    datelast_out, _ = util.system.call_binary(os.path.join(cwb_bin_path, "cwb-scan-corpus"), datelast_args)
     datelast = _parse_cwb_output(datelast_out)[-1]
     out_datelast.write(str(datelast))
 

@@ -271,7 +271,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         elif param.annotation == Binary:
             param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
             rule.missing_config.update(missing_configs)
-            binary = paths.get_bin_path(param_value)
+            binary = util.find_binary(param_value, executable=False)
+            binary = Path(binary if binary else param_value)
             rule.inputs.append(binary)
             rule.parameters[param_name] = Binary(binary)
         # Source

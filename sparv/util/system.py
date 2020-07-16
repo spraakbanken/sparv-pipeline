@@ -6,6 +6,9 @@ import os
 import shutil
 import subprocess
 import sys
+from typing import Optional, Union
+
+import sparv.core.paths as paths
 
 log = logging.getLogger(__name__)
 
@@ -53,8 +56,7 @@ def call_java(jar, arguments, options=[], stdin="", search_paths=(),
                        verbose=verbose, return_command=return_command)
 
 
-def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
-                binary_names=(), encoding=None, verbose=False,
+def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(), encoding=None, verbose=False,
                 use_shell=False, allow_error=False, return_command=False):
     """Call a binary with arguments and stdin, return a pair (stdout, stderr).
 
@@ -68,7 +70,7 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
     assert isinstance(arguments, (list, tuple))
     assert isinstance(stdin, (str, list, tuple))
 
-    binary = find_binary(name, search_paths, binary_names)
+    binary = find_binary(name, search_paths)
     if raw_command:
         use_shell = True
         command = raw_command % binary
@@ -102,28 +104,46 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
         return stdout, stderr
 
 
-def find_binary(name, search_paths=(), binary_names=(), executable=True):
-    """Search for the binary for a program. Based on NLTK."""
-    assert isinstance(name, str)
-    assert isinstance(search_paths, (list, tuple))
-    assert isinstance(binary_names, (list, tuple))
+def find_binary(name: Union[str, list], search_paths=(), executable: bool = True,
+                raise_error: bool = False) -> Optional[str]:
+    """Search for the binary for a program.
 
-    search_paths = list(search_paths) + ['.'] + os.getenv("PATH").split(":")
+    Args:
+        name: Name of the binary, either a string or a list of strings with alternative names.
+        search_paths: List of paths where to look, in addition to the environment variable PATH.
+        executable: Set to False to not fail when binary is not executable.
+        raise_error: Raise error if binary could not be found.
+
+    Returns:
+        Path to binary, or None if not found.
+    """
+    if isinstance(name, str):
+        name = [name]
+    search_paths = list(search_paths) + ["."] + [paths.get_bin_path()] + os.getenv("PATH").split(":")
     search_paths = list(map(os.path.expanduser, search_paths))
 
-    if not binary_names:
-        binary_names = [name]
+    # Use 'which' first
+    for binary in name:
+        if not os.path.dirname(binary) == "":
+            continue
+        path_to_bin = shutil.which(binary)
+        if path_to_bin:
+            return path_to_bin
 
+    # Look for file in paths
     for directory in search_paths:
-        for binary in binary_names:
+        for binary in name:
             path_to_bin = os.path.join(directory, binary)
             if os.path.isfile(path_to_bin):
                 if executable:
                     assert os.access(path_to_bin, os.X_OK), "Binary is not executable: %s" % path_to_bin
                 return path_to_bin
 
-    raise LookupError("Couldn't find binary: %s\nSearched in: %s\nFor binary names: %s" %
-                      (name, ", ".join(search_paths), ", ".join(binary_names)))
+    if raise_error:
+        raise LookupError("Couldn't find binary: %s\nSearched in: %s\nFor binary names: %s" %
+                          (name[0], ", ".join(search_paths), ", ".join(binary)))
+    else:
+        return None
 
 
 def rsync(local, host, remote=None):

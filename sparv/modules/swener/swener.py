@@ -6,7 +6,7 @@ import xml.etree.ElementTree as etree
 import xml.sax.saxutils
 
 import sparv.util as util
-from sparv import Annotation, Output, annotator
+from sparv import Annotation, Binary, Config, Output, annotator
 
 log = logging.getLogger(__name__)
 
@@ -15,7 +15,8 @@ SENT_SEP = "\n"
 TOK_SEP = " "
 
 
-@annotator("Named entity tagging with SweNER", language=["swe"])
+@annotator("Named entity tagging with SweNER", language=["swe"],
+           config=[Config("swener.binary", default="hfst-swener")])
 def annotate(out_ne: Output = Output("swener.ne", cls="named_entity", description="Named entity segments from SweNER"),
              out_ne_ex: Output = Output("swener.ne:swener.ex", description="Named entity expressions from SweNER"),
              out_ne_type: Output = Output("swener.ne:swener.type", cls="named_entity_type",
@@ -27,6 +28,7 @@ def annotate(out_ne: Output = Output("swener.ne", cls="named_entity", descriptio
              word: Annotation = Annotation("<token:word>"),
              sentence: Annotation = Annotation("<sentence>"),
              token: Annotation = Annotation("<token>"),
+             binary: Binary = Binary("[swener.binary]"),
              process_dict=None):
     """Tag named entities using HFST-SweNER.
 
@@ -37,7 +39,7 @@ def annotate(out_ne: Output = Output("swener.ne", cls="named_entity", descriptio
     - process_dict is used in the catapult and should never be set from the command line
     """
     if process_dict is None:
-        process = swenerstart("", util.UTF8, verbose=False)
+        process = swenerstart(binary, "", util.UTF8, verbose=False)
     # else:
     #     process = process_dict["process"]
     #     # If process seems dead, spawn a new one
@@ -160,6 +162,6 @@ def parse_swener_output(sentences: list, token: Annotation, output, out_ne: Outp
     out_ne_name.write(out_name)
 
 
-def swenerstart(stdin, encoding, verbose):
+def swenerstart(binary, stdin, encoding, verbose):
     """Start a SweNER process and return it."""
-    return util.system.call_binary("hfst-swener", [], stdin, encoding=encoding, verbose=verbose, return_command=True)
+    return util.system.call_binary(binary, [], stdin, encoding=encoding, verbose=verbose, return_command=True)

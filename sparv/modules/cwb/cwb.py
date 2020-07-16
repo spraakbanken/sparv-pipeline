@@ -93,6 +93,7 @@ def vrt_scrambled(doc: Document = Document(),
 @exporter("CWB encode", order=2, config=[
     Config("cwb.corpus_registry", default=paths.corpus_registry),
     Config("cwb.cwb_datadir", default=paths.cwb_datadir),
+    Config("cwb.bin_path", default=""),
     Config("cwb.encoding", default=paths.cwb_encoding),
     Config("cwb.skip_compression", False),
     Config("cwb.skip_validation", False)
@@ -106,6 +107,7 @@ def encode(corpus: Corpus = Corpus(),
            out: Export = Export("[cwb.corpus_registry]/[metadata.id]", absolute_path=True),
            out_time: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.time_original", absolute_path=True),
            token: AnnotationAllDocs = AnnotationAllDocs("<token>"),
+           bin_path: Config = Config("cwb.bin_path"),
            encoding: str = Config("cwb.encoding"),
            datadir: str = Config("cwb.cwb_datadir"),
            registry: str = Config("cwb.corpus_registry"),
@@ -114,12 +116,13 @@ def encode(corpus: Corpus = Corpus(),
            skip_validation: Optional[bool] = Config("cwb.skip_validation")):
     """Do cwb encoding with vrt files in original order."""
     cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, out, out_time, token.name,
-               encoding, datadir, registry, remove_namespaces, skip_compression, skip_validation)
+               bin_path, encoding, datadir, registry, remove_namespaces, skip_compression, skip_validation)
 
 
 @exporter("CWB encode, scrambled", order=1, config=[
     Config("cwb.corpus_registry", default=paths.corpus_registry),
     Config("cwb.cwb_datadir", default=paths.cwb_datadir),
+    Config("cwb.bin_path", default=""),
     Config("cwb.encoding", default=paths.cwb_encoding),
     Config("cwb.skip_compression", False),
     Config("cwb.skip_validation", False)
@@ -133,6 +136,7 @@ def encode_scrambled(corpus: Corpus = Corpus(),
                      out: Export = Export("[cwb.corpus_registry]/[metadata.id]", absolute_path=True),
                      out_time: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.time_scrambled", absolute_path=True),
                      token: AnnotationAllDocs = AnnotationAllDocs("<token>"),
+                     bin_path: Config = Config("cwb.bin_path"),
                      encoding: str = Config("cwb.encoding"),
                      datadir: str = Config("cwb.cwb_datadir"),
                      registry: str = Config("cwb.corpus_registry"),
@@ -141,11 +145,11 @@ def encode_scrambled(corpus: Corpus = Corpus(),
                      skip_validation: Optional[bool] = Config("cwb.skip_validation")):
     """Do cwb encoding with vrt files in scrambled order."""
     cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, out, out_time, token.name,
-               encoding, datadir, registry, remove_namespaces, skip_compression, skip_validation)
+               bin_path, encoding, datadir, registry, remove_namespaces, skip_compression, skip_validation)
 
 
 def cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, out, out_time, token_name: str,
-               encoding, datadir, registry, remove_namespaces, skip_compression, skip_validation):
+               bin_path, encoding, datadir, registry, remove_namespaces, skip_compression, skip_validation):
     """Encode a number of vrt files, by calling cwb-encode."""
     assert datadir, "CWB_DATADIR not specified"
     assert registry, "CORPUS_REGISTRY not specified"
@@ -197,12 +201,12 @@ def cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, o
             attrs2 = "+" + attrs2
         encode_args += ["-S", "%s:0%s" % (struct, attrs2)]
 
-    util.system.call_binary("cwb-encode", encode_args, verbose=True)
+    util.system.call_binary(os.path.join(bin_path, "cwb-encode"), encode_args, verbose=True)
     # Use xargs to avoid "Argument list too long" problems
-    # util.system.call_binary("cwb-encode", raw_command="cat %s | xargs cat | %%s %s" % (vrtfiles, " ".join(encode_args)), use_shell=True)
+    # util.system.call_binary(os.path.join(bin_path, "cwb-encode"), raw_command="cat %s | xargs cat | %%s %s" % (vrtfiles, " ".join(encode_args)), use_shell=True)
 
     index_args = ["-V", "-r", registry, corpus.upper()]
-    util.system.call_binary("cwb-makeall", index_args)
+    util.system.call_binary(os.path.join(bin_path, "cwb-makeall"), index_args)
     log.info("Encoded and indexed %d columns, %d structs", len(columns), len(structs))
 
     if not skip_compression:
@@ -212,12 +216,12 @@ def cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, o
             compress_args.insert(0, "-T")
             log.info("Skipping validation")
         # Compress token stream
-        util.system.call_binary("cwb-huffcode", compress_args)
+        util.system.call_binary(os.path.join(bin_path, "cwb-huffcode"), compress_args)
         log.info("Removing uncompressed token stream...")
         for f in glob(os.path.join(corpus_datadir, "*.corpus")):
             os.remove(f)
         # Compress index files
-        util.system.call_binary("cwb-compress-rdx", compress_args)
+        util.system.call_binary(os.path.join(bin_path, "cwb-compress-rdx"), compress_args)
         log.info("Removing uncompressed index files...")
         for f in glob(os.path.join(corpus_datadir, "*.corpus.rev")):
             os.remove(f)
@@ -230,7 +234,8 @@ def cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, o
 
 
 # TODO: Add snake-support!
-def cwb_align(corpus, other, link, aligndir="annotations/align", encoding: str = Config("cwb.encoding", "utf8")):
+def cwb_align(corpus, other, link, aligndir="annotations/align", bin_path="",
+              encoding: str = Config("cwb.encoding", "utf8")):
     """Align 'corpus' with 'other' corpus, using the 'link' annotation for alignment."""
     os.makedirs(aligndir, exist_ok=True)
     alignfile = os.path.join(aligndir, corpus + ".align")
@@ -244,7 +249,7 @@ def cwb_align(corpus, other, link, aligndir="annotations/align", encoding: str =
 
     # Align linked chunks
     args = ["-v", "-o", alignfile, "-V", link_attr, corpus, other, link_name]
-    result, _ = util.system.call_binary("cwb-align", args, encoding=encoding)
+    result, _ = util.system.call_binary(os.path.join(bin_path, "cwb-align"), args, encoding=encoding)
     with open(alignfile + ".result", "w") as F:
         print(result, file=F)
     _, lastline = result.rsplit("Alignment complete.", 1)
@@ -266,12 +271,12 @@ def cwb_align(corpus, other, link, aligndir="annotations/align", encoding: str =
             print("ALIGNED", other, file=F)
         log.info("Added alignment to registry: %s", regfile)
     # args = [corpus, ":add", ":a", other]
-    # result, _ = util.system.call_binary("cwb-regedit", args)
+    # result, _ = util.system.call_binary(os.path.join(bin_path, "cwb-regedit"), args)
     # log.info("%s", result.strip())
 
     # Encode the alignments into CWB
     args = ["-v", "-D", alignfile]
-    result, _ = util.system.call_binary("cwb-align-encode", args, encoding=encoding)
+    result, _ = util.system.call_binary(os.path.join(bin_path, "cwb-align-encode"), args, encoding=encoding)
     log.info("%s", result.strip())
 
 
