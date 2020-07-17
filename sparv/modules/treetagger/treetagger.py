@@ -1,4 +1,10 @@
-"""Process tokens with TreeTagger."""
+"""Process tokens with TreeTagger.
+
+Requires TreeTagger version 3.2.3 (https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/).
+May work with newer versions.
+Please make sure you have the tree-tagger binary file in your path.
+You do not need to download any parameter files as Sparv will download these for you when necessary.
+"""
 
 import logging
 
@@ -53,7 +59,7 @@ def annotate(lang: Language = Language(),
     word_annotation = list(word.read())
     stdin = SENT_SEP.join(TOK_SEP.join(word_annotation[token_index] for token_index in sent)
                           for sent in sentences)
-    args = ["-token", "-lemma", "-cap-heuristics", "-no-unknown", "-eos-tag", "<eos>", model.path]
+    args = ["-token", "-lemma", "-no-unknown", "-eos-tag", "<eos>", model.path]
 
     stdout, stderr = util.system.call_binary(tt_binary, args, stdin, encoding=encoding)
     log.debug("Message from TreeTagger:\n%s", stderr)

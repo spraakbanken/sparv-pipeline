@@ -53,13 +53,6 @@ def cmp_export(gold_corpus_dir: pathlib.Path,
                      ), "export dir did not match the gold standard"
 
 
-def is_program(program: str):
-    """Return True if program is an executable."""
-    if shutil.which(program):
-        return True
-    return False
-
-
 def format_error(msg: str):
     """Format msg into an error message."""
     return f"{Color.RED}\n{msg}{Color.RESET}"
