@@ -9,7 +9,7 @@ License for Stanford CoreNLP: GPL2 https://www.gnu.org/licenses/old-licenses/gpl
 import re
 
 import sparv.util as util
-from sparv import Annotation, Binary, Language, Output, Text, annotator
+from sparv import Annotation, BinaryDir, Language, Output, Text, annotator
 
 
 @annotator("Parse and annotate with Stanford Parser", language=["eng"])
@@ -29,7 +29,7 @@ def annotate(corpus_text: Text = Text(),
              out_deprel: Output = Output("<token>:stanford.deprel", description="Dependency relations to the head"),
              out_dephead_ref: Output = Output("<token>:stanford.dephead_ref",
                                               description="Sentence-relative positions of the dependency heads"),
-             binary: Binary = Binary("[stanford.bin=stanford_parser]")):
+             binary: BinaryDir = BinaryDir("[stanford.bin=stanford_parser]")):
     """Use Stanford Parser to parse and annotate text."""
     args = ["-cp", binary + "/*", "edu.stanford.nlp.pipeline.StanfordCoreNLP",
             "-annotators", "tokenize,ssplit,pos,lemma,depparse,ner",

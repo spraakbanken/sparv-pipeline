@@ -15,9 +15,10 @@ from snakemake.io import expand
 from sparv import util
 from sparv.core import config as sparv_config
 from sparv.core import paths, registry
-from sparv.util.classes import (AllDocuments, Annotation, Binary, Config, Corpus, Document, Export, ExportAnnotations,
-                                ExportInput, Language, Model, ModelOutput, Output, Source, BaseAnnotation, BaseOutput,
-                                OutputData, AnnotationData, Base, Text, AnnotationAllDocs, ExportAnnotationsAllDocs)
+from sparv.util.classes import (AllDocuments, Annotation, Binary, BinaryDir, Config, Corpus, Document, Export,
+                                ExportAnnotations, ExportInput, Language, Model, ModelOutput, Output, Source,
+                                BaseAnnotation, BaseOutput, OutputData, AnnotationData, Base, Text, AnnotationAllDocs,
+                                ExportAnnotationsAllDocs)
 
 
 class SnakeStorage:
@@ -268,13 +269,13 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                     rule.inputs.append(param_value.path)
                     rule.parameters[param_name] = Model(str(param_value.path))
         # Binary
-        elif param.annotation == Binary:
+        elif param.annotation in (Binary, BinaryDir):
             param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
             rule.missing_config.update(missing_configs)
-            binary = util.find_binary(param_value, executable=False)
+            binary = util.find_binary(param_value, executable=False, allow_dir=param.annotation == BinaryDir)
             binary = Path(binary if binary else param_value)
             rule.inputs.append(binary)
-            rule.parameters[param_name] = Binary(binary)
+            rule.parameters[param_name] = param.annotation(binary)
         # Source
         elif param.annotation == Source:
             rule.parameters[param_name] = Source(get_source_path())

@@ -371,6 +371,10 @@ class Binary(str):
     """Path to binary executable."""
 
 
+class BinaryDir(str):
+    """Path to directory containing executable binaries."""
+
+
 class Source(str):
     """Path to directory containing input files."""
 

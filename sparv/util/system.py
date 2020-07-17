@@ -104,7 +104,7 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
         return stdout, stderr
 
 
-def find_binary(name: Union[str, list], search_paths=(), executable: bool = True,
+def find_binary(name: Union[str, list], search_paths=(), executable: bool = True, allow_dir: bool = False,
                 raise_error: bool = False) -> Optional[str]:
     """Search for the binary for a program.
 
@@ -112,6 +112,7 @@ def find_binary(name: Union[str, list], search_paths=(), executable: bool = True
         name: Name of the binary, either a string or a list of strings with alternative names.
         search_paths: List of paths where to look, in addition to the environment variable PATH.
         executable: Set to False to not fail when binary is not executable.
+        allow_dir: Set to True to allow the target to be a directory instead of a file.
         raise_error: Raise error if binary could not be found.
 
     Returns:
@@ -119,6 +120,7 @@ def find_binary(name: Union[str, list], search_paths=(), executable: bool = True
     """
     if isinstance(name, str):
         name = [name]
+    name = list(map(os.path.expanduser, name))
     search_paths = list(search_paths) + ["."] + [paths.get_bin_path()] + os.getenv("PATH").split(":")
     search_paths = list(map(os.path.expanduser, search_paths))
 
@@ -134,8 +136,8 @@ def find_binary(name: Union[str, list], search_paths=(), executable: bool = True
     for directory in search_paths:
         for binary in name:
             path_to_bin = os.path.join(directory, binary)
-            if os.path.isfile(path_to_bin):
-                if executable:
+            if os.path.isfile(path_to_bin) or (allow_dir and os.path.isdir(path_to_bin)):
+                if executable and not allow_dir:
                     assert os.access(path_to_bin, os.X_OK), "Binary is not executable: %s" % path_to_bin
                 return path_to_bin
 
