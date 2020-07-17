@@ -4,10 +4,14 @@
 
 metadata:
     # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
-    id: testkorpus
+    id: mini-swe
     # Corpus name (human readable)
-    name: Testkorpus
+    name: Swedish test corpus with quick annotations
 
+    description-en: |
+        This test corpus includes:
+        - some Swedish standard token and text-level annotations that can be done quickly
+        - re-naming of attributes ("as" notation)
 
 #===============================================================================
 # Annotation Settings
@@ -17,25 +21,23 @@ import:
     # The element representing one text document. Text-level annotations will be made on this element.
     document_element: text
 
-xml_import:
-    # Elements and attributes from the source XML that we want to be available as input for other annotations
-    elements:
-        - text:date
-
-segment:
-    # Chunk to use for automatic sentence segmentation (typically text or paragraph)
-    sentence_chunk: <paragraph>
-
-# Description of the date/time input format
-dateformat:
-    datetime_from: <text>:date
-    datetime_to: <text>:date
-    datetime_informat: "%Y-%m-%d"
-
 
 #===============================================================================
 # Output (Export) Settings
 #===============================================================================
+
+export:
+    # Exports to create by default when running 'sparv run'
+    default:
+        - csv_export:csv
+        - cwb:info
+        - cwb:vrt
+        - cwb:vrt_scrambled
+        - korp:timespan_sql
+        # - stats_export:freq_list_simple
+        - xml_export:pretty
+        - xml_export:preserved_format
+        - xml_export:scrambled
 
 xml_export: &xml
     # Annotations from original documents to include in the output. If nothing is specified, everything is kept.
@@ -46,16 +48,13 @@ xml_export: &xml
         - text:forfattare as author
         - i
     # Automatic annotations to be included in the export
-    annotations:
-        - SWE_DEFAULT.all
-        - DATETIME.all
-        - <token>:misc.word.affixed
-        - <token>:misc.word.affixed2
-        - <token>:custom.convert.upper
-
+    annotations: &xml-annotations
+        - <sentence>:misc.id
+        - <token>:saldo.baseform
+        - <token>:hunpos.pos
+        - <token>:sensaldo.sentiment_label
 
 vrt_export: *xml
-
 
 csv_export:
     # Annotations from original documents to include in the output. If nothing is specified, everything is kept.
@@ -64,28 +63,4 @@ csv_export:
         - text:date
         - text:forfattare as author
     # Automatic annotations to be included in the export
-    annotations:
-        - <text>:readability.lix
-        - SWE_DEFAULT.sentence
-        - SWE_DEFAULT.token-annotations
-
-
-#===============================================================================
-# Custom Annotations
-#===============================================================================
-custom_annotations:
-    - name: misc:affix
-      params:
-          out: <token>:misc.word.affixed
-          chunk: <token:word>
-          prefix: "|"
-          suffix: "|"
-
-    - name: misc:affix
-      params:
-          out: <token>:misc.word.affixed2
-          chunk: <token:word>
-          prefix: "-"
-          suffix: "-"
-
-    - name: custom.convert:uppercase
+    annotations: *xml-annotations
