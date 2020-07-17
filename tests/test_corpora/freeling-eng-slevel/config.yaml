@@ -33,7 +33,7 @@ xml_import:
         - text:date
 
 freeling:
-    slevel: s
+    sentence_annotation: s
 
 # Description of the date/time input format
 dateformat:

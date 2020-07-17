@@ -12,6 +12,7 @@ metadata:
 
     description-en: |
         This test corpus includes:
+        - standard Sparv paragraph segmentation
         - the FreeLing annotations from the FREELING preset
         - input files in txt format
         - some exports
@@ -25,6 +26,9 @@ import:
     source_type: txt
     # The element representing one text document. Text-level annotations will be made on this element.
     document_element: text
+
+freeling:
+    sentence_chunk: <paragraph>
 
 #===============================================================================
 # Output (Export) Settings
@@ -45,6 +49,7 @@ export:
 xml_export: &xml
     # Automatic annotations to be included in the export
     annotations:
+        - PARAGRAPH.all
         - <text>:misc.id
         - FREELING.all
 
