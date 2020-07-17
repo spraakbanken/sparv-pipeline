@@ -51,8 +51,8 @@ presets:
         - <token>:misc.number_rel_<sentence> as ref
 
     sentiment:
-        - <token>:sensaldo.score
-        - <token>:sensaldo.label
+        - <token>:sensaldo.sentiment_score
+        - <token>:sensaldo.sentiment_label
 
     token-lexical-class:
         - <token>:lexical_classes.blingbring
