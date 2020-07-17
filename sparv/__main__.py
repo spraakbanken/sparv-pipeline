@@ -8,7 +8,7 @@ import snakemake
 from snakemake.logging import logger
 
 from sparv import __version__
-from sparv.core import log_handler, paths
+from sparv.core import log_handler, paths, setup
 from sparv.core.paths import sparv_path
 
 # Check Python version
@@ -62,6 +62,7 @@ def main():
         "   files            List available corpus documents (input for Sparv)",
         "",
         "Setting up the Sparv pipeline:",
+        "   setup            Set up the Sparv data directory",
         # "   create-config    Run config wizard to create a corpus config",
         "   build-models     Download and build the Sparv models",
         "",
@@ -92,11 +93,12 @@ def main():
     clean_parser.add_argument("--all", action="store_true", help="Remove both annotations and export directories")
 
     # Inspect
-    conifg_parser = subparsers.add_parser("config", description="Display the corpus configuration.")
-    conifg_parser.add_argument("options", nargs="*", default=[], help="Specific options(s) in config to display.")
+    config_parser = subparsers.add_parser("config", description="Display the corpus configuration.")
+    config_parser.add_argument("options", nargs="*", default=[], help="Specific options(s) in config to display.")
     subparsers.add_parser("files", description="List available corpus documents that can be annotated by Sparv.")
 
     # Setup
+    subparsers.add_parser("setup", description="Set up the Sparv data directory.")
     models_parser = subparsers.add_parser("build-models",
                                           description=("Download and build the Sparv models. "
                                                        "If this command is not run before annotating, "
@@ -151,6 +153,16 @@ def main():
         sys.exit()
     else:
         args = parser.parse_args()
+
+    # Make sure that Sparv data dir is set
+    if args.command not in ("setup",) and not paths.get_data_path():
+        print(f"The path to Sparv's data directory needs to be configured, either by running 'sparv setup' or by "
+              f"setting the environment variable '{paths.data_dir_env}'.")
+        sys.exit(1)
+
+    if args.command == "setup":
+        setup.query_user()
+        sys.exit(0)
 
     # Check that a corpus config file is available in the working dir
     if args.command not in ("create-config", "build-models"):

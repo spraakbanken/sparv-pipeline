@@ -1,15 +1,62 @@
 """Paths used by Sparv."""
 import os
 from pathlib import Path
+from typing import Union
 
+import appdirs
+import yaml
+
+
+def read_sparv_config():
+    """Get Sparv data path from config file."""
+    if sparv_config_file.is_file():
+        try:
+            with open(sparv_config_file) as f:
+                data = yaml.load(f, Loader=yaml.FullLoader)
+        except:
+            data = {}
+        return data.get("sparv_data")
+    return None
+
+
+def get_data_path(subpath: Union[str, Path] = "") -> Path:
+    """Get location of directory containing Sparv models, binaries and other files."""
+    global data_dir
+
+    if not data_dir:
+        # Environment variable overrides config
+        data_dir_str = os.environ.get(data_dir_env) or read_sparv_config()
+        if data_dir_str:
+            data_dir = Path(data_dir_str)
+
+    if subpath and data_dir:
+        return data_dir / subpath
+    elif subpath:
+        return Path(subpath)
+    else:
+        return data_dir
+
+
+# Path to the 'sparv' package
 sparv_path = Path(__file__).parent.parent
-pipeline_path = Path(sparv_path).parent
 
-# Internal paths
-config_dir = Path("config")
+# Config file containing path to Sparv data dir
+sparv_config_file = Path(appdirs.user_config_dir("sparv"), "config.yaml")
+
+# Package-internal paths
 modules_dir = "modules"
-models_dir = Path("models")
-bin_dir = "bin"
+
+# Sparv data path (to be read from config)
+data_dir = None
+# Environment variable to override data path from config
+data_dir_env = "SPARV_DIR"
+
+# Data resource paths (below data_dir)
+config_dir = get_data_path("config")
+default_config_file = get_data_path(config_dir / "config_default.yaml")
+presets_dir = get_data_path(config_dir / "presets")
+models_dir = get_data_path("models")
+bin_dir = get_data_path("bin")
 
 # Corpus relative paths
 corpus_dir = Path(os.environ.get("CORPUS_DIR", ""))
@@ -19,15 +66,7 @@ source_dir = "source"
 export_dir = Path("export")
 config_file = "config.yaml"
 
-default_config_file = config_dir / "config_default.yaml"
-presets_dir = config_dir / "presets"
-
 # CWB variables
 cwb_encoding = os.environ.get("CWB_ENCODING", "utf8")
 cwb_datadir = os.environ.get("CWB_DATADIR")
 corpus_registry = os.environ.get("CORPUS_REGISTRY")
-
-
-def get_bin_path(name: str = ""):
-    """Get full path to binary file."""
-    return pipeline_path / bin_dir / name

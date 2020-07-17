@@ -12,8 +12,8 @@ from sparv.core import paths
 
 log = logging.getLogger(__name__)
 
-DEFAULT_CONFIG = paths.pipeline_path / paths.default_config_file
-PRESETS_DIR = paths.pipeline_path / paths.presets_dir
+DEFAULT_CONFIG = paths.default_config_file
+PRESETS_DIR = paths.presets_dir
 
 config = {}  # Dict holding full configuration
 config_undeclared = set()  # Config variables collected from use but not declared anywhere

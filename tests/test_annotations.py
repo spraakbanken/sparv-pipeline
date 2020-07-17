@@ -49,7 +49,7 @@ def test_treetagger_nld(tmp_path):
 
 
 @pytest.mark.stanford
-@pytest.mark.skipif(not paths.get_bin_path("stanford_parser").exists(), reason="Stanford Parser is not available")
+@pytest.mark.skipif(not find_binary("stanford_parser", allow_dir=True), reason="Stanford Parser is not available")
 def test_stanford_eng(tmp_path):
     """Run corpus stanford-eng and compare the annotations and exports to gold standard."""
     gold_corpus_dir = pathlib.Path("tests/test_corpora/stanford-eng")

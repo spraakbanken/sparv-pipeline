@@ -121,7 +121,7 @@ def find_binary(name: Union[str, list], search_paths=(), executable: bool = True
     if isinstance(name, str):
         name = [name]
     name = list(map(os.path.expanduser, name))
-    search_paths = list(search_paths) + ["."] + [paths.get_bin_path()] + os.getenv("PATH").split(":")
+    search_paths = list(search_paths) + ["."] + [paths.bin_dir] + os.getenv("PATH").split(":")
     search_paths = list(map(os.path.expanduser, search_paths))
 
     # Use 'which' first

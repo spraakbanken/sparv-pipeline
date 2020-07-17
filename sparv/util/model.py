@@ -10,7 +10,7 @@ import zipfile
 
 from typing import Union
 
-from sparv.core.paths import models_dir, pipeline_path
+from sparv.core.paths import models_dir
 from sparv.util.classes import Model, ModelOutput
 
 log = logging.getLogger(__name__)
@@ -23,10 +23,10 @@ def get_model_path(name: Union[str, pathlib.Path, Model, ModelOutput]) -> pathli
     elif isinstance(name, (Model, ModelOutput)):
         name = pathlib.Path(name.name)
     # Check if name already includes full path to models dir
-    if pipeline_path / models_dir in name.parents:
+    if models_dir in name.parents:
         return name
     else:
-        return pipeline_path / models_dir / name
+        return models_dir / name
 
 
 def write_model_data(name: Union[ModelOutput, str, pathlib.Path], data):
