@@ -484,7 +484,7 @@ def get_source_files(source_files) -> List[str]:
 
 
 def get_doc_values(config, snake_storage):
-    """Get a list of files represeted by the doc wildcard."""
+    """Get a list of files represented by the doc wildcard."""
     return config.get("doc") or get_source_files(snake_storage.source_files)
 
 
@@ -558,9 +558,17 @@ def get_install_targets(install_outputs):
     return install_inputs
 
 
-def get_export_targets(snake_storage):
-    """Get export targets to be created, either from snakemake_config or (if none supplied) from sparv_config."""
-    export_rules = [rule for rule in snake_storage.all_rules if rule.type == "exporter"
-                    and rule.target_name in sparv_config.get("export.default", [])]
-    # Return all output files from relevant rules (and input files from abstract rules)
-    return [o for rule in export_rules for o in (rule.outputs if not rule.abstract else rule.inputs)]
+def get_export_targets(snake_storage, rules, doc, wildcards):
+    """Get export targets from sparv_config."""
+    all_outputs = []
+
+    for rule in snake_storage.all_rules:
+        if rule.type == "exporter" and rule.target_name in sparv_config.get("export.default", []):
+            # Get Snakemake rule object
+            sm_rule = getattr(rules, rule.rule_name).rule
+            # Get all output files for all documents
+            rule_outputs = expand(rule.outputs if not rule.abstract else rule.inputs, doc=doc, **wildcards)
+            # Convert paths to IOFile objects so Snakemake knows which rule they come from (in case of ambiguity)
+            all_outputs.extend([snakemake.io.IOFile(f, rule=sm_rule) for f in rule_outputs])
+
+    return all_outputs

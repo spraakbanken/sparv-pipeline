@@ -306,12 +306,11 @@ rule list_installs:
         print()
 
 
-# Rule for making exports
+# Rule for making exports defined in corpus config
 rule export_corpus:
     input:
-        expand(snake_utils.get_export_targets(snake_storage),
-               doc=snake_utils.get_doc_values(config, snake_storage),
-               **snake_utils.get_wildcard_values(config))
+        snake_utils.get_export_targets(snake_storage, rules, doc=snake_utils.get_doc_values(config, snake_storage),
+                                       wildcards=snake_utils.get_wildcard_values(config))
 
 
 # Rule for making installations
