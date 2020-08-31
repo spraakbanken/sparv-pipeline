@@ -48,7 +48,6 @@ def install_mysql(host, db_name, sqlfile):
             subprocess.check_call('cat %s | ssh %s "mysql %s"' % (sqlf, host, db_name), shell=True)
 
 
-# TODO: Can we remove this function?
 def install_mysql_dump(host, db_name, tables):
     """Copy selected tables (including data) from local to remote MySQL database."""
     if isinstance(tables, str):

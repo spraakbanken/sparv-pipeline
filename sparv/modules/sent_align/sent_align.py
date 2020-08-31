@@ -1,3 +1,5 @@
+"""NB: Not adapted to Sparv v4 yet!"""
+
 # -*- coding: utf-8 -*-
 import math
 import sparv.util as util

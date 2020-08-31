@@ -1,5 +1,7 @@
 """Topic modelling with vowpal wabbit.
 
+NB: Not fully adapted to Sparv v4 yet!
+
 Public functions:
 - train
 - predict
