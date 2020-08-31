@@ -187,76 +187,6 @@ def build_tokenlist(saldo_model: Model = Model("saldo/saldo.pickle"),
 
 
 ######################################################################
-# Punkt word tokenizer
-
-
-class ModifiedLanguageVars(nltk.tokenize.punkt.PunktLanguageVars):
-    """Slight modification to handle unicode quotation marks and other punctuation."""
-
-    # http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt.PunktLanguageVars-class.html
-    # http://nltk.googlecode.com/svn/trunk/doc/api/nltk.tokenize.punkt-pysrc.html#PunktLanguageVars
-
-    # Excludes some characters from starting word tokens
-    _re_word_start = r'''[^\(\"\'‘’–—“”»\`\\{\/\[:;&\#\*@\)}\]\-,…]'''
-    # Characters that cannot appear within words
-    _re_non_word_chars = r'(?:[?!)\"“”»–—\\;\/}\]\*:\'‘’\({\[…%])'
-    # Used to realign punctuation that should be included in a sentence although it follows the period (or ?, !).
-    re_boundary_realignment = re.compile(r'[“”"\')\]}]+?(?:\s+|(?=--)|$)', re.MULTILINE)
-
-    def __init__(self):
-        """Initialize class."""
-        pass
-
-
-class ModifiedPunktWordTokenizer:
-    def __init__(self):
-        self.lang_vars = ModifiedLanguageVars()
-        self.is_post_sentence_token = self.lang_vars.re_boundary_realignment
-        self.is_punctuated_token = re.compile(r"\w.*\.$", re.UNICODE)
-        self.abbreviations = {"a.a", "a.d", "agr", "a.k.a", "alt", "ang", "anm", "art", "avd", "avl", "b.b", "betr",
-                              "b.g", "b.h", "bif", "bl.a", "b.r.b", "b.t.w", "civ.ek", "civ.ing", "co", "dir", "div",
-                              "d.m", "doc", "dr", "d.s", "d.s.o", "d.v", "d.v.s", "d.y", "dåv", "d.ä", "e.a.g", "e.d", "eftr", "eg",
-                              "ekon", "e.kr", "dyl", "e.d", "em", "e.m", "enl", "e.o", "etc", "e.u", "ev", "ex", "exkl", "f",
-                              "farm", "f.d", "ff", "fig", "f.k", "f.kr", "f.m", "f.n", "forts", "fr", "fr.a", "fr.o.m", "f.v.b",
-                              "f.v.t", "f.ö", "följ", "föreg", "förf", "gr", "g.s", "h.h.k.k.h.h", "h.k.h", "h.m", "ill",
-                              "inkl", "i.o.m", "st.f", "jur", "kand", "kap", "kl", "lb", "leg", "lic", "lisp", "m.a.a",
-                              "mag", "m.a.o", "m.a.p", "m.fl", "m.h.a", "m.h.t", "milj", "m.m", "m.m.d", "mom", "m.v.h",
-                              "möjl", "n.b", "näml", "nästk", "o", "o.d", "odont", "o.dyl", "omkr", "o.m.s", "op", "ordf",
-                              "o.s.a", "o.s.v", "pers", "p.gr", "p.g.a", "pol", "prel", "prof", "rc", "ref", "resp", "r.i.p",
-                              "rst", "s.a.s", "sek", "sekr", "sid", "sign", "sistl", "s.k", "sk", "skålp", "s.m", "s.m.s", "sp",
-                              "spec", "s.st", "st", "stud", "särsk", "tab", "tekn", "tel", "teol", "t.ex", "tf", "t.h",
-                              "tim", "t.o.m", "tr", "trol", "t.v", "u.p.a", "urspr", "utg", "v", "w", "v.d", "å.k",
-                              "ä.k.s", "äv", "ö.g", "ö.h", "ök", "övers"}
-
-    def span_tokenize(self, text):
-        begin = 0
-        for w in self.tokenize(text):
-            begin = text.find(w, begin)
-            yield begin, begin + len(w)
-            begin += len(w)
-
-    def tokenize(self, sentence):
-        words = list(self.lang_vars.word_tokenize(sentence))
-        if not words:
-            return words
-        pos = len(words) - 1
-
-        # split sentence-final . from the final word
-        # i.e., "peter." "piper." ")" => "peter." "piper" "." ")"
-        # but not "t.ex." => "t.ex" "."
-        while pos >= 0 and self.is_post_sentence_token.match(words[pos]):
-            pos -= 1
-        endword = words[pos]
-        if self.is_punctuated_token.search(endword):
-            endword = endword[:-1]
-            if endword not in self.abbreviations:
-                words[pos] = endword
-                words.insert(pos + 1, ".")
-
-        return words
-
-
-######################################################################
 
 def train_punkt_segmenter(textfiles, modelfile, encoding=util.UTF8, protocol=-1):
     """Train a Punkt sentence tokenizer."""
@@ -494,7 +424,6 @@ SEGMENTERS = dict(whitespace=nltk.WhitespaceTokenizer,
                   linebreaks=LinebreakTokenizer,
                   blanklines=nltk.BlanklineTokenizer,
                   punkt_sentence=nltk.PunktSentenceTokenizer,
-                  punkt_word=ModifiedPunktWordTokenizer,
                   punctuation=PunctuationTokenizer,
                   better_word=BetterWordTokenizer,
                   crf_tokenizer=CRFTokenizer,
