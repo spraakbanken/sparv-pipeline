@@ -31,6 +31,7 @@ setuptools.setup(
     install_requires=[
         "alive-progress==1.6.1",
         "appdirs==1.4.4",
+        "colorama==0.4.3",
         "nltk==3.5",
         "python-dateutil==2.8.1",
         "PyYAML==5.3.1",
