@@ -83,11 +83,6 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
     Return True if a Snakemake rule should be created.
     """
-    if config.get("debug"):
-        print()
-        print("{}{}:{} {}".format(util.Color.BOLD, rule.module_name.upper(), util.Color.RESET, rule.f_name))
-        print()
-
     # Only create certain rules when config is missing
     if config_missing and not rule.modelbuilder:
         return False
@@ -341,6 +336,9 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         log_file.write_text("\n".join(rule.missing_config))
 
     if config.get("debug"):
+        print()
+        print("{}{}:{} {}".format(util.Color.BOLD, rule.module_name.upper(), util.Color.RESET, rule.f_name))
+        print()
         print("    " + util.Color.BOLD + "INPUTS" + util.Color.RESET)
         for i in rule.inputs:
             print("        {}".format(i))
