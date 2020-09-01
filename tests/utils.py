@@ -5,6 +5,7 @@ import filecmp
 import pathlib
 import shutil
 import subprocess
+import xml.etree.ElementTree as etree
 from typing import Optional
 
 from sparv.core import paths
@@ -80,7 +81,9 @@ def _cmp_dirs(a: pathlib.Path,
         print(format_error(f"Some files could not be compared: {', '.join(dirs_cmp.funny_files)}"))
         ok = False
 
-    _match, mismatch, errors = filecmp.cmpfiles(a, b, dirs_cmp.common_files, shallow=False)
+    # Compare non XML files
+    common_no_xml = [f for f in dirs_cmp.common_files if not f.endswith(".xml")]
+    _match, mismatch, errors = filecmp.cmpfiles(a, b, common_no_xml, shallow=False)
     if len(mismatch) > 0:
         print(format_error(f"Some files did not match in {a}: {', '.join(mismatch)}"))
         for filename in mismatch:
@@ -90,6 +93,12 @@ def _cmp_dirs(a: pathlib.Path,
     if len(errors) > 0:
         print(format_error(f"Some files could not be compared: {', '.join(errors)}"))
         ok = False
+
+    # Compare XML files
+    common_xml = [f for f in dirs_cmp.common_files if f.endswith(".xml")]
+    for filename in common_xml:
+        if _xml_filediff(a / filename, b / filename):
+            ok = False
 
     for common_dir in dirs_cmp.common_dirs:
         new_a = a / pathlib.Path(common_dir)
@@ -105,7 +114,35 @@ def _cmp_dirs(a: pathlib.Path,
 def _filediff(a: pathlib.Path, b: pathlib.Path):
     """Print a unified diff of files a and b."""
     with a.open() as a_contents:
-        with b.open() as b_contents:
-            diff = difflib.unified_diff(a_contents.readlines(), b_contents.readlines(), fromfile=str(a), tofile=str(b))
-            for line in diff:
-                print(line.strip())
+        a_contents = a_contents.readlines()
+    with b.open() as b_contents:
+        b_contents = b_contents.readlines()
+
+    diff = difflib.unified_diff(a_contents, b_contents, fromfile=str(a), tofile=str(b))
+    for line in diff:
+        print(line.strip())
+
+
+def _xml_filediff(a: pathlib.Path, b: pathlib.Path):
+    """Print a unified diff of canonicalize XML files a and b."""
+    with a.open() as a_contents:
+        try:
+            a_contents = etree.canonicalize(a_contents.read()).split("\n")
+        except etree.ParseError:
+            print(format_error(f"File {a} could not be parsed."))
+            return True
+    with b.open() as b_contents:
+        try:
+            b_contents = etree.canonicalize(b_contents.read()).split("\n")
+        except etree.ParseError:
+            print(format_error(f"File {a} could not be parsed."))
+            return True
+
+    diff = list(difflib.unified_diff(a_contents, b_contents, fromfile=str(a), tofile=str(b)))
+
+    if diff:
+        print(format_error(f"Files {a} did not match:"))
+        for line in diff:
+            print(line.strip())
+        return True
+    return False
