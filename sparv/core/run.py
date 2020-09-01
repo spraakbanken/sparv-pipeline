@@ -54,7 +54,7 @@ def main(argv=None, log_level="info"):
             param_default = parameter[1].default
             is_optional = False
             if not param_ann == inspect.Parameter.empty:
-                arg_type, is_list, is_optional = registry.get_type_hint_type(param_ann)
+                arg_type, _is_list, is_optional = registry.get_type_hint_type(param_ann)
                 # arg_type = arg_type if arg_type in (str, int, bool) else None
             else:
                 arg_type = None

@@ -1,4 +1,4 @@
-"""This script is used by Snakemake to run Sparv modules."""
+"""Script used by Snakemake to run Sparv modules."""
 
 import importlib
 import logging

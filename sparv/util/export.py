@@ -24,10 +24,10 @@ def gather_annotations(annotations: List[Annotation],
     Args:
         annotations: List of annotations to include
         export_names: Dictionary that maps from annotation names to export names
-        header_annotations:
+        header_annotations: List of header annotations
         doc: The document name
-        flatten:
-        split_overlaps:
+        flatten: Whether to return the spans as a flat list
+        split_overlaps: Whether to split up overlapping spans
     """
     class Span:
         """Object to store span information."""

@@ -57,7 +57,7 @@ def timespan_sql_with_dateinfo(corpus: Corpus = Corpus(),
         datespans[("0" * 8, "0" * 8)] += len(orphans)
         datetimespans[("0" * 14, "0" * 14)] += len(orphans)
         dateinfo = util.read_annotation_attributes(doc, (datefrom, dateto, timefrom, timeto))
-        for i, text in enumerate(text_tokens):
+        for text in text_tokens:
             d = next(dateinfo)
             datespans[(d[0].zfill(8), d[1].zfill(8))] += len(text)
             datetimespans[(d[0].zfill(8) + d[2].zfill(6), d[1].zfill(8) + d[3].zfill(6))] += len(text)
@@ -107,11 +107,11 @@ def timespan_sql_no_dateinfo(corpus: Corpus = Corpus(),
         "tokens": token_count
     }]
     rows_datetime = [{
-            "corpus": corpus_name,
-            "datefrom": "0" * 14,
-            "dateto": "0" * 14,
-            "tokens": token_count
-        }]
+        "corpus": corpus_name,
+        "datefrom": "0" * 14,
+        "dateto": "0" * 14,
+        "tokens": token_count
+    }]
 
     create_sql(corpus_name, db_name, out, rows_date, rows_datetime)
 

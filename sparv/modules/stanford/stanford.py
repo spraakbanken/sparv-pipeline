@@ -1,6 +1,6 @@
 """Use Stanford Parser to analyse English text.
 
-Needs Stanford CoreNLP version 4.0.0 (https://stanfordnlp.github.io/CoreNLP/history.html).
+Requires Stanford CoreNLP version 4.0.0 (https://stanfordnlp.github.io/CoreNLP/history.html).
 May work with newer versions.
 Please download, unzip and place contents inside sparv-pipeline/bin/stanford_parser.
 License for Stanford CoreNLP: GPL2 https://www.gnu.org/licenses/old-licenses/gpl-2.0.html

@@ -8,7 +8,7 @@ import re
 from typing import Union
 
 from sparv.core import paths
-from .classes import BaseAnnotation, Model, AnnotationAllDocs, Annotation
+from .classes import BaseAnnotation, Model, Annotation
 
 _log = logging.getLogger(__name__)
 
