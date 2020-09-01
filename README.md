@@ -33,10 +33,12 @@ cd sparv-pipeline
 python3 -m pip install --user pipx
 python3 -m pipx ensurepath
 cd ..
-pipx install -e sparv-pipeline
+pipx install ./sparv-pipeline
 ```
 
 * Now you should be ready to run the Sparv pipeline! Try it by typing `sparv --help`.
+
+* When updating and reinstalling Sparv you might have to use the `--force flag` with pipx (`pipx install ./sparv-pipeline --force`).
 
 ## Installation of additional software
 

@@ -1,12 +1,31 @@
+# Sparv's data directory
+data
+
+# Snakemake
 .snakemake
 
-sparv_pipeline.egg-info
-
-sparv/__pycache__
-sparv/util/__pycache__/
-venv/
-*.pyc
-
-# Editor stuff
+# Editors
 .idea/
 .vscode
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Distribution / packaging
+*.egg-info/
+*.egg
+MANIFEST*
+
+# Unit test / coverage reports
+.pytest_cache/
