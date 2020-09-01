@@ -1,4 +1,4 @@
-from . import run, system, tagsets
+from . import system, tagsets
 from .constants import *
 from .corpus import *
 from .export import gather_annotations, get_annotation_names, get_header_names, scramble_spans
