@@ -4,8 +4,8 @@ import logging
 from collections import defaultdict
 
 import sparv.util as util
-from sparv import (AllDocuments, AnnotationAllDocs, Config, Corpus, Export, ExportInput, OutputCommonData, annotator,
-                   exporter, installer)
+from sparv import (AllDocuments, Annotation, AnnotationAllDocs, Config, Corpus, Export, ExportInput, OutputCommonData,
+                   annotator, exporter, installer)
 from sparv.util.mysql_wrapper import MySQL
 
 log = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ def timespan_sql_with_dateinfo(corpus: Corpus = Corpus(),
     datetimespans = defaultdict(int)
 
     for doc in docs:
-        text_tokens, orphans = util.get_children(doc, datefrom, token)
+        text_tokens, orphans = Annotation(datefrom.name, doc=doc).get_children(token)
         datespans[("0" * 8, "0" * 8)] += len(orphans)
         datetimespans[("0" * 14, "0" * 14)] += len(orphans)
         dateinfo = util.read_annotation_attributes(doc, (datefrom, dateto, timefrom, timeto))

@@ -179,7 +179,7 @@ def build_tokenlist(saldo_model: Model = Model("saldo/saldo.pickle"),
                 if len(spans) > 1 and not wf.endswith(","):
                     wordforms.add(wf)
 
-    out.write_data("\n".join(sorted(wordforms)))
+    out.write("\n".join(sorted(wordforms)))
 
 
 ######################################################################

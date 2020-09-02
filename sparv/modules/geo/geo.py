@@ -145,7 +145,7 @@ def pickle_model(geonames, alternative_names, out):
     log.info("Reading geonames: %s", geonames.name)
     result = {}
 
-    model_file = geonames.read_data()
+    model_file = geonames.read()
     for line in model_file.split("\n"):
         if line.strip():
             geonameid, name, _, _, latitude, longitude, _feature_class, _feature_code, \
@@ -163,7 +163,7 @@ def pickle_model(geonames, alternative_names, out):
     # Parse file with alternative names of locations, paired with language codes
     log.info("Reading alternative names: %s", alternative_names.name)
 
-    model_file = alternative_names.read_data()
+    model_file = alternative_names.read()
     for line in model_file.split("\n"):
         if line.strip():
             _altid, geonameid, isolanguage, altname, _is_preferred_name, _is_short_name, \
