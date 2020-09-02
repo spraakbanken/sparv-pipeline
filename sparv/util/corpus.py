@@ -43,11 +43,6 @@ def clear_annotation(doc, annotation):
         os.remove(annotation_path)
 
 
-def has_attribute(annotation):
-    """Return True if annotation has an attribute."""
-    return ELEM_ATTR_DELIM in annotation
-
-
 def write_annotation(doc, annotation, values, append=False, allow_newlines=False):
     """Write an annotation to one or more files. The file is overwritten if it exists.
 
@@ -227,17 +222,6 @@ def read_data(doc, name):
     return data
 
 
-def write_common_data(name, value, append=False):
-    """Write arbitrary corpus level string data to file in annotations directory."""
-    write_data(None, name, value, append)
-    _log.info("Wrote: %s", name)
-
-
-def read_common_data(name):
-    """Read arbitrary corpus level string data from file in annotations directory."""
-    return read_data(None, name)
-
-
 def write_structure(doc, structure):
     """Sort the document's structural elements and write structure file."""
     file_path = get_annotation_path(doc, STRUCTURE_FILE, data=True)
@@ -340,28 +324,3 @@ class PickledLexicon:
     def lookup(self, key, default=set()):
         """Lookup a key in the lexicon."""
         return self.lexicon.get(key, default)
-
-
-######################################################################
-# Corpus text
-
-def read_corpus_text(doc):
-    """Read the text contents of a corpus and return as a string."""
-    text_file = get_annotation_path(doc, TEXT_FILE, data=True)
-    with open(text_file) as f:
-        text = f.read()
-    _log.info("Read %d chars: %s", len(text), text_file)
-    return text
-
-
-def write_corpus_text(doc, text):
-    """Write text to the designated file of a corpus.
-
-    text is a unicode string.
-    """
-    doc, _, _chunk = doc.partition(DOC_CHUNK_DELIM)
-    text_file = get_annotation_path(doc, TEXT_FILE, data=True)
-    os.makedirs(os.path.dirname(text_file), exist_ok=True)
-    with open(text_file, "w") as f:
-        f.write(text)
-    _log.info("Wrote %d chars: %s", len(text), text_file)

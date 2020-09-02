@@ -171,4 +171,4 @@ def install_compressed_xml(corpus, xmlfile, out, export_path, host):
     filename = corpus + ".xml.bz2"
     remote_file_path = os.path.join(export_path, filename)
     util.install_file(host, xmlfile, remote_file_path)
-    util.write_common_data(out, "")
+    out.write("")

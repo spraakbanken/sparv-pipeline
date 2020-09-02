@@ -6,7 +6,7 @@ import unicodedata
 import xml.etree.ElementTree as etree
 from pathlib import Path
 
-from sparv import Config, Document, Source, importer, util
+from sparv import Config, Document, Source, Text, importer, util
 
 log = logging.getLogger(__name__)
 
@@ -244,7 +244,7 @@ class SparvXMLParser:
     def save(self):
         """Save text data and annotation files to disk."""
         text = unicodedata.normalize("NFC", "".join(self.text))
-        util.write_corpus_text(self.doc, text)
+        Text(self.doc).write(text)
         structure = []
         header_elements = []
 
@@ -253,7 +253,7 @@ class SparvXMLParser:
             spans = []
             attributes = {attr: [] for attr in self.data[element]["attrs"]}
             for instance in self.data[element]["elements"]:
-                start, start_subpos, end, end_subpos, original_element, attrs = instance
+                start, start_subpos, end, end_subpos, _original_element, attrs = instance
                 spans.append(((start, start_subpos), (end, end_subpos)))
                 for attr in attributes:
                     attributes[attr].append(attrs.get(attr, ""))

@@ -4,7 +4,7 @@ import unicodedata
 from pathlib import Path
 
 from sparv import importer, util
-from sparv.util.classes import Document, Source
+from sparv.util.classes import Document, Source, Text
 
 
 @importer("TXT import", source_type="txt", outputs=["text"])
@@ -35,7 +35,7 @@ def parse(doc: Document = Document(),
     if normalize:
         text = unicodedata.normalize("NFC", text)
 
-    util.write_corpus_text(doc, text)
+    Text(doc).write(text)
 
     # Make up a text annotation surrounding the whole file
     text_annotation = "{}.text".format(prefix) if prefix else "text"

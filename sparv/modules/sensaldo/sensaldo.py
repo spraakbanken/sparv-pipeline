@@ -90,7 +90,7 @@ def read_sensaldo(tsv, verbose=True):
         log.info("Reading TSV lexicon")
     lexicon = {}
 
-    f = tsv.read_data()
+    f = tsv.read()
     # with open(tsv) as f:
     for line in f.split("\n"):
         if line.lstrip():

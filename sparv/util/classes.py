@@ -13,7 +13,6 @@ from typing import Any, List, Optional, Tuple, Union
 import sparv.core
 from sparv.core.paths import models_dir
 from sparv.util import corpus
-from sparv.util import parent as parents
 
 log = logging.getLogger(__name__)
 
@@ -72,7 +71,7 @@ class BaseAnnotation(Base):
 
     def has_attribute(self) -> bool:
         """Return True if the annotation has an attribute."""
-        return corpus.has_attribute(self.name)
+        return corpus.ELEM_ATTR_DELIM in self.name
 
     def annotation_name(self) -> str:
         """Get annotation name (excluding name of any attribute)."""
@@ -111,15 +110,100 @@ class Annotation(BaseAnnotation):
         preserve_parent_annotation_order is set to True, in which case the parents keep the order from the parent
         annotation.
         """
-        return parents.get_children(self.doc, self.name, child.name, orphan_alert=orphan_alert,
-                                    preserve_parent_annotation_order=preserve_parent_annotation_order)
+        parent_spans, child_spans = self.read_parents_and_children(self.name, child)
+        parent_children = []
+        orphans = []
+        previous_parent_i = None
+        try:
+            parent_i, parent_span = next(parent_spans)
+            parent_children.append((parent_i, []))
+        except StopIteration:
+            parent_i = None
+            parent_span = None
+
+        for child_i, child_span in child_spans:
+            if parent_span:
+                while child_span[1] > parent_span[1]:
+                    previous_parent_i = parent_i
+                    try:
+                        parent_i, parent_span = next(parent_spans)
+                        parent_children.append((parent_i, []))
+                    except StopIteration:
+                        parent_span = None
+                        break
+            if parent_span is None or parent_span[0] > child_span[0]:
+                if orphan_alert:
+                    log.warning("Child '%s' missing parent; closest parent is %s",
+                                child_i, parent_i or previous_parent_i)
+                orphans.append(child_i)
+            else:
+                parent_children[-1][1].append(child_i)
+
+        # Add rest of parents
+        if parent_span is not None:
+            for parent_i, parent_span in parent_spans:
+                parent_children.append((parent_i, []))
+
+        if preserve_parent_annotation_order:
+            # Restore parent order
+            parent_children = [p for _, p in sorted(parent_children)]
+        else:
+            parent_children = [p for _, p in parent_children]
+
+        return parent_children, orphans
 
     def get_parents(self, parent: BaseAnnotation, orphan_alert: bool = False):
         """Return a list with n (= total number of children) elements where every element is an index in the parent annotation.
 
         Return None when no parent is found.
         """
-        return parents.get_parents(self.doc, parent.name, self.name, orphan_alert=orphan_alert)
+        parent_spans, child_spans = self.read_parents_and_children(parent, self.name)
+        child_parents = []
+        previous_parent_i = None
+        try:
+            parent_i, parent_span = next(parent_spans)
+        except StopIteration:
+            parent_i = None
+            parent_span = None
+
+        for child_i, child_span in child_spans:
+            while parent_span is not None and child_span[1] > parent_span[1]:
+                previous_parent_i = parent_i
+                try:
+                    parent_i, parent_span = next(parent_spans)
+                except StopIteration:
+                    parent_span = None
+                    break
+            if parent_span is None or parent_span[0] > child_span[0]:
+                if orphan_alert:
+                    log.warning("Child '%s' missing parent; closest parent is %s",
+                                child_i, parent_i or previous_parent_i)
+                child_parents.append((child_i, None))
+            else:
+                child_parents.append((child_i, parent_i))
+
+        # Restore child order
+        child_parents = [p for _, p in sorted(child_parents)]
+
+        return child_parents
+
+    def read_parents_and_children(self, parent, child):
+        """Read parent and child annotations.
+
+        Reorder them according to span position, but keep original index information.
+        """
+        if isinstance(parent, (BaseAnnotation, str)):
+            parent = sorted(enumerate(corpus.read_annotation_spans(self.doc, parent, decimals=True)), key=lambda x: x[1])
+        if isinstance(child, (BaseAnnotation, str)):
+            child = sorted(enumerate(corpus.read_annotation_spans(self.doc, child, decimals=True)), key=lambda x: x[1])
+
+        # Only use sub-positions if both parent and child have them
+        if parent and child:
+            if len(parent[0][1][0]) == 1 or len(child[0][1][0]) == 1:
+                parent = [(p[0], (p[1][0][0], p[1][1][0])) for p in parent]
+                child = [(c[0], (c[1][0][0], c[1][1][0])) for c in child]
+
+        return iter(parent), iter(child)
 
     def read_attributes(self, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]],
                         with_annotation_name: bool = False, allow_newlines: bool = False):
@@ -213,7 +297,7 @@ class AnnotationCommonData(BaseAnnotation):
 
     def read(self):
         """Read arbitrary corpus level string data from annotation file."""
-        return corpus.read_common_data(self.name)
+        return corpus.read_data(None, self.name)
 
 
 class BaseOutput(BaseAnnotation):
@@ -316,7 +400,7 @@ class OutputCommonData(BaseOutput):
 
     def write(self, value, append: bool = False):
         """Write arbitrary corpus level string data to annotation file."""
-        corpus.write_common_data(self, value, append)
+        corpus.write_data(None, self, value, append)
 
 
 class Text:
@@ -327,7 +411,23 @@ class Text:
 
     def read(self) -> str:
         """Get corpus text."""
-        return corpus.read_corpus_text(self.doc)
+        text_file = corpus.get_annotation_path(self.doc, corpus.TEXT_FILE, data=True)
+        with open(text_file) as f:
+            text = f.read()
+        log.info("Read %d chars: %s", len(text), text_file)
+        return text
+
+    def write(self, text):
+        """Write text to the designated file of a corpus.
+
+        text is a unicode string.
+        """
+        doc, _, _chunk = self.doc.partition(corpus.DOC_CHUNK_DELIM)
+        text_file = corpus.get_annotation_path(doc, corpus.TEXT_FILE, data=True)
+        os.makedirs(os.path.dirname(text_file), exist_ok=True)
+        with open(text_file, "w") as f:
+            f.write(text)
+        log.info("Wrote %d chars: %s", len(text), text_file)
 
 
 class Document(str):
@@ -369,7 +469,7 @@ class Model(Base):
         else:
             return models_dir / return_path
 
-    def write_data(self, data):
+    def write(self, data):
         """Write arbitrary string data to models directory."""
         file_path = self.path
         os.makedirs(file_path.parent, exist_ok=True)
@@ -379,7 +479,7 @@ class Model(Base):
         os.utime(file_path, None)
         log.info("Wrote %d bytes: %s", len(data), self.name)
 
-    def read_data(self):
+    def read(self):
         """Read arbitrary string data from file in models directory."""
         file_path = self.path
         with open(file_path) as f:

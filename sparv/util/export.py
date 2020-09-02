@@ -8,7 +8,7 @@ from itertools import combinations
 from typing import Any, List, Optional, Set, Tuple, Union
 
 from sparv.util.classes import ExportAnnotations, Annotation, AnnotationAllDocs, ExportAnnotationsAllDocs
-from sparv.util import corpus, misc, parent
+from sparv.util import corpus, misc
 
 log = logging.getLogger(__name__)
 
@@ -208,19 +208,15 @@ def calculate_element_hierarchy(doc, spans_list):
     # Flatten structure
     unclear_spans = set([elem for elem_set in span_duplicates for elem in elem_set])
 
-    # Read all annotation spans for quicker access later
-    read_items = {}
-    for span in unclear_spans:
-        read_items[span] = sorted(enumerate(corpus.read_annotation_spans(
-                                  doc, span, decimals=True)), key=lambda x: x[1])
-
     # Get pairs of relations that need to be ordered
     relation_pairs = list(combinations(unclear_spans, r=2))
     # Order each pair into [parent, children]
     ordered_pairs = set()
     for a, b in relation_pairs:
-        a_parent = len([i for i in (parent.get_parents(doc, read_items[a], read_items[b])) if i is not None])
-        b_parent = len([i for i in (parent.get_parents(doc, read_items[b], read_items[a])) if i is not None])
+        a_annot = Annotation(a, doc=doc)
+        b_annot = Annotation(b, doc=doc)
+        a_parent = len([i for i in (b_annot.get_parents(a_annot)) if i is not None])
+        b_parent = len([i for i in (a_annot.get_parents(b_annot)) if i is not None])
         if a_parent > b_parent:
             ordered_pairs.add((a, b))
         else:
