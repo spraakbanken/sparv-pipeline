@@ -8,7 +8,7 @@ import xml.etree.ElementTree as etree
 from collections import defaultdict
 
 import sparv.util as util
-from sparv import ModelOutput, modelbuilder
+from sparv import Model, ModelOutput, modelbuilder
 
 log = logging.getLogger(__name__)
 
@@ -22,48 +22,45 @@ CORPUS_REGISTRY = os.environ.get("CORPUS_REGISTRY")
 def blingbring_model(out: ModelOutput = ModelOutput("lexical_classes/blingbring.pickle")):
     """Download and build Blingbring model."""
     # Download roget hierarchy
-    classmap = "lexical_classes/roget_hierarchy.xml"
-    util.download_model(
-        "https://github.com/spraakbanken/sparv-models/raw/master/lexical_classes/roget_hierarchy.xml",
-        classmap)
+    classmap = Model("lexical_classes/roget_hierarchy.xml")
+    classmap.download("https://github.com/spraakbanken/sparv-models/raw/master/lexical_classes/roget_hierarchy.xml")
 
     # Download blingbring.txt and build blingbring.pickle
-    raw_file = "lexical_classes/blingbring.txt"
-    util.download_model("https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/bring/blingbring.txt", raw_file)
-    lexicon = read_blingbring(util.get_model_path(raw_file), util.get_model_path(classmap))
-    util.write_model_pickle(out.path, lexicon)
+    raw_file = Model("lexical_classes/blingbring.txt")
+    raw_file.download("https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/bring/blingbring.txt")
+    lexicon = read_blingbring(raw_file.path, classmap.path)
+    out.write_pickle(lexicon)
 
     # Clean up
-    util.remove_model_files([raw_file, classmap])
+    raw_file.remove()
+    classmap.remove()
 
 
 @modelbuilder("SweFN model", language=["swe"])
 def swefn_model(out: ModelOutput = ModelOutput("lexical_classes/swefn.pickle")):
     """Download and build SweFN model."""
     # Download swefn.xml and build swefn.pickle
-    raw_file = "lexical_classes/swefn.xml"
-    util.download_model("https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/swefn/swefn.xml", raw_file)
-    lexicon = read_swefn(util.get_model_path(raw_file))
-    util.write_model_pickle(out.path, lexicon)
+    raw_file = Model("lexical_classes/swefn.xml")
+    raw_file.download("https://svn.spraakdata.gu.se/sb-arkiv/pub/lmf/swefn/swefn.xml")
+    lexicon = read_swefn(raw_file.path)
+    out.write_pickle(lexicon)
 
     # Clean up
-    util.remove_model_files([raw_file])
+    raw_file.remove()
 
 
 @modelbuilder("Blingbring frequency model", language=["swe"])
 def blingbring_freq_model(out: ModelOutput = ModelOutput("lexical_classes/blingbring.freq.gp2008+suc3+romi.pickle")):
     """Download Blingbring frequency model."""
-    util.download_model(
-        "https://github.com/spraakbanken/sparv-models/raw/master/lexical_classes/blingbring.freq.gp2008+suc3+romi.pickle",
-        out)
+    out.download(
+        "https://github.com/spraakbanken/sparv-models/raw/master/lexical_classes/blingbring.freq.gp2008+suc3+romi.pickle")
 
 
 @modelbuilder("Blingbring frequency model", language=["swe"])
 def swefn_freq_model(out: ModelOutput = ModelOutput("lexical_classes/swefn.freq.gp2008+suc3+romi.pickle")):
     """Download SweFN frequency model."""
-    util.download_model(
-        "https://github.com/spraakbanken/sparv-models/raw/master/lexical_classes/swefn.freq.gp2008+suc3+romi.pickle",
-        out)
+    out.download(
+        "https://github.com/spraakbanken/sparv-models/raw/master/lexical_classes/swefn.freq.gp2008+suc3+romi.pickle")
 
 
 def read_blingbring(tsv, classmap, verbose=True):
@@ -193,7 +190,7 @@ def read_swefn(xml, verbose=True):
     return lexicon
 
 
-def create_freq_pickle(corpus, annotation, filename, model, class_set=None, score_separator=util.SCORESEP):
+def create_freq_pickle(corpus, annotation, model, class_set=None, score_separator=util.SCORESEP):
     """Build pickle with relative frequency for a given annotation in one or more reference corpora."""
     lexicon = util.PickledLexicon(model)
     # Create a set of all possible classes
@@ -259,4 +256,4 @@ def create_freq_pickle(corpus, annotation, filename, model, class_set=None, scor
         cl = cl.replace("_", " ")
         rel_freq[cl] = (corpus_stats[cl] + smoothing) / (corpus_size + smoothing * lexicon_size)
 
-    util.write_model_pickle(filename, rel_freq)
+    model.write_pickle(rel_freq)

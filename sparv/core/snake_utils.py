@@ -543,7 +543,7 @@ def load_config(snakemake_config):
 
     # Some commands may override the corpus language
     if snakemake_config.get("language"):
-        sparv_config.config["metadata"]["language"] = snakemake_config["language"]
+        sparv_config.set_value("metadata.language", snakemake_config["language"])
 
     return config_missing
 

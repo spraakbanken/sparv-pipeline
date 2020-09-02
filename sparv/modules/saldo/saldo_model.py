@@ -21,7 +21,7 @@ PART_DELIM3 = "^3"
 @modelbuilder("SALDO morphology XML", language=["swe"])
 def download_saldo(out: ModelOutput = ModelOutput("saldo/saldom.xml")):
     """Download SALDO morphology XML."""
-    util.download_model("https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/saldom/saldom.xml", out)
+    out.download("https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/saldom/saldom.xml")
 
 
 @modelbuilder("SALDO morphology model", language=["swe"])

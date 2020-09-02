@@ -29,9 +29,9 @@ def hist_morphtable(out: ModelOutput = ModelOutput("hunpos/hist/dalinm-swedberg_
             Defaults to Model("hunpos/saldo_suc-tags.morphtable").
     """
     words = {}
-    _read_saldosuc(words, saldosuc_morphtable)
+    _read_saldosuc(words, saldosuc_morphtable.path)
     for fil in [dalin, swedberg]:
-        for line in open(fil, encoding="utf-8").readlines():
+        for line in open(fil.path, encoding="utf-8").readlines():
             if not line.strip():
                 continue
             xs = line.split("\t")
@@ -49,7 +49,7 @@ def hist_morphtable(out: ModelOutput = ModelOutput("hunpos/hist/dalinm-swedberg_
             if suc:
                 words.setdefault(word.lower(), set()).update(suc)
                 words.setdefault(word.title(), set()).update(suc)
-    with open(out, encoding="UTF-8", mode="w") as out:
+    with open(out.path, encoding="UTF-8", mode="w") as out:
         for w, ts in list(words.items()):
             line = ("\t".join([w] + list(ts)) + "\n")
             out.write(line)
@@ -106,3 +106,15 @@ def _force_parse(msd):
     new_suc = set(suctag for suctag in util.tagsets.suc_tags if re.match(sucfilter, suctag))
     SALDO_TO_SUC[msd] = new_suc
     return new_suc
+
+
+@modelbuilder("Swedberg wordlist", language=["swe"])
+def download_swedberg_wordlist(out: ModelOutput = ModelOutput("hunpos/hist/swedberg-gender.hunpos")):
+    """Download Swedberg wordlist."""
+    out.download("https://github.com/spraakbanken/sparv-models/raw/master/hunpos/hist/swedberg-gender.hunpos")
+
+
+@modelbuilder("Dalin wordlist", language=["swe"])
+def download_dalin_wordlist(out: ModelOutput = ModelOutput("hunpos/hist/dalinm.hunpos")):
+    """Download Dalin wordlist."""
+    out.download("https://github.com/spraakbanken/sparv-models/raw/master/hunpos/hist/dalinm.hunpos")

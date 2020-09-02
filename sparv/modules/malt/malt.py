@@ -164,4 +164,4 @@ def build_model(out: ModelOutput = ModelOutput("malt/swemalt-1.7.2.mco"),
 
     Won't download model unless maltjar has been installed.
     """
-    util.download_model("http://maltparser.org/mco/swedish_parser/swemalt-1.7.2.mco", out)
+    out.download("http://maltparser.org/mco/swedish_parser/swemalt-1.7.2.mco")

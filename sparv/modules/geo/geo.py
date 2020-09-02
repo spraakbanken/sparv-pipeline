@@ -118,25 +118,23 @@ def metadata(out: Output = Output("{chunk}:geo.geo_metadata", description="Geogr
 def build_model(out: ModelOutput = ModelOutput("geo/geo.pickle")):
     """Download and build geo model."""
     # Download and extract cities1000.txt
-    cities_zip = "geo/cities1000.zip"
-    util.download_model("http://download.geonames.org/export/dump/cities1000.zip", cities_zip)
-    util.unzip_model(cities_zip)
+    cities_zip = Model("geo/cities1000.zip")
+    cities_zip.download("http://download.geonames.org/export/dump/cities1000.zip")
+    cities_zip.unzip()
 
     # Download and extract alternateNames.txt
-    names_zip = "geo/alternateNames.zip"
-    util.download_model("http://download.geonames.org/export/dump/alternateNames.zip", names_zip)
-    util.unzip_model(names_zip)
+    names_zip = Model("geo/alternateNames.zip")
+    names_zip.download("http://download.geonames.org/export/dump/alternateNames.zip")
+    names_zip.unzip()
 
-    pickle_model("geo/cities1000.txt", "geo/alternateNames.txt", out.path)
+    pickle_model(Model("geo/cities1000.txt"), Model("geo/alternateNames.txt"), out)
 
     # Clean up
-    util.remove_model_files([
-        cities_zip,
-        names_zip,
-        "geo/iso-languagecodes.txt",
-        "geo/cities1000.txt",
-        "geo/alternateNames.txt"
-    ])
+    cities_zip.remove()
+    names_zip.remove()
+    Model("geo/iso-languagecodes.txt").remove()
+    Model("geo/cities1000.txt").remove()
+    Model("geo/alternateNames.txt").remove()
 
 
 def pickle_model(geonames, alternative_names, out):
@@ -144,10 +142,10 @@ def pickle_model(geonames, alternative_names, out):
 
     Add alternative names for each city.
     """
-    log.info("Reading geonames: %s", geonames)
+    log.info("Reading geonames: %s", geonames.name)
     result = {}
 
-    model_file = util.read_model_data(geonames)
+    model_file = geonames.read_data()
     for line in model_file.split("\n"):
         if line.strip():
             geonameid, name, _, _, latitude, longitude, _feature_class, _feature_code, \
@@ -163,9 +161,9 @@ def pickle_model(geonames, alternative_names, out):
             }
 
     # Parse file with alternative names of locations, paired with language codes
-    log.info("Reading alternative names: %s", alternative_names)
+    log.info("Reading alternative names: %s", alternative_names.name)
 
-    model_file = util.read_model_data(alternative_names)
+    model_file = alternative_names.read_data()
     for line in model_file.split("\n"):
         if line.strip():
             _altid, geonameid, isolanguage, altname, _is_preferred_name, _is_short_name, \
@@ -175,7 +173,7 @@ def pickle_model(geonames, alternative_names, out):
                 result[geonameid]["alternative_names"][isolanguage].append(altname)
 
     log.info("Saving geomodel in Pickle format")
-    util.write_model_pickle(out, result)
+    out.write_pickle(result)
 
 
 ########################################################################################################

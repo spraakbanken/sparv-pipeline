@@ -2,7 +2,6 @@
 
 from collections import defaultdict
 
-import sparv.util as util
 from sparv import Model, ModelOutput, modelbuilder
 from sparv.modules.saldo import saldo
 
@@ -12,17 +11,11 @@ def morphtable_inputs(suc: ModelOutput = ModelOutput("hunpos/suc3_morphtable.wor
                       morphtable_base: ModelOutput = ModelOutput("hunpos/suc.morphtable"),
                       morphtable_patterns: ModelOutput = ModelOutput("hunpos/suc.patterns")):
     """Download the files needed to build the SALDO morphtable."""
-    util.download_model(
-        "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc3_morphtable.words",
-        suc)
+    suc.download("https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc3_morphtable.words")
 
-    util.download_model(
-        "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc.morphtable",
-        morphtable_base)
+    morphtable_base.download("https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc.morphtable")
 
-    util.download_model(
-        "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc.patterns",
-        morphtable_patterns)
+    morphtable_patterns.download("https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc.patterns")
 
 
 @modelbuilder("Hunpos-SALDO morphtable", language=["swe"])

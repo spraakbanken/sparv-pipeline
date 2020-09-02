@@ -68,7 +68,7 @@ def _get(name: str):
     return reduce(lambda c, k: c[k], name.split("."), config)
 
 
-def _set(name: str, value: Any, overwrite=False):
+def set_value(name: str, value: Any, overwrite=True):
     """Set value in config, possibly using dot notation."""
     keys = name.split(".")
     prev = config
@@ -96,11 +96,11 @@ def set_default(name: str, default=None):
     if default is not None:
         try:
             if _get(name) is None:
-                _set(name, default, overwrite=True)
+                set_value(name, default)
         except KeyError:
-            _set(name, default)
+            set_value(name, default, overwrite=False)
     else:
-        _set(name, default)
+        set_value(name, default, overwrite=False)
 
 
 def extend_config(new_config):
@@ -173,7 +173,7 @@ def apply_presets(user_classes, default_classes):
         # Update annotations
         preset_classes.update(_collect_classes(get(a), class_dict))
         annotations = resolve_presets(get(a))
-        _set(a, annotations, overwrite=True)
+        set_value(a, annotations)
 
     # Update classes
     combined_classes = _merge_dicts(preset_classes, default_classes)

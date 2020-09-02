@@ -6,7 +6,6 @@ import re
 
 from nltk import FreqDist, LidstoneProbDist
 
-import sparv.util as util
 from sparv import Model, ModelOutput, modelbuilder
 
 log = logging.getLogger(__name__)
@@ -15,9 +14,7 @@ log = logging.getLogger(__name__)
 @modelbuilder("Compound POS model", language=["swe"], order=1)
 def download_nst_comp(out: ModelOutput = ModelOutput("saldo/nst_comp_pos.pickle")):
     """Download compound POS model from sparv-models repo."""
-    util.download_model(
-        "https://github.com/spraakbanken/sparv-models/raw/master/saldo/nst_comp_pos.pickle",
-        out)
+    out.download("https://github.com/spraakbanken/sparv-models/raw/master/saldo/nst_comp_pos.pickle")
 
 
 @modelbuilder("Compound POS model", language=["swe"], order=2)

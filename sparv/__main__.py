@@ -110,6 +110,8 @@ def main():
                                                        "the models will be downloaded and built as needed. "
                                                        "This will make things slower when annotating a corpus "
                                                        "for the first time."))
+    models_parser.add_argument("model", nargs="*", default=[],
+                               help="The model to be built (if omitted all models will be built).")
     models_parser.add_argument("-l", "--list", action="store_true", help="List available models")
     models_parser.add_argument("--language", help="Language (ISO 639-3) if different from current corpus language")
 
@@ -138,7 +140,7 @@ def main():
                                default=1)
     for subparser in [run_parser, runrule_parser]:
         subparser.add_argument("-d", "--doc", nargs="+", default=[], help="Only annotate specified input document(s)")
-    for subparser in [run_parser, runrule_parser, createfile_parser]:
+    for subparser in [run_parser, runrule_parser, createfile_parser, models_parser]:
         subparser.add_argument("--log", metavar="LOGLEVEL", const="info", help="Show log instead of progress bar",
                                nargs="?", choices=["debug", "info", "warning", "error", "critical"])
         subparser.add_argument("--debug", action="store_true", help="Show debug messages")
@@ -231,11 +233,13 @@ def main():
             config["language"] = args.language
             if args.list:
                 snakemake_args["targets"] = ["list_models"]
+            elif args.model:
+                snakemake_args["targets"] = args.model
             else:
                 snakemake_args["targets"] = ["build_models"]
 
         # Command: run, run-rule, create-file
-        if args.command in ("run", "run-rule", "create-file"):
+        if args.command in ("run", "run-rule", "create-file", "build-models"):
             config.update({"debug": args.debug, "doc": vars(args).get("doc", []), "log": args.log or "",
                            "targets": snakemake_args["targets"]})
             if args.log:

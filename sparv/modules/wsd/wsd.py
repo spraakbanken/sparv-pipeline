@@ -82,14 +82,12 @@ def build_model(sense_model: ModelOutput = ModelOutput("wsd/ALL_512_128_w10_A2_1
                 context_model: ModelOutput = ModelOutput("wsd/lem_cbow0_s512_w10_NEW2_ctx.bin")):
     """Download models for SALDO-based word sense disambiguation."""
     # Download sense model
-    util.download_model(
-        "https://github.com/spraakbanken/sparv-wsd/raw/master/models/scouse/ALL_512_128_w10_A2_140403_ctx1.bin",
-        sense_model)
+    sense_model.download(
+        "https://github.com/spraakbanken/sparv-wsd/raw/master/models/scouse/ALL_512_128_w10_A2_140403_ctx1.bin")
 
     # Download context model
-    util.download_model(
-        "https://github.com/spraakbanken/sparv-wsd/raw/master/models/scouse/lem_cbow0_s512_w10_NEW2_ctx.bin",
-        context_model)
+    context_model.download(
+        "https://github.com/spraakbanken/sparv-wsd/raw/master/models/scouse/lem_cbow0_s512_w10_NEW2_ctx.bin")
 
 
 def wsd_start(wsdjar, sense_model, context_model, encoding):

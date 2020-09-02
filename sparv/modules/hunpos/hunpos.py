@@ -92,6 +92,5 @@ def upostag(out: Output = Output("<token>:hunpos.upos", cls="token:upos", descri
 @modelbuilder("Hunpos model", language=["swe"])
 def hunpos_model(model: ModelOutput = ModelOutput("hunpos/suc3_suc-tags_default-setting_utf8.model")):
     """Download the Hunpos model."""
-    util.download_model(
-        "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc3_suc-tags_default-setting_utf8.model",
-        model)
+    model.download(
+        "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc3_suc-tags_default-setting_utf8.model")

@@ -1,10 +1,21 @@
 """Classes used as default input for annotator functions."""
+
+import gzip
+import logging
+import os
 import pathlib
+import pickle
+import urllib.request
+import zipfile
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional, Union, Tuple
+from typing import Any, List, Optional, Tuple, Union
 
 import sparv.core
-from sparv.util import corpus, parent as parents
+from sparv.core.paths import models_dir
+from sparv.util import corpus
+from sparv.util import parent as parents
+
+log = logging.getLogger(__name__)
 
 
 class Base(ABC):
@@ -351,20 +362,89 @@ class Model(Base):
     @property
     def path(self) -> pathlib.Path:
         """Get model path."""
-        return sparv.util.model.get_model_path(self.name)
+        return_path = pathlib.Path(self.name)
+        # Check if name already includes full path to models dir
+        if models_dir in return_path.parents:
+            return return_path
+        else:
+            return models_dir / return_path
+
+    def write_data(self, data):
+        """Write arbitrary string data to models directory."""
+        file_path = self.path
+        os.makedirs(file_path.parent, exist_ok=True)
+        with open(file_path, "w") as f:
+            f.write(data)
+        # Update file modification time even if nothing was written
+        os.utime(file_path, None)
+        log.info("Wrote %d bytes: %s", len(data), self.name)
+
+    def read_data(self):
+        """Read arbitrary string data from file in models directory."""
+        file_path = self.path
+        with open(file_path) as f:
+            data = f.read()
+        log.info("Read %d bytes: %s", len(data), self.name)
+        return data
+
+    def write_pickle(self, data, protocol=-1):
+        """Dump data to pickle file in models directory."""
+        file_path = self.path
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, "wb") as f:
+            pickle.dump(data, f, protocol=protocol)
+        # Update file modification time even if nothing was written
+        os.utime(file_path, None)
+        log.info("Wrote %d bytes: %s", len(data), self.name)
+
+    def read_pickle(self):
+        """Read pickled data from file in models directory."""
+        file_path = self.path
+        with open(file_path, "rb") as f:
+            data = pickle.load(f)
+        log.info("Read %d bytes: %s", len(data), self.name)
+        return data
+
+    def download(self, url: str):
+        """Download file from url and save to modeldir/filename."""
+        os.makedirs(self.path.parent, exist_ok=True)
+        try:
+            urllib.request.urlretrieve(url, self.path)
+            log.info("Successfully downloaded %s", self.name)
+        except Exception as e:
+            log.error("Download from %s failed", url)
+            raise e
+
+    def unzip(self):
+        """Unzip zip file inside modeldir."""
+        out_dir = self.path.parent
+        with zipfile.ZipFile(self.path) as z:
+            z.extractall(out_dir)
+        log.info("Successfully unzipped %s", self.name)
+
+    def ungzip(self, out: str):
+        """Unzip gzip file inside modeldir."""
+        with gzip.open(self.path) as z:
+            data = z.read()
+            with open(out, "wb") as f:
+                f.write(data)
+        log.info("Successfully unzipped %s", out)
+
+    def remove(self, raise_errors: bool = False):
+        """Remove model file from disk."""
+        try:
+            os.remove(self.path)
+        except FileNotFoundError as e:
+            if raise_errors:
+                raise e
 
 
-class ModelOutput(Base):
+class ModelOutput(Model):
     """Path to model file used as output of a modelbuilder."""
 
     def __init__(self, name: str, description: Optional[str] = None):
         super().__init__(name)
         self.description = description
-
-    @property
-    def path(self) -> pathlib.Path:
-        """Get model path."""
-        return sparv.util.model.get_model_path(self.name)
 
 
 class Binary(str):

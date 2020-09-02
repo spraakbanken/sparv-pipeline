@@ -7,7 +7,6 @@ import urllib.request
 
 from nltk import FreqDist, LidstoneProbDist
 
-import sparv.util as util
 from sparv import Model, ModelOutput, modelbuilder
 
 log = logging.getLogger(__name__)
@@ -18,30 +17,27 @@ MIN_FREQ = 4
 @modelbuilder("Korp statistic model", language=["swe"], order=1)
 def download_korp_stats(out: ModelOutput = ModelOutput("saldo/stats.pickle")):
     """Download stats.pickle model."""
-    util.download_model(
-        "https://github.com/spraakbanken/sparv-models/raw/master/saldo/stats.pickle",
-        out)
+    out.download("https://github.com/spraakbanken/sparv-models/raw/master/saldo/stats.pickle")
 
 
 @modelbuilder("Korp statistic model", language=["swe"], order=2)
 def build_korp_stats(out: ModelOutput = ModelOutput("saldo/stats.pickle"),
                      _saldom: Model = Model("saldo/saldom.xml")):
     """Download Korp's word frequency file and convert it to a model."""
-    txt_path = "saldo/stats_all.txt"
+    txt_file = Model("saldo/stats_all.txt")
     try:
         log.info("Downloading Korp stats file...")
-        download_stats_file("https://svn.spraakdata.gu.se/sb-arkiv/pub/frekvens/stats_all.txt", txt_path)
+        download_stats_file("https://svn.spraakdata.gu.se/sb-arkiv/pub/frekvens/stats_all.txt", txt_file.path)
 
         log.info("Building frequency model...")
-        make_model(util.get_model_path(txt_path), out.path)
+        make_model(txt_file.path, out.path)
     finally:
         # Clean up
-        util.remove_model_files([txt_path])
+        txt_file.remove()
 
 
 def download_stats_file(url, destination):
     """Download statistics file in chunks, aborting when we've got what we need."""
-    destination = util.get_model_path(destination)
     os.makedirs(os.path.dirname(destination), exist_ok=True)
 
     response = urllib.request.urlopen(url)

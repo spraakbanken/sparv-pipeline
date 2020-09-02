@@ -137,17 +137,13 @@ def do_segmentation(text: Text, out: Output, segmenter, chunk: Optional[Annotati
 @modelbuilder("Model for PunktSentenceTokenizer", language=["swe"])
 def download_punkt_model(out: ModelOutput = ModelOutput("segment/punkt-nltk-svenska.pickle")):
     """Download model for use with PunktSentenceTokenizer."""
-    util.download_model(
-        "https://github.com/spraakbanken/sparv-models/raw/master/segment/punkt-nltk-svenska.pickle",
-        out)
+    out.download("https://github.com/spraakbanken/sparv-models/raw/master/segment/punkt-nltk-svenska.pickle")
 
 
 @modelbuilder("Model for BetterWordTokenizer", language=["swe"])
 def download_bettertokenizer(out: ModelOutput = ModelOutput("segment/bettertokenizer.sv")):
     """Download model for use with BetterWordTokenizer."""
-    util.download_model(
-        "https://github.com/spraakbanken/sparv-models/raw/master/segment/bettertokenizer.sv",
-        out)
+    out.download("https://github.com/spraakbanken/sparv-models/raw/master/segment/bettertokenizer.sv")
 
 
 @modelbuilder("Token list for BetterWordTokenizer", language=["swe"])
@@ -183,7 +179,7 @@ def build_tokenlist(saldo_model: Model = Model("saldo/saldo.pickle"),
                 if len(spans) > 1 and not wf.endswith(","):
                     wordforms.add(wf)
 
-    util.write_model_data(out.path, "\n".join(sorted(wordforms)))
+    out.write_data("\n".join(sorted(wordforms)))
 
 
 ######################################################################

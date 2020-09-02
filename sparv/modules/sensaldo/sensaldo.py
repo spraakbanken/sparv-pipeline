@@ -66,21 +66,19 @@ def annotate(sense: Annotation = Annotation("<token>:saldo.sense"),
 def build_model(out: ModelOutput = ModelOutput("sensaldo/sensaldo.pickle")):
     """Download and build SenSALDO model."""
     # Download and extract sensaldo-base-v02.txt
-    zip_path = "sensaldo/sensaldo-v02.zip"
-    util.download_model("https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/sensaldo/sensaldo-v02.zip", zip_path)
-    util.unzip_model(zip_path)
-    tsv_path = "sensaldo/sensaldo-base-v02.txt"
+    zip_model = Model("sensaldo/sensaldo-v02.zip")
+    zip_model.download("https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/sensaldo/sensaldo-v02.zip")
+    zip_model.unzip()
+    tsv_model = Model("sensaldo/sensaldo-base-v02.txt")
 
     # Read sensaldo tsv dictionary and save as a pickle file
-    lexicon = read_sensaldo(tsv_path)
-    util.write_model_pickle(out.path, lexicon)
+    lexicon = read_sensaldo(tsv_model)
+    out.write_pickle(lexicon)
 
     # Clean up
-    util.remove_model_files([
-        zip_path,
-        "sensaldo/sensaldo-fullform-v02.txt",
-        tsv_path
-    ])
+    zip_model.remove()
+    tsv_model.remove()
+    Model("sensaldo/sensaldo-fullform-v02.txt").remove()
 
 
 def read_sensaldo(tsv, verbose=True):
@@ -92,7 +90,7 @@ def read_sensaldo(tsv, verbose=True):
         log.info("Reading TSV lexicon")
     lexicon = {}
 
-    f = util.read_model_data(tsv)
+    f = tsv.read_data()
     # with open(tsv) as f:
     for line in f.split("\n"):
         if line.lstrip():
