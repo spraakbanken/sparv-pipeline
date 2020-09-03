@@ -3,15 +3,20 @@
 import argparse
 import importlib
 import inspect
+import logging
 import sys
 
-from sparv.core import log, paths, registry
+from sparv.core import log_handler, paths, registry
 from sparv.util.classes import Annotation, AnnotationData, Config, Document, Output, OutputData
 
 
-def main(argv=None, log_level="info"):
+def main(argv=None, log_level: str = "info"):
     """Parse command line arguments and execute the requested Sparv module."""
-    log.setup_logging(log_level)
+
+    # Set up logging
+    logging.basicConfig(format=log_handler.LOG_FORMAT, datefmt=log_handler.DATE_FORMAT, level=log_level.upper(),
+                        stream=sys.stdout)
+
     modules_path = ".".join(("sparv", paths.modules_dir))
 
     if argv is None:

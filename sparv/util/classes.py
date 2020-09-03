@@ -418,7 +418,7 @@ class Text:
         text_file = corpus.get_annotation_path(self.doc, corpus.TEXT_FILE, data=True)
         with open(text_file) as f:
             text = f.read()
-        log.info("Read %d chars: %s", len(text), text_file)
+        log.debug("Read %d chars: %s", len(text), text_file)
         return text
 
     def write(self, text):
@@ -488,7 +488,7 @@ class Model(Base):
         file_path = self.path
         with open(file_path) as f:
             data = f.read()
-        log.info("Read %d bytes: %s", len(data), self.name)
+        log.debug("Read %d bytes: %s", len(data), self.name)
         return data
 
     def write_pickle(self, data, protocol=-1):
@@ -506,7 +506,7 @@ class Model(Base):
         file_path = self.path
         with open(file_path, "rb") as f:
             data = pickle.load(f)
-        log.info("Read %d bytes: %s", len(data), self.name)
+        log.debug("Read %d bytes: %s", len(data), self.name)
         return data
 
     def download(self, url: str):

@@ -1,17 +1,96 @@
-"""Handler for Snakemake log messages."""
+"""Handler for log messages, both from the logging library and from Snakemake."""
+import copy
+import datetime
+import logging
+import logging.handlers
 import os
+import pickle
 import re
+import socketserver
+import struct
 import sys
+import threading
 import time
 from collections import defaultdict
 from datetime import timedelta
 from pathlib import Path
+from typing import Optional
 
 from alive_progress import alive_bar
 from snakemake import logger
 
+import sparv.util as util
 from sparv.core import paths
 from sparv.util.misc import SparvErrorMessage
+
+LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+LOG_FORMAT_DEBUG = "%(asctime)s - %(name)s (%(process)d) - %(levelname)s - %(message)s"
+DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+
+class ColorFormatter(logging.Formatter):
+    """Custom log formatter for adding colors.
+
+    http://uran198.github.io/en/python/2016/07/12/colorful-python-logging.html
+    """
+
+    LOG_COLORS = {
+        logging.CRITICAL: util.Color.RED,
+        logging.ERROR: util.Color.RED,
+        logging.WARNING: util.Color.YELLOW,
+        logging.DEBUG: util.Color.CYAN
+    }
+
+    def format(self, record):
+        """Colorise levelname and message in the log output."""
+        # If the corresponding logger has children, they may receive modified record, so we want to keep it intact
+        new_record = copy.copy(record)
+        if new_record.levelno in ColorFormatter.LOG_COLORS:
+            new_record.levelname = "{}{}{}".format(
+                ColorFormatter.LOG_COLORS[new_record.levelno],
+                new_record.levelname,
+                util.Color.RESET)
+            new_record.msg = "{}{}{}".format(
+                ColorFormatter.LOG_COLORS[new_record.levelno],
+                new_record.getMessage(),
+                util.Color.RESET
+            )
+        # Let standard formatting take care of the rest
+        return super().format(new_record)
+
+
+class LogRecordStreamHandler(socketserver.StreamRequestHandler):
+    """Handler for streaming logging requests."""
+
+    def handle(self):
+        """Handle multiple requests - each expected to be a 4-byte length followed by the LogRecord in pickle format."""
+        while True:
+            chunk = self.connection.recv(4)
+            if len(chunk) < 4:
+                break
+            slen = struct.unpack(">L", chunk)[0]
+            chunk = self.connection.recv(slen)
+            while len(chunk) < slen:
+                chunk = chunk + self.connection.recv(slen - len(chunk))
+            obj = pickle.loads(chunk)
+            record = logging.makeLogRecord(obj)
+            self.handle_log_record(record)
+
+    @staticmethod
+    def handle_log_record(record):
+        """Handle log record."""
+        sparv_logger = logging.getLogger("sparv_logging")
+        sparv_logger.handle(record)
+
+
+class FileHandlerWithDirCreation(logging.FileHandler):
+    """FileHandler which creates necessary directories when the first log message is handled."""
+
+    def emit(self, record):
+        """Emit a record and create necessary directories if needed."""
+        if self.stream is None:
+            os.makedirs(os.path.dirname(self.baseFilename), exist_ok=True)
+        super().emit(record)
 
 
 class LogHandler:
@@ -19,15 +98,19 @@ class LogHandler:
 
     icon = "\U0001f426"
 
-    def __init__(self, progressbar=False, summary=False):
+    def __init__(self, progressbar=True, summary=False, log_level=None, log_file_level=None):
         """Initialize log handler.
 
         Args:
-            progressbar: Set to True to enable progress bar. Disabled by default.
+            progressbar: Set to False to disable progress bar. Enabled by default.
             summary: Set to True to write a final summary (elapsed time). Disabled by default.
+            log_level: Log level for logging to stdout.
+            log_file_level: Log level for logging to file.
         """
         self.use_progressbar = progressbar
         self.show_summary = summary
+        self.log_level = log_level
+        self.log_file_level = log_file_level
         self.finished = False
         self.messages = defaultdict(list)
         self.missing_configs = None
@@ -43,6 +126,41 @@ class LogHandler:
         self.bar = None
         self.last_percentage = 0
 
+        # Create a simple TCP socket-based logging receiver
+        tcpserver = socketserver.ThreadingTCPServer(("localhost", 0), RequestHandlerClass=LogRecordStreamHandler)
+        self.log_server = tcpserver.server_address
+
+        # Start a thread with the server
+        server_thread = threading.Thread(target=tcpserver.serve_forever)
+        server_thread.daemon = True  # Exit the server thread when the main thread terminates
+        server_thread.start()
+
+        if not self.use_progressbar:  # When using progress bar, we must wait until after the bar is initialized.
+            self.setup_loggers()
+
+    def setup_loggers(self):
+        """Set up log handlers for logging to stdout and log file."""
+        if not self.log_level or not self.log_file_level:
+            return
+
+        sparv_logger = logging.getLogger("sparv_logging")
+
+        # stdout logger
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.setLevel(self.log_level.upper())
+        log_format = LOG_FORMAT if stream_handler.level > logging.DEBUG else LOG_FORMAT_DEBUG
+        stream_handler.setFormatter(ColorFormatter(log_format, datefmt=DATE_FORMAT))
+        sparv_logger.addHandler(stream_handler)
+
+        # File logger
+        log_filename = "{}.log".format(datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f"))
+        file_handler = FileHandlerWithDirCreation(os.path.join(paths.log_dir, log_filename), mode="w",
+                                                  encoding="UTF-8", delay=True)
+        file_handler.setLevel(self.log_file_level.upper())
+        log_format = LOG_FORMAT if file_handler.level > logging.DEBUG else LOG_FORMAT_DEBUG
+        file_handler.setFormatter(logging.Formatter(log_format))
+        sparv_logger.addHandler(file_handler)
+
     def setup_bar(self, total: int):
         """Initialize the progress bar."""
         print()
@@ -50,12 +168,15 @@ class LogHandler:
         self.exit = type(self.bar_mgr).__exit__
         self.bar = type(self.bar_mgr).__enter__(self.bar_mgr)
 
+        # Logging needs to be set up after the bar, to make use if its print hook
+        self.setup_loggers()
+
     def log_handler(self, msg):
         """Log handler for Snakemake displaying a progress bar."""
         def read_log_files(log_type: str):
             """Find log files tied to this process and return log messages."""
             messages = []
-            for log_file in paths.log_dir.glob("{}.*.{}.*".format(os.getpid(), log_type)):
+            for log_file in paths.log_dir_internal.glob("{}.*.{}.*".format(os.getpid(), log_type)):
                 log_info = re.match(r"\d+\.\d+\." + log_type + r"\.([^.]+)\.([^.]+)", log_file.stem)
                 assert log_info, "Could not parse log file name: {}".format(log_file)
                 messages.append((*log_info.groups(), log_file.read_text()))
@@ -162,7 +283,7 @@ class LogHandler:
                 if job_name in self.missing_configs_annotators and job_name not in self.handled_missing_configs:
                     self.handled_missing_configs.add(job_name)
                     for error_message in self.missing_configs_annotators[job_name]:
-                        self.messages["error"].append(*job_name, error_message)
+                        self.messages["error"].append((*job_name, error_message))
 
     def stop(self):
         """Stop the progress bar and output any error messages."""
@@ -203,3 +324,13 @@ class LogHandler:
                     print()
                 elapsed = round(time.time() - self.start_time)
                 logger.logger.info("Time elapsed: {}".format(timedelta(seconds=elapsed)))
+
+
+def setup_logging(log_server, log_level: Optional[str] = "warning", log_file_level: Optional[str] = "critical"):
+    """Set up logging with socket handler."""
+    # Use the lowest log level, but never lower than warning
+    log_level = min(logging.WARNING, getattr(logging, log_level.upper()), getattr(logging, log_file_level.upper()))
+    socket_logger = logging.getLogger("sparv")
+    socket_logger.setLevel(log_level)
+    socket_handler = logging.handlers.SocketHandler(*log_server)
+    socket_logger.addHandler(socket_handler)

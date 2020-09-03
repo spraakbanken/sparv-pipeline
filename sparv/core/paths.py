@@ -61,7 +61,8 @@ bin_dir = get_data_path("bin")
 # Corpus relative paths
 corpus_dir = Path(os.environ.get("CORPUS_DIR", ""))
 annotation_dir = Path("annotations")
-log_dir = annotation_dir / ".log"
+log_dir_internal = annotation_dir / ".log"
+log_dir = "logs"
 source_dir = "source"
 export_dir = Path("export")
 config_file = "config.yaml"

@@ -7,7 +7,7 @@ import sys
 
 from pkg_resources import iter_entry_points
 
-from sparv.core import log, paths
+from sparv.core import log_handler, paths
 from sparv.core.registry import annotators
 from sparv.util import SparvErrorMessage
 
@@ -23,7 +23,7 @@ except NameError:
 
 def exit_with_error_message(error, snakemake_pid, pid, module_name, function_name):
     """Save error message to temporary file (to be read by log handler) and exit with non-zero status."""
-    log_file = paths.log_dir / "{}.{}.error.{}.{}.log".format(snakemake_pid, pid or 0, module_name, function_name)
+    log_file = paths.log_dir_internal / "{}.{}.error.{}.{}.log".format(snakemake_pid, pid or 0, module_name, function_name)
     log_file.parent.mkdir(parents=True, exist_ok=True)
     log_file.write_text(str(error))
     sys.exit(123)
@@ -58,7 +58,9 @@ else:
 f_name = snakemake.params.f_name
 parameters = snakemake.params.parameters
 
-log.setup_logging(log_level=snakemake.params.log)
+log_handler.setup_logging(snakemake.config["log_server"],
+                          log_level=snakemake.config["log_level"],
+                          log_file_level=snakemake.config["log_file_level"])
 logger = logging.getLogger("sparv")
 logger.info("RUN: %s:%s(%s)", module_name, f_name, ", ".join("%s=%s" % (i[0], repr(i[1])) for i in
                                                              list(parameters.items())))

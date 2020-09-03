@@ -189,7 +189,7 @@ def _read_single_annotation(doc, annotation, with_annotation_name, allow_newline
                 value = re.sub(r"((?<!\\)(?:\\\\)*)\\n", r"\1\n", value).replace(r"\\", "\\")
             yield value if not with_annotation_name else (value, annotation)
             ctr += 1
-    _log.info("Read %d items: %s/%s", ctr, doc, annotation)
+    _log.debug("Read %d items: %s/%s", ctr, doc, annotation)
 
 
 def write_data(doc, name, value, append=False):
@@ -211,7 +211,7 @@ def read_data(doc, name):
 
     with open(file_path) as f:
         data = f.read()
-    _log.info("Read %d bytes: %s/%s", len(data), doc, name)
+    _log.debug("Read %d bytes: %s/%s", len(data), doc, name)
     return data
 
 

@@ -117,7 +117,7 @@ def main():
 
     # Advanced commands
     runmodule = subparsers.add_parser("run-module", no_help=True)
-    runmodule.add_argument("--log", metavar="LOGLEVEL", help="Set the log level", default="info",
+    runmodule.add_argument("--log", metavar="LOGLEVEL", help="Set the log level (default: 'info')", default="info",
                            choices=["debug", "info", "warning", "error", "critical"])
 
     runrule_parser = subparsers.add_parser("run-rule", description="Run specified rule(s) for creating annotations.")
@@ -141,7 +141,10 @@ def main():
     for subparser in [run_parser, runrule_parser]:
         subparser.add_argument("-d", "--doc", nargs="+", default=[], help="Only annotate specified input document(s)")
     for subparser in [run_parser, runrule_parser, createfile_parser, models_parser]:
-        subparser.add_argument("--log", metavar="LOGLEVEL", const="info", help="Show log instead of progress bar",
+        subparser.add_argument("--log", metavar="LOGLEVEL", const="info", help="Set the log level (default: 'warning')",
+                               nargs="?", choices=["debug", "info", "warning", "error", "critical"])
+        subparser.add_argument("--log-to-file", metavar="LOGLEVEL", const="info",
+                               help="Enable logging to file using specified log level (default: 'info')",
                                nargs="?", choices=["debug", "info", "warning", "error", "critical"])
         subparser.add_argument("--debug", action="store_true", help="Show debug messages")
 
@@ -179,8 +182,9 @@ def main():
 
     snakemake_args = {"workdir": args.dir}
     config = {"run_by_sparv": True}
-    use_progressbar = True
     simple_target = False
+    log_level = ""
+    log_file_level = ""
 
     if args.command in ("annotations", "config", "files", "clean", "presets"):
         snakemake_args["targets"] = [args.command]
@@ -240,27 +244,24 @@ def main():
 
         # Command: run, run-rule, create-file
         if args.command in ("run", "run-rule", "create-file", "build-models"):
-            config.update({"debug": args.debug, "doc": vars(args).get("doc", []), "log": args.log or "",
+            log_level = args.log or "warning"
+            log_file_level = args.log_to_file or "critical"
+            config.update({"debug": args.debug,
+                           "doc": vars(args).get("doc", []),
+                           "log_level": log_level,
+                           "log_file_level": log_file_level,
                            "targets": snakemake_args["targets"]})
-            if args.log:
-                use_progressbar = False
 
     if simple_target:
-        # Disable progressbar for simple targets, and force Snakemake to use threads to prevent unnecessary processes
-        use_progressbar = False
+        # Force Snakemake to use threads to prevent unnecessary processes for simple targets
         snakemake_args["force_use_threads"] = True
 
-    # Disable Snakemake's default log handler
+    # Disable Snakemake's default log handler and use our own
     logger.log_handler = []
+    progress = log_handler.LogHandler(progressbar=not simple_target, log_level=log_level, log_file_level=log_file_level)
+    snakemake_args["log_handler"] = [progress.log_handler]
 
-    if use_progressbar:
-        # Use progress bar log handler
-        progress = log_handler.LogHandler(progressbar=True)
-        snakemake_args["log_handler"] = [progress.log_handler]
-    else:
-        # Use minimal log handler
-        progress = log_handler.LogHandler(summary=not simple_target)
-        snakemake_args["log_handler"] = [progress.log_handler]
+    config["log_server"] = progress.log_server
 
     # Run Snakemake
     success = snakemake.snakemake(sparv_path / "core" / "Snakefile", config=config, **snakemake_args)

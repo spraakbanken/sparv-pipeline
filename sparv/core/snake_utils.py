@@ -332,7 +332,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         rule.exit_message = "EXPORT_DIRS:\n{}".format("\n".join(str(p / "_")[:-1] for p in output_dirs))
 
     if rule.missing_config:
-        log_file = paths.log_dir / "{}.0.missing_config.{}.log".format(os.getpid(), rule.full_name.replace(":", "."))
+        log_file = paths.log_dir_internal / "{}.0.missing_config.{}.log".format(os.getpid(),
+                                                                                rule.full_name.replace(":", "."))
         log_file.parent.mkdir(parents=True, exist_ok=True)
         log_file.write_text("\n".join(rule.missing_config))
 
