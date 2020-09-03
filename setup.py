@@ -17,10 +17,19 @@ def get_version(rel_path):
             raise RuntimeError("Unable to find version string.")
 
 
+def get_readme(readme_path):
+    """Get the contents of the README file."""
+    here = os.path.abspath(os.path.dirname(__file__))
+    with open(os.path.join(here, readme_path), encoding="utf-8") as f:
+        return f.read()
+
+
 setuptools.setup(
     name="sparv-pipeline",
     version=get_version("sparv/__init__.py"),
     description="Språkbanken's corpus annotation pipeline",
+    long_description=get_readme("README.md"),
+    long_description_content_type="text/markdown",
     url="https://github.com/spraakbanken/sparv-pipeline/",
     author="Språkbanken",
     author_email="sb-info@svenska.gu.se",
