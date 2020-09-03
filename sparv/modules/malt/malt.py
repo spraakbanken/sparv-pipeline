@@ -108,7 +108,7 @@ def annotate(maltjar: Binary = Binary("[malt.jar]"),
         malt_sentences = (malt_sent.split(TOK_SEP)
                           for malt_sent in stdout.split(SENT_SEP))
 
-    out_dephead_annotation = util.create_empty_attribute(word_annotation)
+    out_dephead_annotation = word.create_empty_attribute()
     out_dephead_ref_annotation = out_dephead_annotation.copy()
     out_deprel_annotation = out_dephead_annotation.copy()
     for (sent, malt_sent) in zip(sentences, malt_sentences):

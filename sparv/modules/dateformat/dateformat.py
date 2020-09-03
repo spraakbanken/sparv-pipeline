@@ -190,7 +190,7 @@ def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Outpu
                                                                      "or the number of in-formats."
 
     ifrom = list(in_from.read())
-    ofrom = util.create_empty_attribute(ifrom)
+    ofrom = in_from.create_empty_attribute()
 
     for index, val in enumerate(ifrom):
         val = val.strip()
@@ -255,7 +255,7 @@ def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Outpu
 
     if out_to:
         ito = list(in_to.read())
-        oto = util.create_empty_attribute(in_to)
+        oto = in_to.create_empty_attribute()
 
         for index, val in enumerate(ito):
             if not val:

@@ -190,7 +190,7 @@ def annotate_standard(out, input_annotation, annotator, extra_input="", delimite
     if extra_input:
         LEMS = merge(LEMS, util.read_annotation(extra_input))
 
-    util.clear_annotation(out)
+    clear_annotation(out)
     OUT = {}
 
     for tokid in LEMS:
@@ -255,7 +255,7 @@ def annotate_full(word, sentence, reference, out, annotations, models, msd="",
     if msd:
         MSD = util.read_annotation(msd)
     for out_file in out:
-        util.clear_annotation(out_file)
+        clear_annotation(out_file)
 
     sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
     OUT = {}
@@ -400,7 +400,7 @@ def annotate_mwe(variants, word, reference, sentence, out, annotations, models, 
     REF = util.read_annotation(reference)
 
     for out_file in out:
-        util.clear_annotation(out_file)
+        clear_annotation(out_file)
 
     sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
     OUT = {}
@@ -483,6 +483,13 @@ def find_multiword_expressions(incomplete_multis, complete_multis, theword, text
 
 def _concat(xs):
     return sum(xs, [])
+
+
+def clear_annotation(doc, annotation):
+    """Remove an annotation file if it exists."""
+    annotation_path = util.get_annotation_path(doc, annotation)
+    if os.path.exists(annotation_path):
+        os.remove(annotation_path)
 
 
 if __name__ == "__main__":

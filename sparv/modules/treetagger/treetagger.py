@@ -65,8 +65,8 @@ def annotate(lang: Language = Language(),
     log.debug("Message from TreeTagger:\n%s", stderr)
 
     # Write pos and upos annotations.
-    out_upos_annotation = util.create_empty_attribute(word_annotation)
-    out_pos_annotation = util.create_empty_attribute(word_annotation)
+    out_upos_annotation = word.create_empty_attribute()
+    out_pos_annotation = word.create_empty_attribute()
     for sent, tagged_sent in zip(sentences, stdout.strip().split(SENT_SEP)):
         for token_id, tagged_token in zip(sent, tagged_sent.strip().split(TOK_SEP)):
             tag = tagged_token.strip().split(TAG_SEP)[TAG_COLUMN]
@@ -76,7 +76,7 @@ def annotate(lang: Language = Language(),
     out_upos.write(out_upos_annotation)
 
     # Write lemma annotations.
-    out_lemma_annotation = util.create_empty_attribute(word_annotation)
+    out_lemma_annotation = word.create_empty_attribute()
     for sent, tagged_sent in zip(sentences, stdout.strip().split(SENT_SEP)):
         for token_id, tagged_token in zip(sent, tagged_sent.strip().split(TOK_SEP)):
             lem = tagged_token.strip().split(TAG_SEP)[LEM_COLUMN]

@@ -103,7 +103,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 annotations_ = set()
                 for export_annotation in rule.import_outputs:
                     annotations_.add(export_annotation)
-                    annotations_.add(util.split_annotation(export_annotation)[0])
+                    annotations_.add(BaseAnnotation(export_annotation).split()[0])
+
                 for element in annotations_:
                     rule.outputs.append(paths.annotation_dir / get_annotation_path(element))
 
@@ -460,7 +461,9 @@ def get_source_path() -> str:
 
 def get_annotation_path(annotation, data=False, common=False):
     """Construct a path to an annotation file given a doc and annotation."""
-    elem, attr = util.split_annotation(annotation)
+    if not isinstance(annotation, BaseAnnotation):
+        annotation = BaseAnnotation(annotation)
+    elem, attr = annotation.split()
     path = Path(elem)
 
     if not (data or common):

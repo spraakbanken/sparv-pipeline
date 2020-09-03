@@ -7,8 +7,9 @@ from copy import deepcopy
 from itertools import combinations
 from typing import Any, List, Optional, Set, Tuple, Union
 
-from sparv.util.classes import ExportAnnotations, Annotation, AnnotationAllDocs, ExportAnnotationsAllDocs
 from sparv.util import corpus, misc
+from sparv.util.classes import (Annotation, AnnotationAllDocs, AnnotationData, ExportAnnotations,
+                                ExportAnnotationsAllDocs)
 
 log = logging.getLogger(__name__)
 
@@ -118,7 +119,7 @@ def gather_annotations(annotations: List[Annotation],
                 annotation_dict[base_name][attr] = list(annotation.read())
             elif is_header:
                 annotation_dict[base_name][corpus.HEADER_CONTENT] = list(
-                    corpus.read_annotation(doc, f"{base_name}:{corpus.HEADER_CONTENT}", allow_newlines=True))
+                    Annotation(f"{base_name}:{corpus.HEADER_CONTENT}", doc=doc).read(allow_newlines=True))
 
     # Calculate hierarchy (if needed) and sort the span objects
     elem_hierarchy = calculate_element_hierarchy(doc, spans_list)
@@ -247,9 +248,9 @@ def get_available_source_annotations(doc: Optional[str] = None, docs: Optional[L
     available_source_annotations = set()
     if docs:
         for d in docs:
-            available_source_annotations.update(corpus.read_data(d, corpus.STRUCTURE_FILE).split())
+            available_source_annotations.update(AnnotationData(corpus.STRUCTURE_FILE, doc=d).read().split())
     else:
-        available_source_annotations.update(corpus.read_data(doc, corpus.STRUCTURE_FILE).split())
+        available_source_annotations.update(AnnotationData(corpus.STRUCTURE_FILE, doc=doc).read().split())
 
     return available_source_annotations
 
@@ -328,11 +329,12 @@ def get_header_names(header_annotation_names: Optional[List[str]],
         if docs:
             annotation_names = []
             for d in docs:
-                if corpus.data_exists(d, corpus.HEADERS_FILE):
+                if AnnotationData(corpus.HEADERS_FILE, doc=d).exists():
                     annotation_names.extend(
-                        misc.parse_annotation_list(corpus.read_data(d, corpus.HEADERS_FILE).splitlines()))
-        elif corpus.data_exists(doc, corpus.HEADERS_FILE):
-            annotation_names = misc.parse_annotation_list(corpus.read_data(doc, corpus.HEADERS_FILE).splitlines())
+                        misc.parse_annotation_list(AnnotationData(corpus.HEADERS_FILE, doc=d).read().splitlines()))
+        elif AnnotationData(corpus.HEADERS_FILE, doc=doc).exists():
+            annotation_names = misc.parse_annotation_list(
+                AnnotationData(corpus.HEADERS_FILE, doc=d).read().splitlines())
 
     header_annotations = [(Annotation(a[0], doc) if doc else AnnotationAllDocs(a[0]), a[1]) for a in
                           annotation_names]
@@ -360,18 +362,18 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
                          source_annotations: list = []):
     """Create dictionary for renamed annotations."""
     if remove_namespaces:
-        def shorten(_name):
+        def shorten(annotation):
             """Shorten annotation name or attribute name.
 
             For example:
                 segment.token -> token
                 segment.token:saldo.baseform -> segment.token:baseform
             """
-            annotation, attribute = corpus.split_annotation(_name)
+            annotation_name, attribute = annotation.split()
             if attribute:
-                short = corpus.join_annotation(annotation, attribute.split(".")[-1])
+                short = corpus.join_annotation(annotation_name, attribute.split(".")[-1])
             else:
-                short = corpus.join_annotation(annotation.split(".")[-1], None)
+                short = corpus.join_annotation(annotation_name.split(".")[-1], None)
             return short
 
         # Create short names dictionary and count
@@ -383,7 +385,7 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
             if (annotation, new_name) in source_annotations:
                 short_name = name
             else:
-                short_name = shorten(name)
+                short_name = shorten(annotation)
             if new_name:
                 if ":" in name:
                     # Combine new attribute name with base annotation name
@@ -391,7 +393,7 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
                 else:
                     short_name = new_name
             short_names_count[short_name] += 1
-            base, attr = corpus.split_annotation(short_name)
+            base, attr = Annotation(short_name).split()
             short_names[name] = attr or base
 
         export_names = {}
@@ -399,10 +401,10 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
             name = annotation.name
             if not new_name:
                 # Only use short name if it's unique
-                if "." in name and short_names_count[shorten(name)] == 1:
+                if "." in name and short_names_count[shorten(annotation)] == 1:
                     new_name = short_names[name]
                 else:
-                    base, attr = corpus.split_annotation(name)
+                    base, attr = annotation.split()
                     new_name = attr or base
 
             if keep_struct_names:
@@ -417,7 +419,7 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
             for annotation, new_name in sorted(annotations):
                 name = annotation.name
                 if not new_name:
-                    base, attr = corpus.split_annotation(name)
+                    base, attr = annotation.split()
                     new_name = attr or base
                 if ":" in name and not name.startswith(token_name):
                     base_name = annotation.annotation_name()

@@ -80,7 +80,7 @@ def metadata(out: Output = Output("{chunk}:geo.geo_metadata", description="Geogr
 
     geomodel = load_model(model, language=language)
 
-    same_target_source = util.split_annotation(chunk)[0] == util.split_annotation(source)[0]
+    same_target_source = chunk.split()[0] == source.split()[0]
     chunk_annotation = list(chunk.read())
     source_annotation = list(source.read())
 
@@ -107,7 +107,7 @@ def metadata(out: Output = Output("{chunk}:geo.geo_metadata", description="Geogr
 
     chunk_locations = most_populous(chunk_locations)
 
-    out_annotation = util.create_empty_attribute(chunk_annotation)
+    out_annotation = chunk.create_empty_attribute()
     for c in chunk_locations:
         out_annotation[c] = _format_location(chunk_locations.get(c, ()))
 
