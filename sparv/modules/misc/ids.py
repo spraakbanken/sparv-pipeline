@@ -39,7 +39,7 @@ def doc_id(out: OutputDataAllDocs = OutputDataAllDocs("misc.docid", cls="docid")
     if add:
         for doc in docs:
             if out.exists(doc):
-                used_ids.add(util.read_data(doc, out))
+                used_ids.add(out.read(doc))
                 docs_with_ids.add(doc)
 
     for doc in docs:

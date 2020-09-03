@@ -6,7 +6,7 @@ import unicodedata
 import xml.etree.ElementTree as etree
 from pathlib import Path
 
-from sparv import Config, Document, Source, Text, importer, util
+from sparv import Config, Document, OutputData, Source, Text, importer, util
 
 log = logging.getLogger(__name__)
 
@@ -280,4 +280,4 @@ class SparvXMLParser:
 
         if header_elements:
             # Save list of all header elements to a file
-            util.write_data(self.doc, util.corpus.HEADERS_FILE, "\n".join(header_elements))
+            OutputData(util.corpus.HEADERS_FILE, doc=self.doc).write("\n".join(header_elements))

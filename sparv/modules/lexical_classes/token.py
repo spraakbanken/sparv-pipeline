@@ -108,10 +108,10 @@ def annotate_words(out, model: Model, saldoids, pos, annotate, pos_limit, class_
 
     sense = saldoids.read()
     token_pos = list(pos.read())
-    out_annotation = util.create_empty_attribute(token_pos)
+    out_annotation = pos.create_empty_attribute()
 
     # Check if the saldo IDs are ranked (= word senses have been disambiguated)
-    wsd = util.split_annotation(saldoids)[1].split(".")[0] == "wsd"
+    wsd = saldoids.split()[1].split(".")[0] == "wsd"
 
     for token_index, token_sense in enumerate(sense):
 

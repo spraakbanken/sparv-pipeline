@@ -5,7 +5,6 @@ import re
 from binascii import hexlify
 from collections import defaultdict
 
-import sparv.util as util
 from sparv import Annotation, Output, annotator
 
 START_DEFAULT = 1
@@ -121,7 +120,7 @@ def _read_chunks_and_write_new_ordering(out, chunk, order, prefix="", zfill=Fals
         val = order(i, val)
         new_order[val].append(i)
 
-    out_annotation = util.create_empty_attribute(chunk)
+    out_annotation = chunk.create_empty_attribute()
 
     nr_digits = len(str(len(new_order) - 1 + start))
     for nr, key in enumerate(sorted(new_order), start):

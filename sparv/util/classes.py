@@ -96,9 +96,9 @@ class Annotation(BaseAnnotation):
         """Return True if annotation file exists."""
         return corpus.annotation_exists(self.doc, self.name)
 
-    def read(self):
+    def read(self, allow_newlines: bool = False):
         """Yield each line from the annotation."""
-        return corpus.read_annotation(self.doc, self.name)
+        return corpus.read_annotation(self.doc, self.name, allow_newlines=allow_newlines)
 
     def get_children(self, child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False):
         """Return two lists.
@@ -379,6 +379,10 @@ class OutputDataAllDocs(BaseOutput):
 
     def __init__(self, name: str = "", cls: Optional[str] = None, description: Optional[str] = None):
         super().__init__(name, cls, description=description)
+
+    def read(self, doc: str):
+        """Read arbitrary string data from annotation file."""
+        return corpus.read_data(doc, self.name)
 
     def write(self, value, doc: str, append: bool = False):
         """Write arbitrary string data to annotation file."""

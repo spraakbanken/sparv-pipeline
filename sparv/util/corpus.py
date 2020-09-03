@@ -36,13 +36,6 @@ def data_exists(doc, name):
     return os.path.isfile(annotation_path)
 
 
-def clear_annotation(doc, annotation):
-    """Remove an annotation file if it exists."""
-    annotation_path = get_annotation_path(doc, annotation)
-    if os.path.exists(annotation_path):
-        os.remove(annotation_path)
-
-
 def write_annotation(doc, annotation, values, append=False, allow_newlines=False):
     """Write an annotation to one or more files. The file is overwritten if it exists.
 

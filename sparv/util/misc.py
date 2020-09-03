@@ -3,7 +3,7 @@
 import logging
 from typing import List, Optional
 
-from . import corpus
+from .classes import Annotation
 from .constants import Color
 
 
@@ -82,7 +82,7 @@ def parse_annotation_list(annotation_names: Optional[List[str]], add_plain_annot
     result = []
     for a in annotation_names:
         name, _, export_name = a.partition(" as ")
-        plain_name, attr = corpus.split_annotation(name)
+        plain_name, attr = Annotation(name).split()
         if not attr:
             plain_annotations.add(name)
         else:

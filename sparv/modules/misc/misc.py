@@ -33,12 +33,12 @@ def text_headtail(text: Text = Text(),
         """Escape whitespace characters."""
         return t.replace(" ", "\\s").replace("\n", "\\n").replace("\t", "\\t")
 
+    out_head_annotation = chunk.create_empty_attribute()
+    out_tail_annotation = chunk.create_empty_attribute()
+    head_text = None
+
     corpus_text = text.read()
     chunk = list(chunk.read())
-
-    out_head_annotation = util.create_empty_attribute(chunk)
-    out_tail_annotation = util.create_empty_attribute(chunk)
-    head_text = None
 
     for i, span in enumerate(chunk):
         if head_text:
