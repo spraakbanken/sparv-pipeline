@@ -4,7 +4,7 @@ import unicodedata
 from pathlib import Path
 
 from sparv import importer, util
-from sparv.util.classes import Document, Source, Text
+from sparv.util.classes import Document, Output, Source, Text
 
 
 @importer("TXT import", source_type="txt", outputs=["text"])
@@ -39,5 +39,5 @@ def parse(doc: Document = Document(),
 
     # Make up a text annotation surrounding the whole file
     text_annotation = "{}.text".format(prefix) if prefix else "text"
-    util.write_annotation(doc, text_annotation, [(0, len(text))])
+    Output(text_annotation, doc=doc).write([(0, len(text))])
     util.write_structure(doc, [])

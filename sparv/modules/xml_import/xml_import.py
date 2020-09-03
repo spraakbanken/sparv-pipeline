@@ -6,7 +6,7 @@ import unicodedata
 import xml.etree.ElementTree as etree
 from pathlib import Path
 
-from sparv import Config, Document, OutputData, Source, Text, importer, util
+from sparv import Config, Document, Output, OutputData, Source, Text, importer, util
 
 log = logging.getLogger(__name__)
 
@@ -266,12 +266,12 @@ class SparvXMLParser:
             else:
                 structure.append(full_element)
 
-            util.write_annotation(self.doc, full_element, spans)
+            Output(full_element, doc=self.doc).write(spans)
 
             for attr in attributes:
                 full_attr = "{}.{}".format(self.prefix, attr) if self.prefix else attr
-                util.write_annotation(self.doc, "{}:{}".format(full_element, full_attr), attributes[attr],
-                                      allow_newlines=is_header)
+                Output("{}:{}".format(full_element, full_attr), doc=self.doc).write(attributes[attr],
+                                                                                    allow_newlines=is_header)
                 if element not in self.header_elements:
                     structure.append("{}:{}".format(full_element, full_attr))
 
