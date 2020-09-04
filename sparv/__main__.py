@@ -144,7 +144,7 @@ def main():
         subparser.add_argument("--log", metavar="LOGLEVEL", const="info", help="Set the log level (default: 'warning')",
                                nargs="?", choices=["debug", "info", "warning", "error", "critical"])
         subparser.add_argument("--log-to-file", metavar="LOGLEVEL", const="info",
-                               help="Enable logging to file using specified log level (default: 'info')",
+                               help="Set log level for logging to file (default: 'warning')",
                                nargs="?", choices=["debug", "info", "warning", "error", "critical"])
         subparser.add_argument("--debug", action="store_true", help="Show debug messages")
 
@@ -245,7 +245,7 @@ def main():
         # Command: run, run-rule, create-file
         if args.command in ("run", "run-rule", "create-file", "build-models"):
             log_level = args.log or "warning"
-            log_file_level = args.log_to_file or "critical"
+            log_file_level = args.log_to_file or "warning"
             config.update({"debug": args.debug,
                            "doc": vars(args).get("doc", []),
                            "log_level": log_level,

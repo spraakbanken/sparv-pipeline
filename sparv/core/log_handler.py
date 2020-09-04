@@ -27,6 +27,9 @@ LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 LOG_FORMAT_DEBUG = "%(asctime)s - %(name)s (%(process)d) - %(levelname)s - %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
+# Messages from the Sparv core
+messages = {"missing_configs": defaultdict(set)}
+
 
 class ColorFormatter(logging.Formatter):
     """Custom log formatter for adding colors.
@@ -83,6 +86,18 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
         sparv_logger.handle(record)
 
 
+class LogLevelCounterHandler(logging.Handler):
+    """Handler that counts the number of log messages per log level."""
+
+    def __init__(self, count_dict, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.levelcount = count_dict
+
+    def emit(self, record):
+        """Increment level counter for each log message."""
+        self.levelcount[record.levelname] += 1
+
+
 class FileHandlerWithDirCreation(logging.FileHandler):
     """FileHandler which creates necessary directories when the first log message is handled."""
 
@@ -111,11 +126,13 @@ class LogHandler:
         self.show_summary = summary
         self.log_level = log_level
         self.log_file_level = log_file_level
+        self.log_filename = None
+        self.log_levelcount = defaultdict(int)
         self.finished = False
+        self.handled_error = False
         self.messages = defaultdict(list)
         self.missing_configs = None
         self.missing_configs_re = None
-        self.missing_configs_annotators = defaultdict(list)
         self.export_dirs = []
         self.handled_missing_configs = set()
         self.start_time = time.time()
@@ -153,13 +170,18 @@ class LogHandler:
         sparv_logger.addHandler(stream_handler)
 
         # File logger
-        log_filename = "{}.log".format(datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f"))
-        file_handler = FileHandlerWithDirCreation(os.path.join(paths.log_dir, log_filename), mode="w",
+        self.log_filename = "{}.log".format(datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f"))
+        file_handler = FileHandlerWithDirCreation(os.path.join(paths.log_dir, self.log_filename), mode="w",
                                                   encoding="UTF-8", delay=True)
         file_handler.setLevel(self.log_file_level.upper())
         log_format = LOG_FORMAT if file_handler.level > logging.DEBUG else LOG_FORMAT_DEBUG
         file_handler.setFormatter(logging.Formatter(log_format))
         sparv_logger.addHandler(file_handler)
+
+        # Level counter
+        levelcount_handler = LogLevelCounterHandler(self.log_levelcount)
+        levelcount_handler.setLevel(logging.WARNING)
+        sparv_logger.addHandler(levelcount_handler)
 
     def setup_bar(self, total: int):
         """Initialize the progress bar."""
@@ -173,15 +195,14 @@ class LogHandler:
 
     def log_handler(self, msg):
         """Log handler for Snakemake displaying a progress bar."""
-        def read_log_files(log_type: str):
-            """Find log files tied to this process and return log messages."""
-            messages = []
-            for log_file in paths.log_dir_internal.glob("{}.*.{}.*".format(os.getpid(), log_type)):
-                log_info = re.match(r"\d+\.\d+\." + log_type + r"\.([^.]+)\.([^.]+)", log_file.stem)
-                assert log_info, "Could not parse log file name: {}".format(log_file)
-                messages.append((*log_info.groups(), log_file.read_text()))
-                log_file.unlink()
-            return messages
+        def missing_config_message(source):
+            """Create error message when config variables are missing."""
+            self.handled_missing_configs.add(source)
+            _variables = messages["missing_configs"][source]
+            _message = "The following config variable{} need{} to be set:\n- {}".format(
+                *("s", "") if len(_variables) > 1 else ("", "s"),
+                "\n- ".join(_variables))
+            self.messages["error"].append((source, _message))
 
         level = msg["level"]
 
@@ -234,56 +255,53 @@ class LogHandler:
                                                             SparvErrorMessage.end_marker),
                     msg["msg"])
                 if message:
-                    self.messages["error"].append(message.groups())
+                    module, function, error_message = message.groups()
+                    self.messages["error"].append((":".join((module, function)), error_message))
                     handled = True
 
-            # Exit status 123 means a SparvErrorMessage exception saved to file
+            # Exit status 123 means a Sparv module raised a SparvErrorMessage exception
+            # The error message has already been logged so doesn't need to be printed again
             elif "exit status 123" in msg["msg"] or ("SystemExit" in msg["msg"] and "123" in msg["msg"]):
-                self.messages["error"].extend(read_log_files("error"))
                 handled = True
 
-            # Errors due to missing config variables
+            # Errors due to missing config variables leading to missing input files
             elif "MissingInputException" in msg["msg"] or "MissingOutputException" in msg["msg"]:
                 config_variable = self.missing_configs_re.search(msg["msg"])
                 if config_variable:
                     handled = True
                     annotator = self.missing_configs[config_variable.group(1)]
                     if annotator not in self.handled_missing_configs:
-                        self.handled_missing_configs.add(annotator)
-                        variables = self.missing_configs_annotators[annotator]
-                        message = "The following config variable{} need{} to be set:\n- {}".format(
-                            *("s", "") if len(variables) > 1 else ("", "s"),
-                            "\n- ".join(variables))
-                        self.messages["error"].append((*annotator, message))
+                        missing_config_message(annotator)
 
             # Unhandled errors
             if not handled:
-                self.messages["real_error"].append(msg)
+                self.messages["unhandled_error"].append(msg)
+            else:
+                self.handled_error = True
 
         elif level in ("warning", "job_error"):
             # Save other errors and warnings for later
-            self.messages["real_error"].append(msg)
+            self.messages["unhandled_error"].append(msg)
 
         elif level == "dag_debug" and "job" in msg:
-            # If a module can't be used due to missing config variables, a log is created. Read those log files and
-            # save to a dictionary.
+            # Create dictionary of unset config variables leading to unusable modules
             if self.missing_configs is None:
                 self.missing_configs = {}
-                for log in read_log_files("missing_config"):
-                    annotator = tuple(log[0:2])
-                    for variable in log[2].splitlines():
+                for annotator, variables in messages["missing_configs"].items():
+                    for variable in variables:
                         self.missing_configs[variable] = annotator
-                        self.missing_configs_annotators[annotator].append(variable)
 
-            self.missing_configs_re = re.compile(r"\[({})\]".format("|".join(self.missing_configs.keys())))
+            self.missing_configs_re = re.compile(r"\[({})]".format("|".join(self.missing_configs.keys())))
 
-            # Check the rules used by the current operation, and see if any is unusable
+            # Check the rules selected for the current operation, and see if any is unusable due to missing configs
             if msg["status"] == "selected":
-                job_name = tuple(str(msg["job"]).split("::"))
-                if job_name in self.missing_configs_annotators and job_name not in self.handled_missing_configs:
-                    self.handled_missing_configs.add(job_name)
-                    for error_message in self.missing_configs_annotators[job_name]:
-                        self.messages["error"].append((*job_name, error_message))
+                job_name = str(msg["job"]).replace("::", ":")
+                if job_name in messages["missing_configs"] and job_name not in self.handled_missing_configs:
+                    missing_config_message(job_name)
+                    self.handled_error = True
+                    # We need to stop Snakemake by raising an exception, and BrokenPipeError is the only exception
+                    # not leading to a full traceback being printed (due to Snakemake's handling of exceptions)
+                    raise BrokenPipeError()
 
     def stop(self):
         """Stop the progress bar and output any error messages."""
@@ -304,20 +322,39 @@ class LogHandler:
 
             print()
 
-            # Print user-friendly error messages
-            if self.messages["error"]:
-                logger.logger.error("Job execution failed with the following message{}:".format(
-                    "s" if len(self.messages) > 1 else ""))
-                for message in self.messages["error"]:
-                    module_name, f_name, msg = message
-                    logger.logger.error("\n[{}:{}]\n{}".format(module_name, f_name, msg))
-            # Defer to Snakemake's default log handler for other errors
-            elif self.messages["real_error"]:
-                for error in self.messages["real_error"]:
+            # Execution failed but we handled the error
+            if self.handled_error:
+                # Print any collected core error messages
+                if self.messages["error"]:
+                    logger.logger.error("Sparv exited with the following error message{}:".format(
+                        "s" if len(self.messages) > 1 else ""))
+                    for message in self.messages["error"]:
+                        error_source, msg = message
+                        logger.logger.error("\n[{}]\n{}".format(error_source, msg))
+                else:
+                    # Errors from modules have already been logged, so notify user
+                    logger.logger.error(
+                        "Job execution failed. See log messages above or {} for details.".format(
+                            os.path.join(paths.log_dir, self.log_filename)))
+            # Defer to Snakemake's default log handler for unhandled errors
+            elif self.messages["unhandled_error"]:
+                for error in self.messages["unhandled_error"]:
                     logger.text_handler(error)
             elif self.export_dirs:
                 logger.logger.info("The exported files can be found in the following location{}:\n- {}".format(
                     "s" if len(self.export_dirs) > 1 else "", "\n- ".join(self.export_dirs)))
+            elif self.log_levelcount:
+                # Errors or warnings were logged but execution finished anyway. Notify user of potential problems.
+                problems = []
+                if self.log_levelcount["ERROR"]:
+                    problems.append("{} error{}".format(self.log_levelcount["ERROR"],
+                                                        "s" if self.log_levelcount["ERROR"] > 1 else ""))
+                if self.log_levelcount["WARNING"]:
+                    problems.append("{} warning{}".format(self.log_levelcount["WARNING"],
+                                                          "s" if self.log_levelcount["WARNING"] > 1 else ""))
+                logger.logger.warning(
+                    "Job execution finished but {} occured. See log messages above or {} for details.".format(
+                        " and ".join(problems), os.path.join(paths.log_dir, self.log_filename)))
 
             if self.show_summary:
                 if self.messages:
@@ -326,7 +363,7 @@ class LogHandler:
                 logger.logger.info("Time elapsed: {}".format(timedelta(seconds=elapsed)))
 
 
-def setup_logging(log_server, log_level: Optional[str] = "warning", log_file_level: Optional[str] = "critical"):
+def setup_logging(log_server, log_level: Optional[str] = "warning", log_file_level: Optional[str] = "warning"):
     """Set up logging with socket handler."""
     # Use the lowest log level, but never lower than warning
     log_level = min(logging.WARNING, getattr(logging, log_level.upper()), getattr(logging, log_file_level.upper()))

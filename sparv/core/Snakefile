@@ -68,8 +68,7 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
         @workflow.output(rule_storage.outputs)
         @workflow.params(module_name=rule_storage.module_name,
                          f_name=rule_storage.f_name,
-                         parameters=snake_utils.get_parameters(rule_storage),
-                         pid=os.getpid())
+                         parameters=snake_utils.get_parameters(rule_storage))
         # We use "script" instead of "run" since with "run" the whole Snakefile would have to be reloaded for every
         # single job, due to how Snakemake creates processes for run-jobs.
         @workflow.script("run_snake.py")

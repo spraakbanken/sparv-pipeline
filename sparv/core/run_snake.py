@@ -2,7 +2,6 @@
 
 import importlib
 import logging
-import os
 import sys
 
 from pkg_resources import iter_entry_points
@@ -21,11 +20,10 @@ except NameError:
     snakemake = None
 
 
-def exit_with_error_message(error, snakemake_pid, pid, module_name, function_name):
-    """Save error message to temporary file (to be read by log handler) and exit with non-zero status."""
-    log_file = paths.log_dir_internal / "{}.{}.error.{}.{}.log".format(snakemake_pid, pid or 0, module_name, function_name)
-    log_file.parent.mkdir(parents=True, exist_ok=True)
-    log_file.write_text(str(error))
+def exit_with_error_message(message, logger_name):
+    """Log error message and exit with non-zero status."""
+    error_logger = logging.getLogger(logger_name)
+    error_logger.error(message)
     sys.exit(123)
 
 
@@ -50,8 +48,8 @@ else:
         if entry_point:
             entry_point.load()
         else:
-            e = f"Couldn't load plugin '{module_name}'. Please make sure it was installed correctly."
-            exit_with_error_message(e, snakemake.params.pid, os.getpid(), "sparv", "run")
+            exit_with_error_message(
+                f"Couldn't load plugin '{module_name}'. Please make sure it was installed correctly.", "sparv")
 
 
 # Get function name and parameters
@@ -70,6 +68,6 @@ try:
     annotators[module_name][f_name]["function"](**parameters)
 except SparvErrorMessage as e:
     # Any exception raised here would be printed directly to the terminal, due to how Snakemake runs the script.
-    # Instead we save the error message to a file and exit with a non-zero status to signal to Snakemake that
-    # something went wrong. The log handler will take care of printing the error message to the user.
-    exit_with_error_message(e.message, snakemake.params.pid, os.getpid(), module_name, f_name)
+    # Instead we log the error message and exit with a non-zero status to signal to Snakemake that
+    # something went wrong.
+    exit_with_error_message(e.message, "sparv.modules." + module_name)

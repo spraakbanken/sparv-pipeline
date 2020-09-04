@@ -2,7 +2,6 @@
 
 import copy
 import inspect
-import os
 import re
 from collections import defaultdict, OrderedDict
 from itertools import combinations
@@ -14,7 +13,7 @@ from snakemake.io import expand
 
 from sparv import util
 from sparv.core import config as sparv_config
-from sparv.core import paths, registry
+from sparv.core import log_handler, paths, registry
 from sparv.util.classes import (AllDocuments, Annotation, Binary, BinaryDir, Config, Corpus, Document, Export,
                                 ExportAnnotations, ExportInput, Language, Model, ModelOutput, Output, Source,
                                 BaseAnnotation, BaseOutput, OutputData, AnnotationData, Base, Text, AnnotationAllDocs,
@@ -332,10 +331,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         rule.exit_message = "EXPORT_DIRS:\n{}".format("\n".join(str(p / "_")[:-1] for p in output_dirs))
 
     if rule.missing_config:
-        log_file = paths.log_dir_internal / "{}.0.missing_config.{}.log".format(os.getpid(),
-                                                                                rule.full_name.replace(":", "."))
-        log_file.parent.mkdir(parents=True, exist_ok=True)
-        log_file.write_text("\n".join(rule.missing_config))
+        log_handler.messages["missing_configs"][rule.full_name].update(rule.missing_config)
 
     if config.get("debug"):
         print()
