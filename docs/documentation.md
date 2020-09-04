@@ -9,12 +9,11 @@
 
 - Typical folder structure of a plugin
 
-    sparv-freeling
-        - freeling
-            - __init__.py
-            - freeling.py
-            - models.py
-            - ...
-        - setup.py
-        - LICENSE
-        - ...
+    sparv-freeling/
+    ├── freeling
+    │   ├── freeling.py
+    │   ├── __init__.py
+    │   └── models.py
+    ├── LICENSE
+    ├── README.md
+    └── setup.py

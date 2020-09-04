@@ -77,11 +77,11 @@ directory](#datadir) under `bin/wsd`. You will need
 disambiguation.
 
 ### hfst-SweNER
-The current version of [hfst-SweNER](http://www.ling.helsinki.fi/users/janiemi/finclarin/ner/hfst-swener-0.9.3.tgz)
-expects to be run in a Python 2 environment while the Sparv pipeline is written in Python 3. Before installing
-hfst-SweNER you need make sure that it will be run with the correct version of Python by replacing `python` with
-`python2` in all the Python scripts in the `hfst-swener-0.9.3/scripts` directory. The first line in every script will
-then look like this:
+[hfst-SweNER](http://www.ling.helsinki.fi/users/janiemi/finclarin/ner/hfst-swener-0.9.3.tgz) is used for Swedish
+named-entity recognition. The current version of hfst-SweNER expects to be run in a Python 2 environment while the Sparv
+pipeline is written in Python 3. Before installing hfst-SweNER you need make sure that it will be run with the correct
+version of Python by replacing `python` with `python2` in all the Python scripts in the `hfst-swener-0.9.3/scripts`
+directory. The first line in every script will then look like this:
 
     #! /usr/bin/env python2
 
@@ -101,7 +101,7 @@ Sparv can use different third-party software for analyzing corpora in other lang
 <a name="language_table"></a>The following is a list over the languages currently supported by the corpus pipeline,
 their language codes (ISO 639-3) and which tools Sparv can use to analyze them:
 
-Language       |Code       |Analysis Tool
+Language       |ISO Code   |Analysis Tool
 :--------------|:----------|:-------------
 Asturian       |ast        |FreeLing
 Bulgarian      |bul        |TreeTagger

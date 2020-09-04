@@ -14,25 +14,23 @@ If you have any questions, problems or suggestions please contact <sb-sparv@sven
 
 * A Unix-like environment (e.g. Linux, OS X)
 * [Python 3.6](http://python.org/) or newer
-
-### Additional prerequisites
-
-* [Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) (if you want to run the
-  Malt parser, Swedish word sense disambiguation or the Stanford Parser)
+* [Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) (if you want to run
+  Swedish dependency parsing, Swedish word sense disambiguation or the Stanford Parser)
 
 ## Installation
 
-The Sparv pipeline can be installed using [pip](https://pip.pypa.io/en/stable/installing):
-
-```
-pip install --user sparv-pipeline
-```
-
-Alternatively you can install Sparv from the latest release from GitHub with pipx:
+The Sparv pipeline can be installed using [pip](https://pip.pypa.io/en/stable/installing). We even recommend using
+[pipx](https://pipxproject.github.io/pipx/) so that you can install the `sparv` command globally:
 
 ```
 python3 -m pip install --user pipx
 python3 -m pipx ensurepath
+pipx install --user sparv-pipeline
+```
+
+Alternatively you can install Sparv from the latest release from GitHub:
+
+```
 pipx install https://github.com/spraakbanken/sparv-pipeline/archive/latest.tar.gz
 ```
 
