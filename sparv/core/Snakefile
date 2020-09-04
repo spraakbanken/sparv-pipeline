@@ -270,7 +270,10 @@ rule clean:
             if config.get("export") or config.get("all"):
                 to_remove.append(paths.export_dir)
                 assert paths.export_dir, "Export dir name not configured."
-            if config.get("all") or not config.get("export"):
+            if config.get("logs") or config.get("all"):
+                to_remove.append(paths.log_dir)
+                assert paths.log_dir, "Log dir name not configured."
+            if config.get("all") or not (config.get("export") or config.get("logs")):
                 to_remove.append(paths.annotation_dir)
                 assert paths.annotation_dir, "Annotations dir name not configured."
 

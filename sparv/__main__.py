@@ -95,6 +95,7 @@ def main():
     clean_parser = subparsers.add_parser("clean", description="Remove output directories (by default only the "
                                                               "annotations directory).")
     clean_parser.add_argument("--export", action="store_true", help="Remove export directory")
+    clean_parser.add_argument("--logs", action="store_true", help="Remove logs directory")
     clean_parser.add_argument("--all", action="store_true", help="Remove both annotations and export directories")
 
     # Inspect
@@ -191,6 +192,7 @@ def main():
         simple_target = True
         if args.command == "clean":
             config["export"] = args.export
+            config["logs"] = args.logs
             config["all"] = args.all
         if args.command == "config" and args.options:
             config["options"] = args.options
