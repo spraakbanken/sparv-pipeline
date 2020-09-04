@@ -60,6 +60,7 @@ class RuleStorage:
         self.doc_annotations = []  # List of parameters containing the {doc} wildcard
         self.wildcard_annotations = []  # List of parameters containing other wildcards
         self.missing_config = set()
+        self.missing_binaries = set()
         self.exit_message = None
 
         self.type = annotator_info["type"].name
@@ -268,6 +269,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
             rule.missing_config.update(missing_configs)
             binary = util.find_binary(param_value, executable=False, allow_dir=param.annotation == BinaryDir)
+            if not binary:
+                rule.missing_binaries.add(param_value)
             binary = Path(binary if binary else param_value)
             rule.inputs.append(binary)
             rule.parameters[param_name] = param.annotation(binary)
@@ -332,6 +335,9 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
     if rule.missing_config:
         log_handler.messages["missing_configs"][rule.full_name].update(rule.missing_config)
+
+    if rule.missing_binaries:
+        log_handler.messages["missing_binaries"][rule.full_name].update(rule.missing_binaries)
 
     if config.get("debug"):
         print()

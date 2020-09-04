@@ -28,7 +28,7 @@ LOG_FORMAT_DEBUG = "%(asctime)s - %(name)s (%(process)d) - %(levelname)s - %(mes
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 # Messages from the Sparv core
-messages = {"missing_configs": defaultdict(set)}
+messages = {"missing_configs": defaultdict(set), "missing_binaries": defaultdict(set)}
 
 
 class ColorFormatter(logging.Formatter):
@@ -131,10 +131,9 @@ class LogHandler:
         self.finished = False
         self.handled_error = False
         self.messages = defaultdict(list)
-        self.missing_configs = None
         self.missing_configs_re = None
+        self.missing_binaries_re = None
         self.export_dirs = []
-        self.handled_missing_configs = set()
         self.start_time = time.time()
 
         # Progress bar related variables
@@ -197,11 +196,18 @@ class LogHandler:
         """Log handler for Snakemake displaying a progress bar."""
         def missing_config_message(source):
             """Create error message when config variables are missing."""
-            self.handled_missing_configs.add(source)
             _variables = messages["missing_configs"][source]
             _message = "The following config variable{} need{} to be set:\n- {}".format(
                 *("s", "") if len(_variables) > 1 else ("", "s"),
                 "\n- ".join(_variables))
+            self.messages["error"].append((source, _message))
+
+        def missing_binary_message(source):
+            """Create error message when binaries are missing."""
+            _binaries = messages["missing_binaries"][source]
+            _message = "The following executable{} {} needed but could not be found:\n- {}".format(
+                *("s", "are") if len(_binaries) > 1 else ("", "is"),
+                "\n- ".join(_binaries))
             self.messages["error"].append((source, _message))
 
         level = msg["level"]
@@ -264,14 +270,17 @@ class LogHandler:
             elif "exit status 123" in msg["msg"] or ("SystemExit" in msg["msg"] and "123" in msg["msg"]):
                 handled = True
 
-            # Errors due to missing config variables leading to missing input files
+            # Errors due to missing config variables or binaries leading to missing input files
             elif "MissingInputException" in msg["msg"] or "MissingOutputException" in msg["msg"]:
-                config_variable = self.missing_configs_re.search(msg["msg"])
-                if config_variable:
+                msg_contents = re.search(r" for rule (\S+):\n(.+)", msg["msg"])
+                rule_name, filelist = msg_contents.groups()
+                rule_name = rule_name.replace("::", ":")
+                if self.missing_configs_re.search(filelist):
                     handled = True
-                    annotator = self.missing_configs[config_variable.group(1)]
-                    if annotator not in self.handled_missing_configs:
-                        missing_config_message(annotator)
+                    missing_config_message(rule_name)
+                elif self.missing_binaries_re.search(filelist):
+                    handled = True
+                    missing_binary_message(rule_name)
 
             # Unhandled errors
             if not handled:
@@ -284,19 +293,19 @@ class LogHandler:
             self.messages["unhandled_error"].append(msg)
 
         elif level == "dag_debug" and "job" in msg:
-            # Create dictionary of unset config variables leading to unusable modules
-            if self.missing_configs is None:
-                self.missing_configs = {}
-                for annotator, variables in messages["missing_configs"].items():
-                    for variable in variables:
-                        self.missing_configs[variable] = annotator
+            # Create regular expressions for searching for missing config variables or binaries
+            if self.missing_configs_re is None:
+                all_configs = [v for varlist in messages["missing_configs"].values() for v in varlist]
+                self.missing_configs_re = re.compile(r"\[({})]".format("|".join(all_configs)))
 
-            self.missing_configs_re = re.compile(r"\[({})]".format("|".join(self.missing_configs.keys())))
+            if self.missing_binaries_re is None:
+                all_binaries = [b for binlist in messages["missing_binaries"].values() for b in binlist]
+                self.missing_binaries_re = re.compile(r"^({})$".format("|".join(all_binaries)), flags=re.MULTILINE)
 
             # Check the rules selected for the current operation, and see if any is unusable due to missing configs
             if msg["status"] == "selected":
                 job_name = str(msg["job"]).replace("::", ":")
-                if job_name in messages["missing_configs"] and job_name not in self.handled_missing_configs:
+                if job_name in messages["missing_configs"]:
                     missing_config_message(job_name)
                     self.handled_error = True
                     # We need to stop Snakemake by raising an exception, and BrokenPipeError is the only exception
