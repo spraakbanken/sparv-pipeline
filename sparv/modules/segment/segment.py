@@ -192,8 +192,8 @@ def train_punkt_segmenter(textfiles, modelfile, encoding=util.UTF8, protocol=-1)
     log.info("Reading files")
     text = u""
     for filename in textfiles:
-        with open(filename) as stream:
-            text += stream.read().decode(encoding)
+        with open(filename, encoding=encoding) as stream:
+            text += stream.read()
     log.info("Training model")
     trainer = nltk.tokenize.PunktTrainer(text, verbose=True)
     log.info("Saving pickled model")

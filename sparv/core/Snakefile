@@ -1,5 +1,4 @@
 """Snakefile used by Snakemake."""
-import os
 from pathlib import Path
 
 import snakemake.io

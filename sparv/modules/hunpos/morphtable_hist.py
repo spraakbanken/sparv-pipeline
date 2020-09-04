@@ -62,7 +62,7 @@ def _read_saldosuc(words, saldosuc_morphtable):
 
 
 def _force_parse(msd):
-    # This is a modifcation of _make_saldo_to_suc in utils.tagsets.py
+    # This is a modification of _make_saldo_to_suc in utils.tagsets.py
     params = msd.split()
 
     # try ignoring gender, m/f => u

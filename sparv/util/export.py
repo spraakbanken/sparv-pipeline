@@ -334,7 +334,7 @@ def get_header_names(header_annotation_names: Optional[List[str]],
                         misc.parse_annotation_list(AnnotationData(corpus.HEADERS_FILE, doc=d).read().splitlines()))
         elif AnnotationData(corpus.HEADERS_FILE, doc=doc).exists():
             annotation_names = misc.parse_annotation_list(
-                AnnotationData(corpus.HEADERS_FILE, doc=d).read().splitlines())
+                AnnotationData(corpus.HEADERS_FILE, doc=doc).read().splitlines())
 
     header_annotations = [(Annotation(a[0], doc) if doc else AnnotationAllDocs(a[0]), a[1]) for a in
                           annotation_names]

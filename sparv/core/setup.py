@@ -56,7 +56,7 @@ def query_user():
             (path / d).mkdir(exist_ok=True)
     except:
         print("\nAn error occurred while trying to create the directories. "
-              "Make sure the path you entered is correct, and that you have the neccessary read/write permissions.")
+              "Make sure the path you entered is correct, and that you have the necessary read/write permissions.")
         sys.exit(1)
 
     config_dict = {

@@ -247,7 +247,7 @@ def create_freq_pickle(corpus, annotation, model, class_set=None, score_separato
                         score = float(score)
                         if score <= 0:
                             continue
-                        freq = freq * score
+                        freq *= score
                     corpus_stats[cl.replace("_", " ")] += freq
 
     rel_freq = defaultdict(float)

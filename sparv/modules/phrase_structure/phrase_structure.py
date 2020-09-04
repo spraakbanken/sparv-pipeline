@@ -232,7 +232,7 @@ class Terminal:
         return self.t.position
 
     def to_tree_str(self, n=0):
-        return (str(self.t), str(self.fun), n)
+        return str(self.t), str(self.fun), n
 
     def to_word_str(self):
         if self.t.pos == "PM":
