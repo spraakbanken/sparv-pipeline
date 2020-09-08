@@ -45,6 +45,6 @@ xml_export: &xml
     annotations:
         - STANFORD.all
 
-vrt_export: *xml
+cwb: *xml
 
 csv_export: *xml

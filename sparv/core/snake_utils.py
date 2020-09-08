@@ -204,11 +204,13 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 rule.wildcard_annotations.append(param_name)
         # ExportAnnotations
         elif param_type in (ExportAnnotations, ExportAnnotationsAllDocs):
-            export_type = param.default.export_type
+            source = param.default.config_name
             if not isinstance(param_value, param_type):
                 param_value = param_type(param_value)
             rule.parameters[param_name] = param_value
-            export_annotations = util.parse_annotation_list(sparv_config.get(f"{export_type}.annotations", []),
+            if not sparv_config.get(f"{source}", []):
+                rule.missing_config.add(f"{source}")
+            export_annotations = util.parse_annotation_list(sparv_config.get(f"{source}", []),
                                                             add_plain_annotations=False)
             annotation_type = Annotation if param_type == ExportAnnotations else AnnotationAllDocs
             plain_annotations = set()

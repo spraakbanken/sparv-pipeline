@@ -20,7 +20,7 @@ def scrambled(doc: Document = Document(),
               chunk_order: Annotation = Annotation("[export.scramble_on]:misc.number_random"),
               token: Annotation = Annotation("<token>"),
               word: Annotation = Annotation("<token:word>"),
-              annotations: ExportAnnotations = ExportAnnotations(export_type="xml_export"),
+              annotations: ExportAnnotations = ExportAnnotations("xml_export.annotations"),
               source_annotations: Optional[list] = Config("xml_export.source_annotations"),
               remove_namespaces: bool = Config("export.remove_export_namespaces", False),
               include_empty_attributes: bool = Config("xml_export.include_empty_attributes")):

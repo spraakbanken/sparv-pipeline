@@ -589,9 +589,9 @@ class ExportAnnotations(List[Tuple[Annotation, Optional[str]]]):
 
     is_input = True
 
-    def __init__(self, export_type: str, items=(), is_input: bool = True):
+    def __init__(self, config_name: str, items=(), is_input: bool = True):
         list.__init__(self, items)
-        self.export_type = export_type
+        self.config_name = config_name
         self.is_input = is_input
 
 
@@ -600,9 +600,9 @@ class ExportAnnotationsAllDocs(List[Tuple[AnnotationAllDocs, Optional[str]]]):
 
     is_input = True
 
-    def __init__(self, export_type: str, items=(), is_input: bool = True):
+    def __init__(self, config_name: str, items=(), is_input: bool = True):
         list.__init__(self, items)
-        self.export_type = export_type
+        self.config_name = config_name
         self.is_input = is_input
 
 

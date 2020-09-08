@@ -20,8 +20,8 @@ def vrt(doc: Document = Document(),
         out: Export = Export("vrt/{doc}.vrt"),
         token: Annotation = Annotation("<token>"),
         word: Annotation = Annotation("<token:word>"),
-        annotations: ExportAnnotations = ExportAnnotations(export_type="vrt_export"),
-        source_annotations: Optional[list] = Config("vrt_export.source_annotations"),
+        annotations: ExportAnnotations = ExportAnnotations("cwb.annotations"),
+        source_annotations: Optional[list] = Config("cwb.source_annotations"),
         remove_namespaces: bool = Config("export.remove_export_namespaces", False)):
     """Export annotations to vrt.
 
@@ -56,8 +56,8 @@ def vrt_scrambled(doc: Document = Document(),
                   chunk_order: Annotation = Annotation("[export.scramble_on]:misc.number_random"),
                   token: Annotation = Annotation("<token>"),
                   word: Annotation = Annotation("<token:word>"),
-                  annotations: ExportAnnotations = ExportAnnotations(export_type="vrt_export"),
-                  source_annotations: Optional[list] = Config("vrt_export.source_annotations"),
+                  annotations: ExportAnnotations = ExportAnnotations("cwb.annotations"),
+                  source_annotations: Optional[list] = Config("cwb.source_annotations"),
                   remove_namespaces: bool = Config("export.remove_export_namespaces", False)):
     """Export annotations to vrt in scrambled order."""
     # Get annotation spans, annotations list etc.
@@ -99,8 +99,8 @@ def vrt_scrambled(doc: Document = Document(),
     Config("cwb.skip_validation", False)
 ])
 def encode(corpus: Corpus = Corpus(),
-           annotations: ExportAnnotations = ExportAnnotations(export_type="vrt_export", is_input=False),
-           source_annotations: Optional[list] = Config("vrt_export.source_annotations"),
+           annotations: ExportAnnotations = ExportAnnotations("cwb.annotations", is_input=False),
+           source_annotations: Optional[list] = Config("cwb.source_annotations"),
            docs: AllDocuments = AllDocuments(),
            words: AnnotationAllDocs = AnnotationAllDocs("<token:word>"),
            vrtfiles: ExportInput = ExportInput("vrt/{doc}.vrt", all_docs=True),
@@ -128,8 +128,8 @@ def encode(corpus: Corpus = Corpus(),
     Config("cwb.skip_validation", False)
 ])
 def encode_scrambled(corpus: Corpus = Corpus(),
-                     annotations: ExportAnnotations = ExportAnnotations(export_type="vrt_export", is_input=False),
-                     source_annotations: Optional[list] = Config("vrt_export.source_annotations"),
+                     annotations: ExportAnnotations = ExportAnnotations("cwb.annotations", is_input=False),
+                     source_annotations: Optional[list] = Config("cwb.source_annotations"),
                      docs: AllDocuments = AllDocuments(),
                      words: AnnotationAllDocs = AnnotationAllDocs("<token:word>"),
                      vrtfiles: ExportInput = ExportInput("vrt_scrambled/{doc}.vrt", all_docs=True),

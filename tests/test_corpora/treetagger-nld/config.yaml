@@ -49,4 +49,4 @@ xml_export: &xml
 
 csv_export: *xml
 
-vrt_export: *xml
+cwb: *xml

@@ -16,7 +16,7 @@ def csv(doc: Document = Document(),
         token: Annotation = Annotation("<token>"),
         word: Annotation = Annotation("<token:word>"),
         sentence: Annotation = Annotation("<sentence>"),
-        annotations: ExportAnnotations = ExportAnnotations(export_type="csv_export"),
+        annotations: ExportAnnotations = ExportAnnotations("csv_export.annotations"),
         source_annotations: Optional[list] = Config("csv_export.source_annotations"),
         remove_namespaces: bool = Config("export.remove_export_namespaces", False),
         delimiter: str = Config("csv_export.delimiter")):

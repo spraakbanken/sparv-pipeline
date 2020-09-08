@@ -54,7 +54,7 @@ xml_export: &xml
         - <token>:hunpos.pos
         - <token>:sensaldo.sentiment_label
 
-vrt_export: *xml
+cwb: *xml
 
 csv_export:
     # Annotations from original documents to include in the output. If nothing is specified, everything is kept.

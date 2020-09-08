@@ -65,6 +65,6 @@ xml_export: &xml
         - s:misc.id
         - FREELING_FULL.token
 
-vrt_export: *xml
+cwb: *xml
 
 csv_export: *xml
