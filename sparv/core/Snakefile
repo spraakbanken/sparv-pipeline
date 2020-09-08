@@ -33,7 +33,7 @@ def make_rules(config_missing: bool) -> None:
     
     # Create custom rules
     for custom_rule_obj in sparv_config.get("custom_annotations", []):
-        module_name, f_name = custom_rule_obj["name"].split(":")
+        module_name, f_name = custom_rule_obj["annotator"].split(":")
         annotator = registry.annotators[module_name][f_name]
         make_rule(module_name, f_name, annotator, config_missing, custom_rule_obj)
 

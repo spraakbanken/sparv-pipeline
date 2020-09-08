@@ -89,11 +89,11 @@ cwb: *xml
 # Custom Annotations
 #===============================================================================
 custom_annotations:
-    - name: misc:affix
+    - annotator: misc:affix
       params:
           out: <token>:misc.word.affixed
           chunk: <token:word>
           prefix: "|"
           suffix: "|"
 
-    - name: custom.convert:uppercase
+    - annotator: custom.convert:uppercase
