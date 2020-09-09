@@ -8,10 +8,11 @@ metadata:
     # Corpus name (human readable)
     name: Swedish test corpus with quick annotations
 
-    description-en: |
-        This test corpus includes:
-        - some Swedish standard token and text-level annotations that can be done quickly
-        - re-naming of attributes ("as" notation)
+    description:
+        eng: |
+            This test corpus includes:
+            - some Swedish standard token and text-level annotations that can be done quickly
+            - re-naming of attributes ("as" notation)
 
 #===============================================================================
 # Annotation Settings

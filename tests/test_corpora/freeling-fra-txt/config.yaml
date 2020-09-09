@@ -10,12 +10,13 @@ metadata:
     # Language of the input documents, specified as ISO 639-3 code
     language: fra
 
-    description-en: |
-        This test corpus includes:
-        - standard Sparv paragraph segmentation
-        - the FreeLing annotations from the FREELING preset
-        - input files in txt format
-        - some exports
+    description:
+        eng: |
+            This test corpus includes:
+            - standard Sparv paragraph segmentation
+            - the FreeLing annotations from the FREELING preset
+            - input files in txt format
+            - some exports
 
 #===============================================================================
 # Annotation Settings

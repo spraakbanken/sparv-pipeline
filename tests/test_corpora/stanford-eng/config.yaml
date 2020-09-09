@@ -10,10 +10,11 @@ metadata:
     # Language of the input documents, specified as ISO 639-3 code
     language: eng
 
-    description-en: |
-        This test corpus includes:
-        - the Stanford Parser annotations from the STANFORD preset
-        - some exports
+    description:
+        eng: |
+            This test corpus includes:
+            - the Stanford Parser annotations from the STANFORD preset
+            - some exports
 
 #===============================================================================
 # Annotation Settings

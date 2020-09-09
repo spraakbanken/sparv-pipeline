@@ -14,6 +14,7 @@ log = logging.getLogger(__name__)
 
 @exporter("XML export with one token element per line", config=[
     Config("xml_export.filename", default="{doc}_export.xml"),
+    Config("xml_export.annotations"),
     Config("xml_export.source_annotations"),
     Config("xml_export.header_annotations"),
     Config("xml_export.include_empty_attributes", False)

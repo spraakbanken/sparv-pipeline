@@ -26,12 +26,12 @@ class Base(ABC):
         self.name = name
         self.original_name = name
 
-    def expand_variables(self, module_name: str = "") -> List[str]:
+    def expand_variables(self, rule_name: str = "") -> List[str]:
         """Update annotation name by replacing <class> references with real annotations, and [config] references with config values.
 
         Return a list of any unresolved config references.
         """
-        new_value, rest = sparv.core.registry.expand_variables(self.name, module_name)
+        new_value, rest = sparv.core.registry.expand_variables(self.name, rule_name)
         self.name = new_value
         return rest
 
@@ -452,9 +452,10 @@ class Config(str):
     def __new__(cls, name: str, *args, **kwargs):
         return super().__new__(cls, name)
 
-    def __init__(self, name: str, default: Any = None):
+    def __init__(self, name: str, default: Any = None, description: Optional[str] = None):
         self.name = name
         self.default = default
+        self.description = description
 
 
 class Model(Base):

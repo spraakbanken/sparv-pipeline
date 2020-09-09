@@ -12,7 +12,7 @@ from pkg_resources import iter_entry_points
 
 from sparv.core import config as sparv_config
 from sparv.core import paths
-from sparv.util.classes import BaseOutput, Config, ModelOutput
+from sparv.util.classes import BaseOutput, Config, ExportAnnotations, ExportAnnotationsAllDocs, ModelOutput
 
 modules_path = ".".join(("sparv", paths.modules_dir))
 custom_name = "custom"
@@ -177,6 +177,8 @@ def modelbuilder(description: str, name: Optional[str] = None, config: Optional[
 def _add_to_registry(annotator):
     """Add function to annotator registry. Used by annotator."""
     module_name = annotator["module_name"]
+    f_name = annotator["function"].__name__ if not annotator["name"] else annotator["name"]
+    rule_name = f"{module_name}:{f_name}"
 
     # Add config variables to config
     if annotator["config"]:
@@ -188,6 +190,8 @@ def _add_to_registry(annotator):
                     raise ValueError("Config option '{}' in module '{}' doesn't include module "
                                      "name as prefix.".format(c.name, module_name))
                 sparv_config.set_default(c.name, c.default)
+                sparv_config.add_to_structure(c.name, c.default, description=c.description,
+                                              annotator=rule_name, explicit=True)
 
     for param, val in inspect.signature(annotator["function"]).parameters.items():
         if isinstance(val.default, BaseOutput):
@@ -219,14 +223,17 @@ def _add_to_registry(annotator):
                     else:
                         print("Malformed class name: '{}'".format(cls))
 
-        if isinstance(val.default, ModelOutput):
+        elif isinstance(val.default, ModelOutput):
             modeldir = val.default.name.split("/")[0]
             if not modeldir.startswith(module_name):
                 raise ValueError("Output model '{}' in module '{}' doesn't include module "
                                  "name as sub directory.".format(val.default, module_name))
+        elif isinstance(val.default, Config):
+            sparv_config.add_to_structure(val.default.name, val.default.default, annotator=rule_name)
+        elif isinstance(val.default, (ExportAnnotations, ExportAnnotationsAllDocs)):
+            sparv_config.add_to_structure(val.default.config_name, annotator=rule_name)
 
     annotators.setdefault(module_name, {})
-    f_name = annotator["function"].__name__ if not annotator["name"] else annotator["name"]
     if f_name in annotators[module_name]:
         print("Annotator function '{}' collides with other function with same name in module '{}'.".format(f_name,
                                                                                                            module_name))
@@ -249,7 +256,7 @@ def _expand_class(cls):
     return annotation
 
 
-def expand_variables(string, module_name):
+def expand_variables(string, rule_name):
     """Take a string and replace <class> references with real annotations, and [config] references with config values.
 
     Return the resulting string and a list of any unresolved config references.
@@ -262,6 +269,7 @@ def expand_variables(string, module_name):
             break
         for cfg in cfgs:
             cfg_value = sparv_config.get(cfg.group(1), cfg.group(2))
+            sparv_config.add_to_structure(cfg.group(1), cfg.group(2), annotator=rule_name)
             if cfg_value is not None:
                 string = string.replace(cfg.group(), cfg_value)
             else:
@@ -279,7 +287,7 @@ def expand_variables(string, module_name):
             break
         for cls in clss:
             real_ann = _expand_class(cls.group(1))
-            assert real_ann, "Could not convert " + cls.group() + " into a real annotation (used in " + module_name + ")."
+            assert real_ann, "Could not convert " + cls.group() + " into a real annotation (used in " + rule_name + ")."
             string = string.replace(cls.group(), real_ann)
 
     return string, rest

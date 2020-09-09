@@ -15,9 +15,30 @@ log = logging.getLogger(__name__)
 DEFAULT_CONFIG = paths.default_config_file
 PRESETS_DIR = paths.presets_dir
 
+config_user = {}  # Dict holding local corpus config
 config = {}  # Dict holding full configuration
-config_undeclared = set()  # Config variables collected from use but not declared anywhere
+config_undeclared = set()  # Config variables collected from use in modules but not declared anywhere
 presets = {}  # Dict holding annotation presets
+
+# Dict with info about config structure, prepopulated with some module-independent keys
+config_structure = {
+    "metadata": {
+        "id": {"_source": "core"},
+        "name": {"_source": "core"},
+        "language": {"_source": "core"},
+        "description": {"_source": "core"}
+    },
+    "classes": {"_source": "core"},
+    "import": {
+        "document_element": {"_source": "core"},
+        "source_type": {"_source": "core"}
+    },
+    "export": {
+        "default": {"_source": "core"},
+        "remove_export_namespaces": {"_source": "core"}
+    },
+    "custom_annotations": {"_source": "core"}
+}
 
 
 def read_yaml(yaml_file):
@@ -46,15 +67,13 @@ def load_config(config_file: str) -> None:
     default_classes = default_config.get("classes", {})
 
     # Read corpus config
-    user_config = {}
-    loaded_config = read_yaml(config_file)
-    if loaded_config:
-        user_config = loaded_config
-    user_classes = user_config.get("classes", {})
+    global config_user
+    config_user = read_yaml(config_file) or {}
+    user_classes = config_user.get("classes", {})
 
     # Merge default and corpus config and save to global config variable
     global config
-    config = _merge_dicts(copy.deepcopy(user_config), default_config)
+    config = _merge_dicts(copy.deepcopy(config_user), default_config)
 
     # Set correct classes and annotations from presets
     apply_presets(user_classes, default_classes)
@@ -62,16 +81,17 @@ def load_config(config_file: str) -> None:
     fix_document_element()
 
 
-def _get(name: str):
+def _get(name: str, config_dict=None):
     """Try to get value from config, raising an exception if key doesn't exist."""
+    config_dict = config_dict if config_dict is not None else config
     # Handle dot notation
-    return reduce(lambda c, k: c[k], name.split("."), config)
+    return reduce(lambda c, k: c[k], name.split("."), config_dict)
 
 
-def set_value(name: str, value: Any, overwrite=True):
+def set_value(name: str, value: Any, overwrite=True, config_dict=None):
     """Set value in config, possibly using dot notation."""
     keys = name.split(".")
-    prev = config
+    prev = config_dict if config_dict is not None else config
     for key in keys[:-1]:
         prev.setdefault(key, {})
         prev = prev[key]
@@ -117,6 +137,47 @@ def _merge_dicts(user, default):
             else:
                 user[k] = _merge_dicts(user[k], v)
     return user
+
+
+def add_to_structure(name, default=None, description=None, annotator=None, explicit=False):
+    """Add config variable to config structure."""
+    annotator_path = name + "._annotator"
+    try:
+        annotators = _get(annotator_path, config_dict=config_structure)
+    except KeyError:
+        annotators = set()
+    if annotator:
+        annotators.add(annotator)
+
+    set_value(name,
+              {"_default": default,
+               "_description": description,
+               "_source": "explicit" if explicit else "implicit",
+               "_annotator": annotators},
+              overwrite=explicit,
+              config_dict=config_structure
+              )
+    if annotator and not explicit:
+        set_value(annotator_path, annotators, config_dict=config_structure)
+
+
+def validate_config(config_dict=None, structure=None, parent=""):
+    """Make sure the user config doesn't contain invalid keys."""
+    config_dict = config_dict or config_user
+    structure = structure or config_structure
+    for key in config_dict:
+        path = (parent + "." + key) if parent else key
+        if key not in structure:
+            if not parent:
+                raise util.SparvErrorMessage(f"Unknown key in config file: '{path}'. No module with that name found.",
+                                             module="sparv", function="config")
+            else:
+                module_name = parent.split(".", 1)[0]
+                raise util.SparvErrorMessage(f"Unknown key in config file: '{path}'. The module '{module_name}' "
+                                             f"doesn't have an option with that name.",
+                                             module="sparv", function="config")
+        elif not structure[key].get("_source"):
+            validate_config(config_dict[key], structure[key], path)
 
 
 def load_presets(lang):

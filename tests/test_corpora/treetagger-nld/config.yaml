@@ -10,10 +10,11 @@ metadata:
     # Language of the input documents, specified as ISO 639-3 code
     language: nld
 
-    description-en: |
-        This test corpus includes:
-        - the Treetagger annotations from the TREETAGGER preset
-        - some exports
+    description:
+        eng: |
+            This test corpus includes:
+            - the Treetagger annotations from the TREETAGGER preset
+            - some exports
 
 #===============================================================================
 # Annotation Settings

@@ -10,11 +10,12 @@ metadata:
     # Language of the input documents, specified as ISO 639-3 code
     language: eng
 
-    description-en: |
-        This test corpus includes:
-        - the FreeLing_FULL annotations from the FREELING preset
-        - annotations with slevel (meaning that FreeLing won't do sentence segmentation)
-        - some exports
+    description:
+        eng: |
+            This test corpus includes:
+            - the FreeLing_FULL annotations from the FREELING preset
+            - annotations with slevel (meaning that FreeLing won't do sentence segmentation)
+            - some exports
 
 #===============================================================================
 # Annotation Settings

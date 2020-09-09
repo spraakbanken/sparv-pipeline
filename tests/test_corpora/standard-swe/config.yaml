@@ -8,11 +8,12 @@ metadata:
     # Corpus name (human readable)
     name: Swedish standard test corpus
 
-    description-en: |
-        This test corpus includes:
-        - all Swedish standard token and text-level annotations except wsd
-        - custom annotations
-        - all kinds of exports except the combined and compressed variants
+    description:
+        eng: |
+            This test corpus includes:
+            - all Swedish standard token and text-level annotations except wsd
+            - custom annotations
+            - all kinds of exports except the combined and compressed variants
 
 
 #===============================================================================

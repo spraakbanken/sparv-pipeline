@@ -10,7 +10,10 @@ from sparv import Annotation, Config, Document, Export, ExportAnnotations, expor
 log = logging.getLogger(__name__)
 
 
-@exporter("CSV export", config=[Config("csv_export.delimiter", default="\t")])
+@exporter("CSV export", config=[
+    Config("csv_export.delimiter", default="\t"),
+    Config("csv_export.annotations")
+])
 def csv(doc: Document = Document(),
         out: Export = Export("csv/{doc}.csv"),
         token: Annotation = Annotation("<token>"),

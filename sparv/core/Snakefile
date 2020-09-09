@@ -125,6 +125,9 @@ config_missing = snake_utils.load_config(config)
 # Load modules and create automatic rules
 make_rules(config_missing)
 
+# Validate config
+sparv_config.validate_config()
+
 
 # ==============================================================================
 # Static Snakemake Rules
