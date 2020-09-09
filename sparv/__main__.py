@@ -96,7 +96,7 @@ def main():
                                                               "annotations directory).")
     clean_parser.add_argument("--export", action="store_true", help="Remove export directory")
     clean_parser.add_argument("--logs", action="store_true", help="Remove logs directory")
-    clean_parser.add_argument("--all", action="store_true", help="Remove both annotations and export directories")
+    clean_parser.add_argument("--all", action="store_true", help="Remove annotations, export and logs directories")
 
     # Inspect
     config_parser = subparsers.add_parser("config", description="Display the corpus configuration.")
