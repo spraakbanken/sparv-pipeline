@@ -22,13 +22,17 @@ def scrambled(doc: Document = Document(),
               word: Annotation = Annotation("<token:word>"),
               annotations: ExportAnnotations = ExportAnnotations("xml_export.annotations"),
               source_annotations: Optional[list] = Config("xml_export.source_annotations"),
-              remove_namespaces: bool = Config("export.remove_export_namespaces", False),
+              remove_namespaces: bool = Config("export.remove_module_namespaces", False),
+              sparv_namespace: str = Config("export.sparv_namespace", None),
+              source_namespace: str = Config("export.source_namespace", None),
               include_empty_attributes: bool = Config("xml_export.include_empty_attributes")):
     """Export annotations to scrambled XML."""
     # Get annotation spans, annotations list etc.
     annotation_list, _, export_names = util.get_annotation_names(annotations, source_annotations, doc=doc,
                                                                  token_name=token.name,
-                                                                 remove_namespaces=remove_namespaces)
+                                                                 remove_namespaces=remove_namespaces,
+                                                                 sparv_namespace=sparv_namespace,
+                                                                 source_namespace=source_namespace)
     if chunk not in annotation_list:
         raise util.SparvErrorMessage(
             "The annotation used for scrambling ({}) needs to be included in the output.".format(chunk))
@@ -45,7 +49,7 @@ def scrambled(doc: Document = Document(),
 
     # Construct XML string
     xmlstr = xml_utils.make_pretty_xml(new_span_positions, annotation_dict, export_names, token.name, word_annotation,
-                                       docid_annotation, include_empty_attributes)
+                                       docid_annotation, include_empty_attributes, sparv_namespace)
 
     # Create export dir
     os.makedirs(os.path.dirname(out), exist_ok=True)

@@ -74,7 +74,7 @@ def info_date(corpus: Corpus = Corpus(),
               dateto: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation=<text>]:dateformat.dateto"),
               timefrom: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation=<text>]:dateformat.timefrom"),
               timeto: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation=<text>]:dateformat.timeto"),
-              remove_namespaces: bool = Config("export.remove_export_namespaces", False),
+              remove_namespaces: bool = Config("export.remove_module_namespaces", False),
               cwb_bin_path: Config = Config("cwb.bin_path", ""),
               registry: str = Config("cwb.corpus_registry")):
     """Create datefirst and datelast file (needed for .info file)."""

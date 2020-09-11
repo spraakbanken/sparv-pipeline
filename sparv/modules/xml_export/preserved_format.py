@@ -25,7 +25,9 @@ def preserved_format(doc: Document = Document(),
                      annotations: ExportAnnotations = ExportAnnotations("xml_export.annotations"),
                      source_annotations: Optional[list] = Config("xml_export.source_annotations"),
                      header_annotations: Optional[list] = Config("xml_export.header_annotations"),
-                     remove_namespaces: bool = Config("export.remove_export_namespaces", False),
+                     remove_namespaces: bool = Config("export.remove_module_namespaces", False),
+                     sparv_namespace: str = Config("export.sparv_namespace", None),
+                     source_namespace: str = Config("export.source_namespace", None),
                      include_empty_attributes: bool = Config("xml_export.include_empty_attributes")):
     """Export annotations to XML in export_dir and keep whitespaces and indentation from original file.
 
@@ -57,7 +59,9 @@ def preserved_format(doc: Document = Document(),
 
     # Get annotation spans, annotations list etc.
     annotation_list, _, export_names = util.get_annotation_names(annotations, source_annotations, doc=doc,
-                                                                 remove_namespaces=remove_namespaces)
+                                                                 remove_namespaces=remove_namespaces,
+                                                                 sparv_namespace=sparv_namespace,
+                                                                 source_namespace=source_namespace)
     h_annotations, h_export_names = util.get_header_names(header_annotations, doc=doc)
     export_names.update(h_export_names)
     span_positions, annotation_dict = util.gather_annotations(annotation_list, export_names, h_annotations, doc=doc,
@@ -100,7 +104,11 @@ def preserved_format(doc: Document = Document(),
                 xml_utils.add_attrs(span.node, span.name, annotation_dict, export_names, span.index,
                                     include_empty_attributes)
                 if span.overlap_id:
-                    span.node.set("_overlap", f"{docid}-{span.overlap_id}")
+                    if sparv_namespace:
+                        span.node.set(f"{sparv_namespace}.{util.OVERLAP_ATTR}", f"{docid}-{span.overlap_id}")
+                    else:
+                        span.node.set(f"{util.SPARV_DEFAULT_NAMESPACE}.{util.OVERLAP_ATTR}",
+                                      f"{docid}-{span.overlap_id}")
                 node_stack.append(span)
 
                 # Set text if there should be any between this node and the next one

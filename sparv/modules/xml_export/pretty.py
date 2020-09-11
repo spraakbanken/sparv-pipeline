@@ -27,7 +27,9 @@ def pretty(doc: Document = Document(),
            annotations: ExportAnnotations = ExportAnnotations("xml_export.annotations"),
            source_annotations: Optional[list] = Config("xml_export.source_annotations"),
            header_annotations: Optional[list] = Config("xml_export.header_annotations"),
-           remove_namespaces: bool = Config("export.remove_export_namespaces", False),
+           remove_namespaces: bool = Config("export.remove_module_namespaces", False),
+           sparv_namespace: str = Config("export.sparv_namespace", None),
+           source_namespace: str = Config("export.source_namespace", None),
            include_empty_attributes: bool = Config("xml_export.include_empty_attributes")):
     """Export annotations to pretty XML in export_dir.
 
@@ -44,6 +46,8 @@ def pretty(doc: Document = Document(),
             in the export. If not specified, all headers will be kept.
         remove_namespaces: Whether to remove module "namespaces" from element and attribute names.
             Disabled by default.
+        sparv_namespace: The namespace to be added to all Sparv annotations.
+        source_namespace: The namespace to be added to all annotations present in the source.
         include_empty_attributes: Whether to include attributes even when they are empty. Disabled by default.
     """
     # Create export dir
@@ -58,13 +62,15 @@ def pretty(doc: Document = Document(),
     # Get annotation spans, annotations list etc.
     annotation_list, _, export_names = util.get_annotation_names(annotations, source_annotations, doc=doc,
                                                                  token_name=token_name,
-                                                                 remove_namespaces=remove_namespaces)
+                                                                 remove_namespaces=remove_namespaces,
+                                                                 sparv_namespace=sparv_namespace,
+                                                                 source_namespace=source_namespace)
     h_annotations, h_export_names = util.get_header_names(header_annotations, doc=doc)
     export_names.update(h_export_names)
     span_positions, annotation_dict = util.gather_annotations(annotation_list, export_names, h_annotations,
                                                               doc=doc, split_overlaps=True)
     xmlstr = xml_utils.make_pretty_xml(span_positions, annotation_dict, export_names, token_name, word_annotation,
-                                       docid_annotation, include_empty_attributes)
+                                       docid_annotation, include_empty_attributes, sparv_namespace)
 
     # Write XML to file
     with open(out, mode="w") as outfile:

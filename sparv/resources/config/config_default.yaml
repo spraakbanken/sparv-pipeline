@@ -30,13 +30,17 @@ classes:
 
 # Common settings for exporters
 export:
-    # Set to false if annotation name spaces should be kept in the export
-    remove_export_namespaces: true
     # Chunk to scramble the XML export on
     scramble_on: <sentence>
     # Exports to create by default when running 'sparv run'
     default:
         - xml_export:pretty
+    # Set to false if module name spaces should be kept in the export (e.g. 'pos' will be called 'hunpos.pos')
+    remove_module_namespaces: true
+    # A string representing the name space to be added to all annotations created by Sparv
+    sparv_namespace: Null
+    # A string representing the name space to be added to all annotations present in the source
+    source_namespace: Null
 
 #===============================================================================
 # Module-specific Settings

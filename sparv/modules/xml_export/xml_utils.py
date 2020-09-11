@@ -6,6 +6,7 @@ import logging
 import os
 import re
 import xml.etree.ElementTree as etree
+from typing import Optional
 
 import sparv.util as util
 
@@ -15,7 +16,7 @@ INDENTATION = "  "
 
 
 def make_pretty_xml(span_positions, annotation_dict, export_names, token_name: str, word_annotation, docid,
-                    include_empty_attributes: bool):
+                    include_empty_attributes: bool, sparv_namespace: Optional[str] = None):
     """Create a pretty formatted XML string from span_positions.
 
     Used by pretty and sentence_scrambled.
@@ -67,7 +68,11 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token_name: s
             node_stack.append(span)
             add_attrs(span.node, span.name, annotation_dict, export_names, span.index, include_empty_attributes)
             if span.overlap_id:
-                span.node.set("_overlap", f"{docid}-{span.overlap_id}")
+                if sparv_namespace:
+                    span.node.set(f"{sparv_namespace}.{util.OVERLAP_ATTR}", f"{docid}-{span.overlap_id}")
+                else:
+                    span.node.set(f"{util.SPARV_DEFAULT_NAMESPACE}.{util.OVERLAP_ATTR}", f"{docid}-{span.overlap_id}")
+
             # Add text if this node is a token
             if span.name == token_name:
                 inside_token = True

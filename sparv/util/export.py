@@ -283,7 +283,9 @@ def get_annotation_names(annotations: Union[ExportAnnotations, ExportAnnotations
                          source_annotations=None,
                          doc: Optional[str] = None, docs: Optional[List[str]] = None,
                          token_name: Optional[str] = None,
-                         remove_namespaces=False, keep_struct_names=False):
+                         remove_namespaces=False, keep_struct_names=False,
+                         sparv_namespace: Optional[str] = None,
+                         source_namespace: Optional[str] = None):
     """Get a list of annotations, token attributes and a dictionary for renamed annotations.
 
     Args:
@@ -295,6 +297,8 @@ def get_annotation_names(annotations: Union[ExportAnnotations, ExportAnnotations
         remove_namespaces: Remove all namespaces in export_names unless names are ambiguous.
         keep_struct_names: For structural attributes (anything other than token), include the annotation base name
             (everything before ":") in export_names (used in cwb encode).
+        sparv_namespace: The namespace to be added to all Sparv annotations.
+        source_namespace: The namespace to be added to all annotations present in the source.
 
     Returns:
         A list of annotations, a list of token attribute names, a dictionary with translation from annotation names to
@@ -314,7 +318,7 @@ def get_annotation_names(annotations: Union[ExportAnnotations, ExportAnnotations
         token_attributes = []
 
     export_names = _create_export_names(all_annotations, token_name, remove_namespaces, keep_struct_names,
-                                        source_annotations)
+                                        source_annotations, sparv_namespace, source_namespace)
 
     return [i[0] for i in all_annotations], token_attributes, export_names
 
@@ -359,7 +363,9 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
                          token_name: Optional[str],
                          remove_namespaces: bool,
                          keep_struct_names: bool,
-                         source_annotations: list = []):
+                         source_annotations: list = [],
+                         sparv_namespace: Optional[str] = None,
+                         source_namespace: Optional[str] = None):
     """Create dictionary for renamed annotations."""
     if remove_namespaces:
         def shorten(annotation):
@@ -427,6 +433,31 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
                 export_names[name] = new_name
         else:
             export_names = {annotation.name: new_name for annotation, new_name in annotations if new_name}
+
+    export_names = _add_global_namespaces(export_names, annotations, source_annotations, sparv_namespace,
+                                          source_namespace)
+
+    return export_names
+
+
+def _add_global_namespaces(export_names: dict,
+                           annotations: List[Tuple[Union[Annotation, AnnotationAllDocs], Any]],
+                           source_annotations: list,
+                           sparv_namespace: Optional[str] = None,
+                           source_namespace: Optional[str] = None):
+    """Add sparv_namespace and source_namespace to export names."""
+    source_annotation_names = [a.name for a, _ in source_annotations]
+
+    if sparv_namespace:
+        for a, _ in annotations:
+            name = a.name
+            if name not in source_annotation_names:
+                export_names[name] = f"{sparv_namespace}.{export_names.get(name, name)}"
+
+    if source_namespace:
+        for name in source_annotation_names:
+            export_names[name] = f"{source_namespace}.{export_names.get(name, name)}"
+
     return export_names
 
 

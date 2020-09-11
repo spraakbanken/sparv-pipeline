@@ -21,7 +21,9 @@ def csv(doc: Document = Document(),
         sentence: Annotation = Annotation("<sentence>"),
         annotations: ExportAnnotations = ExportAnnotations("csv_export.annotations"),
         source_annotations: Optional[list] = Config("csv_export.source_annotations"),
-        remove_namespaces: bool = Config("export.remove_export_namespaces", False),
+        remove_namespaces: bool = Config("export.remove_module_namespaces", False),
+        sparv_namespace: str = Config("export.sparv_namespace", None),
+        source_namespace: str = Config("export.source_namespace", None),
         delimiter: str = Config("csv_export.delimiter")):
     """Export annotations to CSV format."""
     # Create export dir
@@ -35,7 +37,9 @@ def csv(doc: Document = Document(),
     # Get annotation spans, annotations list etc.
     annotation_list, token_attributes, export_names = util.get_annotation_names(annotations, source_annotations,
                                                                                 doc=doc, token_name=token_name,
-                                                                                remove_namespaces=remove_namespaces)
+                                                                                remove_namespaces=remove_namespaces,
+                                                                                sparv_namespace=sparv_namespace,
+                                                                                source_namespace=source_namespace)
     span_positions, annotation_dict = util.gather_annotations(annotation_list, export_names, doc=doc)
 
     # Make csv header
