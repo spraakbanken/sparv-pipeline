@@ -10,21 +10,24 @@
     + [Sparv wsd](#sparv-wsd)
     + [hfst-SweNER](#hfst-swener)
     + [Corpus Workbench](#corpus-workbench)
-    + [Software for analysing other languages](#software-for-analysing-other-languages)
+    + [Software for Analysing other Languages](#software-for-analysing-other-languages)
       - [TreeTagger](#treetagger)
       - [Stanford Parser](#stanford-parser)
       - [FreeLing](#freeling)
   * [Plugins](#plugins)
 - [Running Sparv](#running-sparv)
-  * [Annotating a corpus](#annotating-a-corpus)
-  * [Inspecting corpus details](#inspecting-corpus-details)
-  * [Setting up the Sparv pipeline](#setting-up-the-sparv-pipeline)
-  * [Advanced commands](#advanced-commands)
+  * [Annotating a Corpus](#annotating-a-corpus)
+  * [Inspecting Corpus Details](#inspecting-corpus-details)
+  * [Setting up the Sparv Pipeline](#setting-up-the-sparv-pipeline)
+  * [Advanced Commands](#advanced-commands)
 - [Corpus Configuration](#corpus-configuration)
   * [Corpus Config Wizard](#corpus-config-wizard)
-  * [Annotation presets](#annotation-presets)
+  * [Annotation Presets](#annotation-presets)
   * [Headers](#headers)
-  * [Custom Rules](#custom-rules)
+  * [Custom Annotations](#custom-annotations)
+    + [Built-in Custom Annotations](#built-in-custom-annotations)
+    + [Modifying Annotators with Custom Annotations](#modifying-annotators-with-custom-annotations)
+    + [User-defined Custom Annotations](#user-defined-custom-annotations)
 - [MISC](#misc)
 
 
@@ -278,66 +281,60 @@ When running `sparv` (or `sparv -h`) the available sparv commands will be listed
         annotations      List available modules, annotations, and classes
         presets          List available annotation presets
 
-We did our best to make the Sparv command line interface (CLI) as user-friendly as possible by including help texts for
-every command. You can learn more about a command and its options by using it together with the `-h` flag, e.g. `sparv
-run -h`:
-
-    usage: sparv run [-h] [-l] [-n] [-j N] [-d DOC [DOC ...]] [--log [LOGLEVEL]] [--log-to-file [LOGLEVEL]]
-                    [--debug]
-                    [output [output ...]]
-
-    Annotate a corpus and generate export files.
-
-    positional arguments:
-    output                The type of output format to generate
-
-    optional arguments:
-    -h, --help            Show this help message and exit
-    -l, --list            List available output formats
-    -n, --dry-run         Only dry-run the workflow
-    -j N, --cores N       Use at most N cores in parallel
-    -d DOC [DOC ...], --doc DOC [DOC ...]
-                            Only annotate specified input document(s)
-    --log [LOGLEVEL]      Set the log level (default: 'warning')
-    --log-to-file [LOGLEVEL]
-                            Set log level for logging to file (default: 'warning')
-    --debug               Show debug messages
+Every command in the Sparv command line interface (CLI) has a help text which can be accessed with the `-h` flag. Below
+we will give an overview for the most important commands in Sparv. 
 
 ## Annotating a Corpus
-From inside a corpus directory with a config file you can annotate the corpus using `sparv run`. This will start the
-annotation process and produce all the output formats (or exports) listed under `export.default` in your config. You can
-also tell Sparv explicitely what output format to generate, e.g. `sparv run csv_export:csv`. Type `sparv run -l` to
-learn what output formats there are available for your corpus. The output files will be stored in a folder called
-`exports` inside your corpus directory.
+**`sparv run`:** From inside a corpus directory with a config file you can annotate the corpus using `sparv run`. This
+will start the annotation process and produce all the output formats (or exports) listed under `export.default` in your
+config. You can also tell Sparv explicitely what output format to generate, e.g. `sparv run csv_export:csv`. Type `sparv
+run -l` to learn what output formats there are available for your corpus. The output files will be stored in a folder
+called `exports` inside your corpus directory.
 
-Installing a corpus means deploying it on a remote server. Sparv supports deployment of compressed XML exports, CWB data
-files and SQL data. If you try to install a corpus Sparv will check if the necessary annotations have been created. If
-any annotations are lacking, Sparv will run them for you. Thus you do not need to annotate the corpus before installing.
-You can list the available installations with `sparv install -l`.
+**`sparv install`:** Installing a corpus means deploying it on a remote server. Sparv supports deployment of compressed
+XML exports, CWB data files and SQL data. If you try to install a corpus Sparv will check if the necessary annotations
+have been created. If any annotations are lacking, Sparv will run them for you. Thus you do not need to annotate the
+corpus before installing. You can list the available installations with `sparv install -l`.
 
-When annotating Sparv will create a folder called `annotations` inside your corpus directory. You usually don't need to
-touch the files stored here. Leaving this directory as it is will usually lead to faster processing of your corpus if
-you for example want to add a new output format. However, if you would like to delete this folder (e.g. because you want
-to save disk space or because you want to rerun all annotations from scratch) you can do so by running `sparv clean`.
-The export directory and log files can also be removed with the `clean` command. Check out the available options to
-learn more.
+**`sparv clean`:** When annotating Sparv will create a folder called `annotations` inside your corpus directory. You
+usually don't need to touch the files stored here. Leaving this directory as it is will usually lead to faster
+processing of your corpus if you for example want to add a new output format. However, if you would like to delete this
+folder (e.g. because you want to save disk space or because you want to rerun all annotations from scratch) you can do
+so by running this command. The export directory and log files can also be removed with the `clean` command. Check out
+the available options to learn more.
 
 ## Inspecting Corpus Details
-The configuration for your corpus can be inspected with `sparv config`. You can read more about this in the [section
-about corpus configuration](#corpus-configuration).
+**`sparv config`:** This command lets you inspect the configuration for your corpus. You can read more about this in the
+[section about corpus configuration](#corpus-configuration).
 
-By using the command `sparv files` you can list all available input documents belonging to your corpus.
+**`sparv files`:** By using this command you can list all available input documents belonging to your corpus.
 
 ## Setting up the Sparv Pipeline
-The commands `sparv setup` and `build-models` are explained in the section [Setting up Sparv](#setting-up-sparv).
+**`sparv setup`** and **`sparv build-models`:** These commands are explained in the section [Setting up
+Sparv](#setting-up-sparv).
 
 ## Advanced Commands
-**TODO**
-<!-- run-rule         Run specified rule(s) for creating annotations -->
-<!-- create-file      Create specified file(s) -->
-<!-- run-module       Run annotator module independently -->
-<!-- annotations      List available modules, annotations, and classes -->
-<!-- presets          List available annotation presets -->
+**`sparv run-rule`** and **`sparv create-file`:** Instruct Sparv to run the specified annotation rule or to create
+the specified file. Multiple arguments can be supplied.
+
+Example running the part-of-speech annotation for all input files:
+
+    sparv run-rule hunpos:postag
+
+Example creating the part-of-speech annotation for the input file `document1`:
+
+    sparv create-file annotations/dokument1/segment.token/hunpos.pos
+
+**`sparv run-module`:** Run an annotator module independently (mostly for debugging). You must supply the module and the
+function you want to run and all the mandatory arguments. E.g. to run the hunpos msd tagging module on the input file
+called `document1` you could use the following command:
+
+    sparv run-module hunpos msdtag --out segment.token:hunpos.msd --word segment.token:misc.word --sentence segment.sentence --binary hunpos-tag --model hunpos/suc3_suc-tags_default-setting_utf8.model --morphtable hunpos/saldo_suc-tags.morphtable --patterns hunpos/suc.patterns --doc dokument1
+
+**`sparv annotations`:** List all available modules, annotations, and classes.
+
+**`sparv presets`:** List available annotation presets available for your corpus. You can read more about presets in the
+[section about annotation presets](#annotation-presets).
 
 # Corpus Configuration
 To be able to annotate a corpus with Sparv you will need to create a corpus config file. A corpus config file is written
@@ -386,6 +383,8 @@ There are a couple of config options that must be set (either through the defaul
 
 **TODO** Förklara klasser (t.ex. `<token>`)
 
+**TODO** Förklara anchors
+
 **TODO** Här kan man skriva hur mycket som helst om olika config-inställningar. Hur mycket behöver vi förklara?
 
 ## Corpus Config Wizard
@@ -424,11 +423,102 @@ override these in your config files if you know what you are doing.
 ## Headers
 **TODO**
 
-## Custom Rules
-**TODO**
-- How do custom rules work?
-- Använd enkelfnuttar för regex-strängar i YAML!
-- How to re-use existing annotation modules with custom parameters (e.g. models) by using custom rules.
+## Custom Annotations
+Custom annotations may be used to apply more customised, non-pre-defined annotations to your corpus. The different
+usages of custom annotations are explained below.
+
+### Built-in Custom Annotations
+Sparv provides a couple of built-in custom annotations which need extra input from the user before they can be used.
+These are listed under "Available custom annotation functions" when running `sparv annotations`. Please note that custom
+annotations always result in new annotations, they do not modify existing ones. 
+
+The `misc:affix` annotation for example can be used to add a prefix and/or a suffix string to another annotation. When
+using this annotation function you must tell Sparv 1. what your output annotation should be called, 2. what annotation
+you want to use as input (the chunk), and 3. the string that you want to use as prefix and/or the suffix. These things
+are defined in the `custom_annotations` section in your corpus config. First you specify the annotator module
+(`annotator`) and function you want to use and then you list the parameter names (`params`) and their values. In this
+example we are using the word annotation as input and adding the string "|" as prefix and suffix.
+
+    custom_annotations:
+        - annotator: misc:affix
+          params:
+              out: <token>:misc.word.affixed
+              chunk: <token:word>
+              prefix: "|"
+              suffix: "|"
+
+In order to use this annotation you need to add `<token>:misc.word.affixed` to an annotations list in your corpus config
+(e.g. `xml_export.annotations`). This example is applied in the standard-swe example corpus.
+
+You can use the same custom annotation function multiple times as long as you name the outputs differently:
+
+    custom_annotations:
+        - annotator: misc:affix
+          params:
+              out: <token>:misc.word.affixed
+              chunk: <token:word>
+              prefix: "|"
+              suffix: "|"
+        - annotator: misc:affix
+          params:
+              out: <token>:misc.word.affixed2
+              chunk: <token:word>
+              prefix: "+"
+              suffix: "+"
+
+**Hint:** When using a regular expression as input for a custom rule (e.g. in `misc:find_replace_regex`), the expression
+must be surrounded by single quotation marks. Regular expressions inside double quotation marks in YAML are not parsed
+correctly.
+
+### Modifying Annotators with Custom Annotations
+Custom annotations may also be used to modify the parameters of existing annotation functions. This comes in handy when
+you want to use the same annotator multiple times but with different models. In order to do this you specify the
+annotator and its parameters in the `custom_annotations` section of your corpus config as explained in the section
+above. You only need to specify the parameters you want to modify. In the example below we are re-using the
+`hunpos:msdtag` function with a custom model and we are calling the output annotation
+`<token>:hunpos.msd.myHunposModel`:
+
+    custom_annotations:
+        - annotator: hunpos:msdtag
+          params:
+              out: <token>:hunpos.msd.myHunposModel
+              model: path/to/myHunposModel
+
+### User-defined Custom Annotations
+User-defined custom annotations are useful when you want to write your own python annotation function and plug it into
+Sparv. Your annotation function must have one of the sparv decorators (usually `@annotator`) and your annotator must be
+declared in the `custom_annotations` section of your corpus config. Place your python code inside your corpus directory
+and Sparv will be able to find it. There is an example of a user-defined custom annotation in the standard-swe example
+corpus. The code for a simple annotator that converts all tokens to upper case looks like this:
+
+    from sparv import Annotation, Output, annotator
+
+    @annotator("Convert every word to uppercase.")
+    def uppercase(word: Annotation = Annotation("<token:word>"),
+                  out: Output = Output("<token>:custom.convert.upper")):
+        """Convert to uppercase."""
+        out.write([val.upper() for val in word.read()])
+
+The custom rule is then declared in your corpus config using the prefix `custom` before the annotator name:
+
+    custom_annotations:
+        - annotator: custom.convert:uppercase
+
+In this example all parameters in the annotator function have default values which means that you do not need to supply
+any parameter values in your config. But of course you can override the default values:
+
+    custom_annotations:
+        - annotator: custom.convert:uppercase
+          params:
+              out: <token>:custom.convert.myUppercaseAnnotation
+
+Now you can add the annotation name given by the `out` parameter value to an annotations list in your corpus config
+(e.g. `xml_export.annotations`). Please note that when using custom annotations from your own code all output
+annotations must be prefixed with `custom`.
+
+If you need more information on how to write an annotation function please refer to the [developer's guide][4]. If you
+have written a rater general annotation module you could consider writing a Sparv plugin. This way others will be able
+to use your annotator. Read more about writing plugins in the [developer's guide][4].
 
 
 # MISC
@@ -442,3 +532,4 @@ override these in your config files if you know what you are doing.
 [1]: https://spraakbanken.gu.se/
 [2]: http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
 [3]: https://github.com/spraakbanken/sparv-pipeline/releases/download/v4.0/example_corpora.zip
+[4]: TODO: link to developer's guide

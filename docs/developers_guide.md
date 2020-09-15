@@ -4,6 +4,10 @@
 - List annotators (decorators), their options and what they are used for
 - When should you use the SparvError class?
 
+## Importer module
+
+## Exporter module
+
 
 # Writing Plugins
 Writing a Sparv plugin is not much different from writing a Sparv module. The main difference is that the code for a
