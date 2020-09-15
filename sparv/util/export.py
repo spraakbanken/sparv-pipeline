@@ -7,6 +7,7 @@ from copy import deepcopy
 from itertools import combinations
 from typing import Any, List, Optional, Set, Tuple, Union
 
+import sparv.util as util
 from sparv.util import corpus, misc
 from sparv.util.classes import (Annotation, AnnotationAllDocs, AnnotationData, ExportAnnotations,
                                 ExportAnnotationsAllDocs)
@@ -432,10 +433,12 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
                     new_name = corpus.join_annotation(export_names.get(base_name, base_name), new_name)
                 export_names[name] = new_name
         else:
-            export_names = {annotation.name: new_name for annotation, new_name in annotations if new_name}
+            export_names = {annotation.name: (new_name if new_name else annotation.attribute_name() or annotation.name)
+                            for annotation, new_name in annotations}
 
     export_names = _add_global_namespaces(export_names, annotations, source_annotations, sparv_namespace,
                                           source_namespace)
+    export_names = _check_name_collision(export_names, source_annotations)
 
     return export_names
 
@@ -460,6 +463,39 @@ def _add_global_namespaces(export_names: dict,
 
     return export_names
 
+
+def _check_name_collision(export_names, source_annotations):
+    """Detect collisions in attribute names and resolve them or send warnings."""
+    source_names = [a.name for a, _ in source_annotations]
+
+    # Get annotations with identical export attribute names
+    reverse_index = defaultdict(set)
+    for k, v in export_names.items():
+        reverse_index[v].add(k)
+    possible_collisions = {k: [Annotation(v) for v in values] for k, values in reverse_index.items() if len(values) > 1}
+    # Only keep the ones with matching element names
+    for attr, values in possible_collisions.items():
+        attr_dict = defaultdict(list)
+        for v in values:
+            attr_dict[v.annotation_name()].append(v)
+        attr_collisions = {k: v for k, v in attr_dict.items() if len(v) > 1}
+        for _elem, annots in attr_collisions.items():
+            # If there are two colliding attributes and one is an automatic one, prefix it with SPARV_DEFAULT_NAMESPACE
+            if len(annots) == 2 and len([a for a in annots if a.name not in source_names]) == 1:
+                sparv_annot = annots[0] if annots[0].name not in source_names else annots[1]
+                source_annot = annots[0] if annots[0].name in source_names else annots[1]
+                new_name = util.SPARV_DEFAULT_NAMESPACE + "." + export_names[sparv_annot.name]
+                export_names[sparv_annot.name] = new_name
+                log.info("Changing name of automatic annotation '{}' to '{}' due to collision with '{}'.".format(
+                         sparv_annot.name, new_name, source_annot.name))
+            # Warn the user if we cannot resolve collisions automatically
+            else:
+                annots_string = "\n".join([f"{a.name} ({'source' if a.name in source_names else 'sparv'} annotation)"
+                                           for a in annots])
+                log.warning("The following annotations are exported with the same name ({}) and might overwrite "
+                            "each other: \n\n{}\n\nIf you want to keep all of these annotations you can change their "
+                            "export names.".format(attr, annots_string))
+    return export_names
 
 ################################################################################
 # Scrambling
