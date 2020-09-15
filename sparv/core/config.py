@@ -2,6 +2,7 @@
 
 import copy
 import logging
+from collections import defaultdict
 from functools import reduce
 from typing import Any
 
@@ -37,10 +38,13 @@ config_structure = {
         "default": {"_source": "core"},
         "remove_module_namespaces": {"_source": "core"},
         "sparv_namespace": {"_source": "core"},
-        "source_namespace": {"_source": "core"}
+        "source_namespace": {"_source": "core"},
+        "scramble_on": {"_source": "core"}
     },
     "custom_annotations": {"_source": "core"}
 }
+
+config_usage = defaultdict(set)  # For each config key, a list of annotators using that key
 
 
 def read_yaml(yaml_file):
@@ -141,26 +145,38 @@ def _merge_dicts(user, default):
     return user
 
 
-def add_to_structure(name, default=None, description=None, annotator=None, explicit=False):
+def add_to_structure(name, default=None, description=None, annotator=None):
     """Add config variable to config structure."""
-    annotator_path = name + "._annotator"
-    try:
-        annotators = _get(annotator_path, config_dict=config_structure)
-    except KeyError:
-        annotators = set()
-    if annotator:
-        annotators.add(annotator)
-
     set_value(name,
               {"_default": default,
                "_description": description,
-               "_source": "explicit" if explicit else "implicit",
-               "_annotator": annotators},
-              overwrite=explicit,
+               "_source": "module"},
               config_dict=config_structure
               )
-    if annotator and not explicit:
-        set_value(annotator_path, annotators, config_dict=config_structure)
+
+    add_config_usage(name, annotator)
+
+
+def get_config_description(name):
+    """Get discription for config key."""
+    return _get(name, config_structure).get("_description")
+
+
+def add_config_usage(config_key, annotator):
+    """Add an annotator to the list of annotators that are using a given config key."""
+    config_usage[config_key].add(annotator)
+
+
+def validate_module_config():
+    """Make sure that modules don't try to access undeclared config keys."""
+    for config_key in config_usage:
+        try:
+            _get(config_key, config_structure)
+        except KeyError:
+            annotators = config_usage[config_key]
+            raise util.SparvErrorMessage(
+                "The annotator{} {} is trying to access the config key '{}' which isn't declared anywhere.".format(
+                    "s" if len(annotators) > 1 else "", ", ".join(annotators), config_key), "sparv", "config")
 
 
 def validate_config(config_dict=None, structure=None, parent=""):

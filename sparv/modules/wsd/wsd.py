@@ -10,10 +10,16 @@ log = logging.getLogger(__name__)
 SENT_SEP = "$SENT$"
 
 
-@annotator("Word sense disambiguation", language=["swe"])
-def annotate(wsdjar: Binary = Binary("[wsd.jar=wsd/saldowsd.jar]"),
-             sense_model: Model = Model("[wsd.sense_model=wsd/ALL_512_128_w10_A2_140403_ctx1.bin]"),
-             context_model: Model = Model("[wsd.context_model=wsd/lem_cbow0_s512_w10_NEW2_ctx.bin]"),
+@annotator("Word sense disambiguation", language=["swe"], config=[
+    Config("wsd.sense_model", default="wsd/ALL_512_128_w10_A2_140403_ctx1.bin"),
+    Config("wsd.context_model", default="wsd/lem_cbow0_s512_w10_NEW2_ctx.bin"),
+    Config("wsd.default_prob", -1.0),
+    Config("wsd.jar", default="wsd/saldowsd.jar"),
+    Config("wsd.prob_format", util.SCORESEP + "%.3f")
+])
+def annotate(wsdjar: Binary = Binary("[wsd.jar]"),
+             sense_model: Model = Model("[wsd.sense_model]"),
+             context_model: Model = Model("[wsd.context_model]"),
              out: Output = Output("<token>:wsd.sense", cls="token:sense",
                                   description="Sense disambiguated SALDO identifiers"),
              sentence: Annotation = Annotation("<sentence>"),
@@ -23,8 +29,8 @@ def annotate(wsdjar: Binary = Binary("[wsd.jar=wsd/saldowsd.jar]"),
              saldo: Annotation = Annotation("<token>:saldo.sense"),
              pos: Annotation = Annotation("<token:pos>"),
              token: Annotation = Annotation("<token>"),
-             prob_format: str = Config("wsd.prob_format", util.SCORESEP + "%.3f"),
-             default_prob: float = Config("wsd.default_prob", -1.0),
+             prob_format: str = Config("wsd.prob_format"),
+             default_prob: float = Config("wsd.default_prob"),
              encoding: str = util.UTF8):
     """Run the word sense disambiguation tool (saldowsd.jar) to add probabilities to the saldo annotation.
 

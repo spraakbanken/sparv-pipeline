@@ -10,16 +10,21 @@ from sparv import Config, Corpus, ExportInput, OutputCommonData, installer
 log = logging.getLogger(__name__)
 
 
-@installer("Install CWB datafiles on remote host")
+@installer("Install CWB datafiles on remote host", config=[
+    Config("korp.remote_host", ""),
+    Config("korp.remote_corpus_registry", ""),
+    Config("korp.remote_cwb_datadir", ""),
+    Config("korp.protected", False)
+])
 def install_corpus(corpus: Corpus = Corpus(),
                    info_file: ExportInput = ExportInput("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_path=True),
                    cwb_file: ExportInput = ExportInput("[cwb.corpus_registry]/[metadata.id]", absolute_path=True),
                    out: OutputCommonData = OutputCommonData("korp.time_install_corpus"),
-                   host: str = Config("korp.remote_host", ""),
+                   host: str = Config("korp.remote_host"),
                    datadir: str = Config("cwb.cwb_datadir"),
                    registry: str = Config("cwb.corpus_registry"),
-                   target_datadir: str = Config("korp.remote_cwb_datadir", ""),
-                   target_registry: str = Config("korp.remote_corpus_registry", "")):
+                   target_datadir: str = Config("korp.remote_cwb_datadir"),
+                   target_registry: str = Config("korp.remote_corpus_registry")):
     """Install CWB datafiles on server, by rsyncing datadir and registry.
 
     If local and remote paths differ, target_datadir and target_registry must be specified.

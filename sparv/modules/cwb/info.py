@@ -18,7 +18,7 @@ def info(out: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_
          firstdate: AnnotationCommonData = AnnotationCommonData("cwb.datefirst"),
          lastdate: AnnotationCommonData = AnnotationCommonData("cwb.datelast"),
          resolution: AnnotationCommonData = AnnotationCommonData("dateformat.resolution"),
-         protected: bool = Config("korp.protected", False)):
+         protected: bool = Config("korp.protected")):
     """Save information to the file specified by 'out'."""
     content = []
     protected_str = str(util.strtobool(protected)).lower()
@@ -70,10 +70,10 @@ def info_date(corpus: Corpus = Corpus(),
               out_datefirst: OutputCommonData = OutputCommonData("cwb.datefirst"),
               out_datelast: OutputCommonData = OutputCommonData("cwb.datelast"),
               corpus_data_file: ExportInput = ExportInput("[cwb.corpus_registry]/[metadata.id]"),
-              datefrom: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation=<text>]:dateformat.datefrom"),
-              dateto: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation=<text>]:dateformat.dateto"),
-              timefrom: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation=<text>]:dateformat.timefrom"),
-              timeto: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation=<text>]:dateformat.timeto"),
+              datefrom: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation]:dateformat.datefrom"),
+              dateto: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation]:dateformat.dateto"),
+              timefrom: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation]:dateformat.timefrom"),
+              timeto: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation]:dateformat.timeto"),
               remove_namespaces: bool = Config("export.remove_module_namespaces", False),
               cwb_bin_path: Config = Config("cwb.bin_path", ""),
               registry: str = Config("cwb.corpus_registry")):

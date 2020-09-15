@@ -1,5 +1,5 @@
 """Snakefile used by Snakemake."""
-from pathlib import Path
+from collections import defaultdict
 
 import snakemake.io
 from snakemake.logging import logger
@@ -125,6 +125,9 @@ config_missing = snake_utils.load_config(config)
 # Load modules and create automatic rules
 make_rules(config_missing)
 
+# Validate config usage in modules
+sparv_config.validate_module_config()
+
 # Validate config
 sparv_config.validate_config()
 
@@ -148,6 +151,12 @@ rule config:
 # Rule to list all annotations
 rule annotations:
     run:
+        # Get config variables used by each annotator
+        reverse_config_usage = defaultdict(list)
+        for config_key in sparv_config.config_usage:
+            for annotator in sparv_config.config_usage[config_key]:
+                reverse_config_usage[annotator].append((config_key, sparv_config.get_config_description(config_key)))
+
         all_annotations = snake_storage.all_annotations
         max_len = max(len(a[0]) for m in all_annotations for f in all_annotations[m]
                       for a in all_annotations[m][f]["annotations"]) + 4
@@ -163,11 +172,18 @@ rule annotations:
                     print("      {}".format(f_desc))
                 print()
                 f_anns = all_annotations[module_name][f_name]["annotations"]
+                print("      Annotations:")
                 for f_ann in sorted(f_anns):
                     print("        • {:{width}}{}".format(f_ann[0], f_ann[1] or "", width=max_len))
                     if f_ann[0].cls:
                         print(util.Color.ITALIC + "          <{}>".format(f_ann[0].cls) + util.Color.RESET)
                 print()
+                f_config = reverse_config_usage.get(f"{module_name}:{f_name}")
+                if f_config:
+                    print("      Configuration variables used:")
+                    for config_key in sorted(f_config):
+                        print("        • {:{width}}{}".format(config_key[0], config_key[1] or "", width=max_len))
+                    print()
 
         print()
         print("Available custom annotation functions")

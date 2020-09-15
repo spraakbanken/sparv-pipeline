@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 ])
 def dateformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
                in_to: Optional[Annotation] = Annotation("[dateformat.datetime_to]"),
-               out_from: Output = Output("[dateformat.out_annotation=<text>]:dateformat.datefrom",
+               out_from: Output = Output("[dateformat.out_annotation]:dateformat.datefrom",
                                          description="From-dates"),
                out_to: Optional[Output] = Output("[dateformat.out_annotation]:dateformat.dateto",
                                                  description="To-dates"),
@@ -42,9 +42,9 @@ def dateformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
         in_to (Optional[str], optional): Annotation containing to-dates.
             Defaults to Annotation("[dateformat.datetime_to]").
         out_from (str, optional): Annotation with from-times to be written.
-            Defaults to Output("[dateformat.out_annotation=<text>]:dateformat.datefrom",description="From-dates").
+            Defaults to Output("[dateformat.out_annotation]:dateformat.datefrom",description="From-dates").
         out_to (Optional[str], optional): Annotation with to-times to be written.
-            Defaults to Output("[dateformat.out_annotation=<text>]:dateformat.dateto",description="To-dates").
+            Defaults to Output("[dateformat.out_annotation]:dateformat.dateto",description="To-dates").
         informat (str, optional): Format of the in_from and in_to dates/times.
             Several formats can be specified separated by |. They will be tried in order.
             Defaults to Config("dateformat.datetime_informat").
@@ -59,15 +59,17 @@ def dateformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
     _formatter(in_from, in_to, out_from, out_to, informat, outformat, splitter, regex)
 
 
-@annotator("Convert existing times to specified output format")
+@annotator("Convert existing times to specified output format", config=[
+    Config("dateformat.time_outformat", "%H%M%S")
+])
 def timeformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
                in_to: Optional[Annotation] = Annotation("[dateformat.datetime_to]"),
-               out_from: Output = Output("[dateformat.out_annotation=<text>]:dateformat.timefrom",
+               out_from: Output = Output("[dateformat.out_annotation]:dateformat.timefrom",
                                          description="From-times"),
-               out_to: Optional[Output] = Output("[dateformat.out_annotation=<text>]:dateformat.timeto",
+               out_to: Optional[Output] = Output("[dateformat.out_annotation]:dateformat.timeto",
                                                  description="To-times"),
                informat: str = Config("dateformat.datetime_informat"),
-               outformat: str = Config("dateformat.time_outformat", "%H%M%S"),
+               outformat: str = Config("dateformat.time_outformat"),
                splitter: Optional[str] = Config("dateformat.splitter", None),
                regex: Optional[str] = Config("dateformat.regex", None)):
     """Convert existing dates/times to specified time output format.
@@ -80,9 +82,9 @@ def timeformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
         in_to (Optional[str], optional): Annotation containing to-dates.
             Defaults to Annotation("[dateformat.datetime_to]").
         out_from (str, optional): Annotation with from-times to be written.
-            Defaults to Output("[dateformat.out_annotation=<text>]:dateformat.timefrom",description="From-times").
+            Defaults to Output("[dateformat.out_annotation]:dateformat.timefrom",description="From-times").
         out_to (Optional[str], optional): Annotation with to-times to be written.
-            Defaults to Output("[dateformat.out_annotation=<text>]:dateformat.timeto",description="To-times").
+            Defaults to Output("[dateformat.out_annotation]:dateformat.timeto",description="To-times").
         informat (str, optional): Format of the in_from and in_to dates/times.
             Several formats can be specified separated by |. They will be tried in order.
             Defaults to Config("dateformat.datetime_informat").

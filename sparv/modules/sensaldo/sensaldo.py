@@ -3,7 +3,7 @@
 import logging
 
 import sparv.util as util
-from sparv import Annotation, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv import Annotation, Config, Model, ModelOutput, Output, annotator, modelbuilder
 
 log = logging.getLogger(__name__)
 
@@ -14,11 +14,13 @@ SENTIMENT_LABLES = {
 }
 
 
-@annotator("Sentiment annotation per token using SenSALDO", language=["swe"])
+@annotator("Sentiment annotation per token using SenSALDO", language=["swe"], config=[
+    Config("sensaldo.model", default="sensaldo/sensaldo.pickle")
+])
 def annotate(sense: Annotation = Annotation("<token>:saldo.sense"),
              out_scores: Output = Output("<token>:sensaldo.sentiment_score", description="SenSALDO sentiment score"),
              out_labels: Output = Output("<token>:sensaldo.sentiment_label", description="SenSALDO sentiment label"),
-             model: Model = Model("[sensaldo.model=sensaldo/sensaldo.pickle]"),
+             model: Model = Model("[sensaldo.model]"),
              lexicon=None):
     """Assign sentiment values to tokens based on their sense annotation.
 

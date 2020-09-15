@@ -167,11 +167,12 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             rule.parameters[param_name] = param_value
             if "{" in param_value:
                 rule.wildcard_annotations.append(param_name)
-            storage.all_annotations.setdefault(rule.module_name, {}).setdefault(rule.f_name,
-                                                                                {"description": rule.description,
-                                                                                 "annotations": []})
-            storage.all_annotations[rule.module_name][rule.f_name]["annotations"].append((param_value,
-                                                                                          param_value.description))
+            if rule.annotator:
+                storage.all_annotations.setdefault(rule.module_name, {}).setdefault(rule.f_name,
+                                                                                    {"description": rule.description,
+                                                                                     "annotations": []})
+                storage.all_annotations[rule.module_name][rule.f_name]["annotations"].append((param_value,
+                                                                                              param_value.description))
         # ModelOutput
         elif param_type == ModelOutput:
             rule.missing_config.update(param_value.expand_variables(rule.full_name))

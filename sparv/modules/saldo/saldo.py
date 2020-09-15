@@ -15,7 +15,10 @@ log = logging.getLogger(__name__)
 PRECISION_DIFF = 0.01
 
 
-@annotator("SALDO annotations", language=["swe"])
+@annotator("SALDO annotations", language=["swe"], config=[
+    Config("saldo.model", default="saldo/saldo.pickle"),
+    Config("saldo.precision", util.SCORESEP + "%.3f")
+])
 def annotate(token: Annotation = Annotation("<token>"),
              word: Annotation = Annotation("<token:word>"),
              sentence: Annotation = Annotation("<sentence>"),
@@ -24,11 +27,11 @@ def annotate(token: Annotation = Annotation("<token>"),
              out_lemgram: Output = Output("<token>:saldo.lemgram", description="SALDO lemgram"),
              out_baseform: Output = Output("<token>:saldo.baseform", cls="token:baseform",
                                            description="Baseform from SALDO"),
-             models: List[Model] = [Model("[saldo.model=saldo/saldo.pickle]")],
+             models: List[Model] = [Model("[saldo.model]")],
              msd: Optional[Annotation] = Annotation("<token:msd>"),
              delimiter: str = util.DELIM,
              affix: str = util.AFFIX,
-             precision: str = Config("saldo.precision", util.SCORESEP + "%.3f"),
+             precision: str = Config("saldo.precision"),
              precision_filter: str = "max",
              min_precision: float = 0.66,
              skip_multiword: bool = False,

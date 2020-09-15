@@ -12,6 +12,7 @@ log = logging.getLogger(__name__)
 
 @exporter("CSV export", config=[
     Config("csv_export.delimiter", default="\t"),
+    Config("csv_export.source_annotations"),
     Config("csv_export.annotations")
 ])
 def csv(doc: Document = Document(),

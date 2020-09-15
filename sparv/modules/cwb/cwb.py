@@ -15,7 +15,10 @@ from sparv.core import paths
 log = logging.getLogger(__name__)
 
 
-@exporter("VRT export")
+@exporter("VRT export", config=[
+    Config("cwb.source_annotations"),
+    Config("cwb.annotations")
+])
 def vrt(doc: Document = Document(),
         out: Export = Export("vrt/{doc}.vrt"),
         token: Annotation = Annotation("<token>"),

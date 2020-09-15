@@ -5,12 +5,14 @@ from collections import defaultdict
 from typing import Optional
 
 import sparv.util as util
-from sparv import Annotation, Model, Output, annotator
+from sparv import Annotation, Config, Model, Output, annotator
 
 log = logging.getLogger(__name__)
 
 
-@annotator("Annotate text chunks with Blingbring classes", language=["swe"])
+@annotator("Annotate text chunks with Blingbring classes", language=["swe"], config=[
+    Config("lexical_classes.bb_freq_model", default="lexical_classes/blingbring.freq.gp2008+suc3+romi.pickle")
+])
 def blingbring_text(out: Output = Output("<text>:lexical_classes.blingbring",
                                          description="Lexical classes for text chunks from Blingbring"),
                     lexical_classes_token: Annotation = Annotation("<token>:lexical_classes.blingbring"),
@@ -21,8 +23,7 @@ def blingbring_text(out: Output = Output("<text>:lexical_classes.blingbring",
                     types: bool = False,
                     delimiter: str = util.DELIM,
                     affix: str = util.AFFIX,
-                    freq_model: Model = Model(
-                        "[lexical_classes.bb_freq_model=lexical_classes/blingbring.freq.gp2008+suc3+romi.pickle]"),
+                    freq_model: Model = Model("[lexical_classes.bb_freq_model]"),
                     decimals: int = 3):
     """Annotate text chunks with Blingbring classes."""
     annotate_text(out=out, lexical_classes_token=lexical_classes_token, text=text, token=token,
@@ -30,7 +31,9 @@ def blingbring_text(out: Output = Output("<text>:lexical_classes.blingbring",
                   freq_model=freq_model, decimals=decimals)
 
 
-@annotator("Annotate text chunks with SweFN classes", language=["swe"])
+@annotator("Annotate text chunks with SweFN classes", language=["swe"], config=[
+    Config("lexical_classes.swefn_freq_model", default="lexical_classes/swefn.freq.gp2008+suc3+romi.pickle")
+])
 def swefn_text(out: Output = Output("<text>:lexical_classes.swefn",
                                     description="Lexical classes for text chunks from SweFN"),
                lexical_classes_token: Annotation = Annotation("<token>:lexical_classes.swefn"),
@@ -41,8 +44,7 @@ def swefn_text(out: Output = Output("<text>:lexical_classes.swefn",
                types: bool = False,
                delimiter: str = util.DELIM,
                affix: str = util.AFFIX,
-               freq_model: Model = Model(
-                   "[lexical_classes.swefn_freq_model=lexical_classes/swefn.freq.gp2008+suc3+romi.pickle]"),
+               freq_model: Model = Model("[lexical_classes.swefn_freq_model]"),
                decimals: int = 3):
     """Annotate text chunks with SweFN classes."""
     annotate_text(out=out, lexical_classes_token=lexical_classes_token, text=text, token=token,

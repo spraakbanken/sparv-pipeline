@@ -10,7 +10,7 @@ import xml.etree.ElementTree as etree
 from functools import reduce
 
 import sparv.util as util
-from sparv import Annotation, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv import Annotation, Config, Model, ModelOutput, Output, annotator, modelbuilder
 
 log = logging.getLogger(__name__)
 
@@ -24,7 +24,11 @@ PART_DELIM2 = "^2"
 PART_DELIM3 = "^3"
 
 
-@annotator("Compound analysis", name="compound", language=["swe"])
+@annotator("Compound analysis", name="compound", language=["swe"], config=[
+    Config("saldo.comp_model", default="saldo/saldo.compound.pickle"),
+    Config("saldo.comp_nst_model", default="saldo/nst_comp_pos.pickle"),
+    Config("saldo.comp_stats_model", default="saldo/stats.pickle")
+])
 def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
                                                description="Compound analysis using lemgrams"),
              out_compwf: Output = Output("<token>:saldo.compwf", description="Compound analysis using wordforms"),
@@ -33,9 +37,9 @@ def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
              word: Annotation = Annotation("<token:word>"),
              msd: Annotation = Annotation("<token:msd>"),
              baseform_tmp: Annotation = Annotation("<token>:saldo.baseform"),
-             saldo_comp_model: Model = Model("[saldo.comp_model=saldo/saldo.compound.pickle]"),
-             nst_model: Model = Model("[saldo.comp_nst_model=saldo/nst_comp_pos.pickle]"),
-             stats_model: Model = Model("[saldo.comp_stats_model=saldo/stats.pickle]"),
+             saldo_comp_model: Model = Model("[saldo.comp_model]"),
+             nst_model: Model = Model("[saldo.comp_nst_model]"),
+             stats_model: Model = Model("[saldo.comp_stats_model]"),
              complemgramfmt: str = util.SCORESEP + "%.3e",
              delimiter: str = util.DELIM,
              compdelim: str = util.COMPSEP,

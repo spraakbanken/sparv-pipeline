@@ -180,18 +180,19 @@ def _add_to_registry(annotator):
     f_name = annotator["function"].__name__ if not annotator["name"] else annotator["name"]
     rule_name = f"{module_name}:{f_name}"
 
+    # Skip annotators for other languages
+    if annotator["language"] and sparv_config.get("metadata.language") and sparv_config.get("metadata.language") \
+            not in annotator["language"]:
+        return
+
     # Add config variables to config
     if annotator["config"]:
-        # Only add config for relevant languages
-        if not annotator["language"] or (
-                annotator["language"] and sparv_config.get("metadata.language") in annotator["language"]):
-            for c in annotator["config"]:
-                if not c.name.startswith(module_name + "."):
-                    raise ValueError("Config option '{}' in module '{}' doesn't include module "
-                                     "name as prefix.".format(c.name, module_name))
-                sparv_config.set_default(c.name, c.default)
-                sparv_config.add_to_structure(c.name, c.default, description=c.description,
-                                              annotator=rule_name, explicit=True)
+        for c in annotator["config"]:
+            if not c.name.startswith(module_name + "."):
+                raise ValueError("Config option '{}' in module '{}' doesn't include module "
+                                 "name as prefix.".format(c.name, module_name))
+            sparv_config.set_default(c.name, c.default)
+            sparv_config.add_to_structure(c.name, c.default, description=c.description, annotator=rule_name)
 
     for param, val in inspect.signature(annotator["function"]).parameters.items():
         if isinstance(val.default, BaseOutput):
@@ -229,9 +230,9 @@ def _add_to_registry(annotator):
                 raise ValueError("Output model '{}' in module '{}' doesn't include module "
                                  "name as sub directory.".format(val.default, module_name))
         elif isinstance(val.default, Config):
-            sparv_config.add_to_structure(val.default.name, val.default.default, annotator=rule_name)
+            sparv_config.add_config_usage(val.default.name, rule_name)
         elif isinstance(val.default, (ExportAnnotations, ExportAnnotationsAllDocs)):
-            sparv_config.add_to_structure(val.default.config_name, annotator=rule_name)
+            sparv_config.add_config_usage(val.default.config_name, rule_name)
 
     annotators.setdefault(module_name, {})
     if f_name in annotators[module_name]:
@@ -269,7 +270,7 @@ def expand_variables(string, rule_name):
             break
         for cfg in cfgs:
             cfg_value = sparv_config.get(cfg.group(1), cfg.group(2))
-            sparv_config.add_to_structure(cfg.group(1), cfg.group(2), annotator=rule_name)
+            sparv_config.add_config_usage(cfg.group(1), rule_name)
             if cfg_value is not None:
                 string = string.replace(cfg.group(), cfg_value)
             else:

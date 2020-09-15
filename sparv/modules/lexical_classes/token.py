@@ -4,15 +4,17 @@ import logging
 from typing import List
 
 import sparv.util as util
-from sparv import Annotation, Model, Output, annotator
+from sparv import Annotation, Config, Model, Output, annotator
 
 log = logging.getLogger(__name__)
 
 
-@annotator("Annotate tokens with Blingbring classes", language=["swe"])
+@annotator("Annotate tokens with Blingbring classes", language=["swe"], config=[
+    Config("lexical_classes.bb_word_model", default="lexical_classes/blingbring.pickle")
+])
 def blingbring_words(out: Output = Output("<token>:lexical_classes.blingbring",
                                           description="Lexical classes for tokens from Blingbring"),
-                     model: Model = Model("[lexical_classes.bb_word_model=lexical_classes/blingbring.pickle]"),
+                     model: Model = Model("[lexical_classes.bb_word_model]"),
                      saldoids: Annotation = Annotation("<token:sense>"),
                      pos: Annotation = Annotation("<token:pos>"),
                      pos_limit: List[str] = ["NN", "VB", "JJ", "AB"],
@@ -48,10 +50,12 @@ def blingbring_words(out: Output = Output("<token>:lexical_classes.blingbring",
                    lexicon=lexicon)
 
 
-@annotator("Annotate tokens with Blingbring classes", language=["swe"])
+@annotator("Annotate tokens with Blingbring classes", language=["swe"], config=[
+    Config("lexical_classes.swefn_word_model", default="lexical_classes/swefn.pickle")
+])
 def swefn_words(out: Output = Output("<token>:lexical_classes.swefn",
                                      description="Lexical classes for tokens from SweFN"),
-                model: Model = Model("[lexical_classes.swefn_word_model=lexical_classes/swefn.pickle]"),
+                model: Model = Model("[lexical_classes.swefn_word_model]"),
                 saldoids: Annotation = Annotation("<token:sense>"),
                 pos: Annotation = Annotation("<token:pos>"),
                 pos_limit: List[str] = ["NN", "VB", "JJ", "AB"],

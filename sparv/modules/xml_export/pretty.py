@@ -98,11 +98,14 @@ def compressed(out: Export = Export("[xml_export.filename_compressed]"),
     xml_utils.compress(xmlfile, out)
 
 
-@installer("Copy compressed unscrambled XML to remote host")
+@installer("Copy compressed unscrambled XML to remote host", config=[
+    Config("xml_export.export_original_host", ""),
+    Config("xml_export.export_original_path", "")
+])
 def install_original(corpus: Corpus = Corpus(),
                      xmlfile: ExportInput = ExportInput("[xml_export.filename_compressed]"),
                      out: OutputCommonData = OutputCommonData("xml_export.time_install_export_pretty"),
-                     export_path: str = Config("xml_export.export_original_path", ""),
-                     host: str = Config("xml_export.export_original_host", "")):
+                     export_path: str = Config("xml_export.export_original_path"),
+                     host: str = Config("xml_export.export_original_host")):
     """Copy compressed combined unscrambled XML to remote host."""
     xml_utils.install_compressed_xml(corpus, xmlfile, out, export_path, host)

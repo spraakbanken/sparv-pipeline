@@ -11,11 +11,14 @@ from sparv.util.mysql_wrapper import MySQL
 log = logging.getLogger(__name__)
 
 
-@installer("Install timespan SQL on remote host")
+@installer("Install timespan SQL on remote host", config=[
+    Config("korp.mysql_dbname", ""),
+    Config("korp.remote_host", "")
+])
 def install_timespan(sqlfile: ExportInput = ExportInput("korp_timespan/timespan.sql"),
                      out: OutputCommonData = OutputCommonData("korp.time_install_timespan"),
-                     db_name: str = Config("korp.mysql_dbname", ""),
-                     host: str = Config("korp.remote_host", "")):
+                     db_name: str = Config("korp.mysql_dbname"),
+                     host: str = Config("korp.remote_host")):
     """Install timespan SQL on remote host.
 
     Args:

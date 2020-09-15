@@ -11,14 +11,16 @@ log = logging.getLogger(__name__)
 
 
 @annotator("Annotate chunks with location data, based on locations contained within the text", language=["swe"],
-           config=[Config("geo.context_chunk", default="<sentence>")])
+           config=[
+               Config("geo.context_chunk", default="<sentence>")
+           ])
 def contextual(out: Output = Output("{chunk}:geo.geo_context", description="Geographical places with coordinates"),
                chunk: Annotation = Annotation("{chunk}"),
                context: Annotation = Annotation("[geo.context_chunk]"),
                ne_type: Annotation = Annotation("swener.ne:swener.type"),
                ne_subtype: Annotation = Annotation("swener.ne:swener.subtype"),
                ne_name: Annotation = Annotation("swener.ne:swener.name"),
-               model: Model = Model("[geo.model=geo/geo.pickle]"),
+               model: Model = Model("[geo.model]"),
                method: str = "populous",
                language: list = []):
     """Annotate chunks with location data, based on locations contained within the text.
@@ -67,11 +69,13 @@ def contextual(out: Output = Output("{chunk}:geo.geo_context", description="Geog
 
 
 @annotator("Annotate chunks with location data, based on metadata containing location names", config=[
-           Config("geo.metadata_source", default="")])
+    Config("geo.metadata_source", default=""),
+    Config("geo.model", default="geo/geo.pickle")
+])
 def metadata(out: Output = Output("{chunk}:geo.geo_metadata", description="Geographical places with coordinates"),
              chunk: Annotation = Annotation("{chunk}"),
              source: Annotation = Annotation("[geo.metadata_source]"),
-             model: Model = Model("[geo.model=geo/geo.pickle]"),
+             model: Model = Model("[geo.model]"),
              method: str = "populous",
              language: list = []):
     """Get location data based on metadata containing location names."""

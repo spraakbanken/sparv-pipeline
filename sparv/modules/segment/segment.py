@@ -146,10 +146,12 @@ def download_bettertokenizer(out: ModelOutput = ModelOutput("segment/bettertoken
     out.download("https://github.com/spraakbanken/sparv-models/raw/master/segment/bettertokenizer.sv")
 
 
-@modelbuilder("Token list for BetterWordTokenizer", language=["swe"])
+@modelbuilder("Token list for BetterWordTokenizer", language=["swe"], config=[
+    Config("segment.token_wordlist_segmenter", "better_word")
+])
 def build_tokenlist(saldo_model: Model = Model("saldo/saldo.pickle"),
                     out: ModelOutput = ModelOutput("segment/bettertokenizer.sv.saldo-tokens"),
-                    segmenter: str = Config("segment.token_wordlist_segmenter", "better_word"),
+                    segmenter: str = Config("segment.token_wordlist_segmenter"),
                     model: Model = Model("segment/bettertokenizer.sv")):
     """Build a list of words from a SALDO model, to help BetterWordTokenizer."""
     segmenter_args = []
