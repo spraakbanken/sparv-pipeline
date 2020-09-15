@@ -22,7 +22,7 @@ If you have any questions, problems or suggestions please contact <sb-sparv@sven
 The Sparv pipeline can be installed using [pip](https://pip.pypa.io/en/stable/installing). We even recommend using
 [pipx](https://pipxproject.github.io/pipx/) so that you can install the `sparv` command globally:
 
-```
+```bash
 python3 -m pip install --user pipx
 python3 -m pipx ensurepath
 pipx install sparv-pipeline
@@ -30,7 +30,7 @@ pipx install sparv-pipeline
 
 Alternatively you can install Sparv from the latest release from GitHub:
 
-```
+```bash
 pipx install https://github.com/spraakbanken/sparv-pipeline/archive/latest.tar.gz
 ```
 
@@ -55,7 +55,7 @@ otherwise.
 We recommend that you set up a virtual environment and install the dependencies (including the dev dependencies) listed
 in `setup.py`:
 
-```
+```bash
 python3 -m venv venv
 source venv/bin/activate
 pip install -e .[dev]

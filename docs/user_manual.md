@@ -42,15 +42,16 @@ or newer installed on it.
 
 The Sparv pipeline can be installed using [pip](https://pip.pypa.io/en/stable/installing). We even recommend using
 [pipx](https://pipxproject.github.io/pipx/) so that you can install the `sparv` command globally:
-
-    python3 -m pip install --user pipx
-    python3 -m pipx ensurepath
-    pipx install sparv-pipeline
+```bash
+python3 -m pip install --user pipx
+python3 -m pipx ensurepath
+pipx install sparv-pipeline
+```
 
 Alternatively you can install Sparv from the latest release from GitHub:
-
-    pipx install https://github.com/spraakbanken/sparv-pipeline/archive/latest.tar.gz
-
+```bash
+pipx install https://github.com/spraakbanken/sparv-pipeline/archive/latest.tar.gz
+```
 
 ## Setting up Sparv
 To check if your installation of Sparv was successful you can type `sparv` on your command line. The Sparv help should
@@ -90,9 +91,9 @@ Installation is done by unpacking and then adding the executables to your path
 directory](#datadir) under `bin/hunpos`.
 
 If you are running a 64-bit OS, you might also have to install 32-bit compatibility libraries if Hunpos won't run:
-
-    sudo apt install ia32-libs
-
+```bash
+sudo apt install ia32-libs
+```
 On Arch Linux, activate the `multilib` repository and install `lib32-gcc-libs`. If that doesn't work, you might have to
 compile Hunpos from source.
 
@@ -133,13 +134,14 @@ The current version of hfst-SweNER expects to be run in a Python 2 environment w
 Python 3. Before installing hfst-SweNER you need make sure that it will be run with the correct version of Python by
 replacing `python` with `python2` in all the Python scripts in the `hfst-swener-0.9.3/scripts` directory. The first line
 in every script will then look like this:
-
-    #! /usr/bin/env python2
-
+```python
+#! /usr/bin/env python2
+```
 On Unix systems this can be done by running the following command from whithin the `hfst-swener-0.9.3/scripts`
 directory:
-
-    sed -i 's:#! \/usr/bin/env python:#! /usr/bin/env python2:g' *.py
+```bash
+sed -i 's:#! \/usr/bin/env python:#! /usr/bin/env python2:g' *.py
+```
 
 After applying these changes please follow the installation instructions provided by hfst-SweNER.
 
@@ -155,9 +157,10 @@ Refer to the INSTALL text file for instructions on how to build and install on y
 for storing the corpora, one for the data, and one for the corpus registry. You will have to create these directories
 and you will have to set the environment variables `CWB_DATADIR` and `CORPUS_REGISTRY` and point them to the directories
 you created. For example:
-
-    export CWB_DATADIR=~/cwb/data;
-    export CORPUS_REGISTRY=~/cwb/registry;
+```bash
+export CWB_DATADIR=~/cwb/data;
+export CORPUS_REGISTRY=~/cwb/registry;
+```
 
 ### Software for Analysing other Languages
 Sparv can use different third-party software for analyzing corpora in other languages than Swedish.
@@ -260,26 +263,27 @@ structure could look like this:
 When trying out Sparv for the first time we recommend that you download and test run some of the [example corpora][3].
 
 When running `sparv` (or `sparv -h`) the available sparv commands will be listed:
+```
+Annotating a corpus:
+    run              Annotate a corpus and generate export files
+    install          Annotate and install a corpus on remote server
+    clean            Remove output directories
 
-    Annotating a corpus:
-        run              Annotate a corpus and generate export files
-        install          Annotate and install a corpus on remote server
-        clean            Remove output directories
-    
-    Inspecting corpus details:
-        config           Display the corpus config
-        files            List available corpus documents (input for Sparv)
-    
-    Setting up the Sparv pipeline:
-        setup            Set up the Sparv data directory
-        build-models     Download and build the Sparv models
-    
-    Advanced commands:
-        run-rule         Run specified rule(s) for creating annotations
-        create-file      Create specified file(s)
-        run-module       Run annotator module independently
-        annotations      List available modules, annotations, and classes
-        presets          List available annotation presets
+Inspecting corpus details:
+    config           Display the corpus config
+    files            List available corpus documents (input for Sparv)
+
+Setting up the Sparv pipeline:
+    setup            Set up the Sparv data directory
+    build-models     Download and build the Sparv models
+
+Advanced commands:
+    run-rule         Run specified rule(s) for creating annotations
+    create-file      Create specified file(s)
+    run-module       Run annotator module independently
+    annotations      List available modules, annotations, and classes
+    presets          List available annotation presets
+```
 
 Every command in the Sparv command line interface (CLI) has a help text which can be accessed with the `-h` flag. Below
 we will give an overview for the most important commands in Sparv. 
@@ -318,18 +322,21 @@ Sparv](#setting-up-sparv).
 the specified file. Multiple arguments can be supplied.
 
 Example running the part-of-speech annotation for all input files:
-
-    sparv run-rule hunpos:postag
+```bash
+sparv run-rule hunpos:postag
+```
 
 Example creating the part-of-speech annotation for the input file `document1`:
-
-    sparv create-file annotations/dokument1/segment.token/hunpos.pos
+```bash
+sparv create-file annotations/dokument1/segment.token/hunpos.pos
+```
 
 **`sparv run-module`:** Run an annotator module independently (mostly for debugging). You must supply the module and the
 function you want to run and all the mandatory arguments. E.g. to run the hunpos msd tagging module on the input file
 called `document1` you could use the following command:
-
-    sparv run-module hunpos msdtag --out segment.token:hunpos.msd --word segment.token:misc.word --sentence segment.sentence --binary hunpos-tag --model hunpos/suc3_suc-tags_default-setting_utf8.model --morphtable hunpos/saldo_suc-tags.morphtable --patterns hunpos/suc.patterns --doc dokument1
+```bash
+sparv run-module hunpos msdtag --out segment.token:hunpos.msd --word segment.token:misc.word --sentence segment.sentence --binary hunpos-tag --model hunpos/suc3_suc-tags_default-setting_utf8.model --morphtable hunpos/saldo_suc-tags.morphtable --patterns hunpos/suc.patterns --doc dokument1
+```
 
 **`sparv annotations`:** List all available modules, annotations, and classes.
 
@@ -347,19 +354,21 @@ A minimal config file contains a corpus ID, information about which XML element 
 (**TODO**: what if the input is not XML?) and a list of (automatic) annotations you want to be included in the output
 (or multiple such lists if you want to produce multiple output formats). Here is an example of a small config file:
 
-    metadata:
-        # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
-        id: mini-swe
-    import:
-        # The element representing one text document. Text-level annotations will be made on this element.
-        document_element: text
-    xml_export:
-        # Automatic annotations to be included in the export
-        annotations:
-            - <sentence>:misc.id
-            - <token>:saldo.baseform
-            - <token>:hunpos.pos
-            - <token>:sensaldo.sentiment_label
+```yaml
+metadata:
+    # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
+    id: mini-swe
+import:
+    # The element representing one text document. Text-level annotations will be made on this element.
+    document_element: text
+xml_export:
+    # Automatic annotations to be included in the export
+    annotations:
+        - <sentence>:misc.id
+        - <token>:saldo.baseform
+        - <token>:hunpos.pos
+        - <token>:sensaldo.sentiment_label
+```
 
 When running Sparv your corpus config will be read and combined with Sparv's default config file and the default values
 defined by different Sparv modules. You can view the resulting configuration by running `sparv config`. Using the
@@ -397,20 +406,24 @@ corpus. A config file that was created with the wizard can of course be edited m
 When telling Sparv which automatic annotations should be included in a speficic output format you usually list them like
 this:
 
-    xml_export:
-        annotations:
-            - <token>:saldo.baseform
-            - <token>:saldo.lemgram
-            - <token>:wsd.sense
-            - <token>:saldo.compwf
-            - <token>:saldo.complemgram
+```yaml
+xml_export:
+    annotations:
+        - <token>:saldo.baseform
+        - <token>:saldo.lemgram
+        - <token>:wsd.sense
+        - <token>:saldo.compwf
+        - <token>:saldo.complemgram
+```
 
 If you want to process many corpora and produce the same annotations for them it can be tedious to include the same
 annotations list in every corpus config. Instead you can use annotation presets for a more compact representation:
 
-    xml_export:
-        annotations:
-            - SWE_DEFAULT.saldo
+```yaml
+xml_export:
+    annotations:
+        - SWE_DEFAULT.saldo
+```
 
 Here `SWE_DEFAULT.saldo` will expand to all the SALDO annotations. You can mix presets with annotations and you can
 combine different presets with each other. You can find the presets in the [Sparv data directory](#datadir) (in the
@@ -439,32 +452,36 @@ are defined in the `custom_annotations` section in your corpus config. First you
 (`annotator`) and function you want to use and then you list the parameter names (`params`) and their values. In this
 example we are using the word annotation as input and adding the string "|" as prefix and suffix.
 
-    custom_annotations:
-        - annotator: misc:affix
-          params:
-              out: <token>:misc.word.affixed
-              chunk: <token:word>
-              prefix: "|"
-              suffix: "|"
+```yaml
+custom_annotations:
+    - annotator: misc:affix
+        params:
+            out: <token>:misc.word.affixed
+            chunk: <token:word>
+            prefix: "|"
+            suffix: "|"
+```
 
 In order to use this annotation you need to add `<token>:misc.word.affixed` to an annotations list in your corpus config
 (e.g. `xml_export.annotations`). This example is applied in the standard-swe example corpus.
 
 You can use the same custom annotation function multiple times as long as you name the outputs differently:
 
-    custom_annotations:
-        - annotator: misc:affix
-          params:
-              out: <token>:misc.word.affixed
-              chunk: <token:word>
-              prefix: "|"
-              suffix: "|"
-        - annotator: misc:affix
-          params:
-              out: <token>:misc.word.affixed2
-              chunk: <token:word>
-              prefix: "+"
-              suffix: "+"
+```yaml
+custom_annotations:
+    - annotator: misc:affix
+        params:
+            out: <token>:misc.word.affixed
+            chunk: <token:word>
+            prefix: "|"
+            suffix: "|"
+    - annotator: misc:affix
+        params:
+            out: <token>:misc.word.affixed2
+            chunk: <token:word>
+            prefix: "+"
+            suffix: "+"
+```
 
 **Hint:** When using a regular expression as input for a custom rule (e.g. in `misc:find_replace_regex`), the expression
 must be surrounded by single quotation marks. Regular expressions inside double quotation marks in YAML are not parsed
@@ -478,11 +495,13 @@ above. You only need to specify the parameters you want to modify. In the exampl
 `hunpos:msdtag` function with a custom model and we are calling the output annotation
 `<token>:hunpos.msd.myHunposModel`:
 
-    custom_annotations:
-        - annotator: hunpos:msdtag
-          params:
-              out: <token>:hunpos.msd.myHunposModel
-              model: path/to/myHunposModel
+```yaml
+custom_annotations:
+    - annotator: hunpos:msdtag
+        params:
+            out: <token>:hunpos.msd.myHunposModel
+            model: path/to/myHunposModel
+```
 
 ### User-defined Custom Annotations
 User-defined custom annotations are useful when you want to write your own python annotation function and plug it into
@@ -491,26 +510,32 @@ declared in the `custom_annotations` section of your corpus config. Place your p
 and Sparv will be able to find it. There is an example of a user-defined custom annotation in the standard-swe example
 corpus. The code for a simple annotator that converts all tokens to upper case looks like this:
 
-    from sparv import Annotation, Output, annotator
+```python
+from sparv import Annotation, Output, annotator
 
-    @annotator("Convert every word to uppercase.")
-    def uppercase(word: Annotation = Annotation("<token:word>"),
-                  out: Output = Output("<token>:custom.convert.upper")):
-        """Convert to uppercase."""
-        out.write([val.upper() for val in word.read()])
+@annotator("Convert every word to uppercase.")
+def uppercase(word: Annotation = Annotation("<token:word>"),
+              out: Output = Output("<token>:custom.convert.upper")):
+    """Convert to uppercase."""
+    out.write([val.upper() for val in word.read()])
+```
 
 The custom rule is then declared in your corpus config using the prefix `custom` before the annotator name:
 
-    custom_annotations:
-        - annotator: custom.convert:uppercase
+```yaml
+custom_annotations:
+    - annotator: custom.convert:uppercase
+```
 
 In this example all parameters in the annotator function have default values which means that you do not need to supply
 any parameter values in your config. But of course you can override the default values:
 
-    custom_annotations:
-        - annotator: custom.convert:uppercase
-          params:
-              out: <token>:custom.convert.myUppercaseAnnotation
+```yaml
+custom_annotations:
+    - annotator: custom.convert:uppercase
+        params:
+            out: <token>:custom.convert.myUppercaseAnnotation
+```
 
 Now you can add the annotation name given by the `out` parameter value to an annotations list in your corpus config
 (e.g. `xml_export.annotations`). Please note that when using custom annotations from your own code all output

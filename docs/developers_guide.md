@@ -1,5 +1,5 @@
 
-# Writing a Sparv module
+# Writing Sparv modules
 - Explain the most important classes and util functions
 - List annotators (decorators), their options and what they are used for
 - When should you use the SparvError class?
@@ -32,7 +32,9 @@ In the above example the `freeling` folder is basically a Sparv module. The `set
 as a plugin. If the `setup.py` is constructed correctly, the plugin code can then be injected into the Sparv pipeline
 code using pipx:
 
-    pipx inject sparv-pipeline ./sparv-freeling
+```bash
+pipx inject sparv-pipeline ./sparv-freeling
+```
 
 Now the plugin functionality should be available and it should be treated just like any other module within the Sparv
 pipeline.
