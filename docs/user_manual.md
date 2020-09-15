@@ -4,7 +4,7 @@
 - [Installation and Setup](#installation-and-setup)
   * [Installing Sparv](#installing-sparv)
   * [Setting up Sparv](#setting-up-sparv)
-  * [Installing additional Third-party Software](#installing-additional-third-party-software)
+  * [Installing Additional Third-party Software](#installing-additional-third-party-software)
     + [Hunpos](#hunpos)
     + [MaltParser](#maltparser)
     + [Sparv wsd](#sparv-wsd)
@@ -42,7 +42,7 @@ The Sparv pipeline can be installed using [pip](https://pip.pypa.io/en/stable/in
 
     python3 -m pip install --user pipx
     python3 -m pipx ensurepath
-    pipx install --user sparv-pipeline
+    pipx install sparv-pipeline
 
 Alternatively you can install Sparv from the latest release from GitHub:
 
@@ -65,7 +65,7 @@ should be built for (otherwise the language of the corpus config is chosen autom
 three-letter code with the `--language` flag (check [this table](#language_table) for available languages and their
 codes). For example, if you would like to build all the Swedish models you can run `sparv build-models --language swe`.
 
-## Installing additional Third-party Software
+## Installing Additional Third-party Software
 The Sparv Pipeline is typically used together with several plugins and third-party software. Which of these you will
 need to install depends on what analyses you want to run with Sparv. Please note that different licenses may apply for
 different software.
@@ -156,7 +156,7 @@ you created. For example:
     export CWB_DATADIR=~/cwb/data;
     export CORPUS_REGISTRY=~/cwb/registry;
 
-### Software for analysing other languages
+### Software for Analysing other Languages
 Sparv can use different third-party software for analyzing corpora in other languages than Swedish.
 
 <a name="language_table"></a>The following is a list over the languages currently supported by the corpus pipeline,
@@ -303,7 +303,7 @@ run -h`:
                             Set log level for logging to file (default: 'warning')
     --debug               Show debug messages
 
-## Annotating a corpus
+## Annotating a Corpus
 From inside a corpus directory with a config file you can annotate the corpus using `sparv run`. This will start the
 annotation process and produce all the output formats (or exports) listed under `export.default` in your config. You can
 also tell Sparv explicitely what output format to generate, e.g. `sparv run csv_export:csv`. Type `sparv run -l` to
@@ -322,16 +322,16 @@ to save disk space or because you want to rerun all annotations from scratch) yo
 The export directory and log files can also be removed with the `clean` command. Check out the available options to
 learn more.
 
-## Inspecting corpus details
+## Inspecting Corpus Details
 The configuration for your corpus can be inspected with `sparv config`. You can read more about this in the [section
 about corpus configuration](#corpus-configuration).
 
 By using the command `sparv files` you can list all available input documents belonging to your corpus.
 
-## Setting up the Sparv pipeline
+## Setting up the Sparv Pipeline
 The commands `sparv setup` and `build-models` are explained in the section [Setting up Sparv](#setting-up-sparv).
 
-## Advanced commands
+## Advanced Commands
 **TODO**
 <!-- run-rule         Run specified rule(s) for creating annotations -->
 <!-- create-file      Create specified file(s) -->
@@ -394,7 +394,7 @@ corpus. A config file that was created with the wizard can of course be edited m
 
 **TODO**
 
-## Annotation presets
+## Annotation Presets
 When telling Sparv which automatic annotations should be included in a speficic output format you usually list them like
 this:
 
@@ -428,6 +428,8 @@ override these in your config files if you know what you are doing.
 **TODO**
 - How do custom rules work?
 - Använd enkelfnuttar för regex-strängar i YAML!
+- How to re-use existing annotation modules with custom parameters (e.g. models) by using custom rules.
+
 
 # MISC
 **TODO**
@@ -439,4 +441,4 @@ override these in your config files if you know what you are doing.
 <!-- Links -->
 [1]: https://spraakbanken.gu.se/
 [2]: http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
-[3]: ??? (TODO: add link to test corpora)
+[3]: https://github.com/spraakbanken/sparv-pipeline/releases/download/v4.0/example_corpora.zip

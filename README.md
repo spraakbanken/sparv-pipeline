@@ -25,7 +25,7 @@ The Sparv pipeline can be installed using [pip](https://pip.pypa.io/en/stable/in
 ```
 python3 -m pip install --user pipx
 python3 -m pipx ensurepath
-pipx install --user sparv-pipeline
+pipx install sparv-pipeline
 ```
 
 Alternatively you can install Sparv from the latest release from GitHub:

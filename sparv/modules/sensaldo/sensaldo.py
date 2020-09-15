@@ -23,7 +23,6 @@ def annotate(sense: Annotation = Annotation("<token>:saldo.sense"),
     """Assign sentiment values to tokens based on their sense annotation.
 
     When more than one sense is possible, calulate a weighted mean.
-    - doc: the corpus document.
     - sense: existing annotation with saldoIDs.
     - out_scores, out_labels: resulting annotation file.
     - model: pickled lexicon with saldoIDs as keys.
