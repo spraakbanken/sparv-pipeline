@@ -36,6 +36,7 @@ config_structure = {
     },
     "export": {
         "default": {"_source": "core"},
+        "word": {"_source": "core"},
         "remove_module_namespaces": {"_source": "core"},
         "sparv_namespace": {"_source": "core"},
         "source_namespace": {"_source": "core"},

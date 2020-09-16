@@ -43,12 +43,9 @@ def preserved_format(doc: Document = Document(),
             in the export. If not specified, all headers will be kept.
         remove_namespaces: Whether to remove module "namespaces" from element and attribute names.
             Disabled by default.
+        sparv_namespace: The namespace to be added to all Sparv annotations.
+        source_namespace: The namespace to be added to all annotations present in the source.
         include_empty_attributes: Whether to include attributes even when they are empty. Disabled by default.
-
-    - doc: name of the original document
-    - annotations: list of elements:attributes (annotations) to include.
-    - source_annotations: list of elements:attributes from the original document
-      to be kept. If not specified, everything will be kept.
     """
     # Create export dir
     os.makedirs(os.path.dirname(out), exist_ok=True)

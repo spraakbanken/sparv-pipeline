@@ -140,6 +140,14 @@ def affix(chunk: Annotation,
     out.write([(prefix + val + suffix) for val in chunk.read()])
 
 
+@annotator("Replace every character in an annotation with an anonymous character")
+def anonymise(chunk: Annotation,
+              out: Output,
+              anonym_char: Optional[str] = "*"):
+    """Replace every character in an annotation with an anonymous character (* per default)."""
+    out.write([(anonym_char * len(val)) for val in chunk.read()])
+
+
 @annotator("Find and replace whole annotation")
 def replace(chunk: Annotation,
             out: Output,
