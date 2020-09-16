@@ -73,10 +73,12 @@ class BaseAnnotation(Base):
         """Return True if the annotation has an attribute."""
         return corpus.ELEM_ATTR_DELIM in self.name
 
+    @property
     def annotation_name(self) -> str:
         """Get annotation name (excluding name of any attribute)."""
         return self.split()[0]
 
+    @property
     def attribute_name(self) -> Optional[str]:
         """Get attribute name (excluding name of annotation)."""
         return self.split()[1] or None

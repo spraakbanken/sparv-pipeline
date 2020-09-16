@@ -313,8 +313,8 @@ def get_annotation_names(annotations: Union[ExportAnnotations, ExportAnnotations
 
     if token_name:
         # Get the names of all token attributes
-        token_attributes = [a[0].attribute_name() for a in all_annotations
-                            if a[0].annotation_name() == token_name and a[0].name != token_name]
+        token_attributes = [a[0].attribute_name for a in all_annotations
+                            if a[0].annotation_name == token_name and a[0].name != token_name]
     else:
         token_attributes = []
 
@@ -376,11 +376,10 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
                 segment.token -> token
                 segment.token:saldo.baseform -> segment.token:baseform
             """
-            annotation_name, attribute = annotation.split()
-            if attribute:
-                short = corpus.join_annotation(annotation_name, attribute.split(".")[-1])
+            if annotation.attribute_name:
+                short = corpus.join_annotation(annotation.annotation_name, annotation.attribute_name.split(".")[-1])
             else:
-                short = corpus.join_annotation(annotation_name.split(".")[-1], None)
+                short = corpus.join_annotation(annotation.annotation_name.split(".")[-1], None)
             return short
 
         # Create short names dictionary and count
@@ -396,7 +395,7 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
             if new_name:
                 if ":" in name:
                     # Combine new attribute name with base annotation name
-                    short_name = corpus.join_annotation(annotation.annotation_name(), new_name)
+                    short_name = corpus.join_annotation(annotation.annotation_name, new_name)
                 else:
                     short_name = new_name
             short_names_count[short_name] += 1
@@ -411,13 +410,12 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
                 if "." in name and short_names_count[shorten(annotation)] == 1:
                     new_name = short_names[name]
                 else:
-                    base, attr = annotation.split()
-                    new_name = attr or base
+                    new_name = annotation.attribute_name or annotation.annotation_name
 
             if keep_struct_names:
                 # Keep annotation base name (the part before ":") if this is not a token attribute
                 if ":" in name and not name.startswith(token_name):
-                    base_name = annotation.annotation_name()
+                    base_name = annotation.annotation_name
                     new_name = corpus.join_annotation(export_names.get(base_name, base_name), new_name)
             export_names[name] = new_name
     else:
@@ -426,14 +424,13 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
             for annotation, new_name in sorted(annotations):
                 name = annotation.name
                 if not new_name:
-                    base, attr = annotation.split()
-                    new_name = attr or base
+                    new_name = annotation.attribute_name or annotation.annotation_name
                 if ":" in name and not name.startswith(token_name):
-                    base_name = annotation.annotation_name()
+                    base_name = annotation.annotation_name
                     new_name = corpus.join_annotation(export_names.get(base_name, base_name), new_name)
                 export_names[name] = new_name
         else:
-            export_names = {annotation.name: (new_name if new_name else annotation.attribute_name() or annotation.name)
+            export_names = {annotation.name: (new_name if new_name else annotation.attribute_name or annotation.name)
                             for annotation, new_name in annotations}
 
     export_names = _add_global_namespaces(export_names, annotations, source_annotations, sparv_namespace,
@@ -477,7 +474,7 @@ def _check_name_collision(export_names, source_annotations):
     for attr, values in possible_collisions.items():
         attr_dict = defaultdict(list)
         for v in values:
-            attr_dict[v.annotation_name()].append(v)
+            attr_dict[v.annotation_name].append(v)
         attr_collisions = {k: v for k, v in attr_dict.items() if len(v) > 1}
         for _elem, annots in attr_collisions.items():
             # If there are two colliding attributes and one is an automatic one, prefix it with SPARV_DEFAULT_NAMESPACE

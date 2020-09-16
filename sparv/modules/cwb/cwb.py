@@ -195,7 +195,7 @@ def cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, o
 
     # Get VRT structs
     struct_annotations = [cwb_escape(export_names.get(a.name, a.name)) for a in annotation_list if
-                          not a.annotation_name() == token_name]
+                          not a.annotation_name == token_name]
     structs = parse_structural_attributes(struct_annotations)
 
     corpus_registry = os.path.join(registry, corpus)
