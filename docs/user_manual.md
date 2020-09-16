@@ -22,7 +22,10 @@
   * [Advanced Commands](#advanced-commands)
 - [Corpus Configuration](#corpus-configuration)
   * [Corpus Config Wizard](#corpus-config-wizard)
+  * [Default Values](#default-values)
+  * [Annotation Classes](#annotation-classes)
   * [Annotation Presets](#annotation-presets)
+  * [Import and Export Options](#import-and-export-options)
   * [Headers](#headers)
   * [Custom Annotations](#custom-annotations)
     + [Built-in Custom Annotations](#built-in-custom-annotations)
@@ -370,11 +373,49 @@ xml_export:
         - <token>:sensaldo.sentiment_label
 ```
 
-When running Sparv your corpus config will be read and combined with Sparv's default config file and the default values
-defined by different Sparv modules. You can view the resulting configuration by running `sparv config`. Using the
-`config` command you can also ask for specific config values, e.g. `sparv config metadata.id`. All default values can be
-overridden in your own corpus config. You can find the default config file in the [Sparv data directory](#datadir)
-(`config_default.yaml`).
+**Hint:** If you want to produce multiple output formats with the same annotations you can use YAML anchors. So instead
+of writing:
+```yaml
+xml_export:
+    annotations:
+        - <sentence>:misc.id
+        - <token>:saldo.baseform
+        - <token>:hunpos.pos
+        - <token>:sensaldo.sentiment_label
+csv_export:
+    annotations:
+        - <sentence>:misc.id
+        - <token>:saldo.baseform
+        - <token>:hunpos.pos
+        - <token>:sensaldo.sentiment_label
+```
+you may use this short form:
+```yaml
+xml_export: &xmlannotations
+    annotations:
+        - <sentence>:misc.id
+        - <token>:saldo.baseform
+        - <token>:hunpos.pos
+        - <token>:sensaldo.sentiment_label
+csv_export: *xmlannotations
+```
+
+## Corpus Config Wizard
+The corpus config wizard is a tool designed to help you create a corpus config file by asking questions about your
+corpus. A config file that was created with the wizard can of course be edited manually afterwards.
+
+**TODO**
+
+## Default Values
+Some config variables such as `metadata`, `classes`, `import`, `export` and `custom_annotations` are general and are
+used by multiple Sparv modules, while others are specific to one particular annotation module (e.g. `hunpos.binary`
+defines the name of the binary the hunpos module uses to run part-of-speech tagging). These module specific config
+options usually have default values which are defined by the module itself.
+
+When running Sparv your corpus config will be read and combined with Sparv's default config file (`config_default.yaml`
+in the [Sparv data directory](#datadir)) and the default values defined by different Sparv modules. You can view the
+resulting configuration by running `sparv config`. Using the `config` command you can also ask for specific config
+values, e.g. `sparv config metadata.id`. All default values can be overridden in your own corpus config.
 
 There are a couple of config options that must be set (either through the default config or the corpus config):
   - `metadata.id`
@@ -386,26 +427,40 @@ There are a couple of config options that must be set (either through the defaul
   - `[export module].annotations`
   - **TODO** What more?
 
-
-**TODO** Om man listar element i `original_annotations` måste man också lägga in ett rot-element för varje dokument
-(element that encloses all other included elements and text content)
-
-**TODO** Förklara klasser (t.ex. `<token>`)
-
-**TODO** Förklara anchors
-
-**TODO** Här kan man skriva hur mycket som helst om olika config-inställningar. Hur mycket behöver vi förklara?
-
-## Corpus Config Wizard
-The corpus config wizard is a tool designed to help you create a corpus config file by asking questions about your
-corpus. A config file that was created with the wizard can of course be edited manually afterwards.
-
-**TODO**
+## Annotation Classes
+The `classes` config variable defines the annotation classes for your corpus. Annotation classes are used to create
+abstract instances for common annotations such as tokens, sentences and text units. They simplify dependencies between
+annotation modules and increase the flexibility of the annotation pipeline. Many annotations modules (such as
+part-of-speech taggers and dependency parsers) need tokenised text as input but they might not care about what tokeniser
+is being used. So instead of telling the part-of-speech tagger and the dependency parser that it needs input from a
+specific module we can tell it to take the class `<token>` as input. So when setting `classes.token` to `segment.token`
+we tell Sparv that tokens will be produced by the segment module. This way we can ask Sparv to perform part-of-speech
+tagging and it will figure out automatically that tokenisation needs to be done first and that this is done with the
+segment module. Classes may also be used in your export annotation lists. If you want to include part-of-speech tags
+from hunpos you would include `segment.token:hunpos.pos` in the annotations, meaning that you want to have pos tags from
+hunpos as attributes to the tokens prodcued by the segment module. Here is an example:
+```yaml
+xml_export:
+    annotations:
+        - segment.token:hunpos.pos
+        - segment.token:malt.deprel
+        - segment.token:malt.dephead_ref
+```
+The disadvantage of this notation is that when you decide to exchange your token segmenter for a different one called
+`my_new_segmenter` you would have to change all occurences of `segment.token` in your config to
+`my_new_segmenter.token`. Instead of doing that you can just re-define your token class by setting `classes.token` to
+`my_new_segmenter.token` and write your annotations list as follows:
+```yaml
+xml_export:
+    annotations:
+        - <token>:hunpos.pos
+        - <token>:malt.deprel
+        - <token>:malt.dephead_ref
+```
 
 ## Annotation Presets
 When telling Sparv which automatic annotations should be included in a speficic output format you usually list them like
 this:
-
 ```yaml
 xml_export:
     annotations:
@@ -418,7 +473,6 @@ xml_export:
 
 If you want to process many corpora and produce the same annotations for them it can be tedious to include the same
 annotations list in every corpus config. Instead you can use annotation presets for a more compact representation:
-
 ```yaml
 xml_export:
     annotations:
@@ -433,8 +487,22 @@ for your corpus (and which annotations they include) with `sparv presets`.
 Preset files may define their own `class` default values. These will be set automatically when using a preset. You can
 override these in your config files if you know what you are doing.
 
+## Import and Export Options
+With the config option `export.source_annotations` you can tell Sparv what elements and attributes present in your
+indata you would like to keep in your output data (this only applies if your input data is XML). If you don't specify
+anything, everything will be kept in the output. If you do list anything here, make sure that you include the root
+element (i.e. the element that encloses all other included elements and text content) for your input files. If you
+don't, the resulting output XML will be invalid and Sparv won't be able to produce XML files. If you only want to
+produce other output formats than XML you don't need to worry about this.
+
+**TODO** Vad mer behöver förklaras här?
+
 ## Headers
-**TODO**
+Sometimes corpus metadata can be stored in XML headers rather than in attributes belonging to text-enclosing elements.
+Sparv can extract information from headers and store as annotations. These can then be used as input for different
+analyses. Information from headers can be exported as attributes if you choose to.
+
+**TODO** Give example. How to write config?
 
 ## Custom Annotations
 Custom annotations may be used to apply more customised, non-pre-defined annotations to your corpus. The different
@@ -451,36 +519,34 @@ you want to use as input (the chunk), and 3. the string that you want to use as 
 are defined in the `custom_annotations` section in your corpus config. First you specify the annotator module
 (`annotator`) and function you want to use and then you list the parameter names (`params`) and their values. In this
 example we are using the word annotation as input and adding the string "|" as prefix and suffix.
-
 ```yaml
 custom_annotations:
     - annotator: misc:affix
-        params:
-            out: <token>:misc.word.affixed
-            chunk: <token:word>
-            prefix: "|"
-            suffix: "|"
+      params:
+          out: <token>:misc.word.affixed
+          chunk: <token:word>
+          prefix: "|"
+          suffix: "|"
 ```
 
 In order to use this annotation you need to add `<token>:misc.word.affixed` to an annotations list in your corpus config
 (e.g. `xml_export.annotations`). This example is applied in the standard-swe example corpus.
 
 You can use the same custom annotation function multiple times as long as you name the outputs differently:
-
 ```yaml
 custom_annotations:
     - annotator: misc:affix
-        params:
-            out: <token>:misc.word.affixed
-            chunk: <token:word>
-            prefix: "|"
-            suffix: "|"
+      params:
+          out: <token>:misc.word.affixed
+          chunk: <token:word>
+          prefix: "|"
+          suffix: "|"
     - annotator: misc:affix
-        params:
-            out: <token>:misc.word.affixed2
-            chunk: <token:word>
-            prefix: "+"
-            suffix: "+"
+      params:
+          out: <token>:misc.word.affixed2
+          chunk: <token:word>
+          prefix: "+"
+          suffix: "+"
 ```
 
 **Hint:** When using a regular expression as input for a custom rule (e.g. in `misc:find_replace_regex`), the expression
@@ -494,13 +560,12 @@ annotator and its parameters in the `custom_annotations` section of your corpus 
 above. You only need to specify the parameters you want to modify. In the example below we are re-using the
 `hunpos:msdtag` function with a custom model and we are calling the output annotation
 `<token>:hunpos.msd.myHunposModel`:
-
 ```yaml
 custom_annotations:
     - annotator: hunpos:msdtag
-        params:
-            out: <token>:hunpos.msd.myHunposModel
-            model: path/to/myHunposModel
+      params:
+          out: <token>:hunpos.msd.myHunposModel
+          model: path/to/myHunposModel
 ```
 
 ### User-defined Custom Annotations
@@ -521,7 +586,6 @@ def uppercase(word: Annotation = Annotation("<token:word>"),
 ```
 
 The custom rule is then declared in your corpus config using the prefix `custom` before the annotator name:
-
 ```yaml
 custom_annotations:
     - annotator: custom.convert:uppercase
@@ -529,12 +593,11 @@ custom_annotations:
 
 In this example all parameters in the annotator function have default values which means that you do not need to supply
 any parameter values in your config. But of course you can override the default values:
-
 ```yaml
 custom_annotations:
     - annotator: custom.convert:uppercase
-        params:
-            out: <token>:custom.convert.myUppercaseAnnotation
+      params:
+          out: <token>:custom.convert.myUppercaseAnnotation
 ```
 
 Now you can add the annotation name given by the `out` parameter value to an annotations list in your corpus config

@@ -34,13 +34,18 @@ Alternatively you can install Sparv from the latest release from GitHub:
 pipx install https://github.com/spraakbanken/sparv-pipeline/archive/latest.tar.gz
 ```
 
-Now you should be ready to run the Sparv pipeline! Try it by typing `sparv --help`.
+Now you should be ready to run the Sparv command! Try it by typing `sparv --help`.
 
-### Installation of additional software
+The Sparv Pipeline can be used together with several plugins and third-party software. Please check the [Sparv user
+manual](https://spraakbanken.gu.se/en/tools/sparv/pipeline/installation) for more details!
 
-The Sparv Pipeline can be used together with several plugins and third-party software. Please check the Sparv user
-manual on [Språkbanken's homepage](https://spraakbanken.gu.se/en/tools/sparv/pipeline/installation) for more details!
+## Roadmap
 
+* Support for Swedish historic texts
+* Export of corpus metadata to META-SHARE format
+* Support for parallel corpora
+* Preprocessing of indata with automatic chunking
+* Export to CoNNL-U format
 
 ## Running tests
 
