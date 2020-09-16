@@ -23,8 +23,8 @@ def scrambled(doc: Document = Document(),
               annotations: ExportAnnotations = ExportAnnotations("xml_export.annotations"),
               source_annotations: Optional[list] = Config("xml_export.source_annotations"),
               remove_namespaces: bool = Config("export.remove_module_namespaces", False),
-              sparv_namespace: str = Config("export.sparv_namespace", None),
-              source_namespace: str = Config("export.source_namespace", None),
+              sparv_namespace: str = Config("export.sparv_namespace"),
+              source_namespace: str = Config("export.source_namespace"),
               include_empty_attributes: bool = Config("xml_export.include_empty_attributes")):
     """Export annotations to scrambled XML."""
     # Get annotation spans, annotations list etc.
@@ -77,8 +77,8 @@ def compressed_scrambled(out: Export = Export("[metadata.id]_scrambled.xml.bz2")
 
 
 @installer("Copy compressed scrambled XML to remote host", config=[
-    Config("xml_export.export_host", ""),
-    Config("xml_export.export_path", "")
+    Config("xml_export.export_host", "", description="Remote host to copy scrambled XML export to"),
+    Config("xml_export.export_path", "", description="Path on remote host to copy scrambled XML export to")
 ])
 def install_scrambled(corpus: Corpus = Corpus(),
                       xmlfile: ExportInput = ExportInput("[metadata.id]_scrambled.xml"),

@@ -12,8 +12,8 @@ log = logging.getLogger(__name__)
 
 
 @installer("Install timespan SQL on remote host", config=[
-    Config("korp.mysql_dbname", ""),
-    Config("korp.remote_host", "")
+    Config("korp.mysql_dbname", "", description="Name of database where Korp data will be stored"),
+    Config("korp.remote_host", "", description="Remote host to install to")
 ])
 def install_timespan(sqlfile: ExportInput = ExportInput("korp_timespan/timespan.sql"),
                      out: OutputCommonData = OutputCommonData("korp.time_install_timespan"),
@@ -39,7 +39,7 @@ def timespan_sql(_sql: ExportInput = ExportInput("korp_timespan/timespan.sql")):
 
 
 @annotator("Timespan SQL data for use in Korp", order=1, config=[
-    Config("korp.timespan_db_name", default="timespan")
+    Config("korp.timespan_db_name", default="timespan", description="Name of database")
 ])
 def timespan_sql_with_dateinfo(corpus: Corpus = Corpus(),
                                db_name: str = Config("korp.timespan_db_name"),
@@ -88,7 +88,7 @@ def timespan_sql_with_dateinfo(corpus: Corpus = Corpus(),
 
 
 @annotator("Timespan SQL data for use in Korp, for when the corpus has no date metadata.", order=2, config=[
-    Config("korp.timespan_db_name", default="timespan")
+    Config("korp.timespan_db_name", default="timespan", description="Name of database")
 ])
 def timespan_sql_no_dateinfo(corpus: Corpus = Corpus(),
                              db_name: str = Config("korp.timespan_db_name"),

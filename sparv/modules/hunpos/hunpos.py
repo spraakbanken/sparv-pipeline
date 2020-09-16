@@ -1,6 +1,7 @@
 """Part of Speech annotation using Hunpos."""
 
 import re
+from typing import Optional
 
 import sparv.util as util
 from sparv import Annotation, Binary, Config, Model, ModelOutput, Output, annotator, modelbuilder
@@ -12,10 +13,12 @@ TAG_COLUMN = 1
 
 
 @annotator("Part-of-speech annotation with morphological descriptions", language=["swe"], config=[
-           Config("hunpos.binary", default="hunpos-tag"),
-           Config("hunpos.model", default="hunpos/suc3_suc-tags_default-setting_utf8.model"),
-           Config("hunpos.morphtable", default="hunpos/saldo_suc-tags.morphtable"),
-           Config("hunpos.patterns", default="hunpos/suc.patterns")
+           Config("hunpos.binary", default="hunpos-tag", description="Hunpos executable"),
+           Config("hunpos.model", default="hunpos/suc3_suc-tags_default-setting_utf8.model",
+                  description="Path to Hunpos model"),
+           Config("hunpos.morphtable", default="hunpos/saldo_suc-tags.morphtable",
+                  description="Path to optional Hunpos morphtable file"),
+           Config("hunpos.patterns", default="hunpos/suc.patterns", description="Path to optional patterns file")
            ])
 def msdtag(out: Output = Output("<token>:hunpos.msd", cls="token:msd",
                                 description="Part-of-speeches with morphological descriptions"),
@@ -23,8 +26,8 @@ def msdtag(out: Output = Output("<token>:hunpos.msd", cls="token:msd",
            sentence: Annotation = Annotation("<sentence>"),
            binary: Binary = Binary("[hunpos.binary]"),
            model: Model = Model("[hunpos.model]"),
-           morphtable: Model = Model("[hunpos.morphtable]"),
-           patterns: Model = Model("[hunpos.patterns]"),
+           morphtable: Optional[Model] = Model("[hunpos.morphtable]"),
+           patterns: Optional[Model] = Model("[hunpos.patterns]"),
            tag_mapping=None,
            encoding: str = util.UTF8):
     """POS/MSD tag using the Hunpos tagger."""

@@ -25,9 +25,10 @@ PART_DELIM3 = "^3"
 
 
 @annotator("Compound analysis", name="compound", language=["swe"], config=[
-    Config("saldo.comp_model", default="saldo/saldo.compound.pickle"),
-    Config("saldo.comp_nst_model", default="saldo/nst_comp_pos.pickle"),
-    Config("saldo.comp_stats_model", default="saldo/stats.pickle")
+    Config("saldo.comp_model", default="saldo/saldo.compound.pickle", description="Path to SALDO compound model"),
+    Config("saldo.comp_nst_model", default="saldo/nst_comp_pos.pickle",
+           description="Path to NST part of speech compound model"),
+    Config("saldo.comp_stats_model", default="saldo/stats.pickle", description="Path to statistics model")
 ])
 def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
                                                description="Compound analysis using lemgrams"),

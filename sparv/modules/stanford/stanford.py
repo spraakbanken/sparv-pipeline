@@ -13,7 +13,7 @@ from sparv import Annotation, BinaryDir, Config, Language, Output, Text, annotat
 
 
 @annotator("Parse and annotate with Stanford Parser", language=["eng"], config=[
-    Config("stanford.bin", default="stanford_parser")
+    Config("stanford.bin", default="stanford_parser", description="Path to directory containing Stanford executables")
 ])
 def annotate(corpus_text: Text = Text(),
              lang: Language = Language(),

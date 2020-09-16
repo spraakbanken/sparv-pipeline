@@ -12,7 +12,8 @@ log = logging.getLogger(__name__)
 
 @annotator("Annotate chunks with location data, based on locations contained within the text", language=["swe"],
            config=[
-               Config("geo.context_chunk", default="<sentence>")
+               Config("geo.context_chunk", default="<sentence>",
+                      description="Text chunk (annotation) to use for disambiguating places")
            ])
 def contextual(out: Output = Output("{chunk}:geo.geo_context", description="Geographical places with coordinates"),
                chunk: Annotation = Annotation("{chunk}"),
@@ -69,8 +70,8 @@ def contextual(out: Output = Output("{chunk}:geo.geo_context", description="Geog
 
 
 @annotator("Annotate chunks with location data, based on metadata containing location names", config=[
-    Config("geo.metadata_source", default=""),
-    Config("geo.model", default="geo/geo.pickle")
+    Config("geo.metadata_source", default="", description="Source attribute for location metadata"),
+    Config("geo.model", default="geo/geo.pickle", description="Path to model")
 ])
 def metadata(out: Output = Output("{chunk}:geo.geo_metadata", description="Geographical places with coordinates"),
              chunk: Annotation = Annotation("{chunk}"),
@@ -79,9 +80,6 @@ def metadata(out: Output = Output("{chunk}:geo.geo_metadata", description="Geogr
              method: str = "populous",
              language: list = []):
     """Get location data based on metadata containing location names."""
-    if not source:
-        raise(Exception("Missing meta data source annotation."))
-
     geomodel = load_model(model, language=language)
 
     same_target_source = chunk.split()[0] == source.split()[0]

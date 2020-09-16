@@ -11,9 +11,11 @@ log = logging.getLogger(__name__)
 
 
 @exporter("CSV export", config=[
-    Config("csv_export.delimiter", default="\t"),
-    Config("csv_export.source_annotations"),
-    Config("csv_export.annotations")
+    Config("csv_export.delimiter", default="\t", description="Delimiter separating fields."),
+    Config("csv_export.source_annotations",
+           description="List of annotations and attributes from the source data to include. Everything will be "
+                       "included by default."),
+    Config("csv_export.annotations", description="Sparv annotations to include.")
 ])
 def csv(doc: Document = Document(),
         out: Export = Export("csv/{doc}.csv"),
@@ -23,8 +25,8 @@ def csv(doc: Document = Document(),
         annotations: ExportAnnotations = ExportAnnotations("csv_export.annotations"),
         source_annotations: Optional[list] = Config("csv_export.source_annotations"),
         remove_namespaces: bool = Config("export.remove_module_namespaces", False),
-        sparv_namespace: str = Config("export.sparv_namespace", None),
-        source_namespace: str = Config("export.source_namespace", None),
+        sparv_namespace: str = Config("export.sparv_namespace"),
+        source_namespace: str = Config("export.source_namespace"),
         delimiter: str = Config("csv_export.delimiter")):
     """Export annotations to CSV format."""
     # Create export dir

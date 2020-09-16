@@ -258,7 +258,8 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
 
 
 @exporter("Word Picture SQL for use in Korp", config=[
-    Config("korp.relations_db_name", "korp_relations")
+    Config("korp.relations_db_name", "korp_relations",
+           description="Name of database where Word Picture data should be stored.")
 ])
 def relations_sql(corpus: Corpus = Corpus(),
                   db_name: str = Config("korp.relations_db_name"),

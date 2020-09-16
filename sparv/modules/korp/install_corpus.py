@@ -11,10 +11,10 @@ log = logging.getLogger(__name__)
 
 
 @installer("Install CWB datafiles on remote host", config=[
-    Config("korp.remote_host", ""),
-    Config("korp.remote_corpus_registry", ""),
-    Config("korp.remote_cwb_datadir", ""),
-    Config("korp.protected", False)
+    Config("korp.remote_host", "", description="Remote host to install CWB datafiles to"),
+    Config("korp.remote_corpus_registry", "", description="CWB registry path on remote host"),
+    Config("korp.remote_cwb_datadir", "", description="CWB datadir path on remote host"),
+    Config("korp.protected", False, description="Whether this corpus should have limited access or not")
 ])
 def install_corpus(corpus: Corpus = Corpus(),
                    info_file: ExportInput = ExportInput("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_path=True),

@@ -14,13 +14,20 @@ log = logging.getLogger(__name__)
 
 
 @annotator("Convert existing dates to specified output format", config=[
-    Config("dateformat.datetime_from"),
-    Config("dateformat.datetime_to"),
-    Config("dateformat.datetime_informat"),
-    Config("dateformat.splitter"),
-    Config("dateformat.regex"),
-    Config("dateformat.date_outformat", default="%Y%m%d"),
-    Config("dateformat.out_annotation", default="<text>")
+    Config("dateformat.datetime_from", description="Annotation attribute containing from-dates (and times)"),
+    Config("dateformat.datetime_to", description="Annotation attribute containing to-dates (and times)"),
+    Config("dateformat.datetime_informat",
+           description="Format of the source date/time values. Several formats can be specified separated "
+                       "by |. They will be tried in order."),
+    Config("dateformat.splitter", description="One or more characters separating two dates in 'datetime_from', "
+                                              "treating them as from-date and to-date."),
+    Config("dateformat.regex", description="Regular expression with a catching group whose content will be used in the "
+                                           "parsing instead of the whole string."),
+    Config("dateformat.date_outformat", default="%Y%m%d",
+           description="Desired format of the formatted dates. Several formats can be specified separated "
+                       "by |. They will be tied to their respective in-format."),
+    Config("dateformat.out_annotation", default="<text>",
+           description="Annotation on which the resulting formatted date attributes will be written.")
 ])
 def dateformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
                in_to: Optional[Annotation] = Annotation("[dateformat.datetime_to]"),
@@ -48,7 +55,7 @@ def dateformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
         informat (str, optional): Format of the in_from and in_to dates/times.
             Several formats can be specified separated by |. They will be tried in order.
             Defaults to Config("dateformat.datetime_informat").
-        outformat (str, optional): Desired format of the outfrom and out_to dates.
+        outformat (str, optional): Desired format of the out_from and out_to dates.
             Several formats can be specified separated by |. They will be tied to their respective in-format.
             Defaults to Config("dateformat.date_outformat", "%Y%m%d").
         splitter (str, optional): One or more characters separating two dates in 'in_from',
@@ -60,7 +67,9 @@ def dateformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
 
 
 @annotator("Convert existing times to specified output format", config=[
-    Config("dateformat.time_outformat", "%H%M%S")
+    Config("dateformat.time_outformat", "%H%M%S",
+           description="Desired format of the formatted times. Several formats can be specified separated "
+                       "by |. They will be tied to their respective in-format.")
 ])
 def timeformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
                in_to: Optional[Annotation] = Annotation("[dateformat.datetime_to]"),
@@ -88,7 +97,7 @@ def timeformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
         informat (str, optional): Format of the in_from and in_to dates/times.
             Several formats can be specified separated by |. They will be tried in order.
             Defaults to Config("dateformat.datetime_informat").
-        outformat (str, optional): Desired format of the outfrom and out_to times.
+        outformat (str, optional): Desired format of the out_from and out_to times.
             Several formats can be specified separated by |. They will be tied to their respective in-format.
             Defaults to Config("dateformat.time_outformat", "%Y%m%d").
         splitter (str, optional): One or more characters separating two dates in 'in_from',

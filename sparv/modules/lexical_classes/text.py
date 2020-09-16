@@ -11,7 +11,8 @@ log = logging.getLogger(__name__)
 
 
 @annotator("Annotate text chunks with Blingbring classes", language=["swe"], config=[
-    Config("lexical_classes.bb_freq_model", default="lexical_classes/blingbring.freq.gp2008+suc3+romi.pickle")
+    Config("lexical_classes.bb_freq_model", default="lexical_classes/blingbring.freq.gp2008+suc3+romi.pickle",
+           description="Path to Blingbring frequency model")
 ])
 def blingbring_text(out: Output = Output("<text>:lexical_classes.blingbring",
                                          description="Lexical classes for text chunks from Blingbring"),
@@ -32,7 +33,8 @@ def blingbring_text(out: Output = Output("<text>:lexical_classes.blingbring",
 
 
 @annotator("Annotate text chunks with SweFN classes", language=["swe"], config=[
-    Config("lexical_classes.swefn_freq_model", default="lexical_classes/swefn.freq.gp2008+suc3+romi.pickle")
+    Config("lexical_classes.swefn_freq_model", default="lexical_classes/swefn.freq.gp2008+suc3+romi.pickle",
+           description="Path to SweFN frequency model")
 ])
 def swefn_text(out: Output = Output("<text>:lexical_classes.swefn",
                                     description="Lexical classes for text chunks from SweFN"),

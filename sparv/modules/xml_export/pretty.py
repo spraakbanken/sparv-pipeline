@@ -13,11 +13,16 @@ log = logging.getLogger(__name__)
 
 
 @exporter("XML export with one token element per line", config=[
-    Config("xml_export.filename", default="{doc}_export.xml"),
-    Config("xml_export.annotations"),
-    Config("xml_export.source_annotations"),
-    Config("xml_export.header_annotations"),
-    Config("xml_export.include_empty_attributes", False)
+    Config("xml_export.filename", default="{doc}_export.xml",
+           description="Filename pattern for resulting XML files, with '{doc}' representing the source name."),
+    Config("xml_export.annotations", description="Sparv annotations to include."),
+    Config("xml_export.source_annotations",
+           description="List of annotations and attributes from the source data to include. Everything will be "
+                       "included by default."),
+    Config("xml_export.header_annotations",
+           description="List of headers from the source data to include. All headers will be included by default."),
+    Config("xml_export.include_empty_attributes", False,
+           description="Whether to include attributes even when they are empty.")
 ])
 def pretty(doc: Document = Document(),
            docid: AnnotationData = AnnotationData("<docid>"),
@@ -28,8 +33,8 @@ def pretty(doc: Document = Document(),
            source_annotations: Optional[list] = Config("xml_export.source_annotations"),
            header_annotations: Optional[list] = Config("xml_export.header_annotations"),
            remove_namespaces: bool = Config("export.remove_module_namespaces", False),
-           sparv_namespace: str = Config("export.sparv_namespace", None),
-           source_namespace: str = Config("export.source_namespace", None),
+           sparv_namespace: str = Config("export.sparv_namespace"),
+           source_namespace: str = Config("export.source_namespace"),
            include_empty_attributes: bool = Config("xml_export.include_empty_attributes")):
     """Export annotations to pretty XML in export_dir.
 
@@ -79,7 +84,8 @@ def pretty(doc: Document = Document(),
 
 
 @exporter("Combined XML export (all results in one file)", config=[
-    Config("xml_export.filename_combined", default="[metadata.id].xml")
+    Config("xml_export.filename_combined", default="[metadata.id].xml",
+           description="Filename of resulting combined XML.")
 ])
 def combined(corpus: Corpus = Corpus(),
              out: Export = Export("[xml_export.filename_combined]"),
@@ -90,7 +96,8 @@ def combined(corpus: Corpus = Corpus(),
 
 
 @exporter("Compressed combined XML export", config=[
-    Config("xml_export.filename_compressed", default="[metadata.id].xml.bz2")
+    Config("xml_export.filename_compressed", default="[metadata.id].xml.bz2",
+           description="Filename of resulting compressed combined XML.")
 ])
 def compressed(out: Export = Export("[xml_export.filename_compressed]"),
                xmlfile: ExportInput = ExportInput("[xml_export.filename_combined]")):
@@ -99,8 +106,8 @@ def compressed(out: Export = Export("[xml_export.filename_compressed]"),
 
 
 @installer("Copy compressed unscrambled XML to remote host", config=[
-    Config("xml_export.export_original_host", ""),
-    Config("xml_export.export_original_path", "")
+    Config("xml_export.export_original_host", "", description="Remote host to copy XML export to."),
+    Config("xml_export.export_original_path", "", description="Path on remote host to copy XML export to.")
 ])
 def install_original(corpus: Corpus = Corpus(),
                      xmlfile: ExportInput = ExportInput("[xml_export.filename_compressed]"),

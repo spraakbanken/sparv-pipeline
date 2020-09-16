@@ -10,10 +10,11 @@ from sparv import AllDocuments, AnnotationAllDocs, Corpus, Export, exporter, Con
 log = logging.getLogger(__name__)
 
 
-@exporter("Corpus word frequency list", language=["swe"], order=1,
-          config=[Config("stats_export.delimiter", default="\t"),
-                  Config("stats_export.cutoff", default=1),
-                  Config("stats_export.include_all_compounds", default=False)])
+@exporter("Corpus word frequency list", language=["swe"], order=1, config=[
+    Config("stats_export.include_all_compounds", default=False,
+           description="Whether to include compound analyses for every word or just for the words that are lacking "
+                       "a sense annotation")
+])
 def freq_list(corpus: Corpus = Corpus(),
               docs: AllDocuments = AllDocuments(),
               word: AnnotationAllDocs = AnnotationAllDocs("<token:word>"),
@@ -55,9 +56,11 @@ def freq_list(corpus: Corpus = Corpus(),
     write_csv(out, freq_dict, delimiter, cutoff)
 
 
-@exporter("Corpus word frequency list (withouth Swedish annotations)", order=2,
-          config=[Config("stats_export.delimiter", default="\t"),
-                  Config("stats_export.cutoff", default=1)])
+@exporter("Corpus word frequency list (withouth Swedish annotations)", order=2, config=[
+    Config("stats_export.delimiter", default="\t", description="Delimiter separating columns"),
+    Config("stats_export.cutoff", default=1,
+           description="The minimum frequency a word must have in order to be included in the result"),
+])
 def freq_list_simple(corpus: Corpus = Corpus(),
                      docs: AllDocuments = AllDocuments(),
                      word: AnnotationAllDocs = AnnotationAllDocs("<token:word>"),

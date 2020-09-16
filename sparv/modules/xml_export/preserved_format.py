@@ -13,10 +13,8 @@ log = logging.getLogger(__name__)
 
 
 @exporter("XML export preserving whitespaces from source file", config=[
-    Config("xml_export.filename_formatted", default="{doc}_export.xml"),
-    Config("xml_export.source_annotations"),
-    Config("xml_export.header_annotations"),
-    Config("xml_export.include_empty_attributes", False)
+    Config("xml_export.filename_formatted", default="{doc}_export.xml",
+           description="Filename pattern for resulting XML files, with '{doc}' representing the source name.")
 ])
 def preserved_format(doc: Document = Document(),
                      text: Text = Text(),
@@ -26,8 +24,8 @@ def preserved_format(doc: Document = Document(),
                      source_annotations: Optional[list] = Config("xml_export.source_annotations"),
                      header_annotations: Optional[list] = Config("xml_export.header_annotations"),
                      remove_namespaces: bool = Config("export.remove_module_namespaces", False),
-                     sparv_namespace: str = Config("export.sparv_namespace", None),
-                     source_namespace: str = Config("export.source_namespace", None),
+                     sparv_namespace: str = Config("export.sparv_namespace"),
+                     source_namespace: str = Config("export.source_namespace"),
                      include_empty_attributes: bool = Config("xml_export.include_empty_attributes")):
     """Export annotations to XML in export_dir and keep whitespaces and indentation from original file.
 

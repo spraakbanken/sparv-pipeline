@@ -15,7 +15,7 @@ SENTIMENT_LABLES = {
 
 
 @annotator("Sentiment annotation per token using SenSALDO", language=["swe"], config=[
-    Config("sensaldo.model", default="sensaldo/sensaldo.pickle")
+    Config("sensaldo.model", default="sensaldo/sensaldo.pickle", description="Path to SenSALDO model")
 ])
 def annotate(sense: Annotation = Annotation("<token>:saldo.sense"),
              out_scores: Output = Output("<token>:sensaldo.sentiment_score", description="SenSALDO sentiment score"),

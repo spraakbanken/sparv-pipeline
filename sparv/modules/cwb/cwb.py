@@ -16,8 +16,10 @@ log = logging.getLogger(__name__)
 
 
 @exporter("VRT export", config=[
-    Config("cwb.source_annotations"),
-    Config("cwb.annotations")
+    Config("cwb.source_annotations",
+           description="List of annotations and attributes from the source data to include. Everything will be "
+                       "included by default."),
+    Config("cwb.annotations", description="Sparv annotations to include.")
 ])
 def vrt(doc: Document = Document(),
         out: Export = Export("vrt/{doc}.vrt"),
@@ -26,8 +28,8 @@ def vrt(doc: Document = Document(),
         annotations: ExportAnnotations = ExportAnnotations("cwb.annotations"),
         source_annotations: Optional[list] = Config("cwb.source_annotations"),
         remove_namespaces: bool = Config("export.remove_module_namespaces", False),
-        sparv_namespace: str = Config("export.sparv_namespace", None),
-        source_namespace: str = Config("export.source_namespace", None)):
+        sparv_namespace: str = Config("export.sparv_namespace"),
+        source_namespace: str = Config("export.source_namespace")):
     """Export annotations to vrt.
 
     - annotations: list of elements:attributes (annotations) to include.
@@ -66,8 +68,8 @@ def vrt_scrambled(doc: Document = Document(),
                   annotations: ExportAnnotations = ExportAnnotations("cwb.annotations"),
                   source_annotations: Optional[list] = Config("cwb.source_annotations"),
                   remove_namespaces: bool = Config("export.remove_module_namespaces", False),
-                  sparv_namespace: str = Config("export.sparv_namespace", None),
-                  source_namespace: str = Config("export.source_namespace", None)):
+                  sparv_namespace: str = Config("export.sparv_namespace"),
+                  source_namespace: str = Config("export.source_namespace")):
     """Export annotations to vrt in scrambled order."""
     # Get annotation spans, annotations list etc.
     annotation_list, token_attributes, export_names = util.get_annotation_names(annotations, source_annotations,
@@ -102,12 +104,12 @@ def vrt_scrambled(doc: Document = Document(),
 
 
 @exporter("CWB encode", order=2, config=[
-    Config("cwb.corpus_registry", default=paths.corpus_registry),
-    Config("cwb.cwb_datadir", default=paths.cwb_datadir),
-    Config("cwb.bin_path", default=""),
-    Config("cwb.encoding", default=paths.cwb_encoding),
-    Config("cwb.skip_compression", False),
-    Config("cwb.skip_validation", False)
+    Config("cwb.corpus_registry", default=paths.corpus_registry, description="Path to CWB registry directory"),
+    Config("cwb.cwb_datadir", default=paths.cwb_datadir, description="Path to CWB data directory"),
+    Config("cwb.bin_path", default="", description="Path to directory containing the CWB executables"),
+    Config("cwb.encoding", default=paths.cwb_encoding, description="Encoding to use"),
+    Config("cwb.skip_compression", False, description="Whether to skip compression"),
+    Config("cwb.skip_validation", False, description="Whether to skip validation")
 ])
 def encode(corpus: Corpus = Corpus(),
            annotations: ExportAnnotations = ExportAnnotations("cwb.annotations", is_input=False),
@@ -123,8 +125,8 @@ def encode(corpus: Corpus = Corpus(),
            datadir: str = Config("cwb.cwb_datadir"),
            registry: str = Config("cwb.corpus_registry"),
            remove_namespaces: bool = Config("export.remove_module_namespaces", False),
-           sparv_namespace: str = Config("export.sparv_namespace", None),
-           source_namespace: str = Config("export.source_namespace", None),
+           sparv_namespace: str = Config("export.sparv_namespace"),
+           source_namespace: str = Config("export.source_namespace"),
            skip_compression: Optional[bool] = Config("cwb.skip_compression"),
            skip_validation: Optional[bool] = Config("cwb.skip_validation")):
     """Do cwb encoding with vrt files in original order."""
@@ -133,14 +135,7 @@ def encode(corpus: Corpus = Corpus(),
                skip_compression, skip_validation)
 
 
-@exporter("CWB encode, scrambled", order=1, config=[
-    Config("cwb.corpus_registry", default=paths.corpus_registry),
-    Config("cwb.cwb_datadir", default=paths.cwb_datadir),
-    Config("cwb.bin_path", default=""),
-    Config("cwb.encoding", default=paths.cwb_encoding),
-    Config("cwb.skip_compression", False),
-    Config("cwb.skip_validation", False)
-])
+@exporter("CWB encode, scrambled", order=1)
 def encode_scrambled(corpus: Corpus = Corpus(),
                      annotations: ExportAnnotations = ExportAnnotations("cwb.annotations", is_input=False),
                      source_annotations: Optional[list] = Config("cwb.source_annotations"),
@@ -155,8 +150,8 @@ def encode_scrambled(corpus: Corpus = Corpus(),
                      datadir: str = Config("cwb.cwb_datadir"),
                      registry: str = Config("cwb.corpus_registry"),
                      remove_namespaces: bool = Config("export.remove_module_namespaces", False),
-                     sparv_namespace: str = Config("export.sparv_namespace", None),
-                     source_namespace: str = Config("export.source_namespace", None),
+                     sparv_namespace: str = Config("export.sparv_namespace"),
+                     source_namespace: str = Config("export.source_namespace"),
                      skip_compression: Optional[bool] = Config("cwb.skip_compression"),
                      skip_validation: Optional[bool] = Config("cwb.skip_validation")):
     """Do cwb encoding with vrt files in scrambled order."""

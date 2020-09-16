@@ -23,10 +23,11 @@ DEPREL_COLUMN = 7
 UNDEF = "_"
 
 
-@annotator("Dependency parsing using MALT Parser", language=["swe"],
-           config=[Config("malt.jar", default="maltparser-1.7.2/maltparser-1.7.2.jar"),
-                   Config("malt.model", default="malt/swemalt-1.7.2.mco")
-                   ])
+@annotator("Dependency parsing using MALT Parser", language=["swe"], config=[
+    Config("malt.jar", default="maltparser-1.7.2/maltparser-1.7.2.jar",
+           description="Path name of the executable .jar file"),
+    Config("malt.model", default="malt/swemalt-1.7.2.mco", description="Path to MALT model")
+])
 def annotate(maltjar: Binary = Binary("[malt.jar]"),
              model: Model = Model("[malt.model]"),
              out_dephead: Output = Output("<token>:malt.dephead", description="Positions of the dependency heads"),
@@ -156,8 +157,7 @@ def maltstart(maltjar, model, encoding, send_empty_sentence=False):
     return process
 
 
-@modelbuilder("Model for MALT Parser", language=["swe"],
-              config=[Config("malt.jar", default="maltparser-1.7.2/maltparser-1.7.2.jar")])
+@modelbuilder("Model for MALT Parser", language=["swe"])
 def build_model(out: ModelOutput = ModelOutput("malt/swemalt-1.7.2.mco"),
                 _maltjar: Binary = Binary("[malt.jar]")):
     """Download model for MALT Parser.

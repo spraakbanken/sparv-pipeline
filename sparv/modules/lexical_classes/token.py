@@ -10,7 +10,8 @@ log = logging.getLogger(__name__)
 
 
 @annotator("Annotate tokens with Blingbring classes", language=["swe"], config=[
-    Config("lexical_classes.bb_word_model", default="lexical_classes/blingbring.pickle")
+    Config("lexical_classes.bb_word_model", default="lexical_classes/blingbring.pickle",
+           description="Path to Blingbring model")
 ])
 def blingbring_words(out: Output = Output("<token>:lexical_classes.blingbring",
                                           description="Lexical classes for tokens from Blingbring"),
@@ -51,7 +52,8 @@ def blingbring_words(out: Output = Output("<token>:lexical_classes.blingbring",
 
 
 @annotator("Annotate tokens with Blingbring classes", language=["swe"], config=[
-    Config("lexical_classes.swefn_word_model", default="lexical_classes/swefn.pickle")
+    Config("lexical_classes.swefn_word_model", default="lexical_classes/swefn.pickle",
+           description="Path to SweFN model")
 ])
 def swefn_words(out: Output = Output("<token>:lexical_classes.swefn",
                                      description="Lexical classes for tokens from SweFN"),

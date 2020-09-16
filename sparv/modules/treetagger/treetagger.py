@@ -40,8 +40,8 @@ TAG_SETS = {
 @annotator("Part-of-speech tags and baseforms from TreeTagger",
            language=["bul", "est", "fin", "lat", "nld", "pol", "ron", "slk", "deu", "eng", "fra", "spa", "ita", "rus"],
            config=[
-               Config("treetagger.binary", "tree-tagger"),
-               Config("treetagger.model", "treetagger/[metadata.language].par")
+               Config("treetagger.binary", "tree-tagger", description="TreeTagger executable"),
+               Config("treetagger.model", "treetagger/[metadata.language].par", description="Path to TreeTagger model")
            ])
 def annotate(lang: Language = Language(),
              model: Model = Model("[treetagger.model]"),

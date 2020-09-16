@@ -12,13 +12,18 @@ log = logging.getLogger(__name__)
 
 
 @importer("XML import", source_type="xml", outputs=Config("xml_import.elements", []), config=[
-    Config("xml_import.elements", []),
-    Config("xml_import.skip", []),
-    Config("xml_import.header_elements", []),
-    Config("xml_import.header_data", []),
-    Config("xml_import.prefix", ""),
-    Config("xml_import.encoding", util.UTF8),
-    Config("xml_import.normalize", "NFC")
+    Config("xml_import.elements", [], description="List of elements and attributes in source document. Only needed for "
+                                                  "renaming, as everything is parsed whether listed or not."),
+    Config("xml_import.skip", [], description="Elements and attributes to skip. "
+                                              "Use elementname:@contents to skip contents as well."),
+    Config("xml_import.header_elements", [], description="Elements containing header metadata. Contents will not be "
+                                                         "included in corpus text."),
+    Config("xml_import.header_data", [], description="List of header elements and attributes from which to extract "
+                                                     "metadata."),
+    Config("xml_import.prefix", "", description="Optional prefix to add to annotation names."),
+    Config("xml_import.encoding", util.UTF8, description="Encoding of source document. Defaults to UTF-8."),
+    Config("xml_import.normalize", "NFC", description="Normalize input using any of the following forms: "
+                                                      "'NFC', 'NFKC', 'NFD', and 'NFKD'.")
 ])
 def parse(doc: Document = Document(),
           source_dir: Source = Source(),
