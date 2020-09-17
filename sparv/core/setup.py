@@ -12,6 +12,11 @@ from sparv import __version__
 from sparv.core import paths
 
 
+def check_sparv_version():
+    """Check if the Sparv data dir is outdated."""
+    return __version__ == paths.read_sparv_config().get("version", "unknown")
+
+
 def copy_resource_files(data_dir, backup: bool = True):
     """Copy resource files to data dir."""
     data_dir = pathlib.Path(data_dir)
@@ -74,7 +79,8 @@ def query_user():
         # If directory already exists, ask if the user wants to backup any existing files
         while True:
             backup = input("A default config file and presets will be copied to this directory. Do you want to create "
-                           "backups of any existing files? Previous backups will be overwritten. [y/n]").strip().lower()
+                           "backups of any existing files? Previous backups will be overwritten. "
+                           "[y/n] ").strip().lower()
             if backup and backup in "yn":
                 backup = backup == "y"
                 break

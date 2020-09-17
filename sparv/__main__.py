@@ -165,11 +165,18 @@ def main():
     else:
         args = parser.parse_args()
 
-    # Make sure that Sparv data dir is set
-    if args.command not in ("setup",) and not paths.get_data_path():
-        print(f"The path to Sparv's data directory needs to be configured, either by running 'sparv setup' or by "
-              f"setting the environment variable '{paths.data_dir_env}'.")
-        sys.exit(1)
+    if args.command not in ("setup",):
+        # Make sure that Sparv data dir is set
+        if not paths.get_data_path():
+            print(f"The path to Sparv's data directory needs to be configured, either by running 'sparv setup' or by "
+                  f"setting the environment variable '{paths.data_dir_env}'.")
+            sys.exit(1)
+
+        # Check if Sparv data dir is outdated
+        if not setup.check_sparv_version():
+            print("Sparv has been updated and Sparv's data directory may need to be upgraded. Please rerun the "
+                  "'sparv setup' command.")
+            sys.exit(1)
 
     if args.command == "setup":
         setup.query_user()

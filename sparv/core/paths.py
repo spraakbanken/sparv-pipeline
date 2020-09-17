@@ -9,14 +9,14 @@ import yaml
 
 def read_sparv_config():
     """Get Sparv data path from config file."""
+    data = {}
     if sparv_config_file.is_file():
         try:
             with open(sparv_config_file) as f:
                 data = yaml.load(f, Loader=yaml.FullLoader)
         except:
             data = {}
-        return data.get("sparv_data")
-    return None
+    return data
 
 
 def get_data_path(subpath: Union[str, Path] = "") -> Path:
@@ -25,7 +25,7 @@ def get_data_path(subpath: Union[str, Path] = "") -> Path:
 
     if not data_dir:
         # Environment variable overrides config
-        data_dir_str = os.environ.get(data_dir_env) or read_sparv_config()
+        data_dir_str = os.environ.get(data_dir_env) or read_sparv_config().get("sparv_data")
         if data_dir_str:
             data_dir = Path(data_dir_str)
 
