@@ -99,6 +99,7 @@ def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations
             if a.startswith("not "):
                 name = a[4:]
                 omit_annotations.add(name)
+                include_all = True
             elif a == "...":
                 include_all = True
             else:
