@@ -6,7 +6,8 @@ metadata:
     # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
     id: standard-swe
     # Corpus name (human readable)
-    name: Swedish standard test corpus
+    name:
+        eng: Swedish standard test corpus
 
     description:
         eng: |

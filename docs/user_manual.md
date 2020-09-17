@@ -495,14 +495,21 @@ element (i.e. the element that encloses all other included elements and text con
 don't, the resulting output XML will be invalid and Sparv won't be able to produce XML files. If you only want to
 produce other output formats than XML you don't need to worry about this.
 
-**TODO** Vad mer behöver förklaras här?
+**TODO**
+- Import: renaming elemets/attributes?
+- Mention `as`, `not` and `...` syntax.
+- Explain option `export.word = <token>:some_annotation`
+- What more?
 
 ## Headers
 Sometimes corpus metadata can be stored in XML headers rather than in attributes belonging to text-enclosing elements.
 Sparv can extract information from headers and store as annotations. These can then be used as input for different
 analyses. Information from headers can be exported as attributes if you choose to.
 
-**TODO** Give example. How to write config?
+**TODO**
+- Give example.
+- How to write config?
+- Mention `as`, `not` and `...` syntax.
 
 ## Custom Annotations
 Custom annotations may be used to apply more customised, non-pre-defined annotations to your corpus. The different

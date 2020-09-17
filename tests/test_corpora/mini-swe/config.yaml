@@ -6,7 +6,8 @@ metadata:
     # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
     id: mini-swe
     # Corpus name (human readable)
-    name: Swedish test corpus with quick annotations
+    name:
+        eng: Swedish test corpus with quick annotations
 
     description:
         eng: |

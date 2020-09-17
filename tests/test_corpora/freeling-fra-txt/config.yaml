@@ -6,7 +6,8 @@ metadata:
     # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
     id: freeling-fra-txt
     # Corpus name (human readable)
-    name: French FreeLing test corpus
+    name:
+        eng: French FreeLing test corpus
     # Language of the input documents, specified as ISO 639-3 code
     language: fra
 
