@@ -66,32 +66,57 @@ def split(value):
     return value
 
 
-def parse_annotation_list(annotation_names: Optional[List[str]], add_plain_annotations: bool = True):
+def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations: Optional[List[str]] = [],
+                          add_plain_annotations: bool = True):
     """Take a list of annotation names and possible export names, and return a list of tuples.
 
     Each list item will be split into a tuple by the string ' as '.
     Each tuple will contain 2 elements. If there is no ' as ' in the string, the second element will be None.
 
+    If there is an element called '...' everything from all_annotations will be included in the result, except for
+    the elements that are prefixed with 'not '.
+
     Plain annotations (without attributes) will be added if needed, unless add_plain_annotations is set to False.
     Make sure to disable add_plain_annotations if the annotation names may include classes or config variables.
     """
     if not annotation_names:
-        return []
+        return [(a, None) for a in all_annotations]
+
     plain_annotations = set()
     possible_plain_annotations = set()
+    omit_annotations = set()
+    include_all = False
+
     result = []
     for a in annotation_names:
         name, _, export_name = a.partition(" as ")
         plain_name, attr = Annotation(name).split()
-        if not attr:
-            plain_annotations.add(name)
-        else:
+        if attr:
             possible_plain_annotations.add(plain_name)
-        result.append((name, export_name or None))
+            result.append((name, export_name or None))
+        else:
+            # Check if this annotation should be omitted
+            if a.startswith("not "):
+                name = a[4:]
+                omit_annotations.add(name)
+            elif a == "...":
+                include_all = True
+            else:
+                plain_annotations.add(name)
+                result.append((name, export_name or None))
 
+    # Add all_annotations to result if required
+    if include_all and all_annotations:
+        for a in set(all_annotations).difference(omit_annotations):
+            if a not in [name for name, _export_name in result]:
+                result.append((a, None))
+                plain_annotations.add(a)
+
+    # Add annotations names without attributes to result if required
     if add_plain_annotations:
         for a in possible_plain_annotations.difference(plain_annotations):
-            result.append((a, None))
+            if a not in [name for name, _export_name in result]:
+                result.append((a, None))
 
     return result
 

@@ -265,17 +265,12 @@ def get_source_annotations(source_annotation_names: Optional[List[str]], doc: Op
     # Get list of available source annotation names
     available_source_annotations = get_available_source_annotations(doc, docs)
 
-    # Parse list
-    annotation_names = misc.parse_annotation_list(source_annotation_names)
+    # Parse source_annotation_names
+    annotation_names = misc.parse_annotation_list(source_annotation_names, available_source_annotations)
 
-    if not annotation_names:
-        # Include all available annotations from source
-        source_annotations = [(Annotation(a, doc) if doc else AnnotationAllDocs(a), None) for a in
-                              available_source_annotations]
-    else:
-        # Make sure source_annotations doesn't include annotations not in source
-        source_annotations = [(Annotation(a[0], doc) if doc else AnnotationAllDocs(a[0]), a[1]) for a in
-                              annotation_names if a[0] in available_source_annotations]
+    # Make sure source_annotations doesn't include annotations not in source
+    source_annotations = [(Annotation(a[0], doc) if doc else AnnotationAllDocs(a[0]), a[1]) for a in
+                          annotation_names if a[0] in available_source_annotations]
 
     return source_annotations
 
@@ -328,19 +323,18 @@ def get_header_names(header_annotation_names: Optional[List[str]],
                      doc: Optional[str] = None,
                      docs: Optional[List[str]] = None):
     """Get a list of header annotations and a dictionary for renamed annotations."""
-    annotation_names = misc.parse_annotation_list(header_annotation_names)
-    if not annotation_names:
-        # Get header_annotation_names from HEADERS_FILE if it exists
-        if docs:
-            annotation_names = []
-            for d in docs:
-                if AnnotationData(corpus.HEADERS_FILE, doc=d).exists():
-                    annotation_names.extend(
-                        misc.parse_annotation_list(AnnotationData(corpus.HEADERS_FILE, doc=d).read().splitlines()))
-        elif AnnotationData(corpus.HEADERS_FILE, doc=doc).exists():
-            annotation_names = misc.parse_annotation_list(
-                AnnotationData(corpus.HEADERS_FILE, doc=doc).read().splitlines())
+    # Get source_header_names from HEADERS_FILE if it exists
+    source_header_names = []
+    if docs:
+        for d in docs:
+            if AnnotationData(corpus.HEADERS_FILE, doc=d).exists():
+                source_header_names.extend(AnnotationData(corpus.HEADERS_FILE, doc=d).read().splitlines())
+        source_header_names = list(set(source_header_names))
+    elif AnnotationData(corpus.HEADERS_FILE, doc=doc).exists():
+        source_header_names = AnnotationData(corpus.HEADERS_FILE, doc=doc).read().splitlines()
 
+    # Parse header_annotation_names and convert to annotations
+    annotation_names = misc.parse_annotation_list(header_annotation_names, source_header_names)
     header_annotations = [(Annotation(a[0], doc) if doc else AnnotationAllDocs(a[0]), a[1]) for a in
                           annotation_names]
 
