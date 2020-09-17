@@ -1,6 +1,7 @@
 """Main Sparv executable."""
 
 import argparse
+import difflib
 import sys
 from pathlib import Path
 
@@ -18,7 +19,7 @@ if sys.version_info < (3, 6):
 
 
 class CustomArgumentParser(argparse.ArgumentParser):
-    """ArgumentParser with custom help message."""
+    """ArgumentParser with custom help message and better handling of misspelled commands."""
 
     def __init__(self, *args, **kwargs):
         """Init parser."""
@@ -29,6 +30,18 @@ class CustomArgumentParser(argparse.ArgumentParser):
         # Add our own help message unless the (sub)parser is created with the no_help argument
         if not no_help:
             self.add_argument("-h", "--help", action="help", help="Show this help message and exit")
+
+    def _check_value(self, action, value):
+        """Check if command is valid, and if not, try to guess what the user meant."""
+        if action.choices is not None and value not in action.choices:
+            # Check for possible misspelling
+            close_matches = difflib.get_close_matches(value, action.choices, n=1)
+            if close_matches:
+                message = f"unknown command: '{value}' - maybe you meant '{close_matches[0]}'"
+            else:
+                choices = ", ".join(map(repr, action.choices))
+                message = f"unknown command: '{value}' (choose from {choices})"
+            raise argparse.ArgumentError(action, message)
 
 
 class CustomHelpFormatter(argparse.RawDescriptionHelpFormatter):
@@ -43,7 +56,6 @@ class CustomHelpFormatter(argparse.RawDescriptionHelpFormatter):
 
 def main():
     """Run Sparv pipeline (main entry point for Sparv)."""
-
     # Initialize colorama to automatically strip all formatting if output is not a terminal
     colorama.init()
 
