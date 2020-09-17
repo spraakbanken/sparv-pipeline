@@ -310,17 +310,27 @@ rule clean:
 rule list_installs:
     run:
         max_len = max(len(t[0]) for t in snake_storage.install_targets) + 4
-        print()
-        print("Installations to be made")
-        print("========================")
-        for target, desc in sorted(snake_storage.install_targets):
-            if target in sparv_config.get("korp.install", []):
+        installations_to_be_made = [(t, d) for t, d in sorted(snake_storage.install_targets)
+                                    if t in snake_utils.get_install_targets(
+                                        snake_storage.install_outputs, snake_storage.install_targets)]
+        other_installations = [(t, d) for t, d in sorted(snake_storage.install_targets)
+                               if t not in snake_utils.get_install_targets(
+                                   snake_storage.install_outputs, snake_storage.install_targets)]
+        if installations_to_be_made:
+            print()
+            print("Installations to be made")
+            print("========================")
+            for target, desc in installations_to_be_made:
                 print("    {:{}}    {}".format(target, max_len, desc))
-        print()
-        print("Other available installations")
-        print("=============================")
-        for target, desc in sorted(snake_storage.install_targets):
-            if target not in sparv_config.get("korp.install", []):
+
+        if other_installations:
+            print()
+            if installations_to_be_made:
+                print("Other available installations")
+            else:
+                print("Available installations")
+            print("=============================")
+            for target, desc in other_installations:
                 print("    {:{}}    {}".format(target, max_len, desc))
         print()
 
@@ -335,7 +345,7 @@ rule export_corpus:
 # Rule for making installations
 rule install_annotated_corpus:
     input:
-        snake_utils.get_install_targets(snake_storage.install_outputs)
+        snake_utils.get_install_targets(snake_storage.install_outputs, snake_storage.install_targets)
 
 
 # Rule to list all models that can be built/downloaded

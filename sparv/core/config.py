@@ -42,7 +42,8 @@ config_structure = {
         "source_namespace": {"_source": "core"},
         "scramble_on": {"_source": "core"}
     },
-    "custom_annotations": {"_source": "core"}
+    "custom_annotations": {"_source": "core"},
+    "install": {"_source": "core"}
 }
 
 config_usage = defaultdict(set)  # For each config key, a list of annotators using that key

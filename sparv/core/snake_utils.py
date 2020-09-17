@@ -557,11 +557,26 @@ def load_config(snakemake_config):
     return config_missing
 
 
-def get_install_targets(install_outputs):
+def get_install_targets(install_outputs, all_installs=[]):
     """Collect files to be created for all installations listed in config.install."""
+    # If nothing is specified in config.install, install everyting
+    if not sparv_config.get("install", []):
+        return [i for i, _ in all_installs]
+
     install_inputs = []
-    for installation in sparv_config.get("korp.install", []):
-        install_inputs.extend(install_outputs[installation])
+    omit_installs = []
+    include_all = False
+    for installation in sparv_config.get("install", []):
+        if installation.startswith("not "):
+            omit_installs.append(installation[4:])
+            include_all = True
+        else:
+            install_inputs.extend(install_outputs[installation])
+
+    if include_all:
+        for i, _ in all_installs:
+            if (i not in install_inputs) and (i not in omit_installs):
+                install_inputs.append(i)
     return install_inputs
 
 
