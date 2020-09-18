@@ -85,29 +85,31 @@ def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations
     plain_annotations = set()
     possible_plain_annotations = set()
     omit_annotations = set()
-    include_all = False
+    include_rest = False
 
     result = []
     for a in annotation_names:
-        name, _, export_name = a.partition(" as ")
-        plain_name, attr = Annotation(name).split()
-        if attr:
-            possible_plain_annotations.add(plain_name)
-            result.append((name, export_name or None))
+        # Check if this annotation should be omitted
+        if a.startswith("not "):
+            omit_annotations.add(a[4:])
+        elif a == "...":
+            include_rest = True
         else:
-            # Check if this annotation should be omitted
-            if a.startswith("not "):
-                name = a[4:]
-                omit_annotations.add(name)
-                include_all = True
-            elif a == "...":
-                include_all = True
+            name, _, export_name = a.partition(" as ")
+            plain_name, attr = Annotation(name).split()
+            if attr:
+                possible_plain_annotations.add(plain_name)
+                result.append((name, export_name or None))
             else:
                 plain_annotations.add(name)
                 result.append((name, export_name or None))
 
+    # If only exclusions have been listed, include rest of annotations
+    if omit_annotations and not result:
+        include_rest = True
+
     # Add all_annotations to result if required
-    if include_all and all_annotations:
+    if include_rest and all_annotations:
         for a in set(all_annotations).difference(omit_annotations):
             if a not in [name for name, _export_name in result]:
                 result.append((a, None))
