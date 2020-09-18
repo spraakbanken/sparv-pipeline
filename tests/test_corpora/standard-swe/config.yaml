@@ -67,18 +67,8 @@ xml_export: &xml
     annotations:
         - DATETIME.all
         - PARAGRAPH_SWE.all
-        - SWE_DEFAULT.swener
-        - SWE_DEFAULT.sentence
-        - SWE_DEFAULT.text-lexical-class
-        - SWE_DEFAULT.readability
-        - SWE_DEFAULT.hunpos
-        - SWE_DEFAULT.malt
-        - SWE_DEFAULT.sentiment
-        - SWE_DEFAULT.token-lexical-class
-        - <token>:saldo.baseform
-        - <token>:saldo.lemgram
-        - <token>:saldo.compwf
-        - <token>:saldo.complemgram
+        - SWE_DEFAULT.all
+        - not <token>:wsd.sense
         - <token>:misc.word.affixed
         - <token>:custom.convert.upper
 
