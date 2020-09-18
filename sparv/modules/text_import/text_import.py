@@ -40,4 +40,4 @@ def parse(doc: Document = Document(),
     # Make up a text annotation surrounding the whole file
     text_annotation = "{}.text".format(prefix) if prefix else "text"
     Output(text_annotation, doc=doc).write([(0, len(text))])
-    util.write_structure(doc, [])
+    util.write_structure(doc, [text_annotation])
