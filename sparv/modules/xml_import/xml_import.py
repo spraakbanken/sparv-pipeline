@@ -116,10 +116,11 @@ class SparvXMLParser:
             header_source, _, header_source_attrib = header_source.partition(":")
             header_source_root, _, header_source_rest = header_source.partition("/")
             self.headers.setdefault(header_source_root, {})
-            self.headers[header_source_root][header_source_rest] = {
+            self.headers[header_source_root].setdefault(header_source_rest, [])
+            self.headers[header_source_root][header_source_rest].append({
                 "source": header_source_attrib,
                 "target": elsplit(header_target)
-            }
+            })
 
         self.skipped_elems = set(elsplit(elem) for elem in skip)
         assert self.skipped_elems.isdisjoint(all_elems), "skip and elements must be disjoint"
@@ -187,21 +188,22 @@ class SparvXMLParser:
 
         def handle_header_data(element: etree.Element):
             """Extract header metadata."""
-            for header_path, header_info in self.headers.get(element.tag, {}).items():
+            for header_path, header_sources in self.headers.get(element.tag, {}).items():
                 if not header_path:
                     header_element = element
                 else:
                     header_element = element.find(header_path)
 
                 if header_element is not None:
-                    if header_info["source"]:
-                        header_value = header_element.attrib.get(header_info["source"])
-                    else:
-                        header_value = header_element.text.strip()
+                    for header_source in header_sources:
+                        if header_source["source"]:
+                            header_value = header_element.attrib.get(header_source["source"])
+                        else:
+                            header_value = header_element.text.strip()
 
-                    if header_value:
-                        header_data.setdefault(header_info["target"][0], {})
-                        header_data[header_info["target"][0]][header_info["target"][1]] = header_value
+                        if header_value:
+                            header_data.setdefault(header_source["target"][0], {})
+                            header_data[header_source["target"][0]][header_source["target"][1]] = header_value
 
         def iter_tree(element: etree.Element, start_pos: int = 0, start_subpos: int = 0):
             """Walk though whole XML and handle elements and text data."""
