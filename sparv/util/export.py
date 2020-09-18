@@ -7,8 +7,7 @@ from copy import deepcopy
 from itertools import combinations
 from typing import Any, List, Optional, Set, Tuple, Union
 
-import sparv.util as util
-from sparv.util import corpus, misc
+from sparv.util import corpus, misc, SPARV_DEFAULT_NAMESPACE
 from sparv.util.classes import (Annotation, AnnotationAllDocs, AnnotationData, ExportAnnotations,
                                 ExportAnnotationsAllDocs)
 
@@ -475,7 +474,7 @@ def _check_name_collision(export_names, source_annotations):
             if len(annots) == 2 and len([a for a in annots if a.name not in source_names]) == 1:
                 sparv_annot = annots[0] if annots[0].name not in source_names else annots[1]
                 source_annot = annots[0] if annots[0].name in source_names else annots[1]
-                new_name = util.SPARV_DEFAULT_NAMESPACE + "." + export_names[sparv_annot.name]
+                new_name = SPARV_DEFAULT_NAMESPACE + "." + export_names[sparv_annot.name]
                 export_names[sparv_annot.name] = new_name
                 log.info("Changing name of automatic annotation '{}' to '{}' due to collision with '{}'.".format(
                          sparv_annot.name, new_name, source_annot.name))
