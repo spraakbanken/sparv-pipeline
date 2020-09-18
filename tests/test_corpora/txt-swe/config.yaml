@@ -1,0 +1,13 @@
+metadata:
+    id: txt-swe
+    language: swe
+
+import:
+    document_element: text
+    source_type: txt
+
+xml_export:
+    annotations:
+        - <sentence>
+        - <token:word>
+        - <token:pos>
