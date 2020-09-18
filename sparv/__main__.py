@@ -288,6 +288,7 @@ def main():
     success = snakemake.snakemake(sparv_path / "core" / "Snakefile", config=config, **snakemake_args)
 
     progress.stop()
+    progress.cleanup()
 
     sys.exit(0 if success else 1)
 

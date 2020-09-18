@@ -321,14 +321,6 @@ class LogHandler:
                 self.exit(self.bar_mgr, None, None, None)
 
             self.finished = True
-
-            # Remove Snakemake log file if empty (which it will be unless errors occurred)
-            snakemake_log_file = logger.get_logfile()
-            if snakemake_log_file is not None:
-                log_file = Path(snakemake_log_file)
-                if log_file.is_file() and log_file.stat().st_size == 0:
-                    log_file.unlink()
-
             print()
 
             # Execution failed but we handled the error
@@ -370,6 +362,17 @@ class LogHandler:
                     print()
                 elapsed = round(time.time() - self.start_time)
                 logger.logger.info("Time elapsed: {}".format(timedelta(seconds=elapsed)))
+
+    def cleanup(self):
+        """Remove Snakemake log files."""
+        snakemake_log_file = logger.get_logfile()
+        if snakemake_log_file is not None:
+            log_file = Path(snakemake_log_file)
+            if log_file.is_file():
+                try:
+                    log_file.unlink()
+                except PermissionError:
+                    pass
 
 
 def setup_logging(log_server, log_level: Optional[str] = "warning", log_file_level: Optional[str] = "warning"):
