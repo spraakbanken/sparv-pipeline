@@ -1,5 +1,6 @@
 """Snakefile used by Snakemake."""
 from collections import defaultdict
+from pathlib import Path
 
 import snakemake.io
 from snakemake.logging import logger
