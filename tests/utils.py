@@ -27,7 +27,14 @@ def run_sparv(gold_corpus_dir: pathlib.Path,
         str(paths.export_dir), GOLD_PREFIX + str(paths.export_dir)))
 
     args = ["sparv", "-d", str(new_corpus_dir), "run", *targets]
-    process = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.run(args, capture_output=True)
+    # Exclude progress updates and progress bar from output
+    stdout = process.stdout.strip().decode().split("\n")
+    stdout = "\n".join([line for line in stdout if "Progress:" not in line and u"\U0001F426" not in line])
+    if stdout:
+        print(format_error(f"The following warnings/errors occurred:\n{stdout}"))
+    elif process.stderr.strip():
+        print(format_error(process.stderr.strip().decode()))
     assert process.returncode == 0, "corpus could not be annotated"
     return new_corpus_dir
 
