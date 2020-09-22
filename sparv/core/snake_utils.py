@@ -462,7 +462,7 @@ def update_storage(storage, rule):
 
 def get_source_path() -> str:
     """Get path to source files."""
-    return sparv_config.get("source_dir", paths.source_dir)
+    return sparv_config.get("import.source_dir", paths.source_dir)
 
 
 def get_annotation_path(annotation, data=False, common=False):
