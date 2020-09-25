@@ -4,10 +4,11 @@ import logging
 import os
 from typing import Optional
 
-from . import xml_utils
 import sparv.util as util
 from sparv import (AllDocuments, Annotation, AnnotationData, Config, Corpus, Document, Export, ExportAnnotations,
-                   OutputCommonData, ExportInput, exporter, installer)
+                   ExportInput, HeaderAnnotations, OutputCommonData, SourceAnnotations, exporter, installer)
+
+from . import xml_utils
 
 log = logging.getLogger(__name__)
 
@@ -30,8 +31,8 @@ def pretty(doc: Document = Document(),
            token: Annotation = Annotation("<token>"),
            word: Annotation = Annotation("[export.word]"),
            annotations: ExportAnnotations = ExportAnnotations("xml_export.annotations"),
-           source_annotations: Optional[list] = Config("xml_export.source_annotations"),
-           header_annotations: Optional[list] = Config("xml_export.header_annotations"),
+           source_annotations: SourceAnnotations = SourceAnnotations("xml_export.source_annotations"),
+           header_annotations: HeaderAnnotations = HeaderAnnotations("xml_export.header_annotations"),
            remove_namespaces: bool = Config("export.remove_module_namespaces", False),
            sparv_namespace: str = Config("export.sparv_namespace"),
            source_namespace: str = Config("export.source_namespace"),

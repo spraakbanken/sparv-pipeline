@@ -41,8 +41,6 @@ export:
         - xml_export:pretty
         - xml_export:preserved_format
         - xml_export:scrambled
-
-xml_export:
     # Annotations from original documents to include in the output. If nothing is specified, everything is kept.
     source_annotations: &xml-source-annotations
         - dokument as document
@@ -55,11 +53,3 @@ xml_export:
     annotations: &xml-annotations
         - <sentence>:misc.id
         - <token>
-
-csv_export:
-    source_annotations: *xml-source-annotations
-    annotations: *xml-annotations
-
-cwb:
-    source_annotations: *xml-source-annotations
-    annotations: *xml-annotations

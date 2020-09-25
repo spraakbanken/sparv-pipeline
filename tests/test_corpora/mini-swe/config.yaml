@@ -40,27 +40,21 @@ export:
         - xml_export:pretty
         - xml_export:preserved_format
         - xml_export:scrambled
-
-xml_export: &xml
+    # Automatic annotations to be included in the export
+    annotations:
+        - <sentence>:misc.id
+        - <token>:saldo.baseform
+        - <token>:hunpos.pos
+        - <token>:sensaldo.sentiment_label
     # Annotations from original documents to include in the output. If nothing is specified, everything is kept.
     source_annotations:
         - dokument as document
         - text:forfattare as author
         - ...
-    # Automatic annotations to be included in the export
-    annotations: &xml-annotations
-        - <sentence>:misc.id
-        - <token>:saldo.baseform
-        - <token>:hunpos.pos
-        - <token>:sensaldo.sentiment_label
-
-cwb: *xml
 
 csv_export:
-    # Annotations from original documents to include in the output. If nothing is specified, everything is kept.
+    # Overriding export.source_annotations
     source_annotations:
         - text:id
         - text:date
         - text:forfattare as author
-    # Automatic annotations to be included in the export
-    annotations: *xml-annotations

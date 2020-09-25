@@ -5,7 +5,7 @@ import os
 from typing import Optional
 
 import sparv.util as util
-from sparv import Annotation, Config, Document, Export, ExportAnnotations, exporter
+from sparv import Annotation, Config, Document, Export, ExportAnnotations, SourceAnnotations, exporter
 
 log = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ def csv(doc: Document = Document(),
         word: Annotation = Annotation("[export.word]"),
         sentence: Annotation = Annotation("<sentence>"),
         annotations: ExportAnnotations = ExportAnnotations("csv_export.annotations"),
-        source_annotations: Optional[list] = Config("csv_export.source_annotations"),
+        source_annotations: SourceAnnotations = SourceAnnotations("csv_export.source_annotations"),
         remove_namespaces: bool = Config("export.remove_module_namespaces", False),
         sparv_namespace: str = Config("export.sparv_namespace"),
         source_namespace: str = Config("export.source_namespace"),

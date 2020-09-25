@@ -4,10 +4,11 @@ import logging
 import os
 from typing import Optional
 
-from . import xml_utils
 import sparv.util as util
 from sparv import (AllDocuments, Annotation, AnnotationData, Config, Corpus, Document, Export, ExportAnnotations,
-                   ExportInput, OutputCommonData, exporter, installer)
+                   ExportInput, OutputCommonData, SourceAnnotations, exporter, installer)
+
+from . import xml_utils
 
 log = logging.getLogger(__name__)
 
@@ -21,7 +22,7 @@ def scrambled(doc: Document = Document(),
               token: Annotation = Annotation("<token>"),
               word: Annotation = Annotation("[export.word]"),
               annotations: ExportAnnotations = ExportAnnotations("xml_export.annotations"),
-              source_annotations: Optional[list] = Config("xml_export.source_annotations"),
+              source_annotations: SourceAnnotations = SourceAnnotations("xml_export.source_annotations"),
               remove_namespaces: bool = Config("export.remove_module_namespaces", False),
               sparv_namespace: str = Config("export.sparv_namespace"),
               source_namespace: str = Config("export.source_namespace"),

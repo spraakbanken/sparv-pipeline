@@ -9,7 +9,7 @@ from typing import Optional
 
 import sparv.util as util
 from sparv import (AllDocuments, Annotation, AnnotationAllDocs, Config, Corpus, Document, Export, ExportAnnotations,
-                   ExportInput, exporter)
+                   ExportInput, SourceAnnotations, exporter)
 from sparv.core import paths
 
 log = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ def vrt(doc: Document = Document(),
         token: Annotation = Annotation("<token>"),
         word: Annotation = Annotation("[export.word]"),
         annotations: ExportAnnotations = ExportAnnotations("cwb.annotations"),
-        source_annotations: Optional[list] = Config("cwb.source_annotations"),
+        source_annotations: SourceAnnotations = SourceAnnotations("cwb.source_annotations"),
         remove_namespaces: bool = Config("export.remove_module_namespaces", False),
         sparv_namespace: str = Config("export.sparv_namespace"),
         source_namespace: str = Config("export.source_namespace")):
@@ -66,7 +66,7 @@ def vrt_scrambled(doc: Document = Document(),
                   token: Annotation = Annotation("<token>"),
                   word: Annotation = Annotation("[export.word]"),
                   annotations: ExportAnnotations = ExportAnnotations("cwb.annotations"),
-                  source_annotations: Optional[list] = Config("cwb.source_annotations"),
+                  source_annotations: SourceAnnotations = SourceAnnotations("cwb.source_annotations"),
                   remove_namespaces: bool = Config("export.remove_module_namespaces", False),
                   sparv_namespace: str = Config("export.sparv_namespace"),
                   source_namespace: str = Config("export.source_namespace")):
@@ -113,7 +113,7 @@ def vrt_scrambled(doc: Document = Document(),
 ])
 def encode(corpus: Corpus = Corpus(),
            annotations: ExportAnnotations = ExportAnnotations("cwb.annotations", is_input=False),
-           source_annotations: Optional[list] = Config("cwb.source_annotations"),
+           source_annotations: SourceAnnotations = SourceAnnotations("cwb.source_annotations"),
            docs: AllDocuments = AllDocuments(),
            words: AnnotationAllDocs = AnnotationAllDocs("[export.word]"),
            vrtfiles: ExportInput = ExportInput("vrt/{doc}.vrt", all_docs=True),
@@ -138,7 +138,7 @@ def encode(corpus: Corpus = Corpus(),
 @exporter("CWB encode, scrambled", order=1)
 def encode_scrambled(corpus: Corpus = Corpus(),
                      annotations: ExportAnnotations = ExportAnnotations("cwb.annotations", is_input=False),
-                     source_annotations: Optional[list] = Config("cwb.source_annotations"),
+                     source_annotations: SourceAnnotations = SourceAnnotations("cwb.source_annotations"),
                      docs: AllDocuments = AllDocuments(),
                      words: AnnotationAllDocs = AnnotationAllDocs("[export.word]"),
                      vrtfiles: ExportInput = ExportInput("vrt_scrambled/{doc}.vrt", all_docs=True),

@@ -47,14 +47,8 @@ export:
         - stats_export:freq_list_simple
         - xml_export:pretty
         - xml_export:preserved_format
-
-xml_export: &xml
     # Automatic annotations to be included in the export
     annotations:
         - PARAGRAPH.all
         - <text>:misc.id
         - FREELING.all
-
-csv_export: *xml
-
-cwb: *xml

@@ -590,6 +590,7 @@ class ExportInput(str):
 class ExportAnnotations(List[Tuple[Annotation, Optional[str]]]):
     """List of annotations to include in export."""
 
+    # If is_input = False the annotations won't be added to the rule's input.
     is_input = True
 
     def __init__(self, config_name: str, items=(), is_input: bool = True):
@@ -601,6 +602,31 @@ class ExportAnnotations(List[Tuple[Annotation, Optional[str]]]):
 class ExportAnnotationsAllDocs(List[Tuple[AnnotationAllDocs, Optional[str]]]):
     """List of annotations to include in export."""
 
+    # If is_input = False the annotations won't be added to the rule's input.
+    is_input = True
+
+    def __init__(self, config_name: str, items=(), is_input: bool = True):
+        list.__init__(self, items)
+        self.config_name = config_name
+        self.is_input = is_input
+
+
+class SourceAnnotations(List[Tuple[Annotation, Optional[str]]]):
+    """List of source annotations to include in export."""
+
+    # If is_input = False the annotations won't be added to the rule's input.
+    is_input = True
+
+    def __init__(self, config_name: str, items=(), is_input: bool = True):
+        list.__init__(self, items)
+        self.config_name = config_name
+        self.is_input = is_input
+
+
+class HeaderAnnotations(List[Tuple[Annotation, Optional[str]]]):
+    """List of header annotations to include in export."""
+
+    # If is_input = False the annotations won't be added to the rule's input.
     is_input = True
 
     def __init__(self, config_name: str, items=(), is_input: bool = True):
