@@ -83,7 +83,7 @@ you prior to annotating data.
 
 ### Hunpos
 |                                  |           |
-:----------------------------------|:----------
+|:---------------------------------|:----------
 |**Purpose**                       |Swedish part-of-speech tagging (prerequisite for many other annotations, such as all of the SALDO annotations)
 |**Download**                      |[Hunpos on Google Code](https://code.google.com/archive/p/hunpos/downloads)
 |**License**                       |[BSD-3](https://opensource.org/licenses/BSD-3-Clause)
@@ -91,7 +91,7 @@ you prior to annotating data.
 
 Installation is done by unpacking and then adding the executables to your path
 (you will need at least `hunpos-tag`). Alternatively you can place the binaries inside your [Sparv data
-directory](#datadir) under `bin/hunpos`.
+directory](#datadir) under `bin`.
 
 If you are running a 64-bit OS, you might also have to install 32-bit compatibility libraries if Hunpos won't run:
 ```bash
@@ -102,7 +102,7 @@ compile Hunpos from source.
 
 ### MaltParser
 |                                  |           |
-:----------------------------------|:----------
+|:---------------------------------|:----------
 |**Purpose**                       |Swedish dependency parsing
 |**Download**                      |[MaltParser webpage](http://www.maltparser.org/download.html)
 |**License**                       |[MaltParser license](http://www.maltparser.org/license.html) (open source)
@@ -114,7 +114,7 @@ Download and unpack the zip-file from the [MaltParser webpage](http://www.maltpa
 
 ### Sparv wsd
 |                                  |           |
-:----------------------------------|:----------
+|:---------------------------------|:----------
 |**Purpose**                       |Swedish word-sense disambiguation
 |**Download**                      |[Sparv wsd](https://github.com/spraakbanken/sparv-wsd/raw/master/bin/saldowsd.jar)
 |**License**                       |[MIT](https://opensource.org/licenses/MIT)
@@ -128,7 +128,7 @@ directory](#datadir) under `bin/wsd`.
 
 ### hfst-SweNER
 |                                  |           |
-:----------------------------------|:----------
+|:---------------------------------|:----------
 |**Purpose**                       |Swedish named-entity recognition
 |**Download**                      |[hfst-SweNER](http://www.ling.helsinki.fi/users/janiemi/finclarin/ner/hfst-swener-0.9.3.tgz)
 |**Version compatible with Sparv** |0.9.3
@@ -150,7 +150,7 @@ After applying these changes please follow the installation instructions provide
 
 ### Corpus Workbench
 |                                  |           |
-:----------------------------------|:----------
+|:---------------------------------|:----------
 |**Purpose**                       |Creating corpus workbench binary files. You will only need it if you want to be able to search corpora with this tool.
 |**Download**                      |[Corpus Workbench on SourceForge](http://cwb.sourceforge.net/beta.php)
 |**License**                       |[GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.html)
@@ -201,18 +201,18 @@ Swedish        |swe        |Sparv
 
 #### TreeTagger
 |                                  |           |
-:----------------------------------|:----------
+|:---------------------------------|:----------
 |**Purpose**                       |POS-tagging and lemmatisation for [some languages](#language_table)
 |**Download**                      |[TreeTagger webpage](http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/)
 |**License**                       |[TreeTagger license](https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/Tagger-Licence) (freely available for research, education and evaluation)
 |**Version compatible with Sparv** |3.2.3 (may work with newer versions)
 
 After downloading the software you need to have the `tree-tagger` binary in your path. Alternatively you can place the
-`tree-tagger` binary file in the [Sparv data directory](#datadir) under `bin/treetagger`.
+`tree-tagger` binary file in the [Sparv data directory](#datadir) under `bin    `.
 
 #### Stanford Parser
 |                                  |           |
-:----------------------------------|:----------
+|:---------------------------------|:----------
 |**Purpose**                       |Various analyses for English
 |**Download**                      |[Stanford CoreNLP webpage](https://stanfordnlp.github.io/CoreNLP/history.html)
 |**Version compatible with Sparv** |4.0.0 (may work with newer versions)
@@ -223,20 +223,20 @@ Please download, unzip and place contents inside the [Sparv data directory](#dat
 
 #### FreeLing
 |                                  |           |
-:----------------------------------|:----------
+|:---------------------------------|:----------
 |**Purpose**                       |Tokenisation, POS-tagging, lemmatisation and named entity recognition for [some languages](#language_table)
 |**Download**                      |[FreeLing on GitHub](https://github.com/TALP-UPC/FreeLing/releases/tag/4.2)
 |**Version compatible with Sparv** |4.2
 |**License**                       |[AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.en.html)
 
-Please install the software according to the instructions provided by FreeLing. You will also need to install the
-[sparv-freeling plugin](https://github.com/spraakbanken/sparv-freeling). Please follow the installation instructions for
-the sparv-freeling module on [GitHub](https://github.com/spraakbanken/sparv-freeling) in order to set up the plugin
-correctly.
+Please install the software (including the additional language data) according to the instructions provided by FreeLing.
+You will also need to install the [sparv-freeling plugin](https://github.com/spraakbanken/sparv-freeling). Please follow
+the installation instructions for the sparv-freeling module on [GitHub](https://github.com/spraakbanken/sparv-freeling)
+in order to set up the plugin correctly.
 
 <!-- #### fast_align
 |                                  |           |
-:----------------------------------|:----------
+|:---------------------------------|:----------
 |**Purpose**                       |word-linking on parallel corpora
 |**Download**                      |[fast_align on GitHub](https://github.com/clab/fast_align)
 |**License**                       |[Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0)
