@@ -20,13 +20,15 @@
   * [Inspecting Corpus Details](#inspecting-corpus-details)
   * [Setting up the Sparv Pipeline](#setting-up-the-sparv-pipeline)
   * [Advanced Commands](#advanced-commands)
+- [Requirements for Indata](#requirements-for-indata)
 - [Corpus Configuration](#corpus-configuration)
   * [Corpus Config Wizard](#corpus-config-wizard)
   * [Default Values](#default-values)
+  * [Import Options](#import-options)
+  * [Export Options](#export-options)
+  * [Headers](#headers)
   * [Annotation Classes](#annotation-classes)
   * [Annotation Presets](#annotation-presets)
-  * [Import and Export Options](#import-and-export-options)
-  * [Headers](#headers)
   * [Custom Annotations](#custom-annotations)
     + [Built-in Custom Annotations](#built-in-custom-annotations)
     + [Modifying Annotators with Custom Annotations](#modifying-annotators-with-custom-annotations)
@@ -346,6 +348,13 @@ sparv run-module hunpos msdtag --out segment.token:hunpos.msd --word segment.tok
 **`sparv presets`:** List available annotation presets available for your corpus. You can read more about presets in the
 [section about annotation presets](#annotation-presets).
 
+# Requirements for Indata
+**TODO**
+- valid XML where the text to be analyzed is actual text (not attribute values) in the XML
+- document size?
+- no elements/attributes called "not"
+
+
 # Corpus Configuration
 To be able to annotate a corpus with Sparv you will need to create a corpus config file. A corpus config file is written
 in [YAML](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html), a fairly human-readable format
@@ -354,8 +363,8 @@ how to process it. The [corpus config wizard](#corpus-config-wizard) can help yo
 examples of config files you can download the [example corpora][3].
 
 A minimal config file contains a corpus ID, information about which XML element is regarded the document element
-(**TODO**: what if the input is not XML?) and a list of (automatic) annotations you want to be included in the output
-(or multiple such lists if you want to produce multiple output formats). Here is an example of a small config file:
+(**TODO**: what if the input is not XML?) and a list of (automatic) annotations you want to be included in the output.
+Here is an example of a small config file:
 
 ```yaml
 metadata:
@@ -364,40 +373,13 @@ metadata:
 import:
     # The element representing one text document. Text-level annotations will be made on this element.
     document_element: text
-xml_export:
+export:
     # Automatic annotations to be included in the export
     annotations:
         - <sentence>:misc.id
         - <token>:saldo.baseform
         - <token>:hunpos.pos
         - <token>:sensaldo.sentiment_label
-```
-
-**Hint:** If you want to produce multiple output formats with the same annotations you can use YAML anchors. So instead
-of writing:
-```yaml
-xml_export:
-    annotations:
-        - <sentence>:misc.id
-        - <token>:saldo.baseform
-        - <token>:hunpos.pos
-        - <token>:sensaldo.sentiment_label
-csv_export:
-    annotations:
-        - <sentence>:misc.id
-        - <token>:saldo.baseform
-        - <token>:hunpos.pos
-        - <token>:sensaldo.sentiment_label
-```
-you may use this short form:
-```yaml
-xml_export: &xmlannotations
-    annotations:
-        - <sentence>:misc.id
-        - <token>:saldo.baseform
-        - <token>:hunpos.pos
-        - <token>:sensaldo.sentiment_label
-csv_export: *xmlannotations
 ```
 
 ## Corpus Config Wizard
@@ -427,6 +409,80 @@ There are a couple of config options that must be set (either through the defaul
   - `[export module].annotations`
   - **TODO** What more?
 
+
+## Import Options
+**TODO**
+- Renaming elemets/attributes?
+- source_dir
+- source_type
+- document_element
+
+
+## Export Options
+The `export` section of your corpus config defines what the output data (or export) looks like. With the config option
+`export.source_annotations` you can tell Sparv what elements and attributes present in your indata you would like to
+keep in your output data (this only applies if your input data is XML). If you don't specify anything, everything will
+be kept in the output. If you do list anything here, make sure that you include the root element (i.e. the element that
+encloses all other included elements and text content) for each of your input files. If you don't, the resulting output
+XML will be invalid and Sparv won't be able to produce XML files. If you only want to produce other output formats than
+XML you don't need to worry about this.
+
+It is possible to rename elements and attributes present in your indata. Let's say your documents contain elements like
+ this `<article name="Scandinavian Furniture" date="2020-09-28">` and you would like them to look like this in the
+ output `<text title="Scandinavian Furniture" date="2020-09-28">` (so you want to rename "article" and "name" to "text"
+ and "title" respectively). For this you can use the following syntax:
+```yaml
+export:
+    source_annotations:
+        - article as text
+        - name as title
+        - ...
+```
+Please note that the dots (`...`) in the above example also carry meaning. You can use these to refer to all the
+remaining elements and attributes in your indata. Without using the dots the "date" attribute in the example would be
+lost. If you want to keep most of the markup of your indata but you want to exclude some elements or attributes you can
+do this by using the `not` keyword:
+```yaml
+export:
+    source_annotations:
+        - not date
+```
+In the example above this would result in the following output: `<article name="Scandinavian Furniture">`.
+
+The option `export.annotations` contains a list of automatic annotations you want Sparv to produce and include in the
+output. You can run `sparv annotations` to see what annotations are available. You can also read the section about
+[annotation presets](#annotation-presets) for more info about automatic annotations.
+
+If you want to produce multiple output formats containing different annotations you can override the
+`export.source_annotations` and `export.annotations` options for specific exporter modules. The annotations for the XML
+export for example are set with `xml_export.source_annotations` and `xml_export.annotations`, the annotations for the
+CSV export are set with `csv_export.source_annotations` and `csv_export.annotations` and so on.
+
+**Hint:** If you want to produce multiple output formats with the same annotations you can use YAML
+[anchors](https://docs.ansible.com/ansible/latest/user_guide/playbooks_advanced_syntax.html#yaml-anchors-and-aliases-sharing-variable-values)
+to avoid copying and pasting the same settings.
+
+The option `export.default` defines a list of export formats that will be produced when running `sparv run`. Per default
+it only contains `xml_export:pretty`, the formatted XML export with one token per line. 
+
+**TODO**
+- export.word: <token>:some_annotation
+- scramble_on: <sentence>
+- remove_module_namespaces: true
+- sparv_namespace: Null
+- source_namespace: Null
+
+## Headers
+Sometimes corpus metadata can be stored in XML headers rather than in attributes belonging to text-enclosing elements.
+Sparv can extract information from headers and store as annotations. These can then be used as input for different
+analyses. Information from headers can be exported as attributes if you choose to.
+
+**TODO**
+- Give example.
+- How to write config?
+- Mention `as`, `not` and `...` syntax.
+
+
 ## Annotation Classes
 The `classes` config variable defines the annotation classes for your corpus. Annotation classes are used to create
 abstract instances for common annotations such as tokens, sentences and text units. They simplify dependencies between
@@ -440,7 +496,7 @@ segment module. Classes may also be used in your export annotation lists. If you
 from hunpos you would include `segment.token:hunpos.pos` in the annotations, meaning that you want to have pos tags from
 hunpos as attributes to the tokens prodcued by the segment module. Here is an example:
 ```yaml
-xml_export:
+export:
     annotations:
         - segment.token:hunpos.pos
         - segment.token:malt.deprel
@@ -451,7 +507,7 @@ The disadvantage of this notation is that when you decide to exchange your token
 `my_new_segmenter.token`. Instead of doing that you can just re-define your token class by setting `classes.token` to
 `my_new_segmenter.token` and write your annotations list as follows:
 ```yaml
-xml_export:
+export:
     annotations:
         - <token>:hunpos.pos
         - <token>:malt.deprel
@@ -462,7 +518,7 @@ xml_export:
 When telling Sparv which automatic annotations should be included in a speficic output format you usually list them like
 this:
 ```yaml
-xml_export:
+export:
     annotations:
         - <token>:saldo.baseform
         - <token>:saldo.lemgram
@@ -474,7 +530,7 @@ xml_export:
 If you want to process many corpora and produce the same annotations for them it can be tedious to include the same
 annotations list in every corpus config. Instead you can use annotation presets for a more compact representation:
 ```yaml
-xml_export:
+export:
     annotations:
         - SWE_DEFAULT.saldo
 ```
@@ -484,32 +540,22 @@ combine different presets with each other. You can find the presets in the [Spar
 `config/presets` folder) and here you can even add your own preset files if you like. You can list all available presets
 for your corpus (and which annotations they include) with `sparv presets`.
 
-Preset files may define their own `class` default values. These will be set automatically when using a preset. You can
-override these in your config files if you know what you are doing.
+It is possible to exclude specific annotations from a preset by using the `not` keyword. In the following example we are
+including all SALDO annotations except for the compound analysis attributes:
+```yaml
+export:
+    annotations:
+        - SWE_DEFAULT.saldo
+        - not <token>:saldo.compwf
+        - not <token>:saldo.complemgram
+```
 
-## Import and Export Options
-With the config option `export.source_annotations` you can tell Sparv what elements and attributes present in your
-indata you would like to keep in your output data (this only applies if your input data is XML). If you don't specify
-anything, everything will be kept in the output. If you do list anything here, make sure that you include the root
-element (i.e. the element that encloses all other included elements and text content) for your input files. If you
-don't, the resulting output XML will be invalid and Sparv won't be able to produce XML files. If you only want to
-produce other output formats than XML you don't need to worry about this.
+**Note:** Preset files may define their own `class` default values. These will be set automatically when using a preset.
+You can override these in your config files if you know what you are doing.
 
-**TODO**
-- Import: renaming elemets/attributes?
-- Mention `as`, `not` and `...` syntax.
-- Explain option `export.word = <token>:some_annotation`
-- What more?
+If you frequently run corpora through using the same annotations you can add your own presets. They will be accessible
+by Sparv as soon as you store them in `config/presets` in the [Sparv data directory](#datadir).
 
-## Headers
-Sometimes corpus metadata can be stored in XML headers rather than in attributes belonging to text-enclosing elements.
-Sparv can extract information from headers and store as annotations. These can then be used as input for different
-analyses. Information from headers can be exported as attributes if you choose to.
-
-**TODO**
-- Give example.
-- How to write config?
-- Mention `as`, `not` and `...` syntax.
 
 ## Custom Annotations
 Custom annotations may be used to apply more customised, non-pre-defined annotations to your corpus. The different
@@ -618,7 +664,7 @@ to use your annotator. Read more about writing plugins in the [developer's guide
 
 # MISC
 **TODO**
-- List and explain the segmeters available in `segment.py`?
+- List and explain the segmenters available in `segment.py`?
 - Tipsa om att man kan konvertera strukturella attribut till ordattribut (till exempel NER). Det är praktiskt för csv-exporten!
 
 
