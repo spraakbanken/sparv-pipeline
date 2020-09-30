@@ -3,20 +3,26 @@
 import re
 from typing import List, Optional
 
-from sparv import Annotation, Output, Text, annotator, util
+from sparv import Annotation, Config, Output, Text, annotator, util
 
 
-@annotator("Text value of a span (usually a token)")
+@annotator("Text value of a span (usually a token)", config=[
+    Config("misc.keep_control_chars", default=False,
+           description="Set to True if you don't want control characters to be removed from tokens in the output.")])
 def text_spans(text: Text = Text(),
                chunk: Annotation = Annotation("<token>"),
-               out: Output = Output("<token>:misc.word", cls="token:word")):
+               out: Output = Output("<token>:misc.word", cls="token:word"),
+               keep_control_chars: Optional[bool] = Config("misc.keep_control_chars")):
     """Add the text content for each edge as a new annotation."""
     corpus_text = text.read()
     if isinstance(chunk, (str, Annotation)):
         chunk = chunk.read_spans()
     out_annotation = []
     for span in chunk:
-        out_annotation.append(corpus_text[span[0]:span[1]])
+        token = corpus_text[span[0]:span[1]]
+        if not keep_control_chars:
+            token = util.remove_control_characters(token)
+        out_annotation.append(token)
     if out:
         out.write(out_annotation)
     else:

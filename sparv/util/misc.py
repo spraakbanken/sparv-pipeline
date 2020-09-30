@@ -164,7 +164,7 @@ def truncateset(string, maxlength=4095, delimiter="|", affix="|", encoding="UTF-
                 return cwbset(values[:i], delimiter, affix)
 
 
-def remove_control_characters(text):
-    """Remove control characters from text."""
-    return text.translate(dict(
-        (ord(c), None) for c in [chr(i) for i in list(range(9)) + list(range(11, 13)) + list(range(14, 32)) + [127]]))
+def remove_control_characters(text, keep=["\n", "\t", "\r"]):
+    """Remove control characters from text, except for those in 'keep'."""
+    import unicodedata
+    return "".join(c for c in text if c in keep or unicodedata.category(c)[0] != "C")
