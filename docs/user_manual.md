@@ -20,7 +20,7 @@
   * [Inspecting Corpus Details](#inspecting-corpus-details)
   * [Setting up the Sparv Pipeline](#setting-up-the-sparv-pipeline)
   * [Advanced Commands](#advanced-commands)
-- [Requirements for Indata](#requirements-for-indata)
+- [Requirements for Input Data](#requirements-for-input-data)
 - [Corpus Configuration](#corpus-configuration)
   * [Corpus Config Wizard](#corpus-config-wizard)
   * [Default Values](#default-values)
@@ -348,11 +348,12 @@ sparv run-module hunpos msdtag --out segment.token:hunpos.msd --word segment.tok
 **`sparv presets`:** List available annotation presets available for your corpus. You can read more about presets in the
 [section about annotation presets](#annotation-presets).
 
-# Requirements for Indata
+# Requirements for Input Data
 **TODO**
 - valid XML where the text to be analyzed is actual text (not attribute values) in the XML
 - document size?
 - no elements/attributes called "not"
+- make sure to not have `annotations` or `export` dir in corpus dir
 
 
 # Corpus Configuration
@@ -384,7 +385,8 @@ export:
 
 ## Corpus Config Wizard
 The corpus config wizard is a tool designed to help you create a corpus config file by asking questions about your
-corpus. A config file that was created with the wizard can of course be edited manually afterwards.
+corpus. Run `sparv wizard` in order to start the tool. A config file that was created with the wizard can of course be
+edited manually afterwards.
 
 **TODO**
 
@@ -416,19 +418,20 @@ There are a couple of config options that must be set (either through the defaul
 - source_dir
 - source_type
 - document_element
+- `skip`
 
 
 ## Export Options
 The `export` section of your corpus config defines what the output data (or export) looks like. With the config option
-`export.source_annotations` you can tell Sparv what elements and attributes present in your indata you would like to
+`export.source_annotations` you can tell Sparv what elements and attributes present in your input data you would like to
 keep in your output data (this only applies if your input data is XML). If you don't specify anything, everything will
 be kept in the output. If you do list anything here, make sure that you include the root element (i.e. the element that
 encloses all other included elements and text content) for each of your input files. If you don't, the resulting output
 XML will be invalid and Sparv won't be able to produce XML files. If you only want to produce other output formats than
 XML you don't need to worry about this.
 
-It is possible to rename elements and attributes present in your indata. Let's say your documents contain elements like
- this `<article name="Scandinavian Furniture" date="2020-09-28">` and you would like them to look like this in the
+It is possible to rename elements and attributes present in your input data. Let's say your documents contain elements
+ like this `<article name="Scandinavian Furniture" date="2020-09-28">` and you would like them to look like this in the
  output `<text title="Scandinavian Furniture" date="2020-09-28">` (so you want to rename "article" and "name" to "text"
  and "title" respectively). For this you can use the following syntax:
 ```yaml
@@ -439,9 +442,9 @@ export:
         - ...
 ```
 Please note that the dots (`...`) in the above example also carry meaning. You can use these to refer to all the
-remaining elements and attributes in your indata. Without using the dots the "date" attribute in the example would be
-lost. If you want to keep most of the markup of your indata but you want to exclude some elements or attributes you can
-do this by using the `not` keyword:
+remaining elements and attributes in your input data. Without using the dots the "date" attribute in the example would
+be lost. If you want to keep most of the markup of your input data but you want to exclude some elements or attributes
+you can do this by using the `not` keyword:
 ```yaml
 export:
     source_annotations:
@@ -472,15 +475,64 @@ it only contains `xml_export:pretty`, the formatted XML export with one token pe
 - sparv_namespace: Null
 - source_namespace: Null
 
+
 ## Headers
 Sometimes corpus metadata can be stored in XML headers rather than in attributes belonging to text-enclosing elements.
 Sparv can extract information from headers and store as annotations. These can then be used as input for different
 analyses. Information from headers can be exported as attributes if you choose to.
 
-**TODO**
-- Give example.
-- How to write config?
-- Mention `as`, `not` and `...` syntax.
+Let's say we have a corpus file with the following contents:
+```xml
+<text id="1">
+    <header>
+        <author birth="1780" death="????">Anonym</author>
+        <date>2020-09-08</date>
+        <title>
+            <main-title>A History of Corpora</main-title>
+            <sub-title>A Masterpiece</sub-title>
+        </title>
+    </header>
+    <another-header>
+        <dummy>1</dummy>
+    </another-header>
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+    eiusmod tempor incididunt ut labore et dolore magna aliqua.
+</text>
+```
+We want to keep the data in `<header>` but we don't want the contents to be analysed as corpus text. We want its
+metadata to be attached to the `<text>` element. We want to get rid of `<another-header>` and its contents entirely.
+This configuration will do the job:
+```yaml
+xml_import:
+    header_elements:
+        - header
+        - another-header
+    header_data:
+        - header/author as text:author
+        - header/author:birth as text:author-birth
+        - header/author:death as text:author-death
+        - header/title/main-title as text:title
+        - header/title/sub-title as text:subtitle
+        - header/date as text:date
+export:
+    header_annotations:
+        - not header
+        - not another-header
+```
+The output will look like this:
+```xml
+<text author="Anonym" author-birth="1780" author-death="????" date="2020-09-08"
+      id="1" title="A History of Corpora" subtitle="A Masterpiece">
+    <sentence id="13f">
+      <token>Lorem</token>
+      <token>ipsum</token>
+      ...
+    </sentence>
+</text>
+```
+Of course it is possible to keep the headers in the output (without them being analysed as corpus text) by listing them
+without the `not` in `export.header_annotations`. If you don't specify anything at all in `export.header_annotations`
+all your headers will be kept.
 
 
 ## Annotation Classes
