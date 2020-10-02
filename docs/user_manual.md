@@ -62,17 +62,18 @@ pipx install https://github.com/spraakbanken/sparv-pipeline/archive/latest.tar.g
 To check if your installation of Sparv was successful you can type `sparv` on your command line. The Sparv help should
 now be displayed.
 
-<a name="datadir"></a>Sparv needs access to a directory on your system where it can store data, such as language models
-and configuration files. This is called the *Sparv data directory*. By running `sparv setup` you can tell Sparv where to
-set up its data directory.
+Sparv needs access to a directory on your system where it can store data, such as language models and configuration
+files. This is called the *Sparv data directory*. By running `sparv setup` you can tell Sparv
+where to set up its data directory.
 
 If you like you can pre-build the model files. This step is optional and the only advantage is that annotating corpora
 will be quicker once all the models are set up. If you skip this step, models will be downloaded and built automatically
 on demand when annotating your first corpus. Pre-building models can be done by running `sparv build-models`. If you do
-this in a directory where there is no [corpus config](#corpus-configuration) you have to tell Sparv what language the models
-should be built for (otherwise the language of the corpus config is chosen automatically). The language is provided as a
-three-letter code with the `--language` flag (check [this table](#language_table) for available languages and their
-codes). For example, if you would like to build all the Swedish models you can run `sparv build-models --language swe`.
+this in a directory where there is no [corpus config](#corpus-configuration) you have to tell Sparv what language the
+models should be built for (otherwise the language of the corpus config is chosen automatically). The language is
+provided as a three-letter code with the `--language` flag (check [this table](#software-for-analysing-other-languages)
+for available languages and their codes). For example, if you would like to build all the Swedish models you can run
+`sparv build-models --language swe`.
 
 ## Installing Additional Third-party Software
 The Sparv Pipeline is typically used together with several plugins and third-party software. Which of these you will
@@ -93,7 +94,7 @@ you prior to annotating data.
 
 Installation is done by unpacking and then adding the executables to your path
 (you will need at least `hunpos-tag`). Alternatively you can place the binaries inside your [Sparv data
-directory](#datadir) under `bin`.
+directory](#setting-up-sparv) under `bin`.
 
 If you are running a 64-bit OS, you might also have to install 32-bit compatibility libraries if Hunpos won't run:
 ```bash
@@ -112,7 +113,7 @@ compile Hunpos from source.
 |**Dependencies**          		   |[Java][2]
 
 Download and unpack the zip-file from the [MaltParser webpage](http://www.maltparser.org/download.html) and place the
-`maltparser-1.7.2` folder inside the `bin` folder of the [Sparv data directory](#datadir).
+`maltparser-1.7.2` folder inside the `bin` folder of the [Sparv data directory](#setting-up-sparv).
 
 ### Sparv wsd
 |                                  |           |
@@ -126,7 +127,7 @@ Download and unpack the zip-file from the [MaltParser webpage](http://www.maltpa
 developed at Språkbanken and runs under the same license as the Sparv pipeline. In order to use it within the Sparv
 Pipeline it is enough to download the saldowsd.jar from
 GitHub (see downloadlink above) and place it inside your [Sparv data
-directory](#datadir) under `bin/wsd`.
+directory](#setting-up-sparv) under `bin/wsd`.
 
 ### hfst-SweNER
 |                                  |           |
@@ -170,8 +171,8 @@ export CORPUS_REGISTRY=~/cwb/registry;
 ### Software for Analysing other Languages
 Sparv can use different third-party software for analyzing corpora in other languages than Swedish.
 
-<a name="language_table"></a>The following is a list over the languages currently supported by the corpus pipeline,
-their language codes (ISO 639-3) and which tools Sparv can use to analyze them:
+The following is a list over the languages currently supported by the corpus pipeline, their language codes (ISO 639-3)
+and which tools Sparv can use to analyze them:
 
 Language       |ISO Code   |Analysis Tool
 :--------------|:----------|:-------------
@@ -204,13 +205,13 @@ Swedish        |swe        |Sparv
 #### TreeTagger
 |                                  |           |
 |:---------------------------------|:----------
-|**Purpose**                       |POS-tagging and lemmatisation for [some languages](#language_table)
+|**Purpose**                       |POS-tagging and lemmatisation for [some languages](#software-for-analysing-other-languages)
 |**Download**                      |[TreeTagger webpage](http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/)
 |**License**                       |[TreeTagger license](https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/Tagger-Licence) (freely available for research, education and evaluation)
 |**Version compatible with Sparv** |3.2.3 (may work with newer versions)
 
 After downloading the software you need to have the `tree-tagger` binary in your path. Alternatively you can place the
-`tree-tagger` binary file in the [Sparv data directory](#datadir) under `bin    `.
+`tree-tagger` binary file in the [Sparv data directory](#setting-up-sparv) under `bin`.
 
 #### Stanford Parser
 |                                  |           |
@@ -221,12 +222,12 @@ After downloading the software you need to have the `tree-tagger` binary in your
 |**License**                       |[GPL-2.0](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
 |**Dependencies**          		   |[Java][2]
 
-Please download, unzip and place contents inside the [Sparv data directory](#datadir) under `bin/stanford_parser`.
+Please download, unzip and place contents inside the [Sparv data directory](#setting-up-sparv) under `bin/stanford_parser`.
 
 #### FreeLing
 |                                  |           |
 |:---------------------------------|:----------
-|**Purpose**                       |Tokenisation, POS-tagging, lemmatisation and named entity recognition for [some languages](#language_table)
+|**Purpose**                       |Tokenisation, POS-tagging, lemmatisation and named entity recognition for [some languages](#software-for-analysing-other-languages)
 |**Download**                      |[FreeLing on GitHub](https://github.com/TALP-UPC/FreeLing/releases/tag/4.2)
 |**Version compatible with Sparv** |4.2
 |**License**                       |[AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.en.html)
@@ -244,7 +245,7 @@ in order to set up the plugin correctly.
 |**License**                       |[Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0)
 
 Please follow the installation instructions given in the fast_align repository and make sure to have the binaries
-`atools` and `fast_align` in your path. Alternatively you can place them in the [Sparv data directory](#datadir) under
+`atools` and `fast_align` in your path. Alternatively you can place them in the [Sparv data directory](#setting-up-sparv) under
 `bin/word_alignment`. -->
 
 
@@ -348,12 +349,21 @@ sparv run-module hunpos msdtag --out segment.token:hunpos.msd --word segment.tok
 **`sparv presets`:** List available annotation presets available for your corpus. You can read more about presets in the
 [section about annotation presets](#annotation-presets).
 
+
 # Requirements for Input Data
-**TODO**
-- valid XML where the text to be analyzed is actual text (not attribute values) in the XML
-- document size?
-- no elements/attributes called "not"
-- make sure to not have `annotations` or `export` dir in corpus dir
+In order for Sparv to be able to process your corpus, please make sure your input data meets the following requirements:
+
+1. Make sure you don't have any directories called `annotations` or `export` in your corpus directory as Sparv will
+   attempt to create and use these.
+
+2. If your corpus is in XML format, make sure your **XML is valid** and that the text to be analysed is actual text (not
+   attribute values).
+
+3. If your corpus is in XML format, make sure you don't have any elements of attributes called "not" as this is a
+   reserved keyword in the Sparv pipeline.
+
+4. If your input documents are very large or if your corpus consists of a large amount of really small documents Sparv
+   will become quite slow. The recommended size per document lies around **TODO:** ?? MB.
 
 
 # Corpus Configuration
@@ -364,9 +374,8 @@ how to process it. The [corpus config wizard](#corpus-config-wizard) can help yo
 examples of config files you can download the [example corpora][3].
 
 A minimal config file contains a corpus ID, information about which XML element is regarded the document element
-(**TODO**: what if the input is not XML?) and a list of (automatic) annotations you want to be included in the output.
-Here is an example of a small config file:
-
+(**Note:** if your input documents are plain text each document will be regarded as a document element) and a list of
+(automatic) annotations you want to be included in the output. Here is an example of a small config file:
 ```yaml
 metadata:
     # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
@@ -397,28 +406,40 @@ defines the name of the binary the hunpos module uses to run part-of-speech tagg
 options usually have default values which are defined by the module itself.
 
 When running Sparv your corpus config will be read and combined with Sparv's default config file (`config_default.yaml`
-in the [Sparv data directory](#datadir)) and the default values defined by different Sparv modules. You can view the
-resulting configuration by running `sparv config`. Using the `config` command you can also ask for specific config
-values, e.g. `sparv config metadata.id`. All default values can be overridden in your own corpus config.
+in the [Sparv data directory](#setting-up-sparv)) and the default values defined by different Sparv modules. You can
+view the resulting configuration by running `sparv config`. Using the `config` command you can also ask for specific
+config values, e.g. `sparv config metadata.id`. All default values can be overridden in your own corpus config.
 
-There are a couple of config options that must be set (either through the default config or the corpus config):
+There are a few config options that must be set (either through the default config or the corpus config):
   - `metadata.id`
   - `metadata.language` (default: `swe`)
   - `import.importer` (default: `xml_import:parse`)
+  - `export.annotations`
   - `classes.token` (default: `segment.token`)
   - `classes.sentence` (default: `segment.sentence`)
-  - `classes.text`
-  - `[export module].annotations`
   - **TODO** What more?
 
 
 ## Import Options
+The `import` section of your corpus config is used to give Sparv some information about your input documents (i.e. your
+corpus). 
+
+`import.source_dir` defines the location of your input documents and it defaults to `source`. Sparv will check
+the source directory recursively for valid input documents to process.
+
+`import.importer` is used to tell Sparv which importer to use to process your corpus documents. The setting you want to
+choose depends on the format of your input documents. If your corpus is in XML you should choose `xml_import:parse`
+(this is the default setting), if your corpus documents are in plain text, you should choose `text_import:parse`
+instead.
+
+`import.document_element` specifies the XML element representing one text document. Text-level annotations will be made
+on this element. If your input is anything else than XML you won't have to change this setting. In this case a default
+`text` root element will be created automatically.
+
 **TODO**
-- Renaming elemets/attributes?
-- source_dir
-- importer
-- document_element
-- `skip`
+- xml importer options:
+  - Renaming elemets/attributes? (Check if this is possible)
+  - `skip`
 
 
 ## Export Options
@@ -426,9 +447,9 @@ The `export` section of your corpus config defines what the output data (or expo
 `export.source_annotations` you can tell Sparv what elements and attributes present in your input data you would like to
 keep in your output data (this only applies if your input data is XML). If you don't specify anything, everything will
 be kept in the output. If you do list anything here, make sure that you include the root element (i.e. the element that
-encloses all other included elements and text content) for each of your input files. If you don't, the resulting output
-XML will be invalid and Sparv won't be able to produce XML files. If you only want to produce other output formats than
-XML you don't need to worry about this.
+encloses all other included elements and text content) for each of your input documents. If you don't, the resulting
+output XML will be invalid and Sparv won't be able to produce XML files. If you only want to produce other output
+formats than XML you don't need to worry about this.
 
 It is possible to rename elements and attributes present in your input data. Let's say your documents contain elements
  like this `<article name="Scandinavian Furniture" date="2020-09-28">` and you would like them to look like this in the
@@ -468,12 +489,35 @@ to avoid copying and pasting the same settings.
 The option `export.default` defines a list of export formats that will be produced when running `sparv run`. Per default
 it only contains `xml_export:pretty`, the formatted XML export with one token per line. 
 
-**TODO**
-- export.word: <token>:some_annotation
-- scramble_on: <sentence>
-- remove_module_namespaces: true
-- sparv_namespace: Null
-- source_namespace: Null
+There are a couple of export options concerning XML namespaces. You can chose to prefix all annotations produced by
+Sparv with a custom prefix with the `export.sparv_namespace` option. Likewise you can add a prefix to all elements and
+attributes existing in your input with the `export.source_namespace` option.
+
+The option `export.remove_module_namespaces` is `true` by default which means that the module name prefixes are removed
+in the annotations. Turning the option off will result in output like:
+```xml
+<segment.token hunpos.pos="IN" saldo.baseform="|hej|">Hej</segment.token>
+```
+instead of the more compact:
+```xml
+<token pos="IN" baseform="|hej|">Hej</token>
+```
+
+`export.scramble_on` is a setting used by all the export formats that support scrambling. It controls on what element
+your corpus will be scrambled. Typical settings are `export.scramble_on: <sentence>` or `export.scramble_on:
+<paragraph>`.
+
+The option `export.word` is used to define the strings to be output as tokens in the export. By default this is set to
+`<token:word>`. A useful application for this setting is anonymisation of texts. If you want to produce XML containing
+only annotations but not the actual text, you could set `export.word: <token>:anonymised` to get output like this:
+```xml
+    <sentence id="b1ac">
+      <token pos="IN">***</token>
+      <token pos="MAD">*</token>
+    </sentence>
+```
+**Note:** For technical reasons the export `xml_export:preserved_format` does not respect this setting. The preserved
+format XML will always include the original corpus text.
 
 
 ## Headers
@@ -588,7 +632,7 @@ export:
 ```
 
 Here `SWE_DEFAULT.saldo` will expand to all the SALDO annotations. You can mix presets with annotations and you can
-combine different presets with each other. You can find the presets in the [Sparv data directory](#datadir) (in the
+combine different presets with each other. You can find the presets in the [Sparv data directory](#setting-up-sparv) (in the
 `config/presets` folder) and here you can even add your own preset files if you like. You can list all available presets
 for your corpus (and which annotations they include) with `sparv presets`.
 
@@ -606,7 +650,7 @@ export:
 You can override these in your config files if you know what you are doing.
 
 If you frequently run corpora through using the same annotations you can add your own presets. They will be accessible
-by Sparv as soon as you store them in `config/presets` in the [Sparv data directory](#datadir).
+by Sparv as soon as you store them in `config/presets` in the [Sparv data directory](#setting-up-sparv).
 
 
 ## Custom Annotations
