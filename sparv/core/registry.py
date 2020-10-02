@@ -82,7 +82,7 @@ def find_modules(no_import=False, find_custom=False) -> list:
     return modules
 
 
-def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, source_type: Optional[str] = None,
+def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, file_extension: Optional[str] = None,
                outputs=(), language: Optional[List[str]] = None, config: Optional[List[Config]] = None,
                order: Optional[int] = None, abstract: bool = False):
     """Return a decorator for annotator functions, adding them to annotator registry."""
@@ -103,7 +103,7 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
             "function": f,
             "name": name,
             "type": a_type,
-            "source_type": source_type,
+            "file_extension": file_extension,
             "outputs": outputs,
             "language": language,
             "config": config,
@@ -122,13 +122,13 @@ def annotator(description: str, name: Optional[str] = None, language: Optional[L
                       config=config, order=order)
 
 
-def importer(description: str, source_type: str, name: Optional[str] = None, outputs=None,
+def importer(description: str, file_extension: str, name: Optional[str] = None, outputs=None,
              config: Optional[List[Config]] = None):
     """Return a decorator for importer functions.
 
     Args:
         description: Description of importer.
-        source_type: The file extension of the type of source this importer handles, e.g. "xml" or "txt".
+        file_extension: The file extension of the type of source this importer handles, e.g. "xml" or "txt".
         name: Optional name to use instead of the function name.
         outputs: A list of annotations and attributes that the importer is guaranteed to generate.
             May also be a Config instance referring to such a list.
@@ -139,7 +139,7 @@ def importer(description: str, source_type: str, name: Optional[str] = None, out
     Returns:
         A decorator
     """
-    return _annotator(description=description, a_type=Annotator.importer, name=name, source_type=source_type,
+    return _annotator(description=description, a_type=Annotator.importer, name=name, file_extension=file_extension,
                       outputs=outputs, config=config)
 
 

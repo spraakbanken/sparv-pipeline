@@ -70,7 +70,7 @@ class RuleStorage:
         self.installer = annotator_info["type"] is registry.Annotator.installer
         self.modelbuilder = annotator_info["type"] is registry.Annotator.modelbuilder
         self.description = annotator_info["description"]
-        self.source_type = annotator_info["source_type"]
+        self.file_extension = annotator_info["file_extension"]
         self.import_outputs = annotator_info["outputs"]
         self.order = annotator_info["order"]
         self.abstract = annotator_info["abstract"]
@@ -92,8 +92,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         return False
 
     if rule.importer:
-        rule.inputs.append(Path(get_source_path(), "{doc}." + rule.source_type))
-        if rule.source_type == sparv_config.get("import.source_type", "xml"):
+        rule.inputs.append(Path(get_source_path(), "{doc}." + rule.file_extension))
+        if rule.target_name == sparv_config.get("import.importer"):
             # Exports always generate corpus text file
             rule.outputs.append(paths.annotation_dir / "{doc}" / util.TEXT_FILE)
             # If importer guarantees other outputs, add them to outputs list
@@ -500,8 +500,17 @@ def get_annotation_path(annotation, data=False, common=False):
 def get_source_files(source_files) -> List[str]:
     """Get list of all available source files."""
     if not source_files:
+        if not sparv_config.get("import.importer"):
+            raise util.SparvErrorMessage("The config variable 'import.importer' must not be empty.", "sparv")
+        try:
+            importer_module, _, importer_function = sparv_config.get("import.importer").partition(":")
+            file_extension = registry.annotators[importer_module][importer_function]["file_extension"]
+        except KeyError:
+            raise util.SparvErrorMessage(
+                "Could not find the importer '{}'. Make sure the 'import.importer' config value refers to an "
+                "existing importer.".format(sparv_config.get("import.importer")), "sparv")
         source_files = [f[1][0] for f in snakemake.utils.listfiles(
-            Path(get_source_path(), "{file}." + sparv_config.get("import.source_type", "xml")))]
+            Path(get_source_path(), "{file}." + file_extension))]
     return source_files
 
 

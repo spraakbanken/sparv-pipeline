@@ -404,7 +404,7 @@ values, e.g. `sparv config metadata.id`. All default values can be overridden in
 There are a couple of config options that must be set (either through the default config or the corpus config):
   - `metadata.id`
   - `metadata.language` (default: `swe`)
-  - `import.source_type` (default: `xml`)
+  - `import.importer` (default: `xml_import:parse`)
   - `classes.token` (default: `segment.token`)
   - `classes.sentence` (default: `segment.sentence`)
   - `classes.text`
@@ -416,7 +416,7 @@ There are a couple of config options that must be set (either through the defaul
 **TODO**
 - Renaming elemets/attributes?
 - source_dir
-- source_type
+- importer
 - document_element
 - `skip`
 

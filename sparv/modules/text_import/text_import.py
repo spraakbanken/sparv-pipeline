@@ -7,7 +7,7 @@ from sparv import importer, util
 from sparv.util.classes import Document, Output, Source, Text
 
 
-@importer("TXT import", source_type="txt", outputs=["text"])
+@importer("TXT import", file_extension="txt", outputs=["text"])
 def parse(doc: Document = Document(),
           source_dir: Source = Source(),
           prefix: str = "",

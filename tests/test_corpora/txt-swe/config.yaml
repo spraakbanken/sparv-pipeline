@@ -4,7 +4,7 @@ metadata:
 
 import:
     document_element: text
-    source_type: txt
+    importer: text_import:parse
 
 xml_export:
     annotations:

@@ -11,7 +11,7 @@ from sparv import Config, Document, Output, OutputData, Source, Text, importer, 
 log = logging.getLogger(__name__)
 
 
-@importer("XML import", source_type="xml", outputs=Config("xml_import.elements", []), config=[
+@importer("XML import", file_extension="xml", outputs=Config("xml_import.elements", []), config=[
     Config("xml_import.elements", [], description="List of elements and attributes in source document. Only needed for "
                                                   "renaming, as everything is parsed whether listed or not."),
     Config("xml_import.skip", [], description="Elements and attributes to skip. "

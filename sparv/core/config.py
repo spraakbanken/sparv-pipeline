@@ -33,7 +33,7 @@ config_structure = {
     "import": {
         "document_element": {"_source": "core"},
         "source_dir": {"_source": "core"},
-        "source_type": {"_source": "core"}
+        "importer": {"_source": "core"}
     },
     "export": {
         "default": {"_source": "core"},

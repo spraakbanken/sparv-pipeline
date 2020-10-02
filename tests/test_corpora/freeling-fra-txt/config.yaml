@@ -24,8 +24,8 @@ metadata:
 #===============================================================================
 
 import:
-    # File type of the input. Must be 'xml' or 'txt'.
-    source_type: txt
+    # Importer to use
+    importer: text_import:parse
     # The element representing one text document. Text-level annotations will be made on this element.
     document_element: text
 
