@@ -1,14 +1,3 @@
-
-# Writing Sparv modules
-- Explain the most important classes and util functions
-- List annotators (decorators), their options and what they are used for
-- When should you use the SparvError class?
-
-## Importer module
-
-## Exporter module
-
-
 # Writing Plugins
 Writing a Sparv plugin is not much different from writing a Sparv module. The main difference is that the code for a
 plugin is not stored together with the core Sparv code. Instead it usually lives in a separate repository. Reasons for

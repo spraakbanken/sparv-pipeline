@@ -1,0 +1,14 @@
+- User Manual
+    - [Installation and Setup](user-manual/installation-and-setup.md)
+    - [Running Sparv](user-manual/running-sparv.md)
+    - [Requirements for Input Data](user-manual/requirements-for-input-data.md)
+    - [Corpus Configuration](user-manual/corpus-configuration.md)
+    - [MISC](user-manual/misc.md)
+- Developer's Guide
+    - [Writing Sparv Modules](developers-guide/writing-sparv-modules.md)
+    - [Module function types](developers-guide/module-function-types.md)
+    - [Classes](developers-guide/classes.md)
+    - [Config](developers-guide/config.md)
+    - [Wildcards](developers-guide/wildcards.md)
+    - [MISC](developers-guide/misc.md)
+    - [Writing Plugins](developers-guide/writing-plugins.md)
