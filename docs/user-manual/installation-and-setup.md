@@ -47,8 +47,8 @@ parameter files. If the software is installed correctly, Sparv will download and
 you prior to annotating data.
 
 ### Hunpos
-|                                  |           |
-|:---------------------------------|:----------
+|    |           |
+|:---|:----------|
 |**Purpose**                       |Swedish part-of-speech tagging (prerequisite for many other annotations, such as all of the SALDO annotations)
 |**Download**                      |[Hunpos on Google Code](https://code.google.com/archive/p/hunpos/downloads)
 |**License**                       |[BSD-3](https://opensource.org/licenses/BSD-3-Clause)
@@ -65,8 +65,8 @@ On Arch Linux, activate the `multilib` repository and install `lib32-gcc-libs`. 
 compile Hunpos from source.
 
 ### MaltParser
-|                                  |           |
-|:---------------------------------|:----------
+|    |           |
+|:---|:----------|
 |**Purpose**                       |Swedish dependency parsing
 |**Download**                      |[MaltParser webpage](http://www.maltparser.org/download.html)
 |**License**                       |[MaltParser license](http://www.maltparser.org/license.html) (open source)
@@ -77,8 +77,8 @@ Download and unpack the zip-file from the [MaltParser webpage](http://www.maltpa
 `maltparser-1.7.2` folder inside the `bin` folder of the [Sparv data directory](#setting-up-sparv).
 
 ### Sparv wsd
-|                                  |           |
-|:---------------------------------|:----------
+|    |           |
+|:---|:----------|
 |**Purpose**                       |Swedish word-sense disambiguation
 |**Download**                      |[Sparv wsd](https://github.com/spraakbanken/sparv-wsd/raw/master/bin/saldowsd.jar)
 |**License**                       |[MIT](https://opensource.org/licenses/MIT)
@@ -89,8 +89,8 @@ the Sparv pipeline. In order to use it within the Sparv Pipeline it is enough to
 (see downloadlink above) and place it inside your [Sparv data directory](#setting-up-sparv) under `bin/wsd`.
 
 ### hfst-SweNER
-|                                  |           |
-|:---------------------------------|:----------
+|    |           |
+|:---|:----------|
 |**Purpose**                       |Swedish named-entity recognition
 |**Download**                      |[hfst-SweNER](http://www.ling.helsinki.fi/users/janiemi/finclarin/ner/hfst-swener-0.9.3.tgz)
 |**Version compatible with Sparv** |0.9.3
@@ -111,8 +111,8 @@ sed -i 's:#! \/usr/bin/env python:#! /usr/bin/env python2:g' *.py
 After applying these changes please follow the installation instructions provided by hfst-SweNER.
 
 ### Corpus Workbench
-|                                  |           |
-|:---------------------------------|:----------
+|    |           |
+|:---|:----------|
 |**Purpose**                       |Creating corpus workbench binary files. You will only need it if you want to be able to search corpora with this tool.
 |**Download**                      |[Corpus Workbench on SourceForge](http://cwb.sourceforge.net/beta.php)
 |**License**                       |[GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.html)
@@ -162,8 +162,8 @@ Swedish        |swe        |Sparv
 
 
 #### TreeTagger
-|                                  |           |
-|:---------------------------------|:----------
+|    |           |
+|:---|:----------|
 |**Purpose**                       |POS-tagging and lemmatisation for [some languages](#software-for-analysing-other-languages)
 |**Download**                      |[TreeTagger webpage](http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/)
 |**License**                       |[TreeTagger license](https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/Tagger-Licence) (freely available for research, education and evaluation)
@@ -173,8 +173,8 @@ After downloading the software you need to have the `tree-tagger` binary in your
 `tree-tagger` binary file in the [Sparv data directory](#setting-up-sparv) under `bin`.
 
 #### Stanford Parser
-|                                  |           |
-|:---------------------------------|:----------
+|    |           |
+|:---|:----------|
 |**Purpose**                       |Various analyses for English
 |**Download**                      |[Stanford CoreNLP webpage](https://stanfordnlp.github.io/CoreNLP/history.html)
 |**Version compatible with Sparv** |4.0.0 (may work with newer versions)
@@ -184,8 +184,8 @@ After downloading the software you need to have the `tree-tagger` binary in your
 Please download, unzip and place contents inside the [Sparv data directory](#setting-up-sparv) under `bin/stanford_parser`.
 
 #### FreeLing
-|                                  |           |
-|:---------------------------------|:----------
+|    |           |
+|:---|:----------|
 |**Purpose**                       |Tokenisation, POS-tagging, lemmatisation and named entity recognition for [some languages](#software-for-analysing-other-languages)
 |**Download**                      |[FreeLing on GitHub](https://github.com/TALP-UPC/FreeLing/releases/tag/4.2)
 |**Version compatible with Sparv** |4.2
@@ -197,8 +197,8 @@ the installation instructions for the sparv-freeling module on [GitHub](https://
 in order to set up the plugin correctly.
 
 <!-- #### fast_align
-|                                  |           |
-|:---------------------------------|:----------
+|    |           |
+|:---|:----------|
 |**Purpose**                       |word-linking on parallel corpora
 |**Download**                      |[fast_align on GitHub](https://github.com/clab/fast_align)
 |**License**                       |[Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0)

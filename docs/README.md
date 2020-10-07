@@ -27,7 +27,13 @@ docsify serve docsify --port 3000
 
 ## Render documentation as PDF
 
+Adapt Sparv version number (`SPARV_VERSION`) in  `md2pdf/make_pdf.sh`.
 
+Convert User Manual and Developer's Guide from markdown to PDF (requires markdown and latex):
+```bash
+cd md2pdf
+./make_pdf.sh
+```
 
 ## MISC
 

@@ -7,15 +7,16 @@ or that the code cannot be distributed under the same license.
 A working sparv plugin is the [sparv-freeling](https://github.com/spraakbanken/sparv-freeling) plugin.
 
 The following is an example of a typical folder structure of a plugin:
-
-    sparv-freeling/
-    ├── freeling
-    │   ├── freeling.py
-    │   ├── __init__.py
-    │   └── models.py
-    ├── LICENSE
-    ├── README.md
-    └── setup.py
+```
+sparv-freeling/
+├── freeling
+│   ├── freeling.py
+│   ├── __init__.py
+│   └── models.py
+├── LICENSE
+├── README.md
+└── setup.py
+```
 
 In the above example the `freeling` folder is basically a Sparv module. The `setup.py` is what really makes this behave
 as a plugin. If the `setup.py` is constructed correctly, the plugin code can then be injected into the Sparv pipeline

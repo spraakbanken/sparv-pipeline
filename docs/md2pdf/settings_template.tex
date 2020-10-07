@@ -1,0 +1,86 @@
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc} % Use 8-bit encoding that has 256 glyphs
+\usepackage{fourier} % Use the Adobe Utopia font for the document
+\usepackage[english]{babel} % English language/hyphenation
+
+\usepackage{graphicx} % For including graphics
+\usepackage[dvipsnames]{xcolor} % Display colors
+\usepackage{pmboxdraw} % Display funny tree structure chars
+
+\usepackage{sectsty} % Allows customizing section commands
+\allsectionsfont{\normalfont\scshape} % Make all sections centered, the default font and small caps
+
+\usepackage[a4paper, margin=3cm]{geometry} % Smaller margins
+% \linespread{1.1} % Line spacing
+
+\usepackage{titlesec}
+
+\titleformat{\paragraph}[hang]{\normalfont\scshape}{\theparagraph}{1em}{}
+\titlespacing*{\paragraph}{0pt}{3.25ex plus 1ex minus .2ex}{0.5em} % Line break after paragraph
+
+\titleformat{\subparagraph}[hang]{\normalfont\scshape}{\theparagraph}{1em}{}
+\titlespacing*{\subparagraph}{0pt}{3.25ex plus 1ex minus .2ex}{0.5em} % Line break after paragraph
+
+\usepackage{fancyhdr} % Custom headers and footers
+\pagestyle{fancyplain} % Makes all pages in the document conform to the custom headers and footers
+\fancyhead{} % No page header
+\fancyfoot[L]{} % Empty left footer
+\fancyfoot[C]{} % Empty center footer
+\fancyfoot[R]{\thepage} % Page numbering for right footer
+\renewcommand{\headrulewidth}{0pt} % Remove header underlines
+\renewcommand{\footrulewidth}{0pt} % Remove footer underlines
+\setlength{\headheight}{13.6pt} % Customize the height of the header
+
+\setlength\parindent{0pt} % Removes all indentation from paragraphs
+
+\widowpenalty10000 % Prevent widows
+\clubpenalty10000 % Prevent orphans
+
+% Display of code blocks
+\lstset{
+    basicstyle=\ttfamily,
+    % numbers=left,
+    % numberstyle=\footnotesize,
+    % stepnumber=2,
+    % numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    captionpos=b,
+    breaklines=true,
+    % postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\color{red}\hookrightarrow\space}},
+    breakatwhitespace=true,
+    breakautoindent=true,
+    linewidth=\textwidth,
+    inputencoding=utf8,
+    extendedchars=true,
+    literate=
+        {ä}{{\"a}}1 {Ä}{{\"A}}1 {ö}{{\"o}}1 {Ö}{{\"O}}1 {å}{{\aa}}1 {Å}{{\AA}}1
+        {└}{\textSFii}1 {├}{\textSFviii}1 {─}{\textSFx}1 {│}{\textSFxi}1,
+    keywordstyle=\color[rgb]{0.13,0.29,0.53}\bfseries,
+    stringstyle=\color[rgb]{0.31,0.60,0.02},
+    commentstyle=\color[rgb]{0.56,0.35,0.01}\itshape,
+    backgroundcolor=\color[RGB]{242,242,242},
+    escapeinside={\%*}{*)},
+    basewidth=0.5em,
+}
+
+% Uniform bullet points on all levels
+\usepackage{enumitem}
+\setlist[itemize]{label=\textbullet}
+
+% Prevent page breaks for listings
+\usepackage{etoolbox}
+\BeforeBeginEnvironment{lstlisting}{\par\noindent\begin{minipage}{\linewidth}}
+\AfterEndEnvironment{lstlisting}{\end{minipage}\par\addvspace{\topskip}}
+
+% Remove "figure" prefix from figure captions
+% \usepackage[labelformat=empty]{caption}
+
+% New page for new chapter
+\newcommand{\sectionbreak}{\clearpage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
