@@ -14,8 +14,8 @@ USER_MANUAL_FILES="
 
 DEVELOPERS_GUIDE_FILES="
 ../developers-guide/writing-sparv-modules.md
-../developers-guide/module-function-types.md
-../developers-guide/classes.md
+../developers-guide/sparv-decorators.md
+../developers-guide/sparv-classes.md
 ../developers-guide/config.md
 ../developers-guide/wildcards.md
 ../developers-guide/misc.md

@@ -1,4 +1,4 @@
-# Module function types
+# Sparv Decorators
 Intro
 
 Describe common arguments: name, description, config (wizard does not have this one)

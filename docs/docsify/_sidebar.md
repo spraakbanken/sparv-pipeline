@@ -6,8 +6,8 @@
     - [MISC](user-manual/misc.md)
 - Developer's Guide
     - [Writing Sparv Modules](developers-guide/writing-sparv-modules.md)
-    - [Module function types](developers-guide/module-function-types.md)
-    - [Classes](developers-guide/classes.md)
+    - [Sparv Decorators](developers-guide/sparv-decorators.md)
+    - [Sparv Classes](developers-guide/sparv-classes.md)
     - [Config](developers-guide/config.md)
     - [Wildcards](developers-guide/wildcards.md)
     - [MISC](developers-guide/misc.md)

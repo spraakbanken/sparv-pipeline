@@ -1,13 +1,13 @@
-
 # Writing Sparv modules
+This section will give a brief overview of how Sparv modules work. More details are provided in the following chapters.
+
 The Sparv pipeline is comprised of different modules like importers, annotators and exporters. None of these modules are
 hard-coded into the Sparv pipeline and therefore it can easily be extended.
 
-When writing a Sparv module one basically creates a Python script that imports Sparv classes (and util functions if
-needed) which are needed for describing dependencies to other entities (e.g. annotations or models) handled or created
-by the pipeline.
+A Sparv module is a Python script that imports Sparv classes (and util functions if needed) which are needed for
+describing dependencies to other entities (e.g. annotations or models) handled or created by the pipeline.
 
-Here is an example of a minimal annotation module that converts tokens to uppercase:
+Here is an example of a small annotation module that converts tokens to uppercase:
 
 ```python
 from sparv import Annotation, Output, annotator
@@ -19,15 +19,47 @@ def uppercase(word: Annotation = Annotation("<token:word>"),
     out.write([val.upper() for val in word.read()])
 ```
 
-- vad importeras? Importera bara från sparv!
-- en modul är en funktion som dekoreras med lämplig dekorator (som tar argument...)
-- det som beskriver en funktions relation till annat i pipelinen är funktionens signatur, genom typehints anges vad
-  varje argument har för funktion (input, output, modeller, beroenden...). Rerefera till exemplet.
-- funktionen du skriver kommer anropas automatisk av Sparv, ingen annan annoterare kommer att anropa den direkt, och du
-  behöver aldrig anropa någon annan annoterare direkt. Vilka moduler som körs beräknas automatiskt av en beroendegraf.
-- Instanserna av klasserna som finns i funktionssignaturen har metoder för att läsa och skriva till filer etc. Ingen
-  modul ska skriva annotationsfiler själv, Sparvs util-funktioner ska fixa detta. Man behöver inte bekymra sig om Sparvs
-  interna dataformat. Detta för att det ska vara framtidssäkert (om Sparvs format ändras, ska inte modulerna behöva
-  uppdateras). Peka på read() och write() i exemplet. Peka även på fullständig lista av bös längre ner i dokumentet.
-- Nånting om classes... Det är fritt fram för varje modul att hitta på egna klasser, det finns ingen closed lista över
-  klasser (dock får de som finns användas med fördel)
+In this script we import two classes from Sparv (`Annotation` and `Output`) and the `annotator` decorator. Please note
+that nothing should be imported from the Sparv code unless it is directly available from the sparv package (i.e. `from
+sparv import ...`).
+
+Our `uppercase` function is decorated with `@annotator` which tells Sparv that this function can be used to produce an
+annotation. The first argument in the decorator is its description which is used for help functions in the CLI (e.g.
+when running `sparv annotations`).
+
+The functions relation to other pipeline components is described by its signature. The function arguments contain type
+hints to the Sparv classes `Annotation` and `Output` which indicate what dependencies (e.g. annotations, models or
+config variables) must be satisfied before the function can do its job, and what it will produce. In this example Sparv
+will make sure that a word annotation exists before it will attempt to call the `uppercase` function because it knows
+that `word` is an input as it is of type `Annotation`. It also knows that the function produces the output annotation
+`<token>:custom.convert.upper`, so if any other module would request this annotation as input, it will run `uppercase`
+prior to calling that module.
+
+A function decorated with a Sparv decorator should never be actively called by you or by another decorated function.
+When running Sparv through the CLI Sparv's dependency system will calculate a dependency graph and all the functions
+necessary for producing the desired output will be run automatically.
+
+Sparv classes like `Annotation` and `Output` have built-in methods for reading and writing files (like `word.read() and
+out.write()` in the example). A Sparv module should never read or write any files without using the provided class
+methods. This is to make sure that files are written to the correct places in the file structure so that they can be
+found by other modules. The read and write methods also make sure that Sparv's internal data format is handled
+correctly. Not using these provided methods can lead to procedures breaking if the internal data format or file
+structure is updated in the future.
+
+## Annotation Classes
+When describing dependencies to other annotations one can make use of annotation classes which are denoted by angle
+brackets (`<token>` and `<token:word>` in the example). Annotation classes are used to create abstract instances for
+common annotations such as tokens, sentences and text units. They simplify dependencies between annotation modules and
+increase the flexibility of the annotation pipeline. Many annotations modules need tokenised text as input but they
+might not care about what tokeniser is being used. So instead of telling a module that it needs tokens produced by
+another specific module we can tell it to take the class `<token>` as input. In the [corpus
+configuration](user-manual/corpus-configuration.md) we can then set `classes.token` to `segment.token` which tells Sparv
+that `<token>` refers to output produced by the segment module. In the above example we define that `word` is an input
+annotation of the class `<token:word>` and `out` is an output annotation which provides new attributes for token
+elements.
+
+Annotation classes are valid across all modules and may be used wherever you see fit. There is no closed set of
+annotation classes and each module can invent its own classes if desired. **TODO:** command to list all existing
+classes?
+
+**TODO:** Explain difference between elements and attributes
