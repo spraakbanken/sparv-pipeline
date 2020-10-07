@@ -14,6 +14,12 @@ ln -s ../images _media
 cd ..
 ```
 
+Set Sparv version number:
+```bash
+cd doscify
+./set_version.sh
+```
+
 Serve documentation with python:
 ```bash
 python3 -m http.server --directory docsify 3000
@@ -26,8 +32,6 @@ docsify serve docsify --port 3000
 ```
 
 ## Render documentation as PDF
-
-Adapt Sparv version number (`SPARV_VERSION`) in  `md2pdf/make_pdf.sh`.
 
 Convert User Manual and Developer's Guide from markdown to PDF (requires markdown and latex):
 ```bash

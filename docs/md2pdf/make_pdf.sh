@@ -4,8 +4,6 @@
 # Script for creating PDFs from markdown
 # Requires markdown and latex
 
-SPARV_VERSION="4.0"
-
 USER_MANUAL_FILES="
 ../user-manual/installation-and-setup.md
 ../user-manual/running-sparv.md
@@ -24,6 +22,10 @@ DEVELOPERS_GUIDE_FILES="
 ../developers-guide/writing-plugins.md
 "
 
+# Get version number from sparv/__init__.py
+line=$(grep -F "__version__" ../../sparv/__init__.py) # Find version number
+version=${line#"__version__ = \""} # Remove prefix
+SPARV_VERSION=${version%"\""} # Remove suffix
 
 function make_document {
     # $1: file name (without extension)

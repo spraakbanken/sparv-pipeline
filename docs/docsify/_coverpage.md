@@ -4,6 +4,8 @@
 
 > Språkbanken Text's corpus annotation tool
 
+<p class="version"> version 4.0.dev0 </p>
+
 <p class="links">
     <a class="button" target="_blank" href="https://github.com/spraakbanken/sparv-pipeline">Sparv on GitHub</a>
     <a class="button" href="#/sparv-pipeline">Start Reading</a>
