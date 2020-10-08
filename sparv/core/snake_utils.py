@@ -59,6 +59,8 @@ class RuleStorage:
         self.docs = []  # List of parameters referring to Document
         self.doc_annotations = []  # List of parameters containing the {doc} wildcard
         self.wildcard_annotations = []  # List of parameters containing other wildcards
+        self.configs = set()  # Set of config variables used
+        self.classes = set()  # Set of classes used
         self.missing_config = set()
         self.missing_binaries = set()
         self.exit_message = None
@@ -74,6 +76,7 @@ class RuleStorage:
         self.import_outputs = annotator_info["outputs"]
         self.order = annotator_info["order"]
         self.abstract = annotator_info["abstract"]
+        self.wildcards = annotator_info["wildcards"]  # Information about the wildcards used
 
 
 def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_missing: bool = False,
@@ -88,7 +91,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         return False
 
     # Skip any annotator that is not available for the selected corpus language
-    if rule.annotator_info["language"] and sparv_config.get("metadata.language") not in rule.annotator_info["language"]:
+    if rule.annotator_info["language"] and sparv_config.get("metadata.language") and \
+            sparv_config.get("metadata.language") not in rule.annotator_info["language"]:
         return False
 
     if rule.importer:
@@ -132,7 +136,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 param_value = custom_rule_obj["params"][param_name]
                 custom_params.remove(param_name)
             elif not param_default_empty:
-                param_value = param.default
+                param_value = copy.deepcopy(param.default)
             else:
                 raise util.SparvErrorMessage(
                     f"Parameter '{param_name}' in custom rule '{rule.full_name}' has no value!", "sparv", "config")
@@ -142,7 +146,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 storage.custom_targets.append((rule.target_name, rule.description))
                 return False
             else:
-                param_value = param.default
+                param_value = copy.deepcopy(param.default)
 
         param_type, param_list, param_optional = registry.get_type_hint_type(param.annotation)
 
@@ -152,6 +156,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 if not param_value:
                     return False
                 param_value = param_type(param_value)
+            rule.configs.update(registry.find_config_variables(param_value.name))
+            rule.classes.update(registry.find_classes(param_value.name))
             missing_configs = param_value.expand_variables(rule.full_name)
             rule.missing_config.update(missing_configs)
             ann_path = get_annotation_path(param_value, data=param_type.data, common=param_type.common)
@@ -175,6 +181,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                                                                                               param_value.description))
         # ModelOutput
         elif param_type == ModelOutput:
+            rule.configs.update(registry.find_config_variables(param_value.name))
+            rule.classes.update(registry.find_classes(param_value.name))
             rule.missing_config.update(param_value.expand_variables(rule.full_name))
             model_path = param_value.path
             rule.outputs.append(model_path)
@@ -186,6 +194,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 if not param_value:
                     return False
                 param_value = param_type(param_value)
+            rule.configs.update(registry.find_config_variables(param_value.name))
+            rule.classes.update(registry.find_classes(param_value.name))
             missing_configs = param_value.expand_variables(rule.full_name)
             if (not param_value or missing_configs) and param_optional:
                 rule.parameters[param_name] = None
@@ -221,6 +231,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             possible_plain_annotations = set()
             for i, (export_annotation_name, export_name) in enumerate(export_annotations):
                 annotation = annotation_type(export_annotation_name)
+                rule.configs.update(registry.find_config_variables(annotation.name))
+                rule.classes.update(registry.find_classes(annotation.name))
                 rule.missing_config.update(annotation.expand_variables(rule.full_name))
                 export_annotations[i] = (annotation, export_name)
                 plain_name, attr = annotation.split()
@@ -273,17 +285,23 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                     for model in param_value:
                         if not isinstance(model, Model):
                             model = Model(param_value)
+                        rule.configs.update(registry.find_config_variables(model.name))
+                        rule.classes.update(registry.find_classes(model.name))
                         rule.missing_config.update(model.expand_variables(rule.full_name))
                         rule.inputs.append(model.path)
                         rule.parameters[param_name].append(Model(str(model.path)))
                 else:
                     if not isinstance(param_value, Model):
                         param_value = Model(param_value)
+                    rule.configs.update(registry.find_config_variables(param_value.name))
+                    rule.classes.update(registry.find_classes(param_value.name))
                     rule.missing_config.update(param_value.expand_variables(rule.full_name))
                     rule.inputs.append(param_value.path)
                     rule.parameters[param_name] = Model(str(param_value.path))
         # Binary
         elif param.annotation in (Binary, BinaryDir):
+            rule.configs.update(registry.find_config_variables(param.default))
+            rule.classes.update(registry.find_classes(param.default))
             param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
             rule.missing_config.update(missing_configs)
             binary = util.find_binary(param_value, executable=False, allow_dir=param.annotation == BinaryDir)
@@ -297,6 +315,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             rule.parameters[param_name] = Source(get_source_path())
         # Export
         elif param.annotation == Export:
+            rule.configs.update(registry.find_config_variables(param.default))
+            rule.classes.update(registry.find_classes(param.default))
             param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
             rule.missing_config.update(missing_configs)
             if param.default.absolute_path:
@@ -312,6 +332,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 rule.wildcard_annotations.append(param_name)
         # ExportInput
         elif param.annotation == ExportInput:
+            rule.configs.update(registry.find_config_variables(param.default))
+            rule.classes.update(registry.find_classes(param.default))
             param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
             rule.missing_config.update(missing_configs)
             if param.default.absolute_path:
@@ -327,6 +349,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 rule.wildcard_annotations.append(param_name)
         # Config
         elif isinstance(param_value, Config):
+            rule.configs.add(param_value.name)
             rule.parameters[param_name] = sparv_config.get(param_value, param_value.default)
         # Everything else
         else:
@@ -352,7 +375,10 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         rule.exit_message = "EXPORT_DIRS:\n{}".format("\n".join(str(p / "_")[:-1] for p in output_dirs))
 
     if rule.missing_config:
-        log_handler.messages["missing_configs"][rule.full_name].update(rule.missing_config)
+        log_handler.messages["missing_configs"][rule.full_name].update(
+            [c for c in rule.missing_config if not c.startswith("<")])
+        log_handler.messages["missing_classes"][rule.full_name].update(
+            [c[1:-1] for c in rule.missing_config if c.startswith("<")])
 
     if rule.missing_binaries:
         log_handler.messages["missing_binaries"][rule.full_name].update(rule.missing_binaries)

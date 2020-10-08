@@ -28,7 +28,11 @@ LOG_FORMAT_DEBUG = "%(asctime)s - %(name)s (%(process)d) - %(levelname)s - %(mes
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 # Messages from the Sparv core
-messages = {"missing_configs": defaultdict(set), "missing_binaries": defaultdict(set)}
+messages = {
+    "missing_configs": defaultdict(set),
+    "missing_binaries": defaultdict(set),
+    "missing_classes": defaultdict(set)
+}
 
 
 class ColorFormatter(logging.Formatter):
@@ -133,6 +137,7 @@ class LogHandler:
         self.messages = defaultdict(list)
         self.missing_configs_re = None
         self.missing_binaries_re = None
+        self.missing_classes_re = None
         self.export_dirs = []
         self.start_time = time.time()
 
@@ -210,6 +215,14 @@ class LogHandler:
                 "\n- ".join(_binaries))
             self.messages["error"].append((source, _message))
 
+        def missing_class_message(source):
+            """Create error message when class variables are missing."""
+            _variables = messages["missing_classes"][source]
+            _message = "The following class{} need{} to be set:\n- {}".format(
+                *("es", "") if len(_variables) > 1 else ("", "s"),
+                "\n- ".join(_variables))
+            self.messages["error"].append((source, _message))
+
         level = msg["level"]
 
         if level == "run_info" and self.use_progressbar:
@@ -281,6 +294,9 @@ class LogHandler:
                 elif self.missing_binaries_re.search(filelist):
                     handled = True
                     missing_binary_message(rule_name)
+                elif self.missing_classes_re.search(filelist):
+                    handled = True
+                    missing_class_message(rule_name)
 
             # Unhandled errors
             if not handled:
@@ -295,12 +311,16 @@ class LogHandler:
         elif level == "dag_debug" and "job" in msg:
             # Create regular expressions for searching for missing config variables or binaries
             if self.missing_configs_re is None:
-                all_configs = [v for varlist in messages["missing_configs"].values() for v in varlist]
+                all_configs = set([v for varlist in messages["missing_configs"].values() for v in varlist])
                 self.missing_configs_re = re.compile(r"\[({})]".format("|".join(all_configs)))
 
             if self.missing_binaries_re is None:
-                all_binaries = [b for binlist in messages["missing_binaries"].values() for b in binlist]
+                all_binaries = set([b for binlist in messages["missing_binaries"].values() for b in binlist])
                 self.missing_binaries_re = re.compile(r"^({})$".format("|".join(all_binaries)), flags=re.MULTILINE)
+
+            if self.missing_classes_re is None:
+                all_classes = set([v for varlist in messages["missing_classes"].values() for v in varlist])
+                self.missing_classes_re = re.compile(r"<({})>".format("|".join(all_classes)))
 
             # Check the rules selected for the current operation, and see if any is unusable due to missing configs
             if msg["status"] == "selected":

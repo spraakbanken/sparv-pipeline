@@ -5,10 +5,43 @@ import logging
 import unicodedata
 import xml.etree.ElementTree as etree
 from pathlib import Path
+from typing import List
 
-from sparv import Config, Document, Output, OutputData, Source, Text, importer, util
+from sparv import Config, Document, SourceStructure, Output, OutputData, Source, Text, importer, util
 
 log = logging.getLogger(__name__)
+
+
+class XMLStructure(SourceStructure):
+    """Class to get and store XML structure."""
+
+    def setup(self):
+        """Return setup wizard."""
+        return {
+            "type": "select",
+            "name": "scan_xml",
+            "message": "What type of scan do you want to do?",
+            "choices": [
+                {"name": "Scan ALL my files, since markup may differ between them "
+                         "(this might take some time if the corpus is big).", "value": "all"},
+                {"name": "Scan ONE of my files at random. All files contain the same markup, so scanning "
+                         "one is enough.", "value": "one"}
+            ]
+        }
+
+    def get_annotations(self, corpus_config: dict) -> List[str]:
+        """Get, store and return XML structure."""
+        if self.annotations is None:
+            elements = set()
+            xml_files = self.source_dir.glob("**/*.xml")
+            if self.answers.get("scan_xml") == "all":
+                for xml_file in xml_files:
+                    elements = elements.union(analyze_xml(xml_file))
+            else:
+                elements = analyze_xml(next(xml_files))
+
+            self.annotations = sorted(elements)
+        return self.annotations
 
 
 @importer("XML import", file_extension="xml", outputs=Config("xml_import.elements", []), config=[
@@ -24,7 +57,7 @@ log = logging.getLogger(__name__)
     Config("xml_import.encoding", util.UTF8, description="Encoding of source document. Defaults to UTF-8."),
     Config("xml_import.normalize", "NFC", description="Normalize input using any of the following forms: "
                                                       "'NFC', 'NFKC', 'NFD', and 'NFKD'.")
-])
+], structure=XMLStructure)
 def parse(doc: Document = Document(),
           source_dir: Source = Source(),
           elements: list = Config("xml_import.elements"),
@@ -288,3 +321,20 @@ class SparvXMLParser:
         if header_elements:
             # Save list of all header elements to a file
             OutputData(util.corpus.HEADERS_FILE, doc=self.doc).write("\n".join(header_elements))
+
+
+def analyze_xml(source_file):
+    """Analyze an XML file and return a list of elements and attributes."""
+    elements = set()
+
+    parser = etree.iterparse(source_file, events=("start", "end"))
+    event, root = next(parser)
+
+    for event, element in parser:
+        if event == "start":
+            elements.add(element.tag)
+            for attr in element.attrib:
+                elements.add(f"{element.tag}:{attr}")
+            root.clear()
+
+    return elements

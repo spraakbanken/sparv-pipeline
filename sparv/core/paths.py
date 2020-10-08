@@ -45,6 +45,7 @@ sparv_config_file = Path(appdirs.user_config_dir("sparv"), "config.yaml")
 
 # Package-internal paths
 modules_dir = "modules"
+core_modules_dir = "core_modules"
 
 # Sparv data path (to be read from config)
 data_dir = None

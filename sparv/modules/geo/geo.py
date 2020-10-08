@@ -5,16 +5,16 @@ import pickle
 from collections import defaultdict
 
 import sparv.util as util
-from sparv import Annotation, Config, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv import Annotation, Config, Model, ModelOutput, Output, Wildcard, annotator, modelbuilder
 
 log = logging.getLogger(__name__)
 
 
-@annotator("Annotate chunks with location data, based on locations contained within the text", language=["swe"],
+@annotator("Annotate {chunk} with location data, based on locations contained within the text", language=["swe"],
            config=[
                Config("geo.context_chunk", default="<sentence>",
                       description="Text chunk (annotation) to use for disambiguating places")
-           ])
+           ], wildcards=[Wildcard("chunk", Wildcard.ANNOTATION)])
 def contextual(out: Output = Output("{chunk}:geo.geo_context", description="Geographical places with coordinates"),
                chunk: Annotation = Annotation("{chunk}"),
                context: Annotation = Annotation("[geo.context_chunk]"),
@@ -69,10 +69,10 @@ def contextual(out: Output = Output("{chunk}:geo.geo_context", description="Geog
     out.write(out_annotation)
 
 
-@annotator("Annotate chunks with location data, based on metadata containing location names", config=[
+@annotator("Annotate {chunk} with location data, based on metadata containing location names", config=[
     Config("geo.metadata_source", default="", description="Source attribute for location metadata"),
     Config("geo.model", default="geo/geo.pickle", description="Path to model")
-])
+], wildcards=[Wildcard("chunk", Wildcard.ANNOTATION)])
 def metadata(out: Output = Output("{chunk}:geo.geo_metadata", description="Geographical places with coordinates"),
              chunk: Annotation = Annotation("{chunk}"),
              source: Annotation = Annotation("[geo.metadata_source]"),

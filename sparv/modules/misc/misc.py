@@ -3,7 +3,7 @@
 import re
 from typing import List, Optional
 
-from sparv import Annotation, Config, Output, Text, annotator, util
+from sparv import Annotation, Config, Output, Text, Wildcard, annotator, util
 
 
 @annotator("Text value of a span (usually a token)", config=[
@@ -84,7 +84,10 @@ def translate_tag(out: Output,
     out.write((mapping.get(t, t) for t in tag.read()))
 
 
-@annotator("Convert {struct}:{attr} into a token annotation")
+@annotator("Convert {struct}:{attr} into a token annotation", wildcards=[
+    Wildcard("struct", Wildcard.ANNOTATION),
+    Wildcard("attr", Wildcard.ATTRIBUTE)
+])
 def struct_to_token(attr: Annotation = Annotation("{struct}:{attr}"),
                     token: Annotation = Annotation("<token>"),
                     out: Output = Output("<token>:misc.from_struct_{struct}_{attr}")):

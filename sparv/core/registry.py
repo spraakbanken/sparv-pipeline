@@ -5,16 +5,18 @@ import pkgutil
 import re
 from collections import defaultdict
 from enum import Enum
-from typing import List, Optional, Tuple, TypeVar
+from typing import List, Optional, Tuple, Type, TypeVar
 
 import typing_inspect
 from pkg_resources import iter_entry_points
 
 from sparv.core import config as sparv_config
 from sparv.core import paths
-from sparv.util.classes import BaseOutput, Config, ExportAnnotations, ExportAnnotationsAllDocs, ModelOutput
+from sparv.util.classes import (BaseOutput, Config, ExportAnnotations, ExportAnnotationsAllDocs, SourceStructure,
+                                ModelOutput, Wildcard)
 
 modules_path = ".".join(("sparv", paths.modules_dir))
+core_modules_path = ".".join(("sparv", paths.core_modules_dir))
 custom_name = "custom"
 
 
@@ -28,10 +30,10 @@ class Annotator(Enum):
     modelbuilder = 5
 
 
-# All available annotator functions
+# All available annotator functions (possibly limited by the selected language)
 annotators = {}
 
-# All available annotation classes, collected from different sources
+# All available annotation classes for the selected language, collected from modules and corpus config
 annotation_classes = {
     # Classes from modules
     "module_classes": defaultdict(list),
@@ -39,6 +41,15 @@ annotation_classes = {
     # Classes from config, either new classes or overriding the above
     "config_classes": {}
 }
+
+# All available module classes sorted by language. This is only used by the wizard.
+all_module_classes = defaultdict(lambda: defaultdict(list))
+
+# All available wizard functions
+wizards = []
+
+# All available languages
+languages = set()
 
 
 def find_modules(no_import=False, find_custom=False) -> list:
@@ -55,12 +66,15 @@ def find_modules(no_import=False, find_custom=False) -> list:
         A list of available module names.
     """
     modules_full_path = paths.sparv_path / paths.modules_dir
-    found_modules = pkgutil.iter_modules([modules_full_path])
-    modules = []
-    for module in found_modules:
-        modules.append(module.name)
-        if not no_import:
-            importlib.import_module(".".join((modules_path, module.name)))
+    core_modules_full_path = paths.sparv_path / paths.core_modules_dir
+
+    for full_path, path in ((core_modules_full_path, core_modules_path), (modules_full_path, modules_path)):
+        found_modules = pkgutil.iter_modules([full_path])
+        modules = []
+        for module in found_modules:
+            modules.append(module.name)
+            if not no_import:
+                importlib.import_module(".".join((path, module.name)))
 
     if find_custom:
         # Also search for modules in corpus dir
@@ -82,21 +96,39 @@ def find_modules(no_import=False, find_custom=False) -> list:
     return modules
 
 
+def wizard(config_keys: List[str], source_structure: bool = False):
+    """Return a wizard decorator."""
+    def decorator(f):
+        """Add wrapped function to wizard registry."""
+        wizards.append((f, tuple(config_keys), source_structure))
+        return f
+    return decorator
+
+
+def _get_module_name(module_string: str) -> str:
+    """Extract module name from dotted path, i.e. 'modulename.submodule' -> 'modulename'."""
+    if module_string.startswith(modules_path):
+        # Built-in Sparv module
+        module_name = module_string[len(modules_path) + 1:].split(".")[0]
+    elif module_string.startswith(core_modules_path):
+        # Built-in Sparv core module
+        module_name = module_string[len(core_modules_path) + 1:].split(".")[0]
+    elif module_string.split(".")[0] == custom_name:
+        # Custom user module
+        module_name = module_string
+    else:
+        # External plugin
+        module_name = module_string.split(".")[0]
+    return module_name
+
+
 def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, file_extension: Optional[str] = None,
-               outputs=(), language: Optional[List[str]] = None, config: Optional[List[Config]] = None,
-               order: Optional[int] = None, abstract: bool = False):
+               outputs=(), structure=None, language: Optional[List[str]] = None, config: Optional[List[Config]] = None,
+               order: Optional[int] = None, abstract: bool = False, wildcards: Optional[List[Wildcard]] = None):
     """Return a decorator for annotator functions, adding them to annotator registry."""
     def decorator(f):
         """Add wrapped function to registry."""
-        if f.__module__.startswith(modules_path):
-            # Built-in Sparv module
-            module_name = f.__module__[len(modules_path) + 1:].split(".")[0]
-        elif f.__module__.split(".")[0] == custom_name:
-            # Custom user module
-            module_name = f.__module__
-        else:
-            # External plugin
-            module_name = f.__module__.split(".")[0]
+        module_name = _get_module_name(f.__module__)
         _add_to_registry({
             "module_name": module_name,
             "description": description,
@@ -105,10 +137,12 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
             "type": a_type,
             "file_extension": file_extension,
             "outputs": outputs,
+            "structure": structure,
             "language": language,
             "config": config,
             "order": order,
-            "abstract": abstract
+            "abstract": abstract,
+            "wildcards": wildcards
         })
         return f
 
@@ -116,14 +150,15 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
 
 
 def annotator(description: str, name: Optional[str] = None, language: Optional[List[str]] = None,
-              config: Optional[List[Config]] = None, order: Optional[int] = None):
+              config: Optional[List[Config]] = None, order: Optional[int] = None,
+              wildcards: Optional[List[Wildcard]] = None):
     """Return a decorator for annotator functions, adding them to the annotator registry."""
     return _annotator(description=description, a_type=Annotator.annotator, name=name, language=language,
-                      config=config, order=order)
+                      config=config, order=order, wildcards=wildcards)
 
 
 def importer(description: str, file_extension: str, name: Optional[str] = None, outputs=None,
-             config: Optional[List[Config]] = None):
+             structure: Optional[Type[SourceStructure]] = None, config: Optional[List[Config]] = None):
     """Return a decorator for importer functions.
 
     Args:
@@ -134,13 +169,14 @@ def importer(description: str, file_extension: str, name: Optional[str] = None, 
             May also be a Config instance referring to such a list.
             It may generate more outputs than listed, but only the annotations listed here will be available
             to use as input for annotator functions.
+        structure: A class used to parse and return the structure of source documents.
         config: List of Config instances defining config options for the importer.
 
     Returns:
         A decorator
     """
     return _annotator(description=description, a_type=Annotator.importer, name=name, file_extension=file_extension,
-                      outputs=outputs, config=config)
+                      outputs=outputs, structure=structure, config=config)
 
 
 def exporter(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
@@ -180,10 +216,12 @@ def _add_to_registry(annotator):
     f_name = annotator["function"].__name__ if not annotator["name"] else annotator["name"]
     rule_name = f"{module_name}:{f_name}"
 
-    # Skip annotators for other languages
-    if annotator["language"] and sparv_config.get("metadata.language") and sparv_config.get("metadata.language") \
-            not in annotator["language"]:
-        return
+    if annotator["language"]:
+        # Add to set of supported languages...
+        languages.update(annotator["language"])
+        # ... but skip annotators for other languages than the one specified in the config
+        if sparv_config.get("metadata.language") and sparv_config.get("metadata.language") not in annotator["language"]:
+            return
 
     # Add config variables to config
     if annotator["config"]:
@@ -212,17 +250,28 @@ def _add_to_registry(annotator):
 
             # Add to class registry
             if cls:
-                # Only add classes for relevant languages
-                if not annotator["language"] or (
-                        annotator["language"] and sparv_config.get("metadata.language") in annotator["language"]):
-                    if ":" in cls and not cls.startswith(":") and ann_name and attr:
-                        annotation_classes["module_classes"][cls].append(ann.name)
-                    elif cls.startswith(":") and attr:
-                        annotation_classes["module_classes"][cls].append(attr)
-                    elif ":" not in cls:
-                        annotation_classes["module_classes"][cls].append(ann_name)
-                    else:
-                        print("Malformed class name: '{}'".format(cls))
+                cls_target = None
+                if ":" in cls and not cls.startswith(":") and ann_name and attr:
+                    cls_target = ann.name
+                elif cls.startswith(":") and attr:
+                    cls_target = attr
+                elif ":" not in cls:
+                    cls_target = ann_name
+                else:
+                    print("Malformed class name: '{}'".format(cls))
+
+                if cls_target:
+                    if annotator["language"]:
+                        if not annotator["language"]:
+                            all_module_classes[None][cls].append(cls_target)
+                        else:
+                            for language in annotator["language"]:
+                                all_module_classes[language][cls].append(cls_target)
+
+                    # Only add classes for relevant languages
+                    if not annotator["language"] or (
+                            annotator["language"] and sparv_config.get("metadata.language") in annotator["language"]):
+                        annotation_classes["module_classes"][cls].append(cls_target)
 
         elif isinstance(val.default, ModelOutput):
             modeldir = val.default.name.split("/")[0]
@@ -257,6 +306,24 @@ def _expand_class(cls):
     return annotation
 
 
+def find_config_variables(string, match_objects: bool = False):
+    """Find all config variables in a string and return a list of strings or match objects."""
+    if match_objects:
+        result = list(re.finditer(r"\[([^\]=[]+)(?:=([^\][]+))?\]", string))
+    else:
+        result = [c.group()[1:-1] for c in re.finditer(r"\[([^\]=[]+)(?:=([^\][]+))?\]", string)]
+    return result
+
+
+def find_classes(string, match_objects: bool = False):
+    """Find all class references in a string and return a list of strings or match objects."""
+    if match_objects:
+        result = list(re.finditer(r"<([^>]+)>", string))
+    else:
+        result = [c.group()[1:-1] for c in re.finditer(r"<([^>]+)>", string)]
+    return result
+
+
 def expand_variables(string, rule_name):
     """Take a string and replace <class> references with real annotations, and [config] references with config values.
 
@@ -265,7 +332,7 @@ def expand_variables(string, rule_name):
     rest = []
     # Convert config keys to config values
     while True:
-        cfgs = list(re.finditer(r"\[([^\]=[]+)(?:=([^\][]+))?\]", string))
+        cfgs = find_config_variables(string, True)
         if not cfgs:
             break
         for cfg in cfgs:
@@ -283,13 +350,19 @@ def expand_variables(string, rule_name):
 
     # Convert class names to real annotations
     while True:
-        clss = list(re.finditer(r"<([^>]+)>", string))
+        clss = find_classes(string, True)
         if not clss:
             break
         for cls in clss:
             real_ann = _expand_class(cls.group(1))
-            assert real_ann, "Could not convert " + cls.group() + " into a real annotation (used in " + rule_name + ")."
-            string = string.replace(cls.group(), real_ann)
+            if real_ann:
+                string = string.replace(cls.group(), real_ann)
+            else:
+                rest.append(cls.group())
+                break
+        else:
+            continue
+        break
 
     return string, rest
 

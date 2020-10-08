@@ -5,12 +5,12 @@ import re
 from binascii import hexlify
 from collections import defaultdict
 
-from sparv import Annotation, Output, annotator
+from sparv import Annotation, Output, Wildcard, annotator
 
 START_DEFAULT = 1
 
 
-@annotator("Number {annotation} by position")
+@annotator("Number {annotation} by position", wildcards=[Wildcard("annotation", Wildcard.ANNOTATION)])
 def number_by_position(out: Output = Output("{annotation}:misc.number_position"),
                        chunk: Annotation = Annotation("{annotation}"),
                        prefix: str = "",
@@ -25,7 +25,7 @@ def number_by_position(out: Output = Output("{annotation}:misc.number_position")
     _read_chunks_and_write_new_ordering(out, chunk, _order, prefix, zfill, start)
 
 
-@annotator("Number {annotation} randomly")
+@annotator("Number {annotation} randomly", wildcards=[Wildcard("annotation", Wildcard.ANNOTATION)])
 def number_random(out: Output = Output("{annotation}:misc.number_random"),
                   chunk: Annotation = Annotation("{annotation}"),
                   prefix: str = "",
@@ -92,7 +92,10 @@ def number_by_parent(out: Output,
     _read_chunks_and_write_new_ordering(out, chunk, _order, prefix, zfill, start)
 
 
-@annotator("Number {annotation} by relative position within {parent}")
+@annotator("Number {annotation} by relative position within {parent}", wildcards=[
+    Wildcard("annotation", Wildcard.ANNOTATION),
+    Wildcard("parent", Wildcard.ANNOTATION)
+])
 def number_relative(out: Output = Output("{annotation}:misc.number_rel_{parent}"),
                     parent: Annotation = Annotation("{parent}"),
                     child: Annotation = Annotation("{annotation}"),

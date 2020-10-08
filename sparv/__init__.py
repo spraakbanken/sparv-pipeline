@@ -1,21 +1,21 @@
 """Main Sparv package."""
-from sparv.core import config
-from sparv.core.registry import annotator, exporter, importer, installer, modelbuilder
+from sparv.core.registry import annotator, exporter, importer, installer, modelbuilder, wizard
 from sparv.util.classes import (AllDocuments, Annotation, AnnotationAllDocs, AnnotationCommonData, AnnotationData,
                                 AnnotationDataAllDocs, Binary, BinaryDir, Config, Corpus, Document, Export,
-                                ExportAnnotations, ExportInput, HeaderAnnotations, Language, Model, ModelOutput, Output,
-                                OutputAllDocs, OutputCommonData, OutputData, OutputDataAllDocs, Source,
-                                SourceAnnotations, Text)
+                                ExportAnnotations, ExportInput, HeaderAnnotations, SourceStructure, Language, Model,
+                                ModelOutput, Output, OutputAllDocs, OutputCommonData, OutputData, OutputDataAllDocs,
+                                Source, SourceAnnotations, Text, Wildcard)
 
 __version__ = "4.0.dev0"
 
+# Only expose classes and functions that are meant to be used in modules
 __all__ = [
     "annotator",
-    "config",
     "exporter",
     "importer",
     "installer",
     "modelbuilder",
+    "wizard",
     "AllDocuments",
     "Annotation",
     "AnnotationDataAllDocs",
@@ -31,6 +31,7 @@ __all__ = [
     "ExportAnnotations",
     "ExportInput",
     "HeaderAnnotations",
+    "SourceStructure",
     "Language",
     "Model",
     "ModelOutput",
@@ -41,5 +42,6 @@ __all__ = [
     "OutputDataAllDocs",
     "Source",
     "SourceAnnotations",
-    "Text"
+    "Text",
+    "Wildcard"
 ]

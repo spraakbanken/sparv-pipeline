@@ -6,7 +6,7 @@ from binascii import hexlify
 from typing import Optional
 
 import sparv.util as util
-from sparv import AllDocuments, Annotation, AnnotationData, Document, Output, OutputDataAllDocs, annotator
+from sparv import AllDocuments, Annotation, AnnotationData, Document, Output, Wildcard, OutputDataAllDocs, annotator
 
 _ID_LENGTH = 10
 
@@ -51,7 +51,7 @@ def doc_id(out: OutputDataAllDocs = OutputDataAllDocs("misc.docid", cls="docid")
         out.write(new_id, doc)
 
 
-@annotator("Unique IDs for {annotation}")
+@annotator("Unique IDs for {annotation}", wildcards=[Wildcard("annotation", Wildcard.ANNOTATION)])
 def ids(doc: Document = Document(),
         annotation: Annotation = Annotation("{annotation}"),
         out: Output = Output("{annotation}:misc.id", description="Unique ID for {annotation}"),

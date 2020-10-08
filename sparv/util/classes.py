@@ -460,6 +460,23 @@ class Config(str):
         self.description = description
 
 
+class Wildcard(str):
+    """Class holding wildcard information."""
+
+    ANNOTATION = 1
+    ATTRIBUTE = 2
+    ANNOTATION_ATTRIBUTE = 3
+    OTHER = 0
+
+    def __new__(cls, name: str, *args, **kwargs):
+        return super().__new__(cls, name)
+
+    def __init__(self, name: str, type: int = OTHER, description: Optional[str] = None):
+        self.name = name
+        self.type = type
+        self.description = description
+
+
 class Model(Base):
     """Path to model file."""
 
@@ -637,3 +654,41 @@ class HeaderAnnotations(List[Tuple[Annotation, Optional[str]]]):
 
 class Language(str):
     """Language of the corpus."""
+
+
+class SourceStructure(ABC):
+    """Abstract class that should be implemented by an importer's structure parser."""
+
+    def __init__(self, source_dir: pathlib.Path):
+        """Initialize class.
+
+        Args:
+            source_dir: Path to corpus source files
+        """
+        self.answers = {}
+        self.source_dir = source_dir
+
+        # Annotations should be saved to this variable after the first scan, and read from here
+        # on subsequent calls to the get_annotations() and get_plain_annotations() methods.
+        self.annotations = None
+
+    def setup(self):
+        """Return a list of wizard dictionaries with questions needed for setting up the class.
+
+        Answers to the questions will automatically be saved to self.answers."""
+        return {}
+
+    @abstractmethod
+    def get_annotations(self, corpus_config: dict) -> List[str]:
+        """Return a list of annotations including attributes.
+
+        Each value has the format 'annotation:attribute' or 'annotation'.
+        Plain versions of each annotation ('annotation' without attribute) must be included as well.
+        """
+        pass
+
+    def get_plain_annotations(self, corpus_config: dict) -> List[str]:
+        """Return a list of plain annotations without attributes.
+
+        Each value has the format 'annotation'."""
+        return [e for e in self.get_annotations(corpus_config) if ":" not in e]

@@ -4,7 +4,7 @@ import copy
 import logging
 from collections import defaultdict
 from functools import reduce
-from typing import Any
+from typing import Any, Optional
 
 import yaml
 
@@ -64,11 +64,12 @@ def read_yaml(yaml_file):
     return data
 
 
-def load_config(config_file: str) -> None:
+def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) -> None:
     """Load both default config and corpus config and merge into one config structure.
 
     Args:
-        config_file: Path to corpus config file.
+        config_file: Path to corpus config file. If None, only the default config is read.
+        config_dict: Get corpus config from dictionary instead of config file.
     """
     # Read default config
     if DEFAULT_CONFIG.is_file():
@@ -78,9 +79,14 @@ def load_config(config_file: str) -> None:
         default_config = {}
     default_classes = default_config.get("classes", {})
 
-    # Read corpus config
-    global config_user
-    config_user = read_yaml(config_file) or {}
+    if config_file:
+        # Read corpus config
+        global config_user
+        config_user = read_yaml(config_file) or {}
+    elif config_dict:
+        config_user = config_dict
+    else:
+        config_user = {}
     user_classes = config_user.get("classes", {})
 
     # Merge default and corpus config and save to global config variable
@@ -90,7 +96,8 @@ def load_config(config_file: str) -> None:
     # Set correct classes and annotations from presets
     apply_presets(user_classes, default_classes)
 
-    fix_document_element()
+    if config_file:
+        fix_document_element()
 
 
 def _get(name: str, config_dict=None):
@@ -140,8 +147,14 @@ def extend_config(new_config):
     _merge_dicts(config, new_config)
 
 
+def update_config(new_config):
+    """Update existing config with new values, replacing existing values."""
+    global config
+    config = _merge_dicts(copy.deepcopy(new_config), config)
+
+
 def _merge_dicts(user, default):
-    """Merge user config with default config, letting user values override default values."""
+    """Merge corpus config with default config, letting user values override default values."""
     if isinstance(user, dict) and isinstance(default, dict):
         for k, v in default.items():
             if k not in user:
@@ -186,7 +199,7 @@ def validate_module_config():
 
 
 def validate_config(config_dict=None, structure=None, parent=""):
-    """Make sure the user config doesn't contain invalid keys."""
+    """Make sure the corpus config doesn't contain invalid keys."""
     config_dict = config_dict or config_user
     structure = structure or config_structure
     for key in config_dict:
