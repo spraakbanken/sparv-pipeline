@@ -18,8 +18,8 @@ DEVELOPERS_GUIDE_FILES="
 ../developers-guide/sparv-classes.md
 ../developers-guide/config.md
 ../developers-guide/wildcards.md
-../developers-guide/misc.md
 ../developers-guide/writing-plugins.md
+../developers-guide/misc.md
 "
 
 # Get version number from sparv/__init__.py

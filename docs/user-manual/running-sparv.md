@@ -10,9 +10,7 @@ mycorpus/
     ├── document1.xml
     ├── document2.xml
     └── document3.xml
-│
 ```
-
 
 When trying out Sparv for the first time we recommend that you download and test run some of the [example
 corpora](https://github.com/spraakbanken/sparv-pipeline/releases/download/v4.0/example_corpora.zip).

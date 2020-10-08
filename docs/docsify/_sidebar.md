@@ -10,5 +10,5 @@
     - [Sparv Classes](developers-guide/sparv-classes.md)
     - [Config](developers-guide/config.md)
     - [Wildcards](developers-guide/wildcards.md)
-    - [MISC](developers-guide/misc.md)
     - [Writing Plugins](developers-guide/writing-plugins.md)
+    - [MISC](developers-guide/misc.md)

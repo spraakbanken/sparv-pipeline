@@ -1,14 +1,14 @@
 # Writing Sparv modules
 This section will give a brief overview of how Sparv modules work. More details are provided in the following chapters.
+When writing your first Sparv module a good starting point may be to take a look at an existing module that does
+something similar to your goal.
 
 The Sparv pipeline is comprised of different modules like importers, annotators and exporters. None of these modules are
 hard-coded into the Sparv pipeline and therefore it can easily be extended.
 
-A Sparv module is a Python script that imports Sparv classes (and util functions if needed) which are needed for
-describing dependencies to other entities (e.g. annotations or models) handled or created by the pipeline.
-
-Here is an example of a small annotation module that converts tokens to uppercase:
-
+A Sparv module is a Python script that imports Sparv classes (and util functions if needed) which are used for
+describing dependencies to other entities (e.g. annotations or models) handled or created by the pipeline. Here is an
+example of a small annotation module that converts tokens to uppercase:
 ```python
 from sparv import Annotation, Output, annotator
 
@@ -23,11 +23,11 @@ In this script we import two classes from Sparv (`Annotation` and `Output`) and 
 that nothing should be imported from the Sparv code unless it is directly available from the sparv package (i.e. `from
 sparv import ...`).
 
-Our `uppercase` function is decorated with `@annotator` which tells Sparv that this function can be used to produce an
-annotation. The first argument in the decorator is its description which is used for help functions in the CLI (e.g.
-when running `sparv annotations`).
+Our `uppercase` function is decorated with `@annotator` which tells Sparv that this function can be used to produce one
+or more annotations. The first argument in the decorator is its description which is used for displaying help texts in
+the CLI (e.g. when running `sparv annotations`).
 
-The functions relation to other pipeline components is described by its signature. The function arguments contain type
+The function's relation to other pipeline components is described by its signature. The function arguments contain type
 hints to the Sparv classes `Annotation` and `Output` which indicate what dependencies (e.g. annotations, models or
 config variables) must be satisfied before the function can do its job, and what it will produce. In this example Sparv
 will make sure that a word annotation exists before it will attempt to call the `uppercase` function because it knows
@@ -58,8 +58,8 @@ that `<token>` refers to output produced by the segment module. In the above exa
 annotation of the class `<token:word>` and `out` is an output annotation which provides new attributes for token
 elements.
 
+**TODO:** Give an example of an annotation without class (`segment.token:misc.word`)
+
 Annotation classes are valid across all modules and may be used wherever you see fit. There is no closed set of
 annotation classes and each module can invent its own classes if desired. **TODO:** command to list all existing
 classes?
-
-**TODO:** Explain difference between elements and attributes
