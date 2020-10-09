@@ -80,7 +80,7 @@ def main():
         "",
         "Setting up the Sparv pipeline:",
         "   setup            Set up the Sparv data directory",
-        "   create-config    Run config wizard to create a corpus config",
+        "   wizard           Run config wizard to create a corpus config",
         "   build-models     Download and build the Sparv models",
         "",
         "Advanced commands:",
@@ -127,7 +127,7 @@ def main():
                                help="The model to be built (if omitted all models will be built).")
     models_parser.add_argument("-l", "--list", action="store_true", help="List available models")
     models_parser.add_argument("--language", help="Language (ISO 639-3) if different from current corpus language")
-    subparsers.add_parser("create-config", description="Run config wizard to create a corpus config")
+    subparsers.add_parser("wizard", description="Run config wizard to create a corpus config")
 
     # Advanced commands
     runmodule = subparsers.add_parser("run-module", no_help=True)
@@ -194,14 +194,14 @@ def main():
     if args.command == "setup":
         setup.query_user()
         sys.exit(0)
-    elif args.command == "create-config":
+    elif args.command == "wizard":
         from sparv.core.wizard import Wizard
         wizard = Wizard()
         wizard.run()
         sys.exit(0)
 
     # Check that a corpus config file is available in the working dir
-    if args.command not in ("create-config", "build-models"):
+    if args.command not in ("build-models",):
         if not Path(args.dir or Path.cwd(), paths.config_file).is_file():
             print(f"No config file ({paths.config_file}) found in working directory.")
             sys.exit(1)
