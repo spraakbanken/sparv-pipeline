@@ -441,6 +441,8 @@ class Wizard:
                     for annotator in self.output_to_annotators[input_file]:
                         get_dependencies(*annotator)
 
+        config_annotator = None
+
         while True:
             # We need to reload annotators in case any configuration has changed
             config.update_config(self.corpus_config)
@@ -480,7 +482,28 @@ class Wizard:
             if not show_optional:
                 return
 
-            config_annotator = self.q({
+            config_annotators = []
+            preselected = None
+            for module in sorted(used_annotators):
+                for a in sorted(used_annotators[module]):
+                    config_annotators.append({
+                        "name": "{:{width}} {}  {}".format(
+                            "{}:{}".format(module, a),
+                            "({})".format(len(selected_annotations[module].get(a, []))) if
+                            selected_annotations[
+                                module].get(a) else "   ",
+                            self.snake_storage.all_annotations[module][a]["rule"].description,
+                            width=annotator_max_len + (
+                                0 if not self.snake_storage.all_annotations[module][a][
+                                    "rule"].configs else 2)),
+                        "value": (module, a),
+                        "short": "{}:{}".format(module, a),
+                        "disabled": not self.snake_storage.all_annotations[module][a]["rule"].configs
+                    })
+                    if config_annotator == (module, a):
+                        preselected = config_annotators[-1]
+
+            config_annotator = self.q(dict({
                 "type": "select",
                 "name": "annotator",
                 "message": "The following annotators will be used for your corpus, either directly or indirectly by the"
@@ -488,61 +511,54 @@ class Wizard:
                 "choices": [{
                     "name": DONE,
                     "value": "_done"
-                }] + [
-                               {
-                                   "name": "{:{width}} {}  {}".format(
-                                       "{}:{}".format(module, a),
-                                       "({})".format(len(selected_annotations[module].get(a, []))) if
-                                       selected_annotations[
-                                           module].get(a) else "   ",
-                                       self.snake_storage.all_annotations[module][a]["rule"].description,
-                                       width=annotator_max_len + (
-                                           0 if not self.snake_storage.all_annotations[module][a][
-                                               "rule"].configs else 2)),
-                                   "value": (module, a),
-                                   "short": "{}:{}".format(module, a),
-                                   "disabled": not self.snake_storage.all_annotations[module][a]["rule"].configs
-                               } for module in used_annotators for a in used_annotators[module]
-                           ]
-            }, clear=True)
+                }] + config_annotators
+            }, **{"default": preselected} if preselected else {}), clear=True)["annotator"]
 
-            if config_annotator["annotator"] == "_done":
+            if config_annotator == "_done":
                 break
             else:
-                module_name, f_name = config_annotator["annotator"]
+                module_name, f_name = config_annotator
                 max_cfg_len = max(len(cfg) for cfg in
                                   self.snake_storage.all_annotations[module_name][f_name]["rule"].configs)
-                config_choice = self.q([{
-                    "type": "select",
-                    "name": "config",
-                    "message": "What configuration variable do you want to edit?",
-                    "choices": [
-                                   {
-                                       "name": DONE,
-                                       "value": "_done"
-                                   }
-                               ] + [
-                                   {
-                                       "name": "{:{width}}  {}".format(cfg, config.get_config_description(cfg),
-                                                                       width=max_cfg_len),
-                                       "value": cfg
-                                   } for cfg in self.snake_storage.all_annotations[module_name][f_name]["rule"].configs
-                               ]
-                }], clear=True)
+                config_choice = None
+                preselected_key = None
+                while True:
+                    config_choices = []
+                    for cfg in self.snake_storage.all_annotations[module_name][f_name]["rule"].configs:
+                        config_choices.append({
+                            "name": "{:{width}}  {}".format(cfg, config.get_config_description(cfg),
+                                                            width=max_cfg_len),
+                            "value": cfg
+                        })
+                        if config_choice == cfg:
+                            preselected_key = config_choices[-1]
 
-                if config_choice["config"] == "_done":
-                    continue
-                else:
-                    config_variable = config_choice["config"]
-                    config_value = self.q([{
-                        "type": "text",
-                        "name": "value",
-                        "default": config.get(config_variable, ""),
-                        "message": "Set value of config variable '{}':".format(config_variable)
-                    }])
+                    config_choice = self.q(dict({
+                        "type": "select",
+                        "name": "config",
+                        "message": "What configuration variable do you want to edit?",
+                        "choices": [
+                           {
+                               "name": DONE,
+                               "value": "_done"
+                           }
+                        ] + config_choices
+                    }, **{"default": preselected_key} if preselected_key else {}), clear=True)["config"]
 
-                    config.set_value(config_variable, config_value["value"])
-                    config.set_value(config_variable, config_value["value"], config_dict=self.corpus_config)
+                    if config_choice == "_done":
+                        break
+                    else:
+                        config_value = self.q([{
+                            "type": "text",
+                            "name": "value",
+                            "default": config.get(config_choice) or "",
+                            "message": "Set value of config variable '{}':".format(config_choice)
+                        }])["value"]
+
+                        # Only save value if changed
+                        if config_value != (config.get(config_choice) or ""):
+                            config.set_value(config_choice, config_value)
+                            config.set_value(config_choice, config_value, config_dict=self.corpus_config)
 
     def select_wildcards(self, selected_annotations, always_ask: bool = False) -> bool:
         """Find any annotations with wildcards and prompt the user to define values for these.
@@ -705,35 +721,39 @@ class Wizard:
         max_len = max(
             len(module + f_name) + 1 for module in self.snake_storage.all_annotations for f_name in
             self.snake_storage.all_annotations[module])
+        annotator_choice = None
         while True:
-            annotator_choice = self.q([
-                {
-                    "type": "select",
-                    "name": "annotator",
-                    "message": "The following is a list of annotators available for the language you've chosen. "
-                               "Select an annotator below to display its available annotations. "
-                               "Select DONE when you're done.",
-                    "choices": [
-                                   {
-                                       "name": DONE,
-                                       "value": "_done"
-                                   },
-                               ] + [
-                                   {
-                                       "name": "{:{width}} {}  {}".format(
-                                           "{}:{}".format(module, a),
-                                           "({})".format(len(selected_annotations[module].get(a, []))) if
-                                           selected_annotations[
-                                               module].get(a) else "   ",
-                                           self.snake_storage.all_annotations[module][a]["rule"].description,
-                                           width=max_len),
-                                       "value": (module, a),
-                                       "short": "{}:{}".format(module, a)
-                                   } for module in self.snake_storage.all_annotations for a in
-                                   self.snake_storage.all_annotations[module]
-                               ]
-                }
-            ], clear=True)["annotator"]
+            annotators = []
+            preselected = None
+            for module in self.snake_storage.all_annotations:
+                for a in self.snake_storage.all_annotations[module]:
+                    annotators.append({
+                        "name": "{:{width}} {}  {}".format(
+                            "{}:{}".format(module, a),
+                            "({})".format(len(selected_annotations[module].get(a, []))) if
+                            selected_annotations[
+                                module].get(a) else "   ",
+                            self.snake_storage.all_annotations[module][a]["rule"].description,
+                            width=max_len),
+                        "value": (module, a),
+                        "short": "{}:{}".format(module, a)
+                    })
+                    if annotator_choice == (module, a):
+                        preselected = annotators[-1]
+
+            annotator_choice = self.q(dict({
+                "type": "select",
+                "name": "annotator",
+                "message": "The following is a list of annotators available for the language you've chosen. "
+                           "Select an annotator below to display its available annotations. "
+                           "Select DONE when you're done.",
+                "choices": [
+                               {
+                                   "name": DONE,
+                                   "value": "_done"
+                               },
+                           ] + annotators
+                }, **{"default": preselected} if preselected else {}), clear=True)["annotator"]
             if not annotator_choice == "_done":
                 module, annotator = annotator_choice
                 max_len2 = max(len(a[0].original_name) for a in
