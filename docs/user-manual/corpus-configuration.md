@@ -6,16 +6,17 @@ how to process it. The [corpus config wizard](#corpus-config-wizard) can help yo
 examples of config files you can download the [example
 corpora](https://github.com/spraakbanken/sparv-pipeline/releases/download/v4.0/example_corpora.zip).
 
-A minimal config file contains a corpus ID, information about which XML element is regarded the document element
-(**Note:** if your input documents are plain text each document will be regarded as a document element) and a list of
-(automatic) annotations you want to be included in the output. Here is an example of a small config file:
+A minimal config file contains a corpus ID, information about which annotation represents a document (for XML input this
+would refer to an XML element, and if your input documents are plain text each document will be regarded as a document
+annotation) and a list of (automatic) annotations you want to be included in the output. Here is an example of a small
+config file:
 ```yaml
 metadata:
     # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
     id: mini-swe
 import:
-    # The element representing one text document. Text-level annotations will be made on this element.
-    document_element: text
+    # The annotation representing one text document. Any text-level annotations will be attached to this annotation.
+    document_annotation: text
 export:
     # Automatic annotations to be included in the export
     annotations:
@@ -66,9 +67,9 @@ choose depends on the format of your input documents. If your corpus is in XML y
 (this is the default setting), if your corpus documents are in plain text, you should choose `text_import:parse`
 instead.
 
-`import.document_element` specifies the XML element representing one text document. Text-level annotations will be made
-on this element. If your input is anything else than XML you won't have to change this setting. In this case a default
-`text` root element will be created automatically.
+`import.document_annotation` specifies the annotation representing one text document. Any text-level annotations will be
+attached to this annotation. For XML input this refers to an XML element. For plain text input a default `text` root
+annotation will be created automatically and you won't have to change this setting.
 
 **TODO**
 - xml importer options:

@@ -22,8 +22,8 @@ metadata:
 #===============================================================================
 
 import:
-    # The element representing one text document. Text-level annotations will be made on this element.
-    document_element: text
+    # The annotation representing one text document. Any text-level annotations will be attached to this annotation.
+    document_annotation: text
 
 
 #===============================================================================

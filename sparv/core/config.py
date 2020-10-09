@@ -31,7 +31,7 @@ config_structure = {
     },
     "classes": {"_source": "core"},
     "import": {
-        "document_element": {"_source": "core"},
+        "document_annotation": {"_source": "core"},
         "source_dir": {"_source": "core"},
         "importer": {"_source": "core"}
     },
@@ -97,7 +97,7 @@ def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) 
     apply_presets(user_classes, default_classes)
 
     if config_file:
-        fix_document_element()
+        fix_document_annotation()
 
 
 def _get(name: str, config_dict=None):
@@ -306,18 +306,18 @@ def _find_annotations(name, config_obj):
     return result
 
 
-def fix_document_element():
-    """Do special treatment for document element."""
+def fix_document_annotation():
+    """Do special treatment for document annotation."""
     # Check that classes.text is not set
     if get("classes.text") is not None:
         raise util.SparvErrorMessage(
-            "The config value 'classes.text' cannot be set manually. Use 'import.document_element' instead!",
+            "The config value 'classes.text' cannot be set manually. Use 'import.document_annotation' instead!",
             "sparv", "config")
 
-    # Check that import.document_element is set
-    doc_elem = get("import.document_element")
+    # Check that import.document_annotation is set
+    doc_elem = get("import.document_annotation")
     if doc_elem is None:
-        raise util.SparvErrorMessage("The config value 'import.document_element' must be set!", "sparv", "config")
+        raise util.SparvErrorMessage("The config value 'import.document_annotation' must be set!", "sparv", "config")
 
     # Set classes.text and
     set_default("classes.text", doc_elem)

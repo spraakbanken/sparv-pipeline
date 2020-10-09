@@ -367,7 +367,7 @@ class Wizard:
         """Ask user for document annotation."""
         doc_annotation = self.q(self.set_defaults({
             "type": "select",
-            "name": "import.document_element",
+            "name": "import.document_annotation",
             "message": "What is the name of the existing annotation in your source files that encapsulates a "
                        "'document'? This is the text unit for which all document level annotations will apply. "
                        "Usually, no text should exist outside of this annotation.",
@@ -376,10 +376,10 @@ class Wizard:
                 "value": "__sparv_manual_entry"
             }]
         }))
-        if doc_annotation["import.document_element"] == "__sparv_manual_entry":
+        if doc_annotation["import.document_annotation"] == "__sparv_manual_entry":
             doc_annotation = self.q({
                 "type": "text",
-                "name": "import.document_element",
+                "name": "import.document_annotation",
                 "message": "Annotation name, e.g. 'text' or  ̈́document':",
                 "validate": lambda x: bool(re.match(r"^\S+$", x))
             })
