@@ -4,6 +4,7 @@ import copy
 import logging
 import unicodedata
 import xml.etree.ElementTree as etree
+from itertools import chain
 from pathlib import Path
 from typing import List
 
@@ -330,7 +331,7 @@ def analyze_xml(source_file):
     parser = etree.iterparse(source_file, events=("start", "end"))
     event, root = next(parser)
 
-    for event, element in parser:
+    for event, element in chain([(event, root)], parser):
         if event == "start":
             elements.add(element.tag)
             for attr in element.attrib:
