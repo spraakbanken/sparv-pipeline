@@ -461,7 +461,7 @@ class Wizard:
                     missing_config = self.snake_storage.all_annotations[module][f_name]["rule"].missing_config
                     if any(cfg for cfg in missing_config if not cfg.startswith("<")):
                         missing_configs = True
-                        self.q([
+                        config_values = self.q([
                             {
                                 "type": "text",
                                 "name": config_key,
@@ -470,6 +470,10 @@ class Wizard:
                                                                          config_key)
                             } for config_key in missing_config if not config_key.startswith("<")
                         ], clear=True)
+
+                        for key, value in config_values.items():
+                            config.set_value(key, value)
+                            config.set_value(key, value, config_dict=self.corpus_config)
             if missing_configs:
                 continue
 
