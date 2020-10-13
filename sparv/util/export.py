@@ -2,7 +2,7 @@
 
 import logging
 import xml.etree.ElementTree as etree
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from copy import deepcopy
 from itertools import combinations
 from typing import Any, List, Optional, Set, Tuple, Union
@@ -344,13 +344,11 @@ def get_header_names(header_annotation_names: Optional[List[str]],
 
 def _remove_duplicates(annotation_tuples):
     """Remove duplicates from annotation_tuples without changing the order."""
-    new_annotations = []
-    new_annotations_set = set()
+    new_annotations = OrderedDict()
     for a, new_name in annotation_tuples:
-        if (a.name, new_name) not in new_annotations_set:
-            new_annotations.append((a, new_name))
-            new_annotations_set.add((a.name, new_name))
-    return new_annotations
+        if a not in new_annotations or new_name is not None:
+            new_annotations[a] = new_name
+    return list(new_annotations.items())
 
 
 def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAllDocs], Any]],
@@ -396,7 +394,7 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
             short_names[name] = attr or base
 
         export_names = {}
-        for annotation, new_name in sorted(annotations):
+        for annotation, new_name in sorted(annotations):  # Sorted in order to handle annotations before attributes
             name = annotation.name
             if not new_name:
                 # Only use short name if it's unique
@@ -414,7 +412,7 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
     else:
         if keep_struct_names:
             export_names = {}
-            for annotation, new_name in sorted(annotations):
+            for annotation, new_name in sorted(annotations):  # Sorted in order to handle annotations before attributes
                 name = annotation.name
                 if not new_name:
                     new_name = annotation.attribute_name or annotation.annotation_name
