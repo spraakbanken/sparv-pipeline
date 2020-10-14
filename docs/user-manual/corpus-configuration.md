@@ -26,12 +26,18 @@ export:
         - <token>:sensaldo.sentiment_label
 ```
 
+
 ## Corpus Config Wizard
 The corpus config wizard is a tool designed to help you create a corpus config file by asking questions about your
-corpus. Run `sparv wizard` in order to start the tool. A config file that was created with the wizard can of course be
-edited manually afterwards.
+corpus and the annotations you would like Sparv to add to it. Run `sparv wizard` in order to start the tool. When
+running this command in a folder where a corpus config file exists already, Sparv will read the config file and set the
+wizard default values according to the existing configuration.
 
-**TODO**
+The wizard is an auxiliary tool to get you started with your corpus config file and it does not cover all of Sparv's
+advanced functionality. However, a config file that was created with the wizard can of course be edited manually
+afterwards, e.g. for adding more advanced configuration details such as [custom annotations](#custom-annotations) and
+[headers](#headers).
+
 
 ## Default Values
 Some config variables such as `metadata`, `classes`, `import`, `export` and `custom_annotations` are general and are
@@ -389,6 +395,7 @@ Now you can add the annotation name given by the `out` parameter value to an ann
 (e.g. `xml_export.annotations`). Please note that when using custom annotations from your own code all output
 annotations must be prefixed with `custom`.
 
-If you need more information on how to write an annotation function please refer to the [developer's guide][TODO]. If you
-have written a rather general annotation module you could consider writing a Sparv plugin. This way others will be able
-to use your annotator. Read more about writing plugins in the [developer's guide][TODO].
+If you need more information on how to write an annotation function please refer to the [developer's
+guide](developers-guide/writing-sparv-modules). If you have written a rather general annotation module you could
+consider writing a Sparv plugin. This way others will be able to use your annotator. Read more about writing plugins in
+the [developer's guide](developers-guide/writing-plugins).

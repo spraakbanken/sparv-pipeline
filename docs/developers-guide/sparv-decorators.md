@@ -3,9 +3,9 @@ Sparv decorators are used to make functions known to the Sparv registry. Only de
 become part of the pipeline. When Sparv is run it will automatically search for decorated functions and scan their
 arguments, thus building an index of their inputs and outputs. This index is then used to build the dependency graph.
 
-The available decorators are listed below. Every decorator has one mandatory argument, the description, which is a
-string describing what the function does. This is used for displaying help texts in the CLI. All other arguments are
-optional and default to `None`.
+The available decorators are listed below. Every decorator (except for `@wizard`) has one mandatory argument, the
+description, which is a string describing what the function does. This is used for displaying help texts in the CLI. All
+other arguments are optional and default to `None`.
 
 ## @annotator
 A function decorated with `@annotator` usually takes some input (e.g. models, one or more arbitrary annotations like
@@ -18,6 +18,7 @@ tokens, sentences, parts of speeches etc) and outputs one or more new annotation
 - `language`: List of supported languages. If no list is supplied all languages are supported.
 - `order`: If several annotators have the same output, this integer value will help decide which to try to use first. A
   lower number indicates higher priority.
+- `wildcards`: List of wildcards used in the annotator function's arguments.
 
 **Example:**
 ```python
@@ -141,12 +142,16 @@ def build_model(out: ModelOutput = ModelOutput("sensaldo/sensaldo.pickle")):
 ```
 
 ## @wizard
+A function decorated with `@wizard` is used to generate questions for the corpus config wizard.
 
 **Arguments:**
-- `description`: Description of the installer. Used for displaying help texts in the CLI.
-- `name`: Optional name to use instead of the function name.
-- ?
+- `config_keys`: a list of config keys to be set or changed by this function.
+- `source_structure`: Set to `True` if the function needs access to a `SourceStructure` instance (the one holding
+  information on the structure of the source files. Default: `False`
 
 **Example:**
 ```python
+@wizard(["export.source_annotations"], source_structure=True)
+def import_wizard(answers, structure: SourceStructure):
+    ...
 ```

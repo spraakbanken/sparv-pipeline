@@ -532,7 +532,7 @@ class Model(Base):
         return data
 
     def download(self, url: str):
-        """Download file from url and save to modeldir/filename."""
+        """Download file from url and save to modeldir."""
         os.makedirs(self.path.parent, exist_ok=True)
         try:
             urllib.request.urlretrieve(url, self.path)
