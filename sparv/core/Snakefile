@@ -149,8 +149,8 @@ rule config:
         print(snake_utils.prettify_config(out_conf))
 
 
-# Rule to list all annotations
-rule annotations:
+# Rule to list all modules, annotations and classes
+rule modules:
     run:
         # Get config variables used by each annotator
         reverse_config_usage = defaultdict(list)

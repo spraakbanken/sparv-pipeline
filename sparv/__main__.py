@@ -78,6 +78,10 @@ def main():
         "   config           Display the corpus config",
         "   files            List available corpus documents (input for Sparv)",
         "",
+        "Show annotation info:",
+        "   modules          List available modules, annotations, and classes",
+        "   presets          List available annotation presets",
+        "",
         "Setting up the Sparv pipeline:",
         "   setup            Set up the Sparv data directory",
         "   wizard           Run config wizard to create a corpus config",
@@ -87,8 +91,6 @@ def main():
         "   run-rule         Run specified rule(s) for creating annotations",
         "   create-file      Create specified file(s)",
         "   run-module       Run annotator module independently",
-        "   annotations      List available modules, annotations, and classes",
-        "   presets          List available annotation presets",
         "",
         "See 'sparv <command> -h' for help with a specific command"
     ]
@@ -144,7 +146,7 @@ def main():
                                               "The full path must be supplied and wildcards must be replaced."))
     createfile_parser.add_argument("targets", nargs="*", default=["list"], help="File(s) to create")
     createfile_parser.add_argument("-l", "--list", action="store_true", help="List available files that can be created")
-    subparsers.add_parser("annotations", description="List available annotations and classes.")
+    subparsers.add_parser("modules", description="List available modules, annotations and classes.")
     subparsers.add_parser("presets", description="Display all available annotation presets.")
 
     # Add common arguments
@@ -212,7 +214,7 @@ def main():
     log_level = ""
     log_file_level = ""
 
-    if args.command in ("annotations", "config", "files", "clean", "presets"):
+    if args.command in ("modules", "config", "files", "clean", "presets"):
         snakemake_args["targets"] = [args.command]
         simple_target = True
         if args.command == "clean":

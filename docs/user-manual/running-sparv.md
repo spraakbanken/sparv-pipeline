@@ -26,16 +26,19 @@ Inspecting corpus details:
     config           Display the corpus config
     files            List available corpus documents (input for Sparv)
 
+Show annotation info:
+    modules          List available modules, annotations, and classes
+    presets          List available annotation presets
+
 Setting up the Sparv pipeline:
     setup            Set up the Sparv data directory
+    wizard           Run config wizard to create a corpus config
     build-models     Download and build the Sparv models
 
 Advanced commands:
     run-rule         Run specified rule(s) for creating annotations
     create-file      Create specified file(s)
     run-module       Run annotator module independently
-    annotations      List available modules, annotations, and classes
-    presets          List available annotation presets
 ```
 
 Every command in the Sparv command line interface (CLI) has a help text which can be accessed with the `-h` flag. Below
@@ -59,6 +62,12 @@ processing of your corpus if you for example want to add a new output format. Ho
 folder (e.g. because you want to save disk space or because you want to rerun all annotations from scratch) you can do
 so by running this command. The export directory and log files can also be removed with the `clean` command. Check out
 the available options to learn more.
+
+## Show Annotation Info
+**`sparv modules`:** List all available modules, annotations, and classes.
+
+**`sparv presets`:** List available annotation presets available for your corpus. You can read more about presets in the
+[section about annotation presets](user-manual/corpus-configuration.md#annotation-presets).
 
 ## Inspecting Corpus Details
 **`sparv config`:** This command lets you inspect the configuration for your corpus. You can read more about this in the
@@ -90,8 +99,3 @@ called `document1` you could use the following command:
 ```bash
 sparv run-module hunpos msdtag --out segment.token:hunpos.msd --word segment.token:misc.word --sentence segment.sentence --binary hunpos-tag --model hunpos/suc3_suc-tags_default-setting_utf8.model --morphtable hunpos/saldo_suc-tags.morphtable --patterns hunpos/suc.patterns --doc dokument1
 ```
-
-**`sparv annotations`:** List all available modules, annotations, and classes.
-
-**`sparv presets`:** List available annotation presets available for your corpus. You can read more about presets in the
-[section about annotation presets](user-manual/corpus-configuration.md#annotation-presets).
