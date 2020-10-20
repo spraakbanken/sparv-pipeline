@@ -154,8 +154,8 @@ def _handle_overlaps(spans_dict):
     span_stack = []
     overlap_count = 0
     for position in sorted(spans_dict):
+        subposition_shift = 0
         for subposition, (event, span) in enumerate(spans_dict[position].copy()):
-            subposition_shift = 0
             if event == "open":
                 span_stack.append(span)
             elif event == "close":
