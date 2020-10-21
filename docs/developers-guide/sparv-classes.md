@@ -176,14 +176,6 @@ function.
 - `absolute_path`: Set to `True` if the path is absolute. Default: `False`
 
 
-## HeaderAnnotations
-List of header annotations to be included in the export. This list is defined in the corpus configuration.
-
-**Arguments:**
-- `config_name`: The config variable pointing out what header annotations to include.
-- `is_input`: If set to `False` the annotations won't be added to the rule's input. Default: `True`
-
-
 ## Language
 In instance of this class holds information about the luanguage of the corpus. This information is retrieved from the
 corpus configuration and is specified as ISO 639-3 code.

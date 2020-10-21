@@ -16,7 +16,7 @@ from sparv.core import config as sparv_config
 from sparv.core import log_handler, paths, registry
 from sparv.util.classes import (AllDocuments, Annotation, AnnotationAllDocs, AnnotationData, Base, BaseAnnotation,
                                 BaseOutput, Binary, BinaryDir, Config, Corpus, Document, Export, ExportAnnotations,
-                                ExportAnnotationsAllDocs, ExportInput, HeaderAnnotations, Language, Model, ModelOutput,
+                                ExportAnnotationsAllDocs, ExportInput, Language, Model, ModelOutput,
                                 Output, OutputData, Source, SourceAnnotations, Text)
 
 
@@ -263,16 +263,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 rule.parameters[param_name].append((annotation, export_name))
         # SourceAnnotations
         elif param_type == SourceAnnotations:
-            annotations = sparv_config.get(f"{param.default.config_name}", [])
-            if not annotations:
-                annotations = sparv_config.get("export.source_annotations", [])
-            rule.parameters[param_name] = annotations
-        # HeaderAnnotations
-        elif param_type == HeaderAnnotations:
-            annotations = sparv_config.get(f"{param.default.config_name}", [])
-            if not annotations:
-                annotations = sparv_config.get("export.header_annotations", [])
-            rule.parameters[param_name] = annotations
+            rule.parameters[param_name] = sparv_config.get(f"{param.default.config_name}", [])
         # Corpus
         elif param.annotation == Corpus:
             rule.parameters[param_name] = Corpus(sparv_config.get("metadata.id"))

@@ -6,8 +6,7 @@ import xml.etree.ElementTree as etree
 from typing import Optional
 
 import sparv.util as util
-from sparv import (AnnotationData, Config, Document, Export, ExportAnnotations, HeaderAnnotations, SourceAnnotations,
-                   Text, exporter)
+from sparv import (AnnotationData, Config, Document, Export, ExportAnnotations, SourceAnnotations, Text, exporter)
 
 from . import xml_utils
 
@@ -24,7 +23,7 @@ def preserved_format(doc: Document = Document(),
                      out: Export = Export("xml_preserved_format/[xml_export.filename_formatted]"),
                      annotations: ExportAnnotations = ExportAnnotations("xml_export.annotations"),
                      source_annotations: SourceAnnotations = SourceAnnotations("xml_export.source_annotations"),
-                     header_annotations: HeaderAnnotations = HeaderAnnotations("xml_export.header_annotations"),
+                     header_annotations: SourceAnnotations = SourceAnnotations("xml_export.header_annotations"),
                      remove_namespaces: bool = Config("export.remove_module_namespaces", False),
                      sparv_namespace: str = Config("export.sparv_namespace"),
                      source_namespace: str = Config("export.source_namespace"),

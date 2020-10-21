@@ -2,9 +2,9 @@
 from sparv.core.registry import annotator, exporter, importer, installer, modelbuilder, wizard
 from sparv.util.classes import (AllDocuments, Annotation, AnnotationAllDocs, AnnotationCommonData, AnnotationData,
                                 AnnotationDataAllDocs, Binary, BinaryDir, Config, Corpus, Document, Export,
-                                ExportAnnotations, ExportInput, HeaderAnnotations, SourceStructure, Language, Model,
-                                ModelOutput, Output, OutputAllDocs, OutputCommonData, OutputData, OutputDataAllDocs,
-                                Source, SourceAnnotations, Text, Wildcard)
+                                ExportAnnotations, ExportInput, SourceStructure, Language, Model, ModelOutput, Output,
+                                OutputAllDocs, OutputCommonData, OutputData, OutputDataAllDocs, Source,
+                                SourceAnnotations, Text, Wildcard)
 
 __version__ = "4.0.dev0"
 
@@ -30,7 +30,6 @@ __all__ = [
     "Export",
     "ExportAnnotations",
     "ExportInput",
-    "HeaderAnnotations",
     "SourceStructure",
     "Language",
     "Model",

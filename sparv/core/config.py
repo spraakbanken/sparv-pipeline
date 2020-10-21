@@ -328,3 +328,24 @@ def fix_document_annotation():
         set_default("xml_import.elements", [doc_elem])
     elif doc_elem not in xml_import_elems:
         xml_import_elems.append(doc_elem)
+
+
+def inherit_config(source: str, target: str) -> None:
+    """Let 'target' inherit config values from 'source' for evey key that is supported and not already populated.
+
+    Only keys which are either missing or with a value of None in the target will inherit the source's value, meaning
+    that falsy values like empty strings or lists will not be overwritten.
+
+    Args:
+        source: Module name of source.
+        target: Module name of target.
+    """
+    for key in config[source]:
+        if key in config_structure.get(target, []):
+            value = None
+            try:
+                value = _get(f"{target}.{key}")
+            except KeyError:
+                pass
+            if value is None:
+                set_value(f"{target}.{key}", config[source][key])
