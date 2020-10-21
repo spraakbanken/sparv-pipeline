@@ -25,8 +25,10 @@ class SnakeStorage:
 
     def __init__(self):
         """Init attributes."""
-        # All output annotations available, used for printing a list
+        # All output annotations, importers and exporters available, used for printing a list
         self.all_annotations = {}
+        self.all_importers = {}
+        self.all_exporters = {}
 
         # All named targets available, used in list_targets
         self.named_targets = []
@@ -97,6 +99,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
     if rule.importer:
         rule.inputs.append(Path(get_source_path(), "{doc}." + rule.file_extension))
+        storage.all_importers.setdefault(rule.module_name, {}).setdefault(rule.f_name,
+                                                                          {"description": rule.description})
         if rule.target_name == sparv_config.get("import.importer"):
             # Exports always generate corpus text file
             rule.outputs.append(paths.annotation_dir / "{doc}" / util.TEXT_FILE)
@@ -111,6 +115,10 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
                 for element in annotations_:
                     rule.outputs.append(paths.annotation_dir / get_annotation_path(element))
+
+    if rule.exporter:
+        storage.all_exporters.setdefault(rule.module_name, {}).setdefault(rule.f_name,
+                                                                          {"description": rule.description})
 
     params = OrderedDict(inspect.signature(rule.annotator_info["function"]).parameters)
     output_dirs = set()
@@ -644,3 +652,34 @@ def get_export_targets(snake_storage, rules, doc, wildcards):
             all_outputs.extend([snakemake.io.IOFile(f, rule=sm_rule) for f in rule_outputs])
 
     return all_outputs
+
+
+def print_modules(modules: dict, module_name: str, reverse_config_usage: dict, max_len: int, annotations: bool = False):
+    """Print module information."""
+    print()
+    print(f"Available {module_name}")
+    print("==========" + "=" * len(module_name) + "\n")
+    for module_name in sorted(modules):
+        print(util.Color.BOLD + "{}".format(module_name.upper()) + util.Color.RESET)
+        for f_name in sorted(modules[module_name]):
+            print("      {}{}{}".format(util.Color.UNDERLINE, f_name, util.Color.RESET))
+            f_desc = modules[module_name][f_name]["description"]
+            if f_desc:
+                print("      {}".format(f_desc))
+            print()
+
+            if annotations:
+                f_anns = modules[module_name][f_name]["annotations"]
+                print("      Annotations:")
+                for f_ann in sorted(f_anns):
+                    print("        • {:{width}}{}".format(f_ann[0], f_ann[1] or "", width=max_len))
+                    if f_ann[0].cls:
+                        print(util.Color.ITALIC + "          <{}>".format(f_ann[0].cls) + util.Color.RESET)
+                print()
+
+            f_config = reverse_config_usage.get(f"{module_name}:{f_name}")
+            if f_config:
+                print("      Configuration variables used:")
+                for config_key in sorted(f_config):
+                    print("        • {:{width}}{}".format(config_key[0], config_key[1] or "", width=max_len))
+                print()
