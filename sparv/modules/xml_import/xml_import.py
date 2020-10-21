@@ -56,6 +56,8 @@ class XMLStructure(SourceStructure):
                                                      "metadata."),
     Config("xml_import.prefix", "", description="Optional prefix to add to annotation names."),
     Config("xml_import.encoding", util.UTF8, description="Encoding of source document. Defaults to UTF-8."),
+    Config("xml_import.keep_control_chars", False, description="Set to True if control characters should not be removed "
+                                                               "from the text."),
     Config("xml_import.normalize", "NFC", description="Normalize input using any of the following forms: "
                                                       "'NFC', 'NFKC', 'NFD', and 'NFKD'.")
 ], structure=XMLStructure)
@@ -67,6 +69,7 @@ def parse(doc: Document = Document(),
           header_data: list = Config("xml_import.header_data"),
           prefix: str = Config("xml_import.prefix"),
           encoding: str = Config("xml_import.encoding"),
+          keep_control_chars: bool = Config("xml_import.keep_control_chars"),
           normalize: str = Config("xml_import.normalize")):
     """Parse XML source file and create annotation files.
 
@@ -84,7 +87,7 @@ def parse(doc: Document = Document(),
             Defaults to 'NFC'.
     """
     parser = SparvXMLParser(elements, skip, header_elements, header_data, encoding, source_dir, prefix,
-                            normalize)
+                            keep_control_chars, normalize)
     parser.parse(doc)
     parser.save()
 
@@ -93,10 +96,11 @@ class SparvXMLParser:
     """XML parser class for parsing XML."""
 
     def __init__(self, elements: list, skip: list, header_elements: list, headers: list, encoding: str = util.UTF8,
-                 source_dir: str = "src", prefix: str = "", normalize: str = "NFC"):
+                 source_dir: str = "src", prefix: str = "", keep_control_chars: bool = True, normalize: str = "NFC"):
         """Initialize XML parser."""
         self.source_dir = source_dir
         self.encoding = encoding
+        self.keep_control_chars = keep_control_chars
         self.normalize = normalize
         self.doc = None
         self.prefix = prefix
@@ -275,8 +279,15 @@ class SparvXMLParser:
                 self.text.append(element.tail)
             return element_length, len(element.tail or ""), end_subpos
 
-        tree = etree.parse(source_file)
-        root = tree.getroot()
+        if self.keep_control_chars:
+            tree = etree.parse(source_file)
+            root = tree.getroot()
+        else:
+            with open(source_file) as f:
+                text = f.read()
+            text = util.remove_control_characters(text)
+            root = etree.fromstring(text)
+
         iter_tree(root)
 
         if header_data:

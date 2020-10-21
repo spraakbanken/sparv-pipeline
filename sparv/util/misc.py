@@ -1,6 +1,7 @@
 """Misc util functions."""
 
 import logging
+import unicodedata
 from typing import List, Optional
 
 from .classes import Annotation
@@ -164,7 +165,15 @@ def truncateset(string, maxlength=4095, delimiter="|", affix="|", encoding="UTF-
                 return cwbset(values[:i], delimiter, affix)
 
 
-def remove_control_characters(text, keep=["\n", "\t", "\r"]):
+def remove_control_characters(text, keep: Optional[str] = None):
     """Remove control characters from text, except for those in 'keep'."""
-    import unicodedata
-    return "".join(c for c in text if c in keep or unicodedata.category(c)[0] != "C")
+    if keep is None:
+        keep = ["\n", "\t", "\r"]
+    return "".join(c for c in text if c in keep or unicodedata.category(c)[0:2] != "Cc")
+
+
+def remove_formatting_characters(text, keep: Optional[str] = None):
+    """Remove formatting characters from text, except for those in 'keep'."""
+    if keep is None:
+        keep = []
+    return "".join(c for c in text if c in keep or unicodedata.category(c)[0:2] != "Cf")

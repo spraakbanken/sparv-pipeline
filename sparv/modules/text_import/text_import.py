@@ -4,15 +4,23 @@ import unicodedata
 from pathlib import Path
 
 from sparv import importer, util
-from sparv.util.classes import Document, Output, Source, Text
+from sparv.util.classes import Config, Document, Output, Source, Text
 
 
-@importer("TXT import", file_extension="txt", outputs=["text"])
+@importer("TXT import", file_extension="txt", outputs=["text"], config=[
+    Config("text_import.prefix", "", description="Optional prefix to add to annotation names."),
+    Config("text_import.encoding", util.UTF8, description="Encoding of source document. Defaults to UTF-8."),
+    Config("text_import.keep_control_chars", False, description="Set to True if control characters should not be removed "
+                                                                "from the text."),
+    Config("text_import.normalize", "NFC", description="Normalize input using any of the following forms: "
+                                                       "'NFC', 'NFKC', 'NFD', and 'NFKD'.")
+], )
 def parse(doc: Document = Document(),
           source_dir: Source = Source(),
-          prefix: str = "",
-          encoding: str = util.UTF8,
-          normalize: str = "NFC") -> None:
+          prefix: str = Config("text_import.prefix"),
+          encoding: str = Config("text_import.encoding"),
+          keep_control_chars: bool = Config("text_import.keep_control_chars"),
+          normalize: str = Config("text_import.normalize"),) -> None:
     """Parse plain text file as input to the Sparv pipeline.
 
     Args:
@@ -31,6 +39,9 @@ def parse(doc: Document = Document(),
         source_file = Path(source_dir, doc + ".txt")
 
     text = source_file.read_text(encoding=encoding)
+
+    if not keep_control_chars:
+        text = util.remove_control_characters(text)
 
     if normalize:
         text = unicodedata.normalize("NFC", text)

@@ -7,12 +7,13 @@ from sparv import Annotation, Config, Output, Text, Wildcard, annotator, util
 
 
 @annotator("Text value of a span (usually a token)", config=[
-    Config("misc.keep_control_chars", default=False,
-           description="Set to True if you don't want control characters to be removed from tokens in the output.")])
+    Config("misc.keep_formatting_chars", default=False,
+           description="Set to True if you don't want formatting characters (e.g. soft hyphens) to be removed from "
+                       "tokens in the output.")])
 def text_spans(text: Text = Text(),
                chunk: Annotation = Annotation("<token>"),
                out: Output = Output("<token>:misc.word", cls="token:word"),
-               keep_control_chars: Optional[bool] = Config("misc.keep_control_chars")):
+               keep_formatting_chars: Optional[bool] = Config("misc.keep_formatting_chars")):
     """Add the text content for each edge as a new annotation."""
     corpus_text = text.read()
     if isinstance(chunk, (str, Annotation)):
@@ -20,8 +21,11 @@ def text_spans(text: Text = Text(),
     out_annotation = []
     for span in chunk:
         token = corpus_text[span[0]:span[1]]
-        if not keep_control_chars:
-            token = util.remove_control_characters(token)
+        if not keep_formatting_chars:
+            new_token = util.remove_formatting_characters(token)
+            # If this token consists entirely of formatting characters, don't remove them. Empty tokens are bad!
+            if new_token:
+                token = new_token
         out_annotation.append(token)
     if out:
         out.write(out_annotation)
