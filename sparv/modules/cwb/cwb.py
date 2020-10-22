@@ -58,11 +58,13 @@ def vrt(doc: Document = Document(),
     log.info("Exported: %s", out)
 
 
-@exporter("Scrambled VRT export")
+@exporter("Scrambled VRT export", config=[
+    Config("cwb.scramble_on", description="Annotation to use for scrambling.")
+])
 def vrt_scrambled(doc: Document = Document(),
                   out: Export = Export("vrt_scrambled/{doc}.vrt"),
-                  chunk: Annotation = Annotation("[export.scramble_on]"),
-                  chunk_order: Annotation = Annotation("[export.scramble_on]:misc.number_random"),
+                  chunk: Annotation = Annotation("[cwb.scramble_on]"),
+                  chunk_order: Annotation = Annotation("[cwb.scramble_on]:misc.number_random"),
                   token: Annotation = Annotation("<token>"),
                   word: Annotation = Annotation("[export.word]"),
                   annotations: ExportAnnotations = ExportAnnotations("cwb.annotations"),

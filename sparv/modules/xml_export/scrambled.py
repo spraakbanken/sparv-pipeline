@@ -13,12 +13,14 @@ from . import xml_utils
 log = logging.getLogger(__name__)
 
 
-@exporter("Scrambled XML export")
+@exporter("Scrambled XML export", config=[
+    Config("xml_export.scramble_on", description="Annotation to use for scrambling.")
+])
 def scrambled(doc: Document = Document(),
               docid: AnnotationData = AnnotationData("<docid>"),
               out: Export = Export("xml_scrambled/[xml_export.filename]"),
-              chunk: Annotation = Annotation("[export.scramble_on]"),
-              chunk_order: Annotation = Annotation("[export.scramble_on]:misc.number_random"),
+              chunk: Annotation = Annotation("[xml_export.scramble_on]"),
+              chunk_order: Annotation = Annotation("[xml_export.scramble_on]:misc.number_random"),
               token: Annotation = Annotation("<token>"),
               word: Annotation = Annotation("[export.word]"),
               annotations: ExportAnnotations = ExportAnnotations("xml_export.annotations"),
