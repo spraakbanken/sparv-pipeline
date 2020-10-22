@@ -99,6 +99,12 @@ def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) 
     if config_file:
         fix_document_annotation()
 
+    # Make sure that the root level only contains dictionaries or lists to save us a lot of headache
+    for key in config:
+        if not isinstance(config[key], (dict, list)):
+            raise util.SparvErrorMessage(f"The config section '{key}' could not be parsed.", module="sparv",
+                                         function="config")
+
 
 def _get(name: str, config_dict=None):
     """Try to get value from config, raising an exception if key doesn't exist."""
