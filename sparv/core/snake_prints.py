@@ -26,40 +26,78 @@ def prettify_config(in_config):
     return yaml_str
 
 
-def print_annotators(snake_storage, reverse_config_usage, print_params=False):
+def print_module_info(module_types, module_names, snake_storage, reverse_config_usage):
+    """Wrap module printing functions: print correct info for chosen module_types and module_names."""
+    all_module_types = {
+        "annotators": print_annotators,
+        "importers": print_importers,
+        "exporters": print_exporters,
+        "custom_annotators": print_custom_annotators
+    }
+
+    if not module_types:
+        module_types = all_module_types.keys()
+
+    module_names = [n.lower() for n in module_names]
+
+    # Print module info for all chosen module_types
+    if not module_names:
+        for m in module_types:
+            print_func = all_module_types.get(m)
+            print_func(snake_storage, reverse_config_usage)
+
+    # Print only info for chosen module_names
+    else:
+        # TODO: check if module name is valid!
+        for m in module_types:
+            print_func = all_module_types.get(m)
+            print_func(snake_storage, reverse_config_usage, only_modules=module_names)
+
+
+def print_annotators(snake_storage, reverse_config_usage, print_params=False, only_modules=[]):
     """Print info about annotators."""
-    all_annotations = snake_storage.all_annotations
-    max_len = max(len(a[0]) for m in all_annotations for f in all_annotations[m]
-                  for a in all_annotations[m][f]["annotations"]) + 4
-    print_modules(all_annotations, "modules, annotators and annotations", reverse_config_usage, snake_storage, max_len,
-                  print_params=print_params)
+    modules = snake_storage.all_annotations
+    if only_modules:
+        modules = dict((k, v) for k, v in snake_storage.all_annotations.items() if k in only_modules)
+    if modules:
+        max_len = max(len(a[0]) for m in modules for f in modules[m] for a in modules[m][f]["annotations"]) + 4
+        print_modules(modules, "annotators", reverse_config_usage, snake_storage, max_len,
+                      print_params=print_params)
 
 
-def print_importers(snake_storage, reverse_config_usage, print_params=False):
+def print_importers(snake_storage, reverse_config_usage, print_params=False, only_modules=[]):
     """Print info about importers."""
     modules = snake_storage.all_importers
-    configs = [reverse_config_usage.get(f"{module_name}:{f_name}") for module_name in modules for f_name in
-               modules[module_name] if reverse_config_usage.get(f"{module_name}:{f_name}")]
-    max_len = max(len(k[0]) for li in configs for k in li) + 4
-    print_modules(modules, "importers", reverse_config_usage, snake_storage, max_len, print_params=print_params)
+    if only_modules:
+        modules = dict((k, v) for k, v in snake_storage.all_importers.items() if k in only_modules)
+    if modules:
+        configs = [reverse_config_usage.get(f"{module_name}:{f_name}") for module_name in modules for f_name in
+                   modules[module_name] if reverse_config_usage.get(f"{module_name}:{f_name}")]
+        max_len = max(len(k[0]) for li in configs for k in li) + 4
+        print_modules(modules, "importers", reverse_config_usage, snake_storage, max_len, print_params=print_params)
 
 
-def print_exporters(snake_storage, reverse_config_usage, print_params=False):
+def print_exporters(snake_storage, reverse_config_usage, print_params=False, only_modules=[]):
     """Print info about exporters."""
     modules = snake_storage.all_exporters
-    configs = [reverse_config_usage.get(f"{module_name}:{f_name}") for module_name in modules for f_name in
-               modules[module_name] if reverse_config_usage.get(f"{module_name}:{f_name}")]
-    max_len = max(len(k[0]) for li in configs for k in li) + 4
-    print_modules(modules, "exporters", reverse_config_usage, snake_storage, max_len, print_params=print_params)
+    if only_modules:
+        modules = dict((k, v) for k, v in snake_storage.all_exporters.items() if k in only_modules)
+    if modules:
+        configs = [reverse_config_usage.get(f"{module_name}:{f_name}") for module_name in modules for f_name in
+                   modules[module_name] if reverse_config_usage.get(f"{module_name}:{f_name}")]
+        max_len = max(len(k[0]) for li in configs for k in li) + 4
+        print_modules(modules, "exporters", reverse_config_usage, snake_storage, max_len, print_params=print_params)
 
 
-def print_custom_annotators(snake_storage, reverse_config_usage, print_params=False):
+def print_custom_annotators(snake_storage, reverse_config_usage, print_params=True, only_modules=[]):
     """Print info about custom annotations."""
-    custom_annotations = snake_storage.all_custom_annotations
-    max_len = max(len(a) for m in custom_annotations for f in custom_annotations[m]
-                  for a in custom_annotations[m][f]["params"]) + 4
-    print_modules(custom_annotations, "custom annotation functions", reverse_config_usage, snake_storage, max_len,
-                  print_params=print_params)
+    modules = snake_storage.all_custom_annotations
+    if only_modules:
+        modules = dict((k, v) for k, v in snake_storage.all_custom_annotations.items() if k in only_modules)
+    if modules:
+        max_len = max(len(a) for m in modules for f in modules[m] for a in modules[m][f]["params"]) + 4
+        print_modules(modules, "custom annotation functions", reverse_config_usage, snake_storage, max_len,
+                      print_params=print_params)
 
 
 def print_annotation_classes():

@@ -163,30 +163,8 @@ rule config:
 rule modules:
     run:
         # Print annotators, importers, exporters, custom annotations
-        snake_prints.print_annotators(snake_storage, reverse_config_usage)
-        snake_prints.print_importers(snake_storage, reverse_config_usage)
-        snake_prints.print_exporters(snake_storage, reverse_config_usage)
-        snake_prints.print_custom_annotators(snake_storage, reverse_config_usage, print_params=True)
-
-# Rule to list all annotators
-rule list_annotators:
-    run:
-        snake_prints.print_annotators(snake_storage, reverse_config_usage)
-
-# Rule to list all importers
-rule list_importers:
-    run:
-        snake_prints.print_importers(snake_storage, reverse_config_usage)
-
-# Rule to list all exporters
-rule list_exporters:
-    run:
-        snake_prints.print_exporters(snake_storage, reverse_config_usage)
-
-# Rule to list all custom annotations
-rule list_custom_annotators:
-    run:
-        snake_prints.print_custom_annotators(snake_storage, reverse_config_usage, print_params=True)
+        snake_prints.print_module_info(config.get("types", []), config.get("names", []), snake_storage,
+                                       reverse_config_usage)
 
 # Rule to list all annotation classes
 rule classes:

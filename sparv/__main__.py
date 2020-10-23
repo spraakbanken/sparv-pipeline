@@ -115,8 +115,19 @@ def main():
 
     # Inspect
     config_parser = subparsers.add_parser("config", description="Display the corpus configuration.")
-    config_parser.add_argument("options", nargs="*", default=[], help="Specific options(s) in config to display.")
+    config_parser.add_argument("options", nargs="*", default=[], help="Specific options(s) in config to display")
     subparsers.add_parser("files", description="List available corpus documents that can be annotated by Sparv.")
+
+    # Annotation info
+    modules_parser = subparsers.add_parser("modules", description="List available modules and annotations.")
+    modules_parser.add_argument("--annotators", action="store_true", help="List info for annotators")
+    modules_parser.add_argument("--importers", action="store_true", help="List info for importers")
+    modules_parser.add_argument("--exporters", action="store_true", help="List info for exporters")
+    modules_parser.add_argument("--custom_annotators", action="store_true", help="List info for custom annotators")
+    modules_parser.add_argument("names", nargs="*", default=[], help="Specific module(s) to display")
+
+    subparsers.add_parser("presets", description="Display all available annotation presets.")
+    subparsers.add_parser("classes", description="Display all available annotation classes.")
 
     # Setup
     subparsers.add_parser("setup", description="Set up the Sparv data directory.")
@@ -147,15 +158,6 @@ def main():
                                               "The full path must be supplied and wildcards must be replaced."))
     createfile_parser.add_argument("targets", nargs="*", default=["list"], help="File(s) to create")
     createfile_parser.add_argument("-l", "--list", action="store_true", help="List available files that can be created")
-
-    modules_parser = subparsers.add_parser("modules", description="List available modules and annotations.")
-    modules_parser.add_argument("--annotators", action="store_true", help="List info for annotators")
-    modules_parser.add_argument("--importers", action="store_true", help="List info for importers")
-    modules_parser.add_argument("--exporters", action="store_true", help="List info for exporters")
-    modules_parser.add_argument("--custom_annotators", action="store_true", help="List info for custom annotators")
-
-    subparsers.add_parser("presets", description="Display all available annotation presets.")
-    subparsers.add_parser("classes", description="Display all available annotation classes.")
 
     # Add common arguments
     for subparser in [run_parser, install_parser, models_parser, runrule_parser, createfile_parser]:
@@ -232,14 +234,17 @@ def main():
         if args.command == "config" and args.options:
             config["options"] = args.options
         if args.command == "modules":
+            config["types"] = []
+            if args.names:
+                config["names"] = args.names
             if args.annotators:
-                snakemake_args["targets"] = ["list_annotators"]
-            elif args.importers:
-                snakemake_args["targets"] = ["list_importers"]
-            elif args.exporters:
-                snakemake_args["targets"] = ["list_exporters"]
-            elif args.custom_annotators:
-                snakemake_args["targets"] = ["list_custom_annotators"]
+                config["types"].append("annotators")
+            if args.importers:
+                config["types"].append("importers")
+            if args.exporters:
+                config["types"].append("exporters")
+            if args.custom_annotators:
+                config["types"].append("custom_annotators")
 
     elif args.command in ("run-rule", "create-file", "run", "install", "build-models"):
         snakemake_args.update({
