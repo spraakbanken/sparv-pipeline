@@ -29,6 +29,7 @@ class SnakeStorage:
         self.all_annotations = {}
         self.all_importers = {}
         self.all_exporters = {}
+        self.all_custom_annotations = {}
 
         # All named targets available, used in list_targets
         self.named_targets = []
@@ -87,6 +88,13 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
     Populate rule with Snakemake input, output and parameter list.
 
     Return True if a Snakemake rule should be created.
+
+    Args:
+        rule: Object containing snakemake rule parameters.
+        config: Dictionary containing the corpus configuration.
+        storage: Object for saving information for all rules.
+        config_missing: True if there is no corpus config file.
+        custom_rule_obj: Custom annotation dictionary from corpus config.
     """
     # Only create certain rules when config is missing
     if config_missing and not rule.modelbuilder:
@@ -97,10 +105,15 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             sparv_config.get("metadata.language") not in rule.annotator_info["language"]:
         return False
 
+    # Get this function's parameters
+    params = OrderedDict(inspect.signature(rule.annotator_info["function"]).parameters)
+    param_dict = make_param_dict(params)
+
     if rule.importer:
         rule.inputs.append(Path(get_source_path(), "{doc}." + rule.file_extension))
         storage.all_importers.setdefault(rule.module_name, {}).setdefault(rule.f_name,
-                                                                          {"description": rule.description})
+                                                                          {"description": rule.description,
+                                                                           "params": param_dict})
         if rule.target_name == sparv_config.get("import.importer"):
             # Exports always generate corpus text file
             rule.outputs.append(paths.annotation_dir / "{doc}" / util.TEXT_FILE)
@@ -118,11 +131,10 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
     if rule.exporter:
         storage.all_exporters.setdefault(rule.module_name, {}).setdefault(rule.f_name,
-                                                                          {"description": rule.description})
+                                                                          {"description": rule.description,
+                                                                           "params": param_dict})
 
-    params = OrderedDict(inspect.signature(rule.annotator_info["function"]).parameters)
-    output_dirs = set()
-
+    output_dirs = set()    # Directories where export files are stored
     custom_params = set()
 
     if custom_rule_obj:
@@ -150,7 +162,10 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                     f"Parameter '{param_name}' in custom rule '{rule.full_name}' has no value!", "sparv", "config")
         else:
             if param_default_empty:
-                # This is probably an unused custom rule, so don't process it
+                # This is probably an unused custom rule, so don't process it any further,
+                #  but safe it in all_custom_annotations
+                storage.all_custom_annotations.setdefault(rule.module_name, {}).setdefault(rule.f_name, {
+                    "description": rule.description, "params": param_dict})
                 storage.custom_targets.append((rule.target_name, rule.description))
                 return False
             else:
@@ -184,7 +199,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             if rule.annotator:
                 storage.all_annotations.setdefault(rule.module_name, {}).setdefault(rule.f_name,
                                                                                     {"description": rule.description,
-                                                                                     "annotations": []})
+                                                                                     "annotations": [],
+                                                                                     "params": param_dict})
                 storage.all_annotations[rule.module_name][rule.f_name]["annotations"].append((param_value,
                                                                                               param_value.description))
         # ModelOutput
@@ -549,26 +565,6 @@ def get_wildcard_values(config):
     return dict(wc.split("=") for wc in config.get("wildcards", []))
 
 
-def prettify_config(in_config):
-    """Prettify a yaml config string."""
-    import yaml
-
-    class MyDumper(yaml.Dumper):
-        """Customized YAML dumper that indents lists."""
-
-        def increase_indent(self, flow=False, indentless=False):
-            """Force indentation."""
-            return super(MyDumper, self).increase_indent(flow, False)
-
-    # Resolve aliases and replace them with their anchors' contents
-    yaml.Dumper.ignore_aliases = lambda *args: True
-    yaml_str = yaml.dump(in_config, default_flow_style=False, Dumper=MyDumper, indent=4)
-    # Colorize keys for easier reading
-    yaml_str = re.sub(r"^(\s*[\S]+):", util.Color.BLUE + r"\1" + util.Color.RESET + ":", yaml_str,
-                      flags=re.MULTILINE)
-    return yaml_str
-
-
 def escape_wildcards(s):
     """Escape all wildcards other than {doc}."""
     return re.sub(r"(?!{doc})({[^}]+})", r"{\1}", str(s))
@@ -645,32 +641,20 @@ def get_export_targets(snake_storage, rules, doc, wildcards):
     return all_outputs
 
 
-def print_modules(modules: dict, module_name: str, reverse_config_usage: dict, max_len: int, annotations: bool = False):
-    """Print module information."""
-    print()
-    print(f"Available {module_name}")
-    print("==========" + "=" * len(module_name) + "\n")
-    for module_name in sorted(modules):
-        print(util.Color.BOLD + "{}".format(module_name.upper()) + util.Color.RESET)
-        for f_name in sorted(modules[module_name]):
-            print("      {}{}{}".format(util.Color.UNDERLINE, f_name, util.Color.RESET))
-            f_desc = modules[module_name][f_name]["description"]
-            if f_desc:
-                print("      {}".format(f_desc))
-            print()
+def make_param_dict(params):
+    """Make dictionary storing info about a function's parameters."""
+    param_dict = {}
+    for p, v in params.items():
+        default = v.default if v.default != inspect.Parameter.empty else None
+        typ, li, optional = registry.get_type_hint_type(v.annotation)
+        param_dict[p] = (default, typ, li, optional)
+    return param_dict
 
-            if annotations:
-                f_anns = modules[module_name][f_name]["annotations"]
-                print("      Annotations:")
-                for f_ann in sorted(f_anns):
-                    print("        • {:{width}}{}".format(f_ann[0], f_ann[1] or "", width=max_len))
-                    if f_ann[0].cls:
-                        print(util.Color.ITALIC + "          <{}>".format(f_ann[0].cls) + util.Color.RESET)
-                print()
 
-            f_config = reverse_config_usage.get(f"{module_name}:{f_name}")
-            if f_config:
-                print("      Configuration variables used:")
-                for config_key in sorted(f_config):
-                    print("        • {:{width}}{}".format(config_key[0], config_key[1] or "", width=max_len))
-                print()
+def get_reverse_config_usage():
+    """Get config variables used by each annotator."""
+    reverse_config_usage = defaultdict(list)
+    for config_key in sparv_config.config_usage:
+        for annotator in sparv_config.config_usage[config_key]:
+            reverse_config_usage[annotator].append((config_key, sparv_config.get_config_description(config_key)))
+    return reverse_config_usage

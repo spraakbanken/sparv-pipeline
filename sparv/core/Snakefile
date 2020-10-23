@@ -7,7 +7,7 @@ from snakemake.logging import logger
 
 from sparv import util
 from sparv.core import config as sparv_config
-from sparv.core import paths, registry, snake_utils
+from sparv.core import paths, registry, snake_utils, snake_prints
 
 # Remove Snakemake's default log handler
 if config.get("run_by_sparv") and logger.log_handler and logger.log_handler[0] == logger.text_handler:
@@ -154,67 +154,20 @@ rule config:
                 out_conf[k] = sparv_config.get(k)
         else:
             out_conf = sparv_config.config
-        print(snake_utils.prettify_config(out_conf))
+        print(snake_prints.prettify_config(out_conf))
 
 
 # Rule to list all modules, annotations and classes
 rule modules:
     run:
-        # Get config variables used by each annotator
-        reverse_config_usage = defaultdict(list)
-        for config_key in sparv_config.config_usage:
-            for annotator in sparv_config.config_usage[config_key]:
-                reverse_config_usage[annotator].append((config_key, sparv_config.get_config_description(config_key)))
-
-        # Print annotators
-        all_annotations = snake_storage.all_annotations
-        max_len = max(len(a[0]) for m in all_annotations for f in all_annotations[m]
-                      for a in all_annotations[m][f]["annotations"]) + 4
-        snake_utils.print_modules(all_annotations, "modules, annotators and annotations", reverse_config_usage, max_len)
-
-        # Print importers
-        modules = snake_storage.all_importers
-        configs = [reverse_config_usage.get(f"{module_name}:{f_name}") for module_name in modules for f_name in
-                   modules[module_name] if reverse_config_usage.get(f"{module_name}:{f_name}")]
-        max_len = max(len(k[0]) for li in configs for k in li) + 4
-        snake_utils.print_modules(modules, "importers", reverse_config_usage, max_len)
-
-        # Print exporters
-        modules = snake_storage.all_exporters
-        configs = [reverse_config_usage.get(f"{module_name}:{f_name}") for module_name in modules for f_name in
-                   modules[module_name] if reverse_config_usage.get(f"{module_name}:{f_name}")]
-        max_len = max(len(k[0]) for li in configs for k in li) + 4
-        snake_utils.print_modules(modules, "exporters", reverse_config_usage, max_len)
-
-        print()
-        print("Available custom annotation functions")
-        print("=====================================\n")
-        print(util.Color.BOLD + "    Functions that can be used as custom_annotations" + util.Color.RESET)
-        max_len = max(len(t) for t, _ in snake_storage.custom_targets) + 4
-        for target, desc in sorted(snake_storage.custom_targets):
-            print("        {:{}}    {}".format(target, max_len, desc))
-        print()
-
+        reverse_config_usage = snake_utils.get_reverse_config_usage()
+        # Print annotators, importers, exporters, custom annotations
+        snake_prints.print_annotators(snake_storage, reverse_config_usage)
+        snake_prints.print_importers(snake_storage, reverse_config_usage)
+        snake_prints.print_exporters(snake_storage, reverse_config_usage)
+        snake_prints.print_custom_annotations(snake_storage, reverse_config_usage, print_params=True)
         # Print annotation classes
-        max_len = max(len(cls) for cls in registry.annotation_classes["module_classes"]) + 8
-        print()
-        print("Available annotation classes")
-        print("============================\n")
-        print(util.Color.BOLD + "    Classes defined by pipeline modules" + util.Color.RESET)
-        print("        {}{:{}}    {}{}".format(util.Color.ITALIC, "Class", max_len, "Annotation", util.Color.RESET))
-        for cls, anns in registry.annotation_classes["module_classes"].items():
-            print("        {:{}}    {}".format(cls, max_len, anns[0]))
-            if len(anns) > 1:
-                for ann in anns[1:]:
-                    print("        {:{}}    {}".format("", max_len, ann))
-
-        if registry.annotation_classes["config_classes"]:
-            print()
-            print(util.Color.BOLD + "    Classes from config" + util.Color.RESET)
-            print("        {}{:{}}    {}{}".format(util.Color.ITALIC, "Class", max_len, "Annotation", util.Color.RESET))
-            for cls, ann in registry.annotation_classes["config_classes"].items():
-                print("        {:{}}    {}".format(cls, max_len, ann))
-        print()
+        snake_prints.print_annotation_classes()
 
 
 # Rule to list all annotation presets
@@ -222,7 +175,7 @@ rule presets:
     run:
         resolved_presets = dict(
             (i, sparv_config.resolve_presets(sparv_config.presets[i])) for i in sparv_config.presets)
-        print(snake_utils.prettify_config(resolved_presets))
+        print(snake_prints.prettify_config(resolved_presets))
 
 
 # Rule to list all targets
