@@ -81,6 +81,7 @@ def main():
         "Show annotation info:",
         "   modules          List available modules, annotations, and classes",
         "   presets          List available annotation presets",
+        "   classes          List available annotation classes",
         "",
         "Setting up the Sparv pipeline:",
         "   setup            Set up the Sparv data directory",
@@ -146,8 +147,15 @@ def main():
                                               "The full path must be supplied and wildcards must be replaced."))
     createfile_parser.add_argument("targets", nargs="*", default=["list"], help="File(s) to create")
     createfile_parser.add_argument("-l", "--list", action="store_true", help="List available files that can be created")
-    subparsers.add_parser("modules", description="List available modules, annotations and classes.")
+
+    modules_parser = subparsers.add_parser("modules", description="List available modules and annotations.")
+    modules_parser.add_argument("--annotators", action="store_true", help="List info for annotators")
+    modules_parser.add_argument("--importers", action="store_true", help="List info for importers")
+    modules_parser.add_argument("--exporters", action="store_true", help="List info for exporters")
+    modules_parser.add_argument("--custom_annotators", action="store_true", help="List info for custom annotators")
+
     subparsers.add_parser("presets", description="Display all available annotation presets.")
+    subparsers.add_parser("classes", description="Display all available annotation classes.")
 
     # Add common arguments
     for subparser in [run_parser, install_parser, models_parser, runrule_parser, createfile_parser]:
@@ -214,7 +222,7 @@ def main():
     log_level = ""
     log_file_level = ""
 
-    if args.command in ("modules", "config", "files", "clean", "presets"):
+    if args.command in ("modules", "config", "files", "clean", "presets", "classes"):
         snakemake_args["targets"] = [args.command]
         simple_target = True
         if args.command == "clean":
@@ -223,6 +231,15 @@ def main():
             config["all"] = args.all
         if args.command == "config" and args.options:
             config["options"] = args.options
+        if args.command == "modules":
+            if args.annotators:
+                snakemake_args["targets"] = ["list_annotators"]
+            elif args.importers:
+                snakemake_args["targets"] = ["list_importers"]
+            elif args.exporters:
+                snakemake_args["targets"] = ["list_exporters"]
+            elif args.custom_annotators:
+                snakemake_args["targets"] = ["list_custom_annotators"]
 
     elif args.command in ("run-rule", "create-file", "run", "install", "build-models"):
         snakemake_args.update({

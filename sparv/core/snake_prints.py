@@ -1,12 +1,13 @@
 """Printing functions for Snakefile."""
 
 from sparv import util
-from sparv.core import registry
+from sparv.core import registry, snake_utils
 
 
 def prettify_config(in_config):
     """Prettify a yaml config string."""
     import re
+
     import yaml
 
     class MyDumper(yaml.Dumper):
@@ -30,7 +31,7 @@ def print_annotators(snake_storage, reverse_config_usage, print_params=False):
     all_annotations = snake_storage.all_annotations
     max_len = max(len(a[0]) for m in all_annotations for f in all_annotations[m]
                   for a in all_annotations[m][f]["annotations"]) + 4
-    print_modules(all_annotations, "modules, annotators and annotations", reverse_config_usage, max_len,
+    print_modules(all_annotations, "modules, annotators and annotations", reverse_config_usage, snake_storage, max_len,
                   print_params=print_params)
 
 
@@ -40,7 +41,7 @@ def print_importers(snake_storage, reverse_config_usage, print_params=False):
     configs = [reverse_config_usage.get(f"{module_name}:{f_name}") for module_name in modules for f_name in
                modules[module_name] if reverse_config_usage.get(f"{module_name}:{f_name}")]
     max_len = max(len(k[0]) for li in configs for k in li) + 4
-    print_modules(modules, "importers", reverse_config_usage, max_len, print_params=print_params)
+    print_modules(modules, "importers", reverse_config_usage, snake_storage, max_len, print_params=print_params)
 
 
 def print_exporters(snake_storage, reverse_config_usage, print_params=False):
@@ -49,15 +50,15 @@ def print_exporters(snake_storage, reverse_config_usage, print_params=False):
     configs = [reverse_config_usage.get(f"{module_name}:{f_name}") for module_name in modules for f_name in
                modules[module_name] if reverse_config_usage.get(f"{module_name}:{f_name}")]
     max_len = max(len(k[0]) for li in configs for k in li) + 4
-    print_modules(modules, "exporters", reverse_config_usage, max_len, print_params=print_params)
+    print_modules(modules, "exporters", reverse_config_usage, snake_storage, max_len, print_params=print_params)
 
 
-def print_custom_annotations(snake_storage, reverse_config_usage, print_params=False):
+def print_custom_annotators(snake_storage, reverse_config_usage, print_params=False):
     """Print info about custom annotations."""
     custom_annotations = snake_storage.all_custom_annotations
     max_len = max(len(a) for m in custom_annotations for f in custom_annotations[m]
                   for a in custom_annotations[m][f]["params"]) + 4
-    print_modules(custom_annotations, "custom annotation functions", reverse_config_usage, max_len,
+    print_modules(custom_annotations, "custom annotation functions", reverse_config_usage, snake_storage, max_len,
                   print_params=print_params)
 
 
@@ -83,9 +84,11 @@ def print_annotation_classes():
     print()
 
 
-def print_modules(modules: dict, module_name: str, reverse_config_usage: dict, max_len: int,
-                  print_annotations: bool = True, print_params: bool = False):
+def print_modules(modules: dict, module_name: str, reverse_config_usage: dict, snake_storage: snake_utils.SnakeStorage,
+                  max_len: int, print_annotations: bool = True, print_params: bool = False):
     """Print module information."""
+    custom_annotations = snake_storage.all_custom_annotations
+
     print()
     print(f"Available {module_name}")
     print("==========" + "=" * len(module_name) + "\n")
@@ -114,8 +117,14 @@ def print_modules(modules: dict, module_name: str, reverse_config_usage: dict, m
                     print("        • {:{width}}{}".format(config_key[0], config_key[1] or "", width=max_len))
                 print()
 
+            # Always print parameters for custom annotations
             params = modules[module_name][f_name].get("params", {})
-            if print_params and params:
+            custom_params = None
+            if custom_annotations.get(module_name, {}).get(f_name, {}):
+                custom_params = custom_annotations[module_name][f_name].get("params", {})
+                params = custom_params
+
+            if (print_params and params) or custom_params:
                 print("      Arguments:")
                 for p, (default, typ, li, optional) in params.items():
                     opt_str = "(optional) " if optional else ""

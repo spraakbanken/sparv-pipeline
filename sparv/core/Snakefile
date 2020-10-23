@@ -140,6 +140,8 @@ sparv_config.validate_module_config()
 # Validate config
 sparv_config.validate_config()
 
+# Get reverse_config_usage dict for look-ups
+reverse_config_usage = snake_utils.get_reverse_config_usage()
 
 # ==============================================================================
 # Static Snakemake Rules
@@ -160,15 +162,36 @@ rule config:
 # Rule to list all modules, annotations and classes
 rule modules:
     run:
-        reverse_config_usage = snake_utils.get_reverse_config_usage()
         # Print annotators, importers, exporters, custom annotations
         snake_prints.print_annotators(snake_storage, reverse_config_usage)
         snake_prints.print_importers(snake_storage, reverse_config_usage)
         snake_prints.print_exporters(snake_storage, reverse_config_usage)
-        snake_prints.print_custom_annotations(snake_storage, reverse_config_usage, print_params=True)
-        # Print annotation classes
-        snake_prints.print_annotation_classes()
+        snake_prints.print_custom_annotators(snake_storage, reverse_config_usage, print_params=True)
 
+# Rule to list all annotators
+rule list_annotators:
+    run:
+        snake_prints.print_annotators(snake_storage, reverse_config_usage)
+
+# Rule to list all importers
+rule list_importers:
+    run:
+        snake_prints.print_importers(snake_storage, reverse_config_usage)
+
+# Rule to list all exporters
+rule list_exporters:
+    run:
+        snake_prints.print_exporters(snake_storage, reverse_config_usage)
+
+# Rule to list all custom annotations
+rule list_custom_annotators:
+    run:
+        snake_prints.print_custom_annotators(snake_storage, reverse_config_usage, print_params=True)
+
+# Rule to list all annotation classes
+rule classes:
+    run:
+        snake_prints.print_annotation_classes()
 
 # Rule to list all annotation presets
 rule presets:
