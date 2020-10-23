@@ -54,7 +54,7 @@ segment:
     # How to do automatic paragraph segmentation. Valid values: blanklines, linebreaks, whitespace, fsv_paragraph
     paragraph_segmenter: blanklines
     # Chunk to use for automatic sentence segmentation (typically <text> or <paragraph>)
-    sentence_chunk: <text>
+    sentence_chunk: <paragraph>, <text>
     # Chunk to use for automatic tokenisation
     token_chunk: <sentence>
 

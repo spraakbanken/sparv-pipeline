@@ -51,6 +51,12 @@ wizards = []
 # All available languages
 languages = set()
 
+# All config keys containing lists of automatic annotations (i.e. ExportAnnotations)
+annotation_sources = set()
+
+# All explicitly used annotations (with classes expanded)
+explicit_annotations = set()
+
 
 def find_modules(no_import=False, find_custom=False) -> list:
     """Find Sparv modules and optionally import them.
@@ -282,6 +288,7 @@ def _add_to_registry(annotator):
             sparv_config.add_config_usage(val.default.name, rule_name)
         elif isinstance(val.default, (ExportAnnotations, ExportAnnotationsAllDocs)):
             sparv_config.add_config_usage(val.default.config_name, rule_name)
+            annotation_sources.add(val.default.config_name)
 
     annotators.setdefault(module_name, {})
     if f_name in annotators[module_name]:
@@ -324,45 +331,72 @@ def find_classes(string, match_objects: bool = False):
     return result
 
 
-def expand_variables(string, rule_name):
+def expand_variables(string, rule_name: Optional[str] = None, is_annotation: bool = False) -> Tuple[str, List[str]]:
     """Take a string and replace <class> references with real annotations, and [config] references with config values.
 
-    Return the resulting string and a list of any unresolved config references.
+    Args:
+        string: The string to process.
+        rule_name: Name of rule using the string, for logging config usage.
+        is_annotation: Set to True if string refers to an annotation.
+
+    Returns:
+        The resulting string and a list of any unresolved config references.
     """
     rest = []
-    # Convert config keys to config values
-    while True:
-        cfgs = find_config_variables(string, True)
-        if not cfgs:
-            break
-        for cfg in cfgs:
-            cfg_value = sparv_config.get(cfg.group(1), cfg.group(2))
-            sparv_config.add_config_usage(cfg.group(1), rule_name)
-            if cfg_value is not None:
-                string = string.replace(cfg.group(), cfg_value)
-            else:
-                rest.append(cfg.group()[1:-1])
-                break
-        else:
-            # No break occurred, continue outer loop
-            continue
-        break
 
-    # Convert class names to real annotations
-    while True:
-        clss = find_classes(string, True)
-        if not clss:
-            break
-        for cls in clss:
-            real_ann = _expand_class(cls.group(1))
-            if real_ann:
-                string = string.replace(cls.group(), real_ann)
-            else:
-                rest.append(cls.group())
+    if is_annotation:
+        # Split if list of alternatives
+        strings = string.split(", ")
+    else:
+        strings = [string]
+
+    for i, string in enumerate(strings):
+        # Convert config keys to config values
+        while True:
+            cfgs = find_config_variables(string, True)
+            if not cfgs:
                 break
-        else:
-            continue
-        break
+            for cfg in cfgs:
+                cfg_value = sparv_config.get(cfg.group(1), cfg.group(2))
+                if rule_name:
+                    sparv_config.add_config_usage(cfg.group(1), rule_name)
+                if cfg_value is not None:
+                    string = string.replace(cfg.group(), cfg_value)
+                else:
+                    rest.append(cfg.group()[1:-1])
+                    break
+            else:
+                # No break occurred, continue outer loop
+                continue
+            break
+
+        strings[i] = string
+
+    if is_annotation:
+        # Split if list of alternatives
+        strings = [s for s in string.split(", ") for string in strings]
+
+    for string in strings:
+        # Convert class names to real annotations
+        while True:
+            clss = find_classes(string, True)
+            if not clss:
+                break
+            for cls in clss:
+                real_ann = _expand_class(cls.group(1))
+                if real_ann:
+                    string = string.replace(cls.group(), real_ann)
+                else:
+                    rest.append(cls.group())
+                    break
+            else:
+                continue
+            break
+
+        if is_annotation and len(strings) > 1:
+            # If multiple alternative annotations, return the first one that is explicitly used, or the last
+            if string in explicit_annotations or clss and set(clss).intersection(explicit_annotations):
+                break
 
     return string, rest
 

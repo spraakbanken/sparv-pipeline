@@ -1,5 +1,4 @@
 """Snakefile used by Snakemake."""
-from collections import defaultdict
 from pathlib import Path
 
 import snakemake.io
@@ -130,6 +129,12 @@ for module in registry.annotators:
             sparv_config.inherit_config("import", module)
         elif a["type"] == registry.Annotator.exporter:
             sparv_config.inherit_config("export", module)
+
+# Collect list of all explicitly used annotations
+for key in registry.annotation_sources:
+    registry.explicit_annotations.update(
+        registry.expand_variables(a[0])[0]
+        for a in util.parse_annotation_list(sparv_config.get(key, [])))
 
 # Load modules and create automatic rules
 make_rules(config_missing)

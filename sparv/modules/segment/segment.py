@@ -42,7 +42,7 @@ def tokenize(text: Text = Text(),
 
 @annotator("Automatic segmentation of sentences", config=[
     Config("segment.sentence_segmenter", default="punkt_sentence", description="Sentence segmenter to use"),
-    Config("segment.sentence_chunk", default="<text>",
+    Config("segment.sentence_chunk", default="<paragraph>, <text>",
            description="Text chunk (annotation) to use as input when segmenting"),
     Config("segment.existing_sentences", description="Optional existing sentence annotation"),
     Config("segment.sentence_model", default="segment/punkt-nltk-svenska.pickle", description="Path to model")

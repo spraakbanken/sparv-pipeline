@@ -246,8 +246,6 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             source = param.default.config_name
             annotations = sparv_config.get(f"{source}", [])
             if not annotations:
-                annotations = sparv_config.get("export.annotations", [])
-            if not annotations:
                 rule.missing_config.add(f"{source}")
             export_annotations = util.parse_annotation_list(annotations, add_plain_annotations=False)
             annotation_type = Annotation if param_type == ExportAnnotations else AnnotationAllDocs

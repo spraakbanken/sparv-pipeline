@@ -27,7 +27,7 @@ class Base(ABC):
         self.original_name = name
 
     def expand_variables(self, rule_name: str = "") -> List[str]:
-        """Update annotation name by replacing <class> references with real annotations, and [config] references with config values.
+        """Update name by replacing <class> references with annotation names, and [config] references with config values.
 
         Return a list of any unresolved config references.
         """
@@ -64,6 +64,15 @@ class BaseAnnotation(Base):
     def __init__(self, name: str = "", doc: Optional[str] = None):
         super().__init__(name)
         self.doc = doc
+
+    def expand_variables(self, rule_name: str = "") -> List[str]:
+        """Update name by replacing <class> references with annotation names, and [config] references with config values.
+
+        Return a list of any unresolved config references.
+        """
+        new_value, rest = sparv.core.registry.expand_variables(self.name, rule_name, is_annotation=True)
+        self.name = new_value
+        return rest
 
     def split(self) -> Tuple[str, str]:
         """Split name into annotation name and attribute."""
