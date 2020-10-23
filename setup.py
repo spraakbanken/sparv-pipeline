@@ -40,14 +40,14 @@ setuptools.setup(
     install_requires=[
         "alive-progress==1.6.1",
         "appdirs==1.4.4",
-        "colorama==0.4.3",
+        "colorama==0.4.4",
         "iso-639==0.4.5",
         "nltk==3.5",
         "python-dateutil==2.8.1",
         "PyYAML==5.3.1",
-        "snakemake==5.20.1",
-        "typing-inspect==0.6.0",
-        "questionary==1.6.0"
+        "questionary==1.7.0",
+        "snakemake==5.26.1",
+        "typing-inspect==0.6.0"
     ],
     extras_require={
         "dev": [
