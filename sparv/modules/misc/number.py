@@ -42,9 +42,12 @@ def number_random(out: Output = Output("{annotation}:misc.number_random"),
     _read_chunks_and_write_new_ordering(out, chunk, _order, prefix, zfill, start)
 
 
-@annotator("Number chunk, with the order determined by an attribute")
-def number_by_attribute(out: Output,
-                        chunk: Annotation,
+@annotator("Number {annotation}, with the order determined by {attribute}", wildcards=[
+    Wildcard("annotation", Wildcard.ANNOTATION),
+    Wildcard("attribute", Wildcard.ATTRIBUTE)
+])
+def number_by_attribute(out: Output = Output("{annotation}:misc.number_by_{attribute}"),
+                        chunk: Annotation = Annotation("{annotation}:{attribute}"),
                         prefix: str = "",
                         zfill: bool = False,
                         start: int = START_DEFAULT):
@@ -55,9 +58,12 @@ def number_by_attribute(out: Output,
     _read_chunks_and_write_new_ordering(out, chunk, _order, prefix, zfill, start)
 
 
-@annotator("Renumber already numbered chunk, in new random order")
-def renumber_by_shuffle(out: Output,
-                        chunk: Annotation,
+@annotator("Renumber already numbered {annotation}:{attribute}, in new random order", wildcards=[
+    Wildcard("annotation", Wildcard.ANNOTATION),
+    Wildcard("attribute", Wildcard.ATTRIBUTE)
+])
+def renumber_by_shuffle(out: Output = Output("{annotation}:misc.renumber_by_shuffle_{attribute}"),
+                        chunk: Annotation = Annotation("{annotation}:{attribute}"),
                         prefix: str = "",
                         zfill: bool = False,
                         start: int = START_DEFAULT):
@@ -72,10 +78,14 @@ def renumber_by_shuffle(out: Output,
     _read_chunks_and_write_new_ordering(out, chunk, _order, prefix, zfill, start)
 
 
-@annotator("Number chunk by (parent_order, chunk order)")
-def number_by_parent(out: Output,
-                     chunk: Annotation,
-                     parent_order: Annotation,
+@annotator("Number {annotation} by ({parent_annotation}:{parent_attribute} order, {annotation} order)", wildcards=[
+    Wildcard("annotation", Wildcard.ANNOTATION),
+    Wildcard("parent_annotation", Wildcard.ANNOTATION),
+    Wildcard("parent_attribute", Wildcard.ATTRIBUTE)
+])
+def number_by_parent(out: Output = Output("{annotation}:misc.number_by_parent_{parent_annotation}__{parent_attribute}"),
+                     chunk: Annotation = Annotation("{annotation}"),
+                     parent_order: Annotation = Annotation("{parent_annotation}:{parent_attribute}"),
                      prefix: str = "",
                      zfill: bool = False,
                      start: int = START_DEFAULT):
