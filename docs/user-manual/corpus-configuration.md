@@ -115,8 +115,11 @@ export:
 In the example above this would result in the following output: `<article name="Scandinavian Furniture">`.
 
 The option `export.annotations` contains a list of automatic annotations you want Sparv to produce and include in the
-output. You can run `sparv annotations` to see what annotations are available. You can also read the section about
-[annotation presets](#annotation-presets) for more info about automatic annotations.
+output. You can run `sparv modules --annotators` to see what annotations are available. Some annotations listed here
+contain curly brackets, e.g. `{annotation}:misc.id`. This means that the annotation contains a wildcard (or in some
+cases multiple wildcards) that must be replaced with a value when using the annotation in the `export.annotations` list
+(e.g. `<sentence>:misc.id`). You can also read the section about [annotation presets](#annotation-presets) for more info
+about automatic annotations.
 
 If you want to produce multiple output formats containing different annotations you can override the
 `export.source_annotations` and `export.annotations` options for specific exporter modules. The annotations for the XML
@@ -301,8 +304,8 @@ usages of custom annotations are explained below.
 
 ### Built-in Custom Annotations
 Sparv provides a couple of built-in custom annotations which need extra input from the user before they can be used.
-These are listed under "Available custom annotation functions" when running `sparv annotations`. Please note that custom
-annotations always result in new annotations, they do not modify existing ones. 
+These are listed under "Available custom annotation functions" when running `sparv modules --custom_annotators`. Please
+note that custom annotations always result in new annotations, they do not modify existing ones. 
 
 The `misc:affix` annotation for example can be used to add a prefix and/or a suffix string to another annotation. When
 using this annotation function you must tell Sparv 1. what your output annotation should be called, 2. what annotation

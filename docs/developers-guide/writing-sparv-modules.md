@@ -1,4 +1,4 @@
-# Writing Sparv modules
+# Writing Sparv Modules
 This section will give a brief overview of how Sparv modules work. More details are provided in the following chapters.
 When writing your first Sparv module a good starting point may be to take a look at an existing module that does
 something similar to your goal.
@@ -25,7 +25,7 @@ sparv import ...`).
 
 Our `uppercase` function is decorated with `@annotator` which tells Sparv that this function can be used to produce one
 or more annotations. The first argument in the decorator is its description which is used for displaying help texts in
-the CLI (e.g. when running `sparv annotations`).
+the CLI (e.g. when running `sparv modules`).
 
 The function's relation to other pipeline components is described by its signature. The function arguments contain type
 hints to the Sparv classes `Annotation` and `Output` which indicate what dependencies (e.g. annotations, models or
@@ -61,5 +61,5 @@ elements.
 **TODO:** Give an example of an annotation without class (`segment.token:misc.word`)
 
 Annotation classes are valid across all modules and may be used wherever you see fit. There is no closed set of
-annotation classes and each module can invent its own classes if desired. **TODO:** command to list all existing
-classes?
+annotation classes and each module can invent its own classes if desired. Within a corpus directory all existing classes
+can be listed with the `sparv classes` command.

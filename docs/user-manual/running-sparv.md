@@ -27,8 +27,9 @@ Inspecting corpus details:
     files            List available corpus documents (input for Sparv)
 
 Show annotation info:
-    modules          List available modules, annotations, and classes
+    modules          List available modules and annotations
     presets          List available annotation presets
+    classes          List available annotation classes
 
 Setting up the Sparv pipeline:
     setup            Set up the Sparv data directory
@@ -64,10 +65,13 @@ so by running this command. The export directory and log files can also be remov
 the available options to learn more.
 
 ## Show Annotation Info
-**`sparv modules`:** List all available modules, annotations, and classes.
+**`sparv modules`:** List available modules and annotations.
 
 **`sparv presets`:** List available annotation presets available for your corpus. You can read more about presets in the
 [section about annotation presets](user-manual/corpus-configuration.md#annotation-presets).
+
+**`sparv classes`:** List available annotation classes. You can read more about classes in the [section about annotation
+classes](user-manual/corpus-configuration.md#annotation-classes).
 
 ## Inspecting Corpus Details
 **`sparv config`:** This command lets you inspect the configuration for your corpus. You can read more about this in the

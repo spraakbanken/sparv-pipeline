@@ -79,7 +79,7 @@ def main():
         "   files            List available corpus documents (input for Sparv)",
         "",
         "Show annotation info:",
-        "   modules          List available modules, annotations, and classes",
+        "   modules          List available modules and annotations",
         "   presets          List available annotation presets",
         "   classes          List available annotation classes",
         "",

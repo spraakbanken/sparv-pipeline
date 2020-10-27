@@ -1,6 +1,6 @@
 # MISC
-- Explain difference between elements and attributes. Maybe explain what an annotation is? Should we start off with a
-  chapter about general concepts?
+- Explain difference between elements and attributes. Maybe explain what an annotation is? Explain file name convention.
+  Should we start off with a chapter about general concepts?
 - When should you use the SparvError class?
 
 ## Util
