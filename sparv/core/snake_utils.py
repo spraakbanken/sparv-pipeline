@@ -29,7 +29,7 @@ class SnakeStorage:
         self.all_annotations = {}
         self.all_importers = {}
         self.all_exporters = {}
-        self.all_custom_annotations = {}
+        self.all_custom_annotators = {}
 
         # All named targets available, used in list_targets
         self.named_targets = []
@@ -163,8 +163,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         else:
             if param_default_empty:
                 # This is probably an unused custom rule, so don't process it any further,
-                #  but safe it in all_custom_annotations
-                storage.all_custom_annotations.setdefault(rule.module_name, {}).setdefault(rule.f_name, {
+                #  but safe it in all_custom_annotators
+                storage.all_custom_annotators.setdefault(rule.module_name, {}).setdefault(rule.f_name, {
                     "description": rule.description, "params": param_dict})
                 storage.custom_targets.append((rule.target_name, rule.description))
                 return False

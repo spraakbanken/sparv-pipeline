@@ -29,10 +29,10 @@ def prettify_config(in_config):
 def print_module_info(module_types, module_names, snake_storage, reverse_config_usage):
     """Wrap module printing functions: print correct info for chosen module_types and module_names."""
     all_module_types = {
-        "annotators": print_annotators,
-        "importers": print_importers,
-        "exporters": print_exporters,
-        "custom_annotators": print_custom_annotators
+        "annotators": ("annotators", snake_storage.all_annotations),
+        "importers": ("importers", snake_storage.all_importers),
+        "exporters": ("exporters", snake_storage.all_exporters),
+        "custom_annotators": ("custom annotators", snake_storage.all_custom_annotators)
     }
 
     if not module_types:
@@ -43,89 +43,39 @@ def print_module_info(module_types, module_names, snake_storage, reverse_config_
     # Print module info for all chosen module_types
     if not module_names:
         for m in module_types:
-            print_func = all_module_types.get(m)
-            print_func(snake_storage, reverse_config_usage)
+            module_name, modules = all_module_types.get(m)
+            print_modules(modules, module_name, reverse_config_usage, snake_storage)
 
     # Print only info for chosen module_names
     else:
-        # TODO: check if module name is valid!
+        invalid_modules = module_names
         for m in module_types:
-            print_func = all_module_types.get(m)
-            print_func(snake_storage, reverse_config_usage, only_modules=module_names)
-
-
-def print_annotators(snake_storage, reverse_config_usage, print_params=False, only_modules=[]):
-    """Print info about annotators."""
-    modules = snake_storage.all_annotations
-    if only_modules:
-        modules = dict((k, v) for k, v in snake_storage.all_annotations.items() if k in only_modules)
-    if modules:
-        max_len = max(len(a[0]) for m in modules for f in modules[m] for a in modules[m][f]["annotations"]) + 4
-        print_modules(modules, "annotators", reverse_config_usage, snake_storage, max_len,
-                      print_params=print_params)
-
-
-def print_importers(snake_storage, reverse_config_usage, print_params=False, only_modules=[]):
-    """Print info about importers."""
-    modules = snake_storage.all_importers
-    if only_modules:
-        modules = dict((k, v) for k, v in snake_storage.all_importers.items() if k in only_modules)
-    if modules:
-        configs = [reverse_config_usage.get(f"{module_name}:{f_name}") for module_name in modules for f_name in
-                   modules[module_name] if reverse_config_usage.get(f"{module_name}:{f_name}")]
-        max_len = max(len(k[0]) for li in configs for k in li) + 4
-        print_modules(modules, "importers", reverse_config_usage, snake_storage, max_len, print_params=print_params)
-
-
-def print_exporters(snake_storage, reverse_config_usage, print_params=False, only_modules=[]):
-    """Print info about exporters."""
-    modules = snake_storage.all_exporters
-    if only_modules:
-        modules = dict((k, v) for k, v in snake_storage.all_exporters.items() if k in only_modules)
-    if modules:
-        configs = [reverse_config_usage.get(f"{module_name}:{f_name}") for module_name in modules for f_name in
-                   modules[module_name] if reverse_config_usage.get(f"{module_name}:{f_name}")]
-        max_len = max(len(k[0]) for li in configs for k in li) + 4
-        print_modules(modules, "exporters", reverse_config_usage, snake_storage, max_len, print_params=print_params)
-
-
-def print_custom_annotators(snake_storage, reverse_config_usage, print_params=True, only_modules=[]):
-    """Print info about custom annotations."""
-    modules = snake_storage.all_custom_annotations
-    if only_modules:
-        modules = dict((k, v) for k, v in snake_storage.all_custom_annotations.items() if k in only_modules)
-    if modules:
-        max_len = max(len(a) for m in modules for f in modules[m] for a in modules[m][f]["params"]) + 4
-        print_modules(modules, "custom annotation functions", reverse_config_usage, snake_storage, max_len,
-                      print_params=print_params)
-
-
-def print_annotation_classes():
-    """Print info about annotation classes."""
-    max_len = max(len(cls) for cls in registry.annotation_classes["module_classes"]) + 8
-    print()
-    print("Available annotation classes")
-    print("============================\n")
-    print(util.Color.BOLD + "    Classes defined by pipeline modules" + util.Color.RESET)
-    print("        {}{:{}}    {}{}".format(util.Color.ITALIC, "Class", max_len, "Annotation", util.Color.RESET))
-    for cls, anns in registry.annotation_classes["module_classes"].items():
-        print("        {:{}}    {}".format(cls, max_len, anns[0]))
-        if len(anns) > 1:
-            for ann in anns[1:]:
-                print("        {:{}}    {}".format("", max_len, ann))
-    if registry.annotation_classes["config_classes"]:
-        print()
-        print(util.Color.BOLD + "    Classes from config" + util.Color.RESET)
-        print("        {}{:{}}    {}{}".format(util.Color.ITALIC, "Class", max_len, "Annotation", util.Color.RESET))
-        for cls, ann in registry.annotation_classes["config_classes"].items():
-            print("        {:{}}    {}".format(cls, max_len, ann))
-    print()
+            module_name, modules = all_module_types.get(m)
+            modules = dict((k, v) for k, v in modules.items() if k in module_names)
+            if modules:
+                invalid_modules = [m for m in invalid_modules if m not in modules.keys()]
+                print_modules(modules, module_name, reverse_config_usage, snake_storage)
+        if invalid_modules:
+            print("{}Module{} not found: {}{}".format(util.Color.RED,
+                                                      "s" if len(invalid_modules) > 1 else "",
+                                                      ", ".join(invalid_modules),
+                                                      util.Color.RESET))
 
 
 def print_modules(modules: dict, module_name: str, reverse_config_usage: dict, snake_storage: snake_utils.SnakeStorage,
-                  max_len: int, print_annotations: bool = True, print_params: bool = False):
+                  print_params: bool = False):
     """Print module information."""
-    custom_annotations = snake_storage.all_custom_annotations
+    custom_annotations = snake_storage.all_custom_annotators
+
+    # Get length of first column
+    buffer = 4
+    annotation_len = get_max_len([a[0] for m in modules for f in modules[m] for a in modules[m][f].get("annotations", [])],
+                                 buffer)
+    configs = [reverse_config_usage.get(f"{module_name}:{f_name}") for module_name in modules for f_name in
+               modules[module_name] if reverse_config_usage.get(f"{module_name}:{f_name}")]
+    config_len = get_max_len([k[0] for li in configs for k in li], buffer)
+    param_len = get_max_len([a for m in modules for f in modules[m] for a in modules[m][f]["params"]], buffer)
+    max_len = max(annotation_len, config_len, param_len)
 
     print()
     print(f"Available {module_name}")
@@ -140,7 +90,7 @@ def print_modules(modules: dict, module_name: str, reverse_config_usage: dict, s
             print()
 
             f_anns = modules[module_name][f_name].get("annotations", {})
-            if print_annotations and f_anns:
+            if f_anns:
                 print("      Annotations:")
                 for f_ann in sorted(f_anns):
                     print("        • {:{width}}{}".format(f_ann[0], f_ann[1] or "", width=max_len))
@@ -170,3 +120,32 @@ def print_modules(modules: dict, module_name: str, reverse_config_usage: dict, s
                     def_str = f", default: {repr(default)}" if default is not None else ""
                     print("        • {:{width}}{}{}{}".format(p, opt_str, typ_str, def_str, width=max_len))
                 print()
+
+
+def get_max_len(iterable, buffer):
+    """Return the max length of the iterable plus the buffer."""
+    lengths = [len(i) for i in iterable]
+    lengths.append(0)
+    return max(lengths) + buffer
+
+
+def print_annotation_classes():
+    """Print info about annotation classes."""
+    max_len = max(len(cls) for cls in registry.annotation_classes["module_classes"]) + 8
+    print()
+    print("Available annotation classes")
+    print("============================\n")
+    print(util.Color.BOLD + "    Classes defined by pipeline modules" + util.Color.RESET)
+    print("        {}{:{}}    {}{}".format(util.Color.ITALIC, "Class", max_len, "Annotation", util.Color.RESET))
+    for cls, anns in registry.annotation_classes["module_classes"].items():
+        print("        {:{}}    {}".format(cls, max_len, anns[0]))
+        if len(anns) > 1:
+            for ann in anns[1:]:
+                print("        {:{}}    {}".format("", max_len, ann))
+    if registry.annotation_classes["config_classes"]:
+        print()
+        print(util.Color.BOLD + "    Classes from config" + util.Color.RESET)
+        print("        {}{:{}}    {}{}".format(util.Color.ITALIC, "Class", max_len, "Annotation", util.Color.RESET))
+        for cls, ann in registry.annotation_classes["config_classes"].items():
+            print("        {:{}}    {}".format(cls, max_len, ann))
+    print()
