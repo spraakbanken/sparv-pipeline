@@ -66,7 +66,7 @@ class RuleStorage:
         self.classes = set()  # Set of classes used
         self.missing_config = set()
         self.missing_binaries = set()
-        self.exit_message = None
+        self.export_dirs = None
 
         self.type = annotator_info["type"].name
         self.annotator = annotator_info["type"] is registry.Annotator.annotator
@@ -381,11 +381,11 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
     # Add to rule lists in storage
     update_storage(storage, rule)
 
-    # Add exporter message
+    # Add exporter dirs (used for informing user)
     if rule.exporter:
         if rule.abstract:
             output_dirs = set([p.parent for p in rule.inputs])
-        rule.exit_message = "EXPORT_DIRS:\n{}".format("\n".join(str(p / "_")[:-1] for p in output_dirs))
+        rule.export_dirs = [str(p / "_")[:-1] for p in output_dirs]
 
     if rule.missing_config:
         log_handler.messages["missing_configs"][rule.full_name].update(

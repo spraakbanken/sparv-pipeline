@@ -66,6 +66,8 @@ logger.info("RUN: %s:%s(%s)", module_name, f_name, ", ".join("%s=%s" % (i[0], re
 # Execute function
 try:
     annotators[module_name][f_name]["function"](**parameters)
+    if snakemake.params.export_dirs:
+        logger.export_dirs(snakemake.params.export_dirs)
 except SparvErrorMessage as e:
     # Any exception raised here would be printed directly to the terminal, due to how Snakemake runs the script.
     # Instead we log the error message and exit with a non-zero status to signal to Snakemake that

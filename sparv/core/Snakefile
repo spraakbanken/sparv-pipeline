@@ -64,7 +64,8 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
         @workflow.output(rule_storage.outputs)
         @workflow.params(module_name=rule_storage.module_name,
                          f_name=rule_storage.f_name,
-                         parameters=snake_utils.get_parameters(rule_storage))
+                         parameters=snake_utils.get_parameters(rule_storage),
+                         export_dirs=rule_storage.export_dirs)
         # We use "script" instead of "run" since with "run" the whole Snakefile would have to be reloaded for every
         # single job, due to how Snakemake creates processes for run-jobs.
         @workflow.script("run_snake.py")
@@ -105,7 +106,6 @@ def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
     rule_outputs = [snakemake.io.IOFile(f, rule=sm_rule) for f in rule_outputs]
 
     @workflow.rule(name=rule_storage.target_name)
-    @workflow.message(rule_storage.exit_message)
     @workflow.input(rule_outputs)
     @workflow.norun()
     @workflow.run

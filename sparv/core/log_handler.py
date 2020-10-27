@@ -27,6 +27,21 @@ LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 LOG_FORMAT_DEBUG = "%(asctime)s - %(name)s (%(process)d) - %(levelname)s - %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
+# Add internal logging level used for non-logging-related communication from child processes to log handler
+INTERNAL = 100
+logging.addLevelName(INTERNAL, "INTERNAL")
+
+
+def export_dirs(self, dirs):
+    """Send list of export dirs to log handler."""
+    if self.isEnabledFor(INTERNAL):
+        self._log(INTERNAL, "export_dirs", (), extra={"export_dirs": dirs})
+
+
+# Add log function to logger
+logging.export_dirs = export_dirs
+logging.Logger.export_dirs = export_dirs
+
 # Messages from the Sparv core
 messages = {
     "missing_configs": defaultdict(set),
@@ -99,7 +114,8 @@ class LogLevelCounterHandler(logging.Handler):
 
     def emit(self, record):
         """Increment level counter for each log message."""
-        self.levelcount[record.levelname] += 1
+        if record.levelno != INTERNAL:
+            self.levelcount[record.levelname] += 1
 
 
 class FileHandlerWithDirCreation(logging.FileHandler):
@@ -110,6 +126,27 @@ class FileHandlerWithDirCreation(logging.FileHandler):
         if self.stream is None:
             os.makedirs(os.path.dirname(self.baseFilename), exist_ok=True)
         super().emit(record)
+
+
+class InternalFilter(logging.Filter):
+    """Filter out internal log messages."""
+
+    def filter(self, record):
+        """Filter out internal records."""
+        return record.levelno < INTERNAL
+
+
+class InternalLogHandler(logging.Handler):
+    """Handler for internal log messages."""
+
+    def __init__(self, export_dirs_list):
+        self.export_dirs_list = export_dirs_list
+        super().__init__()
+
+    def emit(self, record):
+        """Handle log record."""
+        if record.msg == "export_dirs":
+            self.export_dirs_list.update(record.export_dirs)
 
 
 class LogHandler:
@@ -138,7 +175,7 @@ class LogHandler:
         self.missing_configs_re = None
         self.missing_binaries_re = None
         self.missing_classes_re = None
-        self.export_dirs = []
+        self.export_dirs = set()
         self.start_time = time.time()
 
         # Progress bar related variables
@@ -165,10 +202,12 @@ class LogHandler:
             return
 
         sparv_logger = logging.getLogger("sparv_logging")
+        internal_filter = InternalFilter()
 
         # stdout logger
         stream_handler = logging.StreamHandler(sys.stdout)
         stream_handler.setLevel(self.log_level.upper())
+        stream_handler.addFilter(internal_filter)
         log_format = LOG_FORMAT if stream_handler.level > logging.DEBUG else LOG_FORMAT_DEBUG
         stream_handler.setFormatter(ColorFormatter(log_format, datefmt=DATE_FORMAT))
         sparv_logger.addHandler(stream_handler)
@@ -178,6 +217,7 @@ class LogHandler:
         file_handler = FileHandlerWithDirCreation(os.path.join(paths.log_dir, self.log_filename), mode="w",
                                                   encoding="UTF-8", delay=True)
         file_handler.setLevel(self.log_file_level.upper())
+        file_handler.addFilter(internal_filter)
         log_format = LOG_FORMAT if file_handler.level > logging.DEBUG else LOG_FORMAT_DEBUG
         file_handler.setFormatter(logging.Formatter(log_format))
         sparv_logger.addHandler(file_handler)
@@ -186,6 +226,11 @@ class LogHandler:
         levelcount_handler = LogLevelCounterHandler(self.log_levelcount)
         levelcount_handler.setLevel(logging.WARNING)
         sparv_logger.addHandler(levelcount_handler)
+
+        # Internal log handler
+        internal_handler = InternalLogHandler(self.export_dirs)
+        internal_handler.setLevel(INTERNAL)
+        sparv_logger.addHandler(internal_handler)
 
     def setup_bar(self, total: int):
         """Initialize the progress bar."""
@@ -253,11 +298,8 @@ class LogHandler:
 
         elif level == "job_info" and self.use_progressbar:
             if msg["msg"] and self.bar is not None:
-                if msg["msg"].startswith("EXPORT_DIRS:"):
-                    self.export_dirs.extend(msg["msg"].splitlines()[1:])
-                else:
-                    # Only update status message, don't advance progress
-                    self.bar.text(msg["msg"])
+                # Only update status message, don't advance progress
+                self.bar.text(msg["msg"])
 
         elif level == "info":
             if msg["msg"] == "Nothing to be done.":
@@ -363,7 +405,7 @@ class LogHandler:
                     logger.text_handler(error)
             elif self.export_dirs:
                 logger.logger.info("The exported files can be found in the following location{}:\n- {}".format(
-                    "s" if len(self.export_dirs) > 1 else "", "\n- ".join(self.export_dirs)))
+                    "s" if len(self.export_dirs) > 1 else "", "\n- ".join(sorted(self.export_dirs))))
             elif self.log_levelcount:
                 # Errors or warnings were logged but execution finished anyway. Notify user of potential problems.
                 problems = []
@@ -397,7 +439,7 @@ class LogHandler:
 
 def setup_logging(log_server, log_level: Optional[str] = "warning", log_file_level: Optional[str] = "warning"):
     """Set up logging with socket handler."""
-    # Use the lowest log level, but never lower than warning
+    # Use the lowest log level, but never higher than warning
     log_level = min(logging.WARNING, getattr(logging, log_level.upper()), getattr(logging, log_file_level.upper()))
     socket_logger = logging.getLogger("sparv")
     socket_logger.setLevel(log_level)
