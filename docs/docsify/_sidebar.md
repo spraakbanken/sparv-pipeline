@@ -8,7 +8,7 @@
     - [Writing Sparv Modules](developers-guide/writing-sparv-modules.md)
     - [Sparv Decorators](developers-guide/sparv-decorators.md)
     - [Sparv Classes](developers-guide/sparv-classes.md)
-    - [Config](developers-guide/config.md)
+    - [Config Parameters](developers-guide/config-parameters.md)
     - [Wildcards](developers-guide/wildcards.md)
     - [Writing Plugins](developers-guide/writing-plugins.md)
     - [MISC](developers-guide/misc.md)

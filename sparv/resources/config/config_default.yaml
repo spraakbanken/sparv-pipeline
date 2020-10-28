@@ -32,7 +32,7 @@ classes:
 export:
     # The token strings to be included in the export (NB: xml_export:preserved_format does not respect this setting)
     word: <token:word>
-    # Chunk to scramble the XML export on
+    # Chunk to scramble the export on
     scramble_on: <sentence>
     # Exports to create by default when running 'sparv run'
     default:

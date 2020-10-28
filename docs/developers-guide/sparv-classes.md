@@ -139,7 +139,7 @@ An instance of this class holds a configuration key name and its default value.
 **Arguments:**
 - `name`: The name of the configuration key.
 - `default`: An optional default value of the configuration key.
-- `description`: An optional description.
+- `description`: An obligatory description.
 
 
 ## Corpus

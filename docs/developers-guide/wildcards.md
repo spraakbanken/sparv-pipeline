@@ -18,7 +18,7 @@ argument of the `@annotator` decorator as in the following example:
 @annotator("Number {annotation} by position", wildcards=[Wildcard("annotation", Wildcard.ANNOTATION)])
 def number_by_position(out: Output = Output("{annotation}:misc.number_position"),
                        chunk: Annotation = Annotation("{annotation}"),
-                       ...)
+                       ...):
     ...
 ```
 
@@ -35,6 +35,6 @@ An annotator may also have multiple wildcards as shown in the following example:
 def number_relative(out: Output = Output("{annotation}:misc.number_rel_{parent}"),
                     parent: Annotation = Annotation("{parent}"),
                     child: Annotation = Annotation("{annotation}"),
-                    ...
+                    ...):
     ...
 ```

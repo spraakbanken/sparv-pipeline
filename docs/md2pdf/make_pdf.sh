@@ -16,7 +16,7 @@ DEVELOPERS_GUIDE_FILES="
 ../developers-guide/writing-sparv-modules.md
 ../developers-guide/sparv-decorators.md
 ../developers-guide/sparv-classes.md
-../developers-guide/config.md
+../developers-guide/config-parameters.md
 ../developers-guide/wildcards.md
 ../developers-guide/writing-plugins.md
 ../developers-guide/misc.md
