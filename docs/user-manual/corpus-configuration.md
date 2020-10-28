@@ -94,13 +94,13 @@ formats than XML you don't need to worry about this.
 
 It is possible to rename elements and attributes present in your input data. Let's say your documents contain elements
  like this `<article name="Scandinavian Furniture" date="2020-09-28">` and you would like them to look like this in the
- output `<text title="Scandinavian Furniture" date="2020-09-28">` (so you want to rename "article" and "name" to "text"
- and "title" respectively). For this you can use the following syntax:
+ output `<text title="Scandinavian Furniture" date="2020-09-28">` (so you want to rename the element "article" and the
+ attribute "name" to "text" and "title" respectively). For this you can use the following syntax:
 ```yaml
 export:
     source_annotations:
         - article as text
-        - name as title
+        - article:name as title
         - ...
 ```
 Please note that the dots (`...`) in the above example also carry meaning. You can use these to refer to all the
@@ -124,7 +124,9 @@ about automatic annotations.
 If you want to produce multiple output formats containing different annotations you can override the
 `export.source_annotations` and `export.annotations` options for specific exporter modules. The annotations for the XML
 export for example are set with `xml_export.source_annotations` and `xml_export.annotations`, the annotations for the
-CSV export are set with `csv_export.source_annotations` and `csv_export.annotations` and so on.
+CSV export are set with `csv_export.source_annotations` and `csv_export.annotations` and so on. Many of the `export`
+options work this way, where the values from `export` will be used by default unless overridden on exporter module
+level.
 
 **Hint:** If you want to produce multiple output formats with the same annotations you can use YAML
 [anchors](https://docs.ansible.com/ansible/latest/user_guide/playbooks_advanced_syntax.html#yaml-anchors-and-aliases-sharing-variable-values)
@@ -147,7 +149,7 @@ instead of the more compact:
 <token pos="IN" baseform="|hej|">Hej</token>
 ```
 
-`export.scramble_on` is a setting used by all the export formats that support scrambling. It controls on what element
+`export.scramble_on` is a setting used by all the export formats that support scrambling. It controls on what annotation
 your corpus will be scrambled. Typical settings are `export.scramble_on: <sentence>` or `export.scramble_on:
 <paragraph>`.
 
@@ -304,10 +306,10 @@ usages of custom annotations are explained below.
 
 ### Built-in Custom Annotations
 Sparv provides a couple of built-in custom annotations which need extra input from the user before they can be used.
-These are listed under "Available custom annotation functions" when running `sparv modules --custom_annotators`. Please
+These are listed under "Available custom annotation functions" when running `sparv modules --custom-annotators`. Please
 note that custom annotations always result in new annotations, they do not modify existing ones. 
 
-The `misc:affix` annotation for example can be used to add a prefix and/or a suffix string to another annotation. When
+The `misc:affix` annotator for example can be used to add a prefix and/or a suffix string to another annotation. When
 using this annotation function you must tell Sparv 1. what your output annotation should be called, 2. what annotation
 you want to use as input (the chunk), and 3. the string that you want to use as prefix and/or the suffix. These things
 are defined in the `custom_annotations` section in your corpus config. First you specify the annotator module
@@ -349,7 +351,7 @@ correctly.
 
 ### Modifying Annotators with Custom Annotations
 Custom annotations may also be used to modify the parameters of existing annotation functions. This comes in handy when
-you want to use the same annotator multiple times but with different models. In order to do this you specify the
+you want to use the same annotator multiple times but with different parameters. In order to do this you specify the
 annotator and its parameters in the `custom_annotations` section of your corpus config as explained in the section
 above. You only need to specify the parameters you want to modify. In the example below we are re-using the
 `hunpos:msdtag` function with a custom model and we are calling the output annotation
@@ -379,7 +381,9 @@ def uppercase(word: Annotation = Annotation("<token:word>"),
     out.write([val.upper() for val in word.read()])
 ```
 
-The custom rule is then declared in your corpus config using the prefix `custom` before the annotator name:
+The custom rule is then declared in your corpus config using the prefix `custom` followed by the file name (without
+extension) and finally the annotator name. If the above code is contained in a file called `convert.py` it would be
+referenced like this:
 ```yaml
 custom_annotations:
     - annotator: custom.convert:uppercase

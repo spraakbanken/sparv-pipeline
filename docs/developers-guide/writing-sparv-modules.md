@@ -39,8 +39,8 @@ A function decorated with a Sparv decorator should never be actively called by y
 When running Sparv through the CLI Sparv's dependency system will calculate a dependency graph and all the functions
 necessary for producing the desired output will be run automatically.
 
-Sparv classes like `Annotation` and `Output` have built-in methods for reading and writing files (like `word.read() and
-out.write()` in the example). A Sparv module should never read or write any files without using the provided class
+Sparv classes like `Annotation` and `Output` have built-in methods for reading and writing files (like `word.read()` and
+`out.write()` in the example). A Sparv module should never read or write any files without using the provided class
 methods. This is to make sure that files are written to the correct places in the file structure so that they can be
 found by other modules. The read and write methods also make sure that Sparv's internal data format is handled
 correctly. Not using these provided methods can lead to procedures breaking if the internal data format or file
