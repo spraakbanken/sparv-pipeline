@@ -237,6 +237,8 @@ def _add_to_registry(annotator):
                                  "name as prefix.".format(c.name, module_name))
             sparv_config.set_default(c.name, c.default)
             sparv_config.add_to_structure(c.name, c.default, description=c.description, annotator=rule_name)
+            if not c.description:
+                raise Exception(f"Missing description for configuration key '{c.name}' in module '{module_name}'.")
 
     for param, val in inspect.signature(annotator["function"]).parameters.items():
         if isinstance(val.default, BaseOutput):
