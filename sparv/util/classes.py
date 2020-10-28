@@ -104,6 +104,7 @@ class Annotation(BaseAnnotation):
 
     def __init__(self, name: str = "", doc: Optional[str] = None):
         super().__init__(name, doc=doc)
+        self.size = None
 
     def exists(self) -> bool:
         """Return True if annotation file exists."""
@@ -232,7 +233,9 @@ class Annotation(BaseAnnotation):
 
     def create_empty_attribute(self):
         """Return a list filled with None of the same size as this annotation."""
-        return corpus.create_empty_attribute(self)
+        if self.size is None:
+            self.size = len(list(self.read_spans()))
+        return corpus.create_empty_attribute(self.size)
 
 
 class AnnotationData(BaseAnnotation):
@@ -262,6 +265,7 @@ class AnnotationAllDocs(BaseAnnotation):
 
     def __init__(self, name: str = ""):
         super().__init__(name)
+        self.size = None
 
     def read(self, doc: str):
         """Yield each line from the annotation."""
@@ -274,7 +278,9 @@ class AnnotationAllDocs(BaseAnnotation):
 
     def create_empty_attribute(self, doc: str):
         """Return a list filled with None of the same size as this annotation."""
-        return corpus.create_empty_attribute(self.read_spans(doc))
+        if self.size is None:
+            self.size = len(list(self.read_spans(doc)))
+        return corpus.create_empty_attribute(self.size)
 
     def exists(self, doc: str):
         """Return True if annotation file exists."""

@@ -107,10 +107,14 @@ def _write_single_annotation(doc, annotation, values, append, allow_newlines=Fal
 def create_empty_attribute(annotation):
     """Return a list filled with None of the same size as 'annotation'.
 
-    'annotation' can be either of the following:
-    - the name of an annotation
-    - a list (i.e. an annotation that has already been loaded)
-    - an integer
+    Args:
+        annotation: One of the following:
+          - an Annotation object
+          - a list (i.e. an annotation that has already been loaded)
+          - an integer
+
+    Returns:
+        A list filled with None of the same size as 'annotation'.
     """
     assert isinstance(annotation, (Annotation, list, int))
 
