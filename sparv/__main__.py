@@ -123,7 +123,7 @@ def main():
     modules_parser.add_argument("--annotators", action="store_true", help="List info for annotators")
     modules_parser.add_argument("--importers", action="store_true", help="List info for importers")
     modules_parser.add_argument("--exporters", action="store_true", help="List info for exporters")
-    modules_parser.add_argument("--custom_annotators", action="store_true", help="List info for custom annotators")
+    modules_parser.add_argument("--custom-annotators", action="store_true", help="List info for custom annotators")
     modules_parser.add_argument("names", nargs="*", default=[], help="Specific module(s) to display")
 
     subparsers.add_parser("presets", description="Display all available annotation presets.")
