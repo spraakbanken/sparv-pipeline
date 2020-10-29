@@ -123,7 +123,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                     rule.import_outputs = sparv_config.get(rule.import_outputs, rule.import_outputs.default)
                 annotations_ = set()
                 renames = {}
-                for ann, target in util.parse_annotation_list(rule.import_outputs):
+                # Annotation list needs to be sorted to handle plain annotations before attributes
+                for ann, target in sorted(util.parse_annotation_list(rule.import_outputs)):
                     # Handle annotations renamed during import
                     if target:
                         source_ann, source_attr = BaseAnnotation(ann).split()

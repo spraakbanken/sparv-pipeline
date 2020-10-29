@@ -128,7 +128,8 @@ class SparvXMLParser:
 
         all_elems = set()
         renames = {}
-        for element, target in util.parse_annotation_list(elements):
+        # Element list needs to be sorted to handle plain elements before attributes
+        for element, target in sorted(util.parse_annotation_list(elements)):
             element, attr = elsplit(element)
             all_elems.add((element, attr))
 

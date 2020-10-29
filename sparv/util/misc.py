@@ -79,11 +79,9 @@ def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations
 
     Plain annotations (without attributes) will be added if needed, unless add_plain_annotations is set to False.
     Make sure to disable add_plain_annotations if the annotation names may include classes or config variables.
-
-    The resulting list is sorted, meaning that 'annotation' is guaranteed to come before 'annotation:attribute'.
     """
     if not annotation_names:
-        return sorted([(a, None) for a in all_annotations])
+        return [(a, None) for a in all_annotations]
 
     plain_annotations = set()
     possible_plain_annotations = set()
@@ -124,7 +122,7 @@ def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations
             if a not in [name for name, _export_name in result]:
                 result.append((a, None))
 
-    return sorted(result)
+    return result
 
 
 def single_true(iterable):
