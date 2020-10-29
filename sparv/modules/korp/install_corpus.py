@@ -30,10 +30,10 @@ def install_corpus(corpus: Corpus = Corpus(),
     If local and remote paths differ, target_datadir and target_registry must be specified.
     """
     if not corpus:
-        raise(Exception("Missing corpus name. Corpus not installed."))
+        raise(util.SparvErrorMessage("Missing corpus name. Corpus not installed."))
 
     if not host:
-        raise(Exception("No host provided! Corpus not installed."))
+        raise(util.SparvErrorMessage("No host provided! Corpus not installed."))
 
     target = os.path.join(target_datadir, corpus) if target_datadir else None
     util.system.rsync(os.path.join(datadir, corpus), host, target)
