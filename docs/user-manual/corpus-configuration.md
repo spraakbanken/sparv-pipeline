@@ -65,22 +65,36 @@ There are a few config options that must be set (either through the default conf
 The `import` section of your corpus config is used to give Sparv some information about your input documents (i.e. your
 corpus). 
 
-`import.source_dir` defines the location of your input documents and it defaults to `source`. Sparv will check
-the source directory recursively for valid input documents to process.
+- `import.source_dir` defines the location of your input documents and it defaults to `source`. Sparv will check the
+  source directory recursively for valid input documents to process.
 
-`import.importer` is used to tell Sparv which importer to use to process your corpus documents. The setting you want to
-choose depends on the format of your input documents. If your corpus is in XML you should choose `xml_import:parse`
-(this is the default setting), if your corpus documents are in plain text, you should choose `text_import:parse`
-instead.
+- `import.importer` is used to tell Sparv which importer to use to process your corpus documents. The setting you want
+  to choose depends on the format of your input documents. If your corpus is in XML you should choose `xml_import:parse`
+  (this is the default setting), if your corpus documents are in plain text, you should choose `text_import:parse`
+  instead.
 
-`import.document_annotation` specifies the annotation representing one text document. Any text-level annotations will be
-attached to this annotation. For XML input this refers to an XML element. For plain text input a default `text` root
-annotation will be created automatically and you won't have to change this setting.
+- `import.document_annotation` specifies the annotation representing one text document. Any text-level annotations will
+  be attached to this annotation. For XML input this refers to an XML element. For plain text input a default `text`
+  root annotation will be created automatically and you won't have to change this setting.
 
-**TODO**
-- xml importer options:
-  - Renaming elemets/attributes? (Check if this is possible)
-  - `skip`
+- `import.encoding` specifies the encoding of the source documents. It defaults to UTF-8.
+
+- `import.normalize` lets you normalize unicode symbols in the input using any of the following forms: 'NFC', 'NFKC',
+  'NFD', and 'NFKD'. It defaults to `NFC`.
+
+- `import.keep_control_chars` may be set to `True` if control characters should not be removed from the text. This
+  should normally not be done.
+
+Each importer may have additional options which can be listed with `sparv modules --importers`. The XML importer for
+example has an option that lets you rename elements and attributes from your source files using the `as` syntax:
+```yaml
+xml_import:
+    elements:
+        - paragraph as p
+        - paragraph:n as id
+```
+There is also an option that allows you to skip importing the contents of certain elements and options that give you
+fine-grained control over importing XML headers. Run `sparv modules --importers xml_import` for more details.
 
 
 ## Export Options
@@ -164,6 +178,8 @@ only annotations but not the actual text, you could set `export.word: <token>:an
 ```
 **Note:** For technical reasons the export `xml_export:preserved_format` does not respect this setting. The preserved
 format XML will always include the original corpus text.
+
+Each exporter may have additional options which can be listed with `sparv modules --exporters`.
 
 
 ## Headers

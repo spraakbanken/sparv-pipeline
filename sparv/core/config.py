@@ -32,8 +32,11 @@ config_structure = {
     "classes": {"_source": "core"},
     "import": {
         "document_annotation": {"_source": "core"},
-        "source_dir": {"_source": "core"},
-        "importer": {"_source": "core"}
+        "encoding": {"_source": "core"},
+        "importer": {"_source": "core"},
+        "keep_control_chars": {"_source": "core"},
+        "normalize": {"_source": "core"},
+        "source_dir": {"_source": "core"}
     },
     "export": {
         "default": {"_source": "core"},

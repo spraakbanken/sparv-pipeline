@@ -1,5 +1,4 @@
 # Writing Sparv Modules
-This section will give a brief overview of how Sparv modules work. More details are provided in the following chapters.
 When writing your first Sparv module a good starting point may be to take a look at an existing module that does
 something similar to your goal.
 

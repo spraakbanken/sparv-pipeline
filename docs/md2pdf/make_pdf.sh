@@ -13,11 +13,13 @@ USER_MANUAL_FILES="
 "
 
 DEVELOPERS_GUIDE_FILES="
+../developers-guide/general-concepts.md
 ../developers-guide/writing-sparv-modules.md
 ../developers-guide/sparv-decorators.md
 ../developers-guide/sparv-classes.md
 ../developers-guide/config-parameters.md
 ../developers-guide/wildcards.md
+../developers-guide/util-functions.md
 ../developers-guide/writing-plugins.md
 ../developers-guide/misc.md
 "
