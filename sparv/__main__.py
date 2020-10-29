@@ -93,7 +93,8 @@ def main():
         "   create-file      Create specified file(s)",
         "   run-module       Run annotator module independently",
         "",
-        "See 'sparv <command> -h' for help with a specific command"
+        "See 'sparv <command> -h' for help with a specific command",
+        "For full documentation, visit https://spraakbanken.gu.se/sparv/docs/"
     ]
     subparsers = parser.add_subparsers(dest="command", title="commands", metavar="<command>",
                                        description="\n".join(description))
