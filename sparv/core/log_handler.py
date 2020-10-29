@@ -1,5 +1,4 @@
 """Handler for log messages, both from the logging library and from Snakemake."""
-import copy
 import datetime
 import logging
 import logging.handlers
@@ -17,9 +16,9 @@ from pathlib import Path
 from typing import Optional
 
 from alive_progress import alive_bar
+from rich.logging import RichHandler
 from snakemake import logger
 
-import sparv.util as util
 from sparv.core import paths
 from sparv.util.misc import SparvErrorMessage
 
@@ -48,37 +47,6 @@ messages = {
     "missing_binaries": defaultdict(set),
     "missing_classes": defaultdict(set)
 }
-
-
-class ColorFormatter(logging.Formatter):
-    """Custom log formatter for adding colors.
-
-    http://uran198.github.io/en/python/2016/07/12/colorful-python-logging.html
-    """
-
-    LOG_COLORS = {
-        logging.CRITICAL: util.Color.RED,
-        logging.ERROR: util.Color.RED,
-        logging.WARNING: util.Color.YELLOW,
-        logging.DEBUG: util.Color.CYAN
-    }
-
-    def format(self, record):
-        """Colorise levelname and message in the log output."""
-        # If the corresponding logger has children, they may receive modified record, so we want to keep it intact
-        new_record = copy.copy(record)
-        if new_record.levelno in ColorFormatter.LOG_COLORS:
-            new_record.levelname = "{}{}{}".format(
-                ColorFormatter.LOG_COLORS[new_record.levelno],
-                new_record.levelname,
-                util.Color.RESET)
-            new_record.msg = "{}{}{}".format(
-                ColorFormatter.LOG_COLORS[new_record.levelno],
-                new_record.getMessage(),
-                util.Color.RESET
-            )
-        # Let standard formatting take care of the rest
-        return super().format(new_record)
 
 
 class LogRecordStreamHandler(socketserver.StreamRequestHandler):
@@ -205,11 +173,11 @@ class LogHandler:
         internal_filter = InternalFilter()
 
         # stdout logger
-        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler = RichHandler(show_path=False)
         stream_handler.setLevel(self.log_level.upper())
         stream_handler.addFilter(internal_filter)
-        log_format = LOG_FORMAT if stream_handler.level > logging.DEBUG else LOG_FORMAT_DEBUG
-        stream_handler.setFormatter(ColorFormatter(log_format, datefmt=DATE_FORMAT))
+        log_format = None if stream_handler.level > logging.DEBUG else "(%(process)d) - %(message)s"
+        stream_handler.setFormatter(logging.Formatter(log_format, datefmt=DATE_FORMAT))
         sparv_logger.addHandler(stream_handler)
 
         # File logger
