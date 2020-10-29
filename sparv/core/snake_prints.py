@@ -11,10 +11,9 @@ from sparv.core import registry, snake_utils
 from sparv.core.console import console
 
 
-def prettify_config(in_config):
-    """Prettify a yaml config string."""
-    import re
-
+def prettyprint_yaml(in_dict):
+    """Pretty-print YAML."""
+    from rich.syntax import Syntax
     import yaml
 
     class MyDumper(yaml.Dumper):
@@ -22,15 +21,13 @@ def prettify_config(in_config):
 
         def increase_indent(self, flow=False, indentless=False):
             """Force indentation."""
-            return super(MyDumper, self).increase_indent(flow, False)
+            return super(MyDumper, self).increase_indent(flow)
 
     # Resolve aliases and replace them with their anchors' contents
     yaml.Dumper.ignore_aliases = lambda *args: True
-    yaml_str = yaml.dump(in_config, default_flow_style=False, Dumper=MyDumper, indent=4)
-    # Colorize keys for easier reading
-    yaml_str = re.sub(r"^(\s*[\S]+):", util.Color.BLUE + r"\1" + util.Color.RESET + ":", yaml_str,
-                      flags=re.MULTILINE)
-    return yaml_str
+    yaml_str = yaml.dump(in_dict, default_flow_style=False, Dumper=MyDumper, indent=4)
+    # Print syntax highlighted
+    console.print(Syntax(yaml_str, "yaml"))
 
 
 def print_module_info(module_types, module_names, snake_storage, reverse_config_usage):

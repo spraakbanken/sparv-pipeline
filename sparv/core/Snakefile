@@ -166,7 +166,7 @@ rule config:
                 out_conf[k] = sparv_config.get(k)
         else:
             out_conf = sparv_config.config
-        print(snake_prints.prettify_config(out_conf))
+        snake_prints.prettyprint_yaml(out_conf)
 
 
 # Rule to list all modules, annotations and classes
@@ -186,7 +186,7 @@ rule presets:
     run:
         resolved_presets = dict(
             (preset, sparv_config.resolve_presets(sparv_config.presets[preset])[0]) for preset in sparv_config.presets)
-        print(snake_prints.prettify_config(resolved_presets))
+        snake_prints.prettyprint_yaml(resolved_presets)
 
 
 # Rule to list all targets
