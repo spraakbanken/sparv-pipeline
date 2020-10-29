@@ -20,7 +20,7 @@ metadata:
             - some exports
 
 #===============================================================================
-# Annotation Settings
+# Import Settings
 #===============================================================================
 
 import:
@@ -29,11 +29,15 @@ import:
     # The annotation representing one text document. Any text-level annotations will be attached to this annotation.
     document_annotation: text
 
+#===============================================================================
+# Module Settings
+#===============================================================================
+
 freeling:
     sentence_chunk: <paragraph>
 
 #===============================================================================
-# Output (Export) Settings
+# Export Settings
 #===============================================================================
 
 export:

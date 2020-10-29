@@ -1,9 +1,20 @@
+#===============================================================================
+# Meta Data
+#===============================================================================
+
 metadata:
     id: special-swe
     language: swe
+    description:
+        eng: |
+            This test corpus includes:
+            - XML headers
+            - re-naming of elements and attributes on import
+            - special source_annotations syntax
+            - sub-token source annotations
 
 #===============================================================================
-# Annotation Settings
+# Import Settings
 #===============================================================================
 
 import:
@@ -31,7 +42,7 @@ xml_import:
         - u:@contents
 
 #===============================================================================
-# Output (Export) Settings
+# Export Settings
 #===============================================================================
 
 export:
@@ -45,7 +56,7 @@ export:
         - xml_export:preserved_format
         - xml_export:scrambled
     # Annotations from original documents to include in the output. If nothing is specified, everything is kept.
-    source_annotations: &xml-source-annotations
+    source_annotations:
         - dokument as document
         - not text:subtitle
         - ...
@@ -53,6 +64,6 @@ export:
     header_annotations:
         - header
     # Automatic annotations to be included in the export
-    annotations: &xml-annotations
+    annotations:
         - <sentence>:misc.id
         - <token>

@@ -18,7 +18,7 @@ metadata:
 
 
 #===============================================================================
-# Annotation Settings
+# Import Settings
 #===============================================================================
 
 import:
@@ -30,6 +30,18 @@ xml_import:
     elements:
         - text:date
 
+#===============================================================================
+# Annotation Class Settings
+#===============================================================================
+
+# Class definitions
+classes:
+    "token:sense": <token>:saldo.sense
+
+#===============================================================================
+# Module Settings
+#===============================================================================
+
 segment:
     # Chunk to use for automatic sentence segmentation (typically text or paragraph)
     sentence_chunk: <paragraph>
@@ -40,12 +52,8 @@ dateformat:
     datetime_to: <text>:date
     datetime_informat: "%Y-%m-%d"
 
-# Class definitions
-classes:
-    "token:sense": <token>:saldo.sense
-
 #===============================================================================
-# Output (Export) Settings
+# Export Settings
 #===============================================================================
 
 export:

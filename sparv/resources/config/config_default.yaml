@@ -6,9 +6,8 @@ metadata:
     # Language of the input documents, specified as ISO 639-3 code
     language: swe
 
-
 #===============================================================================
-# General Settings
+# Import Settings
 #===============================================================================
 
 import:
@@ -17,15 +16,17 @@ import:
     # The annotation representing one text document. Any text-level annotations will be attached to this annotation.
     document_annotation: text
 
-# Class definitions
+#===============================================================================
+# Annotation Class Settings
+#===============================================================================
+
 classes:
     sentence: segment.sentence
     token: segment.token
     "token:word": <token>:misc.word
 
-
 #===============================================================================
-# Output Settings
+# Export Settings
 #===============================================================================
 
 # Common settings for exporters
@@ -44,6 +45,14 @@ export:
     # A string representing the name space to be added to all annotations present in the source
     source_namespace: Null
 
+# Common settings for XML exporters
+xml_export:
+    # Export hosts and paths (targets for install_export and install_export_original)
+    export_host: ""
+    export_path: ""
+    export_original_host: ""
+    export_original_path: ""
+
 #===============================================================================
 # Module-specific Settings
 #===============================================================================
@@ -60,17 +69,6 @@ segment:
 
 saldo:
     precision: ""
-
-
-#===============================================================================
-# Korp and Installation
-#===============================================================================
-xml_export:
-    # Export hosts and paths (targets for install_export and install_export_original)
-    export_host: ""
-    export_path: ""
-    export_original_host: ""
-    export_original_path: ""
 
 korp:
     # Korp: password protected corpus

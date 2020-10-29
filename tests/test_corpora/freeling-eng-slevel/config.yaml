@@ -19,11 +19,8 @@ metadata:
             - some exports
 
 #===============================================================================
-# Annotation Settings
+# Import Settings
 #===============================================================================
-
-classes:
-    sentence: s
 
 import:
     # The annotation representing one text document. Any text-level annotations will be attached to this annotation.
@@ -33,6 +30,17 @@ xml_import:
     elements:
         - s
         - text:date
+
+#===============================================================================
+# Annotation Class Settings
+#===============================================================================
+
+classes:
+    sentence: s
+
+#===============================================================================
+# Module Settings
+#===============================================================================
 
 freeling:
     sentence_annotation: s
@@ -44,7 +52,7 @@ dateformat:
     datetime_informat: "%Y-%m-%d"
 
 #===============================================================================
-# Output (Export) Settings
+# Export Settings
 #===============================================================================
 
 export:
