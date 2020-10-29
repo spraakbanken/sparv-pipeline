@@ -23,6 +23,9 @@ xml_import:
         - header/title/main-title as text:title
         - header/title/sub-title as text:subtitle
         - header/date as text:date
+    elements:
+        - paragraph:n as id
+        - paragraph as p
     skip:
         - i
         - u:@contents

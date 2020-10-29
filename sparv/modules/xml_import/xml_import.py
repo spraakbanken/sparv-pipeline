@@ -47,7 +47,8 @@ class XMLStructure(SourceStructure):
 
 @importer("XML import", file_extension="xml", outputs=Config("xml_import.elements", []), config=[
     Config("xml_import.elements", [], description="List of elements and attributes in source document. Only needed for "
-                                                  "renaming, as everything is parsed whether listed or not."),
+                                                  "renaming or when used as input to other annotations, as everything "
+                                                  "is parsed whether listed or not."),
     Config("xml_import.skip", [], description="Elements and attributes to skip. "
                                               "Use elementname:@contents to skip contents as well."),
     Config("xml_import.header_elements", [], description="Elements containing header metadata. Contents will not be "
@@ -56,8 +57,8 @@ class XMLStructure(SourceStructure):
                                                      "metadata."),
     Config("xml_import.prefix", "", description="Optional prefix to add to annotation names."),
     Config("xml_import.encoding", util.UTF8, description="Encoding of source document. Defaults to UTF-8."),
-    Config("xml_import.keep_control_chars", False, description="Set to True if control characters should not be removed "
-                                                               "from the text."),
+    Config("xml_import.keep_control_chars", False, description="Set to True if control characters should not be "
+                                                               "removed from the text."),
     Config("xml_import.normalize", "NFC", description="Normalize input using any of the following forms: "
                                                       "'NFC', 'NFKC', 'NFD', and 'NFKD'.")
 ], structure=XMLStructure)
@@ -83,6 +84,7 @@ def parse(doc: Document = Document(),
         header_data: List of header elements and attributes from which to extract metadata.
         prefix: Optional prefix to add to annotations.
         encoding: Encoding of source document. Defaults to UTF-8.
+        keep_control_chars: Set to True to keep control characters in the text.
         normalize: Normalize input using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.
             Defaults to 'NFC'.
     """
@@ -125,17 +127,20 @@ class SparvXMLParser:
             return tag, attr
 
         all_elems = set()
-        for element in elements:
-            element, _, target = element.partition(">")
+        renames = {}
+        for element, target in util.parse_annotation_list(elements):
             element, attr = elsplit(element)
             all_elems.add((element, attr))
-            all_elems.add((element, ""))  # Make sure that the element without attributes is added as well
 
             if target:
                 # Element and/or attribute should be renamed during import
-                target_element, target_attr = elsplit(target)
-                if element and attr:
-                    assert target_element and target_attr
+                if not attr:
+                    renames[element] = target
+                    target_element = target
+                    target_attr = ""
+                else:
+                    target_element = renames.get(element, element)
+                    target_attr = target
                 self.targets.setdefault(element, {"attrs": {}})
                 self.targets[element]["target"] = target_element
                 self.data.setdefault(target_element, {"attrs": set(), "elements": []})

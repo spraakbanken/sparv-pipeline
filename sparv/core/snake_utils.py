@@ -122,9 +122,17 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 if isinstance(rule.import_outputs, Config):
                     rule.import_outputs = sparv_config.get(rule.import_outputs, rule.import_outputs.default)
                 annotations_ = set()
-                for export_annotation in rule.import_outputs:
-                    annotations_.add(export_annotation)
-                    annotations_.add(BaseAnnotation(export_annotation).split()[0])
+                renames = {}
+                for ann, target in util.parse_annotation_list(rule.import_outputs):
+                    # Handle annotations renamed during import
+                    if target:
+                        source_ann, source_attr = BaseAnnotation(ann).split()
+                        if not source_attr:
+                            renames[ann] = target
+                            ann = target
+                        else:
+                            ann = util.join_annotation(renames.get(source_ann, source_ann), target)
+                    annotations_.add(ann)
 
                 for element in annotations_:
                     rule.outputs.append(paths.annotation_dir / get_annotation_path(element))
@@ -163,7 +171,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         else:
             if param_default_empty:
                 # This is probably an unused custom rule, so don't process it any further,
-                #  but safe it in all_custom_annotators
+                # but save it in all_custom_annotators
                 storage.all_custom_annotators.setdefault(rule.module_name, {}).setdefault(rule.f_name, {
                     "description": rule.description, "params": param_dict})
                 storage.custom_targets.append((rule.target_name, rule.description))
