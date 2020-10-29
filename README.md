@@ -13,7 +13,7 @@ If you have any questions, problems or suggestions please contact <sb-sparv@sven
 ## Prerequisites
 
 * A Unix-like environment (e.g. Linux, OS X)
-* [Python 3.6](http://python.org/) or newer
+* [Python 3.6.1](http://python.org/) or newer
 * [Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) (if you want to run
   Swedish dependency parsing, Swedish word sense disambiguation or the Stanford Parser)
 

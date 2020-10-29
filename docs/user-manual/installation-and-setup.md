@@ -4,8 +4,8 @@ and running on your own machine. It also describes additional software that you 
 the analyses provided through Sparv.
 
 ## Installing Sparv
-In order to install Sparv you will need a Unix-like environment (e.g. Linux, OS X) with [Python 3.6](http://python.org/)
-or newer installed on it.
+In order to install Sparv you will need a Unix-like environment (e.g. Linux, OS X) with
+[Python 3.6.1](http://python.org/) or newer installed on it.
 
 The Sparv pipeline can be installed using [pip](https://pip.pypa.io/en/stable/installing). We even recommend using
 [pipx](https://pipxproject.github.io/pipx/) so that you can install the `sparv` command globally:

@@ -157,7 +157,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
     # Go though function parameters and handle based on type
     for param_name, param in params.items():
         param_default_empty = param.default == inspect.Parameter.empty
-        param_value: Any = None
+        param_value: Any
 
         # Get parameter value, either from custom rule object or default value
         if custom_rule_obj:
@@ -609,9 +609,9 @@ def load_config(snakemake_config):
     return config_missing
 
 
-def get_install_targets(install_outputs, all_installs=[]):
+def get_install_outputs(install_outputs, all_installs=[]):
     """Collect files to be created for all installations listed in config.install."""
-    # If nothing is specified in config.install, install everyting
+    # If nothing is specified in config.install, install everything
     if not sparv_config.get("install", []):
         return [i for i, _ in all_installs]
 

@@ -452,6 +452,9 @@ class Text:
             f.write(text)
         log.info("Wrote %d chars: %s", len(text), text_file)
 
+    def __repr__(self):
+        return "<Text>"
+
 
 class Document(str):
     """Name of a source document."""

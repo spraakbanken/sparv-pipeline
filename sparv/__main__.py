@@ -14,8 +14,8 @@ from sparv.core import log_handler, paths, setup
 from sparv.core.paths import sparv_path
 
 # Check Python version
-if sys.version_info < (3, 6):
-    raise Exception("Python 3.6+ is required.")
+if sys.version_info < (3, 6, 1):
+    raise Exception("Python 3.6.1 or higher is required.")
 
 
 class CustomArgumentParser(argparse.ArgumentParser):
@@ -166,7 +166,7 @@ def main():
                                default=1)
     for subparser in [run_parser, runrule_parser]:
         subparser.add_argument("-d", "--doc", nargs="+", default=[], help="Only annotate specified input document(s)")
-    for subparser in [run_parser, runrule_parser, createfile_parser, models_parser]:
+    for subparser in [run_parser, runrule_parser, createfile_parser, models_parser, install_parser]:
         subparser.add_argument("--log", metavar="LOGLEVEL", const="info", help="Set the log level (default: 'warning')",
                                nargs="?", choices=["debug", "info", "warning", "error", "critical"])
         subparser.add_argument("--log-to-file", metavar="LOGLEVEL", const="info",
@@ -294,7 +294,7 @@ def main():
                 snakemake_args["targets"] = ["build_models"]
 
         # Command: run, run-rule, create-file
-        if args.command in ("run", "run-rule", "create-file", "build-models"):
+        if args.command in ("run", "run-rule", "create-file", "build-models", "install"):
             log_level = args.log or "warning"
             log_file_level = args.log_to_file or "warning"
             config.update({"debug": args.debug,

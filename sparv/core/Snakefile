@@ -2,11 +2,17 @@
 from pathlib import Path
 
 import snakemake.io
+from rich import box
+from rich.highlighter import ReprHighlighter
+from rich.padding import Padding
+from rich.table import Table
+from rich.text import Text
 from snakemake.logging import logger
 
 from sparv import util
 from sparv.core import config as sparv_config
 from sparv.core import paths, registry, snake_utils, snake_prints
+from sparv.core.console import console
 
 # Remove Snakemake's default log handler
 if config.get("run_by_sparv") and logger.log_handler and logger.log_handler[0] == logger.text_handler:
@@ -112,7 +118,6 @@ def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
     def __rule__(*_args, **_kwargs):
         pass
 
-
 # Init the storage for some essential variables involving all rules
 snake_storage = snake_utils.SnakeStorage()
 
@@ -180,64 +185,70 @@ rule classes:
 rule presets:
     run:
         resolved_presets = dict(
-            (i, sparv_config.resolve_presets(sparv_config.presets[i])) for i in sparv_config.presets)
+            (preset, sparv_config.resolve_presets(sparv_config.presets[preset])[0]) for preset in sparv_config.presets)
         print(snake_prints.prettify_config(resolved_presets))
 
 
 # Rule to list all targets
 rule list_targets:
     run:
-        max_len = max(len(t[0]) for t in snake_storage.named_targets + snake_storage.export_targets
-                      + snake_storage.install_targets + snake_storage.model_targets + snake_storage.custom_targets)
         print()
-        print("Available rules")
-        print("===============\n")
-        print(util.Color.BOLD + "    Exports" + util.Color.RESET)
+        table = Table(title="Available rules", box=box.SIMPLE, show_header=False, title_justify="left")
+        table.add_column(no_wrap=True)
+        table.add_column()
+
+        table.add_row("[b]Exports[/b]")
         for target, desc, _lang in sorted(snake_storage.export_targets):
-            print("        {:{}}    {}".format(target, max_len, desc))
-        print()
-        print(util.Color.BOLD + "    Installers" + util.Color.RESET)
+            table.add_row("  " + target, desc)
+        table.add_row()
+        table.add_row("[b]Installers[/b]")
         for target, desc in sorted(snake_storage.install_targets):
-            print("        {:{}}    {}".format(target, max_len, desc))
-        print()
-        print(util.Color.BOLD + "    Annotations" + util.Color.RESET)
+            table.add_row("  " + target, desc)
+        table.add_row()
+        table.add_row("[b]Annotators[/b]")
         for target, desc in sorted(snake_storage.named_targets):
-            print("        {:{}}    {}".format(target, max_len, desc))
-        print()
-        print(util.Color.BOLD + "    Model Builders" + util.Color.RESET)
+            table.add_row("  " + target, desc)
+        table.add_row()
+        table.add_row("[b]Model Builders[/b]")
         for target, desc, _lang in sorted(snake_storage.model_targets):
-            print("        {:{}}    {}".format(target, max_len, desc))
-        print()
-        print(util.Color.BOLD + "    Custom Rules" + util.Color.RESET)
-        print(util.Color.ITALIC + "        Custom rules cannot be run directly but they can be used in the"
-              "'custom_annotations' section in the corpus configuration." + util.Color.RESET)
+            table.add_row("  " + target, desc)
+        table.add_row()
+        table.add_row("[b]Custom Rules[/b]")
         for target, desc in sorted(snake_storage.custom_targets):
-            print("        {:{}}    {}".format(target, max_len, desc))
+            table.add_row("  " + target, desc)
+        console.print(table)
+        note = Text.from_markup("[i]Note:[/i] Custom rules cannot be run directly but they can be used in the "
+                             "'custom_annotations' section in the corpus configuration.")
+        ReprHighlighter().highlight(note)
+        console.print(Padding(note, (0, 4)))
 
 
 # Rule to list all exports
 rule list_exports:
     run:
-        max_len = max(len(t[0]) for t in snake_storage.export_targets) + 4
         print()
-        print("Available corpus output formats (exports)")
-        print("=========================================")
+        table = Table(title="Available corpus output formats (exports)", box=box.SIMPLE, show_header=False,
+                      title_justify="left")
+        table.add_column(no_wrap=True)
+        table.add_column()
+
         for target, desc, language in sorted(snake_storage.export_targets):
             if not language or sparv_config.get("metadata.language") in language:
-                print("    {:{}}    {}".format(target, max_len, desc))
-        print()
-        print("Default: xml_export:pretty")
-        print()
+                table.add_row(target, desc)
+        console.print(table)
+        console.print("  Default: xml_export:pretty")
 
 
 # Rule to list all input files
 rule files:
     run:
+        from rich.columns import Columns
         print("Available input files:\n")
-        print(", ".join(snake_utils.get_source_files(snake_storage.source_files)))
+        console.print(Columns(sorted(snake_utils.get_source_files(snake_storage.source_files)), column_first=True,
+                              padding=(0, 3)))
 
 
-# Rule to remove annotations dir
+# Rule to remove dirs created by Sparv
 rule clean:
     run:
         # Only run if corpus config is found in same dir
@@ -270,30 +281,36 @@ rule clean:
 # Rule to list all installations that will be made when running `sparv install`
 rule list_installs:
     run:
-        max_len = max(len(t[0]) for t in snake_storage.install_targets) + 4
+        install_outputs = set(snake_utils.get_install_outputs(snake_storage.install_outputs, snake_storage.install_targets))
         installations_to_be_made = [(t, d) for t, d in sorted(snake_storage.install_targets)
-                                    if t in snake_utils.get_install_targets(
-                                        snake_storage.install_outputs, snake_storage.install_targets)]
+                                    if set(snake_storage.install_outputs[t]).intersection(install_outputs)]
         other_installations = [(t, d) for t, d in sorted(snake_storage.install_targets)
-                               if t not in snake_utils.get_install_targets(
-                                   snake_storage.install_outputs, snake_storage.install_targets)]
+                               if not set(snake_storage.install_outputs[t]).intersection(install_outputs)]
+
         if installations_to_be_made:
             print()
-            print("Installations to be made")
-            print("========================")
+            table = Table(title="Selected installations", box=box.SIMPLE, show_header=False, title_justify="left")
+            table.add_column(no_wrap=True)
+            table.add_column()
             for target, desc in installations_to_be_made:
-                print("    {:{}}    {}".format(target, max_len, desc))
+                table.add_row(target, desc)
+            console.print(table)
 
         if other_installations:
             print()
             if installations_to_be_made:
-                print("Other available installations")
+                title = "Other available installations"
             else:
-                print("Available installations")
-            print("=============================")
+                title = "Available installations"
+            table = Table(title=title, box=box.SIMPLE, show_header=False, title_justify="left")
+            table.add_column(no_wrap=True)
+            table.add_column()
             for target, desc in other_installations:
-                print("    {:{}}    {}".format(target, max_len, desc))
-        print()
+                table.add_row(target, desc)
+            console.print(table)
+
+        console.print("[i]Note:[/i] Use the 'install' section in your corpus configuration to list what "
+                      "installations should be performed when running 'sparv install' without arguments.")
 
 
 # Rule for making exports defined in corpus config
@@ -306,26 +323,28 @@ rule export_corpus:
 # Rule for making installations
 rule install_annotated_corpus:
     input:
-        snake_utils.get_install_targets(snake_storage.install_outputs, snake_storage.install_targets)
+        snake_utils.get_install_outputs(snake_storage.install_outputs, snake_storage.install_targets)
 
 
 # Rule to list all models that can be built/downloaded
 rule list_models:
     run:
-        max_len = max(len(t[0]) for t in snake_storage.model_targets) + 4
         print()
-        print("Models for current language ({})".format(sparv_config.get("metadata.language")))
-        print("=================================")
+        table = Table(title="Models for current language ({})".format(sparv_config.get("metadata.language")),
+                      box=box.SIMPLE, show_header=False, title_justify="left")
+        table.add_column(no_wrap=True)
+        table.add_column()
         for target, desc, language in sorted(snake_storage.model_targets):
             if language and sparv_config.get("metadata.language") in language:
-                print("    {:{}}    {}".format(target, max_len, desc))
-        print()
-        print("Language-independent models")
-        print("===========================")
+                table.add_row(target, desc)
+        console.print(table)
+        table = Table(title="Language-independent models", box=box.SIMPLE, show_header=False, title_justify="left")
+        table.add_column(no_wrap=True)
+        table.add_column()
         for target, desc, language in sorted(snake_storage.model_targets):
             if not language:
-                print("    {:{}}    {}".format(target, max_len, desc))
-        print()
+                table.add_row(target, desc)
+        console.print(table)
 
 
 # Rule to list all annotations files that can be created
@@ -338,23 +357,19 @@ rule list_files:
         print("This is a list of files than can be created by Sparv. Please note that wildcards must be replaced "
               "with paths.")
         print()
-        print("Annotation files")
-        print("================")
+        console.print("[i]Annotation files[/i]\n")
         for i in sorted(o for t, o in outputs if t in ("annotator", "importer")):
             print("    {}".format(i))
         print()
-        print("Export files")
-        print("============")
+        console.print("[i]Export files[/i]\n")
         for i in sorted(o for t, o in outputs if t == "exporter"):
             print("    {}".format(i))
         print()
-        print("Model files")
-        print("===========")
+        console.print("[i]Model files[/i]\n")
         for i in sorted(o for t, o in outputs if t == "modelbuilder"):
             print("    {}".format(i))
         print()
-        print("Installation files")
-        print("==================")
+        console.print("[i]Installation files[/i]\n")
         for i in sorted(o for t, o in outputs if t == "installer"):
             print("    {}".format(i))
 
