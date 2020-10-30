@@ -63,14 +63,13 @@ class Wizard:
         self.annotation_description = {}
         registry.annotation_classes["config_classes"] = config.config.get("classes", {})
 
-        if not registry.annotators:
+        if not registry.modules:
             registry.find_modules()
 
         self.snake_storage = snake_utils.SnakeStorage()
 
-        for module_name in registry.annotators:
-            for f_name in registry.annotators[module_name]:
-                annotator = registry.annotators[module_name][f_name]
+        for module_name in registry.modules:
+            for f_name, annotator in registry.modules[module_name].functions.items():
                 # Init rule storage
                 rule_storage = snake_utils.RuleStorage(module_name, f_name, annotator)
 
@@ -389,7 +388,7 @@ class Wizard:
         """Create a SourceStructure instance and offer to scan source files if possible."""
         # Create instance of SourceStructure class (if available)
         importer_module, _, importer_function = config.get("import.importer").partition(":")
-        source_structure_class = registry.annotators[importer_module][importer_function]["structure"]
+        source_structure_class = registry.modules[importer_module].functions[importer_function]["structure"]
         do_scan = False
         if source_structure_class:
             self.source_structure = source_structure_class(Path(config.get("import.source_dir")))

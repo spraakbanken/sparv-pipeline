@@ -88,6 +88,9 @@ def print_modules(modules: dict, module_type: str, reverse_config_usage: dict, s
         # Module name header
         console.print(f"\n[bright_black]:[/][dim]:[/]: [b]{module_name.upper()}[/b]\n")
 
+        if registry.modules[module_name].description:
+            console.print(Padding(registry.modules[module_name].description, (0, 4, 1, 4)))
+
         for f_name in sorted(modules[module_name]):
             # Function name and description
             f_desc = modules[module_name][f_name]["description"]

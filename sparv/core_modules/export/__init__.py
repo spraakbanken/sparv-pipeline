@@ -1,4 +1,17 @@
-from sparv import SourceStructure, wizard
+from sparv import Config, SourceStructure, wizard
+
+__config__ = [
+    Config("export.default", description="List of exporters to use by default"),
+    Config("export.annotations", description="List of automatic annotations to include in export"),
+    Config("export.source_annotations", description="List of annotations and attributes from the source to include"),
+    Config("export.header_annotations", description="List of headers from the source data to include"),
+    Config("export.word", description="Annotation to use as token text in export"),
+    Config("export.remove_module_namespaces",
+           description="Remove module name prefixes from annotation names in export"),
+    Config("export.sparv_namespace", description="Prefix to add to the names of all automatically created annotations"),
+    Config("export.source_namespace", description="Prefix to add to the names of all annotations from source"),
+    Config("export.scramble_on", description="What annotation to use as the smallest unit when scrambling")
+]
 
 
 @wizard(["export.source_annotations"], source_structure=True)

@@ -5,7 +5,7 @@ import pkgutil
 import re
 from collections import defaultdict
 from enum import Enum
-from typing import List, Optional, Tuple, Type, TypeVar
+from typing import Dict, List, Optional, Tuple, Type, TypeVar
 
 import typing_inspect
 from pkg_resources import iter_entry_points
@@ -30,8 +30,17 @@ class Annotator(Enum):
     modelbuilder = 5
 
 
-# All available annotator functions (possibly limited by the selected language)
-annotators = {}
+class Module:
+    """Class holding data about Sparv modules."""
+
+    def __init__(self, name):
+        self.name = name
+        self.functions: Dict[str, dict] = {}
+        self.description = None
+
+
+# All loaded Sparv modules with their functions (possibly limited by the selected language)
+modules: Dict[str, Module] = {}
 
 # All available annotation classes for the selected language, collected from modules and corpus config
 annotation_classes = {
@@ -76,30 +85,42 @@ def find_modules(no_import=False, find_custom=False) -> list:
 
     for full_path, path in ((core_modules_full_path, core_modules_path), (modules_full_path, modules_path)):
         found_modules = pkgutil.iter_modules([full_path])
-        modules = []
+        module_names = []
         for module in found_modules:
-            modules.append(module.name)
+            module_names.append(module.name)
             if not no_import:
-                importlib.import_module(".".join((path, module.name)))
+                m = importlib.import_module(".".join((path, module.name)))
+                add_module_metadata(m, module.name)
 
     if find_custom:
         # Also search for modules in corpus dir
         custom_modules = pkgutil.iter_modules([paths.corpus_dir])
         for module in custom_modules:
             module_name = f"{custom_name}.{module.name}"
-            modules.append(module_name)
+            module_names.append(module_name)
             if not no_import:
                 module_path = paths.corpus_dir.resolve() / f"{module.name}.py"
                 spec = importlib.util.spec_from_file_location(module_name, module_path)
                 m = importlib.util.module_from_spec(spec)
+                add_module_metadata(m, module_name)
                 spec.loader.exec_module(m)
 
     # Search for installed plugins
     for entry_point in iter_entry_points("sparv.plugin"):
-        entry_point.load()
-        modules.append(entry_point.name)
+        m = entry_point.load()
+        add_module_metadata(m, entry_point.name)
+        module_names.append(entry_point.name)
 
-    return modules
+    return module_names
+
+
+def add_module_metadata(module, module_name):
+    """Add module metadata."""
+    if hasattr(module, "__config__"):
+        for cfg in module.__config__:
+            handle_config(cfg, module_name)
+    if module_name in modules:
+        modules[module_name].description = getattr(module, "__description__", module.__doc__)
 
 
 def wizard(config_keys: List[str], source_structure: bool = False):
@@ -232,13 +253,7 @@ def _add_to_registry(annotator):
     # Add config variables to config
     if annotator["config"]:
         for c in annotator["config"]:
-            if not c.name.startswith(module_name + "."):
-                raise ValueError("Config option '{}' in module '{}' doesn't include module "
-                                 "name as prefix.".format(c.name, module_name))
-            sparv_config.set_default(c.name, c.default)
-            sparv_config.add_to_structure(c.name, c.default, description=c.description, annotator=rule_name)
-            if not c.description:
-                raise Exception(f"Missing description for configuration key '{c.name}' in module '{module_name}'.")
+            handle_config(c, module_name, rule_name)
 
     for param, val in inspect.signature(annotator["function"]).parameters.items():
         if isinstance(val.default, BaseOutput):
@@ -292,14 +307,34 @@ def _add_to_registry(annotator):
             sparv_config.add_config_usage(val.default.config_name, rule_name)
             annotation_sources.add(val.default.config_name)
 
-    annotators.setdefault(module_name, {})
-    if f_name in annotators[module_name]:
+    if module_name not in modules:
+        modules[module_name] = Module(module_name)
+    if f_name in modules[module_name].functions:
         print("Annotator function '{}' collides with other function with same name in module '{}'.".format(f_name,
                                                                                                            module_name))
     else:
         del annotator["module_name"]
         del annotator["name"]
-        annotators[module_name][f_name] = annotator
+        modules[module_name].functions[f_name] = annotator
+
+
+def handle_config(cfg, module_name, rule_name: Optional[str] = None) -> None:
+    """Handle Config instances."""
+    if not cfg.name.startswith(module_name + "."):
+        raise ValueError("Config option '{}' in module '{}' doesn't include module "
+                         "name as prefix.".format(cfg.name, module_name))
+    # Check that config variable hasn't already been declared
+    prev = sparv_config.config_structure
+    for k in cfg.name.split("."):
+        if k not in prev:
+            break
+        prev = prev[k]
+    else:
+        raise Exception(f"The config variable '{cfg.name}' in '{rule_name or module_name}' has already been declared.")
+    sparv_config.set_default(cfg.name, cfg.default)
+    sparv_config.add_to_structure(cfg.name, cfg.default, description=cfg.description, annotator=rule_name)
+    if not cfg.description:
+        raise Exception(f"Missing description for configuration key '{cfg.name}' in module '{module_name}'.")
 
 
 def _expand_class(cls):

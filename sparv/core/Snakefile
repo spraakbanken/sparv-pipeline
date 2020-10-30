@@ -29,15 +29,14 @@ rule do_nothing:
 def make_rules(config_missing: bool) -> None:
     """Load all Sparv modules and create Snakemake rules."""
     # Create rules for all available annotation functions
-    for module_name in registry.annotators:
-        for f_name in registry.annotators[module_name]:
-            annotator = registry.annotators[module_name][f_name]
-            make_rule(module_name, f_name, annotator, config_missing)
+    for module_name in registry.modules:
+        for f_name, f in registry.modules[module_name].functions.items():
+            make_rule(module_name, f_name, f, config_missing)
     
     # Create custom rules
     for custom_rule_obj in sparv_config.get("custom_annotations", []):
         module_name, f_name = custom_rule_obj["annotator"].split(":")
-        annotator = registry.annotators[module_name][f_name]
+        annotator = registry.modules[module_name].functions[f_name]
         make_rule(module_name, f_name, annotator, config_missing, custom_rule_obj)
 
     # Check and set rule orders
@@ -128,8 +127,8 @@ config_missing = snake_utils.load_config(config)
 registry.find_modules(find_custom=sparv_config.get("custom_annotations"))
 
 # Let exporters and importers inherit config values from 'export' and 'import' sections
-for module in registry.annotators:
-    for a in registry.annotators[module].values():
+for module in registry.modules:
+    for a in registry.modules[module].functions.values():
         if a["type"] == registry.Annotator.importer:
             sparv_config.inherit_config("import", module)
         elif a["type"] == registry.Annotator.exporter:

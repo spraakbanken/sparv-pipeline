@@ -23,32 +23,7 @@ presets = {}  # Dict holding annotation presets
 
 # Dict with info about config structure, prepopulated with some module-independent keys
 config_structure = {
-    "metadata": {
-        "id": {"_source": "core"},
-        "name": {"_source": "core"},
-        "language": {"_source": "core"},
-        "description": {"_source": "core"}
-    },
     "classes": {"_source": "core"},
-    "import": {
-        "document_annotation": {"_source": "core"},
-        "encoding": {"_source": "core"},
-        "importer": {"_source": "core"},
-        "keep_control_chars": {"_source": "core"},
-        "normalize": {"_source": "core"},
-        "source_dir": {"_source": "core"}
-    },
-    "export": {
-        "default": {"_source": "core"},
-        "annotations": {"_source": "core"},
-        "source_annotations": {"_source": "core"},
-        "header_annotations": {"_source": "core"},
-        "word": {"_source": "core"},
-        "remove_module_namespaces": {"_source": "core"},
-        "sparv_namespace": {"_source": "core"},
-        "source_namespace": {"_source": "core"},
-        "scramble_on": {"_source": "core"}
-    },
     "custom_annotations": {"_source": "core"},
     "install": {"_source": "core"}
 }
@@ -173,7 +148,7 @@ def _merge_dicts(user, default):
     return user
 
 
-def add_to_structure(name, default=None, description=None, annotator=None):
+def add_to_structure(name, default=None, description=None, annotator: Optional[str] = None):
     """Add config variable to config structure."""
     set_value(name,
               {"_default": default,
@@ -182,7 +157,8 @@ def add_to_structure(name, default=None, description=None, annotator=None):
               config_dict=config_structure
               )
 
-    add_config_usage(name, annotator)
+    if annotator:
+        add_config_usage(name, annotator)
 
 
 def get_config_description(name):
@@ -203,8 +179,9 @@ def validate_module_config():
         except KeyError:
             annotators = config_usage[config_key]
             raise util.SparvErrorMessage(
-                "The annotator{} {} is trying to access the config key '{}' which isn't declared anywhere.".format(
-                    "s" if len(annotators) > 1 else "", ", ".join(annotators), config_key), "sparv", "config")
+                "The annotator{} {} {} trying to access the config key '{}' which isn't declared anywhere.".format(
+                    "s" if len(annotators) > 1 else "", ", ".join(annotators),
+                    "are" if len(annotators) > 1 else "is", config_key), "sparv", "config")
 
 
 def validate_config(config_dict=None, structure=None, parent=""):

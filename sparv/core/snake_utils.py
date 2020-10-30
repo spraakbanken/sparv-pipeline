@@ -525,7 +525,7 @@ def update_storage(storage, rule):
 
 def get_source_path() -> str:
     """Get path to source files."""
-    return sparv_config.get("import.source_dir", paths.source_dir)
+    return sparv_config.get("import.source_dir")
 
 
 def get_annotation_path(annotation, data=False, common=False):
@@ -552,7 +552,7 @@ def get_source_files(source_files) -> List[str]:
             raise util.SparvErrorMessage("The config variable 'import.importer' must not be empty.", "sparv")
         try:
             importer_module, _, importer_function = sparv_config.get("import.importer").partition(":")
-            file_extension = registry.annotators[importer_module][importer_function]["file_extension"]
+            file_extension = registry.modules[importer_module].functions[importer_function]["file_extension"]
         except KeyError:
             raise util.SparvErrorMessage(
                 "Could not find the importer '{}'. Make sure the 'import.importer' config value refers to an "

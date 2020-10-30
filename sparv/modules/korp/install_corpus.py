@@ -11,7 +11,6 @@ log = logging.getLogger(__name__)
 
 
 @installer("Install CWB datafiles on remote host", config=[
-    Config("korp.remote_host", "", description="Remote host to install CWB datafiles to"),
     Config("korp.remote_corpus_registry", "", description="CWB registry path on remote host"),
     Config("korp.remote_cwb_datadir", "", description="CWB datadir path on remote host"),
     Config("korp.protected", False, description="Whether this corpus should have limited access or not")

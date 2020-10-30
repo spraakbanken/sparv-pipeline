@@ -7,7 +7,7 @@ import sys
 from pkg_resources import iter_entry_points
 
 from sparv.core import log_handler, paths
-from sparv.core.registry import annotators
+from sparv.core import registry
 from sparv.util import SparvErrorMessage
 
 custom_name = "custom"
@@ -65,7 +65,7 @@ logger.info("RUN: %s:%s(%s)", module_name, f_name, ", ".join("%s=%s" % (i[0], re
 
 # Execute function
 try:
-    annotators[module_name][f_name]["function"](**parameters)
+    registry.modules[module_name].functions[f_name]["function"](**parameters)
     if snakemake.params.export_dirs:
         logger.export_dirs(snakemake.params.export_dirs)
 except SparvErrorMessage as e:

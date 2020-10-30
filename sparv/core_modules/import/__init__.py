@@ -1,5 +1,15 @@
-from sparv import wizard
-from sparv.core import registry
+from sparv import Config, wizard
+from sparv.core import paths, registry
+
+__config__ = [
+    Config("import.document_annotation", description="Annotation representing a document"),
+    Config("import.source_dir", paths.source_dir, description="Directory containing corpus source files"),
+    Config("import.importer", description="Name of importer to use"),
+    Config("import.keep_control_chars", False, description="Set to True to keep control characters"),
+    Config("import.normalize", "NFC", description="Normalize input using any of the following forms: "
+                                                  "'NFC', 'NFKC', 'NFD', and 'NFKD'"),
+    Config("import.encoding", "UTF-8", description="Encoding of source documents"),
+]
 
 
 @wizard(config_keys=[
@@ -8,9 +18,8 @@ from sparv.core import registry
 def setup_wizard(_: dict):
     """Return wizard question regarding input format."""
     importers = []
-    for module_name in registry.annotators:
-        for f_name in registry.annotators[module_name]:
-            annotator = registry.annotators[module_name][f_name]
+    for module_name in registry.modules:
+        for f_name, annotator in registry.modules[module_name].functions.items():
             if annotator["type"] == registry.Annotator.importer:
                 importers.append((f"{module_name}:{f_name}", annotator))
     max_len = max(len(n) for n, _ in importers)
