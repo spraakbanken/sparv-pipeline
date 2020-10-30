@@ -98,21 +98,21 @@ def print_modules(modules: dict, module_type: str, reverse_config_usage: dict, s
             f_anns = modules[module_name][f_name].get("annotations", {})
             if f_anns:
                 this_box_style = box_style if any(a[1] for a in f_anns) else box.SIMPLE
-                table = Table(title=f"[b]Annotations[/b]", box=this_box_style, show_header=False,
+                table = Table(title="[b]Annotations[/b]", box=this_box_style, show_header=False,
                               title_justify="left", padding=(0, 2), pad_edge=False, border_style="bright_black")
                 table.add_column(no_wrap=True)
                 table.add_column()
                 for f_ann in sorted(f_anns):
                     table.add_row("• " + f_ann[0].name + (
                         f"\n  [i dim]class:[/] <{f_ann[0].cls}>" if f_ann[0].cls else ""),
-                                  f_ann[1] or "")
+                        f_ann[1] or "")
                 console.print(Padding(table, (0, 0, 0, 4)))
 
             # Config variables
             f_config = reverse_config_usage.get(f"{module_name}:{f_name}")
             if f_config:
                 console.print()
-                table = Table(title=f"[b]Configuration variables used[/b]", box=box_style, show_header=False,
+                table = Table(title="[b]Configuration variables used[/b]", box=box_style, show_header=False,
                               title_justify="left", padding=(0, 2), pad_edge=False, border_style="bright_black")
                 table.add_column(no_wrap=True)
                 table.add_column()
@@ -129,7 +129,7 @@ def print_modules(modules: dict, module_type: str, reverse_config_usage: dict, s
 
             # Arguments
             if (print_params and params) or custom_params:
-                table = Table(title=f"[b]Arguments[/b]", box=box_style, show_header=False, title_justify="left",
+                table = Table(title="[b]Arguments[/b]", box=box_style, show_header=False, title_justify="left",
                               padding=(0, 2), pad_edge=False, border_style="bright_black")
                 table.add_column(no_wrap=True)
                 table.add_column()
