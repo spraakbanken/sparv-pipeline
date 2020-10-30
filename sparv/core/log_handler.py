@@ -7,7 +7,6 @@ import pickle
 import re
 import socketserver
 import struct
-import sys
 import threading
 import time
 from collections import defaultdict
@@ -15,11 +14,12 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Optional
 
-from alive_progress import alive_bar
+import rich.progress as progress
 from rich.logging import RichHandler
 from snakemake import logger
 
 from sparv.core import paths
+from sparv.core.console import console
 from sparv.util.misc import SparvErrorMessage
 
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -145,11 +145,13 @@ class LogHandler:
         self.missing_classes_re = None
         self.export_dirs = set()
         self.start_time = time.time()
+        self.jobs = {}
 
         # Progress bar related variables
-        self.bar_mgr = None
+        self.progress_mgr = None
         self.exit = lambda *x: None
-        self.bar = None
+        self.progress: Optional[progress.Progress] = None
+        self.bar: Optional[progress.TaskID] = None
         self.last_percentage = 0
 
         # Create a simple TCP socket-based logging receiver
@@ -173,7 +175,7 @@ class LogHandler:
         internal_filter = InternalFilter()
 
         # stdout logger
-        stream_handler = RichHandler(show_path=False)
+        stream_handler = RichHandler(show_path=False, console=console)
         stream_handler.setLevel(self.log_level.upper())
         stream_handler.addFilter(internal_filter)
         log_format = None if stream_handler.level > logging.DEBUG else "(%(process)d) - %(message)s"
@@ -203,9 +205,17 @@ class LogHandler:
     def setup_bar(self, total: int):
         """Initialize the progress bar."""
         print()
-        self.bar_mgr = (alive_bar(total, enrich_print=False, title=LogHandler.icon, length=30))
-        self.exit = type(self.bar_mgr).__exit__
-        self.bar = type(self.bar_mgr).__enter__(self.bar_mgr)
+        self.progress_mgr = progress.Progress(
+            progress.TextColumn("[progress.description]{task.description}"),
+            progress.BarColumn(),
+            progress.TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            progress.TimeRemainingColumn(),
+            progress.TextColumn("{task.fields[text]}"),
+            console=console
+        )
+        self.exit = type(self.progress_mgr).__exit__
+        self.progress = type(self.progress_mgr).__enter__(self.progress_mgr)
+        self.bar = self.progress.add_task(self.icon, total=total, text="")
 
         # Logging needs to be set up after the bar, to make use if its print hook
         self.setup_loggers()
@@ -239,11 +249,18 @@ class LogHandler:
         level = msg["level"]
 
         if level == "run_info" and self.use_progressbar:
+            # Parse list of jobs do to and total job count
+            lines = msg["msg"].splitlines()[2:]
+            total_jobs = lines[-1].strip()
+            self.jobs = {}
+            for j in lines[:-1]:
+                _, count, job = j.split("\t")
+                self.jobs[job.replace("::", ":")] = int(count)
+
             if self.bar is None:
                 # Get number of jobs
-                jobs: str = msg["msg"].split("\t")[-1]
-                if jobs.isdigit():
-                    self.setup_bar(int(jobs))
+                if total_jobs.isdigit():
+                    self.setup_bar(int(total_jobs))
 
         elif level == "progress":
             if self.use_progressbar:
@@ -252,10 +269,10 @@ class LogHandler:
                     self.setup_bar(msg["total"])
 
                 # Advance progress
-                self.bar()
+                self.progress.advance(self.bar)
 
                 # Print regular updates if output is not a terminal (i.e. doesn't support the progress bar)
-                if not sys.stdout.isatty():
+                if not console.is_terminal:
                     percentage = (100 * msg["done"]) // msg["total"]
                     if percentage > self.last_percentage:
                         self.last_percentage = percentage
@@ -266,8 +283,8 @@ class LogHandler:
 
         elif level == "job_info" and self.use_progressbar:
             if msg["msg"] and self.bar is not None:
-                # Only update status message, don't advance progress
-                self.bar.text(msg["msg"])
+                # Update progress status message
+                self.progress.update(self.bar, text=msg["msg"])
 
         elif level == "info":
             if msg["msg"] == "Nothing to be done.":
@@ -348,7 +365,12 @@ class LogHandler:
         if not self.finished:
             # Stop progress bar
             if self.bar is not None:
-                self.exit(self.bar_mgr, None, None, None)
+                # Add message about elapsed time
+                elapsed = round(time.time() - self.start_time)
+                self.progress.update(self.bar, text=f"Total time: {timedelta(seconds=elapsed)}")
+
+                # Stop bar
+                self.exit(self.progress_mgr, None, None, None)
 
             self.finished = True
             print()
@@ -393,7 +415,8 @@ class LogHandler:
                 elapsed = round(time.time() - self.start_time)
                 logger.logger.info("Time elapsed: {}".format(timedelta(seconds=elapsed)))
 
-    def cleanup(self):
+    @staticmethod
+    def cleanup():
         """Remove Snakemake log files."""
         snakemake_log_file = logger.get_logfile()
         if snakemake_log_file is not None:

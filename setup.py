@@ -38,7 +38,6 @@ setuptools.setup(
     zip_safe=False,
     python_requires=">=3.6.1",
     install_requires=[
-        "alive-progress==1.6.1",
         "appdirs==1.4.4",
         "colorama==0.4.4",
         "iso-639==0.4.5",
