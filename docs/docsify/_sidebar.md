@@ -12,5 +12,4 @@
     - [Config Parameters](developers-guide/config-parameters.md)
     - [Wildcards](developers-guide/wildcards.md)
     - [Util Functions](developers-guide/util-functions.md)
-    - [Writing Plugins](developers-guide/writing-plugins.md)
     - [MISC](developers-guide/misc.md)

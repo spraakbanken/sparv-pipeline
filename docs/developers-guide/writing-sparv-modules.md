@@ -5,9 +5,10 @@ something similar to your goal.
 The Sparv pipeline is comprised of different modules like importers, annotators and exporters. None of these modules are
 hard-coded into the Sparv pipeline and therefore it can easily be extended.
 
-A Sparv module is a Python script that imports Sparv classes (and util functions if needed) which are used for
-describing dependencies to other entities (e.g. annotations or models) handled or created by the pipeline. Here is an
-example of a small annotation module that converts tokens to uppercase:
+A Sparv module is a Python script that imports [Sparv classes](developers-guide/sparv-classes) (and [util
+functions](developers-guide/util-functions) if needed) which are used for describing dependencies to other entities
+(e.g. annotations or models) handled or created by the pipeline. Here is an example of a small annotation module that
+converts tokens to uppercase:
 ```python
 from sparv import Annotation, Output, annotator
 
@@ -45,20 +46,39 @@ found by other modules. The read and write methods also make sure that Sparv's i
 correctly. Not using these provided methods can lead to procedures breaking if the internal data format or file
 structure is updated in the future.
 
-## Annotation Classes
-When describing dependencies to other annotations one can make use of annotation classes which are denoted by angle
-brackets (`<token>` and `<token:word>` in the example). Annotation classes are used to create abstract instances for
-common annotations such as tokens, sentences and text units. They simplify dependencies between annotation modules and
-increase the flexibility of the annotation pipeline. Many annotations modules need tokenised text as input but they
-might not care about what tokeniser is being used. So instead of telling a module that it needs tokens produced by
-another specific module we can tell it to take the class `<token>` as input. In the [corpus
-configuration](user-manual/corpus-configuration.md) we can then set `classes.token` to `segment.token` which tells Sparv
-that `<token>` refers to output produced by the segment module. In the above example we define that `word` is an input
-annotation of the class `<token:word>` and `out` is an output annotation which provides new attributes for token
-elements.
 
-**TODO:** Give an example of an annotation without class (`segment.token:misc.word`)
+## Plugins
+A Sparv Plugin is a Sparv module that is not stored together with the Sparv code. Instead it usually lives in a separate
+repository. Reasons for writing a plugin could be that the author does not want it to be part of the Sparv core or that
+the code cannot be distributed under the same license. Any Sparv module can be converted into a plugin by adding a
+[Python setup script](https://docs.python.org/3/distutils/setupscript.html).
 
-Annotation classes are valid across all modules and may be used wherever you see fit. There is no closed set of
-annotation classes and each module can invent its own classes if desired. Within a corpus directory all existing classes
-can be listed with the `sparv classes` command.
+A working sparv plugin is the [sparv-freeling](https://github.com/spraakbanken/sparv-freeling) plugin.
+
+The following is an example of a typical folder structure of a plugin:
+```
+sparv-freeling/
+├── freeling
+│   ├── freeling.py
+│   ├── __init__.py
+│   └── models.py
+├── LICENSE
+├── README.md
+└── setup.py
+```
+
+In the above example the `freeling` folder is basically a Sparv module. The `setup.py` is what really makes this behave
+as a plugin. If the `setup.py` is constructed correctly, the plugin code can then be injected into the Sparv pipeline
+code using pipx:
+```bash
+pipx inject sparv-pipeline ./sparv-freeling
+```
+
+In order for this to work you need to make sure that there is a `sparv.plugin` entry point inside the setup script that
+points to your module(s):
+```python
+entry_points={"sparv.plugin": ["freeling = freeling"]}
+```
+
+Now the plugin functionality should be available and it should be treated just like any other module within the Sparv
+pipeline.

@@ -20,7 +20,6 @@ DEVELOPERS_GUIDE_FILES="
 ../developers-guide/config-parameters.md
 ../developers-guide/wildcards.md
 ../developers-guide/util-functions.md
-../developers-guide/writing-plugins.md
 ../developers-guide/misc.md
 "
 
