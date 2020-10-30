@@ -25,7 +25,7 @@ def prettyprint_yaml(in_dict):
 
     # Resolve aliases and replace them with their anchors' contents
     yaml.Dumper.ignore_aliases = lambda *args: True
-    yaml_str = yaml.dump(in_dict, default_flow_style=False, Dumper=MyDumper, indent=4)
+    yaml_str = yaml.dump(in_dict, default_flow_style=False, Dumper=MyDumper, indent=4, allow_unicode=True)
     # Print syntax highlighted
     console.print(Syntax(yaml_str, "yaml"))
 
