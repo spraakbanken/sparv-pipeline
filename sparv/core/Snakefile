@@ -250,31 +250,27 @@ rule files:
 # Rule to remove dirs created by Sparv
 rule clean:
     run:
-        # Only run if corpus config is found in same dir
-        if config_missing:
-            print(util.sparv_warning("No corpus config found. Not removing anything."))
-        else:
-            import shutil
-            to_remove = []
-            if config.get("export") or config.get("all"):
-                to_remove.append(paths.export_dir)
-                assert paths.export_dir, "Export dir name not configured."
-            if config.get("logs") or config.get("all"):
-                to_remove.append(paths.log_dir)
-                assert paths.log_dir, "Log dir name not configured."
-            if config.get("all") or not (config.get("export") or config.get("logs")):
-                to_remove.append(paths.annotation_dir)
-                assert paths.annotation_dir, "Annotations dir name not configured."
+        import shutil
+        to_remove = []
+        if config.get("export") or config.get("all"):
+            to_remove.append(paths.export_dir)
+            assert paths.export_dir, "Export dir name not configured."
+        if config.get("logs") or config.get("all"):
+            to_remove.append(paths.log_dir)
+            assert paths.log_dir, "Log dir name not configured."
+        if config.get("all") or not (config.get("export") or config.get("logs")):
+            to_remove.append(paths.annotation_dir)
+            assert paths.annotation_dir, "Annotations dir name not configured."
 
-            something_removed = False
-            for d in to_remove:
-                full_path = Path.cwd() / d
-                if full_path.is_dir():
-                    shutil.rmtree(full_path)
-                    print(util.sparv_info(f"'{d}' directory removed"))
-                    something_removed = True
-            if not something_removed:
-                print(util.sparv_info("Nothing to remove"))
+        something_removed = False
+        for d in to_remove:
+            full_path = Path.cwd() / d
+            if full_path.is_dir():
+                shutil.rmtree(full_path)
+                snake_utils.print_sparv_info(f"'{d}' directory removed")
+                something_removed = True
+        if not something_removed:
+            snake_utils.print_sparv_info("Nothing to remove")
 
 
 # Rule to list all installations that will be made when running `sparv install`

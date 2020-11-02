@@ -5,7 +5,6 @@ import unicodedata
 from typing import List, Optional
 
 from .classes import Annotation
-from .constants import Color
 
 
 class SparvErrorMessage(Exception):
@@ -33,16 +32,6 @@ def get_logger(name):
     if not name.startswith("sparv.modules"):
         name = "sparv.modules." + name
     return logging.getLogger(name)
-
-
-def sparv_warning(msg):
-    """Format msg into a Sparv warning message."""
-    return f"{Color.YELLOW}WARNING: {msg}{Color.RESET}"
-
-
-def sparv_info(msg):
-    """Format msg into a Sparv info message."""
-    return f"{Color.GREEN}{msg}{Color.RESET}"
 
 
 def _safe_join(sep, elems):

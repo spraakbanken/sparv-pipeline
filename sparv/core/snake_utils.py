@@ -14,10 +14,11 @@ from snakemake.io import expand
 from sparv import util
 from sparv.core import config as sparv_config
 from sparv.core import log_handler, paths, registry
+from sparv.core.console import console
 from sparv.util.classes import (AllDocuments, Annotation, AnnotationAllDocs, AnnotationData, Base, BaseAnnotation,
                                 BaseOutput, Binary, BinaryDir, Config, Corpus, Document, Export, ExportAnnotations,
-                                ExportAnnotationsAllDocs, ExportInput, Language, Model, ModelOutput,
-                                Output, OutputData, Source, SourceAnnotations, Text)
+                                ExportAnnotationsAllDocs, ExportInput, Language, Model, ModelOutput, Output, OutputData,
+                                Source, SourceAnnotations, Text)
 
 
 class SnakeStorage:
@@ -379,11 +380,11 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
     # For custom rules, warn the user of any unknown parameters
     if custom_params:
-        print(util.sparv_warning("The parameter{} '{}' used in one of your custom rules "
-                                 "do{} not exist in {}.".format("s" if len(custom_params) > 1 else "",
-                                                                "', '".join(custom_params),
-                                                                "es" if len(custom_params) == 1 else "",
-                                                                rule.full_name)))
+        print_sparv_warning("The parameter{} '{}' used in one of your custom rules "
+                            "do{} not exist in {}.".format("s" if len(custom_params) > 1 else "",
+                                                           "', '".join(custom_params),
+                                                           "es" if len(custom_params) == 1 else "",
+                                                           rule.full_name))
 
     storage.all_rules.append(rule)
 
@@ -466,8 +467,8 @@ def check_ruleorder(storage: SnakeStorage) -> Set[Tuple[RuleStorage, RuleStorage
         rule1 = rules[0].full_name
         rule2 = rules[1].full_name
         common_outputs = ", ".join(map(str, common_outputs))
-        print(util.sparv_warning(f"The annotators {rule1} and {rule2} have common outputs ({common_outputs}). "
-              "Please make sure to set their 'order' arguments to different values."))
+        print_sparv_warning(f"The annotators {rule1} and {rule2} have common outputs ({common_outputs}). "
+                            "Please make sure to set their 'order' arguments to different values.")
 
     return ordered_rules
 
@@ -665,3 +666,13 @@ def get_reverse_config_usage():
         for annotator in sparv_config.config_usage[config_key]:
             reverse_config_usage[annotator].append((config_key, sparv_config.get_config_description(config_key)))
     return reverse_config_usage
+
+
+def print_sparv_warning(msg):
+    """Format msg into a Sparv warning message."""
+    console.print(f"[yellow]WARNING: {msg}[/yellow]", highlight=False)
+
+
+def print_sparv_info(msg):
+    """Format msg into a Sparv info message."""
+    console.print(f"[green]{msg}[/green]", highlight=False)
