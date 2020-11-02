@@ -15,6 +15,7 @@ log = logging.getLogger(__name__)
 
 DEFAULT_CONFIG = paths.default_config_file
 PRESETS_DIR = paths.presets_dir
+PARENT = "parent"
 
 config_user = {}  # Dict holding local corpus config
 config = {}  # Dict holding full configuration
@@ -25,7 +26,8 @@ presets = {}  # Dict holding annotation presets
 config_structure = {
     "classes": {"_source": "core"},
     "custom_annotations": {"_source": "core"},
-    "install": {"_source": "core"}
+    "install": {"_source": "core"},
+    PARENT: {"_source": "core"}
 }
 
 config_usage = defaultdict(set)  # For each config key, a list of annotators using that key
@@ -38,6 +40,8 @@ def read_yaml(yaml_file):
             data = yaml.load(f, Loader=yaml.FullLoader)
     except yaml.scanner.ScannerError as e:
         raise util.SparvErrorMessage("An error occurred while reading the configuration file:\n" + str(e))
+    except FileNotFoundError as e:
+        raise util.SparvErrorMessage(f"Could not find the config file '{yaml_file}'")
 
     return data
 
@@ -61,6 +65,12 @@ def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) 
         # Read corpus config
         global config_user
         config_user = read_yaml(config_file) or {}
+
+        # If a parent config is specified, inherit its contents
+        if config_user.get(PARENT):
+            config_parent = read_yaml(config_user[PARENT])
+            config_user = _merge_dicts(config_user, config_parent)
+
     elif config_dict:
         config_user = config_dict
     else:
@@ -79,6 +89,8 @@ def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) 
 
     # Make sure that the root level only contains dictionaries or lists to save us a lot of headache
     for key in config:
+        if key == PARENT:
+            continue
         if not isinstance(config[key], (dict, list)):
             raise util.SparvErrorMessage(f"The config section '{key}' could not be parsed.", module="sparv",
                                          function="config")
