@@ -299,10 +299,11 @@ class LogHandler:
                 message = re.search(
                     r"{}([^\n]*)\n([^\n]*)\n(.*?){}".format(SparvErrorMessage.start_marker,
                                                             SparvErrorMessage.end_marker),
-                    msg["msg"])
+                    msg["msg"], flags=re.DOTALL)
                 if message:
                     module, function, error_message = message.groups()
-                    self.messages["error"].append((":".join((module, function)), error_message))
+                    error_source = ":".join((module, function)) if module and function else None
+                    self.messages["error"].append((error_source, error_message))
                     handled = True
 
             # Exit status 123 means a Sparv module raised a SparvErrorMessage exception
@@ -383,7 +384,8 @@ class LogHandler:
                         "s" if len(self.messages) > 1 else ""))
                     for message in self.messages["error"]:
                         error_source, msg = message
-                        logger.logger.error("\n[{}]\n{}".format(error_source, msg))
+                        error_source = f"[{error_source}]\n" if error_source else ""
+                        logger.logger.error(f"\n{error_source}{msg}")
                 else:
                     # Errors from modules have already been logged, so notify user
                     logger.logger.error(
