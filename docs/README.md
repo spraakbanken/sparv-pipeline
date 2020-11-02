@@ -31,6 +31,12 @@ npm i docsify-cli -g
 docsify serve docsify --port 3000
 ```
 
+Sync HTML documentation to server:
+- Create a file `config.sh` inside the docsify directory containing variables `user` (the user to use for login to
+  server), `host` (the address to the host) and `path` (the absolute path on the server to the root of the
+  documentation)
+- Run `./sync_doc.sh`.
+
 ## Render documentation as PDF
 
 Convert User Manual and Developer's Guide from markdown to PDF (requires markdown and latex):
