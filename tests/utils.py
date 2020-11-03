@@ -9,7 +9,7 @@ import xml.etree.ElementTree as etree
 from typing import Optional
 
 from sparv.core import paths
-from sparv.util import Color
+from sparv.core.console import console
 
 GOLD_PREFIX = "gold_"
 
@@ -32,9 +32,9 @@ def run_sparv(gold_corpus_dir: pathlib.Path,
     stdout = process.stdout.strip().decode().split("\n")
     stdout = "\n".join([line for line in stdout if "Progress:" not in line and u"\U0001F426" not in line])
     if stdout:
-        print(format_error(f"The following warnings/errors occurred:\n{stdout}"))
+        print_error(f"The following warnings/errors occurred:\n{stdout}")
     elif process.stderr.strip():
-        print(format_error(process.stderr.strip().decode()))
+        print_error(process.stderr.strip().decode())
     assert process.returncode == 0, "corpus could not be annotated"
     return new_corpus_dir
 
@@ -61,9 +61,9 @@ def cmp_export(gold_corpus_dir: pathlib.Path,
                      ), "export dir did not match the gold standard"
 
 
-def format_error(msg: str):
+def print_error(msg: str):
     """Format msg into an error message."""
-    return f"{Color.RED}\n{msg}{Color.RESET}"
+    console.print(f"[red]\n{msg}[\red]", highlight=False)
 
 
 ################################################################################
@@ -79,26 +79,26 @@ def _cmp_dirs(a: pathlib.Path,
     dirs_cmp = filecmp.dircmp(str(a), str(b), ignore=ignore)
 
     if len(dirs_cmp.left_only) > 0:
-        print(format_error(f"Missing contents in {b}: {', '.join(dirs_cmp.left_only)}"))
+        print_error(f"Missing contents in {b}: {', '.join(dirs_cmp.left_only)}")
         ok = False
     if len(dirs_cmp.right_only) > 0:
-        print(format_error(f"Missing contents in {a}: {', '.join(dirs_cmp.right_only)}"))
+        print_error(f"Missing contents in {a}: {', '.join(dirs_cmp.right_only)}")
         ok = False
     if len(dirs_cmp.funny_files) > 0:
-        print(format_error(f"Some files could not be compared: {', '.join(dirs_cmp.funny_files)}"))
+        print_error(f"Some files could not be compared: {', '.join(dirs_cmp.funny_files)}")
         ok = False
 
     # Compare non XML files
     common_no_xml = [f for f in dirs_cmp.common_files if not f.endswith(".xml")]
     _match, mismatch, errors = filecmp.cmpfiles(a, b, common_no_xml, shallow=False)
     if len(mismatch) > 0:
-        print(format_error(f"Some files did not match in {a}: {', '.join(mismatch)}"))
+        print_error(f"Some files did not match in {a}: {', '.join(mismatch)}")
         for filename in mismatch:
             print("\n" + filename)
             _filediff(a / filename, b / filename)
         ok = False
     if len(errors) > 0:
-        print(format_error(f"Some files could not be compared: {', '.join(errors)}"))
+        print_error(f"Some files could not be compared: {', '.join(errors)}")
         ok = False
 
     # Compare XML files
@@ -136,19 +136,19 @@ def _xml_filediff(a: pathlib.Path, b: pathlib.Path):
         try:
             a_contents = etree.canonicalize(a_contents.read()).split("\n")
         except etree.ParseError:
-            print(format_error(f"File {a} could not be parsed."))
+            print_error(f"File {a} could not be parsed.")
             return True
     with b.open() as b_contents:
         try:
             b_contents = etree.canonicalize(b_contents.read()).split("\n")
         except etree.ParseError:
-            print(format_error(f"File {a} could not be parsed."))
+            print_error(f"File {a} could not be parsed.")
             return True
 
     diff = list(difflib.unified_diff(a_contents, b_contents, fromfile=str(a), tofile=str(b)))
 
     if diff:
-        print(format_error(f"Files {a} did not match:"))
+        print_error(f"Files {a} did not match:")
         for line in diff:
             print(line.strip())
         return True

@@ -46,7 +46,7 @@ def make_rules(config_missing: bool) -> None:
         workflow.ruleorder(rule1.rule_name, rule2.rule_name)
     # Print ordered rules when in debug mode
     if config.get("debug") and ordered_rules:
-        print("\n\n\n{}ORDERED RULES:{}".format(util.Color.BOLD, util.Color.RESET))
+        console.print("\n\n\n[b]ORDERED RULES:[/b]")
         for rule1, rule2 in ordered_rules:
             print("    • {} > {}".format(rule1.rule_name, rule2.rule_name))
         print()

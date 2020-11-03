@@ -60,10 +60,8 @@ def print_module_info(module_types, module_names, snake_storage, reverse_config_
                 invalid_modules = [m for m in invalid_modules if m not in modules.keys()]
                 print_modules(modules, module_type, reverse_config_usage, snake_storage)
         if invalid_modules:
-            print("{}Module{} not found: {}{}".format(util.Color.RED,
-                                                      "s" if len(invalid_modules) > 1 else "",
-                                                      ", ".join(invalid_modules),
-                                                      util.Color.RESET))
+            console.print("[red]Module{} not found: {}[/red]".format("s" if len(invalid_modules) > 1 else "",
+                                                                     ", ".join(invalid_modules)))
 
 
 def print_modules(modules: dict, module_type: str, reverse_config_usage: dict, snake_storage: snake_utils.SnakeStorage,

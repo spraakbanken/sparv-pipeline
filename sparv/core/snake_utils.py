@@ -408,17 +408,17 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
     if config.get("debug"):
         print()
-        print("{}{}:{} {}".format(util.Color.BOLD, rule.module_name.upper(), util.Color.RESET, rule.f_name))
+        console.print("[b]{}:[/b] {}".format(rule.module_name.upper(), rule.f_name))
         print()
-        print("    " + util.Color.BOLD + "INPUTS" + util.Color.RESET)
+        console.print("    [b]INPUTS[/b]")
         for i in rule.inputs:
             print("        {}".format(i))
         print()
-        print("    " + util.Color.BOLD + "OUTPUTS" + util.Color.RESET)
+        console.print("    [b]OUTPUTS[/b]")
         for o in rule.outputs:
             print("        {}".format(o))
         print()
-        print("    " + util.Color.BOLD + "PARAMETERS" + util.Color.RESET)
+        console.print("    [b]PARAMETERS[/b]")
         for p in rule.parameters:
             print("        {} = {!r}".format(p, rule.parameters[p]))
         print()
