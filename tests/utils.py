@@ -63,7 +63,7 @@ def cmp_export(gold_corpus_dir: pathlib.Path,
 
 def print_error(msg: str):
     """Format msg into an error message."""
-    console.print(f"[red]\n{msg}[\red]", highlight=False)
+    console.print(f"[red]\n{msg}[/red]", highlight=False)
 
 
 ################################################################################
