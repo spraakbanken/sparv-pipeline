@@ -18,6 +18,7 @@ Set Sparv version number:
 ```bash
 cd doscify
 ./set_version.sh
+cd ..
 ```
 
 Serve documentation with python:
@@ -25,11 +26,13 @@ Serve documentation with python:
 python3 -m http.server --directory docsify 3000
 ```
 
-or with docsify:
+*or* with docsify:
 ```bash
 npm i docsify-cli -g
 docsify serve docsify --port 3000
 ```
+
+The documentation should now be available under http://localhost:3000/.
 
 Sync HTML documentation to server:
 - Create a file `config.sh` inside the docsify directory containing variables `user` (the user to use for login to

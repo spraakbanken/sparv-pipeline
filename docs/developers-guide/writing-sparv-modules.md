@@ -39,12 +39,31 @@ A function decorated with a Sparv decorator should never be actively called by y
 When running Sparv through the CLI Sparv's dependency system will calculate a dependency graph and all the functions
 necessary for producing the desired output will be run automatically.
 
+## Reading and Writing Files
 Sparv classes like `Annotation` and `Output` have built-in methods for reading and writing files (like `word.read()` and
 `out.write()` in the example). A Sparv module should never read or write any files without using the provided class
 methods. This is to make sure that files are written to the correct places in the file structure so that they can be
 found by other modules. The read and write methods also make sure that Sparv's internal data format is handled
 correctly. Not using these provided methods can lead to procedures breaking if the internal data format or file
 structure is updated in the future.
+
+
+## Logging
+Logging from Sparv modules is done with [Python's logging library](https://docs.python.org/3.6/library/logging.html).
+Please use the provided `get_logger` wrapper when declaring your logger which takes care of importing the logging
+library and sets the correct module name in the log output:
+```python
+import sparv.util as util
+logger = util.get_logger(__name__)
+logger.error("An error was encountered!")
+```
+
+Any of the officially [Python logging levels](https://docs.python.org/3.6/library/logging.html#levels) may be used.
+
+By default Sparv will write log output with level WARNING and higher to the terminal. You can change the log level with
+the flag `--log [LOGLEVEL]`. Most commands support this flag. You can also choose to write the log output to a file by
+using the `--log-to-file [LOGLEVEL]` flag. The log file will recieve the current date and timestamp as filename and can
+be found inside `logs` in the corpus directory.
 
 
 ## Plugins

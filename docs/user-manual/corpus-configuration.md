@@ -316,6 +316,23 @@ If you frequently run corpora through using the same annotations you can add you
 by Sparv as soon as you store them in `config/presets` in the [Sparv data directory](user-manual/installation-and-setup.md#setting-up-sparv).
 
 
+## Parent Configuration
+If you have multiple corpora with similar configurations where only some variables differ for each corpus (e.g. the
+corpus ID) you may add a reference to a parent configuration file from your individual corpus config files. Specify the
+path to the parent config file in the `parent` variable and your corpus configuration will inherit all the parameters
+from it that are not explicitely specified in the individual config file.
+
+```yaml
+parent: ../parent-config.yaml
+metadata:
+  id: flashback-resor
+  name:
+    swe: 'Flashback: Resor'
+```
+The above configuration will contain everything specified inside `../parent-config.yaml` but the values for
+`metadata.id` and `metadata.name.swe` will be overridden with `flashback-resor` and `Flashback: Resor` respectively.
+
+
 ## Custom Annotations
 Custom annotations may be used to apply more customised, non-pre-defined annotations to your corpus. The different
 usages of custom annotations are explained below.
