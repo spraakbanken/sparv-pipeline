@@ -177,6 +177,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 storage.all_custom_annotators.setdefault(rule.module_name, {}).setdefault(rule.f_name, {
                     "description": rule.description, "params": param_dict})
                 storage.custom_targets.append((rule.target_name, rule.description))
+                storage.all_annotations.setdefault(rule.module_name, {}).setdefault(rule.f_name, {
+                    "description": rule.description, "annotations": [], "params": param_dict})
                 return False
             else:
                 param_value = copy.deepcopy(param.default)

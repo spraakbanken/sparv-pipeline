@@ -35,8 +35,7 @@ def print_module_info(module_types, module_names, snake_storage, reverse_config_
     all_module_types = {
         "annotators": ("annotators", snake_storage.all_annotations),
         "importers": ("importers", snake_storage.all_importers),
-        "exporters": ("exporters", snake_storage.all_exporters),
-        "custom_annotators": ("custom annotators", snake_storage.all_custom_annotators)
+        "exporters": ("exporters", snake_storage.all_exporters)
     }
 
     if not module_types:
@@ -95,6 +94,13 @@ def print_modules(modules: dict, module_type: str, reverse_config_usage: dict, s
             console.print(Padding(Panel(f"[b]{f_name.upper()}[/b]\n[i]{f_desc}[/i]", box=left_line, padding=(0, 1),
                                         border_style="bright_green"), (0, 2)))
 
+            # Get parameters. Always print these for custom annotations
+            params = modules[module_name][f_name].get("params", {})
+            custom_params = None
+            if custom_annotations.get(module_name, {}).get(f_name):
+                custom_params = custom_annotations[module_name][f_name].get("params", {})
+                params = custom_params
+
             # Annotations
             f_anns = modules[module_name][f_name].get("annotations", {})
             if f_anns:
@@ -108,6 +114,15 @@ def print_modules(modules: dict, module_type: str, reverse_config_usage: dict, s
                         f"\n  [i dim]class:[/] <{f_ann[0].cls}>" if f_ann[0].cls else ""),
                         f_ann[1] or "")
                 console.print(Padding(table, (0, 0, 0, 4)))
+            elif custom_params:
+                # Print info about custom annotators
+                this_box_style = box_style if any(a[1] for a in f_anns) else box.SIMPLE
+                table = Table(title="[b]Annotations[/b]", box=this_box_style, show_header=False,
+                              title_justify="left", padding=(0, 2), pad_edge=False, border_style="bright_black")
+                table.add_column()
+                table.add_row("In order to use this annotator you first need to declare it in the 'custom_annotations' "
+                              "section of your corpus configuration and specify its arguments.")
+                console.print(Padding(table, (0, 0, 0, 4)))
 
             # Config variables
             f_config = reverse_config_usage.get(f"{module_name}:{f_name}")
@@ -120,13 +135,6 @@ def print_modules(modules: dict, module_type: str, reverse_config_usage: dict, s
                 for config_key in sorted(f_config):
                     table.add_row("• " + config_key[0], config_key[1] or "")
                 console.print(Padding(table, (0, 0, 0, 4)))
-
-            # Always print parameters for custom annotations
-            params = modules[module_name][f_name].get("params", {})
-            custom_params = None
-            if custom_annotations.get(module_name, {}).get(f_name):
-                custom_params = custom_annotations[module_name][f_name].get("params", {})
-                params = custom_params
 
             # Arguments
             if (print_params and params) or custom_params:

@@ -216,8 +216,8 @@ rule list_targets:
         for target, desc in sorted(snake_storage.custom_targets):
             table.add_row("  " + target, desc)
         console.print(table)
-        note = Text.from_markup("[i]Note:[/i] Custom rules cannot be run directly but they can be used in the "
-                             "'custom_annotations' section in the corpus configuration.")
+        note = Text.from_markup("[i]Note:[/i] Custom rules need to be declared in the 'custom_annotations' section "
+                                "of your corpus configuration before they can be used.")
         ReprHighlighter().highlight(note)
         console.print(Padding(note, (0, 4)))
 
