@@ -19,7 +19,7 @@ DEVELOPERS_GUIDE_FILES="
 ../developers-guide/sparv-classes.md
 ../developers-guide/config-parameters.md
 ../developers-guide/wildcards.md
-../developers-guide/util-functions.md
+../developers-guide/utilities.md
 ../developers-guide/misc.md
 "
 

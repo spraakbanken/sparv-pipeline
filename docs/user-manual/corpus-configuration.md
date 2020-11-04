@@ -338,9 +338,9 @@ Custom annotations may be used to apply more customised, non-pre-defined annotat
 usages of custom annotations are explained below.
 
 ### Built-in Custom Annotations
-Sparv provides a couple of built-in custom annotations which need extra input from the user before they can be used.
-These are listed under "Available custom annotation functions" when running `sparv modules --custom-annotators`. Please
-note that custom annotations always result in new annotations, they do not modify existing ones. 
+Any Sparv annotation can be customised to your own needs by using it as a custom annotation. This means that you can
+change its default arguments and thereby affect the resulting annotation. Some Sparv annotators can only be used as
+custom annotations as they are lacking default values in their arguments.
 
 The `misc:affix` annotator for example can be used to add a prefix and/or a suffix string to another annotation. When
 using this annotation function you must tell Sparv 1. what your output annotation should be called, 2. what annotation
@@ -378,17 +378,19 @@ custom_annotations:
           suffix: "+"
 ```
 
+Please note that custom annotations always result in new annotations, they do not modify existing ones.
+
 **Hint:** When using a regular expression as input for a custom rule (e.g. in `misc:find_replace_regex`), the expression
 must be surrounded by single quotation marks. Regular expressions inside double quotation marks in YAML are not parsed
 correctly.
 
 ### Modifying Annotators with Custom Annotations
-Custom annotations may also be used to modify the parameters of existing annotation functions. This comes in handy when
-you want to use the same annotator multiple times but with different parameters. In order to do this you specify the
-annotator and its parameters in the `custom_annotations` section of your corpus config as explained in the section
-above. You only need to specify the parameters you want to modify. In the example below we are re-using the
-`hunpos:msdtag` function with a custom model and we are calling the output annotation
-`<token>:hunpos.msd.myHunposModel`:
+As previously mentioned, custom annotations may be used to modify the parameters of existing annotation functions even
+if they have default values for all their arguments. This comes in handy when you want to use the same annotator
+multiple times but with different parameters. In order to do this you specify the annotator and its parameters in the
+`custom_annotations` section of your corpus config as explained in the section above. You only need to specify the
+parameters you want to modify. In the example below we are re-using the `hunpos:msdtag` function with a custom model and
+we are calling the output annotation `<token>:hunpos.msd.myHunposModel`:
 ```yaml
 custom_annotations:
     - annotator: hunpos:msdtag
@@ -400,9 +402,9 @@ custom_annotations:
 ### User-defined Custom Annotations
 User-defined custom annotations are useful when you want to write your own python annotation function and plug it into
 Sparv. Your annotation function must have one of the sparv decorators (usually `@annotator`) and your annotator must be
-declared in the `custom_annotations` section of your corpus config. Place your python code inside your corpus directory
-and Sparv will be able to find it. There is an example of a user-defined custom annotation in the standard-swe example
-corpus. The code for a simple annotator that converts all tokens to upper case looks like this:
+declared in the `custom_annotations` section of your corpus config. Place your python script inside your corpus
+directory and Sparv will be able to find it. There is an example of a user-defined custom annotation in the standard-swe
+example corpus. The code for a simple annotator that converts all tokens to upper case looks like this:
 
 ```python
 from sparv import Annotation, Output, annotator

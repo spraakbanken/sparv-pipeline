@@ -25,7 +25,7 @@ def lmf_to_pickle(xml, filename, annotation_elements=("writtenForm", "lemgram"),
     SaldoLexicon.save_to_picklefile(filename, xml_lexicon)
 
 
-# TODO: Can this be united with saldo.read_xml ?
+# TODO: Can this be united with saldo.read_lmf ?
 def read_lmf(xml, annotation_elements=("writtenForm", "lemgram"), tagset="SUC", verbose=True, skip_multiword=False, translate_tags=True):
     """Read the XML version of a morphological lexicon in lmf format (dalinm.xml, swedbergm.xml).
 

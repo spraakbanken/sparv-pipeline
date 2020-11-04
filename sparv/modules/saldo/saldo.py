@@ -41,7 +41,7 @@ def annotate(token: Annotation = Annotation("<token>"),
              lexicons=None):
     """Use the Saldo lexicon model (and optionally other older lexicons) to annotate pos-tagged words.
 
-    - doc, token, word, msd, sentence, reference: existing annotations
+    - token, word, msd, sentence, reference: existing annotations
     - out_baseform, out_lemgram, out_sense: resulting annotations to be written
     - models: a list of pickled lexica, typically the Saldo model (saldo.pickle)
       and optional lexicons for older Swedish.

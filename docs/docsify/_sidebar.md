@@ -11,5 +11,5 @@
     - [Sparv Classes](developers-guide/sparv-classes.md)
     - [Config Parameters](developers-guide/config-parameters.md)
     - [Wildcards](developers-guide/wildcards.md)
-    - [Util Functions](developers-guide/util-functions.md)
+    - [Utilities](developers-guide/utilities.md)
     - [MISC](developers-guide/misc.md)

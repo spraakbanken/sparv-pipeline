@@ -176,6 +176,18 @@ function.
 - `absolute_path`: Set to `True` if the path is absolute. Default: `False`
 
 
+## Headers
+List of header annotation names for a given document.
+
+**Arguments:**
+- default argument: The name of the document.
+
+**Methods:**
+- `read()`: Read the headers file and return a list of header annotation names.
+- `write(header_annotations: List[str])`: Write headers file.
+- `exists()`: Return True if headers file exists for this document.
+
+
 ## Language
 In instance of this class holds information about the luanguage of the corpus. This information is retrieved from the
 corpus configuration and is specified as ISO 639-3 code.
@@ -314,6 +326,17 @@ List of source annotations to be included in the export. This list is defined in
 **Arguments:**
 - `config_name`: The config variable pointing out what source annotations to include.
 - `is_input`: If set to `False` the annotations won't be added to the rule's input. Default: `True`
+
+
+## SourceStructure
+Every annotation available in a source document.
+
+**Arguments:**
+- default argument: The name of the document.
+
+**Methods:**
+- `read()`: Read structure file.
+- `write(structure)`: Sort the document's structural elements and write structure file.
 
 
 ## SourceStructureParser

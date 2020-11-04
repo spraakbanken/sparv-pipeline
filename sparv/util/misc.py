@@ -168,10 +168,10 @@ def chain(annotations, default=None):
     return ((key, follow(key)) for key in annotations[0])
 
 
-def test_lexicon(lexicon, testwords):
+def test_lexicon(lexicon: dict, testwords):
     """Test the validity of a lexicon.
 
-    Takes a dictionary (lexicon) and a list of test words.
+    Takes a dictionary ('lexicon') and a list of test words that are expected to occur as keys in 'lexicon'.
     Prints the value for each test word.
     """
     _log.info("Testing annotations...")

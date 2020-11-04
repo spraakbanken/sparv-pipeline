@@ -5,10 +5,10 @@ something similar to your goal.
 The Sparv pipeline is comprised of different modules like importers, annotators and exporters. None of these modules are
 hard-coded into the Sparv pipeline and therefore it can easily be extended.
 
-A Sparv module is a Python script that imports [Sparv classes](developers-guide/sparv-classes) (and [util
-functions](developers-guide/util-functions) if needed) which are used for describing dependencies to other entities
-(e.g. annotations or models) handled or created by the pipeline. Here is an example of a small annotation module that
-converts tokens to uppercase:
+A Sparv module is a Python package containing at least one Python script that imports [Sparv
+classes](developers-guide/sparv-classes) (and [util functions](developers-guide/utilities) if needed) which are used for
+describing dependencies to other entities (e.g. annotations or models) handled or created by the pipeline. Here is an
+example of a small annotation module that converts tokens to uppercase:
 ```python
 from sparv import Annotation, Output, annotator
 
@@ -66,6 +66,26 @@ using the `--log-to-file [LOGLEVEL]` flag. The log file will recieve the current
 be found inside `logs` in the corpus directory.
 
 
+## Init File
+Each Sparv module must contain a [Python init file](https://docs.python.org/3/reference/import.html#regular-packages)
+(`__init__.py`). The python scripts containing decorated Sparv functions should be imported here. Module-specific
+configuration parameters may also declared in this file. Furthermore, you should also provide a short description (one
+sentence) for your module in the `__init__.py` file. This description will be shown when running the `sparv modules`
+command.
+
+Example of an `__init__.py` file:
+```python
+"""Korp-related annotators, exporters and installers."""
+
+from sparv import Config
+from . import install_corpus, lemgram_index, relations, timespan
+
+__config__ = [
+    Config("korp.remote_host", "", description="Remote host to install to")
+]
+```
+
+
 ## Plugins
 A Sparv Plugin is a Sparv module that is not stored together with the Sparv code. Instead it usually lives in a separate
 repository. Reasons for writing a plugin could be that the author does not want it to be part of the Sparv core or that
@@ -86,9 +106,9 @@ sparv-freeling/
 └── setup.py
 ```
 
-In the above example the `freeling` folder is basically a Sparv module. The `setup.py` is what really makes this behave
-as a plugin. If the `setup.py` is constructed correctly, the plugin code can then be injected into the Sparv pipeline
-code using pipx:
+In the above example the `freeling` folder is a Sparv module. The `setup.py` is what really makes it behave as a plugin.
+If the `setup.py` is constructed correctly, the plugin code can then be injected into the Sparv pipeline code using
+pipx:
 ```bash
 pipx inject sparv-pipeline ./sparv-freeling
 ```
