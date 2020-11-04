@@ -1,4 +1,4 @@
-"""Calculate readability measures (läsbarhetsmått)."""
+"""Calculate readability measures."""
 
 from math import log
 

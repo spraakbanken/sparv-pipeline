@@ -1,3 +1,5 @@
+"""Korp-related annotators, exporters and installers."""
+
 from sparv import Config
 from . import install_corpus, lemgram_index, relations, timespan
 

@@ -1,4 +1,4 @@
-"""Create annotations from Saldo."""
+"""Create annotations from SALDO."""
 
 import itertools
 import logging

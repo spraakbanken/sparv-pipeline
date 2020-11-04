@@ -1,4 +1,4 @@
-"""Module for converting malt dependencies to phrase structure trees."""
+"""Module for converting Malt dependencies to phrase structure trees."""
 
 import logging
 import pprint
@@ -9,7 +9,7 @@ from sparv import Annotation, Output, annotator
 log = logging.getLogger(__name__)
 
 
-@annotator("Convert malt dependencies into phrase structure", language=["swe"])
+@annotator("Convert Malt dependencies into phrase structure", language=["swe"])
 def annotate(out_phrase: Output = Output("phrase_structure.phrase", description="Phrase segments"),
              out_phrase_name: Output = Output("phrase_structure.phrase:phrase_structure.name",
                                               description="Phrase names"),
