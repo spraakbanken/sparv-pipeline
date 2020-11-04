@@ -124,6 +124,7 @@ def main():
     modules_parser.add_argument("--annotators", action="store_true", help="List info for annotators")
     modules_parser.add_argument("--importers", action="store_true", help="List info for importers")
     modules_parser.add_argument("--exporters", action="store_true", help="List info for exporters")
+    modules_parser.add_argument("--all", action="store_true", help="List info for all module types")
     modules_parser.add_argument("names", nargs="*", default=[], help="Specific module(s) to display")
 
     subparsers.add_parser("presets", description="Display all available annotation presets.")
@@ -237,12 +238,9 @@ def main():
             config["types"] = []
             if args.names:
                 config["names"] = args.names
-            if args.annotators:
-                config["types"].append("annotators")
-            if args.importers:
-                config["types"].append("importers")
-            if args.exporters:
-                config["types"].append("exporters")
+            for t in ["annotators", "importers", "exporters", "all"]:
+                if getattr(args, t):
+                    config["types"].append(t)
 
     elif args.command in ("run-rule", "create-file", "run", "install", "build-models"):
         snakemake_args.update({

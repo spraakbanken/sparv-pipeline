@@ -30,30 +30,55 @@ def prettyprint_yaml(in_dict):
     console.print(Syntax(yaml_str, "yaml"))
 
 
+def print_module_summary(snake_storage):
+    """Print a summary of all annotation modules."""
+    all_module_types = {
+        "annotators": snake_storage.all_annotations,
+        "importers": snake_storage.all_importers,
+        "exporters": snake_storage.all_exporters
+    }
+
+    print()
+    table = Table(title="Available modules", box=box.SIMPLE, show_header=False, title_justify="left")
+    table.add_column(no_wrap=True)
+    table.add_column()
+
+    for module_type, modules in all_module_types.items():
+        table.add_row(f"[b]{module_type.upper()}[/b]")
+        for module_name in sorted(modules.keys()):
+            description = registry.modules[module_name].description or ""
+            table.add_row("  " + module_name, description)
+        table.add_row()
+    console.print(table)
+    console.print("For more details about a specific module run [green]`sparv modules \\[module name]`[/green].", highlight=False)
+    console.print("For more details about all modules of a specific type run [green]`sparv modules --\\[module type]`[/green].",
+                  highlight=False)
+
+
 def print_module_info(module_types, module_names, snake_storage, reverse_config_usage):
     """Wrap module printing functions: print correct info for chosen module_types and module_names."""
     all_module_types = {
-        "annotators": ("annotators", snake_storage.all_annotations),
-        "importers": ("importers", snake_storage.all_importers),
-        "exporters": ("exporters", snake_storage.all_exporters)
+        "annotators": snake_storage.all_annotations,
+        "importers": snake_storage.all_importers,
+        "exporters": snake_storage.all_exporters
     }
 
-    if not module_types:
+    if not module_types or "all" in module_types:
         module_types = all_module_types.keys()
 
     module_names = [n.lower() for n in module_names]
 
     # Print module info for all chosen module_types
     if not module_names:
-        for m in module_types:
-            module_type, modules = all_module_types.get(m)
+        for module_type in module_types:
+            modules = all_module_types.get(module_type)
             print_modules(modules, module_type, reverse_config_usage, snake_storage)
 
     # Print only info for chosen module_names
     else:
         invalid_modules = module_names
-        for m in module_types:
-            module_type, modules = all_module_types.get(m)
+        for module_type in module_types:
+            modules = all_module_types.get(module_type)
             modules = dict((k, v) for k, v in modules.items() if k in module_names)
             if modules:
                 invalid_modules = [m for m in invalid_modules if m not in modules.keys()]
@@ -160,14 +185,14 @@ def print_annotation_classes():
 
     table.add_row("[b]Defined by pipeline modules[/b]")
     table.add_row("  [i]Class[/i]", "[i]Annotation[/i]")
-    for cls, anns in registry.annotation_classes["module_classes"].items():
-        table.add_row("  " + cls, "\n".join(anns))
+    for annotation_class, anns in registry.annotation_classes["module_classes"].items():
+        table.add_row("  " + annotation_class, "\n".join(anns))
 
     if registry.annotation_classes["config_classes"]:
         table.add_row()
         table.add_row("[b]From config[/b]")
         table.add_row("  [i]Class[/i]", "[i]Annotation[/i]")
-        for cls, ann in registry.annotation_classes["config_classes"].items():
-            table.add_row("  " + cls, ann)
+        for annotation_class, ann in registry.annotation_classes["config_classes"].items():
+            table.add_row("  " + annotation_class, ann)
 
     console.print(table)
