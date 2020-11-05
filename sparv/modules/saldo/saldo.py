@@ -85,11 +85,8 @@ def annotate(token: Annotation = Annotation("<token>"),
     if out_sense:
         annotations.append((out_sense, "saldo"))
 
-    skip_multiword = util.strtobool(skip_multiword)
     if skip_multiword:
         log.info("Skipping multi word annotations")
-
-    allow_multiword_overlap = util.strtobool(allow_multiword_overlap)
 
     min_precision = float(min_precision)
 

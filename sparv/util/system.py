@@ -65,7 +65,6 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
 
     If return_command is set, then the process is returned.
     """
-    from . import unicode_convert
     from subprocess import Popen, PIPE
     assert isinstance(arguments, (list, tuple))
     assert isinstance(stdin, (str, list, tuple))
@@ -81,7 +80,7 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
     if isinstance(stdin, (list, tuple)):
         stdin = "\n".join(stdin)
     if encoding is not None and isinstance(stdin, str):
-        stdin = unicode_convert.encode(stdin, encoding)
+        stdin = stdin.encode(encoding)
     log.info("CALL: %s", " ".join(str(c) for c in command) if not raw_command else command)
     command = Popen(command, shell=use_shell,
                     stdin=PIPE, stdout=PIPE,

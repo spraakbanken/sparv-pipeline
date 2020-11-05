@@ -15,3 +15,5 @@ SPARV_DEFAULT_NAMESPACE = "sparv"
 # Encodings:
 UTF8 = "UTF-8"
 LATIN1 = "ISO-8859-1"
+
+HEADER_CONTENTS = "contents"  # Name of annotation containing header contents

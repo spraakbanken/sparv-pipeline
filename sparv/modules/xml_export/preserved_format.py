@@ -3,11 +3,9 @@
 import logging
 import os
 import xml.etree.ElementTree as etree
-from typing import Optional
 
 import sparv.util as util
 from sparv import (AnnotationData, Config, Document, Export, ExportAnnotations, SourceAnnotations, Text, exporter)
-
 from . import xml_utils
 
 log = logging.getLogger(__name__)
@@ -88,7 +86,7 @@ def preserved_format(doc: Document = Document(),
 
             # Handle headers
             if span.is_header:
-                header = annotation_dict[span.name][util.HEADER_CONTENT][span.index]
+                header = annotation_dict[span.name][util.HEADER_CONTENTS][span.index]
                 header_xml = etree.fromstring(header)
                 header_xml.tag = span.export  # Rename element if needed
                 span.node = header_xml

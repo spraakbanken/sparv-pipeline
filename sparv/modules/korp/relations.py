@@ -279,7 +279,6 @@ def relations_sql(corpus: Corpus = Corpus(),
     - split set to true leads to SQL commands being split into several parts, requiring less memory during creation,
      but installing the data will take much longer.
     """
-    split = util.strtobool(split)
     db_table = MYSQL_TABLE + "_" + corpus.upper()
 
     # Relations that will be grouped together
@@ -302,9 +301,7 @@ def relations_sql(corpus: Corpus = Corpus(),
 
     assert (docs or doclist), "Missing source"
 
-    if docs:
-        docs = util.split(docs)
-    elif doclist:
+    if doclist:
         with open(doclist) as insource:
             docs = [line.strip() for line in insource]
 

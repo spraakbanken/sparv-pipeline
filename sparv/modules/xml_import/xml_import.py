@@ -8,12 +8,12 @@ from itertools import chain
 from pathlib import Path
 from typing import List
 
-from sparv import Config, Document, SourceStructure, Output, OutputData, Source, Text, importer, util
+from sparv import Config, Document, Headers, Output, OutputData, Source, SourceStructureParser, SourceStructure, Text, importer, util
 
 log = logging.getLogger(__name__)
 
 
-class XMLStructure(SourceStructure):
+class XMLStructure(SourceStructureParser):
     """Class to get and store XML structure."""
 
     def setup(self):
@@ -222,10 +222,10 @@ class SparvXMLParser:
             # Save header as XML
             tmp_element = copy.deepcopy(element)
             tmp_element.tail = ""
-            self.data.setdefault(element.tag, {"attrs": {util.HEADER_CONTENT}, "elements": []})
+            self.data.setdefault(element.tag, {"attrs": {util.HEADER_CONTENTS}, "elements": []})
             self.data[element.tag]["elements"].append(
                 (start_pos, start_subpos, start_pos, start_subpos, element.tag,
-                 {util.HEADER_CONTENT: etree.tostring(tmp_element, method="xml", encoding="UTF-8").decode()})
+                 {util.HEADER_CONTENTS: etree.tostring(tmp_element, method="xml", encoding="UTF-8").decode()})
             )
 
             handle_header_data(element)
@@ -334,11 +334,11 @@ class SparvXMLParser:
                     structure.append("{}:{}".format(full_element, full_attr))
 
         # Save list of all elements and attributes to a file (needed for export)
-        util.write_structure(self.doc, structure)
+        SourceStructure(self.doc).write(structure)
 
         if header_elements:
             # Save list of all header elements to a file
-            OutputData(util.corpus.HEADERS_FILE, doc=self.doc).write("\n".join(header_elements))
+            Headers(self.doc).write(header_elements)
 
 
 def analyze_xml(source_file):

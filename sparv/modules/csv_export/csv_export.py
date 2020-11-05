@@ -2,7 +2,6 @@
 
 import logging
 import os
-from typing import Optional
 
 import sparv.util as util
 from sparv import Annotation, Config, Document, Export, ExportAnnotations, SourceAnnotations, exporter

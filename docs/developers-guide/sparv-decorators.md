@@ -146,12 +146,12 @@ A function decorated with `@wizard` is used to generate questions for the corpus
 
 **Arguments:**
 - `config_keys`: a list of config keys to be set or changed by this function.
-- `source_structure`: Set to `True` if the function needs access to a `SourceStructure` instance (the one holding
+- `source_structure`: Set to `True` if the function needs access to a `SourceStructureParser` instance (the one holding
   information on the structure of the source files. Default: `False`
 
 **Example:**
 ```python
 @wizard(["export.source_annotations"], source_structure=True)
-def import_wizard(answers, structure: SourceStructure):
+def import_wizard(answers, structure: SourceStructureParser):
     ...
 ```

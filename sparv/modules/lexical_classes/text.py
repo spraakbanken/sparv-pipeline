@@ -73,7 +73,6 @@ def annotate_text(out: Output, lexical_classes_token: Annotation, text: Annotati
     - decimals: number of decimals to keep in output.
     """
     cutoff = int(cutoff)
-    types = util.strtobool(types)
     text_children, _orphans = text.get_children(token, preserve_parent_annotation_order=True)
     classes = list(lexical_classes_token.read())
     sense = list(saldoids.read()) if types else None

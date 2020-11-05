@@ -1,8 +1,8 @@
 """Calculate readability measures."""
 
 from math import log
+from typing import List
 
-import sparv.util as util
 from sparv import Annotation, Output, annotator
 
 
@@ -12,7 +12,7 @@ def lix(text: Annotation = Annotation("<text>"),
         word: Annotation = Annotation("<token:word>"),
         pos: Annotation = Annotation("<token:pos>"),
         out: Output = Output("<text>:readability.lix", description="LIX values for text chunks"),
-        skip_pos: list = ["MAD", "MID", "PAD"],
+        skip_pos: List[str] = ["MAD", "MID", "PAD"],
         fmt: str = "%.2f"):
     """Create LIX annotation for text."""
     # Read annotation files and get parent_children relations
@@ -61,7 +61,7 @@ def ovix(text: Annotation = Annotation("<text>"),
          word: Annotation = Annotation("<token:word>"),
          pos: Annotation = Annotation("<token:pos>"),
          out: Output = Output("<text>:readability.ovix", description="OVIX values for text chunks"),
-         skip_pos: list = ["MAD", "MID", "PAD"],
+         skip_pos: List[str] = ["MAD", "MID", "PAD"],
          fmt: str = "%.2f"):
     """Create OVIX annotation for text."""
     text_children, _orphans = text.get_children(word)
@@ -111,8 +111,8 @@ def ovix_calc(words):
 def nominal_ratio(text: Annotation = Annotation("<text>"),
                   pos: Annotation = Annotation("<token:pos>"),
                   out: Output = Output("<text>:readability.nk", description="Nominal ratios for text chunks"),
-                  noun_pos: list = ["NN", "PP", "PC"],
-                  verb_pos: list = ["PN", "AB", "VB"],
+                  noun_pos: List[str] = ["NN", "PP", "PC"],
+                  verb_pos: List[str] = ["PN", "AB", "VB"],
                   fmt: str = "%.2f"):
     """Create nominal ratio annotation for text."""
     text_children, _orphans = text.get_children(pos)
@@ -126,25 +126,25 @@ def nominal_ratio(text: Annotation = Annotation("<text>"),
     out.write(nk_annotation)
 
 
-def nominal_ratio_calc(pos, noun_pos, verb_pos):
+def nominal_ratio_calc(pos: List[str], noun_pos: List[str], verb_pos: List[str]):
     """
     Calculate nominal ratio (nominalkvot).
 
-    >>> "%.1f" % nominal_ratio_calc('NN JJ'.split(), noun_pos="NN PP PC", verb_pos="PN AB VB")
+    >>> "%.1f" % nominal_ratio_calc('NN JJ'.split(), noun_pos="NN PP PC".split(), verb_pos="PN AB VB".split())
     'inf'
-    >>> "%.1f" % nominal_ratio_calc('NN NN VB'.split(), noun_pos="NN PP PC", verb_pos="PN AB VB")
+    >>> "%.1f" % nominal_ratio_calc('NN NN VB'.split(), noun_pos="NN PP PC".split(), verb_pos="PN AB VB".split())
     '2.0'
-    >>> "%.1f" % nominal_ratio_calc('NN PP PC PN AB VB MAD MID'.split(), noun_pos="NN PP PC", verb_pos="PN AB VB")
+    >>> "%.1f" % nominal_ratio_calc('NN PP PC PN AB VB MAD MID'.split(), noun_pos="NN PP PC".split(), verb_pos="PN AB VB".split())
     '1.0'
-    >>> "%.1f" % nominal_ratio_calc('NN AB VB PP PN PN MAD'.split(), noun_pos="NN PP PC", verb_pos="PN AB VB")
+    >>> "%.1f" % nominal_ratio_calc('NN AB VB PP PN PN MAD'.split(), noun_pos="NN PP PC".split(), verb_pos="PN AB VB".split())
     '0.5'
-    >>> "%.1f" % nominal_ratio_calc('RG VB'.split(), noun_pos="NN PP PC", verb_pos="PN AB VB")
+    >>> "%.1f" % nominal_ratio_calc('RG VB'.split(), noun_pos="NN PP PC".split(), verb_pos="PN AB VB".split())
     '0.0'
     """
     # nouns prepositions participles
-    nouns = sum(1 for p in pos if p in util.split(noun_pos))
+    nouns = sum(1 for p in pos if p in noun_pos)
     # pronouns adverbs verbs
-    verbs = sum(1 for p in pos if p in util.split(verb_pos))
+    verbs = sum(1 for p in pos if p in verb_pos)
     try:
         nk = float(nouns) / float(verbs)
         return nk
@@ -152,7 +152,7 @@ def nominal_ratio_calc(pos, noun_pos, verb_pos):
         return float('inf')
 
 
-def actual_words(cols, skip_pos):
+def actual_words(cols, skip_pos: List[str]):
     """
     Remove words with punctuation and delimiter POS (provided by skip_pos).
 
@@ -162,10 +162,9 @@ def actual_words(cols, skip_pos):
     ...      ('vad', 'HP'),
     ...      ('heter', 'VB'),
     ...      ('du', 'PN'),
-    ...      ('?', 'MAD')], skip_pos="MAD MID PAD"))
+    ...      ('?', 'MAD')], skip_pos=["MAD", "MID", "PAD"]))
     'Hej vad heter du'
     """
-    skip_pos = util.split(skip_pos)
     for word, pos in cols:
         if pos not in skip_pos:
             yield word

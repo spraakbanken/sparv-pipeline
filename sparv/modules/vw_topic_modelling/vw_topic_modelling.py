@@ -111,7 +111,7 @@ def predict(doc: str = Document,
 
     if raw:
         predictions = (
-            util.cwbset_to_list(index_to_label[str(s)] + ":" + str(v) for s, v in ss)
+            util.cwbset(index_to_label[str(s)] + ":" + str(v) for s, v in ss)
             for ss, _span in vw_predict(args, data, raw=True)
         )
     else:

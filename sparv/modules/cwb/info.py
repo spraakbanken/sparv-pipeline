@@ -21,7 +21,7 @@ def info(out: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_
          protected: bool = Config("korp.protected")):
     """Save information to the file specified by 'out'."""
     content = []
-    protected_str = str(util.strtobool(protected)).lower()
+    protected_str = str(protected).lower()
 
     for key, value_obj in [("Sentences", sentences),
                            ("FirstDate", firstdate),
@@ -31,8 +31,6 @@ def info(out: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_
                            ("Protected", protected_str)]:
         if isinstance(value_obj, AnnotationCommonData):
             value = value_obj.read()
-            if key == "DateResolution":
-                value = "|".join(util.cwbset_to_list(value))
         else:
             value = value_obj
 

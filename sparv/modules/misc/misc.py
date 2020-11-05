@@ -111,7 +111,7 @@ def chain(out, annotations, default=None):
     if isinstance(annotations, str):
         annotations = annotations.split()
     annotations = [a.read() for a in annotations]
-    out.write(util.corpus.chain(annotations, default))
+    out.write(util.chain(annotations, default))
 
 
 @annotator("Create new annotation, with spans as values")

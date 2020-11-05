@@ -5,7 +5,6 @@ import random
 from binascii import hexlify
 from typing import Optional
 
-import sparv.util as util
 from sparv import AllDocuments, Annotation, AnnotationData, Document, Output, Wildcard, OutputDataAllDocs, annotator
 
 _ID_LENGTH = 10
@@ -23,13 +22,11 @@ def doc_id(out: OutputDataAllDocs = OutputDataAllDocs("misc.docid", cls="docid")
     If 'add' is True, existing IDs will not be overwritten.
     """
     assert docs or doclist, "docs or doclist must be specified"
-    add = util.strtobool(add)
 
     if doclist:
         with open(doclist) as f:
-            docs = f.read().strip()
+            docs = f.read().strip().splitlines()
 
-    docs = util.split(docs)
     docs.sort()
 
     numdocs = len(docs) * 2

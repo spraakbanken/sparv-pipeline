@@ -123,7 +123,8 @@ def number_relative(out: Output = Output("{annotation}:misc.number_rel_{parent}"
                for cnr, _index in enumerate(parent, start)))
 
 
-def _read_chunks_and_write_new_ordering(out, chunk, order, prefix="", zfill=False, start=START_DEFAULT):
+def _read_chunks_and_write_new_ordering(out: Output, chunk: Annotation, order, prefix="", zfill=False,
+                                        start=START_DEFAULT):
     """Common function called by other numbering functions."""
     new_order = defaultdict(list)
 

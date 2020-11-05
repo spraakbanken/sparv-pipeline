@@ -12,10 +12,10 @@ import yaml
 from prompt_toolkit.shortcuts import clear as clear_screen
 from prompt_toolkit.styles import Style
 from questionary import prompt
-from alive_progress.core.utils import terminal_columns
 
-from sparv import SourceStructure, Wildcard
+from sparv import SourceStructureParser, Wildcard
 from sparv.core import registry, paths, config, snake_utils
+from sparv.core.console import console
 
 questionary.prompts.common.SELECTED_POINTER = "\u276f"
 
@@ -29,8 +29,8 @@ style = Style.from_dict({
 DONE = "✅ DONE"
 
 
-class BasicSourceStructure(SourceStructure):
-    """Simple SourceStructure implementation which doesn't scan source files."""
+class BasicSourceStructure(SourceStructureParser):
+    """Simple SourceStructureParser implementation which doesn't scan source files."""
 
     def get_annotations(self, corpus_config: dict) -> List[str]:
         """Return annotations."""
@@ -54,7 +54,7 @@ class Wizard:
         self.wildcard_annotations = []
         self.importers = defaultdict(dict)
 
-        self.source_structure: Optional[SourceStructure] = None
+        self.source_structure: Optional[SourceStructureParser] = None
 
     def update_annotators(self):
         """Update storage."""
@@ -106,7 +106,7 @@ class Wizard:
             questions = [questions]
 
         # Wrap and indent question
-        max_width = min(terminal_columns(), 80)
+        max_width = min(console.size[0], 80)
         tw1 = textwrap.TextWrapper(width=max_width, break_long_words=False, subsequent_indent="  ")
         tw2 = textwrap.TextWrapper(width=max_width, break_long_words=False, initial_indent="  ", subsequent_indent="  ")
         for q in questions:
@@ -385,8 +385,8 @@ class Wizard:
         self.update_config(doc_annotation)
 
     def scan_source(self):
-        """Create a SourceStructure instance and offer to scan source files if possible."""
-        # Create instance of SourceStructure class (if available)
+        """Create a SourceStructureParser instance and offer to scan source files if possible."""
+        # Create instance of SourceStructureParser class (if available)
         importer_module, _, importer_function = config.get("import.importer").partition(":")
         source_structure_class = registry.modules[importer_module].functions[importer_function]["structure"]
         do_scan = False

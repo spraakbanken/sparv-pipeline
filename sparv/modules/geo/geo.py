@@ -29,9 +29,6 @@ def contextual(out: Output = Output("{chunk}:geo.geo_context", description="Geog
     context = text chunk to use for disambiguating places (when applicable).
     chunk = text chunk to which the annotation will be added.
     """
-    if isinstance(language, str):
-        language = language.split()
-
     model = load_model(model, language=language)
 
     ne_type_annotation = list(ne_type.read())

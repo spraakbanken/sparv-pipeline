@@ -1331,7 +1331,6 @@ def _make_saldo_to_suc(compound=False):
                 # Skip multiword units
                 continue
         paramstr = " ".join(_translate_saldo_parameters.get(prm, prm.upper()) for prm in params)
-        # print saldotag, ":", paramstr, "->",
         for (pre, post) in _suc_tag_replacements:
             m = re.match(pre, paramstr)
             if m:
@@ -1340,12 +1339,8 @@ def _make_saldo_to_suc(compound=False):
             print(paramstr)
             print()
         sucfilter = m.expand(post).replace(" ", r"\.").replace("+", r"\+")
-        # print sucfilter, "=",
         tagmap[saldotag] = set(suctag for suctag in suc_tags
                                if re.match(sucfilter, suctag))
-        # print ", ".join(tagmap[saldotag])
-        # if not tagmap[saldotag]:
-        #     print saldotag, ":", paramstr, "->", sucfilter
     return tagmap
 
 

@@ -13,7 +13,7 @@ from snakemake.io import expand
 
 from sparv import util
 from sparv.core import config as sparv_config
-from sparv.core import log_handler, paths, registry
+from sparv.core import io, log_handler, paths, registry
 from sparv.core.console import console
 from sparv.util.classes import (AllDocuments, Annotation, AnnotationAllDocs, AnnotationData, Base, BaseAnnotation,
                                 BaseOutput, Binary, BinaryDir, Config, Corpus, Document, Export, ExportAnnotations,
@@ -117,7 +117,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                                                                            "params": param_dict})
         if rule.target_name == sparv_config.get("import.importer"):
             # Exports always generate corpus text file
-            rule.outputs.append(paths.annotation_dir / "{doc}" / util.TEXT_FILE)
+            rule.outputs.append(paths.annotation_dir / "{doc}" / io.TEXT_FILE)
             # If importer guarantees other outputs, add them to outputs list
             if rule.import_outputs:
                 if isinstance(rule.import_outputs, Config):
@@ -133,7 +133,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                             renames[ann] = target
                             ann = target
                         else:
-                            ann = util.join_annotation(renames.get(source_ann, source_ann), target)
+                            ann = io.join_annotation(renames.get(source_ann, source_ann), target)
                     annotations_.add(ann)
 
                 for element in annotations_:
@@ -540,7 +540,7 @@ def get_annotation_path(annotation, data=False, common=False):
 
     if not (data or common):
         if not attr:
-            attr = util.SPAN_ANNOTATION
+            attr = io.SPAN_ANNOTATION
         path = path / attr
 
     if not common:

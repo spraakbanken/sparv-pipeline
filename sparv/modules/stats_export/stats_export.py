@@ -4,7 +4,6 @@ import csv
 import logging
 from collections import defaultdict
 
-import sparv.util as util
 from sparv import AllDocuments, AnnotationAllDocs, Corpus, Export, exporter, Config
 
 log = logging.getLogger(__name__)
@@ -50,7 +49,7 @@ def freq_list(corpus: Corpus = Corpus(),
     freq_dict = defaultdict(int)
 
     for doc in docs:
-        tokens = util.read_annotation_attributes(doc, [word, msd, baseform, sense, lemgram, complemgram])
+        tokens = word.read_attributes(doc, [word, msd, baseform, sense, lemgram, complemgram])
         update_freqs(tokens, freq_dict, include_all_compounds)
 
     write_csv(out, freq_dict, delimiter, cutoff)
@@ -73,7 +72,7 @@ def freq_list_simple(corpus: Corpus = Corpus(),
     freq_dict = defaultdict(int)
 
     for doc in docs:
-        simple_tokens = util.read_annotation_attributes(doc, [word, pos, baseform])
+        simple_tokens = word.read_attributes(doc, [word, pos, baseform])
 
         # Add empty annotations for sense, lemgram and complemgram
         tokens = []

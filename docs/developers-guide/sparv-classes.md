@@ -316,7 +316,7 @@ List of source annotations to be included in the export. This list is defined in
 - `is_input`: If set to `False` the annotations won't be added to the rule's input. Default: `True`
 
 
-## SourceStructure
+## SourceStructureParser
 This is an abstract class that should be implemented by an importer's structure parser.
 
 **Arguments:**

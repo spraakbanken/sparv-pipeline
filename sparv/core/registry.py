@@ -12,7 +12,7 @@ from pkg_resources import iter_entry_points
 
 from sparv.core import config as sparv_config
 from sparv.core import paths
-from sparv.util.classes import (BaseOutput, Config, ExportAnnotations, ExportAnnotationsAllDocs, SourceStructure,
+from sparv.util.classes import (BaseOutput, Config, ExportAnnotations, ExportAnnotationsAllDocs, SourceStructureParser,
                                 ModelOutput, Wildcard)
 
 modules_path = ".".join(("sparv", paths.modules_dir))
@@ -185,7 +185,7 @@ def annotator(description: str, name: Optional[str] = None, language: Optional[L
 
 
 def importer(description: str, file_extension: str, name: Optional[str] = None, outputs=None,
-             structure: Optional[Type[SourceStructure]] = None, config: Optional[List[Config]] = None):
+             structure: Optional[Type[SourceStructureParser]] = None, config: Optional[List[Config]] = None):
     """Return a decorator for importer functions.
 
     Args:

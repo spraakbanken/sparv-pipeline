@@ -6,7 +6,6 @@ from rich.panel import Panel
 from rich.rule import Rule
 from rich.table import Table
 
-from sparv import util
 from sparv.core import registry, snake_utils
 from sparv.core.console import console
 

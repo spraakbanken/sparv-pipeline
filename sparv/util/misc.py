@@ -2,9 +2,12 @@
 
 import logging
 import unicodedata
-from typing import List, Optional
+import pathlib
+from typing import List, Optional, Union
 
-from .classes import Annotation
+from .classes import Annotation, Model
+
+_log = logging.getLogger(__name__)
 
 
 class SparvErrorMessage(Exception):
@@ -34,29 +37,7 @@ def get_logger(name):
     return logging.getLogger(name)
 
 
-def _safe_join(sep, elems):
-    """Join a list of strings (elems), using (sep) as separator.
-
-    All occurrences of (sep) in (elems) are removed.
-    """
-    return sep.join(elem.replace(sep, "") for elem in elems)
-
-
-def strtobool(value):
-    """Convert possible string to boolean."""
-    if isinstance(value, str):
-        value = (value.lower() == "true")
-    return value
-
-
-def split(value):
-    """If 'value' is a string, split and return a list, otherwise return as is."""
-    if isinstance(value, str):
-        value = value.split()
-    return value
-
-
-def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations: Optional[List[str]] = [],
+def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations: Optional[List[str]] = None,
                           add_plain_annotations: bool = True):
     """Take a list of annotation names and possible export names, and return a list of tuples.
 
@@ -69,6 +50,8 @@ def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations
     Plain annotations (without attributes) will be added if needed, unless add_plain_annotations is set to False.
     Make sure to disable add_plain_annotations if the annotation names may include classes or config variables.
     """
+    if all_annotations is None:
+        all_annotations = []
     if not annotation_names:
         return [(a, None) for a in all_annotations]
 
@@ -114,12 +97,8 @@ def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations
     return result
 
 
-def single_true(iterable):
-    """Return True if one and only one element in iterable evaluates to True."""
-    i = iter(iterable)
-    return any(i) and not any(i)
-
-
+# TODO: Split into two functions: one for Sparv-internal lists of values, and one used by the CWB module to create the
+# CWB-specific set format.
 def cwbset(values, delimiter="|", affix="|", sort=False, maxlength=4095, encoding="UTF-8"):
     """Take an iterable object and return a set in the format used by Corpus Workbench."""
     values = list(values)
@@ -135,23 +114,10 @@ def cwbset(values, delimiter="|", affix="|", sort=False, maxlength=4095, encodin
     return affix if not values else affix + delimiter.join(values) + affix
 
 
-def cwbset_to_list(cwbset, delimiter="|", affix="|"):
-    """Turn a cwbset string into a list."""
-    cwbset = cwbset.strip(affix)
-    return cwbset.split(delimiter)
-
-
-def truncateset(string, maxlength=4095, delimiter="|", affix="|", encoding="UTF-8"):
-    """Truncate a Corpus Workbench set to a maximum length."""
-    if len(string) <= maxlength or string == "|":
-        return string
-    else:
-        length = 1  # Including the last affix
-        values = string[1:-1].split("|")
-        for i, value in enumerate(values):
-            length += len(value.encode(encoding)) + 1
-            if length > maxlength:
-                return cwbset(values[:i], delimiter, affix)
+def set_to_list(setstring, delimiter="|", affix="|"):
+    """Turn a set string into a list."""
+    setstring = setstring.strip(affix)
+    return setstring.split(delimiter)
 
 
 def remove_control_characters(text, keep: Optional[str] = None):
@@ -166,3 +132,67 @@ def remove_formatting_characters(text, keep: Optional[str] = None):
     if keep is None:
         keep = []
     return "".join(c for c in text if c in keep or unicodedata.category(c)[0:2] != "Cf")
+
+
+def chain(annotations, default=None):
+    """Create a functional composition of a list of annotations.
+
+    E.g., token.sentence + sentence.id -> token.sentence-id
+
+    >>> from pprint import pprint
+    >>> pprint(dict(
+    ...   chain([{"w:1": "s:A",
+    ...           "w:2": "s:A",
+    ...           "w:3": "s:B",
+    ...           "w:4": "s:C",
+    ...           "w:5": "s:missing"},
+    ...          {"s:A": "text:I",
+    ...           "s:B": "text:II",
+    ...           "s:C": "text:mystery"},
+    ...          {"text:I": "The Bible",
+    ...           "text:II": "The Samannaphala Sutta"}],
+    ...         default="The Principia Discordia")))
+    {'w:1': 'The Bible',
+     'w:2': 'The Bible',
+     'w:3': 'The Samannaphala Sutta',
+     'w:4': 'The Principia Discordia',
+     'w:5': 'The Principia Discordia'}
+    """
+    def follow(key):
+        for annot in annotations:
+            try:
+                key = annot[key]
+            except KeyError:
+                return default
+        return key
+    return ((key, follow(key)) for key in annotations[0])
+
+
+def test_lexicon(lexicon, testwords):
+    """Test the validity of a lexicon.
+
+    Takes a dictionary (lexicon) and a list of test words.
+    Prints the value for each test word.
+    """
+    _log.info("Testing annotations...")
+    for key in testwords:
+        _log.info("  %s = %s", key, lexicon.get(key))
+
+
+class PickledLexicon:
+    """Read basic pickled lexicon and look up keys."""
+
+    def __init__(self, picklefile: Union[pathlib.Path, Model], verbose=True):
+        """Read lexicon from picklefile."""
+        import pickle
+        picklefile_path: pathlib.Path = picklefile.path if isinstance(picklefile, Model) else picklefile
+        if verbose:
+            _log.info("Reading lexicon: %s", picklefile)
+        with open(picklefile_path, "rb") as F:
+            self.lexicon = pickle.load(F)
+        if verbose:
+            _log.info("OK, read %d words", len(self.lexicon))
+
+    def lookup(self, key, default=set()):
+        """Lookup a key in the lexicon."""
+        return self.lexicon.get(key, default)

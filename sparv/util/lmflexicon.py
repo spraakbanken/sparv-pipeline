@@ -19,7 +19,7 @@ from sparv.modules.saldo.saldo_model import HashableDict, SaldoLexicon
 log = logging.getLogger(__name__)
 
 
-def lmf_to_pickle(xml, filename, annotation_elements="writtenForm lemgram", skip_multiword=False):
+def lmf_to_pickle(xml, filename, annotation_elements=("writtenForm", "lemgram"), skip_multiword=False):
     """Read an XML dictionary and save as a pickle file."""
     xml_lexicon = read_lmf(xml, annotation_elements, skip_multiword=skip_multiword)
     SaldoLexicon.save_to_picklefile(filename, xml_lexicon)
@@ -35,7 +35,6 @@ def read_lmf(xml, annotation_elements=("writtenForm", "lemgram"), tagset="SUC", 
     - skip_multiword is a flag telling whether to make special entries for multiword expressions. Set this to False only if
         the tool used for text annotation cannot handle this at all
     """
-    annotation_elements = util.split(annotation_elements)
     # assert annotation_element in ("writtenForm lemgram") "Invalid annotation element"
     if verbose:
         log.info("Reading XML lexicon")

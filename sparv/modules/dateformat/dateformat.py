@@ -7,7 +7,6 @@ from typing import Optional
 
 from dateutil.relativedelta import relativedelta
 
-import sparv.util as util
 from sparv import Annotation, Config, Output, OutputCommonData, annotator
 
 log = logging.getLogger(__name__)
@@ -115,7 +114,7 @@ def resolution(out_resolution: OutputCommonData = OutputCommonData("dateformat.r
     resolutions = []
 
     if informat:
-        informats = util.cwbset_to_list(informat)
+        informats = informat.strip("|").split("|")
         for i in informats:
             res = []
             if any(s in i for s in ["%Y", "%y"]):
@@ -135,7 +134,7 @@ def resolution(out_resolution: OutputCommonData = OutputCommonData("dateformat.r
         # Sort with more fine-grained resolutions first
         resolutions.sort(key=len, reverse=True)
 
-    resolutions = util.cwbset(resolutions)
+    resolutions = "|".join(resolutions)
 
     # Write timeresolution file
     out_resolution.write(resolutions)

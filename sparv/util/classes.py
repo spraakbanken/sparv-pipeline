@@ -11,8 +11,8 @@ from abc import ABC, abstractmethod
 from typing import Any, List, Optional, Tuple, Union
 
 import sparv.core
+from sparv.core import io
 from sparv.core.paths import models_dir
-from sparv.util import corpus
 
 log = logging.getLogger(__name__)
 
@@ -76,11 +76,11 @@ class BaseAnnotation(Base):
 
     def split(self) -> Tuple[str, str]:
         """Split name into annotation name and attribute."""
-        return corpus.split_annotation(self.name)
+        return io.split_annotation(self.name)
 
     def has_attribute(self) -> bool:
         """Return True if the annotation has an attribute."""
-        return corpus.ELEM_ATTR_DELIM in self.name
+        return io.ELEM_ATTR_DELIM in self.name
 
     @property
     def annotation_name(self) -> str:
@@ -108,11 +108,11 @@ class Annotation(BaseAnnotation):
 
     def exists(self) -> bool:
         """Return True if annotation file exists."""
-        return corpus.annotation_exists(self.doc, self.name)
+        return io.annotation_exists(self.doc, self.name)
 
     def read(self, allow_newlines: bool = False):
         """Yield each line from the annotation."""
-        return corpus.read_annotation(self.doc, self.name, allow_newlines=allow_newlines)
+        return io.read_annotation(self.doc, self.name, allow_newlines=allow_newlines)
 
     def get_children(self, child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False):
         """Return two lists.
@@ -207,9 +207,9 @@ class Annotation(BaseAnnotation):
         Reorder them according to span position, but keep original index information.
         """
         if isinstance(parent, (BaseAnnotation, str)):
-            parent = sorted(enumerate(corpus.read_annotation_spans(self.doc, parent, decimals=True)), key=lambda x: x[1])
+            parent = sorted(enumerate(io.read_annotation_spans(self.doc, parent, decimals=True)), key=lambda x: x[1])
         if isinstance(child, (BaseAnnotation, str)):
-            child = sorted(enumerate(corpus.read_annotation_spans(self.doc, child, decimals=True)), key=lambda x: x[1])
+            child = sorted(enumerate(io.read_annotation_spans(self.doc, child, decimals=True)), key=lambda x: x[1])
 
         # Only use sub-positions if both parent and child have them
         if parent and child:
@@ -223,19 +223,19 @@ class Annotation(BaseAnnotation):
                         with_annotation_name: bool = False, allow_newlines: bool = False):
         """Yield tuples of multiple attributes on the same annotation."""
         annotation_names = [a.name for a in annotations]
-        return corpus.read_annotation_attributes(self.doc, annotation_names, with_annotation_name=with_annotation_name,
-                                                 allow_newlines=allow_newlines)
+        return io.read_annotation_attributes(self.doc, annotation_names, with_annotation_name=with_annotation_name,
+                                             allow_newlines=allow_newlines)
 
     def read_spans(self, decimals=False, with_annotation_name=False):
         """Yield the spans of the annotation."""
-        return corpus.read_annotation_spans(self.doc, self.name, decimals=decimals,
-                                            with_annotation_name=with_annotation_name)
+        return io.read_annotation_spans(self.doc, self.name, decimals=decimals,
+                                        with_annotation_name=with_annotation_name)
 
     def create_empty_attribute(self):
         """Return a list filled with None of the same size as this annotation."""
         if self.size is None:
             self.size = len(list(self.read_spans()))
-        return corpus.create_empty_attribute(self.size)
+        return io.create_empty_attribute(self.size)
 
 
 class AnnotationData(BaseAnnotation):
@@ -248,11 +248,11 @@ class AnnotationData(BaseAnnotation):
 
     def read(self, doc: Optional[str] = None):
         """Read arbitrary string data from annotation file."""
-        return corpus.read_data(self.doc or doc, self.name)
+        return io.read_data(self.doc or doc, self.name)
 
     def exists(self):
         """Return True if annotation file exists."""
-        return corpus.data_exists(self.doc, self.name)
+        return io.data_exists(self.doc, self.name)
 
 
 class AnnotationAllDocs(BaseAnnotation):
@@ -269,22 +269,30 @@ class AnnotationAllDocs(BaseAnnotation):
 
     def read(self, doc: str):
         """Yield each line from the annotation."""
-        return corpus.read_annotation(doc, self.name)
+        return io.read_annotation(doc, self.name)
 
     def read_spans(self, doc: str, decimals=False, with_annotation_name=False):
         """Yield the spans of the annotation."""
-        return corpus.read_annotation_spans(doc, self.name, decimals=decimals,
-                                            with_annotation_name=with_annotation_name)
+        return io.read_annotation_spans(doc, self.name, decimals=decimals,
+                                        with_annotation_name=with_annotation_name)
+
+    @staticmethod
+    def read_attributes(doc: str, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]],
+                        with_annotation_name: bool = False, allow_newlines: bool = False):
+        """Yield tuples of multiple attributes on the same annotation."""
+        annotation_names = [a.name for a in annotations]
+        return io.read_annotation_attributes(doc, annotation_names, with_annotation_name=with_annotation_name,
+                                             allow_newlines=allow_newlines)
 
     def create_empty_attribute(self, doc: str):
         """Return a list filled with None of the same size as this annotation."""
         if self.size is None:
             self.size = len(list(self.read_spans(doc)))
-        return corpus.create_empty_attribute(self.size)
+        return io.create_empty_attribute(self.size)
 
     def exists(self, doc: str):
         """Return True if annotation file exists."""
-        return corpus.annotation_exists(doc, self.name)
+        return io.annotation_exists(doc, self.name)
 
 
 class AnnotationDataAllDocs(BaseAnnotation):
@@ -298,11 +306,11 @@ class AnnotationDataAllDocs(BaseAnnotation):
 
     def read(self, doc: str):
         """Read arbitrary string data from annotation file."""
-        return corpus.read_data(doc, self.name)
+        return io.read_data(doc, self.name)
 
     def exists(self, doc: str):
         """Return True if annotation file exists."""
-        return corpus.data_exists(doc, self.name)
+        return io.data_exists(doc, self.name)
 
 
 class AnnotationCommonData(BaseAnnotation):
@@ -316,7 +324,7 @@ class AnnotationCommonData(BaseAnnotation):
 
     def read(self):
         """Read arbitrary corpus level string data from annotation file."""
-        return corpus.read_data(None, self.name)
+        return io.read_data(None, self.name)
 
 
 class BaseOutput(BaseAnnotation):
@@ -345,11 +353,11 @@ class Output(BaseOutput):
 
         'values' should be a list of values.
         """
-        corpus.write_annotation(self.doc or doc, self.name, values, append, allow_newlines)
+        io.write_annotation(self.doc or doc, self.name, values, append, allow_newlines)
 
     def exists(self):
         """Return True if annotation file exists."""
-        return corpus.annotation_exists(self.doc, self.name)
+        return io.annotation_exists(self.doc, self.name)
 
 
 class OutputAllDocs(BaseOutput):
@@ -365,11 +373,11 @@ class OutputAllDocs(BaseOutput):
 
         'values' should be a list of values.
         """
-        corpus.write_annotation(doc, self.name, values, append, allow_newlines)
+        io.write_annotation(doc, self.name, values, append, allow_newlines)
 
     def exists(self, doc: str):
         """Return True if annotation file exists."""
-        return corpus.annotation_exists(doc, self.name)
+        return io.annotation_exists(doc, self.name)
 
 
 class OutputData(BaseOutput):
@@ -383,11 +391,11 @@ class OutputData(BaseOutput):
 
     def write(self, value, append: bool = False):
         """Write arbitrary string data to annotation file."""
-        corpus.write_data(self.doc, self.name, value, append)
+        io.write_data(self.doc, self.name, value, append)
 
     def exists(self):
         """Return True if annotation file exists."""
-        return corpus.data_exists(self.doc, self.name)
+        return io.data_exists(self.doc, self.name)
 
 
 class OutputDataAllDocs(BaseOutput):
@@ -401,15 +409,15 @@ class OutputDataAllDocs(BaseOutput):
 
     def read(self, doc: str):
         """Read arbitrary string data from annotation file."""
-        return corpus.read_data(doc, self.name)
+        return io.read_data(doc, self.name)
 
     def write(self, value, doc: str, append: bool = False):
         """Write arbitrary string data to annotation file."""
-        corpus.write_data(doc, self, value, append)
+        io.write_data(doc, self, value, append)
 
     def exists(self, doc: str):
         """Return True if annotation file exists."""
-        return corpus.data_exists(doc, self.name)
+        return io.data_exists(doc, self.name)
 
 
 class OutputCommonData(BaseOutput):
@@ -423,7 +431,7 @@ class OutputCommonData(BaseOutput):
 
     def write(self, value, append: bool = False):
         """Write arbitrary corpus level string data to annotation file."""
-        corpus.write_data(None, self, value, append)
+        io.write_data(None, self, value, append)
 
 
 class Text:
@@ -434,7 +442,7 @@ class Text:
 
     def read(self) -> str:
         """Get corpus text."""
-        text_file = corpus.get_annotation_path(self.doc, corpus.TEXT_FILE, data=True)
+        text_file = io.get_annotation_path(self.doc, io.TEXT_FILE, data=True)
         with open(text_file) as f:
             text = f.read()
         log.debug("Read %d chars: %s", len(text), text_file)
@@ -445,8 +453,8 @@ class Text:
 
         text is a unicode string.
         """
-        doc, _, _chunk = self.doc.partition(corpus.DOC_CHUNK_DELIM)
-        text_file = corpus.get_annotation_path(doc, corpus.TEXT_FILE, data=True)
+        doc, _, _chunk = self.doc.partition(io.DOC_CHUNK_DELIM)
+        text_file = io.get_annotation_path(doc, io.TEXT_FILE, data=True)
         os.makedirs(os.path.dirname(text_file), exist_ok=True)
         with open(text_file, "w") as f:
             f.write(text)
@@ -454,6 +462,45 @@ class Text:
 
     def __repr__(self):
         return "<Text>"
+
+
+class SourceStructure:
+    """Every annotation available in a source document."""
+
+    def __init__(self, doc):
+        self.doc = doc
+
+    def read(self):
+        """Read structure file."""
+        return io.read_data(self.doc, io.STRUCTURE_FILE)
+
+    def write(self, structure):
+        """Sort the document's structural elements and write structure file."""
+        file_path = io.get_annotation_path(self.doc, io.STRUCTURE_FILE, data=True)
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        structure.sort()
+        with open(file_path, "w") as f:
+            f.write("\n".join(structure))
+        log.info("Wrote: %s", file_path)
+
+
+class Headers:
+    """List of header annotation names."""
+
+    def __init__(self, doc):
+        self.doc = doc
+
+    def read(self) -> List[str]:
+        """Read headers file."""
+        return io.read_data(self.doc, io.HEADERS_FILE).splitlines()
+
+    def write(self, header_annotations: List[str]):
+        """Write headers file."""
+        io.write_data(self.doc, io.HEADERS_FILE, "\n".join(header_annotations))
+
+    def exists(self):
+        """Return True if headers file exists."""
+        return io.data_exists(self.doc, io.HEADERS_FILE)
 
 
 class Document(str):
@@ -664,7 +711,7 @@ class Language(str):
     """Language of the corpus."""
 
 
-class SourceStructure(ABC):
+class SourceStructureParser(ABC):
     """Abstract class that should be implemented by an importer's structure parser."""
 
     def __init__(self, source_dir: pathlib.Path):

@@ -133,7 +133,7 @@ def split_triple(annotation_tag_words):
 ################################################################################
 
 
-def lmf_to_pickle(xml, filename, annotation_elements="gf lem saldo"):
+def lmf_to_pickle(xml, filename, annotation_elements=("gf", "lem", "saldo")):
     """Read an XML dictionary and save as a pickle file."""
     xml_lexicon = read_lmf(xml, annotation_elements)
     SaldoLexicon.save_to_picklefile(filename, xml_lexicon)
@@ -146,7 +146,6 @@ def read_lmf(xml, annotation_elements=("gf", "lem", "saldo"), tagset="SUC", verb
      - annotation_element is the XML element for the annotation value (currently: 'gf' for baseform, 'lem' for lemgram or 'saldo' for SALDO id)
      - tagset is the tagset for the possible tags (currently: 'SUC', 'Parole', 'Saldo')
     """
-    annotation_elements = util.split(annotation_elements)
     # assert annotation_element in ("gf", "lem", "saldo"), "Invalid annotation element"
     tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower())
     if verbose:

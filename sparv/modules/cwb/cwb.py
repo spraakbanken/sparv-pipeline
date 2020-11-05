@@ -389,3 +389,16 @@ def parse_structural_attributes(structural_atts):
 def cwb_escape(inname):
     """Replace dots with "-" for CWB compatibility."""
     return re.sub(r"\.", "-", inname)
+
+
+def truncateset(string, maxlength=4095, delimiter="|", affix="|", encoding="UTF-8"):
+    """Truncate a Corpus Workbench set to a maximum length."""
+    if len(string) <= maxlength or string == "|":
+        return string
+    else:
+        length = 1  # Including the last affix
+        values = string[1:-1].split("|")
+        for i, value in enumerate(values):
+            length += len(value.encode(encoding)) + 1
+            if length > maxlength:
+                return util.cwbset(values[:i], delimiter, affix)

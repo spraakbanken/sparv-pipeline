@@ -28,8 +28,6 @@ def blingbring_words(out: Output = Output("<token>:lexical_classes.blingbring",
                      lexicon=None):
     """Blingbring specific wrapper for annotate_words. See annotate_words for more info."""
     # pos_limit="NN VB JJ AB" | None
-    connect_ids = util.strtobool(connect_ids)
-    disambiguate = util.strtobool(disambiguate)
 
     if class_set not in ["bring", "roget_head", "roget_subsection", "roget_section", "roget_class"]:
         log.warning("Class '%s' not available. Fallback to 'bring'.")
@@ -68,8 +66,6 @@ def swefn_words(out: Output = Output("<token>:lexical_classes.swefn",
                 scoresep: str = util.SCORESEP,
                 lexicon=None):
     """Swefn specific wrapper for annotate_words. See annotate_words for more info."""
-    disambiguate = util.strtobool(disambiguate)
-    connect_ids = util.strtobool(connect_ids)
 
     # SweFN annotation function
     def annotate_swefn(saldo_ids, lexicon, connect_IDs=False, scoresep=util.SCORESEP):
@@ -86,8 +82,9 @@ def swefn_words(out: Output = Output("<token>:lexical_classes.swefn",
                    connect_ids=connect_ids, delimiter=delimiter, affix=affix, scoresep=scoresep, lexicon=lexicon)
 
 
-def annotate_words(out, model: Model, saldoids, pos, annotate, pos_limit, class_set=None, disambiguate=True,
-                   connect_ids=False, delimiter=util.DELIM, affix=util.AFFIX, scoresep=util.SCORESEP, lexicon=None):
+def annotate_words(out: Output, model: Model, saldoids: Annotation, pos: Annotation, annotate, pos_limit: List[str],
+                   class_set=None, disambiguate=True, connect_ids=False, delimiter=util.DELIM, affix=util.AFFIX,
+                   scoresep=util.SCORESEP, lexicon=None):
     """
     Annotate words with blingbring classes (rogetID).
 
@@ -157,7 +154,6 @@ def annotate_words(out, model: Model, saldoids, pos, annotate, pos_limit, class_
 
 def pos_ok(token_pos, token_index, pos_limit):
     """If there is a pos_limit, check if token has correct part of speech. Pass all tokens otherwise."""
-    pos_limit = util.split(pos_limit)
     if pos_limit:
         return token_pos[token_index] in pos_limit
     else:

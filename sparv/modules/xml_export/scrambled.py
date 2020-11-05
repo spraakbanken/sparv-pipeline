@@ -2,12 +2,10 @@
 
 import logging
 import os
-from typing import Optional
 
 import sparv.util as util
 from sparv import (AllDocuments, Annotation, AnnotationData, Config, Corpus, Document, Export, ExportAnnotations,
                    ExportInput, OutputCommonData, SourceAnnotations, exporter, installer)
-
 from . import xml_utils
 
 log = logging.getLogger(__name__)

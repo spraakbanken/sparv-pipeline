@@ -54,7 +54,7 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token_name: s
         # Handle headers
         if span.is_header:
             if instruction == "open":
-                header = annotation_dict[span.name][util.HEADER_CONTENT][span.index]
+                header = annotation_dict[span.name][util.HEADER_CONTENTS][span.index]
                 # Replace any leading tabs with spaces
                 header = re.sub(r"^\t+", lambda m: INDENTATION * len(m.group()), header, flags=re.MULTILINE)
                 header_xml = etree.fromstring(header)

@@ -45,7 +45,7 @@ def main(argv=None, log_level: str = "info"):
 
     needs_doc_types = (Annotation, AnnotationData, Output, OutputData)  # Types that need a doc value
 
-    for f_name in registry.modules[module_name]:
+    for f_name in registry.modules[module_name].functions:
         annotator = registry.modules[module_name].functions[f_name]
         f = annotator["function"]
         subparser = subparsers.add_parser(f_name, formatter_class=argparse.ArgumentDefaultsHelpFormatter,

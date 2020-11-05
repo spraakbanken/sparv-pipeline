@@ -3,17 +3,12 @@
 import heapq
 import logging
 import os
-import pathlib
 import re
-from typing import Union
 
 from sparv.core import paths
-from .classes import BaseAnnotation, Model, Annotation
+from sparv.util.classes import BaseAnnotation, Annotation
 
 _log = logging.getLogger(__name__)
-
-######################################################################
-# Annotations
 
 DOC_CHUNK_DELIM = ":"
 ELEM_ATTR_DELIM = ":"
@@ -21,7 +16,6 @@ SPAN_ANNOTATION = "@span"
 TEXT_FILE = "@text"
 STRUCTURE_FILE = "@structure"
 HEADERS_FILE = "@headers"
-HEADER_CONTENT = "contents"
 
 
 def annotation_exists(doc, annotation):
@@ -219,15 +213,6 @@ def read_data(doc, name):
     return data
 
 
-def write_structure(doc, structure):
-    """Sort the document's structural elements and write structure file."""
-    file_path = get_annotation_path(doc, STRUCTURE_FILE, data=True)
-    structure.sort()
-    with open(file_path, "w") as f:
-        f.write("\n".join(structure))
-    _log.info("Wrote: %s", file_path)
-
-
 def split_annotation(annotation):
     """Split annotation into annotation name and attribute."""
     if isinstance(annotation, BaseAnnotation):
@@ -257,67 +242,3 @@ def get_annotation_path(doc, annotation, data=False):
             attr = SPAN_ANNOTATION
         path = os.path.join(paths.annotation_dir, doc, chunk, elem, attr)
     return path
-
-
-def chain(annotations, default=None):
-    """Create a functional composition of a list of annotations.
-
-    E.g., token.sentence + sentence.id -> token.sentence-id
-
-    >>> from pprint import pprint
-    >>> pprint(dict(
-    ...   chain([{"w:1": "s:A",
-    ...           "w:2": "s:A",
-    ...           "w:3": "s:B",
-    ...           "w:4": "s:C",
-    ...           "w:5": "s:missing"},
-    ...          {"s:A": "text:I",
-    ...           "s:B": "text:II",
-    ...           "s:C": "text:mystery"},
-    ...          {"text:I": "The Bible",
-    ...           "text:II": "The Samannaphala Sutta"}],
-    ...         default="The Principia Discordia")))
-    {'w:1': 'The Bible',
-     'w:2': 'The Bible',
-     'w:3': 'The Samannaphala Sutta',
-     'w:4': 'The Principia Discordia',
-     'w:5': 'The Principia Discordia'}
-    """
-    def follow(key):
-        for annot in annotations:
-            try:
-                key = annot[key]
-            except KeyError:
-                return default
-        return key
-    return ((key, follow(key)) for key in annotations[0])
-
-
-def test_lexicon(lexicon, testwords):
-    """Test the validity of a lexicon.
-
-    Takes a dictionary (lexicon) and a list of test words.
-    Prints the value for each test word.
-    """
-    _log.info("Testing annotations...")
-    for key in testwords:
-        _log.info("  %s = %s", key, lexicon.get(key))
-
-
-class PickledLexicon:
-    """Read basic pickled lexicon and look up keys."""
-
-    def __init__(self, picklefile: Union[pathlib.Path, Model], verbose=True):
-        """Read lexicon from picklefile."""
-        import pickle
-        picklefile_path: pathlib.Path = picklefile.path if isinstance(picklefile, Model) else picklefile
-        if verbose:
-            _log.info("Reading lexicon: %s", picklefile)
-        with open(picklefile_path, "rb") as F:
-            self.lexicon = pickle.load(F)
-        if verbose:
-            _log.info("OK, read %d words", len(self.lexicon))
-
-    def lookup(self, key, default=set()):
-        """Lookup a key in the lexicon."""
-        return self.lexicon.get(key, default)

@@ -1,4 +1,4 @@
-from sparv import Config, SourceStructure, wizard
+from sparv import Config, SourceStructureParser, wizard
 
 __config__ = [
     Config("export.default", description="List of exporters to use by default"),
@@ -15,7 +15,7 @@ __config__ = [
 
 
 @wizard(["export.source_annotations"], source_structure=True)
-def import_wizard(answers, structure: SourceStructure):
+def import_wizard(answers, structure: SourceStructureParser):
     """Return wizard for selecting what source annotations to keep."""
 
     questions = [
