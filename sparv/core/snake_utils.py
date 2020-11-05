@@ -26,10 +26,11 @@ class SnakeStorage:
 
     def __init__(self):
         """Init attributes."""
-        # All output annotations, importers and exporters available, used for printing a list
-        self.all_annotations = {}
+        # All annotators, importers, exporters and installers available, used for CLI listings
+        self.all_annotators = {}
         self.all_importers = {}
         self.all_exporters = {}
+        self.all_installers = {}
         self.all_custom_annotators = {}
 
         # All named targets available, used in list_targets
@@ -143,6 +144,10 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         storage.all_exporters.setdefault(rule.module_name, {}).setdefault(rule.f_name,
                                                                           {"description": rule.description,
                                                                            "params": param_dict})
+    elif rule.installer:
+        storage.all_installers.setdefault(rule.module_name, {}).setdefault(rule.f_name,
+                                                                           {"description": rule.description,
+                                                                            "params": param_dict})
 
     output_dirs = set()    # Directories where export files are stored
     custom_params = set()
@@ -173,11 +178,11 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         else:
             if param_default_empty:
                 # This is probably an unused custom rule, so don't process it any further,
-                # but save it in all_custom_annotators and all_annotations
+                # but save it in all_custom_annotators and all_annotators
                 storage.all_custom_annotators.setdefault(rule.module_name, {}).setdefault(rule.f_name, {
                     "description": rule.description, "params": param_dict})
                 storage.custom_targets.append((rule.target_name, rule.description))
-                storage.all_annotations.setdefault(rule.module_name, {}).setdefault(rule.f_name, {
+                storage.all_annotators.setdefault(rule.module_name, {}).setdefault(rule.f_name, {
                     "description": rule.description, "annotations": [], "params": param_dict})
                 return False
             else:
@@ -209,12 +214,12 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             if "{" in param_value:
                 rule.wildcard_annotations.append(param_name)
             if rule.annotator:
-                storage.all_annotations.setdefault(rule.module_name, {}).setdefault(rule.f_name,
-                                                                                    {"description": rule.description,
-                                                                                     "annotations": [],
-                                                                                     "params": param_dict})
-                storage.all_annotations[rule.module_name][rule.f_name]["annotations"].append((param_value,
-                                                                                              param_value.description))
+                storage.all_annotators.setdefault(rule.module_name, {}).setdefault(rule.f_name,
+                                                                                   {"description": rule.description,
+                                                                                    "annotations": [],
+                                                                                    "params": param_dict})
+                storage.all_annotators[rule.module_name][rule.f_name]["annotations"].append((param_value,
+                                                                                             param_value.description))
         # ModelOutput
         elif param_type == ModelOutput:
             rule.configs.update(registry.find_config_variables(param_value.name))

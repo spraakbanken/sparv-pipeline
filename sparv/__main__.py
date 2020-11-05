@@ -124,6 +124,7 @@ def main():
     modules_parser.add_argument("--annotators", action="store_true", help="List info for annotators")
     modules_parser.add_argument("--importers", action="store_true", help="List info for importers")
     modules_parser.add_argument("--exporters", action="store_true", help="List info for exporters")
+    modules_parser.add_argument("--installers", action="store_true", help="List info for installers")
     modules_parser.add_argument("--all", action="store_true", help="List info for all module types")
     modules_parser.add_argument("names", nargs="*", default=[], help="Specific module(s) to display")
 
@@ -238,7 +239,7 @@ def main():
             config["types"] = []
             if args.names:
                 config["names"] = args.names
-            for t in ["annotators", "importers", "exporters", "all"]:
+            for t in ["annotators", "importers", "exporters", "installers", "all"]:
                 if getattr(args, t):
                     config["types"].append(t)
 

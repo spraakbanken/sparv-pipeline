@@ -75,11 +75,11 @@ class Wizard:
 
                 # Process rule parameters and update rule storage
                 rule_made = snake_utils.rule_helper(rule_storage, config.config, self.snake_storage)
-                if rule_storage.annotator and self.snake_storage.all_annotations.get(module_name, {}).get(f_name):
-                    self.snake_storage.all_annotations[module_name][f_name]["rule"] = rule_storage
+                if rule_storage.annotator and self.snake_storage.all_annotators.get(module_name, {}).get(f_name):
+                    self.snake_storage.all_annotators[module_name][f_name]["rule"] = rule_storage
                     for output in rule_storage.outputs:
                         self.output_to_annotators[output].append((module_name, f_name))
-                    for annotation in self.snake_storage.all_annotations[module_name][f_name]["annotations"]:
+                    for annotation in self.snake_storage.all_annotators[module_name][f_name]["annotations"]:
                         self.annotation_to_annotator[annotation[0].original_name] = (module_name, f_name)
                         if annotation[0].cls:
                             self.annotation_to_annotator[f"<{annotation[0].cls}>"] = (module_name, f_name)
@@ -435,7 +435,7 @@ class Wizard:
             if used_annotators[module].get(f) is not None:
                 return
             used_annotators[module].setdefault(f, {})
-            for input_file in self.snake_storage.all_annotations[module][f]["rule"].inputs:
+            for input_file in self.snake_storage.all_annotators[module][f]["rule"].inputs:
                 if input_file in self.output_to_annotators:
                     for annotator in self.output_to_annotators[input_file]:
                         get_dependencies(*annotator)
@@ -459,7 +459,7 @@ class Wizard:
             # Check for any config variables that MUST be set (i.e. they have no default values we can use)
             for module in used_annotators:
                 for f_name in used_annotators[module]:
-                    missing_config = self.snake_storage.all_annotations[module][f_name]["rule"].missing_config
+                    missing_config = self.snake_storage.all_annotators[module][f_name]["rule"].missing_config
                     if any(cfg for cfg in missing_config if not cfg.startswith("<")):
                         missing_configs = True
                         config_values = self.q([
@@ -491,13 +491,13 @@ class Wizard:
                             "({})".format(len(selected_annotations[module].get(a, []))) if
                             selected_annotations[
                                 module].get(a) else "   ",
-                            self.snake_storage.all_annotations[module][a]["rule"].description,
+                            self.snake_storage.all_annotators[module][a]["rule"].description,
                             width=annotator_max_len + (
-                                0 if not self.snake_storage.all_annotations[module][a][
+                                0 if not self.snake_storage.all_annotators[module][a][
                                     "rule"].configs else 2)),
                         "value": (module, a),
                         "short": "{}:{}".format(module, a),
-                        "disabled": not self.snake_storage.all_annotations[module][a]["rule"].configs
+                        "disabled": not self.snake_storage.all_annotators[module][a]["rule"].configs
                     })
                     if config_annotator == (module, a):
                         preselected = config_annotators[-1]
@@ -518,12 +518,12 @@ class Wizard:
             else:
                 module_name, f_name = config_annotator
                 max_cfg_len = max(len(cfg) for cfg in
-                                  self.snake_storage.all_annotations[module_name][f_name]["rule"].configs)
+                                  self.snake_storage.all_annotators[module_name][f_name]["rule"].configs)
                 config_choice = None
                 preselected_key = None
                 while True:
                     config_choices = []
-                    for cfg in self.snake_storage.all_annotations[module_name][f_name]["rule"].configs:
+                    for cfg in self.snake_storage.all_annotators[module_name][f_name]["rule"].configs:
                         config_choices.append({
                             "name": "{:{width}}  {}".format(cfg, config.get_config_description(cfg),
                                                             width=max_cfg_len),
@@ -587,7 +587,7 @@ class Wizard:
         for module in selected_annotations:
             for f_name in selected_annotations[module]:
                 if selected_annotations[module][f_name]:
-                    wildcards = self.snake_storage.all_annotations[module][f_name]["rule"].wildcards
+                    wildcards = self.snake_storage.all_annotators[module][f_name]["rule"].wildcards
                     if wildcards:
                         has_wildcards = True
                         wc_dict = {wc.name: wc for wc in wildcards}
@@ -600,7 +600,7 @@ class Wizard:
                             continue
                         while True:
                             output_list = "\n".join(f"  {a[0].original_name}" for a in
-                                                    self.snake_storage.all_annotations[module][f_name]["annotations"])
+                                                    self.snake_storage.all_annotators[module][f_name]["annotations"])
                             wc_choice = self.q({
                                 "type": "select",
                                 "name": "wc",
@@ -619,7 +619,7 @@ class Wizard:
                                 ],
                                 "message": "You have selected to use the following annotator:\n\n"
                                            f"  {module}:{f_name}   "
-                                           f"{self.snake_storage.all_annotations[module][f_name]['description']}\n\n"
+                                           f"{self.snake_storage.all_annotators[module][f_name]['description']}\n\n"
                                            f"It produces the following annotations:\n\n{output_list}\n\n"
                                            "The annotations refer to other annotations by using curly braces. "
                                            "To continue you need to select values for these references."
@@ -687,7 +687,7 @@ class Wizard:
         for module in selected_annotations:
             for f_name in selected_annotations[module]:
                 if selected_annotations[module][f_name]:
-                    for cls in self.snake_storage.all_annotations[module][f_name]["rule"].classes:
+                    for cls in self.snake_storage.all_annotators[module][f_name]["rule"].classes:
                         if len(available_classes.get(cls, [])) > 1:
                             has_choices = True
                             if not always_ask and config.get(f"classes.{cls}"):
@@ -718,21 +718,21 @@ class Wizard:
     def select_annotations(self, selected_annotations) -> int:
         """Let the user select annotators and annotations to use."""
         max_len = max(
-            len(module + f_name) + 1 for module in self.snake_storage.all_annotations for f_name in
-            self.snake_storage.all_annotations[module])
+            len(module + f_name) + 1 for module in self.snake_storage.all_annotators for f_name in
+            self.snake_storage.all_annotators[module])
         annotator_choice = None
         while True:
             annotators = []
             preselected = None
-            for module in self.snake_storage.all_annotations:
-                for a in self.snake_storage.all_annotations[module]:
+            for module in self.snake_storage.all_annotators:
+                for a in self.snake_storage.all_annotators[module]:
                     annotators.append({
                         "name": "{:{width}} {}  {}".format(
                             "{}:{}".format(module, a),
                             "({})".format(len(selected_annotations[module].get(a, []))) if
                             selected_annotations[
                                 module].get(a) else "   ",
-                            self.snake_storage.all_annotations[module][a]["rule"].description,
+                            self.snake_storage.all_annotators[module][a]["rule"].description,
                             width=max_len),
                         "value": (module, a),
                         "short": "{}:{}".format(module, a)
@@ -756,7 +756,7 @@ class Wizard:
             if not annotator_choice == "_done":
                 module, annotator = annotator_choice
                 max_len2 = max(len(a[0].original_name) for a in
-                               self.snake_storage.all_annotations[module][annotator]["annotations"])
+                               self.snake_storage.all_annotators[module][annotator]["annotations"])
                 annotations_choice = self.q([
                     {
                         "name": "annotations",
@@ -772,7 +772,7 @@ class Wizard:
                                                                            selected_annotations[module].get(annotator,
                                                                                                             [])]
                             } for annotation in
-                            self.snake_storage.all_annotations[module][annotator]["annotations"]
+                            self.snake_storage.all_annotators[module][annotator]["annotations"]
                         ]
                     }
                 ], clear=True)["annotations"]

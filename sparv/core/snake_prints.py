@@ -32,9 +32,10 @@ def prettyprint_yaml(in_dict):
 def print_module_summary(snake_storage):
     """Print a summary of all annotation modules."""
     all_module_types = {
-        "annotators": snake_storage.all_annotations,
+        "annotators": snake_storage.all_annotators,
         "importers": snake_storage.all_importers,
-        "exporters": snake_storage.all_exporters
+        "exporters": snake_storage.all_exporters,
+        "installers": snake_storage.all_installers
     }
 
     print()
@@ -59,9 +60,10 @@ def print_module_summary(snake_storage):
 def print_module_info(module_types, module_names, snake_storage, reverse_config_usage):
     """Wrap module printing functions: print correct info for chosen module_types and module_names."""
     all_module_types = {
-        "annotators": snake_storage.all_annotations,
+        "annotators": snake_storage.all_annotators,
         "importers": snake_storage.all_importers,
-        "exporters": snake_storage.all_exporters
+        "exporters": snake_storage.all_exporters,
+        "installers": snake_storage.all_installers
     }
 
     if not module_types or "all" in module_types:
@@ -206,4 +208,4 @@ def print_annotation_classes():
 
 def get_custom_module_description(name):
     """Return string with description for custom modules."""
-    return "Custom module from corpus directory ({}.py)".format(name.split(".")[1])
+    return "Custom module from corpus directory ({}.py).".format(name.split(".")[1])
