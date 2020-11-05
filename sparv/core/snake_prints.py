@@ -46,6 +46,8 @@ def print_module_summary(snake_storage):
         table.add_row(f"[b]{module_type.upper()}[/b]")
         for module_name in sorted(modules.keys()):
             description = registry.modules[module_name].description or ""
+            if module_name.startswith("custom."):
+                description = get_custom_module_description(module_name)
             table.add_row("  " + module_name, description)
         table.add_row()
     console.print(table)
@@ -109,8 +111,13 @@ def print_modules(modules: dict, module_type: str, reverse_config_usage: dict, s
         # Module name header
         console.print(f"\n[bright_black]:[/][dim]:[/]: [b]{module_name.upper()}[/b]\n")
 
+        # Module description
         if registry.modules[module_name].description:
-            console.print(Padding(registry.modules[module_name].description, (0, 4, 1, 4)))
+            description = registry.modules[module_name].description
+        elif module_name.startswith("custom."):
+            description = get_custom_module_description(module_name)
+        if description:
+            console.print(Padding(description, (0, 4, 1, 4)))
 
         for f_name in sorted(modules[module_name]):
             # Function name and description
@@ -195,3 +202,8 @@ def print_annotation_classes():
             table.add_row("  " + annotation_class, ann)
 
     console.print(table)
+
+
+def get_custom_module_description(name):
+    """Return string with description for custom modules."""
+    return "Custom module from corpus directory ({}.py)".format(name.split(".")[1])

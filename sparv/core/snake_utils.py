@@ -173,7 +173,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         else:
             if param_default_empty:
                 # This is probably an unused custom rule, so don't process it any further,
-                # but save it in all_custom_annotators
+                # but save it in all_custom_annotators and all_annotations
                 storage.all_custom_annotators.setdefault(rule.module_name, {}).setdefault(rule.f_name, {
                     "description": rule.description, "params": param_dict})
                 storage.custom_targets.append((rule.target_name, rule.description))
