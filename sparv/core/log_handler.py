@@ -16,6 +16,7 @@ from typing import Optional
 
 import rich.progress as progress
 from rich.logging import RichHandler
+from rich.text import Text
 from snakemake import logger
 
 from sparv.core import paths
@@ -220,30 +221,45 @@ class LogHandler:
         # Logging needs to be set up after the bar, to make use if its print hook
         self.setup_loggers()
 
+    @staticmethod
+    def info(msg):
+        """Print info message."""
+        console.print(Text(msg, style="green"))
+
+    @staticmethod
+    def warning(msg):
+        """Print warning message."""
+        console.print(Text(msg, style="yellow"))
+
+    @staticmethod
+    def error(msg):
+        """Print error message."""
+        console.print(Text(msg, style="red"))
+
     def log_handler(self, msg):
         """Log handler for Snakemake displaying a progress bar."""
         def missing_config_message(source):
             """Create error message when config variables are missing."""
             _variables = messages["missing_configs"][source]
-            _message = "The following config variable{} need{} to be set:\n- {}".format(
+            _message = "The following config variable{} need{} to be set:\n • {}".format(
                 *("s", "") if len(_variables) > 1 else ("", "s"),
-                "\n- ".join(_variables))
+                "\n • ".join(_variables))
             self.messages["error"].append((source, _message))
 
         def missing_binary_message(source):
             """Create error message when binaries are missing."""
             _binaries = messages["missing_binaries"][source]
-            _message = "The following executable{} {} needed but could not be found:\n- {}".format(
+            _message = "The following executable{} {} needed but could not be found:\n • {}".format(
                 *("s", "are") if len(_binaries) > 1 else ("", "is"),
-                "\n- ".join(_binaries))
+                "\n • ".join(_binaries))
             self.messages["error"].append((source, _message))
 
         def missing_class_message(source):
             """Create error message when class variables are missing."""
             _variables = messages["missing_classes"][source]
-            _message = "The following class{} need{} to be set:\n- {}".format(
+            _message = "The following class{} need{} to be set:\n • {}".format(
                 *("es", "") if len(_variables) > 1 else ("", "s"),
-                "\n- ".join(_variables))
+                "\n • ".join(_variables))
             self.messages["error"].append((source, _message))
 
         level = msg["level"]
@@ -288,7 +304,7 @@ class LogHandler:
 
         elif level == "info":
             if msg["msg"] == "Nothing to be done.":
-                logger.text_handler(msg)
+                self.info(msg["msg"])
 
         elif level == "error":
             handled = False
@@ -380,15 +396,15 @@ class LogHandler:
             if self.handled_error:
                 # Print any collected core error messages
                 if self.messages["error"]:
-                    logger.logger.error("Sparv exited with the following error message{}:".format(
+                    self.error("Sparv exited with the following error message{}:".format(
                         "s" if len(self.messages) > 1 else ""))
                     for message in self.messages["error"]:
                         error_source, msg = message
                         error_source = f"[{error_source}]\n" if error_source else ""
-                        logger.logger.error(f"\n{error_source}{msg}")
+                        self.error(f"\n{error_source}{msg}")
                 else:
                     # Errors from modules have already been logged, so notify user
-                    logger.logger.error(
+                    self.error(
                         "Job execution failed. See log messages above or {} for details.".format(
                             os.path.join(paths.log_dir, self.log_filename)))
             # Defer to Snakemake's default log handler for unhandled errors
@@ -396,8 +412,8 @@ class LogHandler:
                 for error in self.messages["unhandled_error"]:
                     logger.text_handler(error)
             elif self.export_dirs:
-                logger.logger.info("The exported files can be found in the following location{}:\n- {}".format(
-                    "s" if len(self.export_dirs) > 1 else "", "\n- ".join(sorted(self.export_dirs))))
+                self.info("The exported files can be found in the following location{}:\n • {}".format(
+                    "s" if len(self.export_dirs) > 1 else "", "\n • ".join(sorted(self.export_dirs))))
             elif self.log_levelcount:
                 # Errors or warnings were logged but execution finished anyway. Notify user of potential problems.
                 problems = []
@@ -407,7 +423,7 @@ class LogHandler:
                 if self.log_levelcount["WARNING"]:
                     problems.append("{} warning{}".format(self.log_levelcount["WARNING"],
                                                           "s" if self.log_levelcount["WARNING"] > 1 else ""))
-                logger.logger.warning(
+                self.warning(
                     "Job execution finished but {} occured. See log messages above or {} for details.".format(
                         " and ".join(problems), os.path.join(paths.log_dir, self.log_filename)))
 
@@ -415,7 +431,7 @@ class LogHandler:
                 if self.messages:
                     print()
                 elapsed = round(time.time() - self.start_time)
-                logger.logger.info("Time elapsed: {}".format(timedelta(seconds=elapsed)))
+                self.info("Time elapsed: {}".format(timedelta(seconds=elapsed)))
 
     @staticmethod
     def cleanup():
