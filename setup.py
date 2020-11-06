@@ -40,6 +40,7 @@ setuptools.setup(
     install_requires=[
         "appdirs==1.4.4",
         "colorama==0.4.4",
+        "flair==0.6.1.post1",
         "iso-639==0.4.5",
         "nltk==3.5",
         "python-dateutil==2.8.1",
