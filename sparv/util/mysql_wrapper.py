@@ -14,12 +14,14 @@ MAX_ALLOWED_PACKET = 900000
 class MySQL:
     binaries = ("mysql", "mysql5")
 
-    def __init__(self, database, username=None, password=None, encoding="UTF-8", output="", append=False):
-        self.arguments = [database]
-        if username:
-            self.arguments += ["-u", username]
-        if password:
-            self.arguments += ["-p", password]
+    def __init__(self, database=None, username=None, password=None, encoding="UTF-8", output="", append=False):
+        assert database or output, "Either 'database' or 'output' must be used."
+        if database:
+            self.arguments = [database]
+            if username:
+                self.arguments += ["-u", username]
+            if password:
+                self.arguments += ["-p", password]
         self.encoding = encoding
         self.output = output
         self.first_output = True
