@@ -1,8 +1,9 @@
 """Misc util functions."""
 
 import logging
-import unicodedata
 import pathlib
+import sys
+import unicodedata
 from typing import List, Optional, Union
 
 from .classes import Annotation, Model
@@ -31,7 +32,11 @@ class SparvErrorMessage(Exception):
 
 
 def get_logger(name):
-    """Get a logger that is a child of 'sparv.modules'."""
+    """Get a logger that is a child of 'sparv.modules'.
+
+    Args:
+        name: Name of the module for getting the correct logger (typically '__name__').
+    """
     if not name.startswith("sparv.modules"):
         name = "sparv.modules." + name
     return logging.getLogger(name)
