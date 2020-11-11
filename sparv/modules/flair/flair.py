@@ -6,7 +6,7 @@ import sparv.util as util
 logger = util.get_logger(__name__)
 
 
-@annotator("Convert every word to uppercase.", config=[
+@annotator("Part-of-speech annotation with morphological descriptions from Flair", config=[
            Config("flair.model", default="flair/flair_full/final-model.pt", description="Flair model")])
 def annotate(out: Output = Output("<token>:flair.pos", cls="token:pos", description="Part-of-speech tags"),
              word: Annotation = Annotation("<token:word>"),
