@@ -1,11 +1,10 @@
 """General metadata about corpus."""
-import os
 import re
 
 from iso639 import languages
 
 from sparv import Config, wizard
-from sparv.core import paths, registry
+from sparv.core import registry
 
 __config__ = [
     Config("metadata.id", description="Machine name of corpus (a-z, 0-9, -)"),
@@ -39,13 +38,6 @@ def setup_wizard(_: dict):
             "type": "text",
             "name": "metadata.name.eng",
             "message": "Human readable name of corpus:"
-        },
-        {
-            "type": "text",
-            "name": "import.source_dir",
-            "message": "Relative path to the current directory containing your source files:",
-            "validate": lambda x: os.path.isdir(x),
-            "default": paths.source_dir
         },
         {
             "type": "select",
