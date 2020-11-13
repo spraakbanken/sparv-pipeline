@@ -41,7 +41,7 @@ class SnakeStorage:
         self.custom_targets = []
 
         self.model_outputs = []  # Outputs from modelbuilders, used in build_models
-        self.install_outputs = defaultdict(list)  # Outputs from all installers, used in rule install_annotated_corpus
+        self.install_outputs = defaultdict(list)  # Outputs from all installers, used in rule install_corpus
         self.source_files = []  # List which will contain all source files
         self.all_rules: List[RuleStorage] = []  # List containing all rules created
         self.ordered_rules = []  # List of rules containing rule order
@@ -617,26 +617,12 @@ def load_config(snakemake_config):
     return config_missing
 
 
-def get_install_outputs(install_outputs, all_installs=[]):
-    """Collect files to be created for all installations listed in config.install."""
-    # If nothing is specified in config.install, install everything
-    if not sparv_config.get("install", []):
-        return [i for i, _ in all_installs]
-
+def get_install_outputs(snake_storage: SnakeStorage, install_types: Optional[List] = None):
+    """Collect files to be created for all installations given as argument or listed in config.install."""
     install_inputs = []
-    omit_installs = []
-    include_all = False
-    for installation in sparv_config.get("install", []):
-        if installation.startswith("not "):
-            omit_installs.append(installation[4:])
-            include_all = True
-        else:
-            install_inputs.extend(install_outputs[installation])
+    for installation in install_types or sparv_config.get("install", []):
+        install_inputs.extend(snake_storage.install_outputs[installation])
 
-    if include_all:
-        for i, _ in all_installs:
-            if (i not in install_inputs) and (i not in omit_installs):
-                install_inputs.append(i)
     return install_inputs
 
 

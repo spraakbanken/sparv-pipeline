@@ -71,7 +71,7 @@ def main():
         "",
         "Annotating a corpus:",
         "   run              Annotate a corpus and generate export files",
-        "   install          Annotate and install a corpus on remote server",
+        "   install          Install a corpus",
         "   clean            Remove output directories",
         "",
         "Inspecting corpus details:",
@@ -105,7 +105,8 @@ def main():
     run_parser.add_argument("output", nargs="*", default=[], help="The type of output format to generate")
     run_parser.add_argument("-l", "--list", action="store_true", help="List available output formats")
 
-    install_parser = subparsers.add_parser("install", description="Annotate and install a corpus on remote server.")
+    install_parser = subparsers.add_parser("install", description="Install a corpus.")
+    install_parser.add_argument("type", nargs="*", default=[], help="The type of installation to perform")
     install_parser.add_argument("-l", "--list", action="store_true", help="List installations to be made")
 
     clean_parser = subparsers.add_parser("clean", description="Remove output directories (by default only the "
@@ -279,7 +280,8 @@ def main():
             if args.list:
                 snakemake_args["targets"] = ["list_installs"]
             else:
-                snakemake_args["targets"] = ["install_annotated_corpus"]
+                config["install_types"] = args.type
+                snakemake_args["targets"] = ["install_corpus"]
         # Command: build-models
         elif args.command == "build-models":
             config["language"] = args.language

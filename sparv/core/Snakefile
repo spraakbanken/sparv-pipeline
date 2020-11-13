@@ -277,27 +277,27 @@ rule clean:
             snake_utils.print_sparv_info("Nothing to remove")
 
 
-# Rule to list all installations that will be made when running `sparv install`
+# Rule to list all available installations
 rule list_installs:
     run:
-        install_outputs = set(snake_utils.get_install_outputs(snake_storage.install_outputs, snake_storage.install_targets))
-        installations_to_be_made = [(t, d) for t, d in sorted(snake_storage.install_targets)
-                                    if set(snake_storage.install_outputs[t]).intersection(install_outputs)]
+        selected_install_outputs = set(snake_utils.get_install_outputs(snake_storage))
+        selected_installations = [(t, d) for t, d in sorted(snake_storage.install_targets)
+                                  if set(snake_storage.install_outputs[t]).intersection(selected_install_outputs)]
         other_installations = [(t, d) for t, d in sorted(snake_storage.install_targets)
-                               if not set(snake_storage.install_outputs[t]).intersection(install_outputs)]
+                               if not set(snake_storage.install_outputs[t]).intersection(selected_install_outputs)]
 
-        if installations_to_be_made:
+        if selected_installations:
             print()
             table = Table(title="Selected installations", box=box.SIMPLE, show_header=False, title_justify="left")
             table.add_column(no_wrap=True)
             table.add_column()
-            for target, desc in installations_to_be_made:
+            for target, desc in selected_installations:
                 table.add_row(target, desc)
             console.print(table)
 
         if other_installations:
             print()
-            if installations_to_be_made:
+            if selected_installations:
                 title = "Other available installations"
             else:
                 title = "Available installations"
@@ -308,7 +308,7 @@ rule list_installs:
                 table.add_row(target, desc)
             console.print(table)
 
-        console.print("[i]Note:[/i] Use the 'install' section in your corpus configuration to list what "
+        console.print("[i]Note:[/i] Use the 'install' section in your corpus configuration to select what "
                       "installations should be performed when running 'sparv install' without arguments.")
 
 
@@ -320,9 +320,9 @@ rule export_corpus:
 
 
 # Rule for making installations
-rule install_annotated_corpus:
+rule install_corpus:
     input:
-        snake_utils.get_install_outputs(snake_storage.install_outputs, snake_storage.install_targets)
+        snake_utils.get_install_outputs(snake_storage, config.get("install_types"))
 
 
 # Rule to list all models that can be built/downloaded
