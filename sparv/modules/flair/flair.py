@@ -8,10 +8,11 @@ logger = util.get_logger(__name__)
 
 @annotator("Part-of-speech annotation with morphological descriptions from Flair", config=[
            Config("flair.model", default="flair/flair_full/final-model.pt", description="Flair model")])
-def annotate(out: Output = Output("<token>:flair.pos", cls="token:pos", description="Part-of-speech tags"),
-             word: Annotation = Annotation("<token:word>"),
-             sentence: Annotation = Annotation("<sentence>"),
-             model: Model = Model("[flair.model]")):
+def msdtag(out: Output = Output("<token>:flair.msd", cls="token:msd",
+                                description="Part-of-speeches with morphological descriptions"),
+           word: Annotation = Annotation("<token:word>"),
+           sentence: Annotation = Annotation("<sentence>"),
+           model: Model = Model("[flair.model]")):
     """POS tag using Flair."""
     sentences, _orphans = sentence.get_children(word)
     token_word = list(word.read())
@@ -40,6 +41,14 @@ def annotate(out: Output = Output("<token>:flair.pos", cls="token:pos", descript
             out_annotation.append(tag.value)
 
     out.write(out_annotation)
+
+
+@annotator("Extract POS from MSD", language=["swe"])
+def postag(out: Output = Output("<token>:flair.pos", cls="token:pos", description="Part-of-speech tags"),
+           msd: Annotation = Annotation("<token>:flair.msd")):
+    """Extract POS from MSD."""
+    from sparv.modules.misc import misc
+    misc.select(out, msd, index=0, separator=".")
 
 
 @modelbuilder("Flair model", language=["swe"])
