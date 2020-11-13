@@ -79,19 +79,6 @@ def postag(out: Output = Output("<token>:hunpos.pos", cls="token:pos", descripti
     misc.select(out, msd, index=0, separator=".")
 
 
-@annotator("Convert hunpos SUC tags to UPOS", language=["swe"])
-def upostag(out: Output = Output("<token>:hunpos.upos", cls="token:upos", description="Part-of-speeches in UD"),
-            pos: Annotation = Annotation("<token>:hunpos.pos")):
-    """Convert hunpos SUC tags to UPOS."""
-    pos_tags = pos.read()
-    out_annotation = []
-
-    for tag in pos_tags:
-        out_annotation.append(util.tagsets.pos_to_upos(tag, "swe", "SUC"))
-
-    out.write(out_annotation)
-
-
 @modelbuilder("Hunpos model", language=["swe"])
 def hunpos_model(model: ModelOutput = ModelOutput("hunpos/suc3_suc-tags_default-setting_utf8.model")):
     """Download the Hunpos model."""

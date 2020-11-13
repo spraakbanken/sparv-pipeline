@@ -88,6 +88,36 @@ def translate_tag(out: Output,
     out.write((mapping.get(t, t) for t in tag.read()))
 
 
+@annotator("Convert SUC POS tags to UPOS", language=["swe"])
+def upostag(out: Output = Output("<token>:misc.upos", cls="token:upos", description="Part-of-speeches in UD"),
+            pos: Annotation = Annotation("<token:pos>")):
+    """Convert SUC POS tags to UPOS."""
+    pos_tags = pos.read()
+    out_annotation = []
+
+    for tag in pos_tags:
+        out_annotation.append(util.tagsets.pos_to_upos(tag, "swe", "SUC"))
+
+    out.write(out_annotation)
+
+
+@annotator("Convert SUC MSD tags to universal features", language=["swe"])
+def ufeatstag(out: Output = Output("<token>:misc.ufeats", cls="token:ufeats",
+                                   description="Universal morphological features"),
+              pos: Annotation = Annotation("<token:pos>"),
+              msd: Annotation = Annotation("<token:msd>")):
+    """Convert SUC MSD tags to universal features."""
+    pos_tags = pos.read()
+    msd_tags = msd.read()
+    out_annotation = []
+
+    for pos_tag, msd_tag in zip(pos_tags, msd_tags):
+        feats = util.tagsets.suc_to_feats(pos_tag, msd_tag)
+        out_annotation.append(util.cwbset(feats))
+
+    out.write(out_annotation)
+
+
 @annotator("Convert {struct}:{attr} into a token annotation", wildcards=[
     Wildcard("struct", Wildcard.ANNOTATION),
     Wildcard("attr", Wildcard.ATTRIBUTE)
