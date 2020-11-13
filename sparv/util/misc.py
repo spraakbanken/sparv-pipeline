@@ -116,6 +116,8 @@ def cwbset(values, delimiter="|", affix="|", sort=False, maxlength=4095, encodin
 
 def set_to_list(setstring, delimiter="|", affix="|"):
     """Turn a set string into a list."""
+    if setstring == affix:
+        return []
     setstring = setstring.strip(affix)
     return setstring.split(delimiter)
 
