@@ -191,7 +191,7 @@ def _read_single_annotation(doc, annotation, with_annotation_name, allow_newline
 
 
 def write_data(doc, name, value, append=False):
-    """Write arbitrary string data to file in annotations directory."""
+    """Write arbitrary string data to file in workdir directory."""
     file_path = get_annotation_path(doc, name, data=True)
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     mode = "a" if append else "w"
@@ -204,7 +204,7 @@ def write_data(doc, name, value, append=False):
 
 
 def read_data(doc, name):
-    """Read arbitrary string data from file in annotations directory."""
+    """Read arbitrary string data from file in workdir directory."""
     file_path = get_annotation_path(doc, name, data=True)
 
     with open(file_path) as f:
@@ -234,11 +234,11 @@ def get_annotation_path(doc, annotation, data=False):
 
     if data:
         if doc:
-            path = os.path.join(paths.annotation_dir, doc, chunk, elem)
+            path = os.path.join(paths.work_dir, doc, chunk, elem)
         else:
-            path = os.path.join(paths.annotation_dir, elem)
+            path = os.path.join(paths.work_dir, elem)
     else:
         if not attr:
             attr = SPAN_ANNOTATION
-        path = os.path.join(paths.annotation_dir, doc, chunk, elem, attr)
+        path = os.path.join(paths.work_dir, doc, chunk, elem, attr)
     return path

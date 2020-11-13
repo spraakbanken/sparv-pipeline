@@ -107,10 +107,10 @@ def main():
     install_parser.add_argument("-l", "--list", action="store_true", help="List installations to be made")
 
     clean_parser = subparsers.add_parser("clean", description="Remove output directories (by default only the "
-                                                              "annotations directory).")
+                                                              "sparv-workdir directory).")
     clean_parser.add_argument("--export", action="store_true", help="Remove export directory")
     clean_parser.add_argument("--logs", action="store_true", help="Remove logs directory")
-    clean_parser.add_argument("--all", action="store_true", help="Remove annotations, export and logs directories")
+    clean_parser.add_argument("--all", action="store_true", help="Remove workdir, export and logs directories")
 
     # Inspect
     config_parser = subparsers.add_parser("config", description="Display the corpus configuration.")

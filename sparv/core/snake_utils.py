@@ -118,7 +118,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                                                                            "params": param_dict})
         if rule.target_name == sparv_config.get("import.importer"):
             # Exports always generate corpus text file
-            rule.outputs.append(paths.annotation_dir / "{doc}" / io.TEXT_FILE)
+            rule.outputs.append(paths.work_dir / "{doc}" / io.TEXT_FILE)
             # If importer guarantees other outputs, add them to outputs list
             if rule.import_outputs:
                 if isinstance(rule.import_outputs, Config):
@@ -138,7 +138,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                     annotations_.add(ann)
 
                 for element in annotations_:
-                    rule.outputs.append(paths.annotation_dir / get_annotation_path(element))
+                    rule.outputs.append(paths.work_dir / get_annotation_path(element))
 
     if rule.exporter:
         storage.all_exporters.setdefault(rule.module_name, {}).setdefault(rule.f_name,
@@ -202,12 +202,12 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             rule.missing_config.update(missing_configs)
             ann_path = get_annotation_path(param_value, data=param_type.data, common=param_type.common)
             if param_type.all_docs:
-                rule.outputs.extend(map(Path, expand(escape_wildcards(paths.annotation_dir / ann_path),
+                rule.outputs.extend(map(Path, expand(escape_wildcards(paths.work_dir / ann_path),
                                                      doc=get_source_files(storage.source_files))))
             elif param_type.common:
-                rule.outputs.append(paths.annotation_dir / ann_path)
+                rule.outputs.append(paths.work_dir / ann_path)
                 if rule.installer:
-                    storage.install_outputs[rule.target_name].append(paths.annotation_dir / ann_path)
+                    storage.install_outputs[rule.target_name].append(paths.work_dir / ann_path)
             else:
                 rule.outputs.append(get_annotation_path(param_value, data=param_type.data))
             rule.parameters[param_name] = param_value
@@ -244,10 +244,10 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             rule.missing_config.update(missing_configs)
             ann_path = get_annotation_path(param_value, data=param_type.data, common=param_type.common)
             if param_type.all_docs:
-                rule.inputs.extend(expand(escape_wildcards(paths.annotation_dir / ann_path),
+                rule.inputs.extend(expand(escape_wildcards(paths.work_dir / ann_path),
                                           doc=get_source_files(storage.source_files)))
             elif rule.exporter or rule.installer or param_type.common:
-                rule.inputs.append(paths.annotation_dir / ann_path)
+                rule.inputs.append(paths.work_dir / ann_path)
             else:
                 rule.inputs.append(ann_path)
 
@@ -287,10 +287,10 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 if param.default.is_input:
                     if param_type == ExportAnnotationsAllDocs:
                         rule.inputs.extend(
-                            expand(escape_wildcards(paths.annotation_dir / get_annotation_path(annotation.name)),
+                            expand(escape_wildcards(paths.work_dir / get_annotation_path(annotation.name)),
                                    doc=get_source_files(storage.source_files)))
                     else:
-                        rule.inputs.append(paths.annotation_dir / get_annotation_path(annotation.name))
+                        rule.inputs.append(paths.work_dir / get_annotation_path(annotation.name))
                 rule.parameters[param_name].append((annotation, export_name))
         # SourceAnnotations
         elif param_type == SourceAnnotations:
@@ -590,7 +590,7 @@ def get_doc_value(wildcards, annotator):
     doc = None
     if hasattr(wildcards, "doc"):
         if annotator:
-            doc = wildcards.doc[len(str(paths.annotation_dir)) + 1:]
+            doc = wildcards.doc[len(str(paths.work_dir)) + 1:]
         else:
             doc = wildcards.doc
     return doc

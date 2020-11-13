@@ -97,8 +97,8 @@ def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
 
     dependencies = rule_storage.outputs if not rule_storage.abstract else rule_storage.inputs
 
-    # Prepend annotation dir to paths if needed (usually included in the {doc} wildcard but here it needs to be explicit)
-    rule_outputs = [paths.annotation_dir / o if not (paths.annotation_dir in o.parents or paths.export_dir in o.parents)
+    # Prepend work dir to paths if needed (usually included in the {doc} wildcard but here it needs to be explicit)
+    rule_outputs = [paths.work_dir / o if not (paths.work_dir in o.parents or paths.export_dir in o.parents)
                     else o
                     for o in dependencies]
 
@@ -263,8 +263,8 @@ rule clean:
             to_remove.append(paths.log_dir)
             assert paths.log_dir, "Log dir name not configured."
         if config.get("all") or not (config.get("export") or config.get("logs")):
-            to_remove.append(paths.annotation_dir)
-            assert paths.annotation_dir, "Annotations dir name not configured."
+            to_remove.append(paths.work_dir)
+            assert paths.work_dir, "Work dir name not configured."
 
         something_removed = False
         for d in to_remove:

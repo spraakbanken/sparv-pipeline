@@ -61,7 +61,7 @@ bin_dir = get_data_path("bin")
 
 # Corpus relative paths
 corpus_dir = Path(os.environ.get("CORPUS_DIR", ""))
-annotation_dir = Path("annotations")
+work_dir = Path("sparv-workdir")
 log_dir = "logs"
 source_dir = "source"
 export_dir = Path("export")

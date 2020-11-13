@@ -23,7 +23,7 @@ def run_sparv(gold_corpus_dir: pathlib.Path,
 
     # Copy everything but the output
     shutil.copytree(str(gold_corpus_dir), str(new_corpus_dir), ignore=shutil.ignore_patterns(
-        str(paths.annotation_dir), GOLD_PREFIX + str(paths.annotation_dir),
+        str(paths.work_dir), GOLD_PREFIX + str(paths.work_dir),
         str(paths.export_dir), GOLD_PREFIX + str(paths.export_dir)))
 
     args = ["sparv", "-d", str(new_corpus_dir), "run", *targets]
@@ -39,15 +39,15 @@ def run_sparv(gold_corpus_dir: pathlib.Path,
     return new_corpus_dir
 
 
-def cmp_annotations(gold_corpus_dir: pathlib.Path,
-                    test_corpus_dir: pathlib.Path,
-                    ignore: list = []):
-    """Recursively compare the annotation directories of gold_corpus and test_corpus."""
+def cmp_workdir(gold_corpus_dir: pathlib.Path,
+                test_corpus_dir: pathlib.Path,
+                ignore: list = []):
+    """Recursively compare the workdir directories of gold_corpus and test_corpus."""
     ignore.append(".log")
-    assert _cmp_dirs(gold_corpus_dir / pathlib.Path(GOLD_PREFIX + str(paths.annotation_dir)),
-                     test_corpus_dir / paths.annotation_dir,
+    assert _cmp_dirs(gold_corpus_dir / pathlib.Path(GOLD_PREFIX + str(paths.work_dir)),
+                     test_corpus_dir / paths.work_dir,
                      ignore=ignore
-                     ), "annotations dir did not match the gold standard"
+                     ), "work dir did not match the gold standard"
 
 
 def cmp_export(gold_corpus_dir: pathlib.Path,
