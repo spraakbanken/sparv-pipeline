@@ -46,6 +46,7 @@ setuptools.setup(
         "questionary==1.8.0",
         "rich==9.1.0",
         "snakemake==5.26.1",
+        "stanza==1.1.1",
         "typing-inspect==0.6.0"
     ],
     extras_require={
