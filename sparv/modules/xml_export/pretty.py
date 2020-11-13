@@ -110,7 +110,7 @@ def compressed(out: Export = Export("[xml_export.filename_compressed]"),
 ])
 def install_original(corpus: Corpus = Corpus(),
                      xmlfile: ExportInput = ExportInput("[xml_export.filename_compressed]"),
-                     out: OutputCommonData = OutputCommonData("xml_export.time_install_export_pretty"),
+                     out: OutputCommonData = OutputCommonData("xml_export.install_export_pretty_marker"),
                      export_path: str = Config("xml_export.export_original_path"),
                      host: str = Config("xml_export.export_original_host")):
     """Copy compressed combined unscrambled XML to remote host."""

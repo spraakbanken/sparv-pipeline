@@ -20,15 +20,14 @@ MAX_POS_LENGTH = 5
 
 @installer("Install Korp's Word Picture SQL on remote host")
 def install_relations(sqlfile: ExportInput = ExportInput("korp_wordpicture/relations.sql"),
-                      out: OutputCommonData = OutputCommonData("korp.time_install_relations"),
+                      out: OutputCommonData = OutputCommonData("korp.install_relations_marker"),
                       db_name: str = Config("korp.mysql_dbname"),
                       host: str = Config("korp.remote_host")):
     """Install Korp's Word Picture SQL on remote host.
 
     Args:
         sqlfile (str, optional): SQL file to be installed. Defaults to ExportInput("korp_wordpicture/relations.sql").
-        out (str, optional): Timestamp file to be written.
-            Defaults to OutputCommonData("korp.time_install_relations").
+        out (str, optional): Marker file to be written.
         db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname").
         host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host").
     """
