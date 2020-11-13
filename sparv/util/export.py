@@ -2,16 +2,16 @@
 
 import logging
 import xml.etree.ElementTree as etree
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict, defaultdict
 from copy import deepcopy
 from itertools import combinations
 from typing import Any, List, Optional, Set, Tuple, Union
 
 from sparv import util
 from sparv.core import io
-from sparv.util import misc, SPARV_DEFAULT_NAMESPACE
-from sparv.util.classes import (Annotation, AnnotationAllDocs, AnnotationData, ExportAnnotations,
-                                ExportAnnotationsAllDocs, Headers, SourceStructure)
+from sparv.util import SPARV_DEFAULT_NAMESPACE, misc
+from sparv.util.classes import (Annotation, AnnotationAllDocs, ExportAnnotations, ExportAnnotationsAllDocs, Headers,
+                                SourceStructure)
 
 log = logging.getLogger(__name__)
 
@@ -286,11 +286,12 @@ def get_annotation_names(annotations: Union[ExportAnnotations, ExportAnnotations
     """Get a list of annotations, token attributes and a dictionary for renamed annotations.
 
     Args:
-        annotations:
-        source_annotations:
-        doc:
-        docs:
-        token_name:
+        annotations: List of elements:attributes (annotations) to include.
+        source_annotations: List of elements:attributes from the original document to include. If not specified,
+            everything will be included.
+        doc: Name of the source document.
+        docs: List of names of source documents (alternative to `doc`).
+        token_name: Name of the token annotation.
         remove_namespaces: Remove all namespaces in export_names unless names are ambiguous.
         keep_struct_names: For structural attributes (anything other than token), include the annotation base name
             (everything before ":") in export_names (used in cwb encode).

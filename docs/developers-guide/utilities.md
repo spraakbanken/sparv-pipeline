@@ -31,18 +31,63 @@ from sparv.util import UTF8
 
 
 ## Export Utils
+Util functions used for preparing data for export.
 
 ### gather_annotations()
+Calculate the span hierarchy and the annotation_dict containing all annotation elements and attributes. Returns a
+`spans_dict` and an `annotation_dict` if `flatten` is set to `True`, otherwise `span_positions` and `annotation_dict`.
+
+**Arguments:**
+- `annotations`: A list of annotations to include.
+- `export_names`: Dictionary that maps from annotation names to export names.
+- `header_annotations`: A list of header annotations.
+- `doc`: The document name.
+- `flatten`: Whether to return the spans as a flat list. Default: `True`
+- `split_overlaps`: Whether to split up overlapping spans. Default: `False`
+
+
 ### get_annotation_names()
+Get a list of annotations, token attributes and a dictionary with translations from annotation names to export names.
+
+**Arguments:**
+- `annotations`: List of elements:attributes (annotations) to include.
+- `source_annotations`: List of elements:attributes from the original document to include. If not specified, everything
+  will be included.
+- `doc`: Name of the source document.
+- `docs`: List of names of source documents (alternative to `doc`).
+- `token_name`: Name of the token annotation.
+- `remove_namespaces`: Remove all namespaces in export_names unless names are ambiguous. Default: `False`
+- `keep_struct_names`: For structural attributes (anything other than token), include the annotation base name
+  (everything before ":") in export_names (used in cwb encode). Default: `False`
+- `sparv_namespace`: The namespace to be added to all Sparv annotations.
+- `source_namespace`: The namespace to be added to all annotations present in the source.
+
+
 ### get_header_names()
+Get a list of header annotations and a dictionary for renamed annotations.
+
+**Arguments:**
+- `header_annotation_names`: List of header elements:attributes from the original document to include. If not specified,
+  everything will be included.
+- `doc`: Name of the source document.
+- `docs`: List of names of source documents (alternative to `doc`).
+
+
 ### scramble_spans()
+Reorder chunks according to `chunk_order` and open/close tags in the correct order.
+
+**Arguments:**
+- `span_positions`: The original span positions (usually retrieved from [`gather_annotations()`](#gather_annotations)).
+- `chunk_name`: The name of the annotation to scramble on.
+- `chunk_order`: Annotation containing the new order of the chunk.
 
 
 ## Install Utils
+Util functions used for installing corpora onto remote servers.
 
-### install_directory()`
-### install_file()`
-### install_mysql()`
+### install_directory()
+### install_file()
+### install_mysql()
 
 
 ## System Utils
@@ -56,6 +101,19 @@ from sparv.util import UTF8
 
 
 ## Tagsets
+Functions and objects related to tagset conversions.
+
+### tagsets.join_tag()
+Convert a complex SUC or SALDO tag record into a string.
+
+**Arguments:**
+- `tag`: The tag to convert to a string. Can be a dict (`{'pos': pos, 'msd': msd}`) or a tuple (`(pos, msd)`)
+- `sep`: The separator to be used. Default: "."
+
+
+### tagsets.mappings
+Dictionary containing mappings (dictionaries) for of part-of-speech tag mappings between different tag sets.
+
 
 ### tagsets.pos_to_upos()
 Map POS tags to Universal Depenendy POS tags. This only works if there is a conversion function in `util.pos_to_upos`
@@ -67,7 +125,30 @@ for the given language and tagset.
 - `tagset`: The name of the tagset that `pos` belongs to.
 
 
+### tagsets.split_tag()
+Split a SUC or Saldo tag string ('X.Y.Z') into a tuple ('X', 'Y.Z') where 'X' is a part of speech and 'Y', 'Z' etc. are
+morphologic features (i.e. MSD tags).
+
+**Arguments:**
+- `tag`: The tag string to convert into a tuple.
+- `sep`: The separator to split on. Default: "."
+
+
+### tagsets.suc_to_feats()
+Convert SUC MSD tags into UCoNNL feature list (universal morphological features). Returns a list of universal features.
+
+**Arguments:**
+- `pos`: The SUC part-of-speech tag.
+- `msd`: The SUC MSD tag.
+- `delim`: The delimiter separating the features in `msd`. Default: "."
+
+
+### tagsets.tags
+Dictionary containing sets of part-of-speech tags.
+
+
 ## Miscellaneous Utils
+Miscellaneous utils functions.
 
 <!-- ### chain() -->
 
