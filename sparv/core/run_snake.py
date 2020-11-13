@@ -27,6 +27,18 @@ def exit_with_error_message(message, logger_name):
     sys.exit(123)
 
 
+class StreamToLogger(object):
+    """File-like stream object that redirects writes to a logger instance."""
+
+    def __init__(self, logger, log_level=logging.INFO):
+        self.logger = logger
+        self.log_level = log_level
+        self.linebuf = ""
+
+    def write(self, buf):
+        self.logger.log(self.log_level, buf.rstrip())
+
+
 # Import module
 modules_path = ".".join(("sparv", paths.modules_dir))
 module_name = snakemake.params.module_name
@@ -65,6 +77,11 @@ logger.info("RUN: %s:%s(%s)", module_name, f_name, ", ".join("%s=%s" % (i[0], re
 
 # Execute function
 try:
+    # Suppress unwanted prints to stdout and stderr
+    module_logger = logging.getLogger("sparv.modules." + module_name)
+    sys.stdout = StreamToLogger(module_logger)
+    sys.stderr = StreamToLogger(module_logger, logging.WARNING)
+
     registry.modules[module_name].functions[f_name]["function"](**parameters)
     if snakemake.params.export_dirs:
         logger.export_dirs(snakemake.params.export_dirs)
@@ -73,3 +90,7 @@ except SparvErrorMessage as e:
     # Instead we log the error message and exit with a non-zero status to signal to Snakemake that
     # something went wrong.
     exit_with_error_message(e.message, "sparv.modules." + module_name)
+finally:
+    # Restore printing to stdout and stderr
+    sys.stdout = sys.__stdout__
+    sys.stderr = sys.__stderr__
