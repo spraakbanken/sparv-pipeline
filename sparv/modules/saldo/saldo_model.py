@@ -147,7 +147,7 @@ def read_lmf(xml, annotation_elements=("gf", "lem", "saldo"), tagset="SUC", verb
      - tagset is the tagset for the possible tags (currently: 'SUC', 'Parole', 'Saldo')
     """
     # assert annotation_element in ("gf", "lem", "saldo"), "Invalid annotation element"
-    tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower())
+    tagmap = util.tagsets.mappings["saldo_to_" + tagset.lower()]
     if verbose:
         log.info("Reading XML lexicon")
     lexicon = {}

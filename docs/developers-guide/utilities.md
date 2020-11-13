@@ -55,14 +55,9 @@ from sparv.util import UTF8
 ### rsync()
 
 
-<!-- ## Tagsets -->
+## Tagsets
 
-
-## Miscellaneous Utils
-
-<!-- ### chain() -->
-
-### convert_to_upos()
+### tagsets.pos_to_upos()
 Map POS tags to Universal Depenendy POS tags. This only works if there is a conversion function in `util.pos_to_upos`
 for the given language and tagset.
 
@@ -70,6 +65,11 @@ for the given language and tagset.
 - `pos`: The part-of-speech tag to convert.
 - `lang`: The language code.
 - `tagset`: The name of the tagset that `pos` belongs to.
+
+
+## Miscellaneous Utils
+
+<!-- ### chain() -->
 
 
 ### cwbset()

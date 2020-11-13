@@ -84,7 +84,7 @@ def translate_tag(out: Output,
     Example mappings: parole_to_suc, suc_to_simple, ...
     """
     if isinstance(mapping, str):
-        mapping = util.tagsets.__dict__[mapping]
+        mapping = util.tagsets.mappings[mapping]
     out.write((mapping.get(t, t) for t in tag.read()))
 
 

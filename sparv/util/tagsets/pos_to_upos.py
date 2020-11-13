@@ -26,7 +26,7 @@ FALLBACK = "X"
 #     "X": "other"}
 
 
-def convert_to_upos(pos, lang, tagset):
+def pos_to_upos(pos, lang, tagset):
     """Map POS tags to Universal Depenendy POS tags."""
     if (lang, tagset) in CONVERTERS:
         lang_convert = CONVERTERS[(lang, tagset)]

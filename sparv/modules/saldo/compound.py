@@ -562,7 +562,7 @@ def make_new_baseforms(out_baseform, msd_tag, compounds, stats_lexicon, altlexic
 
 def read_lmf(xml="saldom.xml", tagset="SUC"):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml)."""
-    tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower() + "_compound")
+    tagmap = util.tagsets.mappings["saldo_to_" + tagset.lower() + "_compound"]
     log.info("Reading XML lexicon")
     lexicon = {}
 

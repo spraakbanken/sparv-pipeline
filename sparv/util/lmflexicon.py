@@ -39,7 +39,7 @@ def read_lmf(xml, annotation_elements=("writtenForm", "lemgram"), tagset="SUC", 
     if verbose:
         log.info("Reading XML lexicon")
     lexicon = {}
-    tagmap = getattr(util.tagsets, "saldo_to_" + tagset.lower())
+    tagmap = util.tagsets.mappings["saldo_to_" + tagset.lower()]
 
     context = etree.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
     context = iter(context)
@@ -147,16 +147,16 @@ def try_translate(params):
         params_list.append(re.sub(" f ", " u ", params))
     for params in params_list:
         params = params.split()
-        # copied from util.tagsets._make_saldo_to_suc(), try to convert the tag
+        # copied from util.tagsets.tagmappings._make_saldo_to_suc(), try to convert the tag
         # but allow m (the match) to be None if the tag still can't be translated
-        paramstr = " ".join(util.tagsets._translate_saldo_parameters.get(prm, prm.upper()) for prm in params)
-        for (pre, post) in util.tagsets._suc_tag_replacements:
+        paramstr = " ".join(util.tagsets.mappings["saldo_params_to_suc"].get(prm, prm.upper()) for prm in params)
+        for (pre, post) in util.tagsets.tagmappings._suc_tag_replacements:
             m = re.match(pre, paramstr)
             if m:
                 break
         if m is not None:
             sucfilter = m.expand(post).replace(" ", r"\.").replace("+", r"\+")
-            return set(suctag for suctag in util.tagsets.suc_tags if re.match(sucfilter, suctag))
+            return set(suctag for suctag in util.tagsets.mappings["suc_tags"] if re.match(sucfilter, suctag))
     return []
 
 

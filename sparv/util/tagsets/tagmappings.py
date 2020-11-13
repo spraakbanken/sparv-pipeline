@@ -1227,7 +1227,7 @@ assert parole_tags == set(granska_to_parole.values())
 # Here we automatically create the 1-many dictionaries
 # saldo_to_suc and saldo_to_parole
 
-_translate_saldo_parameters = {
+saldo_params_to_suc = {
     'u':       'UTR',
     'n':       'NEU',
     'masc':    'MAS',
@@ -1330,7 +1330,7 @@ def _make_saldo_to_suc(compound=False):
             if not params or (len(params[0]) == 3 and params[0].endswith('m')):
                 # Skip multiword units
                 continue
-        paramstr = " ".join(_translate_saldo_parameters.get(prm, prm.upper()) for prm in params)
+        paramstr = " ".join(saldo_params_to_suc.get(prm, prm.upper()) for prm in params)
         for (pre, post) in _suc_tag_replacements:
             m = re.match(pre, paramstr)
             if m:
@@ -1354,3 +1354,29 @@ saldo_to_granska = dict((saldotag, set().union(*(suc_to_granska[suctag] for suct
                         for saldotag, suctags in list(saldo_to_suc.items()))
 
 saldo_to_saldo = dict((saldotag, {saldotag}) for saldotag in saldo_tags)
+
+
+mappings = {
+    "granska_to_parole": granska_to_parole,
+    "granska_to_suc": granska_to_suc,
+    "parole_to_granska": parole_to_granska,
+    "parole_to_suc": parole_to_suc,
+    "saldo_to_granska": saldo_to_granska,
+    "saldo_to_parole": saldo_to_parole,
+    "saldo_to_saldo": saldo_to_saldo,
+    "saldo_to_suc_compound": saldo_to_suc_compound,
+    "saldo_to_suc": saldo_to_suc,
+    "suc_descriptions": suc_descriptions,
+    "suc_to_granska": suc_to_granska,
+    "suc_to_parole": suc_to_parole,
+    "suc_to_simple": suc_to_simple,
+    "saldo_params_to_suc": saldo_params_to_suc,
+}
+
+tags = {
+    "granska_tags": granska_tags,
+    "parole_tags": parole_tags,
+    "saldo_tags": saldo_tags,
+    "simple_tags": simple_tags,
+    "suc_tags": suc_tags,
+}

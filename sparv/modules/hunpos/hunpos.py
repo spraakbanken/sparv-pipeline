@@ -32,7 +32,7 @@ def msdtag(out: Output = Output("<token>:hunpos.msd", cls="token:msd",
            encoding: str = util.UTF8):
     """POS/MSD tag using the Hunpos tagger."""
     if isinstance(tag_mapping, str) and tag_mapping:
-        tag_mapping = util.tagsets.__dict__[tag_mapping]
+        tag_mapping = util.tagsets.mappings[tag_mapping]
     elif tag_mapping is None or tag_mapping == "":
         tag_mapping = {}
 
@@ -87,7 +87,7 @@ def upostag(out: Output = Output("<token>:hunpos.upos", cls="token:upos", descri
     out_annotation = []
 
     for tag in pos_tags:
-        out_annotation.append(util.convert_to_upos(tag, "swe", "SUC"))
+        out_annotation.append(util.tagsets.pos_to_upos(tag, "swe", "SUC"))
 
     out.write(out_annotation)
 
