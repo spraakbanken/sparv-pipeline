@@ -39,7 +39,6 @@ setuptools.setup(
     python_requires=">=3.6.1",
     install_requires=[
         "appdirs==1.4.4",
-        "colorama==0.4.4",
         "iso-639==0.4.5",
         "nltk==3.5",
         "python-dateutil==2.8.1",

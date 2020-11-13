@@ -5,7 +5,6 @@ import difflib
 import sys
 from pathlib import Path
 
-import colorama
 import snakemake
 from snakemake.logging import logger
 
@@ -56,8 +55,6 @@ class CustomHelpFormatter(argparse.RawDescriptionHelpFormatter):
 
 def main():
     """Run Sparv pipeline (main entry point for Sparv)."""
-    # Initialize colorama to automatically strip all formatting if output is not a terminal
-    colorama.init()
 
     # Set up command line arguments
     parser = CustomArgumentParser(prog="sparv",
