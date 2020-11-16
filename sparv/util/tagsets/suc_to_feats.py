@@ -1,4 +1,8 @@
-"""Conversion from SUC MSD tags to UCoNNL feature lists."""
+"""Conversion from SUC MSD tags to UCoNNL feature lists.
+
+This tag conversion was taken from this ruby script: https://github.com/spraakbanken/parsing/blob/master/msd_to_feats.rb
+It might be worth improving this in the future, but it's good enough for now.
+"""
 
 
 MSD_TO_FEATS = {

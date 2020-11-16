@@ -50,8 +50,7 @@ manual](https://spraakbanken.gu.se/en/tools/sparv/pipeline/installation) for mor
 ## Running tests
 
 If you want to run the tests you will need to clone this project from
-[GitHub](https://github.com/spraakbanken/sparv-pipeline) since the test data is not distributed with pip. TODO: What
-about the zip-release??
+[GitHub](https://github.com/spraakbanken/sparv-pipeline) since the test data is not distributed with pip.
 
 Before cloning the repository with [git](https://git-scm.com/downloads) make sure you have [Git Large File
 Storage](https://git-lfs.github.com/) installed (`apt install git-lfs`). Some files will not be downloaded correctly
