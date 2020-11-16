@@ -60,11 +60,11 @@ def annotate(out_dephead: Output = Output("<token>:stanza.dephead", description=
             # Calculate dephead as position in document
             dephead_str = str(word.head - 1 + word_count) if word.head > 0 else "-"
             dephead_ref_str = str(word.head) if word.head > 0 else ""
-            # logger.debug(f"word: {word.text}"
-            #              f"\tdephead_ref: {dephead_ref_str}"
-            #              f"\tdephead {dephead_str}"
-            #              f"\tdeprel: {word.deprel}"
-            #              f"\thead word: {sent.words[word.head - 1].text if word.head > 0 else 'root'}")
+            logger.debug(f"word: {word.text}"
+                         f"\tdephead_ref: {dephead_ref_str}"
+                         f"\tdephead: {dephead_str}"
+                         f"\tdeprel: {word.deprel}"
+                         f"\thead word: {sent.words[word.head - 1].text if word.head > 0 else 'root'}")
             dephead.append(dephead_str)
             dephead_ref.append(dephead_ref_str)
             deprel.append(word.deprel)
