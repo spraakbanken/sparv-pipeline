@@ -1,9 +1,10 @@
 """Misc util functions."""
 
 import logging
-import unicodedata
 import pathlib
-from typing import List, Optional, Union
+import unicodedata
+from collections import OrderedDict
+from typing import List, Optional, Union, Tuple
 
 from .classes import Annotation, Model
 
@@ -38,7 +39,7 @@ def get_logger(name):
 
 
 def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations: Optional[List[str]] = None,
-                          add_plain_annotations: bool = True):
+                          add_plain_annotations: bool = True) -> List[Tuple[str, Optional[str]]]:
     """Take a list of annotation names and possible export names, and return a list of tuples.
 
     Each list item will be split into a tuple by the string ' as '.
@@ -46,6 +47,8 @@ def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations
 
     If there is an element called '...' everything from all_annotations will be included in the result, except for
     the elements that are prefixed with 'not '.
+
+    If an annotation occurs more than once in the list, only the last occurrence will be kept.
 
     Plain annotations (without attributes) will be added if needed, unless add_plain_annotations is set to False.
     Make sure to disable add_plain_annotations if the annotation names may include classes or config variables.
@@ -60,7 +63,7 @@ def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations
     omit_annotations = set()
     include_rest = False
 
-    result = []
+    result = OrderedDict()
     for a in annotation_names:
         # Check if this annotation should be omitted
         if a.startswith("not "):
@@ -70,12 +73,12 @@ def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations
         else:
             name, _, export_name = a.partition(" as ")
             plain_name, attr = Annotation(name).split()
+            result.pop(name, None)
+            result[name] = export_name or None
             if attr:
                 possible_plain_annotations.add(plain_name)
-                result.append((name, export_name or None))
             else:
                 plain_annotations.add(name)
-                result.append((name, export_name or None))
 
     # If only exclusions have been listed, include rest of annotations
     if omit_annotations and not result:
@@ -84,17 +87,17 @@ def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations
     # Add all_annotations to result if required
     if include_rest and all_annotations:
         for a in set(all_annotations).difference(omit_annotations):
-            if a not in [name for name, _export_name in result]:
-                result.append((a, None))
+            if a not in result:
+                result[a] = None
                 plain_annotations.add(a)
 
     # Add annotations names without attributes to result if required
     if add_plain_annotations:
         for a in possible_plain_annotations.difference(plain_annotations):
-            if a not in [name for name, _export_name in result]:
-                result.append((a, None))
+            if a not in result:
+                result[a] = None
 
-    return result
+    return list(result.items())
 
 
 # TODO: Split into two functions: one for Sparv-internal lists of values, and one used by the CWB module to create the
