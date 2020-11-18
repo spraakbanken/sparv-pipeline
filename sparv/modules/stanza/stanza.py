@@ -18,7 +18,7 @@ logger = util.get_logger(__name__)
            Config("stanza.resources_file", default="stanza/resources.json", description="Stanza resources file")])
 def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
                                     description="Part-of-speeches with morphological descriptions"),
-           out_upos: Output = Output("<token>:stanza.upos", cls="token:upos", description="Part-of-speeches in UD"),
+           out_pos: Output = Output("<token>:stanza.pos", cls="token:pos", description="Part-of-speech tags"),
            out_feats: Output = Output("<token>:stanza.ufeats", cls="token:ufeats",
                                       description="Universal morphological features"),
            word: Annotation = Annotation("<token:word>"),
@@ -32,7 +32,7 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
     sentences.append(orphans)
     word_list = list(word.read())
     msd = []
-    upos = []
+    pos = []
     feats = []
 
     # Format document for stanza: separate tokens by whitespace and sentences by double new lines
@@ -60,10 +60,10 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
             feats_str = util.cwbset(word.feats.split("|") if word.feats else "")
             logger.debug(f"word: {word.text}"
                          f"\tmsd: {word.xpos}"
-                         f"\tupos: {word.upos}"
+                         f"\tpos: {word.upos}"
                          f"\tfeats: {feats_str}")
             msd.append(word.xpos)
-            upos.append(word.upos)
+            pos.append(word.upos)
             feats.append(feats_str)
 
     if len(word_list) != word_count:
@@ -71,7 +71,7 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
             "Stanza POS tagger did not seem to respect the given tokenisation! Do your tokens contain whitespaces?")
 
     out_msd.write(msd)
-    out_upos.write(upos)
+    out_pos.write(pos)
     out_feats.write(feats)
 
 
@@ -134,6 +134,7 @@ def dep_parse(out_dephead: Output = Output("<token>:stanza.dephead", description
             dephead_ref.append(dephead_ref_str)
             deprel.append(word.deprel)
         word_count += len(sent._words)
+
 
     out_dephead_ref.write(dephead_ref)
     out_dephead.write(dephead)
