@@ -4,6 +4,7 @@ import copy
 import logging
 from collections import defaultdict
 from functools import reduce
+from pathlib import Path
 from typing import Any, Optional
 
 import yaml
@@ -43,7 +44,7 @@ def read_yaml(yaml_file):
     except FileNotFoundError as e:
         raise util.SparvErrorMessage(f"Could not find the config file '{yaml_file}'")
 
-    return data
+    return data or {}
 
 
 def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) -> None:
@@ -66,11 +67,23 @@ def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) 
         global config_user
         config_user = read_yaml(config_file) or {}
 
-        # If a parent config is specified, inherit its contents
-        if config_user.get(PARENT):
-            config_parent = read_yaml(config_user[PARENT])
-            config_user = _merge_dicts(config_user, config_parent)
+        def handle_parents(cfg, current_dir="."):
+            """Combine parent configs recursively."""
+            combined_parents = {}
+            if cfg.get(PARENT):
+                parents = cfg[PARENT]
+                if isinstance(parents, str):
+                    parents = [parents]
+                for parent in parents:
+                    parent_path = Path(current_dir, parent)
+                    config_parent = read_yaml(parent_path)
+                    config_parent = handle_parents(config_parent, parent_path.parent)
+                    combined_parents = _merge_dicts(config_parent, combined_parents)
+                cfg = _merge_dicts(cfg, combined_parents)
+            return cfg
 
+        # If parent configs are specified, inherit their contents
+        config_user = handle_parents(config_user)
     elif config_dict:
         config_user = config_dict
     else:
