@@ -32,7 +32,7 @@ def check_sparv_version() -> Optional[bool]:
     return None
 
 
-def copy_resource_files(data_dir: pathlib.Path, backup: bool = True):
+def copy_resource_files(data_dir: pathlib.Path):
     """Copy resource files to data dir."""
     resources_dir = pathlib.Path(pkg_resources.resource_filename("sparv", "resources"))
 
@@ -41,12 +41,15 @@ def copy_resource_files(data_dir: pathlib.Path, backup: bool = True):
         if f.is_dir():
             (data_dir / rel_f).mkdir(parents=True, exist_ok=True)
         else:
-            if backup and (data_dir / rel_f).is_file():
-                # Only create backup if files are different
+            # Check if file already exists in data dir
+            if (data_dir / rel_f).is_file():
+                # Only copy if files are different
                 if not filecmp.cmp(f, (data_dir / rel_f)):
                     shutil.copy((data_dir / rel_f), (data_dir / rel_f.parent / (rel_f.name + ".bak")))
                     console.print(f"{rel_f} has been updated and a backup was created")
-            shutil.copy(f, data_dir / rel_f)
+                    shutil.copy(f, data_dir / rel_f)
+            else:
+                shutil.copy(f, data_dir / rel_f)
 
 
 def run(sparv_dir: Optional[str] = None):
