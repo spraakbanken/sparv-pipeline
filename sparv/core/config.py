@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 import yaml
+import yaml.scanner
 
 from sparv import util
 from sparv.core import paths
@@ -41,7 +42,7 @@ def read_yaml(yaml_file):
             data = yaml.load(f, Loader=yaml.FullLoader)
     except yaml.scanner.ScannerError as e:
         raise util.SparvErrorMessage("An error occurred while reading the configuration file:\n" + str(e))
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         raise util.SparvErrorMessage(f"Could not find the config file '{yaml_file}'")
 
     return data or {}

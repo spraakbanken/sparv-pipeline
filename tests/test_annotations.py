@@ -5,7 +5,7 @@ import pathlib
 import pytest
 
 from sparv.util.system import find_binary
-import utils
+from . import utils
 
 
 @pytest.mark.swe

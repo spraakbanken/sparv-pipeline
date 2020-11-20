@@ -1,7 +1,6 @@
 """Main Sparv executable."""
 
 import argparse
-import difflib
 import sys
 from pathlib import Path
 
@@ -34,6 +33,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
         """Check if command is valid, and if not, try to guess what the user meant."""
         if action.choices is not None and value not in action.choices:
             # Check for possible misspelling
+            import difflib
             close_matches = difflib.get_close_matches(value, action.choices, n=1)
             if close_matches:
                 message = f"unknown command: '{value}' - maybe you meant '{close_matches[0]}'"

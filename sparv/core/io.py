@@ -116,7 +116,7 @@ def create_empty_attribute(annotation):
         length = len(list(annotation.read_spans()))
     elif isinstance(annotation, list):
         length = len(annotation)
-    elif isinstance(annotation, int):
+    else:  # int
         length = annotation
     return [None] * length
 
