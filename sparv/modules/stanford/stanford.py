@@ -28,8 +28,9 @@ def annotate(corpus_text: Text = Text(),
                                       description="Part-of-speeches from Stanford Parser"),
              out_ne: Output = Output("<token>:stanford.ne_type", cls="named_entity_type",
                                      description="Named entitiy types from Stanford Parser"),
-             out_deprel: Output = Output("<token>:stanford.deprel", description="Dependency relations to the head"),
-             out_dephead_ref: Output = Output("<token>:stanford.dephead_ref",
+             out_deprel: Output = Output("<token>:stanford.deprel", cls="token:deprel",
+                                         description="Dependency relations to the head"),
+             out_dephead_ref: Output = Output("<token>:stanford.dephead_ref", cls="token:dephead_ref",
                                               description="Sentence-relative positions of the dependency heads"),
              binary: BinaryDir = BinaryDir("[stanford.bin]")):
     """Use Stanford Parser to parse and annotate text."""

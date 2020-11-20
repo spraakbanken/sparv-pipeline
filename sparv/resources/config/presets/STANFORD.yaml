@@ -12,6 +12,8 @@ classes:
     "token:word": stanford.token:stanford.word
     "token:pos": stanford.token:stanford.pos
     "token:baseform": stanford.token:stanford.baseform
+    "token:deprel": <token>:stanford.deprel
+    "token:dephead_ref": <token>:stanford.dehead_ref
 
 
 presets:
