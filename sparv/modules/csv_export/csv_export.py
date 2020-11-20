@@ -64,7 +64,7 @@ def csv(doc: Document = Document(),
                     csv_data.append(f"# {span.export}")
 
         # Insert blank line after each closing sentence
-        elif span.name == sentence and instruction == "close":
+        elif span.name == sentence.name and instruction == "close":
             csv_data.append("")
 
     # Write result to file
