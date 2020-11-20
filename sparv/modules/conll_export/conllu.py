@@ -124,5 +124,7 @@ def _make_attrs(annotation, annotation_dict, export_names, index):
     for name, annot in annotation_dict[annotation].items():
         export_name = export_names.get(":".join([annotation, name]), name)
         annotation_name = export_names.get(annotation, annotation)
-        attrs.append("%s.%s = %s" % (annotation_name, export_name, annot[index]))
+        if annotation_name == "sentence":
+            annotation_name = "sent"
+        attrs.append("%s_%s = %s" % (annotation_name, export_name, annot[index]))
     return attrs
