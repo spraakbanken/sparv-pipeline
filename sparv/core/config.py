@@ -260,21 +260,16 @@ def load_presets(lang):
     return class_dict
 
 
-def resolve_presets(annotations, omits=set()):
+def resolve_presets(annotations):
     """Resolve annotation presets into actual annotations."""
     result = []
     for annotation in annotations:
         if annotation in presets:
-            current_result, current_omits = resolve_presets(presets[annotation], omits)
+            current_result = resolve_presets(presets[annotation])
             result.extend(current_result)
-            omits.update(current_omits)
-        elif annotation.startswith("not "):
-            omits.add(annotation[4:])
         else:
             result.append(annotation)
-    # Remove omitted annotations
-    result = [a for a in result if a not in omits]
-    return result, omits
+    return result
 
 
 def apply_presets(user_classes, default_classes):
@@ -287,7 +282,7 @@ def apply_presets(user_classes, default_classes):
     for a in annotation_elems:
         # Update annotations
         preset_classes.update(_collect_classes(get(a), class_dict))
-        annotations, _omits = resolve_presets(get(a))
+        annotations = resolve_presets(get(a))
         set_value(a, annotations)
 
     # Update classes
