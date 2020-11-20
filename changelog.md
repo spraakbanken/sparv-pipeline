@@ -23,6 +23,7 @@
 - New corpus import and export formats
   - Import of plain text files
   - Export to csv (a user-friendly, non-technical column format)
+  - Export to CoNNL-U format
   - Export to corpus statistics (word frequency lists)
 
 - Better support for annotating other (i.e. non-Swedish) languages

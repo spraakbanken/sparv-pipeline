@@ -1,4 +1,4 @@
-"""CoNNLU file export."""
+"""CoNNL-U file export."""
 
 import os
 from typing import Optional
