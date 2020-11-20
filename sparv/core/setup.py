@@ -1,25 +1,39 @@
 """Functions for setting up the Sparv data dir and config."""
-
+import filecmp
+import os
 import pathlib
 import shutil
 import sys
+from typing import Optional
 
 import appdirs
 import pkg_resources
 import yaml
+from rich.padding import Padding
+from rich.prompt import Confirm
 
 from sparv import __version__
 from sparv.core import paths
+from sparv.core.console import console
+
+VERSION_FILE = "version"
 
 
-def check_sparv_version():
-    """Check if the Sparv data dir is outdated."""
-    return __version__ == paths.read_sparv_config().get("version", "unknown")
+def check_sparv_version() -> Optional[bool]:
+    """Check if the Sparv data dir is outdated.
+
+    Returns:
+        True if up to date, False if outdated, None if version file is missing.
+    """
+    data_dir = paths.get_data_path()
+    version_file = (data_dir / VERSION_FILE)
+    if version_file.is_file():
+        return version_file.read_text() == __version__
+    return None
 
 
-def copy_resource_files(data_dir, backup: bool = True):
+def copy_resource_files(data_dir: pathlib.Path, backup: bool = True):
     """Copy resource files to data dir."""
-    data_dir = pathlib.Path(data_dir)
     resources_dir = pathlib.Path(pkg_resources.resource_filename("sparv", "resources"))
 
     for f in resources_dir.rglob("*"):
@@ -28,65 +42,101 @@ def copy_resource_files(data_dir, backup: bool = True):
             (data_dir / rel_f).mkdir(parents=True, exist_ok=True)
         else:
             if backup and (data_dir / rel_f).is_file():
-                shutil.copy((data_dir / rel_f), (data_dir / rel_f.parent / (rel_f.name + ".bak")))
+                # Only create backup if files are different
+                if not filecmp.cmp(f, (data_dir / rel_f)):
+                    shutil.copy((data_dir / rel_f), (data_dir / rel_f.parent / (rel_f.name + ".bak")))
+                    console.print(f"{rel_f} has been updated and a backup was created")
             shutil.copy(f, data_dir / rel_f)
 
 
-def query_user():
-    """Query user about data dir path."""
-    default_dir = appdirs.user_data_dir("sparv")
+def run(sparv_dir: Optional[str] = None):
+    """Query user about data dir path unless provided by argument, and populate path with files."""
+    default_dir = pathlib.Path(appdirs.user_data_dir("sparv"))
     current_dir = paths.get_data_path()
+    path: pathlib.Path
+    using_env = bool(os.environ.get(paths.data_dir_env))
 
-    if current_dir:
-        msg = f"Leave empty to continue using '{current_dir}'."
+    if sparv_dir:
+        # Specifying a path on the command line will perform the setup using that path, even if the environment
+        # variable is set
+        using_env = False
+        path = pathlib.Path(sparv_dir)
     else:
-        msg = "Leave empty to use the default which is '{}'.".format(appdirs.user_data_dir("sparv"))
+        console.print(
+            "\n[b]Sparv Data Directory Setup[/b]\n\n"
+            f"Current data directory: [green]{current_dir or '<not set>'}[/green]\n\n"
+            "Sparv needs a place to store its configuration files, language models and other data. "
+            "After selecting the directory you want to use for this purpose, Sparv will populate it with a default "
+            "config file and presets. Any existing files in the target directory will be backed up. Any previous "
+            "backups will be overwritten.")
+        console.print(Padding(
+            "[b]Tip:[/b] This process can also be completed non-interactively. Run 'sparv setup --help' for details. "
+            f"You may also override the data directory setting using the environment variable '{paths.data_dir_env}'.",
+            (1, 4)))
 
-    path = input(f"Sparv needs a place to store its configuration files, language models and other data. Enter the "
-                 f"path to the directory you want to use. {msg}\n").strip()
-    reused = False
-    if not path:
-        if current_dir:
-            reused = True
+        if using_env:
+            try:
+                cont = Confirm.ask(
+                    f"[b red]NOTE:[/b red] Sparv's data directory is currently set to '{current_dir}' using the "
+                    f"environment variable '{paths.data_dir_env}'. This variable takes precedence over any previous "
+                    f"path set using this setup process. To change the path, either edit the environment variable, or "
+                    f"delete the variable and rerun the setup command.\n"
+                    "Do you want to continue the setup process using the above path?")
+            except KeyboardInterrupt:
+                console.print("\nSetup interrupted.")
+                sys.exit()
+            if not cont:
+                console.print("\nSetup aborted.")
+                sys.exit()
             path = current_dir
         else:
-            path = default_dir
-    path = pathlib.Path(path)
+            # Ask user for path
+            if current_dir:
+                msg = f" Leave empty to continue using '{current_dir}':"
+            else:
+                msg = f" Leave empty to use the default which is '{default_dir}':"
+
+            try:
+                console.print(f"Enter the path to the directory you want to use.{msg}")
+                path_str = input().strip()
+            except KeyboardInterrupt:
+                console.print("\nSetup interrupted.")
+                sys.exit()
+            if path_str:
+                path = pathlib.Path(path_str)
+            else:
+                if current_dir:
+                    path = current_dir
+                else:
+                    path = default_dir
 
     try:
+        # Expand any "~"
+        path = path.expanduser()
         # Create directories
         dirs = [paths.bin_dir.name, paths.config_dir.name, paths.models_dir.name]
         path.mkdir(parents=True, exist_ok=True)
         for d in dirs:
             (path / d).mkdir(exist_ok=True)
     except:
-        print("\nAn error occurred while trying to create the directories. "
-              "Make sure the path you entered is correct, and that you have the necessary read/write permissions.")
+        console.print(
+            "\nAn error occurred while trying to create the directories. "
+            "Make sure the path you entered is correct, and that you have the necessary read/write permissions.")
         sys.exit(1)
 
-    config_dict = {
-        "sparv_data": str(path),
-        "version": __version__
-    }
+    if not using_env:
+        # Save data dir setting to config file
+        config_dict = {
+            "sparv_data": str(path)
+        }
 
-    # Save path to YAML file
-    paths.sparv_config_file.parent.mkdir(parents=True, exist_ok=True)
-    with open(paths.sparv_config_file, "w") as f:
-        yaml.dump(config_dict, f)
+        paths.sparv_config_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(paths.sparv_config_file, "w") as f:
+            yaml.dump(config_dict, f)
 
-    backup = False
-    if reused:
-        # If directory already exists, ask if the user wants to backup any existing files
-        while True:
-            backup = input("A default config file and presets will be copied to this directory. Do you want to create "
-                           "backups of any existing files? Previous backups will be overwritten. "
-                           "[y/n] ").strip().lower()
-            if backup and backup in "yn":
-                backup = backup == "y"
-                break
+    copy_resource_files(path)
 
-    copy_resource_files(path, backup)
+    # Save Sparv version number to a file in data dir
+    (path / VERSION_FILE).write_text(__version__)
 
-    created_msg = f" and the following directory has been created:\n{path}" if not reused else "."
-
-    print(f"\nSettings have been saved{created_msg}")
+    console.print(f"\nSetup completed. The Sparv data directory is set to '{path}'.")

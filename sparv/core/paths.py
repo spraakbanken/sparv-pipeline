@@ -1,7 +1,7 @@
 """Paths used by Sparv."""
 import os
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional
 
 import appdirs
 import yaml
@@ -19,7 +19,7 @@ def read_sparv_config():
     return data
 
 
-def get_data_path(subpath: Union[str, Path] = "") -> Path:
+def get_data_path(subpath: Union[str, Path] = "") -> Optional[Path]:
     """Get location of directory containing Sparv models, binaries and other files."""
     global data_dir
 
@@ -27,7 +27,7 @@ def get_data_path(subpath: Union[str, Path] = "") -> Path:
         # Environment variable overrides config
         data_dir_str = os.environ.get(data_dir_env) or read_sparv_config().get("sparv_data")
         if data_dir_str:
-            data_dir = Path(data_dir_str)
+            data_dir = Path(data_dir_str).expanduser()
 
     if subpath and data_dir:
         return data_dir / subpath
