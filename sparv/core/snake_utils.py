@@ -267,7 +267,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             export_annotations = util.parse_annotation_list(annotations, add_plain_annotations=False)
             annotation_type = Annotation if param_type == ExportAnnotations else AnnotationAllDocs
             plain_annotations = set()
-            possible_plain_annotations = set()
+            possible_plain_annotations = []
             for i, (export_annotation_name, export_name) in enumerate(export_annotations):
                 annotation = annotation_type(export_annotation_name)
                 rule.configs.update(registry.find_config_variables(annotation.name))
@@ -278,10 +278,12 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 if not attr:
                     plain_annotations.add(plain_name)
                 else:
-                    possible_plain_annotations.add(plain_name)
+                    if plain_name not in possible_plain_annotations:
+                        possible_plain_annotations.append(plain_name)
             # Add plain annotations where needed
-            for a in possible_plain_annotations.difference(plain_annotations):
-                export_annotations.append((annotation_type(a), None))
+            for a in possible_plain_annotations:
+                if a not in plain_annotations:
+                    export_annotations.append((annotation_type(a), None))
 
             for annotation, export_name in export_annotations:
                 if param.default.is_input:
