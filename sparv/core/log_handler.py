@@ -26,6 +26,7 @@ from sparv.util.misc import SparvErrorMessage
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 LOG_FORMAT_DEBUG = "%(asctime)s - %(name)s (%(process)d) - %(levelname)s - %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+TIME_FORMAT = "%H:%M:%S"
 
 # Add internal logging level used for non-logging-related communication from child processes to log handler
 INTERNAL = 100
@@ -118,6 +119,16 @@ class InternalLogHandler(logging.Handler):
             self.export_dirs_list.update(record.export_dirs)
 
 
+class ModifiedRichHandler(RichHandler):
+    """RichHandler modified to print names instead of paths."""
+
+    def emit(self, record: logging.LogRecord) -> None:
+        """Replace path with name and call parent method."""
+        record.pathname = record.name
+        record.lineno = 0
+        super().emit(record)
+
+
 class LogHandler:
     """Class providing a log handler for Snakemake."""
 
@@ -176,11 +187,11 @@ class LogHandler:
         internal_filter = InternalFilter()
 
         # stdout logger
-        stream_handler = RichHandler(show_path=False, console=console)
+        stream_handler = ModifiedRichHandler(enable_link_path=False, console=console)
         stream_handler.setLevel(self.log_level.upper())
         stream_handler.addFilter(internal_filter)
-        log_format = None if stream_handler.level > logging.DEBUG else "(%(process)d) - %(message)s"
-        stream_handler.setFormatter(logging.Formatter(log_format, datefmt=DATE_FORMAT))
+        log_format = "%(message)s" if stream_handler.level > logging.DEBUG else "(%(process)d) - %(message)s"
+        stream_handler.setFormatter(logging.Formatter(log_format, datefmt=TIME_FORMAT))
         sparv_logger.addHandler(stream_handler)
 
         # File logger
