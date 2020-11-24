@@ -212,7 +212,7 @@ def validate_module_config():
 
 def validate_config(config_dict=None, structure=None, parent=""):
     """Make sure the corpus config doesn't contain invalid keys."""
-    config_dict = config_dict or config_user
+    config_dict = config_dict or config
     structure = structure or config_structure
     for key in config_dict:
         path = (parent + "." + key) if parent else key
