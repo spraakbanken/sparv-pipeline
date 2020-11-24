@@ -254,7 +254,7 @@ def get_available_source_annotations(doc: Optional[str] = None, docs: Optional[L
     else:
         available_source_annotations.update(SourceStructure(doc).read().split())
 
-    return available_source_annotations
+    return sorted(list(available_source_annotations))
 
 
 def get_source_annotations(source_annotation_names: Optional[List[str]], doc: Optional[str] = None,
