@@ -1,4 +1,4 @@
-"""CoNNL-U file export."""
+"""CoNNL-U file export (modified SBX version)."""
 
 import os
 from typing import Optional
@@ -9,13 +9,13 @@ from sparv import Annotation, Config, Document, Export, SourceAnnotations, expor
 logger = util.get_logger(__name__)
 
 
-@exporter("CoNLL-U export", language=["swe"], config=[
+@exporter("CoNLL-U (SBX version) export", language=["swe"], config=[
     Config("conll_export.conll_fields.sentid", default="<sentence>:misc.id", description="Sentence ID"),
     Config("conll_export.conll_fields.id", default="<token>:misc.number_rel_<sentence>",
            description="Annotation in ID field of CoNLL-U output"),
     Config("conll_export.conll_fields.lemma", default="<token:baseform>",
            description="Annotation in LEMMA field of CoNLL-U output"),
-    Config("conll_export.conll_fields.upos", default="<token:upos>",
+    Config("conll_export.conll_fields.upos", default="<token:pos>",
            description="Annotation in UPOS field of CoNLL-U output"),
     Config("conll_export.conll_fields.xpos", default="<token:msd>",
            description="Annotation in XPOS field of CoNLL-U output"),
@@ -23,7 +23,7 @@ logger = util.get_logger(__name__)
            description="Annotation in FEATS field of CoNLL-U output"),
     Config("conll_export.conll_fields.head", default="<token:dephead_ref>",
            description="Annotation in HEAD field of CoNLL-U output"),
-    Config("conll_export.conll_fields.deprel", default=None,  # Or <token:deprel> ?
+    Config("conll_export.conll_fields.deprel", default="<token:deprel>",
            description="Annotation in DEPREL field of CoNLL-U output"),
     Config("conll_export.conll_fields.deps", default=None,
            description="Annotation in DEPS field of CoNLL-U output"),
@@ -31,7 +31,7 @@ logger = util.get_logger(__name__)
            description="Annotation in MISC field of CoNLL-U output")
 ])
 def conllu(doc: Document = Document(),
-           out: Export = Export("conllu/{doc}.conllu"),
+           out: Export = Export("conll/{doc}.conllu"),
            token: Annotation = Annotation("<token>"),
            sentence: Annotation = Annotation("<sentence>"),
            sentence_id: Annotation = Annotation("[conll_export.conll_fields.sentid]"),
@@ -97,6 +97,9 @@ def conllu(doc: Document = Document(),
         elif span.name == sentence.name and instruction == "close":
             csv_data.append("")
 
+    # Insert extra blank line to make CoNLL-U validator happy
+    csv_data.append("")
+
     # Write result to file
     with open(out, "w") as f:
         f.write("\n".join(csv_data))
@@ -111,9 +114,15 @@ def _make_conll_token_line(conll_fields, token, annotation_dict, index, delimite
             attr_str = "_"
         else:
             attr_str = annotation_dict[token][annot.attribute_name][index].strip("|") or "_"
+        # If there are multiple lemmas, use the first one
+        if i == 2:
+            attr_str = util.set_to_list(attr_str)[0]
         # Set head (index 6 in conll_fields) to '0' when root
         if i == 6 and attr_str == "_":
             attr_str = "0"
+        # Convert deprel to lower case
+        if i == 7:
+            attr_str = attr_str.lower()
         line.append(attr_str)
     return delimiter.join(line)
 
