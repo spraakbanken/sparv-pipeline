@@ -382,7 +382,15 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         # Config
         elif isinstance(param_value, Config):
             rule.configs.add(param_value.name)
-            rule.parameters[param_name] = sparv_config.get(param_value, param_value.default)
+            config_value = sparv_config.get(param_value, sparv_config.Unset)
+            if config_value is sparv_config.Unset:
+                if param_value.default is not None:
+                    config_value = param_value.default
+                elif param_optional:
+                    config_value = None
+                else:
+                    rule.missing_config.add(param_value)
+            rule.parameters[param_name] = config_value
         # Everything else
         else:
             rule.parameters[param_name] = param_value

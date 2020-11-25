@@ -21,7 +21,6 @@ PARENT = "parent"
 
 config_user = {}  # Dict holding local corpus config
 config = {}  # Dict holding full configuration
-config_undeclared = set()  # Config variables collected from use in modules but not declared anywhere
 presets = {}  # Dict holding annotation presets
 
 # Dict with info about config structure, prepopulated with some module-independent keys
@@ -33,6 +32,11 @@ config_structure = {
 }
 
 config_usage = defaultdict(set)  # For each config key, a list of annotators using that key
+
+
+class Unset:
+    """Class used to represent a config value that isn't set."""
+    pass
 
 
 def read_yaml(yaml_file):
@@ -135,7 +139,6 @@ def get(name: str, default=None):
     try:
         return _get(name)
     except KeyError:
-        config_undeclared.add(name)
         return default
 
 

@@ -46,12 +46,12 @@ export:
     source_namespace: Null
 
 # Common settings for XML exporters
-xml_export:
+# xml_export:
     # Export hosts and paths (targets for install_export and install_export_original)
-    export_host: ""
-    export_path: ""
-    export_original_host: ""
-    export_original_path: ""
+    # export_host: ""
+    # export_path: ""
+    # export_original_host: ""
+    # export_original_path: ""
 
 #===============================================================================
 # Module-specific Settings
@@ -70,16 +70,16 @@ segment:
 saldo:
     precision: ""
 
-korp:
-    # Korp: password protected corpus
-    protected: false
+# korp:
+    # Password protected corpus
+    # protected: false
 
     # Remote host name for installation of both corpus data and database
-    remote_host: ""
+    # remote_host:
 
     # Paths on remote server (targets for install_corpus)
-    remote_cwb_datadir: ""
-    remote_cwb_registry: ""
+    # remote_cwb_datadir:
+    # remote_cwb_registry:
 
     # Database name for relations, lemgram index and timespan
-    mysql_dbname: ""
+    # mysql_dbname:

@@ -331,7 +331,8 @@ def handle_config(cfg, module_name, rule_name: Optional[str] = None) -> None:
         prev = prev[k]
     else:
         raise Exception(f"The config variable '{cfg.name}' in '{rule_name or module_name}' has already been declared.")
-    sparv_config.set_default(cfg.name, cfg.default)
+    if cfg.default is not None:
+        sparv_config.set_default(cfg.name, cfg.default)
     sparv_config.add_to_structure(cfg.name, cfg.default, description=cfg.description, annotator=rule_name)
     if not cfg.description:
         raise Exception(f"Missing description for configuration key '{cfg.name}' in module '{module_name}'.")

@@ -109,8 +109,13 @@ def timeformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
 
 @annotator("Get datetime resolutions from informat")
 def resolution(out_resolution: OutputCommonData = OutputCommonData("dateformat.resolution"),
-               informat: str = Config("dateformat.datetime_informat")):
-    """Get the datetime resolution from the informat defined in the corpus config."""
+               informat: Optional[str] = Config("dateformat.datetime_informat")):
+    """Get the datetime resolution from the informat defined in the corpus config.
+
+    Args:
+        out_resolution: Date format output.
+        informat: Date in-format, used to calculate date resolution.
+    """
     resolutions = []
 
     if informat:
@@ -136,7 +141,7 @@ def resolution(out_resolution: OutputCommonData = OutputCommonData("dateformat.r
 
     resolutions = "|".join(resolutions)
 
-    # Write timeresolution file
+    # Write time resolution file
     out_resolution.write(resolutions)
 
 
