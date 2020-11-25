@@ -24,38 +24,38 @@ def install_corpus(corpus: Corpus = Corpus(),
                    registry: str = Config("cwb.corpus_registry"),
                    target_datadir: str = Config("korp.remote_cwb_datadir"),
                    target_registry: str = Config("korp.remote_cwb_registry")):
-    """Install CWB datafiles on server, by rsyncing datadir and registry.
-
-    If local and remote paths differ, target_datadir and target_registry must be specified.
-    """
+    """Install CWB datafiles on server, by rsyncing datadir and registry."""
     if not corpus:
-        raise(util.SparvErrorMessage("Missing corpus name. Corpus not installed."))
+        raise util.SparvErrorMessage("Missing corpus name. Corpus not installed.")
 
     if not host:
-        raise(util.SparvErrorMessage("No host provided! Corpus not installed."))
+        raise util.SparvErrorMessage("No host provided! Corpus not installed.")
 
-    target = os.path.join(target_datadir, corpus) if target_datadir else None
+    if not target_datadir:
+        raise util.SparvErrorMessage("Configuration variable korp.remote_cwb_datadir not set! Corpus not installed.")
+
+    if not target_registry:
+        raise util.SparvErrorMessage("Configuration variable korp.remote_cwb_registry not set! Corpus not installed.")
+
+    target = os.path.join(target_datadir, corpus)
     util.system.rsync(os.path.join(datadir, corpus), host, target)
 
-    target_registry_file = os.path.join(target_registry, corpus) if target_registry else os.path.join(registry, corpus)
-    source_registry_file = os.path.join(registry, corpus + ".tmp") if target_registry else os.path.join(registry,
-                                                                                                        corpus)
+    target_registry_file = os.path.join(target_registry, corpus)
+    source_registry_file = os.path.join(registry, corpus + ".tmp")
 
-    if target_registry:
-        # Fix absolute paths in registry file
-        with open(os.path.join(registry, corpus)) as registry_in:
-            with open(os.path.join(registry, corpus + ".tmp"), "w") as registry_out:
-                for line in registry_in:
-                    if line.startswith("HOME"):
-                        line = re.sub(r"HOME .*(/.+)", r"HOME " + target_datadir + r"\1", line)
-                    elif line.startswith("INFO"):
-                        line = re.sub(r"INFO .*(/.+)/\.info", r"INFO " + target_datadir + r"\1/.info", line)
+    # Fix absolute paths in registry file
+    with open(os.path.join(registry, corpus)) as registry_in:
+        with open(source_registry_file, "w") as registry_out:
+            for line in registry_in:
+                if line.startswith("HOME"):
+                    line = re.sub(r"HOME .*(/.+)", r"HOME " + target_datadir + r"\1", line)
+                elif line.startswith("INFO"):
+                    line = re.sub(r"INFO .*(/.+)/\.info", r"INFO " + target_datadir + r"\1/.info", line)
 
-                    registry_out.write(line)
+                registry_out.write(line)
 
     util.system.rsync(source_registry_file, host, target_registry_file)
-    if target_registry:
-        os.remove(os.path.join(registry, corpus + ".tmp"))
+    os.remove(source_registry_file)
 
     # Write marker file
     out.write("")
