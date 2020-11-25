@@ -3,7 +3,7 @@
 The Sparv pipeline is a corpus annotation tool run from the command line. Additional documentation can be found here:
 https://spraakbanken.gu.se/en/tools/sparv/pipeline.
 
-Check the [changelog](docs/changelog.md) to see what's new!
+Check the [changelog](changelog.md) to see what's new!
 
 Sparv is developed by [Språkbanken](https://spraakbanken.gu.se/). The source code is available under the [MIT
 license](https://opensource.org/licenses/MIT).
@@ -41,17 +41,15 @@ manual](https://spraakbanken.gu.se/en/tools/sparv/pipeline/installation) for mor
 
 ## Roadmap
 
-* Support for Swedish historic texts
 * Export of corpus metadata to META-SHARE format
+* Support for Swedish historic texts
 * Support for parallel corpora
 * Preprocessing of indata with automatic chunking
-* Export to CoNNL-U format
 
 ## Running tests
 
 If you want to run the tests you will need to clone this project from
-[GitHub](https://github.com/spraakbanken/sparv-pipeline) since the test data is not distributed with pip. TODO: What
-about the zip-release??
+[GitHub](https://github.com/spraakbanken/sparv-pipeline) since the test data is not distributed with pip.
 
 Before cloning the repository with [git](https://git-scm.com/downloads) make sure you have [Git Large File
 Storage](https://git-lfs.github.com/) installed (`apt install git-lfs`). Some files will not be downloaded correctly

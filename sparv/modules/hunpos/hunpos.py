@@ -32,7 +32,7 @@ def msdtag(out: Output = Output("<token>:hunpos.msd", cls="token:msd",
            encoding: str = util.UTF8):
     """POS/MSD tag using the Hunpos tagger."""
     if isinstance(tag_mapping, str) and tag_mapping:
-        tag_mapping = util.tagsets.__dict__[tag_mapping]
+        tag_mapping = util.tagsets.mappings[tag_mapping]
     elif tag_mapping is None or tag_mapping == "":
         tag_mapping = {}
 
@@ -77,19 +77,6 @@ def postag(out: Output = Output("<token>:hunpos.pos", cls="token:pos", descripti
     """Extract POS from MSD."""
     from sparv.modules.misc import misc
     misc.select(out, msd, index=0, separator=".")
-
-
-@annotator("Convert hunpos SUC tags to UPOS", language=["swe"])
-def upostag(out: Output = Output("<token>:hunpos.upos", cls="token:upos", description="Part-of-speeches in UD"),
-            pos: Annotation = Annotation("<token>:hunpos.pos")):
-    """Convert hunpos SUC tags to UPOS."""
-    pos_tags = pos.read()
-    out_annotation = []
-
-    for tag in pos_tags:
-        out_annotation.append(util.convert_to_upos(tag, "swe", "SUC"))
-
-    out.write(out_annotation)
 
 
 @modelbuilder("Hunpos model", language=["swe"])

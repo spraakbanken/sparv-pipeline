@@ -1,11 +1,9 @@
 """Main Sparv executable."""
 
 import argparse
-import difflib
 import sys
 from pathlib import Path
 
-import colorama
 import snakemake
 from snakemake.logging import logger
 
@@ -35,6 +33,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
         """Check if command is valid, and if not, try to guess what the user meant."""
         if action.choices is not None and value not in action.choices:
             # Check for possible misspelling
+            import difflib
             close_matches = difflib.get_close_matches(value, action.choices, n=1)
             if close_matches:
                 message = f"unknown command: '{value}' - maybe you meant '{close_matches[0]}'"
@@ -56,8 +55,6 @@ class CustomHelpFormatter(argparse.RawDescriptionHelpFormatter):
 
 def main():
     """Run Sparv pipeline (main entry point for Sparv)."""
-    # Initialize colorama to automatically strip all formatting if output is not a terminal
-    colorama.init()
 
     # Set up command line arguments
     parser = CustomArgumentParser(prog="sparv",
@@ -71,7 +68,7 @@ def main():
         "",
         "Annotating a corpus:",
         "   run              Annotate a corpus and generate export files",
-        "   install          Annotate and install a corpus on remote server",
+        "   install          Install a corpus",
         "   clean            Remove output directories",
         "",
         "Inspecting corpus details:",
@@ -105,14 +102,15 @@ def main():
     run_parser.add_argument("output", nargs="*", default=[], help="The type of output format to generate")
     run_parser.add_argument("-l", "--list", action="store_true", help="List available output formats")
 
-    install_parser = subparsers.add_parser("install", description="Annotate and install a corpus on remote server.")
+    install_parser = subparsers.add_parser("install", description="Install a corpus.")
+    install_parser.add_argument("type", nargs="*", default=[], help="The type of installation to perform")
     install_parser.add_argument("-l", "--list", action="store_true", help="List installations to be made")
 
     clean_parser = subparsers.add_parser("clean", description="Remove output directories (by default only the "
-                                                              "annotations directory).")
+                                                              "sparv-workdir directory).")
     clean_parser.add_argument("--export", action="store_true", help="Remove export directory")
     clean_parser.add_argument("--logs", action="store_true", help="Remove logs directory")
-    clean_parser.add_argument("--all", action="store_true", help="Remove annotations, export and logs directories")
+    clean_parser.add_argument("--all", action="store_true", help="Remove workdir, export and logs directories")
 
     # Inspect
     config_parser = subparsers.add_parser("config", description="Display the corpus configuration.")
@@ -132,7 +130,10 @@ def main():
     subparsers.add_parser("classes", description="Display all available annotation classes.")
 
     # Setup
-    subparsers.add_parser("setup", description="Set up the Sparv data directory.")
+    setup_parser = subparsers.add_parser("setup", description="Set up the Sparv data directory. Run without arguments "
+                                                              "for interactive setup.")
+    setup_parser.add_argument("-d", "--dir", help="Directory to use as Sparv data directory")
+
     models_parser = subparsers.add_parser("build-models",
                                           description=("Download and build the Sparv models. "
                                                        "If this command is not run before annotating, "
@@ -199,14 +200,19 @@ def main():
                   f"setting the environment variable '{paths.data_dir_env}'.")
             sys.exit(1)
 
-        # Check if Sparv data dir is outdated
-        if not setup.check_sparv_version():
-            print("Sparv has been updated and Sparv's data directory may need to be upgraded. Please rerun the "
+        # Check if Sparv data dir is outdated (or not properly set up yet)
+        version_check = setup.check_sparv_version()
+        if version_check is None:
+            print("The Sparv data directory has been configured but not yet set up completely. Run 'sparv setup' to "
+                  "complete the process.")
+            sys.exit(1)
+        elif not version_check:
+            print("Sparv has been updated and Sparv's data directory may need to be upgraded. Please run the "
                   "'sparv setup' command.")
             sys.exit(1)
 
     if args.command == "setup":
-        setup.query_user()
+        setup.run(args.dir)
         sys.exit(0)
     elif args.command == "wizard":
         from sparv.core.wizard import Wizard
@@ -279,7 +285,8 @@ def main():
             if args.list:
                 snakemake_args["targets"] = ["list_installs"]
             else:
-                snakemake_args["targets"] = ["install_annotated_corpus"]
+                config["install_types"] = args.type
+                snakemake_args["targets"] = ["install_corpus"]
         # Command: build-models
         elif args.command == "build-models":
             config["language"] = args.language

@@ -11,21 +11,18 @@ from sparv.util.mysql_wrapper import MySQL
 log = logging.getLogger(__name__)
 
 
-@installer("Install timespan SQL on remote host", config=[
-    Config("korp.mysql_dbname", "", description="Name of database where Korp data will be stored")
-])
+@installer("Install timespan SQL on remote host")
 def install_timespan(sqlfile: ExportInput = ExportInput("korp_timespan/timespan.sql"),
-                     out: OutputCommonData = OutputCommonData("korp.time_install_timespan"),
+                     out: OutputCommonData = OutputCommonData("korp.install_timespan_marker"),
                      db_name: str = Config("korp.mysql_dbname"),
                      host: str = Config("korp.remote_host")):
     """Install timespan SQL on remote host.
 
     Args:
         sqlfile (str, optional): SQL file to be installed. Defaults to ExportInput("korp_timespan/timespan.sql").
-        out (str, optional): Timestamp file to be written.
-            Defaults to OutputCommonData("korp.time_install_relations").
-        db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname", "").
-        host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host", "").
+        out (str, optional): Marker file to be written.
+        db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname").
+        host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host").
     """
     util.install_mysql(host, db_name, sqlfile)
     out.write("")
@@ -37,11 +34,8 @@ def timespan_sql(_sql: ExportInput = ExportInput("korp_timespan/timespan.sql")):
     pass
 
 
-@annotator("Timespan SQL data for use in Korp", order=1, config=[
-    Config("korp.timespan_db_name", default="timespan", description="Name of database")
-])
+@annotator("Timespan SQL data for use in Korp", order=1)
 def timespan_sql_with_dateinfo(corpus: Corpus = Corpus(),
-                               db_name: str = Config("korp.timespan_db_name"),
                                out: Export = Export("korp_timespan/timespan.sql"),
                                docs: AllDocuments = AllDocuments(),
                                token: AnnotationAllDocs = AnnotationAllDocs("<token>"),
@@ -56,8 +50,9 @@ def timespan_sql_with_dateinfo(corpus: Corpus = Corpus(),
 
     for doc in docs:
         text_tokens, orphans = Annotation(datefrom.name, doc=doc).get_children(token)
-        datespans[("0" * 8, "0" * 8)] += len(orphans)
-        datetimespans[("0" * 14, "0" * 14)] += len(orphans)
+        if orphans:
+            datespans[("0" * 8, "0" * 8)] += len(orphans)
+            datetimespans[("0" * 14, "0" * 14)] += len(orphans)
         dateinfo = datefrom.read_attributes(doc, (datefrom, dateto, timefrom, timeto))
         for text in text_tokens:
             d = next(dateinfo)
@@ -83,12 +78,11 @@ def timespan_sql_with_dateinfo(corpus: Corpus = Corpus(),
             "tokens": datetimespans[span]
         })
 
-    create_sql(corpus_name, db_name, out, rows_date, rows_datetime)
+    create_sql(corpus_name, out, rows_date, rows_datetime)
 
 
 @annotator("Timespan SQL data for use in Korp, for when the corpus has no date metadata.", order=2)
 def timespan_sql_no_dateinfo(corpus: Corpus = Corpus(),
-                             db_name: str = Config("korp.timespan_db_name"),
                              out: Export = Export("korp_timespan/timespan.sql"),
                              docs: AllDocuments = AllDocuments(),
                              token: AnnotationAllDocs = AnnotationAllDocs("<token>")):
@@ -113,13 +107,13 @@ def timespan_sql_no_dateinfo(corpus: Corpus = Corpus(),
         "tokens": token_count
     }]
 
-    create_sql(corpus_name, db_name, out, rows_date, rows_datetime)
+    create_sql(corpus_name, out, rows_date, rows_datetime)
 
 
-def create_sql(corpus_name: str, db_name: str, out: Export, rows_date, rows_datetime):
+def create_sql(corpus_name: str, out: Export, rows_date, rows_datetime):
     """Create timespans SQL file."""
     log.info("Creating SQL")
-    mysql = MySQL(db_name, encoding=util.UTF8, output=out)
+    mysql = MySQL(output=out)
     mysql.create_table(MYSQL_TABLE, drop=False, **MYSQL_TIMESPAN)
     mysql.create_table(MYSQL_TABLE_DATE, drop=False, **MYSQL_TIMESPAN_DATE)
     mysql.delete_rows(MYSQL_TABLE, {"corpus": corpus_name})

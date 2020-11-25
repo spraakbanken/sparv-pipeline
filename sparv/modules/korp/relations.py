@@ -20,17 +20,16 @@ MAX_POS_LENGTH = 5
 
 @installer("Install Korp's Word Picture SQL on remote host")
 def install_relations(sqlfile: ExportInput = ExportInput("korp_wordpicture/relations.sql"),
-                      out: OutputCommonData = OutputCommonData("korp.time_install_relations"),
-                      db_name: str = Config("korp.mysql_dbname", ""),
-                      host: str = Config("korp.remote_host", "")):
+                      out: OutputCommonData = OutputCommonData("korp.install_relations_marker"),
+                      db_name: str = Config("korp.mysql_dbname"),
+                      host: str = Config("korp.remote_host")):
     """Install Korp's Word Picture SQL on remote host.
 
     Args:
         sqlfile (str, optional): SQL file to be installed. Defaults to ExportInput("korp_wordpicture/relations.sql").
-        out (str, optional): Timestamp file to be written.
-            Defaults to OutputCommonData("korp.time_install_relations").
-        db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname", "").
-        host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host", "").
+        out (str, optional): Marker file to be written.
+        db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname").
+        host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host").
     """
     util.install_mysql(host, db_name, sqlfile)
     out.write("")
@@ -257,12 +256,8 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
     return x_rel_y * math.log((rel * x_rel_y) / (x_rel * rel_y * 1.0), 2)
 
 
-@exporter("Word Picture SQL for use in Korp", config=[
-    Config("korp.relations_db_name", "korp_relations",
-           description="Name of database where Word Picture data should be stored.")
-])
+@exporter("Word Picture SQL for use in Korp")
 def relations_sql(corpus: Corpus = Corpus(),
-                  db_name: str = Config("korp.relations_db_name"),
                   out: Export = Export("korp_wordpicture/relations.sql"),
                   relations: AnnotationDataAllDocs = AnnotationDataAllDocs("korp.relations"),
                   docs: Optional[AllDocuments] = AllDocuments(),
@@ -271,7 +266,6 @@ def relations_sql(corpus: Corpus = Corpus(),
     """Calculate statistics of the dependencies and saves to SQL files.
 
     - corpus is the corpus name.
-    - db_name is the name of the database.
     - out is the name for the SQL file which will contain the resulting SQL statements.
     - relations is the name of the relations annotation.
     - docs is a list of documents.
@@ -364,26 +358,26 @@ def relations_sql(corpus: Corpus = Corpus(),
         if not doc_count == len(docs):
             if split:
                 # Don't print string table until the last file
-                _write_sql({}, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_name, db_table, split,
+                _write_sql({}, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_table, split,
                            first=(doc_count == 1))
             else:
                 # Only save sentences data, save the rest for the last file
-                _write_sql({}, sentences, {}, {}, {}, {}, out, db_name, db_table, split, first=(doc_count == 1))
+                _write_sql({}, sentences, {}, {}, {}, {}, out, db_table, split, first=(doc_count == 1))
 
     # Create the final file, including the string table
-    _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_name, db_table, split,
+    _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_table, split,
                first=(doc_count == 1), last=True)
 
     log.info("Done creating SQL files")
 
 
-def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, sql_file, db_name, db_table,
+def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, sql_file, db_table,
                split=False, first=False, last=False):
 
     temp_db_table = "temp_" + db_table
     update_freq = "ON DUPLICATE KEY UPDATE freq = freq + VALUES(freq)" if split else ""
 
-    mysql = MySQL(db_name, encoding=util.UTF8, output=sql_file, append=True)
+    mysql = MySQL(output=sql_file, append=True)
 
     if first:
         if not split:

@@ -16,21 +16,23 @@ GOLD_PREFIX = "gold_"
 
 def run_sparv(gold_corpus_dir: pathlib.Path,
               tmp_path: pathlib.Path,
-              targets: Optional[list] = []):
+              targets: Optional[list] = None):
     """Run Sparv on corpus in gold_corpus_dir and return the directory of the test corpus."""
+    if targets is None:
+        targets = []
     corpus_name = gold_corpus_dir.name
     new_corpus_dir = tmp_path / pathlib.Path(corpus_name)
 
     # Copy everything but the output
     shutil.copytree(str(gold_corpus_dir), str(new_corpus_dir), ignore=shutil.ignore_patterns(
-        str(paths.annotation_dir), GOLD_PREFIX + str(paths.annotation_dir),
+        str(paths.work_dir), GOLD_PREFIX + str(paths.work_dir),
         str(paths.export_dir), GOLD_PREFIX + str(paths.export_dir)))
 
     args = ["sparv", "-d", str(new_corpus_dir), "run", *targets]
     process = subprocess.run(args, capture_output=True)
     # Exclude progress updates and progress bar from output
-    stdout = process.stdout.strip().decode().split("\n")
-    stdout = "\n".join([line for line in stdout if "Progress:" not in line and u"\U0001F426" not in line])
+    stdout = process.stdout.strip().decode()
+    stdout = "\n".join([line for line in stdout.split("\n") if not line.startswith("Progress:")])
     if stdout:
         print_error(f"The following warnings/errors occurred:\n{stdout}")
     elif process.stderr.strip():
@@ -39,21 +41,25 @@ def run_sparv(gold_corpus_dir: pathlib.Path,
     return new_corpus_dir
 
 
-def cmp_annotations(gold_corpus_dir: pathlib.Path,
-                    test_corpus_dir: pathlib.Path,
-                    ignore: list = []):
-    """Recursively compare the annotation directories of gold_corpus and test_corpus."""
+def cmp_workdir(gold_corpus_dir: pathlib.Path,
+                test_corpus_dir: pathlib.Path,
+                ignore: list = None):
+    """Recursively compare the workdir directories of gold_corpus and test_corpus."""
+    if ignore is None:
+        ignore = []
     ignore.append(".log")
-    assert _cmp_dirs(gold_corpus_dir / pathlib.Path(GOLD_PREFIX + str(paths.annotation_dir)),
-                     test_corpus_dir / paths.annotation_dir,
+    assert _cmp_dirs(gold_corpus_dir / pathlib.Path(GOLD_PREFIX + str(paths.work_dir)),
+                     test_corpus_dir / paths.work_dir,
                      ignore=ignore
-                     ), "annotations dir did not match the gold standard"
+                     ), "work dir did not match the gold standard"
 
 
 def cmp_export(gold_corpus_dir: pathlib.Path,
                test_corpus_dir: pathlib.Path,
-               ignore: list = []):
+               ignore: list = None):
     """Recursively compare the export directories of gold_corpus and test_corpus."""
+    if ignore is None:
+        ignore = []
     ignore.append(".log")
     assert _cmp_dirs(gold_corpus_dir / pathlib.Path(GOLD_PREFIX + str(paths.export_dir)),
                      test_corpus_dir / paths.export_dir,
@@ -73,9 +79,11 @@ def print_error(msg: str):
 
 def _cmp_dirs(a: pathlib.Path,
               b: pathlib.Path,
-              ignore: list = [".log"],
+              ignore: list = None,
               ok: bool = True):
     """Recursively compare directories a and b."""
+    if ignore is None:
+        ignore = [".log"]
     dirs_cmp = filecmp.dircmp(str(a), str(b), ignore=ignore)
 
     if len(dirs_cmp.left_only) > 0:
@@ -120,10 +128,8 @@ def _cmp_dirs(a: pathlib.Path,
 
 def _filediff(a: pathlib.Path, b: pathlib.Path):
     """Print a unified diff of files a and b."""
-    with a.open() as a_contents:
-        a_contents = a_contents.readlines()
-    with b.open() as b_contents:
-        b_contents = b_contents.readlines()
+    a_contents = a.read_text().splitlines()
+    b_contents = b.read_text().splitlines()
 
     diff = difflib.unified_diff(a_contents, b_contents, fromfile=str(a), tofile=str(b))
     for line in diff:
@@ -132,18 +138,16 @@ def _filediff(a: pathlib.Path, b: pathlib.Path):
 
 def _xml_filediff(a: pathlib.Path, b: pathlib.Path):
     """Print a unified diff of canonicalize XML files a and b."""
-    with a.open() as a_contents:
-        try:
-            a_contents = etree.canonicalize(a_contents.read()).split("\n")
-        except etree.ParseError:
-            print_error(f"File {a} could not be parsed.")
-            return True
-    with b.open() as b_contents:
-        try:
-            b_contents = etree.canonicalize(b_contents.read()).split("\n")
-        except etree.ParseError:
-            print_error(f"File {a} could not be parsed.")
-            return True
+    try:
+        a_contents = etree.canonicalize(a.read_text()).splitlines()
+    except etree.ParseError:
+        print_error(f"File {a} could not be parsed.")
+        return True
+    try:
+        b_contents = etree.canonicalize(b.read_text()).splitlines()
+    except etree.ParseError:
+        print_error(f"File {a} could not be parsed.")
+        return True
 
     diff = list(difflib.unified_diff(a_contents, b_contents, fromfile=str(a), tofile=str(b)))
 

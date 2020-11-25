@@ -1,6 +1,6 @@
 """Script used by Snakemake to run Sparv modules."""
 
-import importlib
+import importlib.util
 import logging
 import sys
 
@@ -13,11 +13,12 @@ from sparv.util import SparvErrorMessage
 custom_name = "custom"
 plugin_name = "plugin"
 
-# The snakemake variable is provided by Snakemake. The below is just to get fewer errors in editor.
+# The snakemake variable is provided automatically by Snakemake; the below is just to please the IDE
 try:
     snakemake
 except NameError:
-    snakemake = None
+    from snakemake.script import Snakemake
+    snakemake: Snakemake
 
 
 def exit_with_error_message(message, logger_name):
@@ -25,6 +26,17 @@ def exit_with_error_message(message, logger_name):
     error_logger = logging.getLogger(logger_name)
     error_logger.error(message)
     sys.exit(123)
+
+
+class StreamToLogger:
+    """File-like stream object that redirects writes to a logger instance."""
+
+    def __init__(self, logger, log_level=logging.INFO):
+        self.logger = logger
+        self.log_level = log_level
+
+    def write(self, buf):
+        self.logger.log(self.log_level, buf.rstrip())
 
 
 # Import module
@@ -63,6 +75,13 @@ logger = logging.getLogger("sparv")
 logger.info("RUN: %s:%s(%s)", module_name, f_name, ", ".join("%s=%s" % (i[0], repr(i[1])) for i in
                                                              list(parameters.items())))
 
+# Redirect any prints to logging module
+old_stdout = sys.stdout
+old_stderr = sys.stderr
+module_logger = logging.getLogger("sparv.modules." + module_name)
+sys.stdout = StreamToLogger(module_logger)
+sys.stderr = StreamToLogger(module_logger, logging.WARNING)
+
 # Execute function
 try:
     registry.modules[module_name].functions[f_name]["function"](**parameters)
@@ -73,3 +92,7 @@ except SparvErrorMessage as e:
     # Instead we log the error message and exit with a non-zero status to signal to Snakemake that
     # something went wrong.
     exit_with_error_message(e.message, "sparv.modules." + module_name)
+finally:
+    # Restore printing to stdout and stderr
+    sys.stdout = old_stdout
+    sys.stderr = old_stderr

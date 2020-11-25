@@ -95,7 +95,7 @@ def _write_single_annotation(doc, annotation, values, append, allow_newlines=Fal
             ctr += 1
     # Update file modification time even if nothing was written
     os.utime(file_path, None)
-    _log.info("Wrote %d items: %s/%s", ctr, doc, annotation)
+    _log.info(f"Wrote {ctr} items: {doc + '/' if doc else ''}{annotation}")
 
 
 def create_empty_attribute(annotation):
@@ -116,7 +116,7 @@ def create_empty_attribute(annotation):
         length = len(list(annotation.read_spans()))
     elif isinstance(annotation, list):
         length = len(annotation)
-    elif isinstance(annotation, int):
+    else:  # int
         length = annotation
     return [None] * length
 
@@ -187,11 +187,11 @@ def _read_single_annotation(doc, annotation, with_annotation_name, allow_newline
                 value = re.sub(r"((?<!\\)(?:\\\\)*)\\n", r"\1\n", value).replace(r"\\", "\\")
             yield value if not with_annotation_name else (value, annotation)
             ctr += 1
-    _log.debug("Read %d items: %s/%s", ctr, doc, annotation)
+    _log.debug(f"Read {ctr} items: {doc + '/' if doc else ''}{annotation}")
 
 
 def write_data(doc, name, value, append=False):
-    """Write arbitrary string data to file in annotations directory."""
+    """Write arbitrary string data to file in workdir directory."""
     file_path = get_annotation_path(doc, name, data=True)
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     mode = "a" if append else "w"
@@ -200,16 +200,16 @@ def write_data(doc, name, value, append=False):
         f.write(value)
     # Update file modification time even if nothing was written
     os.utime(file_path, None)
-    _log.info("Wrote %d bytes: %s/%s", len(value), doc, name)
+    _log.info(f"Wrote {len(value)} bytes: {doc + '/' if doc else ''}{name}")
 
 
 def read_data(doc, name):
-    """Read arbitrary string data from file in annotations directory."""
+    """Read arbitrary string data from file in workdir directory."""
     file_path = get_annotation_path(doc, name, data=True)
 
     with open(file_path) as f:
         data = f.read()
-    _log.debug("Read %d bytes: %s/%s", len(data), doc, name)
+    _log.debug(f"Read {len(data)} bytes: {doc + '/' if doc else ''}{name}")
     return data
 
 
@@ -234,11 +234,11 @@ def get_annotation_path(doc, annotation, data=False):
 
     if data:
         if doc:
-            path = os.path.join(paths.annotation_dir, doc, chunk, elem)
+            path = os.path.join(paths.work_dir, doc, chunk, elem)
         else:
-            path = os.path.join(paths.annotation_dir, elem)
+            path = os.path.join(paths.work_dir, elem)
     else:
         if not attr:
             attr = SPAN_ANNOTATION
-        path = os.path.join(paths.annotation_dir, doc, chunk, elem, attr)
+        path = os.path.join(paths.work_dir, doc, chunk, elem, attr)
     return path

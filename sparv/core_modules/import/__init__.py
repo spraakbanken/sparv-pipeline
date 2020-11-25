@@ -1,3 +1,5 @@
+import os
+
 from sparv import Config, wizard
 from sparv.core import paths, registry
 
@@ -13,17 +15,26 @@ __config__ = [
 
 
 @wizard(config_keys=[
-    "import.importer"
+    "import.importer",
+    "import.source_dir"
 ])
 def setup_wizard(_: dict):
-    """Return wizard question regarding input format."""
+    """Return wizard question regarding source path and input format."""
+    questions = [{
+        "type": "path",
+        "name": "import.source_dir",
+        "message": "Relative path to the current directory containing your source files:",
+        "validate": lambda x: os.path.isdir(x),
+        "default": paths.source_dir
+    }]
+
     importers = []
     for module_name in registry.modules:
         for f_name, annotator in registry.modules[module_name].functions.items():
             if annotator["type"] == registry.Annotator.importer:
                 importers.append((f"{module_name}:{f_name}", annotator))
     max_len = max(len(n) for n, _ in importers)
-    question = [{
+    questions.append({
         "type": "select",
         "name": "import.importer",
         "choices": [{
@@ -31,5 +42,5 @@ def setup_wizard(_: dict):
             "value": importer_name,
         } for importer_name, importer in importers],
         "message": "Choose an importer based on your type of source files:"
-    }]
-    return question
+    })
+    return questions

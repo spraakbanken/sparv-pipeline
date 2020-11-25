@@ -114,7 +114,7 @@ A function decorated with `@installer` is used to copy a corpus export to a remo
 ])
 def install_scrambled(corpus: Corpus = Corpus(),
                       xmlfile: ExportInput = ExportInput("[metadata.id]_scrambled.xml"),
-                      out: OutputCommonData = OutputCommonData("xml_export.time_install_export_scrambled"),
+                      out: OutputCommonData = OutputCommonData("xml_export.install_export_scrambled_marker"),
                       export_path: str = Config("xml_export.export_path"),
                       host: str = Config("xml_export.export_host")):
     ...

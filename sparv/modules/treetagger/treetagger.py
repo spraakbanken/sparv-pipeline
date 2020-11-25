@@ -71,7 +71,7 @@ def annotate(lang: Language = Language(),
         for token_id, tagged_token in zip(sent, tagged_sent.strip().split(TOK_SEP)):
             tag = tagged_token.strip().split(TAG_SEP)[TAG_COLUMN]
             out_pos_annotation[token_id] = tag
-            out_upos_annotation[token_id] = util.convert_to_upos(tag, lang, TAG_SETS.get(lang))
+            out_upos_annotation[token_id] = util.tagsets.pos_to_upos(tag, lang, TAG_SETS.get(lang))
     out_pos.write(out_pos_annotation)
     out_upos.write(out_upos_annotation)
 

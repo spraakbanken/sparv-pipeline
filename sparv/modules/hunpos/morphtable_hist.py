@@ -6,7 +6,7 @@ import sparv.util as util
 from sparv import Model, ModelOutput, modelbuilder
 
 # Constants
-SALDO_TO_SUC = util.tagsets.saldo_to_suc
+SALDO_TO_SUC = util.tagsets.mappings["saldo_to_suc"]
 SALDO_TO_SUC["pm"] = {"PM.NOM"}
 SALDO_TO_SUC["nl invar"] = {"NL.NOM"}
 
@@ -95,15 +95,15 @@ def _force_parse(msd):
         SALDO_TO_SUC[msd] = new_suc
         return new_suc
 
-    paramstr = " ".join(util.tagsets._translate_saldo_parameters.get(prm, prm.upper()) for prm in params)
-    for (pre, post) in util.tagsets._suc_tag_replacements:
+    paramstr = " ".join(util.tagsets.mappings["saldo_params_to_suc"].get(prm, prm.upper()) for prm in params)
+    for (pre, post) in util.tagsets.tagmappings._suc_tag_replacements:
         m = re.match(pre, paramstr)
         if m:
             break
     if m is None:
         return set()
     sucfilter = m.expand(post).replace(" ", r"\.").replace("+", r"\+")
-    new_suc = set(suctag for suctag in util.tagsets.suc_tags if re.match(sucfilter, suctag))
+    new_suc = set(suctag for suctag in util.tagsets.tags["suc_tags"] if re.match(sucfilter, suctag))
     SALDO_TO_SUC[msd] = new_suc
     return new_suc
 

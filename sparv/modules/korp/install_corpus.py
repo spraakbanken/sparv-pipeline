@@ -11,19 +11,19 @@ log = logging.getLogger(__name__)
 
 
 @installer("Install CWB datafiles on remote host", config=[
-    Config("korp.remote_corpus_registry", "", description="CWB registry path on remote host"),
+    Config("korp.remote_cwb_registry", "", description="CWB registry path on remote host"),
     Config("korp.remote_cwb_datadir", "", description="CWB datadir path on remote host"),
     Config("korp.protected", False, description="Whether this corpus should have limited access or not")
 ])
 def install_corpus(corpus: Corpus = Corpus(),
                    info_file: ExportInput = ExportInput("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_path=True),
                    cwb_file: ExportInput = ExportInput("[cwb.corpus_registry]/[metadata.id]", absolute_path=True),
-                   out: OutputCommonData = OutputCommonData("korp.time_install_corpus"),
+                   out: OutputCommonData = OutputCommonData("korp.install_corpus_marker"),
                    host: str = Config("korp.remote_host"),
                    datadir: str = Config("cwb.cwb_datadir"),
                    registry: str = Config("cwb.corpus_registry"),
                    target_datadir: str = Config("korp.remote_cwb_datadir"),
-                   target_registry: str = Config("korp.remote_corpus_registry")):
+                   target_registry: str = Config("korp.remote_cwb_registry")):
     """Install CWB datafiles on server, by rsyncing datadir and registry.
 
     If local and remote paths differ, target_datadir and target_registry must be specified.
@@ -57,5 +57,5 @@ def install_corpus(corpus: Corpus = Corpus(),
     if target_registry:
         os.remove(os.path.join(registry, corpus + ".tmp"))
 
-    # Write timestamp file
+    # Write marker file
     out.write("")

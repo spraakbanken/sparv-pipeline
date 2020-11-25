@@ -14,6 +14,9 @@ classes:
     "token:msd": <token>:hunpos.msd
     "token:baseform": <token>:saldo.baseform
     "token:sense": <token>:wsd.sense
+    "token:deprel": <token>:malt.deprel
+    "token:dephead": <token>:malt.dephead
+    "token:dephead_ref": <token>:malt.dephead_ref
 
 presets:
     all:
