@@ -59,6 +59,7 @@ dateformat:
 export:
     # Exports to create by default when running 'sparv run'
     default:
+        - conll_export:conllu
         - csv_export:csv
         - cwb:info
         - cwb:vrt

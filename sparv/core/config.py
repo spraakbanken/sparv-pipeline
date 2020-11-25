@@ -4,9 +4,11 @@ import copy
 import logging
 from collections import defaultdict
 from functools import reduce
+from pathlib import Path
 from typing import Any, Optional
 
 import yaml
+import yaml.scanner
 
 from sparv import util
 from sparv.core import paths
@@ -40,10 +42,10 @@ def read_yaml(yaml_file):
             data = yaml.load(f, Loader=yaml.FullLoader)
     except yaml.scanner.ScannerError as e:
         raise util.SparvErrorMessage("An error occurred while reading the configuration file:\n" + str(e))
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         raise util.SparvErrorMessage(f"Could not find the config file '{yaml_file}'")
 
-    return data
+    return data or {}
 
 
 def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) -> None:
@@ -66,11 +68,23 @@ def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) 
         global config_user
         config_user = read_yaml(config_file) or {}
 
-        # If a parent config is specified, inherit its contents
-        if config_user.get(PARENT):
-            config_parent = read_yaml(config_user[PARENT])
-            config_user = _merge_dicts(config_user, config_parent)
+        def handle_parents(cfg, current_dir="."):
+            """Combine parent configs recursively."""
+            combined_parents = {}
+            if cfg.get(PARENT):
+                parents = cfg[PARENT]
+                if isinstance(parents, str):
+                    parents = [parents]
+                for parent in parents:
+                    parent_path = Path(current_dir, parent)
+                    config_parent = read_yaml(parent_path)
+                    config_parent = handle_parents(config_parent, parent_path.parent)
+                    combined_parents = _merge_dicts(config_parent, combined_parents)
+                cfg = _merge_dicts(cfg, combined_parents)
+            return cfg
 
+        # If parent configs are specified, inherit their contents
+        config_user = handle_parents(config_user)
     elif config_dict:
         config_user = config_dict
     else:
@@ -198,7 +212,7 @@ def validate_module_config():
 
 def validate_config(config_dict=None, structure=None, parent=""):
     """Make sure the corpus config doesn't contain invalid keys."""
-    config_dict = config_dict or config_user
+    config_dict = config_dict or config
     structure = structure or config_structure
     for key in config_dict:
         path = (parent + "." + key) if parent else key
@@ -247,21 +261,16 @@ def load_presets(lang):
     return class_dict
 
 
-def resolve_presets(annotations, omits=set()):
+def resolve_presets(annotations):
     """Resolve annotation presets into actual annotations."""
     result = []
     for annotation in annotations:
         if annotation in presets:
-            current_result, current_omits = resolve_presets(presets[annotation], omits)
+            current_result = resolve_presets(presets[annotation])
             result.extend(current_result)
-            omits.update(current_omits)
-        elif annotation.startswith("not "):
-            omits.add(annotation[4:])
         else:
             result.append(annotation)
-    # Remove omitted annotations
-    result = [a for a in result if a not in omits]
-    return result, omits
+    return result
 
 
 def apply_presets(user_classes, default_classes):
@@ -274,7 +283,7 @@ def apply_presets(user_classes, default_classes):
     for a in annotation_elems:
         # Update annotations
         preset_classes.update(_collect_classes(get(a), class_dict))
-        annotations, _omits = resolve_presets(get(a))
+        annotations = resolve_presets(get(a))
         set_value(a, annotations)
 
     # Update classes

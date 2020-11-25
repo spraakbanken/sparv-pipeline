@@ -3,7 +3,7 @@
 import logging
 import pathlib
 import unicodedata
-from collections import OrderedDict
+from collections import defaultdict, OrderedDict
 from typing import List, Optional, Union, Tuple
 
 from .classes import Annotation, Model
@@ -48,7 +48,10 @@ def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations
     If there is an element called '...' everything from all_annotations will be included in the result, except for
     the elements that are prefixed with 'not '.
 
-    If an annotation occurs more than once in the list, only the last occurrence will be kept.
+    If an annotation occurs more than once in the list, only the last occurrence will be kept. Similarly, if an
+    annotation is first included and then excluded (using 'not') it will be excluded from the result.
+
+    If a plain annotation (without attributes) is excluded, all its attributes will be excluded as well.
 
     Plain annotations (without attributes) will be added if needed, unless add_plain_annotations is set to False.
     Make sure to disable add_plain_annotations if the annotation names may include classes or config variables.
@@ -62,8 +65,9 @@ def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations
     possible_plain_annotations = set()
     omit_annotations = set()
     include_rest = False
+    plain_to_atts = defaultdict(list)
 
-    result = OrderedDict()
+    result: OrderedDict = OrderedDict()
     for a in annotation_names:
         # Check if this annotation should be omitted
         if a.startswith("not "):
@@ -77,6 +81,7 @@ def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations
             result[name] = export_name or None
             if attr:
                 possible_plain_annotations.add(plain_name)
+                plain_to_atts[plain_name].append(name)
             else:
                 plain_annotations.add(name)
 
@@ -89,13 +94,23 @@ def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations
         for a in set(all_annotations).difference(omit_annotations):
             if a not in result:
                 result[a] = None
-                plain_annotations.add(a)
+                plain_name, _ = Annotation(a).split()
+                plain_to_atts[plain_name].append(a)
+                plain_annotations.add(plain_name)
 
     # Add annotations names without attributes to result if required
     if add_plain_annotations:
         for a in possible_plain_annotations.difference(plain_annotations):
             if a not in result:
                 result[a] = None
+
+    # Remove any exclusions from final list
+    if omit_annotations:
+        for annotation in omit_annotations:
+            result.pop(annotation, None)
+            # If we're excluding a plain annotation, also remove all attributes connected to it
+            for a in plain_to_atts[annotation]:
+                result.pop(a, None)
 
     return list(result.items())
 

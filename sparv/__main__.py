@@ -1,7 +1,6 @@
 """Main Sparv executable."""
 
 import argparse
-import difflib
 import sys
 from pathlib import Path
 
@@ -34,6 +33,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
         """Check if command is valid, and if not, try to guess what the user meant."""
         if action.choices is not None and value not in action.choices:
             # Check for possible misspelling
+            import difflib
             close_matches = difflib.get_close_matches(value, action.choices, n=1)
             if close_matches:
                 message = f"unknown command: '{value}' - maybe you meant '{close_matches[0]}'"
@@ -130,7 +130,10 @@ def main():
     subparsers.add_parser("classes", description="Display all available annotation classes.")
 
     # Setup
-    subparsers.add_parser("setup", description="Set up the Sparv data directory.")
+    setup_parser = subparsers.add_parser("setup", description="Set up the Sparv data directory. Run without arguments "
+                                                              "for interactive setup.")
+    setup_parser.add_argument("-d", "--dir", help="Directory to use as Sparv data directory")
+
     models_parser = subparsers.add_parser("build-models",
                                           description=("Download and build the Sparv models. "
                                                        "If this command is not run before annotating, "
@@ -197,14 +200,19 @@ def main():
                   f"setting the environment variable '{paths.data_dir_env}'.")
             sys.exit(1)
 
-        # Check if Sparv data dir is outdated
-        if not setup.check_sparv_version():
-            print("Sparv has been updated and Sparv's data directory may need to be upgraded. Please rerun the "
+        # Check if Sparv data dir is outdated (or not properly set up yet)
+        version_check = setup.check_sparv_version()
+        if version_check is None:
+            print("The Sparv data directory has been configured but not yet set up completely. Run 'sparv setup' to "
+                  "complete the process.")
+            sys.exit(1)
+        elif not version_check:
+            print("Sparv has been updated and Sparv's data directory may need to be upgraded. Please run the "
                   "'sparv setup' command.")
             sys.exit(1)
 
     if args.command == "setup":
-        setup.query_user()
+        setup.run(args.dir)
         sys.exit(0)
     elif args.command == "wizard":
         from sparv.core.wizard import Wizard

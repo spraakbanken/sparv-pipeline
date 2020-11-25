@@ -50,8 +50,9 @@ def timespan_sql_with_dateinfo(corpus: Corpus = Corpus(),
 
     for doc in docs:
         text_tokens, orphans = Annotation(datefrom.name, doc=doc).get_children(token)
-        datespans[("0" * 8, "0" * 8)] += len(orphans)
-        datetimespans[("0" * 14, "0" * 14)] += len(orphans)
+        if orphans:
+            datespans[("0" * 8, "0" * 8)] += len(orphans)
+            datetimespans[("0" * 14, "0" * 14)] += len(orphans)
         dateinfo = datefrom.read_attributes(doc, (datefrom, dateto, timefrom, timeto))
         for text in text_tokens:
             d = next(dateinfo)

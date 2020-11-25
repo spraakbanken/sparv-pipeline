@@ -52,9 +52,11 @@ def print_module_summary(snake_storage):
             table.add_row("  " + module_name, description)
         table.add_row()
     console.print(table)
-    console.print("For more details about a specific module run [green]`sparv modules \\[module name]`[/green].", highlight=False)
-    console.print("For more details about all modules of a specific type run [green]`sparv modules --\\[module type]`[/green].",
+    console.print("For more details about a specific module run [green]'sparv modules \\[module name]'[/green].",
                   highlight=False)
+    console.print(
+        "For more details about all modules of a specific type run [green]'sparv modules --\\[module type]'[/green].",
+        highlight=False)
 
 
 def print_module_info(module_types, module_names, snake_storage, reverse_config_usage):
@@ -114,6 +116,7 @@ def print_modules(modules: dict, module_type: str, reverse_config_usage: dict, s
         console.print(f"\n[bright_black]:[/][dim]:[/]: [b]{module_name.upper()}[/b]\n")
 
         # Module description
+        description = None
         if registry.modules[module_name].description:
             description = registry.modules[module_name].description
         elif module_name.startswith("custom."):

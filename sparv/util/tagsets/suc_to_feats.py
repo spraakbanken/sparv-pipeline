@@ -57,9 +57,9 @@ def suc_to_feats(pos, msd, delim="."):
             feats.append("VerbForm=Part")
         if pos == "VB" and "Abbr=Yes" not in feats and "Compound=Yes" not in feats and not _findfeat(feats, "VerbForm"):
             feats.append("VerbForm=Fin")
+            if not _findfeat(feats, "Mood"):
+                feats.append("Mood=Ind")
 
-        if not _findfeat(feats, "Mood"):
-            feats.append("Mood=Ind")
     return sorted(feats)
 
 

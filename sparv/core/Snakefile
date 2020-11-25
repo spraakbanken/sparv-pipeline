@@ -188,7 +188,7 @@ rule classes:
 rule presets:
     run:
         resolved_presets = dict(
-            (preset, sparv_config.resolve_presets(sparv_config.presets[preset])[0]) for preset in sparv_config.presets)
+            (preset, sparv_config.resolve_presets(sparv_config.presets[preset])) for preset in sparv_config.presets)
         snake_prints.prettyprint_yaml(resolved_presets)
 
 

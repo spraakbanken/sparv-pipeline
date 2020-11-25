@@ -1,12 +1,11 @@
 """CSV file export."""
 
-import logging
 import os
 
 import sparv.util as util
 from sparv import Annotation, Config, Document, Export, ExportAnnotations, SourceAnnotations, exporter
 
-log = logging.getLogger(__name__)
+logger = util.get_logger(__name__)
 
 
 @exporter("CSV export", config=[
@@ -45,35 +44,35 @@ def csv(doc: Document = Document(),
     span_positions, annotation_dict = util.gather_annotations(annotation_list, export_names, doc=doc)
 
     # Make csv header
-    csv_data = [make_header(token_name, token_attributes, export_names, delimiter)]
+    csv_data = [_make_header(token_name, token_attributes, export_names, delimiter)]
 
     # Go through spans_dict and add to csv, line by line
     for _pos, instruction, span in span_positions:
         if instruction == "open":
             # Create token line
             if span.name == token_name:
-                csv_data.append(make_token_line(word_annotation[span.index], token_name, token_attributes,
-                                                annotation_dict, span.index, delimiter))
+                csv_data.append(_make_token_line(word_annotation[span.index], token_name, token_attributes,
+                                                 annotation_dict, span.index, delimiter))
 
             # Create line with structural annotation
             else:
-                attrs = make_attrs(span.name, annotation_dict, export_names, span.index)
+                attrs = _make_attrs(span.name, annotation_dict, export_names, span.index)
                 for attr in attrs:
                     csv_data.append(f"# {attr}")
                 if not attrs:
                     csv_data.append(f"# {span.export}")
 
         # Insert blank line after each closing sentence
-        elif span.name == sentence and instruction == "close":
+        elif span.name == sentence.name and instruction == "close":
             csv_data.append("")
 
     # Write result to file
     with open(out, "w") as f:
         f.write("\n".join(csv_data))
-    log.info("Exported: %s", out)
+    logger.info("Exported: %s", out)
 
 
-def make_header(token, token_attributes, export_names, delimiter):
+def _make_header(token, token_attributes, export_names, delimiter):
     """Create a csv header containing the names of the token annotations."""
     line = [export_names.get(token, token)]
     for annot in token_attributes:
@@ -81,7 +80,7 @@ def make_header(token, token_attributes, export_names, delimiter):
     return delimiter.join(line)
 
 
-def make_token_line(word, token, token_attributes, annotation_dict, index, delimiter):
+def _make_token_line(word, token, token_attributes, annotation_dict, index, delimiter):
     """Create a line with the token and its annotations."""
     line = [word.replace(delimiter, " ")]
     for attr in token_attributes:
@@ -93,7 +92,7 @@ def make_token_line(word, token, token_attributes, annotation_dict, index, delim
     return delimiter.join(line)
 
 
-def make_attrs(annotation, annotation_dict, export_names, index):
+def _make_attrs(annotation, annotation_dict, export_names, index):
     """Create a list with attribute-value strings for a structural element."""
     attrs = []
     for name, annot in annotation_dict[annotation].items():

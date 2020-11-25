@@ -324,6 +324,14 @@ class SparvXMLParser:
             else:
                 structure.append(full_element)
 
+            # Sort spans and annotations by span position (required by Sparv)
+            if attributes:
+                attr_names, attr_values = list(zip(*attributes.items()))
+                spans, *attr_values = list(zip(*sorted(zip(spans, *attr_values), key=lambda x: x[0])))
+                attributes = dict(zip(attr_names, attr_values))
+            else:
+                spans.sort()
+
             Output(full_element, doc=self.doc).write(spans)
 
             for attr in attributes:
