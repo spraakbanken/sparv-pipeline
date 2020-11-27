@@ -43,6 +43,7 @@ setuptools.setup(
         "iso-639==0.4.5",
         "nltk==3.5",
         "python-dateutil==2.8.1",
+        "sentencepiece==0.1.91",
         "PySocks==1.7.1",  # TODO: Remove this requirement when https://github.com/pypa/pip/issues/4391 is solved.
         "PyYAML==5.3.1",
         "questionary==1.8.0",
