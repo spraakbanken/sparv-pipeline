@@ -27,15 +27,19 @@ def msdtag(out: Output = Output("<token>:flair.msd", cls="token:msd",
     tagger = SequenceTagger.load(model.path)
 
     # Tag one sentence at a time
+    flair_sentences = []
     for sentence in sentences:
         s = " ".join(token_word[token_index] for token_index in sentence)
-        sent = Sentence(s, use_tokenizer=False)
-        tagger.predict(sent)
-        if len(sent) != len(sentence):
+        flair_sent = Sentence(s, use_tokenizer=False)
+        flair_sentences.append(flair_sent)
+    tagger.predict(flair_sentences)
+    for flair_sent, sparv_sent in zip(flair_sentences, sentences):
+        # tagger.predict(sent)
+        if len(flair_sent) != len(sparv_sent):
             raise util.SparvErrorMessage(
                 "Flair POS tagger did not seem to respect the given tokenisation! Do your tokens contain whitespaces? "
                 f"Failed at sentence:\n'{s}'")
-        for token in sent:
+        for token in flair_sent:
             tag = token.get_tag("pos")
             logger.debug(token.text, tag.value, tag.score)
             out_annotation.append(tag.value)
