@@ -10,4 +10,4 @@ xml_export:
     annotations:
         - <sentence>
         - <token:word>
-        - <token:pos>
+        - <token>:stanza.pos

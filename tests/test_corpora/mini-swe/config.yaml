@@ -23,6 +23,14 @@ import:
     # The annotation representing one text document. Any text-level annotations will be attached to this annotation.
     document_annotation: text
 
+#===============================================================================
+# Annotation Class Settings
+#===============================================================================
+
+classes:
+    "token:pos": <token>:stanza.pos
+    "token:msd": <token>:stanza.msd
+    "token:baseform": <token>:saldo.baseform
 
 #===============================================================================
 # Export Settings
@@ -43,8 +51,8 @@ export:
     # Automatic annotations to be included in the export
     annotations:
         - <sentence>:misc.id
-        - <token>:saldo.baseform
-        - <token>:hunpos.pos
+        - <token:baseform>
+        - <token:pos>
         - <token>:sensaldo.sentiment_label
     # Annotations from original documents to include in the output. If nothing is specified, everything is kept.
     source_annotations:
