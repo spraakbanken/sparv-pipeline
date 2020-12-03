@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 def freq_list(corpus: Corpus = Corpus(),
               docs: AllDocuments = AllDocuments(),
               word: AnnotationAllDocs = AnnotationAllDocs("<token:word>"),
-              msd: AnnotationAllDocs = AnnotationAllDocs("<token>:hunpos.msd"),
+              msd: AnnotationAllDocs = AnnotationAllDocs("<token:msd>"),
               baseform: AnnotationAllDocs = AnnotationAllDocs("<token:baseform>"),
               sense: AnnotationAllDocs = AnnotationAllDocs("<token:sense>"),
               lemgram: AnnotationAllDocs = AnnotationAllDocs("<token>:saldo.lemgram"),
@@ -32,7 +32,7 @@ def freq_list(corpus: Corpus = Corpus(),
         corpus (str, optional): The corpus ID. Defaults to Corpus.
         docs (list, optional): The documents belonging to this corpus. Defaults to AllDocuments.
         word (str, optional): Word annotations. Defaults to AnnotationAllDocs("<token:word>").
-        msd (str, optional): MSD annotations. Defaults to AnnotationAllDocs("<token>:hunpos.msd").
+        msd (str, optional): MSD annotations. Defaults to AnnotationAllDocs("<token:msd>").
         baseform (str, optional): Baseform annotations. Defaults to AnnotationAllDocs("<token:baseform>").
         sense (str, optional): Sense annotations. Defaults to AnnotationAllDocs("<token:sense>").
         lemgram (str, optional): Lemgram annotations. Defaults to AnnotationAllDocs("<token>:saldo.lemgram").

@@ -10,13 +10,13 @@ classes:
     named_entity: swener.ne
     token: segment.token
     "token:word": <token>:misc.word
-    "token:pos": <token>:hunpos.pos
-    "token:msd": <token>:hunpos.msd
-    "token:baseform": <token>:saldo.baseform
+    "token:pos": <token>:stanza.pos
+    "token:msd": <token>:stanza.msd
+    "token:baseform": <token>:saldo.baseform2
     "token:sense": <token>:wsd.sense
-    "token:deprel": <token>:malt.deprel
-    "token:dephead": <token>:malt.dephead
-    "token:dephead_ref": <token>:malt.dephead_ref
+    "token:deprel": <token>:stanza.deprel
+    "token:dephead": <token>:stanza.dephead
+    "token:dephead_ref": <token>:stanza.dephead_ref
 
 presets:
     all:
@@ -31,35 +31,24 @@ presets:
     #====================================
 
     token-annotations:
-        - hunpos
         - saldo
-        - malt
-        # - stanza
+        - stanza
         - sentiment
         - token-lexical-class
 
-    hunpos:
-        - <token>:hunpos.pos
-        - <token>:hunpos.msd
-
     saldo:
-        - <token>:saldo.baseform
+        - <token>:saldo.baseform2 as baseform
         - <token>:saldo.lemgram
         - <token>:wsd.sense
         - <token>:saldo.compwf
         - <token>:saldo.complemgram
-
-    malt:
-        - <token>:malt.deprel
-        - <token>:malt.dephead_ref
-        - <token>:misc.number_rel_<sentence> as ref
     
-    # stanza:
-    #     - <token>:stanza.msd
-    #     - <token>:stanza.pos
-    #     - <token>:stanza.deprel
-    #     - <token>:stanza.dephead_ref
-    #     - <token>:misc.number_rel_<sentence> as ref
+    stanza:
+        - <token>:stanza.msd
+        - <token>:stanza.pos
+        - <token>:stanza.deprel
+        - <token>:stanza.dephead_ref
+        - <token>:misc.number_rel_<sentence> as ref
 
     sentiment:
         - <token>:sensaldo.sentiment_score

@@ -1,4 +1,4 @@
-"""Module for converting Malt dependencies to phrase structure trees."""
+"""Module for converting Mamba-Dep dependencies to phrase structure trees."""
 
 import logging
 import pprint
@@ -9,7 +9,7 @@ from sparv import Annotation, Output, annotator
 log = logging.getLogger(__name__)
 
 
-@annotator("Convert Malt dependencies into phrase structure", language=["swe"])
+@annotator("Convert Mamba-Dep dependencies into phrase structure", language=["swe"])
 def annotate(out_phrase: Output = Output("phrase_structure.phrase", description="Phrase segments"),
              out_phrase_name: Output = Output("phrase_structure.phrase:phrase_structure.name",
                                               description="Phrase names"),
@@ -18,11 +18,11 @@ def annotate(out_phrase: Output = Output("phrase_structure.phrase", description=
              token: Annotation = Annotation("<token>"),
              word: Annotation = Annotation("<token:word>"),
              sentence: Annotation = Annotation("<sentence>"),
-             pos: Annotation = Annotation("<token>:hunpos.pos"),
-             msd: Annotation = Annotation("<token>:hunpos.msd"),
+             pos: Annotation = Annotation("<token:pos>"),
+             msd: Annotation = Annotation("<token:msd>"),
              ref: Annotation = Annotation("<token>:misc.number_rel_<sentence>"),
-             dephead_ref: Annotation = Annotation("<token>:malt.dephead_ref"),
-             deprel: Annotation = Annotation("<token>:malt.deprel")):
+             dephead_ref: Annotation = Annotation("<token:dephead_ref>"),
+             deprel: Annotation = Annotation("<token:deprel>")):
     """Annotate sentence with phrase structures."""
     sentences, _orphans = sentence.get_children(word)
     token_annotations = list(ref.read_attributes([ref, word, pos, msd, dephead_ref, deprel]))

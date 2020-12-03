@@ -1,0 +1,14 @@
+#===============================================================================
+# Hunpos Part-of-speech Tagger Preset
+#===============================================================================
+languages:
+    - swe
+
+classes:
+    "token:pos": <token>:hunpos.pos
+    "token:msd": <token>:hunpos.msd
+
+presets:
+    all:
+        - <token>:hunpos.pos
+        - <token>:hunpos.msd
