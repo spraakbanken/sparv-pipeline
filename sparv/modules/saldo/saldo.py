@@ -17,7 +17,7 @@ PRECISION_DIFF = 0.01
 
 @annotator("SALDO annotations", language=["swe"], config=[
     Config("saldo.model", default="saldo/saldo.pickle", description="Path to SALDO model"),
-    Config("saldo.precision", util.SCORESEP + "%.3f",
+    Config("saldo.precision", "",
            description="Format string for appending precision to each value")
 ])
 def annotate(token: Annotation = Annotation("<token>"),

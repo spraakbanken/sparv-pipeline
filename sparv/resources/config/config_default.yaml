@@ -67,9 +67,6 @@ segment:
     # Chunk to use for automatic tokenisation
     token_chunk: <sentence>
 
-saldo:
-    precision: ""
-
 # korp:
     # Password protected corpus
     # protected: false
