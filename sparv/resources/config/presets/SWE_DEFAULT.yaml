@@ -34,6 +34,7 @@ presets:
         - hunpos
         - saldo
         - malt
+        # - stanza
         - sentiment
         - token-lexical-class
 
@@ -52,6 +53,13 @@ presets:
         - <token>:malt.deprel
         - <token>:malt.dephead_ref
         - <token>:misc.number_rel_<sentence> as ref
+    
+    # stanza:
+    #     - <token>:stanza.msd
+    #     - <token>:stanza.pos
+    #     - <token>:stanza.deprel
+    #     - <token>:stanza.dephead_ref
+    #     - <token>:misc.number_rel_<sentence> as ref
 
     sentiment:
         - <token>:sensaldo.sentiment_score
