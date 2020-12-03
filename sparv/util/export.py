@@ -263,6 +263,10 @@ def get_source_annotations(source_annotation_names: Optional[List[str]], doc: Op
 
     If no names are provided all available source annotations will be returnd.
     """
+    # If source_annotation_names is en empty list, do not add any source annotations
+    if not source_annotation_names and source_annotation_names is not None:
+        return []
+
     # Get list of available source annotation names
     available_source_annotations = get_available_source_annotations(doc, docs)
 

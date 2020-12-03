@@ -296,7 +296,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 rule.parameters[param_name].append((annotation, export_name))
         # SourceAnnotations
         elif param_type == SourceAnnotations:
-            rule.parameters[param_name] = sparv_config.get(f"{param.default.config_name}", [])
+            rule.parameters[param_name] = sparv_config.get(f"{param.default.config_name}", None)
         # Corpus
         elif param.annotation == Corpus:
             rule.parameters[param_name] = Corpus(sparv_config.get("metadata.id"))

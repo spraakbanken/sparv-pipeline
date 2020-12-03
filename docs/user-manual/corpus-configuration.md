@@ -140,7 +140,8 @@ If you want to produce multiple output formats containing different annotations 
 export for example are set with `xml_export.source_annotations` and `xml_export.annotations`, the annotations for the
 CSV export are set with `csv_export.source_annotations` and `csv_export.annotations` and so on. Many of the `export`
 options work this way, where the values from `export` will be used by default unless overridden on exporter module
-level.
+level. If you do not want any source annotations to be included in your output you can set this option to `[]`. This
+will cause errors in the XML exports though because the root element must be listed as a source annotation.
 
 **Hint:** If you want to produce multiple output formats with the same annotations you can use YAML
 [anchors](https://docs.ansible.com/ansible/latest/user_guide/playbooks_advanced_syntax.html#yaml-anchors-and-aliases-sharing-variable-values)
