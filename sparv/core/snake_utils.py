@@ -309,6 +309,14 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         # AllDocuments (all source documents)
         elif param_type == AllDocuments:
             rule.parameters[param_name] = AllDocuments(get_source_files(storage.source_files))
+        # Text
+        elif param_type == Text:
+            text_path = Path("{doc}") / io.TEXT_FILE
+            if rule.exporter or rule.installer:
+                rule.inputs.append(paths.work_dir / text_path)
+            else:
+                rule.inputs.append(text_path)
+            rule.parameters[param_name] = param_value
         # Model
         elif param_type == Model:
             if param_value is not None:
