@@ -52,18 +52,18 @@ def copy_resource_files(data_dir: pathlib.Path):
                 shutil.copy(f, data_dir / rel_f)
 
 
-def run(sparv_dir: Optional[str] = None):
+def run(sparv_datadir: Optional[str] = None):
     """Query user about data dir path unless provided by argument, and populate path with files."""
     default_dir = pathlib.Path(appdirs.user_data_dir("sparv"))
     current_dir = paths.get_data_path()
     path: pathlib.Path
     using_env = bool(os.environ.get(paths.data_dir_env))
 
-    if sparv_dir:
+    if sparv_datadir:
         # Specifying a path on the command line will perform the setup using that path, even if the environment
         # variable is set
         using_env = False
-        path = pathlib.Path(sparv_dir)
+        path = pathlib.Path(sparv_datadir)
     else:
         console.print(
             "\n[b]Sparv Data Directory Setup[/b]\n\n"

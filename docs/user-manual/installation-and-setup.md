@@ -26,7 +26,10 @@ now be displayed.
 
 Sparv needs access to a directory on your system where it can store data, such as language models and configuration
 files. This is called the **Sparv data directory**. By running `sparv setup` you can tell Sparv
-where to set up its data directory.
+where to set up its data directory. This will also populate the data directory with default configurations and presets.
+Instead of setting the data directory path using `sparv setup`, you may use the environment variable `SPARV_DATADIR`.
+This will override any path you have previously configured using the setup process. Note that you still have to run
+the setup command, even when using the environment variable.
 
 If you like you can pre-build the model files. This step is optional and the only advantage is that annotating corpora
 will be quicker once all the models are set up. If you skip this step, models will be downloaded and built automatically

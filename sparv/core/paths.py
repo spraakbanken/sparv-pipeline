@@ -50,7 +50,7 @@ core_modules_dir = "core_modules"
 # Sparv data path (to be read from config)
 data_dir = None
 # Environment variable to override data path from config
-data_dir_env = "SPARV_DIR"
+data_dir_env = "SPARV_DATADIR"
 
 # Data resource paths (below data_dir)
 config_dir = get_data_path("config")
