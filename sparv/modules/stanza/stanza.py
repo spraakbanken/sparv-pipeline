@@ -1,5 +1,8 @@
 """POS tagging, lemmatisation and dependency parsing with Stanza."""
 
+from contextlib import redirect_stderr
+from os import devnull
+
 import stanza
 from stanza.models.common.doc import Document
 
@@ -48,21 +51,24 @@ def annotate(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
     document = "\n\n".join([" ".join(word_list[i] for i in sent) for sent in sentences])
     logger.debug(document)
 
-    # Initialize the pipeline
-    nlp = stanza.Pipeline(
-        lang="sv",
-        processors="tokenize,pos,lemma,depparse",  # Comma-separated list of processors to use
-        dir=str(resources_file.path.parent),
-        lemma_model_path=str(lem_model.path),
-        pos_pretrain_path=str(pos_pretrain_model.path),
-        pos_model_path=str(pos_model.path),
-        depparse_pretrain_path=str(dep_pretrain_model.path),
-        depparse_model_path=str(dep_model.path),
-        tokenize_pretokenized=True,  # Assume the text is tokenized by white space and sentence split by newline. Do not run a model.
-        tokenize_no_ssplit=True,     # Disable sentence segmentation
-        verbose=False
-        # depparse_pretagged=True,  # Only run dependency parsing on the document
-    )
+    # Temporarily suppress stderr to silence warning about not having an NVIDIA GPU
+    with open(devnull, "w") as fnull:
+        with redirect_stderr(fnull):
+            # Initialize the pipeline
+            nlp = stanza.Pipeline(
+                lang="sv",
+                processors="tokenize,pos,lemma,depparse",  # Comma-separated list of processors to use
+                dir=str(resources_file.path.parent),
+                lemma_model_path=str(lem_model.path),
+                pos_pretrain_path=str(pos_pretrain_model.path),
+                pos_model_path=str(pos_model.path),
+                depparse_pretrain_path=str(dep_pretrain_model.path),
+                depparse_model_path=str(dep_model.path),
+                tokenize_pretokenized=True,  # Assume the text is tokenized by white space and sentence split by newline. Do not run a model.
+                tokenize_no_ssplit=True,     # Disable sentence segmentation
+                verbose=False
+                # depparse_pretagged=True,  # Only run dependency parsing on the document
+            )
 
     doc = nlp(document)
     word_count = 0  # Keep track of total word count for 'dephead' attribute
@@ -127,17 +133,20 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
     document = "\n\n".join([" ".join(word_list[i] for i in sent) for sent in sentences])
     logger.debug(document)
 
-    # Initialize the pipeline
-    nlp = stanza.Pipeline(
-        lang="sv",                   # Language code for the language to build the Pipeline in
-        processors="tokenize,pos",   # Comma-separated list of processors to use
-        dir=str(resources_file.path.parent),
-        pos_pretrain_path=str(pretrain_model.path),
-        pos_model_path=str(model.path),
-        tokenize_pretokenized=True,  # Assume the text is tokenized by white space and sentence split by newline. Do not run a model.
-        tokenize_no_ssplit=True,     # Disable sentence segmentation
-        verbose=False
-    )
+    # Temporarily suppress stderr to silence warning about not having an NVIDIA GPU
+    with open(devnull, "w") as fnull:
+        with redirect_stderr(fnull):
+            # Initialize the pipeline
+            nlp = stanza.Pipeline(
+                lang="sv",                   # Language code for the language to build the Pipeline in
+                processors="tokenize,pos",   # Comma-separated list of processors to use
+                dir=str(resources_file.path.parent),
+                pos_pretrain_path=str(pretrain_model.path),
+                pos_model_path=str(model.path),
+                tokenize_pretokenized=True,  # Assume the text is tokenized by white space and sentence split by newline. Do not run a model.
+                tokenize_no_ssplit=True,     # Disable sentence segmentation
+                verbose=False
+            )
 
     doc = nlp(document)
     word_count = 0
@@ -192,16 +201,19 @@ def dep_parse(out_dephead: Output = Output("<token>:stanza.dephead", cls="token:
                           list(feats.read()),
                           list(ref.read()))
 
-    # Initialize the pipeline
-    nlp = stanza.Pipeline(
-        lang="sv",                # Language code for the language to build the Pipeline in
-        processors="depparse",    # Comma-separated list of processors to use
-        dir=str(resources_file.path.parent),
-        depparse_pretrain_path=str(pretrain_model.path),
-        depparse_model_path=str(model.path),
-        depparse_pretagged=True,  # Only run dependency parsing on the document
-        verbose=False
-    )
+    # Temporarily suppress stderr to silence warning about not having an NVIDIA GPU
+    with open(devnull, "w") as fnull:
+        with redirect_stderr(fnull):
+            # Initialize the pipeline
+            nlp = stanza.Pipeline(
+                lang="sv",                # Language code for the language to build the Pipeline in
+                processors="depparse",    # Comma-separated list of processors to use
+                dir=str(resources_file.path.parent),
+                depparse_pretrain_path=str(pretrain_model.path),
+                depparse_model_path=str(model.path),
+                depparse_pretagged=True,  # Only run dependency parsing on the document
+                verbose=False
+            )
 
     doc = nlp(Document(document))
     word_count = 0  # Keep track of total word count for 'dephead' attribute
