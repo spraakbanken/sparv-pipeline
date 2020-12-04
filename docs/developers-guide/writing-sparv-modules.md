@@ -41,9 +41,9 @@ necessary for producing the desired output will be run automatically.
 
 ## Reading and Writing Files
 Sparv classes like `Annotation` and `Output` have built-in methods for reading and writing files (like `word.read()` and
-`out.write()` in the example). A Sparv module should never read or write any files without using the provided class
-methods. This is to make sure that files are written to the correct places in the file structure so that they can be
-found by other modules. The read and write methods also make sure that Sparv's internal data format is handled
+`out.write()` in the above example). A Sparv module should never read or write any files without using the provided
+class methods. This is to make sure that files are written to the correct places in the file structure so that they can
+be found by other modules. The read and write methods also make sure that Sparv's internal data format is handled
 correctly. Not using these provided methods can lead to procedures breaking if the internal data format or file
 structure is updated in the future.
 
@@ -51,7 +51,7 @@ structure is updated in the future.
 ## Init File
 Each Sparv module must contain a [Python init file](https://docs.python.org/3/reference/import.html#regular-packages)
 (`__init__.py`). The python scripts containing decorated Sparv functions should be imported here. Module-specific
-configuration parameters may also declared in this file. Furthermore, you should also provide a short description (one
+configuration parameters may also be declared in this file. Furthermore, you should provide a short description (one
 sentence) for your module in the `__init__.py` file. This description will be shown when running the `sparv modules`
 command.
 
@@ -97,11 +97,11 @@ if not host:
 ```
 
 
-## Rule Order
+## Function Order
 Sometimes one may want to create multiple Sparv functions that create the same output files (e.g. annotation files,
 export files or model files). In this case Sparv needs to be informed about the priority of these functions. Let's say
 that there are two functions `annotate()` and `annotate_backoff()` that both produce an annotation output called
-`mymodule.foo`. Ideally `mymodule.foo` should be produced by `annotate()` but if this function cannot be run for some
+`mymodule.foo`. Ideally `mymodule.foo` should be produced by `annotate()` but if this function cannot be run for any
 reason (e.g. because it needs another annotation file `mymodule.bar` that cannot be produced for some corpora), then you
 want `mymodule.foo` to be produced by `annotate_backoff()`. The priority of functions is stated with the `order`
 argument in the `@annotator`, `@exporter`, or `@modelbuilder` decorator. The integer value given by `order` will help

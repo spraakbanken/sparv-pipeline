@@ -54,15 +54,15 @@ called `exports` inside your corpus directory.
 
 **`sparv install`:** Installing a corpus means deploying it on a remote server. Sparv supports deployment of compressed
 XML exports, CWB data files and SQL data. If you try to install a corpus Sparv will check if the necessary annotations
-have been created. If any annotations are lacking, Sparv will run them for you. Thus you do not need to annotate the
-corpus before installing. You can list the available installations with `sparv install -l`.
+have been created. If any annotations are missing, Sparv will run them for you. Therefore you do not need to annotate
+the corpus before installing. You can list the available installations with `sparv install -l`.
 
-**`sparv clean`:** When annotating Sparv will create a folder called `annotations` inside your corpus directory. You
+**`sparv clean`:** While annotating Sparv will create a folder called `sparv-workdir` inside your corpus directory. You
 usually don't need to touch the files stored here. Leaving this directory as it is will usually lead to faster
 processing of your corpus if you for example want to add a new output format. However, if you would like to delete this
 folder (e.g. because you want to save disk space or because you want to rerun all annotations from scratch) you can do
-so by running this command. The export directory and log files can also be removed with the `clean` command. Check out
-the available options to learn more.
+so by running `sparv clean`. The export directory and log files can also be removed with the `clean` command by adding
+appropriate flags. Check out the available options (`sparv clean -h`) to learn more.
 
 ## Show Annotation Info
 **`sparv modules`:** List available modules and annotations.
@@ -87,14 +87,14 @@ Sparv](user-manual/installation-and-setup.md#setting-up-sparv).
 **`sparv run-rule`** and **`sparv create-file`:** Instruct Sparv to run the specified annotation rule or to create
 the specified file. Multiple arguments can be supplied.
 
-Example running the part-of-speech annotation for all input files:
+Example running the Stanza annotations (part-of-speech tagging and dependency parsing) for all input files:
 ```bash
-sparv run-rule hunpos:postag
+sparv run-rule stanza:annotate
 ```
 
 Example creating the part-of-speech annotation for the input file `document1`:
 ```bash
-sparv create-file annotations/dokument1/segment.token/hunpos.pos
+sparv create-file annotations/dokument1/segment.token/stanza.pos
 ```
 
 **`sparv run-module`:** Run an annotator module independently (mostly for debugging). You must supply the module and the

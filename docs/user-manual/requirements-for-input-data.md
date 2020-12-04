@@ -1,8 +1,8 @@
 # Requirements for Input Data
 In order for Sparv to be able to process your corpus, please make sure your input data meets the following requirements:
 
-1. Make sure you don't have any directories called `annotations` or `export` in your corpus directory as Sparv will
-   attempt to create and use these.
+1. Make sure you don't have any manually created directories called `sparv-workdir` or `export` in your corpus directory
+   as Sparv will attempt to create and use these.
 
 2. If your corpus is in XML format, make sure your **XML is valid** and that the text to be analysed is actual text (not
    attribute values).
