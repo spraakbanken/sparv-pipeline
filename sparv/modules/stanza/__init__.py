@@ -11,6 +11,6 @@ __config__ = [
     Config("stanza.pretrain_pos_model", default="stanza/pos/full_sv_talbanken.pretrain.pt",
            description="Stanza pretrain POS model"),
     Config("stanza.dep_model", default="stanza/dep/sv_talbanken_parser.pt", description="Stanza dependency model"),
-    Config("stanza.pretrain_dep_model", default="stanza/dep/sv_talbanken.pretrain.pt",
+    Config("stanza.pretrain_dep_model", default="stanza/pos/full_sv_talbanken.pretrain.pt",
            description="Stanza pretrain dependency model")
 ]

@@ -92,9 +92,9 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
         stdout, stderr = command.communicate(stdin)
         if not allow_error and command.returncode:
             if stdout:
-                print(stdout.decode())
+                log.info(stdout.decode())
             if stderr:
-                print(stderr.decode(), file=sys.stderr)
+                log.warning(stderr.decode())
             raise OSError("%s returned error code %d" % (binary, command.returncode))
         if encoding:
             stdout = stdout.decode(encoding)
