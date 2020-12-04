@@ -52,5 +52,4 @@ cd md2pdf
 
 ### URLs that may have to be updated regularly
 
-- Example corpora download: https://github.com/spraakbanken/sparv-pipeline/releases/download/v4.0/example_corpora.zip
 - Java download: http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html

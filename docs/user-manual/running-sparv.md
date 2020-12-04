@@ -1,7 +1,7 @@
 # Running Sparv
 Sparv is run from the command line. Typically you will want to run Sparv from within a corpus directory containing some
-text documents (the corpus) and a corpus and a [corpus config file](user-manual/corpus-configuration.md). A typical
-corpus folder structure could look like this:
+text documents (the corpus) and a [corpus config file](user-manual/corpus-configuration.md). A typical corpus folder
+structure could look like this:
 
 ```
 mycorpus/
@@ -13,7 +13,7 @@ mycorpus/
 ```
 
 When trying out Sparv for the first time we recommend that you download and test run some of the [example
-corpora](https://github.com/spraakbanken/sparv-pipeline/releases/download/v4.0/example_corpora.zip).
+corpora](https://github.com/spraakbanken/sparv-pipeline/releases/latest/download/example_corpora.zip).
 
 When running `sparv` (or `sparv -h`) the available sparv commands will be listed:
 ```
@@ -42,8 +42,8 @@ Advanced commands:
     run-module       Run annotator module independently
 ```
 
-Every command in the Sparv command line interface (CLI) has a help text which can be accessed with the `-h` flag. Below
-we will give an overview for the most important commands in Sparv. 
+Every command in the Sparv command line interface has a help text which can be accessed with the `-h` flag. Below we
+will give an overview for the most important commands in Sparv.
 
 ## Annotating a Corpus
 **`sparv run`:** From inside a corpus directory with a config file you can annotate the corpus using `sparv run`. This

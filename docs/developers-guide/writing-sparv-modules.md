@@ -48,24 +48,6 @@ correctly. Not using these provided methods can lead to procedures breaking if t
 structure is updated in the future.
 
 
-## Logging
-Logging from Sparv modules is done with [Python's logging library](https://docs.python.org/3.6/library/logging.html).
-Please use the provided `get_logger` wrapper when declaring your logger which takes care of importing the logging
-library and sets the correct module name in the log output:
-```python
-import sparv.util as util
-logger = util.get_logger(__name__)
-logger.error("An error was encountered!")
-```
-
-Any of the officially [Python logging levels](https://docs.python.org/3.6/library/logging.html#levels) may be used.
-
-By default Sparv will write log output with level WARNING and higher to the terminal. You can change the log level with
-the flag `--log [LOGLEVEL]`. Most commands support this flag. You can also choose to write the log output to a file by
-using the `--log-to-file [LOGLEVEL]` flag. The log file will recieve the current date and timestamp as filename and can
-be found inside `logs` in the corpus directory.
-
-
 ## Init File
 Each Sparv module must contain a [Python init file](https://docs.python.org/3/reference/import.html#regular-packages)
 (`__init__.py`). The python scripts containing decorated Sparv functions should be imported here. Module-specific
@@ -84,6 +66,62 @@ __config__ = [
     Config("korp.remote_host", "", description="Remote host to install to")
 ]
 ```
+
+
+## Logging
+Logging from Sparv modules is done with [Python's logging library](https://docs.python.org/3.6/library/logging.html).
+Please use the provided `get_logger` wrapper when declaring your logger which takes care of importing the logging
+library and sets the correct module name in the log output:
+```python
+import sparv.util as util
+logger = util.get_logger(__name__)
+logger.error("An error was encountered!")
+```
+
+Any of the officially [Python logging levels](https://docs.python.org/3.6/library/logging.html#levels) may be used.
+
+By default Sparv will write log output with level WARNING and higher to the terminal. You can change the log level with
+the flag `--log [LOGLEVEL]`. Most commands support this flag. You can also choose to write the log output to a file by
+using the `--log-to-file [LOGLEVEL]` flag. The log file will recieve the current date and timestamp as filename and can
+be found inside `logs` in the corpus directory.
+
+
+## Error Messages
+When raising critical errors that should be displayed to the user (e.g. to tell the user that he/she did something
+wrong) you should use the [SparvErrorMessage class](developers-guide/utilities#SparvErrorMessage). This will raise an
+exception (and thus stop the current Sparv process) and notify the user of errors in a friendly way without displaying
+the usual Python traceback.
+```python
+if not host:
+    raise util.SparvErrorMessage("No host provided! Corpus not installed.")
+```
+
+
+## Rule Order
+Sometimes one may want to create multiple Sparv functions that create the same output files (e.g. annotation files,
+export files or model files). In this case Sparv needs to be informed about the priority of these functions. Let's say
+that there are two functions `annotate()` and `annotate_backoff()` that both produce an annotation output called
+`mymodule.foo`. Ideally `mymodule.foo` should be produced by `annotate()` but if this function cannot be run for some
+reason (e.g. because it needs another annotation file `mymodule.bar` that cannot be produced for some corpora), then you
+want `mymodule.foo` to be produced by `annotate_backoff()`. The priority of functions is stated with the `order`
+argument in the `@annotator`, `@exporter`, or `@modelbuilder` decorator. The integer value given by `order` will help
+Sparv decide which function to try to use first. A lower number indicates higher priority.
+```python
+@annotator("Create foo annotation", order=1)
+def annotate(
+    out: Output = Output("mymodule.foo"),
+    bar_input: Annotation = Annotation("mymodule.bar")):
+    ...
+
+
+@annotator("Create foo annotation for when bar is not available", order=2)
+def annotate_backoff(
+    out: Output = Output("mymodule.foo")):
+    ...
+```
+
+<!-- Functions with a higher order number can explicitely be called with `sparv run-rule`. Not working at the moment due
+to a bug! -->
 
 
 ## Plugins

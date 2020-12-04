@@ -4,7 +4,7 @@ in [YAML](https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSynta
 for creating structured data. This file contains information about your corpus (metadata) and instructions for Sparv on
 how to process it. The [corpus config wizard](#corpus-config-wizard) can help you create one. If you want to see some
 examples of config files you can download the [example
-corpora](https://github.com/spraakbanken/sparv-pipeline/releases/download/v4.0/example_corpora.zip).
+corpora](https://github.com/spraakbanken/sparv-pipeline/releases/latest/download/example_corpora.zip).
 
 A minimal config file contains a corpus ID, information about which annotation represents a document (for XML input this
 would refer to an XML element, and if your input documents are plain text each document will be regarded as a document
@@ -58,7 +58,6 @@ There are a few config options that must be set (either through the default conf
   - `export.annotations`
   - `classes.token` (default: `segment.token`)
   - `classes.sentence` (default: `segment.sentence`)
-  - **TODO** What more?
 
 
 ## Import Options

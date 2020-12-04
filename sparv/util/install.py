@@ -28,7 +28,7 @@ def install_directory(host, directory):
 def install_mysql(host, db_name, sqlfile):
     """Insert tables and data from local SQL-file to remote MySQL database.
 
-    sqlfile may be a whitespace separated list of SQL-files.
+    sqlfile may be a whitespace separated list of SQL files.
     """
     if not host:
         raise(Exception("No host provided! Installations aborted."))

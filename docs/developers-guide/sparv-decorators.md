@@ -77,7 +77,7 @@ files into one output file.
 - `name`: Optional name to use instead of the function name.
 - `config`: List of Config instances defining config options for the exporter.
 - `language`: List of supported languages. If no list is supplied all languages are supported.
-- `order`: If several annotators have the same output, this integer value will help decide which to try to use first. A
+- `order`: If several exporters have the same output, this integer value will help decide which to try to use first. A
   lower number indicates higher priority.
 - `abstract`: Set to True if this exporter has no output.
 
@@ -131,8 +131,8 @@ your system it will be available for any corpus.
 - `name`: Optional name to use instead of the function name.
 - `config`: List of Config instances defining config options for the installer.
 - `language`: List of supported languages. If no list is supplied all languages are supported.
-- `order`: If several annotators have the same output, this integer value will help decide which to try to use first. A
-  lower number indicates higher priority.
+- `order`: If several modelbuilders have the same output, this integer value will help decide which to try to use first.
+  A lower number indicates higher priority.
 
 **Example:**
 ```python

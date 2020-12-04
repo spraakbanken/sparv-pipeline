@@ -1,4 +1,6 @@
 # MISC
-**TODO**
+**TODO** Document somewhere:
+
 - List and explain the segmenters available in `segment.py`?
-- Tipsa om att man kan konvertera strukturella attribut till ordattribut (till exempel NER). Det är praktiskt för csv-exporten!
+- It's possible to convert a structural attribute to a word attribute (e.g. named-entity annotation). This is convenient
+  for the CSV export.

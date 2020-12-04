@@ -85,19 +85,118 @@ Reorder chunks according to `chunk_order` and open/close tags in the correct ord
 ## Install Utils
 Util functions used for installing corpora onto remote servers.
 
+
 ### install_directory()
+Rsync every file from a local directory to a target host. The target path is extracted from filenames by replacing "#"
+with "/".
+
+**Arguments:**
+- `host`: The remote host to install to.
+- `directory`: The directory to sync.
+
+
 ### install_file()
+Rsync a file to a target host.
+
+**Arguments:**
+- `host`: The remote host to install to.
+- `local_file`: Path to the local file to sync.
+- `remote_file`: The name of the resulting file on the remote host.
+
+
 ### install_mysql()
+Insert tables and data from local SQL-file to remote MySQL database.
+
+**Arguments:**
+- `host`: The remote host to install to.
+- `db_name`: Name of the remote database.
+- `sqlfile`: Path to a local SQL file, or multiple paths separated by whitespaces.
+
+
+### install_mysql_dump()
+Copy selected tables (including data) from local to remote MySQL database.
+
+**Arguments:**
+- `host`: The remote host to install to.
+- `db_name`: Name of the remote database.
+- `tables`: Names of SQL tables to be copied separated by whitespaces.
 
 
 ## System Utils
+Util functions related to staring and stopping processes, creating directories etc.
+
 
 ### call_binary()
+Call a binary with `arguments` and `stdin` and return a pair `(stdout, stderr)`.
+
+**Arguments:**
+- `name`: Name of the binary call.
+- `arguments`: Arguments to pass to the call. Defaults to `()`.
+- `stdin`: Stdin input to pass to the call. Defaults to `""`.
+- `raw_command`: Don't use this unless you really have to! String holding the raw command that will be executed through
+  the shell. Defaults to `None`.
+- `search_paths`: List of paths where to look for the binary `name`, in addition to the environment variable PATH.
+  Defaults to `()`.
+- `encoding`: Encoding to use for `stdin`. Defaults to `None`.
+- `verbose`: If set to `True` pipes all stderr output from the subprocess to stderr in the terminal, and an empty string
+  is returned as the stderr component. Defaults to `False`.
+- `use_shell`: Don't use this unless you really have to! If set to `True` the binary will be executed through the shell.
+  Defaults to `False`. Is automatically set to `True` when using `raw_command`.
+- `allow_error`: If set to `False` an exeption is raised if stderr is not empty and stderr and stdout will be logged.
+  Defaults to `False`.
+- `return_command`: If set to `True` the process is returned. Defaults to `False`.
+
+
 ### call_java()
+Call Java with a jar file, command line arguments and stdin. Returns a pair `(stdout, stderr)`.
+
+**Arguments:**
+- `jar`: The name of the jar file to call.
+- `arguments`: Arguments to pass to the call. Defaults to `()`.
+- `options`: List of Java options to pass to the call. Defaults to `[]`, 
+- `stdin`: Stdin input to pass to the call. Defaults to `""`.
+- `search_paths`: List of paths where to look for the binary `name`, in addition to the environment variable PATH.
+  Defaults to `()`.
+- `encoding`: Encoding to use for `stdin`. Defaults to `None`.
+- `verbose`: If set to `True` pipes all stderr output from the subprocess to stderr in the terminal, and an empty string
+  is returned as the stderr component. Defaults to `False`.
+- `return_command`: If set to `True` the process is returned. Defaults to `False`.
+
+
 ### clear_directory()
+Create a new empty directory. Remove it's contents if it already exists.
+
+**Arguments:**
+- `path`: Path to the directory to be created.
+
+
 ### find_binary()
+Search for the binary for a program. Returns the path to binary, or `None` if not found.
+
+**Arguments:**
+- `name`: Name of the binary, either a string or a list of strings with alternative names.
+- `search_paths`: List of paths where to look, in addition to the environment variable PATH.
+- `executable`: Set to `False` to not fail when binary is not executable. Defaults to `True`.
+- `allow_dir`: Set to `True` to allow the target to be a directory instead of a file.  Defaults to `False`.
+- `raise_error`: If set to `True` raises error if binary could not be found. Defaults to `False`.
+
+
 ### kill_process()
+Kill a process, and ignore the error if it is already dead.
+
+**Arguments:**
+- `process`: The process to be killed.
+
+
 ### rsync()
+Transfer files and/or directories using rsync. When syncing directories, extraneous files in destination dirs are
+deleted.
+
+**Arguments:**
+- `local`: Path to a local file or directory.
+- `host`: The remote host to rsync to.
+- `remote`: Path on the remote host to rsync to. Defaults to `None`. If not provided, the path will be the same as on
+  the local machine.
 
 
 ## Tagsets
@@ -149,6 +248,7 @@ Dictionary containing sets of part-of-speech tags.
 
 ## Miscellaneous Utils
 Miscellaneous utils functions.
+
 
 <!-- ### chain() -->
 

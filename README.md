@@ -12,7 +12,9 @@ If you have any questions, problems or suggestions please contact <sb-sparv@sven
 
 ## Prerequisites
 
-* A Unix-like environment (e.g. Linux, OS X)
+* A Unix-like environment (e.g. Linux, OS X or [Windows Subsystem for
+  Linux](https://docs.microsoft.com/en-us/windows/wsl/about)) *Note:* Most things within Sparv should work in a Windows
+  environment as well but we cannot guarantee anything since we do not test our software on Windows.
 * [Python 3.6.1](http://python.org/) or newer
 * [Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) (if you want to run
   Swedish dependency parsing, Swedish word sense disambiguation or the Stanford Parser)

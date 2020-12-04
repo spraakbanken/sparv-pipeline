@@ -9,7 +9,6 @@ USER_MANUAL_FILES="
 ../user-manual/running-sparv.md
 ../user-manual/requirements-for-input-data.md
 ../user-manual/corpus-configuration.md
-../user-manual/misc.md
 "
 
 DEVELOPERS_GUIDE_FILES="
@@ -20,7 +19,6 @@ DEVELOPERS_GUIDE_FILES="
 ../developers-guide/config-parameters.md
 ../developers-guide/wildcards.md
 ../developers-guide/utilities.md
-../developers-guide/misc.md
 "
 
 # Get version number from sparv/__init__.py

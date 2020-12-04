@@ -1,11 +1,13 @@
 # Installation and Setup
-This section describes how to get the Sparv corpus pipeline developed by [Språkbanken](https://spraakbanken.gu.se/) up
-and running on your own machine. It also describes additional software that you may need to install in order to run all
-the analyses provided through Sparv.
+This section describes how to get the Sparv corpus pipeline developed by [Språkbanken Text](https://spraakbanken.gu.se/)
+up and running on your own machine. It also describes additional software that you may need to install in order to run
+all the analyses provided through Sparv.
 
 ## Installing Sparv
-In order to install Sparv you will need a Unix-like environment (e.g. Linux, OS X) with
-[Python 3.6.1](http://python.org/) or newer installed on it.
+In order to install Sparv you will need a Unix-like environment (e.g. Linux, OS X or [Windows Subsystem for
+Linux](https://docs.microsoft.com/en-us/windows/wsl/about)) with [Python 3.6.1](http://python.org/) or newer installed
+on it. *Note:* Most things within Sparv should work in a Windows environment as well but we cannot guarantee anything
+since we do not test our software on Windows. 
 
 The Sparv pipeline can be installed using [pip](https://pip.pypa.io/en/stable/installing). We even recommend using
 [pipx](https://pipxproject.github.io/pipx/) so that you can install the `sparv` command globally:
@@ -41,48 +43,18 @@ table](#software-for-analysing-other-languages) for available languages and thei
 to build all the Swedish models you can run `sparv build-models --language swe`.
 
 ## Installing Additional Third-party Software
-The Sparv Pipeline is typically used together with several plugins and third-party software. Which of these you will
-need to install depends on what analyses you want to run with Sparv. Please note that different licenses may apply for
-different software.
+The Sparv Pipeline can be used together with several plugins and third-party software. Installation of the software
+listed below is optional. Which of these you will need to install depends on what analyses you want to run with Sparv.
+Please note that different licenses may apply for different software.
 
 Unless stated otherwise in the instructions below, you won't have to download any additional language models or
 parameter files. If the software is installed correctly, Sparv will download and install the necessary model files for
 you prior to annotating data.
 
-### Hunpos
-|    |           |
-|:---|:----------|
-|**Purpose**                       |Swedish part-of-speech tagging (prerequisite for many other annotations, such as all of the SALDO annotations)
-|**Download**                      |[Hunpos on Google Code](https://code.google.com/archive/p/hunpos/downloads)
-|**License**                       |[BSD-3](https://opensource.org/licenses/BSD-3-Clause)
-|**Version compatible with Sparv** |latest (1.0)
-
-Installation is done by unpacking and then adding the executables to your path (you will need at least `hunpos-tag`).
-Alternatively you can place the binaries inside your [Sparv data directory](#setting-up-sparv) under `bin`.
-
-If you are running a 64-bit OS, you might also have to install 32-bit compatibility libraries if Hunpos won't run:
-```bash
-sudo apt install ia32-libs
-```
-On Arch Linux, activate the `multilib` repository and install `lib32-gcc-libs`. If that doesn't work, you might have to
-compile Hunpos from source.
-
-### MaltParser
-|    |           |
-|:---|:----------|
-|**Purpose**                       |Swedish dependency parsing
-|**Download**                      |[MaltParser webpage](http://www.maltparser.org/download.html)
-|**License**                       |[MaltParser license](http://www.maltparser.org/license.html) (open source)
-|**Version compatible with Sparv** |1.7.2
-|**Dependencies**          		   |[Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
-
-Download and unpack the zip-file from the [MaltParser webpage](http://www.maltparser.org/download.html) and place the
-`maltparser-1.7.2` folder inside the `bin` folder of the [Sparv data directory](#setting-up-sparv).
-
 ### Sparv wsd
 |    |           |
 |:---|:----------|
-|**Purpose**                       |Swedish word-sense disambiguation
+|**Purpose**                       |Swedish word-sense disambiguation. Recommended for standard Swedish annotations.
 |**Download**                      |[Sparv wsd](https://github.com/spraakbanken/sparv-wsd/raw/master/bin/saldowsd.jar)
 |**License**                       |[MIT](https://opensource.org/licenses/MIT)
 |**Dependencies**          		   |[Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
@@ -94,9 +66,10 @@ the Sparv pipeline. In order to use it within the Sparv Pipeline it is enough to
 ### hfst-SweNER
 |    |           |
 |:---|:----------|
-|**Purpose**                       |Swedish named-entity recognition
+|**Purpose**                       |Swedish named-entity recognition. Recommended for standard Swedish annotations.
 |**Download**                      |[hfst-SweNER](http://www.ling.helsinki.fi/users/janiemi/finclarin/ner/hfst-swener-0.9.3.tgz)
 |**Version compatible with Sparv** |0.9.3
+|**Dependencies**          		   |[Python 2](https://www.python.org/download/releases/2.0/#download)
 
 The current version of hfst-SweNER expects to be run in a Python 2 environment while the Sparv pipeline is written in
 Python 3. Before installing hfst-SweNER you need make sure that it will be run with the correct version of Python by
@@ -112,6 +85,40 @@ sed -i 's:#! \/usr/bin/env python:#! /usr/bin/env python2:g' *.py
 ```
 
 After applying these changes please follow the installation instructions provided by hfst-SweNER.
+
+### Hunpos
+|    |           |
+|:---|:----------|
+|**Purpose**                       |Alternative Swedish part-of-speech tagger (if you don't want to use Stanza)
+|**Download**                      |[Hunpos on Google Code](https://code.google.com/archive/p/hunpos/downloads)
+|**License**                       |[BSD-3](https://opensource.org/licenses/BSD-3-Clause)
+|**Version compatible with Sparv** |latest (1.0)
+
+Installation is done by unpacking and then adding the executables to your path (you will need at least `hunpos-tag`).
+Alternatively you can place the binaries inside your [Sparv data directory](#setting-up-sparv) under `bin`.
+
+If you are running a 64-bit OS, you might also have to install 32-bit compatibility libraries if Hunpos won't run:
+```bash
+sudo apt install ia32-libs
+```
+On Arch Linux, activate the `multilib` repository and install `lib32-gcc-libs`. If that doesn't work, you might have to
+compile Hunpos from source.
+
+When using Sparv with Hunpos on Windows you will have to set the config variable `hunpos.binary: hunpos-tag.exe` in your
+[corpus configuration](user-manual/corpus-configuration.md). You will also have to add the `cygwin1.dll` file that comes
+with Hunpos to your path or copy it into your [Sparv data directory](#setting-up-sparv) along with the Hunpos binaries.
+
+### MaltParser
+|    |           |
+|:---|:----------|
+|**Purpose**                       |Alternative Swedish dependency parser (if you don't want to use Stanza)
+|**Download**                      |[MaltParser webpage](http://www.maltparser.org/download.html)
+|**License**                       |[MaltParser license](http://www.maltparser.org/license.html) (open source)
+|**Version compatible with Sparv** |1.7.2
+|**Dependencies**          		   |[Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+
+Download and unpack the zip-file from the [MaltParser webpage](http://www.maltparser.org/download.html) and place the
+`maltparser-1.7.2` folder inside the `bin` folder of the [Sparv data directory](#setting-up-sparv).
 
 ### Corpus Workbench
 |    |           |
@@ -131,37 +138,37 @@ export CORPUS_REGISTRY=~/cwb/registry;
 ```
 
 ### Software for Analysing other Languages
-Sparv can use different third-party software for analyzing corpora in other languages than Swedish.
+Sparv can use different third-party tools for analyzing corpora in other languages than Swedish.
 
 The following is a list over the languages currently supported by the corpus pipeline, their language codes (ISO 639-3)
 and which tools Sparv can use to analyze them:
 
-Language       |ISO Code   |Analysis Tool
-:--------------|:----------|:-------------
-Asturian       |ast        |FreeLing
-Bulgarian      |bul        |TreeTagger
-Catalan        |cat        |FreeLing
-Dutch          |nld        |TreeTagger
-Estonian       |est        |TreeTagger
-English        |eng        |FreeLing, Stanford Parser, TreeTagger
-French         |fra        |FreeLing, TreeTagger
-Finnish        |fin        |TreeTagger
-Galician       |glg        |FreeLing
-German         |deu        |FreeLing, TreeTagger
-Italian        |ita        |FreeLing, TreeTagger
-Latin          |lat        |TreeTagger
-Norwegian      |nob        |FreeLing
-Polish         |pol        |TreeTagger
-Portuguese     |por        |FreeLing
-Romanian       |ron        |TreeTagger
-Russian        |rus        |FreeLing, TreeTagger
-Slovak         |slk        |TreeTagger
-Slovenian      |slv        |FreeLing
-Spanish        |spa        |FreeLing, TreeTagger
-Swedish        |swe        |Sparv
+Language       |ISO 639-3 Code |Analysis Tool
+:--------------|:--------------|:-------------
+Asturian       |ast            |FreeLing
+Bulgarian      |bul            |TreeTagger
+Catalan        |cat            |FreeLing
+Dutch          |nld            |TreeTagger
+Estonian       |est            |TreeTagger
+English        |eng            |FreeLing, Stanford Parser, TreeTagger
+French         |fra            |FreeLing, TreeTagger
+Finnish        |fin            |TreeTagger
+Galician       |glg            |FreeLing
+German         |deu            |FreeLing, TreeTagger
+Italian        |ita            |FreeLing, TreeTagger
+Latin          |lat            |TreeTagger
+Norwegian      |nob            |FreeLing
+Polish         |pol            |TreeTagger
+Portuguese     |por            |FreeLing
+Romanian       |ron            |TreeTagger
+Russian        |rus            |FreeLing, TreeTagger
+Slovak         |slk            |TreeTagger
+Slovenian      |slv            |FreeLing
+Spanish        |spa            |FreeLing, TreeTagger
+Swedish        |swe            |Sparv
 
-<!-- Swedish 1800's |sv-1800   |Sparv) -->
-<!-- Swedish development mode |sv-dev    |Sparv) -->
+<!-- Swedish 1800's |sv-1800       |Sparv) -->
+<!-- Swedish development mode |sv-dev        |Sparv) -->
 
 
 #### TreeTagger
