@@ -7,11 +7,11 @@ from sparv import importer, util
 from sparv.util.classes import Config, Document, Output, Source, SourceStructure, Text
 
 
-@importer("TXT import", file_extension="txt", outputs=["text"], config=[
+@importer("TXT import", file_extension="txt", outputs=["text"], document_annotation="text", config=[
     Config("text_import.prefix", "", description="Optional prefix to add to annotation names."),
     Config("text_import.encoding", util.UTF8, description="Encoding of source document. Defaults to UTF-8."),
-    Config("text_import.keep_control_chars", False, description="Set to True if control characters should not be removed "
-                                                                "from the text."),
+    Config("text_import.keep_control_chars", False, description="Set to True if control characters should not be "
+                                                                "removed from the text."),
     Config("text_import.normalize", "NFC", description="Normalize input using any of the following forms: "
                                                        "'NFC', 'NFKC', 'NFD', and 'NFKD'.")
 ], )

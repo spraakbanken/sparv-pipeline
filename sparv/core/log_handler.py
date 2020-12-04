@@ -265,12 +265,20 @@ class LogHandler:
                 "\n • ".join(_binaries))
             self.messages["error"].append((source, _message))
 
-        def missing_class_message(source):
+        def missing_class_message(source, classes=None):
             """Create error message when class variables are missing."""
             _variables = messages["missing_classes"][source]
+            if not _variables:
+                _variables = classes
             _message = "The following class{} need{} to be set:\n • {}".format(
                 *("es", "") if len(_variables) > 1 else ("", "s"),
                 "\n • ".join(_variables))
+
+            if "text" in _variables:
+                _message += "\n\nNote: The 'text' class can also be set using the configuration variable " \
+                            "'import.document_annotation', but only if it refers to an annotation from the " \
+                            "source files."
+
             self.messages["error"].append((source, _message))
 
         level = msg["level"]
@@ -351,7 +359,7 @@ class LogHandler:
                     missing_binary_message(rule_name)
                 elif self.missing_classes_re.search(filelist):
                     handled = True
-                    missing_class_message(rule_name)
+                    missing_class_message(rule_name, self.missing_classes_re.findall(filelist))
 
             # Unhandled errors
             if not handled:

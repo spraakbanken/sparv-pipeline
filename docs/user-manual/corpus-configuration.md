@@ -74,7 +74,10 @@ corpus).
 
 - `import.document_annotation` specifies the annotation representing one text document. Any text-level annotations will
   be attached to this annotation. For XML input this refers to an XML element. For plain text input a default `text`
-  root annotation will be created automatically and you won't have to change this setting.
+  root annotation will be created automatically, and you won't have to change this setting.  
+  _Note:_ This setting automatically sets the `text` [class](#annotation-classes) and should be used when the document
+  annotation comes from the input documents. If you want to use an automatic annotation as the document annotation,
+  you should instead set the `text` class directly.
 
 - `import.encoding` specifies the encoding of the source documents. It defaults to UTF-8.
 

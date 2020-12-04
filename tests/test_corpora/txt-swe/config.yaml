@@ -3,7 +3,6 @@ metadata:
     language: swe
 
 import:
-    document_annotation: text
     importer: text_import:parse
 
 xml_export:

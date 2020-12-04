@@ -103,7 +103,7 @@ def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) 
     apply_presets(user_classes, default_classes)
 
     if config_file:
-        fix_document_annotation()
+        handle_document_annotation()
 
     # Make sure that the root level only contains dictionaries or lists to save us a lot of headache
     for key in config:
@@ -316,28 +316,19 @@ def _find_annotations(name, config_obj):
     return result
 
 
-def fix_document_annotation():
-    """Do special treatment for document annotation."""
-    # Check that classes.text is not set
-    if get("classes.text") is not None:
+def handle_document_annotation():
+    """Copy document annotation to text class."""
+    doc_elem = get("import.document_annotation")
+
+    # Make sure that if both classes.text and import.document_annotation are set, that they have the same value
+    if get("classes.text") and doc_elem and get("classes.text") != doc_elem:
         raise util.SparvErrorMessage(
-            "The config value 'classes.text' cannot be set manually. Use 'import.document_annotation' instead!",
+            "The config keys 'classes.text' and 'import.document_annotation' can't have different values.",
             "sparv", "config")
 
-    # Check that import.document_annotation is set
-    doc_elem = get("import.document_annotation")
-    if doc_elem is None:
-        raise util.SparvErrorMessage("The config value 'import.document_annotation' must be set!", "sparv", "config")
-
-    # Set classes.text and
-    set_default("classes.text", doc_elem)
-
-    # Add doc_elem to xml_import.elements
-    xml_import_elems = get("xml_import.elements")
-    if xml_import_elems is None:
-        set_default("xml_import.elements", [doc_elem])
-    elif doc_elem not in xml_import_elems:
-        xml_import_elems.append(doc_elem)
+    # If import.document_annotation is set, copy value to classes.text
+    if doc_elem:
+        set_default("classes.text", doc_elem)
 
 
 def inherit_config(source: str, target: str) -> None:

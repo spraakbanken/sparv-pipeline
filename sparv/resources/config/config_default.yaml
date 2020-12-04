@@ -13,8 +13,6 @@ metadata:
 import:
     # Importer to use
     importer: xml_import:parse
-    # The annotation representing one text document. Any text-level annotations will be attached to this annotation.
-    document_annotation: text
 
 #===============================================================================
 # Annotation Class Settings
