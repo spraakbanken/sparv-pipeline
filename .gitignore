@@ -4,6 +4,9 @@ data
 # Snakemake
 .snakemake
 
+# Example corpora zip
+tests/example_corpora.zip
+
 # Editors
 .idea/
 .vscode
