@@ -28,7 +28,7 @@ corpus and the annotations you would like Sparv to add to it. Run `sparv wizard`
 running this command in a folder where a corpus config file exists already, Sparv will read the config file and set the
 wizard default values according to the existing configuration.
 
-The wizard is an auxiliary tool to get you started with your corpus config file and it does not cover all of Sparv's
+The wizard is an auxiliary tool to get you started with your corpus config file, and it does not cover all of Sparv's
 advanced functionality. However, a config file that was created with the wizard can of course be edited manually
 afterwards, e.g. for adding more advanced configuration details such as [custom annotations](#custom-annotations) or
 [headers](#headers).
@@ -73,7 +73,7 @@ corpus).
 
 - `import.document_annotation` specifies the annotation representing one text document if this annotation comes from
   your input data. Any text-level annotations will be attached to this annotation. For XML input this refers to an XML
-  element. For plain text input a default `text` root annotation will be created automatically and you won't have to
+  element. For plain text input a default `text` root annotation will be created automatically, and you won't have to
   change this setting.  
   _Note:_ This setting automatically sets the `text` [class](#annotation-classes). If you want to
   use an automatic annotation as the document annotation, you should not use this setting, and instead set the `text`
@@ -107,7 +107,7 @@ be kept in the output. If you do not want any source annotations to be included 
 to `[]`. This will cause errors in the XML exports though because the root element must be listed as a source
 annotation. If you do list anything here, make sure that you include the root element (i.e. the element that encloses
 all other included elements and text content) for each of your input documents. If you don't, the resulting output XML
-will be invalid and Sparv won't be able to produce XML files. If you only want to produce other output formats than XML
+will be invalid and Sparv won't be able to produce XML files. If you only want to produce other output formats than XML,
 you don't need to worry about this.
 
 It is possible to rename elements and attributes present in your input data. Let's say your documents contain elements
@@ -158,8 +158,8 @@ the structural annotation and the attribute name respectively (e.g. `<token>:mis
 The option `export.default` defines a list of export formats that will be produced when running `sparv run`. Per default
 it only contains `xml_export:pretty`, the formatted XML export with one token per line. 
 
-There are a couple of export options concerning XML namespaces. You can chose to prefix all annotations produced by
-Sparv with a custom prefix with the `export.sparv_namespace` option. Likewise you can add a prefix to all elements and
+There are a couple of export options concerning XML namespaces. You can choose to prefix all annotations produced by
+Sparv with a custom prefix with the `export.sparv_namespace` option. Likewise, you can add a prefix to all elements and
 attributes existing in your input with the `export.source_namespace` option.
 
 The option `export.remove_module_namespaces` is `true` by default which means that the module name prefixes are removed
@@ -176,7 +176,7 @@ instead of the more compact:
 your corpus will be scrambled on. Typical settings are `export.scramble_on: <sentence>` or `export.scramble_on:
 <paragraph>`.
 
-The option `export.word` is used to define the strings to be output as tokens in the export. By default this is set to
+The option `export.word` is used to define the strings to be output as tokens in the export. By default, this is set to
 `<token:word>`. A useful application for this setting is anonymisation of texts. If you want to produce XML containing
 only annotations but not the actual text, you could set `export.word: <token>:anonymised` to get output like this:
 ```xml
@@ -254,14 +254,14 @@ all your headers will be kept.
 The `classes` config variable defines the annotation classes for your corpus. Annotation classes are used to create
 abstract instances for common annotations such as tokens, sentences and text units. They simplify dependencies between
 annotation modules and increase the flexibility of the annotation pipeline. Many annotation modules (such as
-part-of-speech taggers and dependency parsers) need tokenised text as input but they might not care about what tokeniser
-is being used. So instead of telling the part-of-speech tagger and the dependency parser that it needs input from a
-specific module we can tell it to take the class `<token>` as input. So when setting `classes.token` to `segment.token`
-we tell Sparv that tokens will be produced by the segment module. This way we can ask Sparv to perform part-of-speech
-tagging and it will figure out automatically that tokenisation needs to be done first and that this is done with the
-segment module. Classes may also be used in your export annotations lists. If you want to include part-of-speech tags
-from Stanza you would include `segment.token:stanza.pos` in the annotations, meaning that you want to have pos tags from
-Stanza as attributes to the tokens prodcued by the segment module. Here is an example:
+part-of-speech taggers and dependency parsers) need tokenised text as input, but they might not care about what
+tokeniser is being used. So instead of telling the part-of-speech tagger and the dependency parser that it needs input
+from a specific module we can tell it to take the class `<token>` as input. So when setting `classes.token` to
+`segment.token` we tell Sparv that tokens will be produced by the segment module. This way we can ask Sparv to perform
+part-of-speech tagging, and it will figure out automatically that tokenisation needs to be done first and that this is
+done with the segment module. Classes may also be used in your export annotations lists. If you want to include
+part-of-speech tags from Stanza you would include `segment.token:stanza.pos` in the annotations, meaning that you want
+to have pos tags from Stanza as attributes to the tokens prodcued by the segment module. Here is an example:
 ```yaml
 export:
     annotations:
@@ -295,14 +295,14 @@ export:
 ```
 
 If you want to process many corpora and produce the same annotations for them it can be tedious to include the same
-annotations list in every corpus config. Instead you can use annotation presets for a more compact representation:
+annotations list in every corpus config. Instead, you can use annotation presets for a more compact representation:
 ```yaml
 export:
     annotations:
         - SWE_DEFAULT.saldo
 ```
 
-Here `SWE_DEFAULT.saldo` will expand to all the SALDO annotations. You can mix presets with annotations and you can
+Here `SWE_DEFAULT.saldo` will expand to all the SALDO annotations. You can mix presets with annotations, and you can
 combine different presets with each other. You can find the presets in the [Sparv data
 directory](user-manual/installation-and-setup.md#setting-up-sparv) (in the `config/presets` folder) and here you can
 even add your own preset files if you like. You can list all available presets for your corpus (and which annotations
@@ -321,16 +321,16 @@ export:
 **Note:** Preset files may define their own `class` default values. These will be set automatically when using a preset.
 You can override these in your config files if you know what you are doing.
 
-If you frequently run corpora through Sparv using the same annotations you can add your own presets. They will be
+If you frequently run corpora through Sparv using the same annotations, you can add your own presets. They will be
 accessible by Sparv as soon as you store them in `config/presets` in the [Sparv data
 directory](user-manual/installation-and-setup.md#setting-up-sparv).
 
 
 ## Parent Configuration
 If you have multiple corpora with similar configurations where only some variables differ for each corpus (e.g. the
-corpus ID) you may add a reference to a parent configuration file from your individual corpus config files. Specify the
-path to the parent config file in the `parent` variable and your corpus configuration will inherit all the parameters
-from it that are not explicitely specified in the individual config file. Using a list, multiple parents can be
+corpus ID), you may add a reference to a parent configuration file from your individual corpus config files. Specify the
+path to the parent config file in the `parent` variable, and your corpus configuration will inherit all the parameters
+from it that are not explicitly specified in the individual config file. Using a list, multiple parents can be
 specified, each parent overriding any conflicting values from previous parents. Nested parents are also allowed, i.e.
 parents referencing other parents.
 
@@ -355,7 +355,7 @@ change its default arguments and thereby affect the resulting annotation. Some S
 custom annotations as they are lacking default values in their arguments.
 
 The `misc:affix` annotator for example can be used to add a prefix and/or a suffix string to another annotation. When
-using this annotation function you must tell Sparv 1. what your output annotation should be called, 2. what annotation
+using this annotation function, you must tell Sparv 1. what your output annotation should be called, 2. what annotation
 you want to use as input (the chunk), and 3. the string that you want to use as prefix and/or the suffix. These things
 are defined in the `custom_annotations` section in your corpus config. First you specify the annotator module and
 function you want to use (`annotator`) and then you list the parameter names (`params`) and their values. In this
@@ -402,8 +402,8 @@ As previously mentioned, custom annotations may be used to modify the parameters
 if they have default values for all their arguments. This comes in handy when you want to use the same annotator
 multiple times but with different parameters. In order to do this you specify the annotator and its parameters in the
 `custom_annotations` section of your corpus config as explained in the section above. You only need to specify the
-parameters you want to modify. In the example below we are re-using the `hunpos:msdtag` function with a custom model and
-we are calling the output annotation `<token>:hunpos.msd.myHunposModel`:
+parameters you want to modify. In the example below we are re-using the `hunpos:msdtag` function with a custom model,
+and we are calling the output annotation `<token>:hunpos.msd.myHunposModel`:
 ```yaml
 custom_annotations:
     - annotator: hunpos:msdtag
@@ -414,7 +414,7 @@ custom_annotations:
 
 ### User-defined Custom Annotations
 User-defined custom annotations are useful when you want to write your own python annotation function and plug it into
-Sparv. Your annotation function must have one of the Sparv decorators (usually `@annotator`) and your annotator must be
+Sparv. Your annotation function must have one of the Sparv decorators (usually `@annotator`), and your annotator must be
 declared in the `custom_annotations` section of your corpus config. Place your python script inside your corpus
 directory and Sparv will be able to find it. There is an example of a user-defined custom annotation in the standard-swe
 [example corpus](https://github.com/spraakbanken/sparv-pipeline/releases/latest/download/example_corpora.zip). The code
@@ -452,6 +452,6 @@ Now you can add the annotation name given by the `out` parameter value to an ann
 annotations must be prefixed with `custom`.
 
 If you need more information on how to write an annotation function please refer to the [developer's
-guide](developers-guide/writing-sparv-modules). If you have written a rather general annotation module you could
+guide](developers-guide/writing-sparv-modules). If you have written a rather general annotation module, you could
 consider writing a Sparv plugin. This way other people will be able to use your annotator. Read more about writing
 plugins in the [developer's guide](developers-guide/writing-plugins).

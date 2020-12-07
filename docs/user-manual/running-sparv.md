@@ -1,5 +1,5 @@
 # Running Sparv
-Sparv is run from the command line. Typically you will want to run Sparv from within a corpus directory containing some
+Sparv is run from the command line. Typically, you will want to run Sparv from within a corpus directory containing some
 text documents (the corpus) and a [corpus config file](user-manual/corpus-configuration.md). A typical corpus folder
 structure could look like this:
 
@@ -48,7 +48,7 @@ will give an overview for the most important commands in Sparv.
 ## Annotating a Corpus
 **`sparv run`:** From inside a corpus directory with a config file you can annotate the corpus using `sparv run`. This
 will start the annotation process and produce all the output formats (or exports) listed under `export.default` in your
-config. You can also tell Sparv explicitely what output format to generate, e.g. `sparv run csv_export:csv`. Type `sparv
+config. You can also tell Sparv explicitly what output format to generate, e.g. `sparv run csv_export:csv`. Type `sparv
 run -l` to learn what output formats there are available for your corpus. The output files will be stored in a folder
 called `exports` inside your corpus directory.
 

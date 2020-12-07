@@ -4,7 +4,7 @@ A Sparv user can steer and customise the use of Sparv functions to some extent b
 [corpus config file](user-manual/corpus-configuration.md). Each function decorated with a [Sparv
 decorator](developers-guide/sparv-decorators) (except for wizard functions) may take a `config` argument which contains
 a list of config parameters, their descriptions and optional default values. The config parameters declared here can
-then be referenced in the function's arguments and in its body:
+then be referenced in the function's arguments:
 ```python
 @annotator("Dependency parsing using MALT Parser", language=["swe"], config=[
     Config("malt.jar", default="maltparser-1.7.2/maltparser-1.7.2.jar",
@@ -19,15 +19,23 @@ def annotate(maltjar: Binary = Binary("[malt.jar]"),
     ...
 ```
 
+Config parameters can also be declared in the module's `__init__.py` file, using the global variable `__config__`:
+```python
+__config__ = [
+    Config("korp.remote_host", description="Remote host to install to"),
+    Config("korp.mysql_dbname", description="Name of database where Korp data will be stored")
+]
+```
+
 A Sparv function must never try to read any config values inside the function body. Config parameters are always
 accessed via the function's arguments as shown in the above example. It is important to let the Sparv core handle the
 reading of the corpus configuration in order for the internal [config hierarchy](#config-hierarchy) and [config
 inheritance](#config-inheritance) to be respected and treated correctly.
 
 To be able to use a config parameter inside a Sparv function it must first be declared in a Sparv decorator or in a
-module's init file. However, a config parameter used inside a Sparv function does not necessary have to be declared in
-the decorator beloging to that same function, but the declaration may be done in a decorator belonging to a different
-Sparv function.
+module's init file. However, a config parameter used inside a Sparv function does not necessarily have to be declared in
+the decorator belonging to that same function, but the declaration may be done in a decorator belonging to a different
+Sparv function, or even a different module.
 
 Please note that it is mandatory to set a description for each declared config parameter. These descriptions are
 displayed to the user when lising modules with the `sparv modules` command.
@@ -35,9 +43,10 @@ displayed to the user when lising modules with the `sparv modules` command.
 
 ## Config hierarchy
 
-When Sparv processes the corpus configuration it will look for config values in three different places in the indicated
+When Sparv processes the corpus configuration it will look for config values in four different places in the indicated
 priority order:
 1. the corpus configuration file
+2. a parent corpus configuration file
 2. the default configuration file in the [Sparv data directory](user-manual/installation-and-setup.md#setting-up-sparv)
 3. config default values defined in the Sparv decorators (as shown above)
 
@@ -56,7 +65,7 @@ export:
         - <token>:saldo.baseform
 ```
 the config parameter `csv_export.annotations` belonging to the CSV exporter will automatically be set to the same value
-(unless it is explicitely set to another value in the corpus config file):
+(unless it is explicitly set to another value in the corpus config file):
 ```yaml
 csv_export:
     annotations:

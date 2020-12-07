@@ -25,8 +25,8 @@ starts with the name of the module that it is produced by, followed by a dot, fo
 of lowercase ASCII letters and underscores. The token span annotation produced by the `segment` module for example is
 called `segment.token`. The name of an attribute annotation follows the same rules, except that it is prefixed with the
 name of the span annotation that it is adding attributes to, and a colon. So the part-of-speech annotation produced by
-the `stanza` module is called `segment.token:stanza.pos` because it add part-of-speech attributes to the `segment.token`
-span annotation.
+the `stanza` module is called `segment.token:stanza.pos` because it adds part-of-speech attributes to the
+`segment.token` span annotation.
 
 
 ## Dependencies
@@ -37,7 +37,7 @@ produced by what function and in what order things need to be run. These depende
 module specific manner or in a more abstact way. For example, an annotator producing word base forms (or lemmas) may
 depend on a part-of-speech annotation with a specific tagset and therefore this annotator might define that its input
 needs to be an annotation produced by a specific module. A part-of-speech tagger on the other hand usually needs word
-segments as input and it probably does not matter exactly what module produces these segments. In this case the
+segments as input, and it probably does not matter exactly what module produces these segments. In this case the
 dependency can be expressed with an abstract [annotation class](#annotation-classes).
 
 
@@ -45,9 +45,9 @@ dependency can be expressed with an abstract [annotation class](#annotation-clas
 When describing dependencies to other annotations one can make use of annotation classes which are denoted by angle
 brackets (e.g. `<token>`, `<token:word>`). Annotation classes are used to create abstract instances for common
 annotations such as tokens, sentences and text units. They simplify dependencies between annotation modules and increase
-the flexibility of the annotation pipeline. Many annotation modules need tokenised text as input but they might not care
-about what tokeniser is being used. So instead of telling a module that it needs tokens produced by another specific
-module we can tell it to take the class `<token>` as input. In the [corpus
+the flexibility of the annotation pipeline. Many annotation modules need tokenised text as input, but they might not
+care about what tokeniser is being used. So instead of telling a module that it needs tokens produced by another
+specific module we can tell it to take the class `<token>` as input. In the [corpus
 configuration](user-manual/corpus-configuration.md) we can then set `classes.token` to `segment.token` which tells Sparv
 that `<token>` refers to output produced by the `segment` module.
 

@@ -33,7 +33,7 @@ Instead of setting the data directory path using `sparv setup`, you may use the 
 This will override any path you have previously configured using the setup process. Note that you still have to run
 the setup command, even when using the environment variable.
 
-If you like you can pre-build the model files. This step is optional and the only advantage is that annotating corpora
+If you like, you can pre-build the model files. This step is optional, and the only advantage is that annotating corpora
 will be quicker once all the models are set up. If you skip this step, models will be downloaded and built automatically
 on demand when annotating your first corpus. Pre-building models can be done by running `sparv build-models`. If you do
 this in a directory where there is no [corpus config](user-manual/corpus-configuration.md) you
@@ -61,7 +61,7 @@ you prior to annotating data.
 
 [Sparv wsd](https://github.com/spraakbanken/sparv-wsd) is developed at Språkbanken and runs under the same license as
 the Sparv pipeline. In order to use it within the Sparv Pipeline it is enough to download the saldowsd.jar from GitHub
-(see downloadlink above) and place it inside your [Sparv data directory](#setting-up-sparv) under `bin/wsd`.
+(see download link above) and place it inside your [Sparv data directory](#setting-up-sparv) under `bin/wsd`.
 
 ### hfst-SweNER
 |    |           |
@@ -78,7 +78,7 @@ in every script will then look like this:
 ```python
 #! /usr/bin/env python2
 ```
-On Unix systems this can be done by running the following command from whithin the `hfst-swener-0.9.3/scripts`
+On Unix systems this can be done by running the following command from within the `hfst-swener-0.9.3/scripts`
 directory:
 ```bash
 sed -i 's:#! \/usr/bin/env python:#! /usr/bin/env python2:g' *.py

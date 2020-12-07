@@ -13,5 +13,5 @@ In order for Sparv to be able to process your corpus, please make sure your inpu
    reserved keyword in the Sparv pipeline.
 
 5. If your input documents are very large or if your corpus consists of a large amount of really small documents Sparv
-   might become quite slow. The recommended size per document lies around 5-10 MB. If your machine has lots of memory
+   might become quite slow. The recommended size per document lies around 5-10 MB. If your machine has lots of memory,
    processing larger documents may work just fine.

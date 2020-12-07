@@ -1,5 +1,5 @@
 # Writing Sparv Modules
-When writing your first Sparv module a good starting point may be to take a look at an existing module that does
+When writing your first Sparv module, a good starting point may be to take a look at an existing module that does
 something similar to your goal.
 
 The Sparv pipeline is comprised of different modules like importers, annotators and exporters. None of these modules are
@@ -80,7 +80,7 @@ logger.error("An error was encountered!")
 
 Any of the officially [Python logging levels](https://docs.python.org/3.6/library/logging.html#levels) may be used.
 
-By default Sparv will write log output with level WARNING and higher to the terminal. You can change the log level with
+By default, Sparv will write log output with level WARNING and higher to the terminal. You can change the log level with
 the flag `--log [LOGLEVEL]`. Most commands support this flag. You can also choose to write the log output to a file by
 using the `--log-to-file [LOGLEVEL]` flag. The log file will recieve the current date and timestamp as filename and can
 be found inside `logs` in the corpus directory.
@@ -120,15 +120,15 @@ def annotate_backoff(
     ...
 ```
 
-<!-- Functions with a higher order number can explicitely be called with `sparv run-rule`. Not working at the moment due
+<!-- Functions with a higher order number can explicitly be called with `sparv run-rule`. Not working at the moment due
 to a bug! -->
 
 
 ## Plugins
-A Sparv Plugin is a Sparv module that is not stored together with the Sparv code. Instead it usually lives in a separate
-repository. Reasons for writing a plugin could be that the author does not want it to be part of the Sparv core or that
-the code cannot be distributed under the same license. Any Sparv module can be converted into a plugin by adding a
-[Python setup script](https://docs.python.org/3/distutils/setupscript.html).
+A Sparv Plugin is a Sparv module that is not stored together with the Sparv code. Instead, it usually lives in a
+separate repository. Reasons for writing a plugin could be that the author does not want it to be part of the Sparv
+core or that the code cannot be distributed under the same license. Any Sparv module can be converted into a plugin
+by adding a [Python setup script](https://docs.python.org/3/distutils/setupscript.html).
 
 A working sparv plugin is the [sparv-freeling](https://github.com/spraakbanken/sparv-freeling) plugin.
 
@@ -157,5 +157,5 @@ points to your module(s):
 entry_points={"sparv.plugin": ["freeling = freeling"]}
 ```
 
-Now the plugin functionality should be available and it should be treated just like any other module within the Sparv
+Now the plugin functionality should be available, and it should be treated just like any other module within the Sparv
 pipeline.
