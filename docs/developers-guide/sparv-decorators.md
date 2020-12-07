@@ -12,6 +12,7 @@ A function decorated with `@annotator` usually takes some input (e.g. models, on
 tokens, sentences, parts of speeches etc) and outputs one or more new annotations.
 
 **Arguments:**
+
 - `name`: Optional name to use instead of the function name.
 - `description`: Description of the annotator. Used for displaying help texts in the CLI.
 - `config`: List of Config instances defining config options for the annotator.
@@ -47,6 +48,7 @@ additional outputs may be listed in the `outputs` argument of the decorator. Thi
 needed as input in another part of the pipeline.
 
 **Arguments:**
+
 - `description`: Description of the importer. Used for displaying help texts in the CLI.
 - `file_extension`: The file extension of the type of source this importer handles, e.g. "xml" or "txt".
 - `name`: Optional name to use instead of the function name.
@@ -73,6 +75,7 @@ another module. An export can consist of one file per input corpus file or it ca
 files into one output file.
 
 **Arguments:**
+
 - `description`: Description of the exporter. Used for displaying help texts in the CLI.
 - `name`: Optional name to use instead of the function name.
 - `config`: List of Config instances defining config options for the exporter.
@@ -102,6 +105,7 @@ def freq_list_simple(corpus: Corpus = Corpus(),
 A function decorated with `@installer` is used to copy a corpus export to a remote server.
 
 **Arguments:**
+
 - `description`: Description of the installer. Used for displaying help texts in the CLI.
 - `name`: Optional name to use instead of the function name.
 - `config`: List of Config instances defining config options for the installer.
@@ -127,6 +131,7 @@ format and saving it in Sparv's data directory. A model is usually not specific 
 your system it will be available for any corpus.
 
 **Arguments:**
+
 - `description`: Description of the installer. Used for displaying help texts in the CLI.
 - `name`: Optional name to use instead of the function name.
 - `config`: List of Config instances defining config options for the installer.
@@ -145,6 +150,7 @@ def build_model(out: ModelOutput = ModelOutput("sensaldo/sensaldo.pickle")):
 A function decorated with `@wizard` is used to generate questions for the corpus config wizard.
 
 **Arguments:**
+
 - `config_keys`: a list of config keys to be set or changed by this function.
 - `source_structure`: Set to `True` if the function needs access to a `SourceStructureParser` instance (the one holding
   information on the structure of the source files. Default: `False`

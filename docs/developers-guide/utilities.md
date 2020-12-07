@@ -39,6 +39,7 @@ Calculate the span hierarchy and the annotation_dict containing all annotation e
 `spans_dict` and an `annotation_dict` if `flatten` is set to `True`, otherwise `span_positions` and `annotation_dict`.
 
 **Arguments:**
+
 - `annotations`: A list of annotations to include.
 - `export_names`: Dictionary that maps from annotation names to export names.
 - `header_annotations`: A list of header annotations.
@@ -51,6 +52,7 @@ Calculate the span hierarchy and the annotation_dict containing all annotation e
 Get a list of annotations, token attributes and a dictionary with translations from annotation names to export names.
 
 **Arguments:**
+
 - `annotations`: List of elements:attributes (annotations) to include.
 - `source_annotations`: List of elements:attributes from the original document to include. If not specified, everything
   will be included.
@@ -68,6 +70,7 @@ Get a list of annotations, token attributes and a dictionary with translations f
 Get a list of header annotations and a dictionary for renamed annotations.
 
 **Arguments:**
+
 - `header_annotation_names`: List of header elements:attributes from the original document to include. If not specified,
   everything will be included.
 - `doc`: Name of the source document.
@@ -78,6 +81,7 @@ Get a list of header annotations and a dictionary for renamed annotations.
 Reorder chunks according to `chunk_order` and open/close tags in the correct order.
 
 **Arguments:**
+
 - `span_positions`: The original span positions (usually retrieved from [`gather_annotations()`](#gather_annotations)).
 - `chunk_name`: The name of the annotation to scramble on.
 - `chunk_order`: Annotation containing the new order of the chunk.
@@ -92,6 +96,7 @@ Rsync every file from a local directory to a target host. The target path is ext
 with "/".
 
 **Arguments:**
+
 - `host`: The remote host to install to.
 - `directory`: The directory to sync.
 
@@ -100,6 +105,7 @@ with "/".
 Rsync a file to a target host.
 
 **Arguments:**
+
 - `host`: The remote host to install to.
 - `local_file`: Path to the local file to sync.
 - `remote_file`: The name of the resulting file on the remote host.
@@ -109,6 +115,7 @@ Rsync a file to a target host.
 Insert tables and data from local SQL-file to remote MySQL database.
 
 **Arguments:**
+
 - `host`: The remote host to install to.
 - `db_name`: Name of the remote database.
 - `sqlfile`: Path to a local SQL file, or multiple paths separated by whitespaces.
@@ -118,6 +125,7 @@ Insert tables and data from local SQL-file to remote MySQL database.
 Copy selected tables (including data) from local to remote MySQL database.
 
 **Arguments:**
+
 - `host`: The remote host to install to.
 - `db_name`: Name of the remote database.
 - `tables`: Names of SQL tables to be copied separated by whitespaces.
@@ -131,6 +139,7 @@ Util functions related to staring and stopping processes, creating directories e
 Call a binary with `arguments` and `stdin` and return a pair `(stdout, stderr)`.
 
 **Arguments:**
+
 - `name`: Name of the binary call.
 - `arguments`: Arguments to pass to the call. Defaults to `()`.
 - `stdin`: Stdin input to pass to the call. Defaults to `""`.
@@ -152,6 +161,7 @@ Call a binary with `arguments` and `stdin` and return a pair `(stdout, stderr)`.
 Call Java with a jar file, command line arguments and stdin. Returns a pair `(stdout, stderr)`.
 
 **Arguments:**
+
 - `jar`: The name of the jar file to call.
 - `arguments`: Arguments to pass to the call. Defaults to `()`.
 - `options`: List of Java options to pass to the call. Defaults to `[]`, 
@@ -168,6 +178,7 @@ Call Java with a jar file, command line arguments and stdin. Returns a pair `(st
 Create a new empty directory. Remove it's contents if it already exists.
 
 **Arguments:**
+
 - `path`: Path to the directory to be created.
 
 
@@ -175,6 +186,7 @@ Create a new empty directory. Remove it's contents if it already exists.
 Search for the binary for a program. Returns the path to binary, or `None` if not found.
 
 **Arguments:**
+
 - `name`: Name of the binary, either a string or a list of strings with alternative names.
 - `search_paths`: List of paths where to look, in addition to the environment variable PATH.
 - `executable`: Set to `False` to not fail when binary is not executable. Defaults to `True`.
@@ -186,6 +198,7 @@ Search for the binary for a program. Returns the path to binary, or `None` if no
 Kill a process, and ignore the error if it is already dead.
 
 **Arguments:**
+
 - `process`: The process to be killed.
 
 
@@ -194,6 +207,7 @@ Transfer files and/or directories using rsync. When syncing directories, extrane
 deleted.
 
 **Arguments:**
+
 - `local`: Path to a local file or directory.
 - `host`: The remote host to rsync to.
 - `remote`: Path on the remote host to rsync to. Defaults to `None`. If not provided, the path will be the same as on
@@ -207,6 +221,7 @@ Functions and objects related to tagset conversions.
 Convert a complex SUC or SALDO tag record into a string.
 
 **Arguments:**
+
 - `tag`: The tag to convert to a string. Can be a dict (`{'pos': pos, 'msd': msd}`) or a tuple (`(pos, msd)`)
 - `sep`: The separator to be used. Default: "."
 
@@ -220,6 +235,7 @@ Map POS tags to Universal Depenendy POS tags. This only works if there is a conv
 for the given language and tagset.
 
 **Arguments:**
+
 - `pos`: The part-of-speech tag to convert.
 - `lang`: The language code.
 - `tagset`: The name of the tagset that `pos` belongs to.
@@ -230,6 +246,7 @@ Split a SUC or Saldo tag string ('X.Y.Z') into a tuple ('X', 'Y.Z') where 'X' is
 morphologic features (i.e. MSD tags).
 
 **Arguments:**
+
 - `tag`: The tag string to convert into a tuple.
 - `sep`: The separator to split on. Default: "."
 
@@ -238,6 +255,7 @@ morphologic features (i.e. MSD tags).
 Convert SUC MSD tags into UCoNNL feature list (universal morphological features). Returns a list of universal features.
 
 **Arguments:**
+
 - `pos`: The SUC part-of-speech tag.
 - `msd`: The SUC MSD tag.
 - `delim`: The delimiter separating the features in `msd`. Default: "."
@@ -258,6 +276,7 @@ Miscellaneous utils functions.
 Take an iterable object and return a set in the format used by Corpus Workbench.
 
 **Arguments:**
+
 - `values`: An iterable containing some string values.
 - `delimiter`: Character that delimits the elements in the resulting set. Default: "|"
 - `affix`: Character that the resulting set starts and ends with. that Default: "|"
@@ -270,6 +289,7 @@ Take an iterable object and return a set in the format used by Corpus Workbench.
 Get a logger that is a child of `sparv.modules`.
 
 **Arguments:**
+
 - `name`: The name of the current module (usually `__name__`)
 
 
@@ -279,6 +299,7 @@ into a tuple by the string ' as '. Each tuple will contain 2 elements. If there 
 element will be None.
 
 **Arguments:**
+
 - `annotation_names`: List of annotations.
 - `all_annotations`: List of annotations. If there is an element called '...' everything from all_annotations will be
   included in the result, except for the elements that are prefixed with 'not '. Default: `[]`
@@ -291,10 +312,12 @@ element will be None.
 Class for reading basic pickled lexicon and looking up keys.
 
 **Arguments:**
+
 - default argument: A `pathlib.Path` or `Model` object pointing to a pickled lexicon.
 - `verbose`: Logs status updates upon reading the lexicon if set to `True`. Default: `True`
 
 **Methods:**
+
 - `lookup(key, default=set())`: Look up `key` in the lexicon. Return `default` if `key` is not found.
 
 
@@ -302,6 +325,7 @@ Class for reading basic pickled lexicon and looking up keys.
 Remove control characters from `text`, except for those in `keep`.
 
 **Arguments:**
+
 - `text`: String to remove control characters from.
 - `keep`: List of control characters to keep. Default: `["\n", "\t", "\r"]`
 
@@ -310,6 +334,7 @@ Remove control characters from `text`, except for those in `keep`.
 Remove formatting characters from `text`, except for those in `keep`.
 
 **Arguments:**
+
 - `text`: String to remove formatting characters from.
 - `keep`: List of formatting characters to keep. Default: `[]`
 
@@ -318,6 +343,7 @@ Remove formatting characters from `text`, except for those in `keep`.
 Turn a set string into a list.
 
 **Arguments:**
+
 - `setstring`: A string that can be converted into a list by stripping it of `affix` and splitting the elements on
   `delimiter`.
 - `delimiter`: Character that delimits the elements in `setstring`. Default: "|"
@@ -328,6 +354,7 @@ Turn a set string into a list.
 Exception (class) used to notify users of errors in a friendly way without displaying traceback.
 
 **Arguments:**
+
 - `message`: The error message to display.
 - `module`: Name of the module where the error occurred (optional, not used in Sparv modules). Default: ""
 - `function`: Name of the function where the error occurred (optional, not used in Sparv modules). Default: ""
@@ -338,5 +365,6 @@ Test the validity of a lexicon. Takes a dictionary (lexicon) and a list of test 
 in the lexicon. Prints the value for each test word.
 
 **Arguments:**
+
 - `lexicon`: A dictionary.
 - `testwords`: An iterable containing strings that are expected to occur as keys in `lexicon`.
