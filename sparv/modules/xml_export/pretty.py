@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
 ])
 def pretty(doc: Document = Document(),
            docid: AnnotationData = AnnotationData("<docid>"),
-           out: Export = Export("xml/[xml_export.filename]"),
+           out: Export = Export("xml_pretty/[xml_export.filename]"),
            token: Annotation = Annotation("<token>"),
            word: Annotation = Annotation("[export.word]"),
            annotations: ExportAnnotations = ExportAnnotations("xml_export.annotations"),
@@ -89,7 +89,7 @@ def pretty(doc: Document = Document(),
 def combined(corpus: Corpus = Corpus(),
              out: Export = Export("[xml_export.filename_combined]"),
              docs: AllDocuments = AllDocuments(),
-             xml_input: ExportInput = ExportInput("xml/[xml_export.filename]", all_docs=True)):
+             xml_input: ExportInput = ExportInput("xml_pretty/[xml_export.filename]", all_docs=True)):
     """Combine XML export files into a single XML file."""
     xml_utils.combine(corpus, out, docs, xml_input)
 

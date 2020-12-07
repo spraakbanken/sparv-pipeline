@@ -154,7 +154,7 @@ An instance of this class holds the name of a source document.
 An instance of this class represents an export file. This class is used to define an output of an exporter function.
 
 **Arguments:**
-- `name`: The export directory and filename pattern (e.g. `"xml/[xml_export.filename]"`).
+- `name`: The export directory and filename pattern (e.g. `"xml_pretty/[xml_export.filename]"`).
 - `absolute_path`: Set to `True` if the path is absolute. Default: `False`
 
 
@@ -171,7 +171,7 @@ Export directory and filename pattern, used as input. Use this class if you need
 function.
 
 **Arguments:**
-- `val`: The export directory and filename pattern (e.g. `"xml/[xml_export.filename]"`).
+- `val`: The export directory and filename pattern (e.g. `"xml_pretty/[xml_export.filename]"`).
 - `all_docs`: Set to `True` to get the export for all source documents. Default: `False`
 - `absolute_path`: Set to `True` if the path is absolute. Default: `False`
 
