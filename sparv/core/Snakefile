@@ -134,7 +134,14 @@ for module in registry.modules:
         elif a["type"] == registry.Annotator.exporter:
             sparv_config.inherit_config("export", module)
 
-# Collect list of all explicitly used annotations
+# Collect list of all explicitly used annotations (without class expansion)
+for key in registry.annotation_sources:
+    registry.explicit_annotations_raw.update(a[0] for a in util.parse_annotation_list(sparv_config.get(key, [])))
+
+# Figure out classes from annotation usage
+registry.find_implicit_classes()
+
+# Collect list of all explicitly used annotations (with class expansion)
 for key in registry.annotation_sources:
     registry.explicit_annotations.update(
         registry.expand_variables(a[0])[0]

@@ -2,6 +2,7 @@
 
 import logging
 import pathlib
+import re
 import unicodedata
 from collections import defaultdict, OrderedDict
 from typing import List, Optional, Union, Tuple
@@ -76,7 +77,10 @@ def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations
             include_rest = True
         else:
             name, _, export_name = a.partition(" as ")
-            plain_name, attr = Annotation(name).split()
+            if not re.match(r"^<[^>]+>$", name):  # Prevent splitting class names
+                plain_name, attr = Annotation(name).split()
+            else:
+                plain_name, attr = None, None
             result.pop(name, None)
             result[name] = export_name or None
             if attr:

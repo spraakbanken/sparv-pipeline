@@ -47,6 +47,9 @@ annotation_classes = {
     # Classes from modules
     "module_classes": defaultdict(list),
 
+    # Classes from annotation usage
+    "implicit_classes": {},
+
     # Classes from config, either new classes or overriding the above
     "config_classes": {}
 }
@@ -65,6 +68,9 @@ annotation_sources = set()
 
 # All explicitly used annotations (with classes expanded)
 explicit_annotations = set()
+
+# All explicitly used annotations (without class-expansion)
+explicit_annotations_raw = set()
 
 
 def find_modules(no_import=False, find_custom=False) -> list:
@@ -329,6 +335,24 @@ def _add_to_registry(annotator):
         modules[module_name].functions[f_name] = annotator
 
 
+def find_implicit_classes() -> None:
+    """Figure out implicitly defined classes from annotation usage."""
+
+    annotation_to_class = defaultdict(set)
+    for class_source in ("module_classes", "config_classes"):
+        for cls, anns in annotation_classes[class_source].items():
+            if not isinstance(anns, list):
+                anns = [anns]
+            for ann in anns:
+                annotation_to_class[ann].add(cls)
+                annotation_to_class[expand_variables(ann)[0]].add(cls)
+
+    for annotation in explicit_annotations_raw:
+        for cls in annotation_to_class[annotation]:
+            if cls not in annotation_classes["config_classes"] and cls not in annotation_classes["implicit_classes"]:
+                annotation_classes["implicit_classes"][cls] = annotation
+
+
 def handle_config(cfg, module_name, rule_name: Optional[str] = None) -> None:
     """Handle Config instances."""
     if not cfg.name.startswith(module_name + "."):
@@ -357,6 +381,8 @@ def _expand_class(cls):
     annotation = None
     if cls in annotation_classes["config_classes"]:
         annotation = annotation_classes["config_classes"][cls]
+    elif cls in annotation_classes["implicit_classes"]:
+        annotation = annotation_classes["implicit_classes"][cls]
     elif cls in annotation_classes["module_classes"]:
         annotation = annotation_classes["module_classes"][cls][0]
     return annotation
