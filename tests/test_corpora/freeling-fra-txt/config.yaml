@@ -1,0 +1,56 @@
+#===============================================================================
+# Meta Data
+#===============================================================================
+
+metadata:
+    # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
+    id: freeling-fra-txt
+    # Corpus name (human readable)
+    name:
+        eng: French FreeLing test corpus
+    # Language of the input documents, specified as ISO 639-3 code
+    language: fra
+
+    description:
+        eng: |
+            This test corpus includes:
+            - standard Sparv paragraph segmentation
+            - the FreeLing annotations from the FREELING preset
+            - input files in txt format
+            - some exports
+
+#===============================================================================
+# Import Settings
+#===============================================================================
+
+import:
+    # Importer to use
+    importer: text_import:parse
+
+#===============================================================================
+# Module Settings
+#===============================================================================
+
+freeling:
+    sentence_chunk: <paragraph>
+
+#===============================================================================
+# Export Settings
+#===============================================================================
+
+export:
+    # Exports to create by default when running 'sparv run'
+    default:
+        - korp:timespan_sql
+        - cwb:info
+        - csv_export:csv
+        - cwb:vrt
+        - cwb:vrt_scrambled
+        - stats_export:freq_list_simple
+        - xml_export:pretty
+        - xml_export:preserved_format
+    # Automatic annotations to be included in the export
+    annotations:
+        - PARAGRAPH.all
+        - <text>:misc.id
+        - FREELING.all

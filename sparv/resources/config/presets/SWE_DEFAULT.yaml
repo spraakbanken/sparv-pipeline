@@ -1,0 +1,82 @@
+#===============================================================================
+# Standard Swedish Annotation Presets
+#===============================================================================
+languages:
+    - swe
+
+
+classes:
+    sentence: segment.sentence
+    named_entity: swener.ne
+    token: segment.token
+    "token:word": <token>:misc.word
+    "token:pos": <token>:stanza.pos
+    "token:msd": <token>:stanza.msd
+    "token:baseform": <token>:saldo.baseform2
+    "token:sense": <token>:wsd.sense
+    "token:deprel": <token>:stanza.deprel
+    "token:dephead": <token>:stanza.dephead
+    "token:dephead_ref": <token>:stanza.dephead_ref
+
+presets:
+    all:
+        - token-annotations
+        - swener
+        - sentence
+        - text-lexical-class
+        - readability
+
+    #====================================
+    # Token Annotations
+    #====================================
+
+    token-annotations:
+        - saldo
+        - stanza
+        - sentiment
+        - token-lexical-class
+
+    saldo:
+        - <token>:saldo.baseform2 as baseform
+        - <token>:saldo.lemgram
+        - <token>:wsd.sense
+        - <token>:saldo.compwf
+        - <token>:saldo.complemgram
+    
+    stanza:
+        - <token>:stanza.msd
+        - <token>:stanza.pos
+        - <token>:stanza.deprel
+        - <token>:stanza.dephead_ref
+        - <token>:misc.number_rel_<sentence> as ref
+
+    sentiment:
+        - <token>:sensaldo.sentiment_score
+        - <token>:sensaldo.sentiment_label
+
+    token-lexical-class:
+        - <token>:lexical_classes.blingbring
+        - <token>:lexical_classes.swefn
+
+    #====================================
+    # Structural Annotations
+    #====================================
+
+    swener:
+        - swener.ne:swener.ex
+        - swener.ne:swener.name
+        - swener.ne:swener.type
+        - swener.ne:swener.subtype
+
+    sentence:
+        - <sentence>:misc.id
+        - <sentence>:geo.geo_context as geo
+
+    text-lexical-class:
+        - <text>:lexical_classes.blingbring
+        - <text>:lexical_classes.swefn
+
+    readability:
+        - <text>:readability.lix
+        - <text>:readability.ovix
+        - <text>:readability.nk

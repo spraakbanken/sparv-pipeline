@@ -1,0 +1,41 @@
+#===============================================================================
+# TreeTagger Annotation Presets
+#===============================================================================
+
+languages:
+    - bul
+    - est
+    - fin
+    - lat
+    - nld
+    - pol
+    - ron
+    - slk
+    - deu
+    - eng
+    - fra
+    - spa
+    - ita
+    - rus
+
+
+classes:
+    sentence: segment.sentence
+    token: segment.token
+    "token:word": <token>:misc.word
+    "token:pos": <token>:treetagger.pos
+    "token:baseform": <token>:treetagger.baseform
+
+
+presets:
+    all:
+        - token
+        - sentence
+
+    token:
+        - <token>:treetagger.pos
+        - <token>:treetagger.upos
+        - <token>:treetagger.baseform
+
+    sentence:
+        - <sentence>:misc.id

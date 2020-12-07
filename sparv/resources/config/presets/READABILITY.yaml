@@ -1,0 +1,9 @@
+#===============================================================================
+# Readability Annotation Presets
+#===============================================================================
+
+presets:
+    all:
+        - <text>:readability.lix
+        - <text>:readability.ovix
+        - <text>:readability.nk

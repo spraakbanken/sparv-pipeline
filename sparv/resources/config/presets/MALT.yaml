@@ -1,0 +1,16 @@
+#===============================================================================
+# MALT Dependency Parser Preset
+#===============================================================================
+languages:
+    - swe
+
+classes:
+    "token:deprel": <token>:malt.deprel
+    "token:dephead": <token>:malt.dephead
+    "token:dephead_ref": <token>:malt.dephead_ref
+
+presets:
+    all:
+        - <token>:malt.deprel
+        - <token>:malt.dephead_ref
+        - <token>:misc.number_rel_<sentence> as ref

@@ -1,5 +1,0 @@
-- clean: make distclean
-- clean: rm -rf models
-- make train -j4 train=text.label extra_model_name=-with_names
-- make train -j4 train=text.label banned_pos=PM
-- make export -j4

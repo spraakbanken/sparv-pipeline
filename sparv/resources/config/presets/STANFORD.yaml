@@ -1,0 +1,34 @@
+#===============================================================================
+# Stanford Parser Annotation Presets
+#===============================================================================
+
+languages:
+    - eng
+
+
+classes:
+    sentence: stanford.sentence
+    token: stanford.token
+    "token:word": stanford.token:stanford.word
+    "token:pos": stanford.token:stanford.pos
+    "token:baseform": stanford.token:stanford.baseform
+    "token:deprel": <token>:stanford.deprel
+    "token:dephead_ref": <token>:stanford.dehead_ref
+
+
+presets:
+    all:
+        - token
+        - sentence
+
+    token:
+        - stanford.token:stanford.ref
+        - stanford.token:stanford.pos
+        - stanford.token:stanford.upos
+        - stanford.token:stanford.baseform
+        - stanford.token:stanford.ne_type
+        - stanford.token:stanford.dephead_ref
+        - stanford.token:stanford.deprel
+
+    sentence:
+        - stanford.sentence:misc.id

@@ -1,0 +1,15 @@
+#===============================================================================
+# Paragraph Annotation Presets (with Geo-tagging)
+#===============================================================================
+languages:
+    - swe
+
+
+classes:
+    paragraph: segment.paragraph
+
+
+presets:
+    all:
+        - <paragraph>:misc.id
+        - <paragraph>:geo.geo_context as geo

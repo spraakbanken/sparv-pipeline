@@ -1,0 +1,12 @@
+metadata:
+    id: txt-swe
+    language: swe
+
+import:
+    importer: text_import:parse
+
+xml_export:
+    annotations:
+        - <sentence>
+        - <token:word>
+        - <token>:stanza.pos

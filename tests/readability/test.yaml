@@ -1,4 +1,0 @@
-- clean: make distclean
-- make export -j4
-- clean: rm summary
-- grep '^<text' export.original/* > summary

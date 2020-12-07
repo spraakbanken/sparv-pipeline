@@ -1,0 +1,34 @@
+#===============================================================================
+# FreeLing Annotation Presets
+#===============================================================================
+
+languages:
+    - ast
+    - fra
+    - glg
+    - ita
+    - nob
+    - rus
+    - slv
+
+
+classes:
+    sentence: freeling.sentence
+    token: freeling.token
+    "token:word": freeling.token:freeling.word
+    "token:pos": freeling.token:freeling.pos
+    "token:baseform": freeling.token:freeling.baseform
+
+
+presets:
+    all:
+        - token
+        - sentence
+
+    token:
+        - freeling.token:freeling.upos
+        - freeling.token:freeling.pos
+        - freeling.token:freeling.baseform
+
+    sentence:
+        - freeling.sentence:misc.id

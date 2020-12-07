@@ -1,0 +1,12 @@
+#===============================================================================
+# Phrase Structure Annotation Presets
+#===============================================================================
+languages:
+    - swe
+
+
+presets:
+    all:
+        - phrase_structure.phrase
+        - phrase_structure.phrase:phrase_structure.name
+        - phrase_structure.phrase:phrase_structure.func

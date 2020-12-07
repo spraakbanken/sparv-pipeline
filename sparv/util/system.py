@@ -1,34 +1,20 @@
-# -*- coding: utf-8 -*-
+"""System utility functions."""
 
-"""
-System utilities for Språkbanken
-"""
+import errno
+import logging
+import os
+import shutil
 import subprocess
 import sys
-import os
-import errno
-import shutil
-from . import log
+from typing import Optional, Union
 
+import sparv.core.paths as paths
 
-def dirname(file):
-    return os.path.dirname(file)
-
-
-def make_directory(*path):
-    dir = os.path.join(*path)
-    if dir:
-        try:
-            os.makedirs(dir)
-        except OSError as exc:
-            if exc.errno == errno.EEXIST:
-                pass
-            else:
-                raise
+log = logging.getLogger(__name__)
 
 
 def kill_process(process):
-    """Kills a process, and ignores the error if it is already dead"""
+    """Kill a process, and ignore the error if it is already dead."""
     try:
         process.kill()
     except OSError as exc:
@@ -38,19 +24,23 @@ def kill_process(process):
             raise
 
 
-def clear_directory(dir):
-    shutil.rmtree(dir, ignore_errors=True)
-    make_directory(dir)
+def clear_directory(path):
+    """Create a new empty dir.
+
+    Remove it's contents if it already exists.
+    """
+    shutil.rmtree(path, ignore_errors=True)
+    os.makedirs(path, exist_ok=True)
 
 
 def call_java(jar, arguments, options=[], stdin="", search_paths=(),
               encoding=None, verbose=False, return_command=False):
     """Call java with a jar file, command line arguments and stdin.
+
     Returns a pair (stdout, stderr).
     If the verbose flag is True, pipes all stderr output to stderr,
     and an empty string is returned as the stderr component.
 
-    *** for maltparser: ***
     If return_command is set, then the process is returned.
     """
     assert isinstance(arguments, (list, tuple))
@@ -59,42 +49,39 @@ def call_java(jar, arguments, options=[], stdin="", search_paths=(),
     # For WSD: use = instead of space in arguments
     # TODO: Remove when fixed!
     if isinstance(arguments[0], tuple):
-        arguments = [x + "=" + y for x, y in arguments]
+        arguments = ["{}={}".format(x, y) for x, y in arguments]
     java_args = list(options) + ["-jar", jarfile] + list(arguments)
     return call_binary("java", arguments=java_args, stdin=stdin,
                        search_paths=search_paths, encoding=encoding,
                        verbose=verbose, return_command=return_command)
 
 
-def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
-                binary_names=(), encoding=None, verbose=False,
-                use_shell=False, return_command=False):
-    """
-    Call a binary with arguments and stdin, return a pair (stdout, stderr).
-    If the verbose flag is True, pipes all stderr output to stderr,
-    and an empty string is returned as the stderr component.
+def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(), encoding=None, verbose=False,
+                use_shell=False, allow_error=False, return_command=False):
+    """Call a binary with arguments and stdin, return a pair (stdout, stderr).
 
-    *** for maltparser: ***
+    If the verbose flag is True, pipes all stderr output from the subprocess to
+    stderr in the terminal, and an empty string is returned as the stderr component.
+
     If return_command is set, then the process is returned.
     """
-    from . import unicode_convert
     from subprocess import Popen, PIPE
     assert isinstance(arguments, (list, tuple))
     assert isinstance(stdin, (str, list, tuple))
 
-    binary = find_binary(name, search_paths, binary_names)
+    binary = find_binary(name, search_paths)
     if raw_command:
         use_shell = True
         command = raw_command % binary
         if arguments:
             command = " ".join([command] + arguments)
     else:
-        command = [binary] + list(arguments)
+        command = [binary] + [str(a) for a in arguments]
     if isinstance(stdin, (list, tuple)):
         stdin = "\n".join(stdin)
     if encoding is not None and isinstance(stdin, str):
-        stdin = unicode_convert.encode(stdin, encoding)
-    log.info("CALL: %s", " ".join(command) if not raw_command else command)
+        stdin = stdin.encode(encoding)
+    log.info("CALL: %s", " ".join(str(c) for c in command) if not raw_command else command)
     command = Popen(command, shell=use_shell,
                     stdin=PIPE, stdout=PIPE,
                     stderr=(None if verbose else PIPE),
@@ -103,11 +90,11 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
         return command
     else:
         stdout, stderr = command.communicate(stdin)
-        if command.returncode:
+        if not allow_error and command.returncode:
             if stdout:
-                print(stdout)
+                log.info(stdout.decode())
             if stderr:
-                print(stderr, file=sys.stderr)
+                log.warning(stderr.decode())
             raise OSError("%s returned error code %d" % (binary, command.returncode))
         if encoding:
             stdout = stdout.decode(encoding)
@@ -116,34 +103,53 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
         return stdout, stderr
 
 
-def find_binary(name, search_paths=(), binary_names=(), executable=True):
-    """
-    Search for the binary for a program. Stolen and modified from NLTK.
-    """
-    assert isinstance(name, str)
-    assert isinstance(search_paths, (list, tuple))
-    assert isinstance(binary_names, (list, tuple))
+def find_binary(name: Union[str, list], search_paths=(), executable: bool = True, allow_dir: bool = False,
+                raise_error: bool = False) -> Optional[str]:
+    """Search for the binary for a program.
 
-    search_paths = list(search_paths) + ['.'] + os.getenv("PATH").split(":")
+    Args:
+        name: Name of the binary, either a string or a list of strings with alternative names.
+        search_paths: List of paths where to look, in addition to the environment variable PATH.
+        executable: Set to False to not fail when binary is not executable.
+        allow_dir: Set to True to allow the target to be a directory instead of a file.
+        raise_error: Raise error if binary could not be found.
+
+    Returns:
+        Path to binary, or None if not found.
+    """
+    if isinstance(name, str):
+        name = [name]
+    name = list(map(os.path.expanduser, name))
+    search_paths = list(search_paths) + ["."] + [paths.bin_dir] + os.getenv("PATH").split(":")
     search_paths = list(map(os.path.expanduser, search_paths))
 
-    if not binary_names:
-        binary_names = [name]
+    # Use 'which' first
+    for binary in name:
+        if not os.path.dirname(binary) == "":
+            continue
+        path_to_bin = shutil.which(binary)
+        if path_to_bin:
+            return path_to_bin
 
+    # Look for file in paths
     for directory in search_paths:
-        for binary in binary_names:
+        for binary in name:
             path_to_bin = os.path.join(directory, binary)
-            if os.path.isfile(path_to_bin):
-                if executable:
+            if os.path.isfile(path_to_bin) or (allow_dir and os.path.isdir(path_to_bin)):
+                if executable and not allow_dir:
                     assert os.access(path_to_bin, os.X_OK), "Binary is not executable: %s" % path_to_bin
                 return path_to_bin
 
-    raise LookupError("Couldn't find binary: %s\nSearched in: %s\nFor binary names: %s" %
-                      (name, ", ".join(search_paths), ", ".join(binary_names)))
+    if raise_error:
+        raise LookupError("Couldn't find binary: %s\nSearched in: %s\nFor binary names: %s" %
+                          (name[0], ", ".join(search_paths), ", ".join(binary)))
+    else:
+        return None
 
 
 def rsync(local, host, remote=None):
-    """ Transfer files and/or directories using rsync.
+    """Transfer files and/or directories using rsync.
+
     When syncing directories, extraneous files in destination dirs are deleted.
     """
     if remote is None:

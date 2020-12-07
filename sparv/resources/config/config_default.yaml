@@ -1,0 +1,80 @@
+#===============================================================================
+# Meta Data
+#===============================================================================
+
+metadata:
+    # Language of the input documents, specified as ISO 639-3 code
+    language: swe
+
+#===============================================================================
+# Import Settings
+#===============================================================================
+
+import:
+    # Importer to use
+    importer: xml_import:parse
+
+#===============================================================================
+# Annotation Class Settings
+#===============================================================================
+
+classes:
+    sentence: segment.sentence
+    token: segment.token
+    "token:word": <token>:misc.word
+
+#===============================================================================
+# Export Settings
+#===============================================================================
+
+# Common settings for exporters
+export:
+    # The token strings to be included in the export (NB: xml_export:preserved_format does not respect this setting)
+    word: <token:word>
+    # Chunk to scramble the export on
+    scramble_on: <sentence>
+    # Exports to create by default when running 'sparv run'
+    default:
+        - xml_export:pretty
+    # Set to false if module name spaces should be kept in the export (e.g. 'pos' will be called 'hunpos.pos')
+    remove_module_namespaces: true
+    # A string representing the name space to be added to all annotations created by Sparv
+    sparv_namespace: Null
+    # A string representing the name space to be added to all annotations present in the source
+    source_namespace: Null
+
+# Common settings for XML exporters
+# xml_export:
+    # Export hosts and paths (targets for install_export and install_export_original)
+    # export_host: ""
+    # export_path: ""
+    # export_original_host: ""
+    # export_original_path: ""
+
+#===============================================================================
+# Module-specific Settings
+#===============================================================================
+
+segment:
+    # Chunk to use for automatic sentence segmentation (typically <text> or nothing)
+    paragraph_chunk: <text>
+    # How to do automatic paragraph segmentation. Valid values: blanklines, linebreaks, whitespace, fsv_paragraph
+    paragraph_segmenter: blanklines
+    # Chunk to use for automatic sentence segmentation (typically <text> or <paragraph>)
+    sentence_chunk: <paragraph>, <text>
+    # Chunk to use for automatic tokenisation
+    token_chunk: <sentence>
+
+# korp:
+    # Password protected corpus
+    # protected: false
+
+    # Remote host name for installation of both corpus data and database
+    # remote_host:
+
+    # Paths on remote server (targets for install_corpus)
+    # remote_cwb_datadir:
+    # remote_cwb_registry:
+
+    # Database name for relations, lemgram index and timespan
+    # mysql_dbname:

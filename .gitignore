@@ -1,39 +1,36 @@
-sparv/__pycache__
-sparv/freeling.py
-sparv/util/__pycache__/
+# Sparv's data directory
+data
+
+# Snakemake
+.snakemake
+
+# Example corpora zip
+tests/example_corpora.zip
+
+# Editors
+.idea/
+.vscode
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
 venv/
-*.pyc
+ENV/
+env.bak/
+venv.bak/
 
-models/freeling
-models/treetagger
-models/wsd
-models/bettertokenizer.sv.saldo-tokens
-models/blingbring.pickle
-models/blingbring.txt
-models/dalin.pickle
-models/dalinm.xml
-models/diapivot.pickle
-models/diapivot.xml
-models/geo.pickle
-models/geo_alternateNames.txt
-models/geo_cities1000.txt
-models/hunpos.saldo.suc-tags.morphtable
-models/hunpos.dalinm-swedberg.saldo.suc-tags.morphtable
-models/nst_utf8.txt
-models/saldo.compound.pickle
-models/saldo.pickle
-models/saldom.xml
-models/sensaldo-base*
-models/sensaldo.pickle
-models/stats.pickle
-models/stats_all.txt
-models/swedberg.pickle
-models/swedbergm.xml
-models/swefn.pickle
-models/swefn.xml
-models/swemalt-1.7.2.mco
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+MANIFEST*
 
-bin/maltparser-1.7.2/
-bin/wsd/
-bin/word_alignment/
-bin/treetagger/
+# Unit test / coverage reports
+.pytest_cache/
