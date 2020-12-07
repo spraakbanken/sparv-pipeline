@@ -41,10 +41,10 @@ def annotate(lang: Language = Language(),
 
 ## @importer
 A function decorated with `@importer` is used for importing corpus files in a certain file format. Its job is to read a
-corpus file, extract the corpus text and existing markup (if there is any), and write annotations files for the corpus
-text and markup. The corpus text output is implicit for importers and thus not listed as function arguments. Any
+corpus file, extract the corpus text and existing markup (if applicable), and write annotation files for the corpus text
+and markup. The corpus text output is implicit for importers and thus not listed among the function arguments. Any
 additional outputs may be listed in the `outputs` argument of the decorator. This is necessary in case any output is
-needed as input in another step of the pipeline.
+needed as input in another part of the pipeline.
 
 **Arguments:**
 - `description`: Description of the importer. Used for displaying help texts in the CLI.

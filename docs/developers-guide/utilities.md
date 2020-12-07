@@ -1,6 +1,7 @@
 # Utilities
 
-These utility functions, classes and constants can be imported from `sparv.util`, e.g.:
+Sparv has a number of utility functions, classes and constants that are not specific to any particular module. They are
+imported from `sparv.util`, e.g.:
 ```python
 from sparv.util import UTF8
 ```
@@ -21,7 +22,7 @@ from sparv.util import UTF8
 - `OVERLAP_ATTR = "overlap"`
   Name for automatically created overlap attributes
 - `SPARV_DEFAULT_NAMESPACE = "sparv"`
-  Namespace to be used in case annotation names collide and sparv_namespace is not set in config
+  Namespace to be used in case annotation names collide and `sparv_namespace` is not set in config
 - `UTF8 = "UTF-8"`
   UTF-8 encoding
 - `LATIN1 = "ISO-8859-1"`

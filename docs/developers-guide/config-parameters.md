@@ -1,10 +1,10 @@
 # Config Parameters
 
 A Sparv user can steer and customise the use of Sparv functions to some extent by setting config parameters in the
-corpus config file. Each function decorated with a [Sparv decorator](developers-guide/sparv-decorators) (except for
-wizard functions) may take a `config` argument which contains a list of config parameters, their descriptions and
-optional default values. The config parameters declared here can then be referenced in the function's arguments and in
-its body:
+[corpus config file](user-manual/corpus-configuration.md). Each function decorated with a [Sparv
+decorator](developers-guide/sparv-decorators) (except for wizard functions) may take a `config` argument which contains
+a list of config parameters, their descriptions and optional default values. The config parameters declared here can
+then be referenced in the function's arguments and in its body:
 ```python
 @annotator("Dependency parsing using MALT Parser", language=["swe"], config=[
     Config("malt.jar", default="maltparser-1.7.2/maltparser-1.7.2.jar",
@@ -24,9 +24,10 @@ accessed via the function's arguments as shown in the above example. It is impor
 reading of the corpus configuration in order for the internal [config hierarchy](#config-hierarchy) and [config
 inheritance](#config-inheritance) to be respected and treated correctly.
 
-To be able to use a config parameter inside a Sparv function it must first be declared in a Sparv decorator. However, a
-config parameter used inside a Sparv function does not necessary have to be declared in the decorator beloging to that
-same function, but the declaration may be done in a decorator belonging to a different Sparv function.
+To be able to use a config parameter inside a Sparv function it must first be declared in a Sparv decorator or in a
+module's init file. However, a config parameter used inside a Sparv function does not necessary have to be declared in
+the decorator beloging to that same function, but the declaration may be done in a decorator belonging to a different
+Sparv function.
 
 Please note that it is mandatory to set a description for each declared config parameter. These descriptions are
 displayed to the user when lising modules with the `sparv modules` command.
@@ -63,8 +64,8 @@ csv_export:
         - <token>:saldo.baseform
 ```
 
-This means that when writing and importer or exporter you should try to use the same pre-defined configuration key names
-where ever it makes sense unless you have a good reason not to. Here is a list of all the existing configuration keys
+This means that when writing an importer or exporter you should try to use the same predefined configuration key names
+wherever it makes sense unless you have a good reason not to. Here is a list of all the existing configuration keys
 for the `import` and the `export` categories that are inherited by importers and exporters:
 
 Inheritable configuration keys for `import`:
@@ -79,8 +80,8 @@ Inheritable configuration keys for `import`:
 
 Inheritable configuration keys for `export`:
 
-| config key | description |
-|:-----------|:------------|
+| config key | description  |
+|:-----------|:-------------|
 |`default`                  | Exports to create by default when running 'sparv run'.
 |`source_annotations`       | List of annotations from the original document to be kept.
 |`annotations`              | List of automatic annotations to include.

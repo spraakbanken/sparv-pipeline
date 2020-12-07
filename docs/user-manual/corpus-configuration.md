@@ -150,6 +150,11 @@ level.
 [anchors](https://docs.ansible.com/ansible/latest/user_guide/playbooks_advanced_syntax.html#yaml-anchors-and-aliases-sharing-variable-values)
 to avoid copying and pasting the same settings.
 
+**Hint:** It is possible to convert a structural attribute to a token attribute which can be convenient for representing
+structural information (such as named entities or phrase structures) in non-structured formats (e.g. the CSV export).
+Use the annotation `<token>:misc.from_struct_{struct}_{attr}` where you replace `{struct}` and `{attr}` with the name of
+the structural annotation and the attribute name respectively (e.g. `<token>:misc.from_struct_swener.ne_swener.type`).
+
 The option `export.default` defines a list of export formats that will be produced when running `sparv run`. Per default
 it only contains `xml_export:pretty`, the formatted XML export with one token per line. 
 
