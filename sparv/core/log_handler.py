@@ -347,7 +347,7 @@ class LogHandler:
                 handled = True
 
             # Errors due to missing config variables or binaries leading to missing input files
-            elif "MissingInputException" in msg["msg"] or "MissingOutputException" in msg["msg"]:
+            elif "MissingInputException" in msg["msg"]:
                 msg_contents = re.search(r" for rule (\S+):\n(.+)", msg["msg"])
                 rule_name, filelist = msg_contents.groups()
                 rule_name = rule_name.replace("::", ":")
@@ -360,6 +360,18 @@ class LogHandler:
                 elif self.missing_classes_re.search(filelist):
                     handled = True
                     missing_class_message(rule_name, self.missing_classes_re.findall(filelist))
+
+            # Missing output files
+            elif "MissingOutputException" in msg["msg"]:
+                msg_contents = re.search(r"Missing files after .*?:\n(.+)\nThis might be due to", msg["msg"])
+                missing_files = "\n • ".join(msg_contents.group(1).strip().splitlines())
+                message = f"The following output files were expected but are missing:\n" \
+                          f" • {missing_files}\n" \
+                          f"There can be many reasons for this. Please make sure that there are no problems with " \
+                          f"the corpus configuration file, like misspelled annotation names or references to " \
+                          f"non-existent source annotations."
+                self.messages["error"].append((None, message))
+                handled = True
 
             # Unhandled errors
             if not handled:
