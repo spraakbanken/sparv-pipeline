@@ -85,7 +85,7 @@ def do_segmentation(text: Text, out: Output, segmenter, chunk: Optional[Annotati
     segmenter_args = []
     if model:
         if model.path.suffix in ["pickle", "pkl"]:
-            with open(model, "rb") as M:
+            with open(model.path, "rb") as M:
                 model_arg = pickle.load(M, encoding="UTF-8")
         else:
             model_arg = str(model.path)
@@ -162,7 +162,7 @@ def build_tokenlist(saldo_model: Model = Model("saldo/saldo.pickle"),
     segmenter_args = []
     if model:
         if model.path.suffix in ["pickle", "pkl"]:
-            with open(model, "rb") as m:
+            with open(model.path, "rb") as m:
                 model_arg = pickle.load(m)
         else:
             model_arg = model.path
@@ -335,7 +335,8 @@ class BetterWordTokenizer:
                 self._word_tokenize_fmt %
                 {
                     "tokens": ("(?:" + "|".join(self.patterns["tokens"]) + ")|") if self.patterns["tokens"] else "",
-                    "abbrevs": ("(?:" + "|".join(re.escape(a + ".") for a in self.abbreviations) + ")|") if self.abbreviations else "",
+                    "abbrevs": ("(?:" + "|".join(
+                        re.escape(a + ".") for a in self.abbreviations) + ")|") if self.abbreviations else "",
                     "misc": "|".join(self.patterns["misc"]),
                     "number": self.patterns["number"],
                     "within": self.patterns["within"],

@@ -46,7 +46,8 @@ def write_annotation(doc, annotation, values, append=False, allow_newlines=False
     else:
         elem_attrs = dict(split_annotation(ann) for ann in annotation)
         # Handle multiple annotations used as one
-        assert all(elem_attrs.values()), "Span annotations can not be written while treating multiple annotations as one."
+        assert all(
+            elem_attrs.values()), "Span annotations can not be written while treating multiple annotations as one."
         # Get spans and associated names for annotations. We need this information to figure out which value goes to
         # which annotation.
         spans = read_annotation(doc, elem_attrs.keys(), with_annotation_name=True)

@@ -66,6 +66,6 @@ def suc_to_feats(pos, msd, delim="."):
 def _findfeat(feats, to_find):
     """Check if 'to_find' is a feature (key) in 'feats'."""
     for feat in feats:
-        if (f"{to_find}=") in feat:
+        if f"{to_find}=" in feat:
             return True
     return False

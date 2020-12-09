@@ -560,7 +560,7 @@ def make_new_baseforms(out_baseform, msd_tag, compounds, stats_lexicon, altlexic
     out_baseform.append(util.cwbset(baseform_list, delimiter, affix) if (compounds and baseform_list) else affix)
 
 
-def read_lmf(xml="saldom.xml", tagset="SUC"):
+def read_lmf(xml: pathlib.Path, tagset: str = "SUC"):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml)."""
     tagmap = util.tagsets.mappings["saldo_to_" + tagset.lower() + "_compound"]
     log.info("Reading XML lexicon")

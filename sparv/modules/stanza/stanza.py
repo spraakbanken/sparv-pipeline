@@ -64,7 +64,8 @@ def annotate(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
                 pos_model_path=str(pos_model.path),
                 depparse_pretrain_path=str(dep_pretrain_model.path),
                 depparse_model_path=str(dep_model.path),
-                tokenize_pretokenized=True,  # Assume the text is tokenized by white space and sentence split by newline. Do not run a model.
+                tokenize_pretokenized=True,  # Assume the text is tokenized by white space and sentence split by
+                                             # newline. Do not run a model.
                 tokenize_no_ssplit=True,     # Disable sentence segmentation
                 verbose=False
                 # depparse_pretagged=True,  # Only run dependency parsing on the document
@@ -73,28 +74,28 @@ def annotate(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
     doc = nlp(document)
     word_count = 0  # Keep track of total word count for 'dephead' attribute
     for sent in doc.sentences:
-        for word in sent.words:
-            feats_str = util.cwbset(word.feats.split("|") if word.feats else "")
+        for w in sent.words:
+            feats_str = util.cwbset(w.feats.split("|") if w.feats else "")
             # Calculate dephead as position in document
-            dephead_str = str(word.head - 1 + word_count) if word.head > 0 else "-"
-            dephead_ref_str = str(word.head) if word.head > 0 else ""
-            logger.debug(f"word: {word.text}"
-                         f"\tlemma: {word.lemma}"
-                         f"\tmsd: {word.xpos}"
-                         f"\tpos: {word.upos}"
+            dephead_str = str(w.head - 1 + word_count) if w.head > 0 else "-"
+            dephead_ref_str = str(w.head) if w.head > 0 else ""
+            logger.debug(f"word: {w.text}"
+                         f"\tlemma: {w.lemma}"
+                         f"\tmsd: {w.xpos}"
+                         f"\tpos: {w.upos}"
                          f"\tfeats: {feats_str}"
                          f"\tdephead_ref: {dephead_ref_str}"
                          f"\tdephead: {dephead_str}"
-                         f"\tdeprel: {word.deprel}"
-                         f"\thead word: {sent.words[word.head - 1].text if word.head > 0 else 'root'}")
-            msd.append(word.xpos)
-            pos.append(word.upos)
+                         f"\tdeprel: {w.deprel}"
+                         f"\thead word: {sent.words[w.head - 1].text if w.head > 0 else 'root'}")
+            msd.append(w.xpos)
+            pos.append(w.upos)
             feats.append(feats_str)
-            baseforms.append(word.lemma)
+            baseforms.append(w.lemma)
             dephead.append(dephead_str)
             dephead_ref.append(dephead_ref_str)
-            deprel.append(word.deprel)
-        word_count += len(sent._words)
+            deprel.append(w.deprel)
+        word_count += len(sent.words)
 
     if len(word_list) != word_count:
         raise util.SparvErrorMessage(
@@ -143,7 +144,8 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
                 dir=str(resources_file.path.parent),
                 pos_pretrain_path=str(pretrain_model.path),
                 pos_model_path=str(model.path),
-                tokenize_pretokenized=True,  # Assume the text is tokenized by white space and sentence split by newline. Do not run a model.
+                tokenize_pretokenized=True,  # Assume the text is tokenized by white space and sentence split by
+                                             # newline. Do not run a model.
                 tokenize_no_ssplit=True,     # Disable sentence segmentation
                 verbose=False
             )
@@ -151,15 +153,15 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
     doc = nlp(document)
     word_count = 0
     for sent in doc.sentences:
-        for word in sent.words:
+        for w in sent.words:
             word_count += 1
-            feats_str = util.cwbset(word.feats.split("|") if word.feats else "")
-            logger.debug(f"word: {word.text}"
-                         f"\tmsd: {word.xpos}"
-                         f"\tpos: {word.upos}"
+            feats_str = util.cwbset(w.feats.split("|") if w.feats else "")
+            logger.debug(f"word: {w.text}"
+                         f"\tmsd: {w.xpos}"
+                         f"\tpos: {w.upos}"
                          f"\tfeats: {feats_str}")
-            msd.append(word.xpos)
-            pos.append(word.upos)
+            msd.append(w.xpos)
+            pos.append(w.upos)
             feats.append(feats_str)
 
     if len(word_list) != word_count:
@@ -218,19 +220,19 @@ def dep_parse(out_dephead: Output = Output("<token>:stanza.dephead", cls="token:
     doc = nlp(Document(document))
     word_count = 0  # Keep track of total word count for 'dephead' attribute
     for sent in doc.sentences:
-        for word in sent.words:
+        for w in sent.words:
             # Calculate dephead as position in document
-            dephead_str = str(word.head - 1 + word_count) if word.head > 0 else "-"
-            dephead_ref_str = str(word.head) if word.head > 0 else ""
-            logger.debug(f"word: {word.text}"
+            dephead_str = str(w.head - 1 + word_count) if w.head > 0 else "-"
+            dephead_ref_str = str(w.head) if w.head > 0 else ""
+            logger.debug(f"word: {w.text}"
                          f"\tdephead_ref: {dephead_ref_str}"
                          f"\tdephead: {dephead_str}"
-                         f"\tdeprel: {word.deprel}"
-                         f"\thead word: {sent.words[word.head - 1].text if word.head > 0 else 'root'}")
+                         f"\tdeprel: {w.deprel}"
+                         f"\thead word: {sent.words[w.head - 1].text if w.head > 0 else 'root'}")
             dephead.append(dephead_str)
             dephead_ref.append(dephead_ref_str)
-            deprel.append(word.deprel)
-        word_count += len(sent._words)
+            deprel.append(w.deprel)
+        word_count += len(sent.words)
 
     out_dephead_ref.write(dephead_ref)
     out_dephead.write(dephead)
