@@ -252,7 +252,8 @@ def main():
     elif args.command in ("run-rule", "create-file", "run", "install", "build-models"):
         snakemake_args.update({
             "dryrun": args.dry_run,
-            "cores": args.cores
+            "cores": args.cores,
+            "resources": {"threads": args.cores}
         })
         # Never show progress bar for list commands
         if args.list:
@@ -305,7 +306,8 @@ def main():
                            "doc": vars(args).get("doc", []),
                            "log_level": log_level,
                            "log_file_level": log_file_level,
-                           "targets": snakemake_args["targets"]})
+                           "targets": snakemake_args["targets"],
+                           "threads": args.cores})
 
     if simple_target:
         # Force Snakemake to use threads to prevent unnecessary processes for simple targets

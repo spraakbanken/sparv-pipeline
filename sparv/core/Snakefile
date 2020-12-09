@@ -61,6 +61,13 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
     # Process rule parameters and update rule storage
     create_rule = snake_utils.rule_helper(rule_storage, config, snake_storage, config_missing, custom_rule_obj)
 
+    # Limit number of parallel threads for this rule if requested in config
+    resources = {}
+    if "threads" in config:
+        thread_limit = sparv_config.get(sparv_config.MAX_THREADS, {}).get(rule_storage.target_name)
+        if thread_limit:
+            resources["threads"] = config["threads"] // thread_limit
+
     if create_rule:
         # Create a named Snakemake rule for annotator (unfortunately we cannot use the regular snakemake syntax for this)
         @workflow.rule(name=rule_storage.rule_name)
@@ -71,6 +78,7 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
                          f_name=rule_storage.f_name,
                          parameters=snake_utils.get_parameters(rule_storage),
                          export_dirs=rule_storage.export_dirs)
+        @workflow.resources(**resources)
         # We use "script" instead of "run" since with "run" the whole Snakefile would have to be reloaded for every
         # single job, due to how Snakemake creates processes for run-jobs.
         @workflow.script("run_snake.py")

@@ -18,6 +18,7 @@ log = logging.getLogger(__name__)
 DEFAULT_CONFIG = paths.default_config_file
 PRESETS_DIR = paths.presets_dir
 PARENT = "parent"
+MAX_THREADS = "threads"
 
 config_user = {}  # Dict holding local corpus config
 config = {}  # Dict holding full configuration
@@ -28,7 +29,8 @@ config_structure = {
     "classes": {"_source": "core"},
     "custom_annotations": {"_source": "core"},
     "install": {"_source": "core"},
-    PARENT: {"_source": "core"}
+    PARENT: {"_source": "core"},
+    MAX_THREADS: {"_source": "core"}
 }
 
 config_usage = defaultdict(set)  # For each config key, a list of annotators using that key
