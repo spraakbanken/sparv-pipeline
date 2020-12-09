@@ -150,17 +150,19 @@ def combine(corpus, out, docs, xml_input):
     """Combine xml_files into one single file."""
     xml_files = [xml_input.replace("{doc}", doc) for doc in docs]
     xml_files.sort()
-    root = etree.Element("corpus")
-    root.set("id", corpus.replace("&", "&amp;").replace('"', "&quot;"))
-    # Append each file as a subtree
-    for infile in xml_files:
-        log.info("Read: %s", infile)
-        newroot = etree.parse(infile).getroot()
-        root.append(newroot)
-    # Fix formatting and write to file
-    indent(root)
     with open(out, "w") as outf:
-        etree.ElementTree(root).write(outf, encoding="unicode", method="xml", xml_declaration=True)
+        print("<?xml version='1.0' encoding='UTF-8'?>", file=outf)
+        print('<corpus id="%s">' % corpus.replace("&", "&amp;").replace('"', "&quot;"), file=outf)
+        for infile in xml_files:
+            log.info("Read: %s", infile)
+            with open(infile) as inf:
+                for n, line in enumerate(inf):
+                    # Skip xml declaration
+                    if n == 0 and line.startswith("<?xml"):
+                        continue
+                    # Indent line
+                    outf.write(f"{INDENTATION}{line}")
+        print("</corpus>", file=outf)
         log.info("Exported: %s" % out)
 
 
