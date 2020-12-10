@@ -293,6 +293,16 @@ Get a logger that is a child of `sparv.modules`.
 - `name`: The name of the current module (usually `__name__`)
 
 
+### indent_xml()
+Add pretty-print indentation to an XML tree.
+
+**Arguments:**
+
+- `elem`: The XML tree (`xml.etree.ElementTree.Element`) to indent.
+- `level`: The indentation start level. Default: `0`
+- `indentation`: The indentation to add on each level. Default: '  '
+
+
 ### parse_annotation_list()
 Take a list of annotation names and possible export names, and return a list of tuples. Each list item will be split
 into a tuple by the string ' as '. Each tuple will contain 2 elements. If there is no ' as ' in the string, the second

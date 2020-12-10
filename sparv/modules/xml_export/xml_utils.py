@@ -102,32 +102,12 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token_name: s
             node_stack.pop()
 
     # Pretty formatting of XML tree
-    indent(root_span.node)
+    util.indent_xml(root_span.node, indentation=INDENTATION)
 
     # We use write() instead of tostring() here to be able to get an XML declaration
     stream = io.StringIO()
     etree.ElementTree(root_span.node).write(stream, encoding="unicode", method="xml", xml_declaration=True)
     return stream.getvalue()
-
-
-def indent(elem, level=0) -> None:
-    """Add pretty-print indentation to XML tree.
-
-    From http://effbot.org/zone/element-lib.htm#prettyprint
-    """
-    i = "\n" + level * INDENTATION
-    if len(elem):
-        if not elem.text or not elem.text.strip():
-            elem.text = i + INDENTATION
-        if not elem.tail or not elem.tail.strip():
-            elem.tail = i
-        for elem in elem:
-            indent(elem, level + 1)
-        if not elem.tail or not elem.tail.strip():
-            elem.tail = i
-    else:
-        if level and (not elem.tail or not elem.tail.strip()):
-            elem.tail = i
 
 
 def valid_root(first_item, last_item):
