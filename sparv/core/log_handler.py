@@ -164,6 +164,7 @@ class LogHandler:
         self.exit = lambda *x: None
         self.progress: Optional[progress.Progress] = None
         self.bar: Optional[progress.TaskID] = None
+        self.bar_started: bool = False
         self.last_percentage = 0
 
         # Create a simple TCP socket-based logging receiver
@@ -175,7 +176,10 @@ class LogHandler:
         server_thread.daemon = True  # Exit the server thread when the main thread terminates
         server_thread.start()
 
-        if not self.use_progressbar:  # When using progress bar, we must wait until after the bar is initialized.
+        if self.use_progressbar:
+            self.setup_bar()
+        else:
+            # When using progress bar, we must hold off on setting up logging until after the bar is initialized
             self.setup_loggers()
 
     def setup_loggers(self):
@@ -214,8 +218,8 @@ class LogHandler:
         internal_handler.setLevel(INTERNAL)
         sparv_logger.addHandler(internal_handler)
 
-    def setup_bar(self, total: int):
-        """Initialize the progress bar."""
+    def setup_bar(self):
+        """Initialize the progress bar but don't start it yet."""
         print()
         self.progress_mgr = progress.Progress(
             progress.TextColumn("[progress.description]{task.description}"),
@@ -227,10 +231,16 @@ class LogHandler:
         )
         self.exit = type(self.progress_mgr).__exit__
         self.progress = type(self.progress_mgr).__enter__(self.progress_mgr)
-        self.bar = self.progress.add_task(self.icon, total=total, text="")
+        self.bar = self.progress.add_task(self.icon, start=False, text="[dim]Preparing...[/dim]")
 
         # Logging needs to be set up after the bar, to make use if its print hook
         self.setup_loggers()
+
+    def start_bar(self, total: int):
+        """Start progress bar."""
+        self.progress.update(self.bar, total=total)
+        self.progress.start_task(self.bar)
+        self.bar_started = True
 
     @staticmethod
     def info(msg):
@@ -292,17 +302,13 @@ class LogHandler:
                 _, count, job = j.split("\t")
                 self.jobs[job.replace("::", ":")] = int(count)
 
-            if self.bar is None:
-                # Get number of jobs
+            if not self.bar_started:
+                # Get number of jobs and start progress bar
                 if total_jobs.isdigit():
-                    self.setup_bar(int(total_jobs))
+                    self.start_bar(int(total_jobs))
 
         elif level == "progress":
             if self.use_progressbar:
-                # Set up progress bar if needed
-                if self.bar is None:
-                    self.setup_bar(msg["total"])
-
                 # Advance progress
                 self.progress.advance(self.bar)
 
@@ -413,9 +419,13 @@ class LogHandler:
         if not self.finished:
             # Stop progress bar
             if self.bar is not None:
-                # Add message about elapsed time
-                elapsed = round(time.time() - self.start_time)
-                self.progress.update(self.bar, text=f"Total time: {timedelta(seconds=elapsed)}")
+                if self.bar_started:
+                    # Add message about elapsed time
+                    elapsed = round(time.time() - self.start_time)
+                    self.progress.update(self.bar, text=f"Total time: {timedelta(seconds=elapsed)}")
+                else:
+                    # Hide bar if it was never started
+                    self.progress.update(self.bar, visible=False)
 
                 # Stop bar
                 self.exit(self.progress_mgr, None, None, None)
