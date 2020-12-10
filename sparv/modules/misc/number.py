@@ -5,9 +5,11 @@ import re
 from binascii import hexlify
 from collections import defaultdict
 
-from sparv import Annotation, Output, Wildcard, annotator
+from sparv import AllDocuments, Annotation, AnnotationAllDocs, Output, OutputCommonData, Wildcard, annotator, util
 
 START_DEFAULT = 1
+
+logger = util.get_logger(__name__)
 
 
 @annotator("Number {annotation} by position", wildcards=[Wildcard("annotation", Wildcard.ANNOTATION)])
@@ -121,6 +123,27 @@ def number_relative(out: Output = Output("{annotation}:misc.number_rel_{parent}"
                                                 nr=cnr)
                for parent in parent_children
                for cnr, _index in enumerate(parent, start)))
+
+
+@annotator("Chunk count file with amount of {annotation} chunks in corpus", wildcards=[
+           Wildcard("annotation", Wildcard.ANNOTATION)])
+def count_chunks(out: OutputCommonData = OutputCommonData("misc.{annotation}_count"),
+                 chunk: AnnotationAllDocs = AnnotationAllDocs("{annotation}"),
+                 docs: AllDocuments = AllDocuments()):
+    """Count the number of occurences of 'chunk' in the corpus."""
+    # Read 'chunk' annotations and count the number of chunks
+    chunk_count = 0
+    for doc in docs:
+        try:
+            chunk_count += len(list(chunk.read_spans(doc)))
+        except FileNotFoundError:
+            pass
+
+    if chunk_count == 0:
+        logger.info(f"No {chunk.name} chunks found in corpus")
+
+    # Write chunk count data
+    out.write(str(chunk_count))
 
 
 def _read_chunks_and_write_new_ordering(out: Output, chunk: Annotation, order, prefix="", zfill=False,

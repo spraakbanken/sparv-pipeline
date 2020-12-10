@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 @exporter("CWB .info file")
 def info(out: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_path=True),
-         sentences: AnnotationCommonData = AnnotationCommonData("cwb.sentencecount"),
+         sentences: AnnotationCommonData = AnnotationCommonData("misc.<sentence>_count"),
          firstdate: AnnotationCommonData = AnnotationCommonData("cwb.datefirst"),
          lastdate: AnnotationCommonData = AnnotationCommonData("cwb.datelast"),
          resolution: AnnotationCommonData = AnnotationCommonData("dateformat.resolution"),
@@ -41,26 +41,6 @@ def info(out: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_
         o.writelines(content)
 
     log.info("Exported: %s", out)
-
-
-@annotator("sentencecount file for .info")
-def info_sentences(out: OutputCommonData = OutputCommonData("cwb.sentencecount"),
-                   sentence: AnnotationAllDocs = AnnotationAllDocs("<sentence>"),
-                   docs: AllDocuments = AllDocuments()):
-    """Determine how many sentences there are in the corpus."""
-    # Read sentence annotation and count the sentences
-    sentence_count = 0
-    for doc in docs:
-        try:
-            sentence_count += len(list(sentence.read_spans(doc)))
-        except FileNotFoundError:
-            pass
-
-    if sentence_count == 0:
-        log.info("No sentence information found in corpus")
-
-    # Write sentencecount data
-    out.write(str(sentence_count))
 
 
 @annotator("datefirst and datelast files for .info", order=1)
