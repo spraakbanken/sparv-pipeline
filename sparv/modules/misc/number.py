@@ -116,13 +116,15 @@ def number_relative(out: Output = Output("{annotation}:misc.number_rel_{parent}"
                     start: int = START_DEFAULT):
     """Number chunks by their relative position within a parent."""
     parent_children, _orphans = parent.get_children(child)
+    result = child.create_empty_attribute()
 
-    out.write(("{prefix}{nr:0{length}d}".format(prefix=prefix,
-                                                length=len(str(len(parent) - 1 + start))
-                                                if zfill else 0,
-                                                nr=cnr)
-               for parent in parent_children
-               for cnr, _index in enumerate(parent, start)))
+    for parent in parent_children:
+        for cnr, index in enumerate(parent, start):
+            result[index] = "{prefix}{nr:0{length}d}".format(prefix=prefix,
+                                                             length=len(str(len(parent) - 1 + start))
+                                                             if zfill else 0,
+                                                             nr=cnr)
+    out.write(result)
 
 
 @annotator("Chunk count file with amount of {annotation} chunks in corpus", wildcards=[
