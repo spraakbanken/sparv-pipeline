@@ -38,6 +38,9 @@ def annotate(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
     """Do dependency parsing using Stanza."""
     sentences, orphans = sentence.get_children(token)
     sentences.append(orphans)
+    if orphans:
+        logger.warning(f"Found {len(orphans)} tokens not belonging to any sentence. These will not be annotated with "
+                       f"dependency relations.")
     word_list = list(word.read())
     msd = word.create_empty_attribute()
     pos = word.create_empty_attribute()
@@ -73,7 +76,7 @@ def annotate(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
 
     doc = nlp(document)
     word_count = 0
-    for sent, tagged_sent in zip(sentences, doc.sentences):
+    for i, (sent, tagged_sent) in enumerate(zip(sentences, doc.sentences)):
         for w_index, w in zip(sent, tagged_sent.words):
             feats_str = util.cwbset(w.feats.split("|") if w.feats else "")
             dephead_str = str(sent[w.head - 1]) if w.head > 0 else "-"
@@ -91,9 +94,10 @@ def annotate(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
             pos[w_index] = w.upos
             feats[w_index] = feats_str
             baseforms[w_index] = w.lemma
-            dephead[w_index] = dephead_str
-            dephead_ref[w_index] = dephead_ref_str
-            deprel[w_index] = w.deprel
+            if i + 1 < len(sentences):
+                dephead[w_index] = dephead_str
+                dephead_ref[w_index] = dephead_ref_str
+                deprel[w_index] = w.deprel
         word_count += len(tagged_sent.words)
 
     if len(word_list) != word_count:
@@ -191,7 +195,9 @@ def dep_parse(out_dephead: Output = Output("<token>:stanza.dephead", cls="token:
               resources_file: Model = Model("[stanza.resources_file]")):
     """Do dependency parsing using Stanza."""
     sentences, orphans = sentence.get_children(token)
-    sentences.append(orphans)
+    if orphans:
+        logger.warning(f"Found {len(orphans)} tokens not belonging to any sentence. These will not be annotated with "
+                       f"dependency relations.")
     dephead = word.create_empty_attribute()
     dephead_ref = word.create_empty_attribute()
     deprel = word.create_empty_attribute()
