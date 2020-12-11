@@ -39,13 +39,13 @@ def annotate(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
     sentences, orphans = sentence.get_children(token)
     sentences.append(orphans)
     word_list = list(word.read())
-    msd = []
-    pos = []
-    feats = []
-    baseforms = []
-    dephead = []
-    dephead_ref = []
-    deprel = []
+    msd = word.create_empty_attribute()
+    pos = word.create_empty_attribute()
+    feats = word.create_empty_attribute()
+    baseforms = word.create_empty_attribute()
+    dephead = word.create_empty_attribute()
+    dephead_ref = word.create_empty_attribute()
+    deprel = word.create_empty_attribute()
 
     # Format document for stanza: separate tokens by whitespace and sentences by double new lines
     document = "\n\n".join([" ".join(word_list[i] for i in sent) for sent in sentences])
@@ -73,8 +73,8 @@ def annotate(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
 
     doc = nlp(document)
     word_count = 0  # Keep track of total word count for 'dephead' attribute
-    for sent in doc.sentences:
-        for w in sent.words:
+    for sent, tagged_sent in zip(sentences, doc.sentences):
+        for w_index, w in zip(sent, tagged_sent.words):
             feats_str = util.cwbset(w.feats.split("|") if w.feats else "")
             # Calculate dephead as position in document
             dephead_str = str(w.head - 1 + word_count) if w.head > 0 else "-"
@@ -87,15 +87,15 @@ def annotate(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
                          f"\tdephead_ref: {dephead_ref_str}"
                          f"\tdephead: {dephead_str}"
                          f"\tdeprel: {w.deprel}"
-                         f"\thead word: {sent.words[w.head - 1].text if w.head > 0 else 'root'}")
-            msd.append(w.xpos)
-            pos.append(w.upos)
-            feats.append(feats_str)
-            baseforms.append(w.lemma)
-            dephead.append(dephead_str)
-            dephead_ref.append(dephead_ref_str)
-            deprel.append(w.deprel)
-        word_count += len(sent.words)
+                         f"\thead word: {tagged_sent.words[w.head - 1].text if w.head > 0 else 'root'}")
+            msd[w_index] = w.xpos
+            pos[w_index] = w.upos
+            feats[w_index] = feats_str
+            baseforms[w_index] = w.lemma
+            dephead[w_index] = dephead_str
+            dephead_ref[w_index] = dephead_ref_str
+            deprel[w_index] = w.deprel
+        word_count += len(tagged_sent.words)
 
     if len(word_list) != word_count:
         raise util.SparvErrorMessage(
@@ -126,9 +126,9 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
     sentences, orphans = sentence.get_children(token)
     sentences.append(orphans)
     word_list = list(word.read())
-    msd = []
-    pos = []
-    feats = []
+    msd = word.create_empty_attribute()
+    pos = word.create_empty_attribute()
+    feats = word.create_empty_attribute()
 
     # Format document for stanza: separate tokens by whitespace and sentences by double new lines
     document = "\n\n".join([" ".join(word_list[i] for i in sent) for sent in sentences])
@@ -152,17 +152,17 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
 
     doc = nlp(document)
     word_count = 0
-    for sent in doc.sentences:
-        for w in sent.words:
+    for sent, tagged_sent in zip(sentences, doc.sentences):
+        for w_index, w in zip(sent, tagged_sent.words):
             word_count += 1
             feats_str = util.cwbset(w.feats.split("|") if w.feats else "")
             logger.debug(f"word: {w.text}"
                          f"\tmsd: {w.xpos}"
                          f"\tpos: {w.upos}"
                          f"\tfeats: {feats_str}")
-            msd.append(w.xpos)
-            pos.append(w.upos)
-            feats.append(feats_str)
+            msd[w_index] = w.xpos
+            pos[w_index] = w.upos
+            feats[w_index] = feats_str
 
     if len(word_list) != word_count:
         raise util.SparvErrorMessage(
@@ -193,9 +193,9 @@ def dep_parse(out_dephead: Output = Output("<token>:stanza.dephead", cls="token:
     """Do dependency parsing using Stanza."""
     sentences, orphans = sentence.get_children(token)
     sentences.append(orphans)
-    dephead = []
-    dephead_ref = []
-    deprel = []
+    dephead = word.create_empty_attribute()
+    dephead_ref = word.create_empty_attribute()
+    deprel = word.create_empty_attribute()
     document = _build_doc(sentences,
                           list(word.read()),
                           list(baseform.read()),
@@ -219,8 +219,8 @@ def dep_parse(out_dephead: Output = Output("<token>:stanza.dephead", cls="token:
 
     doc = nlp(Document(document))
     word_count = 0  # Keep track of total word count for 'dephead' attribute
-    for sent in doc.sentences:
-        for w in sent.words:
+    for sent, tagged_sent in zip(sentences, doc.sentences):
+        for w_index, w in zip(sent, tagged_sent.words):
             # Calculate dephead as position in document
             dephead_str = str(w.head - 1 + word_count) if w.head > 0 else "-"
             dephead_ref_str = str(w.head) if w.head > 0 else ""
@@ -228,11 +228,11 @@ def dep_parse(out_dephead: Output = Output("<token>:stanza.dephead", cls="token:
                          f"\tdephead_ref: {dephead_ref_str}"
                          f"\tdephead: {dephead_str}"
                          f"\tdeprel: {w.deprel}"
-                         f"\thead word: {sent.words[w.head - 1].text if w.head > 0 else 'root'}")
-            dephead.append(dephead_str)
-            dephead_ref.append(dephead_ref_str)
-            deprel.append(w.deprel)
-        word_count += len(sent.words)
+                         f"\thead word: {tagged_sent.words[w.head - 1].text if w.head > 0 else 'root'}")
+            dephead[w_index] = dephead_str
+            dephead_ref[w_index] = dephead_ref_str
+            deprel[w_index] = w.deprel
+        word_count += len(tagged_sent.words)
 
     out_dephead_ref.write(dephead_ref)
     out_dephead.write(dephead)
