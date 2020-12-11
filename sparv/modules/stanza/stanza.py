@@ -4,7 +4,7 @@ from contextlib import redirect_stderr
 from os import devnull
 
 import sparv.util as util
-from sparv import Annotation, Model, Output, annotator
+from sparv import Annotation, Config, Model, Output, annotator
 
 logger = util.get_logger(__name__)
 
@@ -31,7 +31,9 @@ def annotate(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
              lem_model: Model = Model("[stanza.lem_model]"),
              dep_model: Model = Model("[stanza.dep_model]"),
              dep_pretrain_model: Model = Model("[stanza.pretrain_dep_model]"),
-             resources_file: Model = Model("[stanza.resources_file]")):
+             resources_file: Model = Model("[stanza.resources_file]"),
+             use_gpu: bool = Config("stanza.use_gpu"),
+             batch_size: int = Config("stanza.batch_size")):
     """Do dependency parsing using Stanza."""
     import stanza
 
@@ -69,11 +71,16 @@ def annotate(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
                 tokenize_pretokenized=True,  # Assume the text is tokenized by white space and sentence split by
                                              # newline. Do not run a model.
                 tokenize_no_ssplit=True,     # Disable sentence segmentation
+                depparse_max_sentence_size=200,  # Create new batch when encountering sentences larger than this
+                depparse_batch_size=batch_size,
+                pos_batch_size=batch_size,
+                lemma_batch_size=batch_size,
+                use_gpu=use_gpu,
                 verbose=False
                 # depparse_pretagged=True,  # Only run dependency parsing on the document
             )
 
-    doc = nlp(document)
+    doc = run_stanza(nlp, document, batch_size)
     word_count = 0
     for i, (sent, tagged_sent) in enumerate(zip(sentences, doc.sentences)):
         for w_index, w in zip(sent, tagged_sent.words):
@@ -123,7 +130,9 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
            sentence: Annotation = Annotation("<sentence>"),
            model: Model = Model("[stanza.pos_model]"),
            pretrain_model: Model = Model("[stanza.pretrain_pos_model]"),
-           resources_file: Model = Model("[stanza.resources_file]")):
+           resources_file: Model = Model("[stanza.resources_file]"),
+           use_gpu: bool = Config("stanza.use_gpu"),
+           batch_size: int = Config("stanza.batch_size")):
     """Do dependency parsing using Stanza."""
     import stanza
 
@@ -151,10 +160,12 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
                 tokenize_pretokenized=True,  # Assume the text is tokenized by white space and sentence split by
                                              # newline. Do not run a model.
                 tokenize_no_ssplit=True,     # Disable sentence segmentation
+                pos_batch_size=batch_size,
+                use_gpu=use_gpu,
                 verbose=False
             )
 
-    doc = nlp(document)
+    doc = run_stanza(nlp, document, batch_size)
     word_count = 0
     for sent, tagged_sent in zip(sentences, doc.sentences):
         for w_index, w in zip(sent, tagged_sent.words):
@@ -193,7 +204,9 @@ def dep_parse(out_dephead: Output = Output("<token>:stanza.dephead", cls="token:
               sentence: Annotation = Annotation("<sentence>"),
               model: Model = Model("[stanza.dep_model]"),
               pretrain_model: Model = Model("[stanza.pretrain_dep_model]"),
-              resources_file: Model = Model("[stanza.resources_file]")):
+              resources_file: Model = Model("[stanza.resources_file]"),
+              use_gpu: bool = Config("stanza.use_gpu"),
+              batch_size: int = Config("stanza.batch_size")):
     """Do dependency parsing using Stanza."""
     import stanza
     from stanza.models.common.doc import Document
@@ -223,10 +236,15 @@ def dep_parse(out_dephead: Output = Output("<token>:stanza.dephead", cls="token:
                 depparse_pretrain_path=str(pretrain_model.path),
                 depparse_model_path=str(model.path),
                 depparse_pretagged=True,  # Only run dependency parsing on the document
+                depparse_max_sentence_size=200,  # Create new batch when encountering sentences larger than this
+                depparse_batch_size=batch_size,
+                pos_batch_size=batch_size,
+                lemma_batch_size=batch_size,
+                use_gpu=use_gpu,
                 verbose=False
             )
 
-    doc = nlp(Document(document))
+    doc = run_stanza(nlp, Document(document), batch_size)
     for sent, tagged_sent in zip(sentences, doc.sentences):
         for w_index, w in zip(sent, tagged_sent.words):
             dephead_str = str(sent[w.head - 1]) if w.head > 0 else "-"
@@ -271,3 +289,21 @@ def _build_doc(sentences, word, baseform, msd, feats, ref):
         if in_sent:
             document.append(in_sent)
     return document
+
+
+def run_stanza(nlp, document, batch_size):
+    """Run Stanza and handle possible errors."""
+    try:
+        doc = nlp(document)
+    except RuntimeError as e:
+        if "CUDA out of memory" in str(e):
+            msg = "Stanza ran out of GPU memory. You can try the following options to prevent this from happening:\n" \
+                  " - Limit the number of parallel Stanza processes by using the 'threads' section in your Sparv " \
+                  "configuration.\n" \
+                  " - Limit the Stanza batch size by setting the 'stanza.batch_size' config variable to something " \
+                  f"lower (current value: {batch_size}).\n" \
+                  " - Switch to using CPU by setting the 'stanza.use_gpu' config variable to false."
+        else:
+            msg = str(e)
+        raise util.SparvErrorMessage(msg)
+    return doc
