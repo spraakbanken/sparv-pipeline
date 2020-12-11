@@ -72,12 +72,11 @@ def annotate(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
             )
 
     doc = nlp(document)
-    word_count = 0  # Keep track of total word count for 'dephead' attribute
+    word_count = 0
     for sent, tagged_sent in zip(sentences, doc.sentences):
         for w_index, w in zip(sent, tagged_sent.words):
             feats_str = util.cwbset(w.feats.split("|") if w.feats else "")
-            # Calculate dephead as position in document
-            dephead_str = str(w.head - 1 + word_count) if w.head > 0 else "-"
+            dephead_str = str(sent[w.head - 1]) if w.head > 0 else "-"
             dephead_ref_str = str(w.head) if w.head > 0 else ""
             logger.debug(f"word: {w.text}"
                          f"\tlemma: {w.lemma}"
@@ -218,11 +217,9 @@ def dep_parse(out_dephead: Output = Output("<token>:stanza.dephead", cls="token:
             )
 
     doc = nlp(Document(document))
-    word_count = 0  # Keep track of total word count for 'dephead' attribute
     for sent, tagged_sent in zip(sentences, doc.sentences):
         for w_index, w in zip(sent, tagged_sent.words):
-            # Calculate dephead as position in document
-            dephead_str = str(w.head - 1 + word_count) if w.head > 0 else "-"
+            dephead_str = str(sent[w.head - 1]) if w.head > 0 else "-"
             dephead_ref_str = str(w.head) if w.head > 0 else ""
             logger.debug(f"word: {w.text}"
                          f"\tdephead_ref: {dephead_ref_str}"
@@ -232,7 +229,6 @@ def dep_parse(out_dephead: Output = Output("<token>:stanza.dephead", cls="token:
             dephead[w_index] = dephead_str
             dephead_ref[w_index] = dephead_ref_str
             deprel[w_index] = w.deprel
-        word_count += len(tagged_sent.words)
 
     out_dephead_ref.write(dephead_ref)
     out_dephead.write(dephead)
