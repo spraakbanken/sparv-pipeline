@@ -452,21 +452,25 @@ class LogHandler:
             elif self.messages["unhandled_error"]:
                 for error in self.messages["unhandled_error"]:
                     logger.text_handler(error)
-            elif self.export_dirs:
-                self.info("The exported files can be found in the following location{}:\n • {}".format(
-                    "s" if len(self.export_dirs) > 1 else "", "\n • ".join(sorted(self.export_dirs))))
-            elif self.log_levelcount:
-                # Errors or warnings were logged but execution finished anyway. Notify user of potential problems.
-                problems = []
-                if self.log_levelcount["ERROR"]:
-                    problems.append("{} error{}".format(self.log_levelcount["ERROR"],
-                                                        "s" if self.log_levelcount["ERROR"] > 1 else ""))
-                if self.log_levelcount["WARNING"]:
-                    problems.append("{} warning{}".format(self.log_levelcount["WARNING"],
-                                                          "s" if self.log_levelcount["WARNING"] > 1 else ""))
-                self.warning(
-                    "Job execution finished but {} occured. See log messages above or {} for details.".format(
-                        " and ".join(problems), os.path.join(paths.log_dir, self.log_filename)))
+            else:
+                spacer = ""
+                if self.export_dirs:
+                    spacer = "\n"
+                    self.info("The exported files can be found in the following location{}:\n • {}".format(
+                        "s" if len(self.export_dirs) > 1 else "", "\n • ".join(sorted(self.export_dirs))))
+
+                if self.log_levelcount:
+                    # Errors or warnings were logged but execution finished anyway. Notify user of potential problems.
+                    problems = []
+                    if self.log_levelcount["ERROR"]:
+                        problems.append("{} error{}".format(self.log_levelcount["ERROR"],
+                                                            "s" if self.log_levelcount["ERROR"] > 1 else ""))
+                    if self.log_levelcount["WARNING"]:
+                        problems.append("{} warning{}".format(self.log_levelcount["WARNING"],
+                                                              "s" if self.log_levelcount["WARNING"] > 1 else ""))
+                    self.warning(
+                        "{}Job execution finished but {} occured. See log messages above or {} for details.".format(
+                            spacer, " and ".join(problems), os.path.join(paths.log_dir, self.log_filename)))
 
             if self.show_summary:
                 if self.messages:
