@@ -3,9 +3,6 @@
 from contextlib import redirect_stderr
 from os import devnull
 
-import stanza
-from stanza.models.common.doc import Document
-
 import sparv.util as util
 from sparv import Annotation, Model, Output, annotator
 
@@ -36,6 +33,8 @@ def annotate(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
              dep_pretrain_model: Model = Model("[stanza.pretrain_dep_model]"),
              resources_file: Model = Model("[stanza.resources_file]")):
     """Do dependency parsing using Stanza."""
+    import stanza
+
     sentences, orphans = sentence.get_children(token)
     sentences.append(orphans)
     if orphans:
@@ -126,6 +125,8 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
            pretrain_model: Model = Model("[stanza.pretrain_pos_model]"),
            resources_file: Model = Model("[stanza.resources_file]")):
     """Do dependency parsing using Stanza."""
+    import stanza
+
     sentences, orphans = sentence.get_children(token)
     sentences.append(orphans)
     word_list = list(word.read())
@@ -194,6 +195,9 @@ def dep_parse(out_dephead: Output = Output("<token>:stanza.dephead", cls="token:
               pretrain_model: Model = Model("[stanza.pretrain_dep_model]"),
               resources_file: Model = Model("[stanza.resources_file]")):
     """Do dependency parsing using Stanza."""
+    import stanza
+    from stanza.models.common.doc import Document
+
     sentences, orphans = sentence.get_children(token)
     if orphans:
         logger.warning(f"Found {len(orphans)} tokens not belonging to any sentence. These will not be annotated with "
