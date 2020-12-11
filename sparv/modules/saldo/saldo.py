@@ -102,6 +102,9 @@ def annotate(token: Annotation = Annotation("<token>"),
     sentences, orphans = sentence.get_children(token)
     sentences.append(orphans)
 
+    if orphans:
+        log.warning(f"Found {len(orphans)} tokens not belonging to any sentence. These will not be annotated.")
+
     out_annotation = word.create_empty_attribute()
 
     for sent in sentences:
@@ -147,7 +150,7 @@ def annotate(token: Annotation = Annotation("<token>"),
         # Loop to next sentence
 
     for out_annotation_obj, annotation_name in annotations:
-        out_annotation_obj.write([v.get(annotation_name, delimiter) for v in out_annotation])
+        out_annotation_obj.write([v.get(annotation_name, delimiter) if v is not None else None for v in out_annotation])
 
 
 ################################################################################
