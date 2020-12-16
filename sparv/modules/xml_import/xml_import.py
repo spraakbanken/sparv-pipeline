@@ -109,9 +109,6 @@ class SparvXMLParser:
         self.header_elements = header_elements
         self.headers = {}
 
-        self.pos = 0  # Current position in the text data
-        self.subpos = 0  # Sub-position for tags with same position
-        self.tagstack = []
         self.targets = {}  # Index of elements and attributes that will be renamed during import
         self.data = {}  # Metadata collected during parsing
         self.text = []  # Text data of the document collected during parsing
@@ -285,13 +282,15 @@ class SparvXMLParser:
                 self.text.append(element.tail)
             return element_length, len(element.tail or ""), end_subpos
 
-        if self.keep_control_chars:
+        if self.keep_control_chars and not self.normalize:
             tree = etree.parse(source_file)
             root = tree.getroot()
         else:
-            with open(source_file) as f:
-                text = f.read()
-            text = util.remove_control_characters(text)
+            text = source_file.read_text()
+            if not self.keep_control_chars:
+                text = util.remove_control_characters(text)
+            if self.normalize:
+                text = unicodedata.normalize(self.normalize, text)
             root = etree.fromstring(text)
 
         iter_tree(root)
@@ -301,7 +300,7 @@ class SparvXMLParser:
 
     def save(self):
         """Save text data and annotation files to disk."""
-        text = unicodedata.normalize("NFC", "".join(self.text))
+        text = "".join(self.text)
         Text(self.doc).write(text)
         structure = []
         header_elements = []
