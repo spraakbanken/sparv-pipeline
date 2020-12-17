@@ -197,7 +197,7 @@ def print_annotation_classes():
     table.add_row("[b]Defined by pipeline modules[/b]")
     table.add_row("  [i]Class[/i]", "[i]Annotation[/i]")
     for annotation_class, anns in registry.annotation_classes["module_classes"].items():
-        table.add_row("  " + annotation_class, "\n".join(anns))
+        table.add_row("  " + annotation_class, "\n".join(sorted(set(anns), key=anns.index)))
 
     if registry.annotation_classes["config_classes"]:
         table.add_row()
