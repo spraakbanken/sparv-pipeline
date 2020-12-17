@@ -504,6 +504,13 @@ def check_ruleorder(storage: SnakeStorage) -> Set[Tuple[RuleStorage, RuleStorage
     return ordered_rules
 
 
+def doc_value(rule_params):
+    """Get doc name for use as parameter to rule."""
+    def _doc_value(wildcards):
+        return get_doc_value(wildcards, rule_params.annotator)
+    return _doc_value
+
+
 def get_parameters(rule_params):
     """Extend function parameters with doc names and replace wildcards."""
     def get_params(wildcards):
