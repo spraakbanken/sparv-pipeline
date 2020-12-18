@@ -160,8 +160,6 @@ class LogHandler:
         self.jobs = {}
 
         # Progress bar related variables
-        self.progress_mgr = None
-        self.exit = lambda *x: None
         self.progress: Optional[progress.Progress] = None
         self.bar: Optional[progress.TaskID] = None
         self.bar_started: bool = False
@@ -221,7 +219,7 @@ class LogHandler:
     def setup_bar(self):
         """Initialize the progress bar but don't start it yet."""
         print()
-        self.progress_mgr = progress.Progress(
+        self.progress = progress.Progress(
             progress.TextColumn("[progress.description]{task.description}"),
             progress.BarColumn(),
             progress.TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
@@ -229,8 +227,7 @@ class LogHandler:
             progress.TextColumn("{task.fields[text]}"),
             console=console
         )
-        self.exit = type(self.progress_mgr).__exit__
-        self.progress = type(self.progress_mgr).__enter__(self.progress_mgr)
+        self.progress.start()
         self.bar = self.progress.add_task(self.icon, start=False, text="[dim]Preparing...[/dim]")
 
         # Logging needs to be set up after the bar, to make use if its print hook
@@ -428,7 +425,7 @@ class LogHandler:
                     self.progress.update(self.bar, visible=False)
 
                 # Stop bar
-                self.exit(self.progress_mgr, None, None, None)
+                self.progress.stop()
 
             self.finished = True
             print()
