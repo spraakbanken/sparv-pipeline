@@ -220,8 +220,9 @@ class LogHandler:
         """Initialize the progress bar but don't start it yet."""
         print()
         self.progress = progress.Progress(
-            progress.TextColumn("[progress.description]{task.description}"),
+            progress.SpinnerColumn(),
             progress.BarColumn(),
+            progress.TextColumn("[progress.description]{task.description}"),
             progress.TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
             progress.TimeRemainingColumn(),
             progress.TextColumn("{task.fields[text]}"),
