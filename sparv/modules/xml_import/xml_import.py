@@ -5,10 +5,10 @@ import logging
 import unicodedata
 import xml.etree.ElementTree as etree
 from itertools import chain
-from pathlib import Path
 from typing import List
 
-from sparv import Config, Document, Headers, Output, OutputData, Source, SourceStructureParser, SourceStructure, Text, importer, util
+from sparv import Config, Document, Headers, Output, Source, SourceStructureParser, SourceStructure, Text, importer, \
+    util
 
 log = logging.getLogger(__name__)
 
@@ -88,7 +88,7 @@ def parse(doc: Document = Document(),
         normalize: Normalize input using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.
             Defaults to 'NFC'.
     """
-    parser = SparvXMLParser(elements, skip, header_elements, header_data, encoding, source_dir, prefix,
+    parser = SparvXMLParser(elements, skip, header_elements, header_data, source_dir, encoding, prefix,
                             keep_control_chars, normalize)
     parser.parse(doc)
     parser.save()
@@ -97,8 +97,8 @@ def parse(doc: Document = Document(),
 class SparvXMLParser:
     """XML parser class for parsing XML."""
 
-    def __init__(self, elements: list, skip: list, header_elements: list, headers: list, encoding: str = util.UTF8,
-                 source_dir: str = "src", prefix: str = "", keep_control_chars: bool = True, normalize: str = "NFC"):
+    def __init__(self, elements: list, skip: list, header_elements: list, headers: list, source_dir: Source,
+                 encoding: str = util.UTF8, prefix: str = "", keep_control_chars: bool = True, normalize: str = "NFC"):
         """Initialize XML parser."""
         self.source_dir = source_dir
         self.encoding = encoding
@@ -170,13 +170,7 @@ class SparvXMLParser:
         """Parse XML and build data structure."""
         self.doc = doc
         header_data = {}
-
-        # Source path
-        if ":" in doc:
-            doc, _, doc_chunk = doc.partition(":")
-            source_file = Path(self.source_dir, doc, doc_chunk + ".xml")
-        else:
-            source_file = Path(self.source_dir, doc + ".xml")
+        source_file = self.source_dir.get_path(self.doc, ".xml")
 
         def handle_element(element):
             """Handle element renaming, skipping and collection of data."""

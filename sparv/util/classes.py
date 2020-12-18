@@ -646,8 +646,22 @@ class BinaryDir(str):
     """Path to directory containing executable binaries."""
 
 
-class Source(str):
+class Source:
     """Path to directory containing input files."""
+
+    def __init__(self, source_dir: Optional[str] = None):
+        self.source_dir = source_dir
+
+    def get_path(self, doc: Document, extension: str):
+        """Get the path of a document."""
+        if not extension.startswith("."):
+            extension = "." + extension
+        if ":" in doc:
+            doc_name, _, doc_chunk = doc.partition(":")
+            source_file = pathlib.Path(self.source_dir, doc_name, doc_chunk + extension)
+        else:
+            source_file = pathlib.Path(self.source_dir, doc + extension)
+        return source_file
 
 
 class Export(str):

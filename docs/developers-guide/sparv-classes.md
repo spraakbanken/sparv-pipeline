@@ -348,6 +348,10 @@ An instance of this class holds a path to the directory containing input files.
 
 - default argument: Path to directory containing input files.
 
+**Methods:**
+
+- `get_path(doc: Document, extension: str)`: Get path to a specific source file.
+
 
 ## SourceAnnotations
 List of source annotations to be included in the export. This list is defined in the corpus configuration.
