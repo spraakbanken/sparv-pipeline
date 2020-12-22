@@ -17,8 +17,10 @@ __config__ = [
 @wizard(config_keys=[
     "metadata.id",
     "metadata.name.eng",
+    "metadata.name.swe",
     "metadata.language",
-    "metadata.description"
+    "metadata.description.eng",
+    "metadata.description.swe"
 ])
 def setup_wizard(_: dict):
     """Return wizard steps for setting metadata variables."""
@@ -37,7 +39,12 @@ def setup_wizard(_: dict):
         {
             "type": "text",
             "name": "metadata.name.eng",
-            "message": "Human readable name of corpus:"
+            "message": "Human readable name of corpus (in English):"
+        },
+        {
+            "type": "text",
+            "name": "metadata.name.swe",
+            "message": "Human readable name of corpus (in Swedish):"
         },
         {
             "type": "select",
@@ -45,6 +52,16 @@ def setup_wizard(_: dict):
             "message": "What language are your source files?",
             "choices": language_list,
             "default": language_default
-        }
+        },
+        {
+            "type": "text",
+            "name": "metadata.description.eng",
+            "message": "Short description of corpus (in English):"
+        },
+        {
+            "type": "text",
+            "name": "metadata.description.swe",
+            "message": "Short description of corpus (in Swedish):"
+        },
     ]
     return questions

@@ -186,7 +186,8 @@ class Wizard:
     def save_config(self):
         """Save config to YAML file."""
         with open("config.yaml", mode="w") as out_file:
-            yaml.dump({k: v for k, v in self.corpus_config.items() if not k.startswith("_")}, out_file)
+            yaml.dump({k: v for k, v in self.corpus_config.items() if not k.startswith("_")}, out_file,
+                      allow_unicode=True)
         print("Your corpus configuration has been saved as 'config.yaml'.")
 
     def load_config(self):
