@@ -127,7 +127,7 @@ def number_relative(out: Output = Output("{annotation}:misc.number_rel_{parent}"
     out.write(result)
 
 
-@annotator("Chunk count file with amount of {annotation} chunks in corpus", wildcards=[
+@annotator("Chunk count file with number of {annotation} chunks in corpus", order=1, wildcards=[
            Wildcard("annotation", Wildcard.ANNOTATION)])
 def count_chunks(out: OutputCommonData = OutputCommonData("misc.{annotation}_count"),
                  chunk: AnnotationAllDocs = AnnotationAllDocs("{annotation}"),
@@ -146,6 +146,15 @@ def count_chunks(out: OutputCommonData = OutputCommonData("misc.{annotation}_cou
 
     # Write chunk count data
     out.write(str(chunk_count))
+
+
+@annotator("Create chunk count file for non-existent {annotation} chunks", order=2, wildcards=[
+           Wildcard("annotation", Wildcard.ANNOTATION)])
+def count_zero_chunks(out: OutputCommonData = OutputCommonData("misc.{annotation}_count"),
+                      docs: AllDocuments = AllDocuments()):
+    """Create chunk count file for non-existent 'annotation' chunks."""
+    logger.info(f"No {out.name[5:-6]} chunks found in corpus")
+    out.write("0")
 
 
 def _read_chunks_and_write_new_ordering(out: Output, chunk: Annotation, order, prefix="", zfill=False,
