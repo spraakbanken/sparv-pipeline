@@ -519,9 +519,9 @@ MYSQL_RELATIONS = {"columns": [("id", int, 0, "NOT NULL"),
                                "head dep bfhead bfdep rel freq id",
                                "dep head bfhead bfdep rel freq id"],
                    "constraints": [("UNIQUE INDEX", "relation", ("head", "rel", "dep"))],
-                   "default charset": "utf8",
+                   "default charset": "utf8mb4",
                    "row_format": "compressed"
-                   # "collate": "utf8_bin"
+                   # "collate": "utf8mb4_bin"
                    }
 
 MYSQL_STRINGS = {"columns": [("id", int, 0, "NOT NULL"),
@@ -530,8 +530,8 @@ MYSQL_STRINGS = {"columns": [("id", int, 0, "NOT NULL"),
                              ("pos", "varchar(%d)" % MAX_POS_LENGTH, "", "NOT NULL")],
                  "primary": "string id pos stringextra",
                  "indexes": ["id string pos stringextra"],
-                 "default charset": "utf8",
-                 "collate": "utf8_bin",
+                 "default charset": "utf8mb4",
+                 "collate": "utf8mb4_bin",
                  "row_format": "compressed"
                  }
 
@@ -540,8 +540,8 @@ MYSQL_REL = {"columns": [("rel", rel_enum, RELNAMES[0], "NOT NULL"),
              "primary": "rel freq",
              "indexes": [],
              "constraints": [("UNIQUE INDEX", "relation", ("rel",))],
-             "default charset": "utf8",
-             "collate": "utf8_bin",
+             "default charset": "utf8mb4",
+             "collate": "utf8mb4_bin",
              "row_format": "compressed"
              }
 
@@ -551,8 +551,8 @@ MYSQL_HEAD_REL = {"columns": [("head", int, 0, "NOT NULL"),
                   "primary": "head rel freq",
                   "indexes": [],
                   "constraints": [("UNIQUE INDEX", "relation", ("head", "rel"))],
-                  "default charset": "utf8",
-                  "collate": "utf8_bin",
+                  "default charset": "utf8mb4",
+                  "collate": "utf8mb4_bin",
                   "row_format": "compressed"
                   }
 
@@ -562,8 +562,8 @@ MYSQL_DEP_REL = {"columns": [("dep", int, 0, "NOT NULL"),
                  "primary": "dep rel freq",
                  "indexes": [],
                  "constraints": [("UNIQUE INDEX", "relation", ("dep", "rel"))],
-                 "default charset": "utf8",
-                 "collate": "utf8_bin",
+                 "default charset": "utf8mb4",
+                 "collate": "utf8mb4_bin",
                  "row_format": "compressed"
                  }
 
@@ -572,7 +572,7 @@ MYSQL_SENTENCES = {"columns": [("id", int, None, ""),
                                ("start", int, None, ""),
                                ("end", int, None, "")],
                    "indexes": ["id"],
-                   "default charset": "utf8",
-                   "collate": "utf8_bin",
+                   "default charset": "utf8mb4",
+                   "collate": "utf8mb4_bin",
                    "row_format": "compressed"
                    }
