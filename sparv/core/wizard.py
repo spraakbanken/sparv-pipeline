@@ -53,6 +53,7 @@ class Wizard:
         self.annotation_description = {}
         self.wildcard_annotations = []
         self.importers = defaultdict(dict)
+        self.exporters = defaultdict(dict)
 
         self.source_structure: Optional[SourceStructureParser] = None
 
@@ -88,6 +89,8 @@ class Wizard:
                             self.wildcard_annotations.append(annotation[0].original_name)
                 elif rule_storage.importer and rule_made:
                     self.importers[module_name][f_name] = rule_storage
+                elif rule_storage.exporter and rule_made:
+                    self.exporters[module_name][f_name] = rule_storage
 
     def q(self, questions: Union[List[dict], dict], clear: bool = False, save_prompt: bool = True):
         """Ask questions and handle interruptions.
@@ -205,11 +208,13 @@ class Wizard:
                 with open(self.config_file) as f:
                     self.corpus_config = yaml.load(f, Loader=yaml.FullLoader)
                 config.load_config(self.config_file)
+                return True
             else:
                 sys.exit()
         else:
             # Load default config
             config.load_config(None)
+            return False
 
     def update_config(self, answers: dict):
         """Add answers to corpus_config dict and update full config."""
@@ -243,7 +248,7 @@ class Wizard:
     def run(self):
         """Run the Sparv corpus set-up wizard."""
         # Load default config and any existing corpus config
-        self.load_config()
+        existing_config = self.load_config()
 
         # Temporarily unset corpus language to allow all modules to be loaded
         language = config.get("metadata.language")
@@ -257,35 +262,150 @@ class Wizard:
 
         # Build module wizard index
         wizard_from_config = {}
-        wizard_from_module = defaultdict(set)
+        self.wizard_from_module = defaultdict(set)
         for w in registry.wizards:
             for config_variable in w[1]:
                 wizard_from_config[config_variable] = w
-                wizard_from_module[config_variable.split(".")[0]].add(w)
+                self.wizard_from_module[config_variable.split(".")[0]].add(w)
 
-        # Initial question to check prerequisites
-        self.prerequisites()
+        # Parse annotations from existing config
+        selected_annotations = defaultdict(dict)
+        self.parse_config_annotations(selected_annotations)
+        self.annotator_max_len = max(
+            len(module + f_name) + 1 for module in self.snake_storage.all_annotators for f_name in
+            self.snake_storage.all_annotators[module])
+        self.select_classes(selected_annotations)
+        self.select_wildcards(selected_annotations)
 
-        # Start with metadata questions
+        if not existing_config:
+            # Initial question to check prerequisites
+            self.prerequisites()
+
+            # Start with metadata questions
+            self.metadata_questions()
+
+            # Questions related to the source documents
+            self.source_questions()
+
+            # Select annotations
+            self.select_annotations(selected_annotations)
+
+            # Select default export formats
+            self.select_exports()
+
+        # Add selected annotations to config
+        self.update_export_annotations(selected_annotations)
+
+        # Check for configurable export modules
+        export_modules = sorted(self.exporters.keys())
+        self.exporters_with_wizard = [m for m in export_modules if self.wizard_from_module.get(m)]
+
+        # Set config variables
+        self.edit_config(selected_annotations)
+
+        # We're done collecting the required data. Let the user edit further if they want to.
+        preselected = None
+        while True:
+            choices = [
+                {
+                    "name": DONE,
+                    "value": "done"
+                }
+            ]
+            if existing_config:
+                choices.extend([
+                    {
+                        "name": "Edit metadata configurations",
+                        "value": "metadata"
+                    },
+                    {
+                        "name": "Edit settings related to the source documents",
+                        "value": "source"
+                    },
+                    {
+                        "name": "Select annotations",
+                        "value": "annotations"
+                    },
+                    {
+                        "name": "Select default export formats",
+                        "value": "exports"
+                    }
+                ])
+            if self.has_class_choices:
+                choices.append({
+                    "name": "Edit class choices",
+                    "value": "class"
+                })
+            if self.has_wildcard_choices:
+                choices.append({
+                    "name": "Edit wildcard references",
+                    "value": "wildcard"
+                })
+            choices.append({
+                "name": "Edit annotator configurations",
+                "value": "annotator_config"
+            })
+            if self.exporters_with_wizard:
+                choices.append({
+                    "name": "Edit exporter configurations",
+                    "value": "exporter_configs"
+                })
+
+            message_new_config = ("All the necessary data has been collected, but you may do further customization by "
+                                  "selecting one of the options below.")
+            message_prev_config = "What would you like to do?"
+
+            choice = self.q(dict({
+                "name": "choice",
+                "type": "select",
+                "choices": choices,
+                "message": message_new_config if not existing_config else message_prev_config
+            }, **{"default": preselected} if preselected else {}), clear=True)["choice"]
+
+            if choice == "done":
+                break
+            elif choice == "exporter_configs":
+                self.configure_exporters()
+            elif choice == "class":
+                self.select_classes(selected_annotations, always_ask=True)
+            elif choice == "wildcard":
+                self.select_wildcards(selected_annotations, always_ask=True)
+                self.update_export_annotations(selected_annotations)
+            elif choice == "annotator_config":
+                self.edit_config(selected_annotations, show_optional=True)
+            elif choice == "metadata":
+                self.metadata_questions()
+            elif choice == "source":
+                self.source_questions()
+            elif choice == "annotations":
+                self.select_annotations(selected_annotations)
+                self.update_export_annotations(selected_annotations)
+            elif choice == "exports":
+                self.select_exports()
+
+            preselected = choices[[c["value"] for c in choices].index(choice)]
+
+        self.save_config()
+
+    def metadata_questions(self):
+        """Run metadata wizard."""
         questions = []
-        for w in wizard_from_module["metadata"]:
+        for w in self.wizard_from_module["metadata"]:
             questions.extend(self.get_module_wizard(w))
-
         self.update_config(self.q(questions, clear=True))
-
-        # Importer choice
-        questions = []
-        for w in wizard_from_module["import"]:
-            questions.extend(self.get_module_wizard(w))
-
-        self.update_config(self.q(questions))
-
-        # Now that the user has selected a language, update the class dict in registry...
+        # In case the language has changed: update the class dict in registry...
         for cls, targets in registry.all_module_classes[config.get("metadata.language")].items():
             registry.annotation_classes["module_classes"][cls].extend(targets)
-
         # ...and rebuild annotator list
         self.update_annotators()
+
+    def source_questions(self):
+        """As questions related to the source documents."""
+        # Importer choice
+        questions = []
+        for w in self.wizard_from_module["import"]:
+            questions.extend(self.get_module_wizard(w))
+        self.update_config(self.q(questions, clear=True))
 
         # Ask user if they want to scan source files
         self.scan_source()
@@ -295,73 +415,9 @@ class Wizard:
 
         # Select source annotations to keep
         questions = []
-        for w in wizard_from_module["export"]:
+        for w in self.wizard_from_module["export"]:
             questions.extend(self.get_module_wizard(w))
-
         self.update_config(self.q(questions))
-
-        # Parse annotations from existing config
-        selected_annotations = defaultdict(dict)
-        self.parse_config_annotations(selected_annotations)
-
-        # Select annotations
-        annotator_max_len = self.select_annotations(selected_annotations)
-
-        # Select classes if needed
-        has_class_choices = self.select_classes(selected_annotations)
-
-        # Select wildcards if needed
-        has_wildcard_choices = self.select_wildcards(selected_annotations)
-
-        # Add selected annotations to config
-        self.update_export_annotations(selected_annotations)
-
-        # Set config variables
-        self.edit_config(selected_annotations, annotator_max_len)
-
-        # We're done collecting the required data. Let the user edit further if they want to.
-        while True:
-            choices = [
-                {
-                    "name": DONE,
-                    "value": "done"
-                }
-            ]
-
-            if has_class_choices:
-                choices.append({
-                    "name": "Edit class choices",
-                    "value": "class"
-                })
-            if has_wildcard_choices:
-                choices.append({
-                    "name": "Edit wildcard references",
-                    "value": "wildcard"
-                })
-            choices.append({
-                "name": "Edit annotator configurations",
-                "value": "config"
-            })
-
-            choice = self.q({
-                "name": "choice",
-                "type": "select",
-                "choices": choices,
-                "message": "All the necessary data has been collected, but you may do further customization by "
-                           "selecting one of the options below."
-            }, clear=True)["choice"]
-
-            if choice == "done":
-                break
-            elif choice == "class":
-                has_class_choices = self.select_classes(selected_annotations, always_ask=True)
-            elif choice == "wildcard":
-                has_wildcard_choices = self.select_wildcards(selected_annotations, always_ask=True)
-                self.update_export_annotations(selected_annotations)
-            elif choice == "config":
-                self.edit_config(selected_annotations, annotator_max_len, show_optional=True)
-
-        self.save_config()
 
     def select_document_annotation(self):
         """Ask user for document annotation."""
@@ -428,7 +484,7 @@ class Wizard:
                     annotations.append(value)
         config.set_value("export.annotations", annotations, config_dict=self.corpus_config)
 
-    def edit_config(self, selected_annotations, annotator_max_len, show_optional: bool = False):
+    def edit_config(self, selected_annotations, show_optional: bool = False):
         """Ask the user for required config variables."""
 
         def get_dependencies(module, f):
@@ -493,7 +549,7 @@ class Wizard:
                             selected_annotations[
                                 module].get(a) else "   ",
                             self.snake_storage.all_annotators[module][a]["rule"].description,
-                            width=annotator_max_len + (
+                            width=self.annotator_max_len + (
                                 0 if not self.snake_storage.all_annotators[module][a][
                                     "rule"].configs else 2)),
                         "value": (module, a),
@@ -565,7 +621,7 @@ class Wizard:
 
         Returns True if there are wildcards, otherwise False.
         """
-        has_wildcards = False
+        self.has_wildcard_choices = False
         full_annotations = set()
         plain_annotations = set()
         attributes = set()
@@ -590,7 +646,7 @@ class Wizard:
                 if selected_annotations[module][f_name]:
                     wildcards = self.snake_storage.all_annotators[module][f_name]["rule"].wildcards
                     if wildcards:
-                        has_wildcards = True
+                        self.has_wildcard_choices = True
                         wc_dict = {wc.name: wc for wc in wildcards}
                         wildcard_max_len = max([len(wc.name) for wc in wildcards])
                         selected_wildcards = {}
@@ -676,21 +732,20 @@ class Wizard:
                         for annotation in selected_annotations[module][f_name]:
                             if "{" in annotation["annotation"]:
                                 annotation["wildcards"] = selected_wildcards
-        return has_wildcards
 
     def select_classes(self, selected_annotations, always_ask: bool = False) -> bool:
         """Find if any dependencies are using classes with multiple options. If so, ask the user which to use.
 
         Returns True if there are multiple options, otherwise False.
         """
-        has_choices = False
+        self.has_class_choices = False
         available_classes = registry.annotation_classes["module_classes"]
         for module in selected_annotations:
             for f_name in selected_annotations[module]:
                 if selected_annotations[module][f_name]:
                     for cls in self.snake_storage.all_annotators[module][f_name]["rule"].classes:
                         if len(available_classes.get(cls, [])) > 1:
-                            has_choices = True
+                            self.has_class_choices = True
                             if not always_ask and config.get(f"classes.{cls}"):
                                 continue
                             max_cls_len = max(map(len, available_classes[cls]))
@@ -714,11 +769,10 @@ class Wizard:
 
                             self.update_config(selected_class)
                             self.update_annotators()
-        return has_choices
 
     def select_annotations(self, selected_annotations) -> int:
         """Let the user select annotators and annotations to use."""
-        max_len = max(
+        self.annotator_max_len = max(
             len(module + f_name) + 1 for module in self.snake_storage.all_annotators for f_name in
             self.snake_storage.all_annotators[module])
         annotator_choice = None
@@ -734,7 +788,7 @@ class Wizard:
                             selected_annotations[
                                 module].get(a) else "   ",
                             self.snake_storage.all_annotators[module][a]["rule"].description,
-                            width=max_len),
+                            width=self.annotator_max_len),
                         "value": (module, a),
                         "short": "{}:{}".format(module, a)
                     })
@@ -782,7 +836,43 @@ class Wizard:
                     selected_annotations[module][annotator].append({"annotation": annotation})
             else:
                 break
-        return max_len
+        # Select classes if needed
+        self.select_classes(selected_annotations)
+        # Select wildcards if needed
+        self.select_wildcards(selected_annotations)
+
+    def select_exports(self):
+        """Ask user to choose default export formats."""
+        export_formats = [f"{k}:{e}" for k, v in self.exporters.items() for e in v]
+        default_exports = self.q(self.set_defaults({
+            "type": "checkbox",
+            "name": "export.default",
+            "message": "What export formats do you want to generate when running 'sparv run'?",
+            "choices": export_formats
+        }), clear=True)
+        self.update_config(default_exports)
+
+    def configure_exporters(self):
+        """Ask user to configure exporters."""
+        while True:
+            exporter_choice = self.q({
+                "type": "select",
+                "name": "exporter",
+                "message": "Which exporter would you like to configure?",
+                "choices": [
+                    {
+                        "name": DONE,
+                        "value": "_done"
+                    },
+                ] + self.exporters_with_wizard
+            }, clear=True)["exporter"]
+            if exporter_choice != "_done":
+                questions = []
+                for w in self.wizard_from_module.get(exporter_choice):
+                    questions.extend(self.get_module_wizard(w))
+                self.update_config(self.q(questions))
+            else:
+                break
 
     def parse_config_annotations(self, selected_annotations) -> None:
         """Parse selected annotations from existing config."""
