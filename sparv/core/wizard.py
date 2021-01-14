@@ -45,8 +45,12 @@ class Wizard:
         self.corpus_config = {}  # Dict holding the resulting config structure
         self.here = os.getcwd()
         self.config_file = os.path.join(self.here, paths.config_file)
+        self.wizard_from_module = defaultdict(set)
+        self.has_wildcard_choices = False
+        self.has_class_choices = False
 
         # Annotator info
+        self._annotator_max_len = 0
         self.snake_storage = None
         self.output_to_annotators = {}
         self.annotation_to_annotator = {}
@@ -54,6 +58,7 @@ class Wizard:
         self.wildcard_annotations = []
         self.importers = defaultdict(dict)
         self.exporters = defaultdict(dict)
+        self.exporters_with_wizard = []
 
         self.source_structure: Optional[SourceStructureParser] = None
 
@@ -63,9 +68,6 @@ class Wizard:
         self.annotation_to_annotator = {}
         self.annotation_description = {}
         registry.annotation_classes["config_classes"] = config.config.get("classes", {})
-
-        if not registry.modules:
-            registry.find_modules()
 
         self.snake_storage = snake_utils.SnakeStorage()
 
@@ -254,28 +256,27 @@ class Wizard:
         language = config.get("metadata.language")
         config.set_value("metadata.language", None)
 
-        # Load all available annotators
-        self.update_annotators()
+        # Load all modules
+        registry.find_modules()
 
         # Restore language
         config.set_value("metadata.language", language)
 
+        # Update class registry with language specific classes
+        self.update_class_registry()
+
+        # Build annotation dictionaries
+        self.update_annotators()
+
         # Build module wizard index
         wizard_from_config = {}
-        self.wizard_from_module = defaultdict(set)
         for w in registry.wizards:
             for config_variable in w[1]:
                 wizard_from_config[config_variable] = w
                 self.wizard_from_module[config_variable.split(".")[0]].add(w)
 
-        # Parse annotations from existing config
+        # Annotations selected by the user
         selected_annotations = defaultdict(dict)
-        self.parse_config_annotations(selected_annotations)
-        self.annotator_max_len = max(
-            len(module + f_name) + 1 for module in self.snake_storage.all_annotators for f_name in
-            self.snake_storage.all_annotators[module])
-        self.select_classes(selected_annotations)
-        self.select_wildcards(selected_annotations)
 
         if not existing_config:
             # Initial question to check prerequisites
@@ -292,6 +293,11 @@ class Wizard:
 
             # Select default export formats
             self.select_exports()
+        else:
+            # Parse annotations from existing config
+            self.parse_config_annotations(selected_annotations)
+            self.select_classes(selected_annotations)
+            self.select_wildcards(selected_annotations)
 
         # Add selected annotations to config
         self.update_export_annotations(selected_annotations)
@@ -387,15 +393,31 @@ class Wizard:
 
         self.save_config()
 
+    @property
+    def annotator_max_len(self):
+        """Calculate max length of annotator names."""
+        if not self._annotator_max_len:
+            self._annotator_max_len = max(
+                len(module + f_name) + 1 for module in self.snake_storage.all_annotators for f_name in
+                self.snake_storage.all_annotators[module])
+        return self._annotator_max_len
+
+    @staticmethod
+    def update_class_registry():
+        """Update class registry with language specific classes."""
+        for cls, targets in registry.all_module_classes[config.get("metadata.language")].items():
+            for target in targets:
+                if target not in registry.annotation_classes["module_classes"][cls]:
+                    registry.annotation_classes["module_classes"][cls].append(target)
+
     def metadata_questions(self):
         """Run metadata wizard."""
         questions = []
         for w in self.wizard_from_module["metadata"]:
             questions.extend(self.get_module_wizard(w))
         self.update_config(self.q(questions, clear=True))
-        # In case the language has changed: update the class dict in registry...
-        for cls, targets in registry.all_module_classes[config.get("metadata.language")].items():
-            registry.annotation_classes["module_classes"][cls].extend(targets)
+        # Now that we know the language, update the class dict in registry...
+        self.update_class_registry()
         # ...and rebuild annotator list
         self.update_annotators()
 
@@ -616,11 +638,8 @@ class Wizard:
                             config.set_value(config_choice, config_value)
                             config.set_value(config_choice, config_value, config_dict=self.corpus_config)
 
-    def select_wildcards(self, selected_annotations, always_ask: bool = False) -> bool:
-        """Find any annotations with wildcards and prompt the user to define values for these.
-
-        Returns True if there are wildcards, otherwise False.
-        """
+    def select_wildcards(self, selected_annotations, always_ask: bool = False):
+        """Find any annotations with wildcards and prompt the user to define values for these."""
         self.has_wildcard_choices = False
         full_annotations = set()
         plain_annotations = set()
@@ -733,11 +752,8 @@ class Wizard:
                             if "{" in annotation["annotation"]:
                                 annotation["wildcards"] = selected_wildcards
 
-    def select_classes(self, selected_annotations, always_ask: bool = False) -> bool:
-        """Find if any dependencies are using classes with multiple options. If so, ask the user which to use.
-
-        Returns True if there are multiple options, otherwise False.
-        """
+    def select_classes(self, selected_annotations, always_ask: bool = False):
+        """Find if any dependencies are using classes with multiple options. If so, ask the user which to use."""
         self.has_class_choices = False
         available_classes = registry.annotation_classes["module_classes"]
         for module in selected_annotations:
@@ -772,9 +788,6 @@ class Wizard:
 
     def select_annotations(self, selected_annotations) -> int:
         """Let the user select annotators and annotations to use."""
-        self.annotator_max_len = max(
-            len(module + f_name) + 1 for module in self.snake_storage.all_annotators for f_name in
-            self.snake_storage.all_annotators[module])
         annotator_choice = None
         while True:
             annotators = []

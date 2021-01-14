@@ -301,17 +301,19 @@ def _add_to_registry(annotator):
                     print("Malformed class name: '{}'".format(cls))
 
                 if cls_target:
-                    if annotator["language"]:
-                        if not annotator["language"]:
+                    if not annotator["language"]:
+                        if cls_target not in all_module_classes[None][cls]:
                             all_module_classes[None][cls].append(cls_target)
-                        else:
-                            for language in annotator["language"]:
+                    else:
+                        for language in annotator["language"]:
+                            if cls_target not in all_module_classes[language][cls]:
                                 all_module_classes[language][cls].append(cls_target)
 
                     # Only add classes for relevant languages
                     if not annotator["language"] or (
                             annotator["language"] and sparv_config.get("metadata.language") in annotator["language"]):
-                        annotation_classes["module_classes"][cls].append(cls_target)
+                        if cls_target not in annotation_classes["module_classes"][cls]:
+                            annotation_classes["module_classes"][cls].append(cls_target)
 
         elif isinstance(val.default, ModelOutput):
             modeldir = val.default.name.split("/")[0]
