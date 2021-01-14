@@ -9,13 +9,16 @@ import socketserver
 import struct
 import threading
 import time
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from datetime import timedelta
 from pathlib import Path
 from typing import Optional
 
+import rich.box as box
 import rich.progress as progress
+from rich.control import Control
 from rich.logging import RichHandler
+from rich.table import Table
 from rich.text import Text
 from snakemake import logger
 
@@ -129,12 +132,46 @@ class ModifiedRichHandler(RichHandler):
         super().emit(record)
 
 
+class ProgressWithTable(progress.Progress):
+    """Progress bar with additional table."""
+
+    def __init__(self, all_tasks, current_tasks, *args, **kwargs):
+        self.all_tasks = all_tasks
+        self.current_tasks = current_tasks
+        self.task_max_len = 0
+        super().__init__(*args, **kwargs)
+
+    def get_renderables(self):
+        """Get a number of renderables for the progress display."""
+        if not self.task_max_len and self.all_tasks:
+            self.task_max_len = max(map(len, self.all_tasks))
+
+        # Progress bar
+        yield self.make_tasks_table(self.tasks)
+
+        # Task table
+        if self.all_tasks:
+            table = Table(show_header=False, box=box.SIMPLE, expand=True)
+            table.add_column("Task", no_wrap=True, min_width=self.task_max_len + 2, ratio=1)
+            table.add_column("Document", no_wrap=True)
+            table.add_column("Elapsed", no_wrap=True, width=8, justify="right", style="progress.remaining")
+            table.add_row("[b]Task[/]", "[b]Document[/]", "[default b]Elapsed[/]")
+            for task in self.current_tasks.values():
+                elapsed = round(time.time() - task["starttime"])
+                table.add_row(
+                    task["name"],
+                    f"[dim]{task['doc']}[/dim]",
+                    str(timedelta(seconds=elapsed))
+                )
+            yield table
+
+
 class LogHandler:
     """Class providing a log handler for Snakemake."""
 
     icon = "\U0001f426"
 
-    def __init__(self, progressbar=True, summary=False, log_level=None, log_file_level=None):
+    def __init__(self, progressbar=True, summary=False, log_level=None, log_file_level=None, verbose=False):
         """Initialize log handler.
 
         Args:
@@ -144,6 +181,7 @@ class LogHandler:
             log_file_level: Log level for logging to file.
         """
         self.use_progressbar = progressbar
+        self.verbose = verbose
         self.show_summary = summary
         self.log_level = log_level
         self.log_file_level = log_file_level
@@ -164,6 +202,8 @@ class LogHandler:
         self.bar: Optional[progress.TaskID] = None
         self.bar_started: bool = False
         self.last_percentage = 0
+        self.current_tasks = OrderedDict()
+        self.max_current_tasks = 0
 
         # Create a simple TCP socket-based logging receiver
         tcpserver = socketserver.ThreadingTCPServer(("localhost", 0), RequestHandlerClass=LogRecordStreamHandler)
@@ -219,17 +259,20 @@ class LogHandler:
     def setup_bar(self):
         """Initialize the progress bar but don't start it yet."""
         print()
-        self.progress = progress.Progress(
-            progress.SpinnerColumn(),
-            progress.BarColumn(),
+        progress_layout = [
+            progress.SpinnerColumn("dots2"),
+            progress.BarColumn(bar_width=None if self.verbose else 40),
             progress.TextColumn("[progress.description]{task.description}"),
             progress.TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-            progress.TimeRemainingColumn(),
-            progress.TextColumn("{task.fields[text]}"),
-            console=console
-        )
+            progress.TextColumn("[progress.remaining]{task.completed} of {task.total} tasks"),
+            progress.TextColumn("{task.fields[text]}")
+        ]
+        if self.verbose:
+            self.progress = ProgressWithTable(self.jobs, self.current_tasks, *progress_layout, console=console)
+        else:
+            self.progress = progress.Progress(*progress_layout, console=console)
         self.progress.start()
-        self.bar = self.progress.add_task(self.icon, start=False, text="[dim]Preparing...[/dim]")
+        self.bar = self.progress.add_task(self.icon, start=False, total=0, text="[dim]Preparing...[/dim]")
 
         # Logging needs to be set up after the bar, to make use if its print hook
         self.setup_loggers()
@@ -295,7 +338,6 @@ class LogHandler:
             # Parse list of jobs do to and total job count
             lines = msg["msg"].splitlines()[2:]
             total_jobs = lines[-1].strip()
-            self.jobs = {}
             for j in lines[:-1]:
                 _, count, job = j.split("\t")
                 self.jobs[job.replace("::", ":")] = int(count)
@@ -323,7 +365,23 @@ class LogHandler:
         elif level == "job_info" and self.use_progressbar:
             if msg["msg"] and self.bar is not None:
                 # Update progress status message
-                self.progress.update(self.bar, text=msg["msg"])
+                self.progress.update(self.bar, text=msg["msg"] if not self.verbose else "")
+
+                if self.verbose:
+                    doc = msg["wildcards"].get("doc", "")
+                    if doc.startswith(str(paths.work_dir)):
+                        doc = doc[len(str(paths.work_dir)) + 1:]
+
+                    self.current_tasks[msg["jobid"]] = {
+                        "name": msg["msg"],
+                        "starttime": time.time(),
+                        "doc": doc
+                    }
+                    if len(self.current_tasks) > self.max_current_tasks:
+                        self.max_current_tasks = len(self.current_tasks)
+
+        elif level == "job_finished" and self.use_progressbar:
+            self.current_tasks.pop(msg["jobid"], None)
 
         elif level == "info":
             if msg["msg"] == "Nothing to be done.":
@@ -427,6 +485,9 @@ class LogHandler:
 
                 # Stop bar
                 self.progress.stop()
+                if self.verbose:
+                    # Clear table from screen
+                    console.control(Control("\r\x1b[2K" + "\x1b[1A\x1b[2K" * (self.max_current_tasks + 3)))
 
             self.finished = True
             print()

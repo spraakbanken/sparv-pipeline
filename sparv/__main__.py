@@ -167,6 +167,8 @@ def main():
         subparser.add_argument("-n", "--dry-run", action="store_true", help="Only dry-run the workflow")
         subparser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel",
                                default=1)
+        subparser.add_argument("-v", "--verbose", action="store_true",
+                               help="Show more info about currently running tasks")
     for subparser in [run_parser, runrule_parser]:
         subparser.add_argument("-d", "--doc", nargs="+", default=[], help="Only annotate specified input document(s)")
     for subparser in [run_parser, runrule_parser, createfile_parser, models_parser, install_parser]:
@@ -231,6 +233,7 @@ def main():
     simple_target = False
     log_level = ""
     log_file_level = ""
+    verbose = False
 
     if args.command in ("modules", "config", "files", "clean", "presets", "classes"):
         snakemake_args["targets"] = [args.command]
@@ -302,6 +305,7 @@ def main():
         if args.command in ("run", "run-rule", "create-file", "build-models", "install"):
             log_level = args.log or "warning"
             log_file_level = args.log_to_file or "warning"
+            verbose = args.verbose
             config.update({"debug": args.debug,
                            "doc": vars(args).get("doc", []),
                            "log_level": log_level,
@@ -315,7 +319,8 @@ def main():
 
     # Disable Snakemake's default log handler and use our own
     logger.log_handler = []
-    progress = log_handler.LogHandler(progressbar=not simple_target, log_level=log_level, log_file_level=log_file_level)
+    progress = log_handler.LogHandler(progressbar=not simple_target, log_level=log_level, log_file_level=log_file_level,
+                                      verbose=verbose)
     snakemake_args["log_handler"] = [progress.log_handler]
 
     config["log_server"] = progress.log_server
