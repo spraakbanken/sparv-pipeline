@@ -56,12 +56,14 @@ def setup_wizard(_: dict):
         {
             "type": "text",
             "name": "metadata.description.eng",
-            "message": "Short description of corpus (in English):"
+            "message": "Short description of corpus (in English):",
+            "multiline": True
         },
         {
             "type": "text",
             "name": "metadata.description.swe",
-            "message": "Short description of corpus (in Swedish):"
+            "message": "Short description of corpus (in Swedish):",
+            "multiline": True
         },
     ]
     return questions
