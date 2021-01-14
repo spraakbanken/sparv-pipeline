@@ -6,25 +6,14 @@ from rich.panel import Panel
 from rich.rule import Rule
 from rich.table import Table
 
-from sparv.core import registry, snake_utils
+from sparv.core import config, registry, snake_utils
 from sparv.core.console import console
 
 
 def prettyprint_yaml(in_dict):
     """Pretty-print YAML."""
     from rich.syntax import Syntax
-    import yaml
-
-    class MyDumper(yaml.Dumper):
-        """Customized YAML dumper that indents lists."""
-
-        def increase_indent(self, flow=False, indentless=False):
-            """Force indentation."""
-            return super(MyDumper, self).increase_indent(flow)
-
-    # Resolve aliases and replace them with their anchors' contents
-    yaml.Dumper.ignore_aliases = lambda *args: True
-    yaml_str = yaml.dump(in_dict, default_flow_style=False, Dumper=MyDumper, indent=4, allow_unicode=True)
+    yaml_str = config.dump_config(in_dict, resolve_alias=True, sort_keys=True)
     # Print syntax highlighted
     console.print(Syntax(yaml_str, "yaml"))
 

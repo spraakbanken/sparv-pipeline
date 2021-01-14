@@ -13,7 +13,7 @@ from rich.padding import Padding
 from rich.prompt import Confirm
 
 from sparv import __version__
-from sparv.core import paths
+from sparv.core import config, paths
 from sparv.core.console import console
 
 VERSION_FILE = "version"
@@ -135,7 +135,7 @@ def run(sparv_datadir: Optional[str] = None):
 
         paths.sparv_config_file.parent.mkdir(parents=True, exist_ok=True)
         with open(paths.sparv_config_file, "w") as f:
-            yaml.dump(config_dict, f)
+            f.write(config.dump_config(config_dict))
 
     copy_resource_files(path)
 
