@@ -179,10 +179,9 @@ class Wizard:
 
         return questions
 
-    def get_module_wizard(self, module_wizard: Tuple[Callable, list, bool],
-                          answers: Optional[dict] = None) -> List[dict]:
+    def get_module_wizard(self, module_wizard: Tuple[Callable, list, bool]) -> List[dict]:
         """Get wizard from module."""
-        args = [answers or {}]
+        args = [self.corpus_config]
         if module_wizard[2]:
             args.append(self.source_structure)
         questions = module_wizard[0](*args)
