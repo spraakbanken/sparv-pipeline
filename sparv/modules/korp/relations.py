@@ -75,10 +75,14 @@ def relations(out: OutputData = OutputData("korp.relations"),
     for sentid, sent in zip(sentence_ids, sentence_tokens):
         incomplete = {}  # Tokens looking for heads, with head as key
         tokens = {}   # Tokens in same sentence, with token_index as key
+        skip_sentence = False
 
         # Link the tokens together
         for token_index in sent:
             token_word, token_pos, token_lem, token_dh, token_dr, token_ref, token_bf = annotations[token_index]
+            if not token_dr:
+                skip_sentence = True
+                break
             token_word = token_word.lower()
 
             if token_lem == "|":
@@ -106,6 +110,9 @@ def relations(out: OutputData = OutputData("korp.relations"),
                     tokens[t[0]]["head"] = this
                     this["dep"].append(t[1])
                 del incomplete[token_index]
+
+        if skip_sentence:
+            continue
 
         assert not incomplete, "incomplete is not empty"
 
