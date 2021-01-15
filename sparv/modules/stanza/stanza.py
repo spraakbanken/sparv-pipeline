@@ -33,15 +33,39 @@ def annotate(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
              dep_pretrain_model: Model = Model("[stanza.pretrain_dep_model]"),
              resources_file: Model = Model("[stanza.resources_file]"),
              use_gpu: bool = Config("stanza.use_gpu"),
-             batch_size: int = Config("stanza.batch_size")):
+             batch_size: int = Config("stanza.batch_size"),
+             max_sentence_length: int = Config("stanza.max_sentence_length")):
     """Do dependency parsing using Stanza."""
     import stanza
 
-    sentences, orphans = sentence.get_children(token)
-    sentences.append(orphans)
+    sentences_all, orphans = sentence.get_children(token)
     if orphans:
         logger.warning(f"Found {len(orphans)} tokens not belonging to any sentence. These will not be annotated with "
                        f"dependency relations.")
+
+    sentences_dep = []
+    sentences_pos = []
+    skipped = 0
+
+    for s in sentences_all:
+        if len(s) <= max_sentence_length or not max_sentence_length:
+            sentences_dep.append(s)
+        elif len(s) <= batch_size:
+            sentences_pos.append(s)
+        else:
+            skipped += 1
+
+    if sentences_pos:
+        n = len(sentences_pos)
+        logger.warning(f"Found {n} sentence{'s' if n > 1 else ''} exceeding the max sentence length "
+                       f"({max_sentence_length}). {'These' if n > 1 else 'This'} sentence{'s' if n > 1 else ''} will "
+                       "not be annotated with dependency relations.")
+    if skipped:
+        logger.warning(f"Found {skipped} sentence{'s' if skipped > 1 else ''} exceeding the batch size "
+                       f"({batch_size}) in number of tokens. {'These' if skipped > 1 else 'This'} "
+                       f"sentence{'s' if skipped > 1 else ''} will not be annotated.")
+    if orphans:
+        sentences_pos.append(orphans)
     word_list = list(word.read())
     msd = word.create_empty_attribute()
     pos = word.create_empty_attribute()
@@ -51,64 +75,84 @@ def annotate(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
     dephead_ref = word.create_empty_attribute()
     deprel = word.create_empty_attribute()
 
-    # Format document for stanza: separate tokens by whitespace and sentences by double new lines
-    document = "\n\n".join([" ".join(word_list[i] for i in sent) for sent in sentences])
-    logger.debug(document)
+    for sentences, dep in ((sentences_dep, True), (sentences_pos, False)):
+        if not sentences:
+            continue
 
-    # Temporarily suppress stderr to silence warning about not having an NVIDIA GPU
-    with open(devnull, "w") as fnull:
-        with redirect_stderr(fnull):
-            # Initialize the pipeline
-            nlp = stanza.Pipeline(
-                lang="sv",
-                processors="tokenize,pos,lemma,depparse",  # Comma-separated list of processors to use
-                dir=str(resources_file.path.parent),
-                lemma_model_path=str(lem_model.path),
-                pos_pretrain_path=str(pos_pretrain_model.path),
-                pos_model_path=str(pos_model.path),
-                depparse_pretrain_path=str(dep_pretrain_model.path),
-                depparse_model_path=str(dep_model.path),
-                tokenize_pretokenized=True,  # Assume the text is tokenized by white space and sentence split by
-                                             # newline. Do not run a model.
-                tokenize_no_ssplit=True,     # Disable sentence segmentation
-                depparse_max_sentence_size=200,  # Create new batch when encountering sentences larger than this
-                depparse_batch_size=batch_size,
-                pos_batch_size=batch_size,
-                lemma_batch_size=batch_size,
-                use_gpu=use_gpu,
-                verbose=False
-                # depparse_pretagged=True,  # Only run dependency parsing on the document
-            )
+        # Temporarily suppress stderr to silence warning about not having an NVIDIA GPU
+        with open(devnull, "w") as fnull:
+            with redirect_stderr(fnull):
+                # Initialize the pipeline
+                if dep:
+                    logger.debug(f"Running dependency parsing and POS-taggning on {len(sentences)} sentences.")
+                    nlp = stanza.Pipeline(
+                        lang="sv",
+                        processors="tokenize,pos,lemma,depparse",  # Comma-separated list of processors to use
+                        dir=str(resources_file.path.parent),
+                        lemma_model_path=str(lem_model.path),
+                        pos_pretrain_path=str(pos_pretrain_model.path),
+                        pos_model_path=str(pos_model.path),
+                        depparse_pretrain_path=str(dep_pretrain_model.path),
+                        depparse_model_path=str(dep_model.path),
+                        tokenize_pretokenized=True,  # Assume the text is tokenized by white space and sentence split by
+                                                     # newline. Do not run a model.
+                        tokenize_no_ssplit=True,  # Disable sentence segmentation
+                        depparse_max_sentence_size=200,  # Create new batch when encountering sentences larger than this
+                        depparse_batch_size=batch_size,
+                        pos_batch_size=batch_size,
+                        lemma_batch_size=batch_size,
+                        use_gpu=use_gpu,
+                        verbose=False
+                    )
+                else:
+                    logger.debug(f"Running POS-taggning on {len(sentences)} sentences.")
+                    nlp = stanza.Pipeline(
+                        lang="sv",
+                        processors="tokenize,pos,lemma",  # Comma-separated list of processors to use
+                        dir=str(resources_file.path.parent),
+                        lemma_model_path=str(lem_model.path),
+                        pos_pretrain_path=str(pos_pretrain_model.path),
+                        pos_model_path=str(pos_model.path),
+                        tokenize_pretokenized=True,  # Assume the text is tokenized by white space and sentence split by
+                                                     # newline. Do not run a model.
+                        tokenize_no_ssplit=True,  # Disable sentence segmentation
+                        pos_batch_size=batch_size,
+                        lemma_batch_size=batch_size,
+                        use_gpu=use_gpu,
+                        verbose=False
+                    )
 
-    doc = run_stanza(nlp, document, batch_size)
-    word_count = 0
-    for i, (sent, tagged_sent) in enumerate(zip(sentences, doc.sentences)):
-        for w_index, w in zip(sent, tagged_sent.words):
-            feats_str = util.cwbset(w.feats.split("|") if w.feats else "")
-            dephead_str = str(sent[w.head - 1]) if w.head > 0 else "-"
-            dephead_ref_str = str(w.head) if w.head > 0 else ""
-            logger.debug(f"word: {w.text}"
-                         f"\tlemma: {w.lemma}"
-                         f"\tmsd: {w.xpos}"
-                         f"\tpos: {w.upos}"
-                         f"\tfeats: {feats_str}"
-                         f"\tdephead_ref: {dephead_ref_str}"
-                         f"\tdephead: {dephead_str}"
-                         f"\tdeprel: {w.deprel}"
-                         f"\thead word: {tagged_sent.words[w.head - 1].text if w.head > 0 else 'root'}")
-            msd[w_index] = w.xpos
-            pos[w_index] = w.upos
-            feats[w_index] = feats_str
-            baseforms[w_index] = w.lemma
-            if i + 1 < len(sentences):
-                dephead[w_index] = dephead_str
-                dephead_ref[w_index] = dephead_ref_str
-                deprel[w_index] = w.deprel
-        word_count += len(tagged_sent.words)
+        # Format document for stanza: separate tokens by whitespace and sentences by double new lines
+        document = "\n\n".join([" ".join(word_list[i] for i in sent) for sent in sentences])
 
-    if len(word_list) != word_count:
-        raise util.SparvErrorMessage(
-            "Stanza POS tagger did not seem to respect the given tokenisation! Do your tokens contain whitespaces?")
+        doc = run_stanza(nlp, document, batch_size, max_sentence_length)
+        word_count_real = sum(len(s) for s in sentences)
+        word_count = 0
+        for sent, tagged_sent in zip(sentences, doc.sentences):
+            for w_index, w in zip(sent, tagged_sent.words):
+                feats_str = util.cwbset(w.feats.split("|") if w.feats else "")
+                # logger.debug(f"word: {w.text}"
+                #              f"\tlemma: {w.lemma}"
+                #              f"\tmsd: {w.xpos}"
+                #              f"\tpos: {w.upos}"
+                #              f"\tfeats: {feats_str}"
+                #              f"\tdephead_ref: {dephead_ref_str}"
+                #              f"\tdephead: {dephead_str}"
+                #              f"\tdeprel: {w.deprel}"
+                #              f"\thead word: {tagged_sent.words[w.head - 1].text if w.head > 0 else 'root'}")
+                msd[w_index] = w.xpos
+                pos[w_index] = w.upos
+                feats[w_index] = feats_str
+                baseforms[w_index] = w.lemma
+                if dep:
+                    dephead[w_index] = str(sent[w.head - 1]) if w.head > 0 else "-"
+                    dephead_ref[w_index] = str(w.head) if w.head > 0 else ""
+                    deprel[w_index] = w.deprel
+            word_count += len(tagged_sent.words)
+
+        if word_count != word_count_real:
+            raise util.SparvErrorMessage(
+                "Stanza POS tagger did not seem to respect the given tokenisation! Do your tokens contain whitespaces?")
 
     out_msd.write(msd)
     out_pos.write(pos)
@@ -206,15 +250,35 @@ def dep_parse(out_dephead: Output = Output("<token>:stanza.dephead", cls="token:
               pretrain_model: Model = Model("[stanza.pretrain_dep_model]"),
               resources_file: Model = Model("[stanza.resources_file]"),
               use_gpu: bool = Config("stanza.use_gpu"),
-              batch_size: int = Config("stanza.batch_size")):
+              batch_size: int = Config("stanza.batch_size"),
+              max_sentence_length: int = Config("stanza.max_sentence_length")):
     """Do dependency parsing using Stanza."""
     import stanza
     from stanza.models.common.doc import Document
 
-    sentences, orphans = sentence.get_children(token)
+    sentences_all, orphans = sentence.get_children(token)
     if orphans:
         logger.warning(f"Found {len(orphans)} tokens not belonging to any sentence. These will not be annotated with "
                        f"dependency relations.")
+    sentences = []
+    skipped_sent = 0
+    skipped_batch = 0
+    for s in sentences_all:
+        if len(s) > max_sentence_length and max_sentence_length:
+            skipped_sent += 1
+        elif len(s) > batch_size:
+            skipped_batch += 1
+        else:
+            sentences.append(s)
+    if skipped_sent:
+        logger.warning(f"Found {skipped_sent} sentence{'s' if skipped_sent > 1 else ''} exceeding the max sentence "
+                       f"length ({max_sentence_length}). {'These' if skipped_sent > 1 else 'This'} "
+                       f"sentence{'s' if skipped_sent > 1 else ''} will not be annotated with dependency relations.")
+    if skipped_batch:
+        logger.warning(f"Found {skipped_batch} sentence{'s' if skipped_batch > 1 else ''} exceeding the batch size "
+                       f"({batch_size}) in number of tokens. {'These' if skipped_batch > 1 else 'This'} "
+                       f"sentence{'s' if skipped_batch > 1 else ''} will not be annotated.")
+
     dephead = word.create_empty_attribute()
     dephead_ref = word.create_empty_attribute()
     deprel = word.create_empty_attribute()
@@ -244,7 +308,7 @@ def dep_parse(out_dephead: Output = Output("<token>:stanza.dephead", cls="token:
                 verbose=False
             )
 
-    doc = run_stanza(nlp, Document(document), batch_size)
+    doc = run_stanza(nlp, Document(document), batch_size, max_sentence_length)
     for sent, tagged_sent in zip(sentences, doc.sentences):
         for w_index, w in zip(sent, tagged_sent.words):
             dephead_str = str(sent[w.head - 1]) if w.head > 0 else "-"
@@ -291,7 +355,7 @@ def _build_doc(sentences, word, baseform, msd, feats, ref):
     return document
 
 
-def run_stanza(nlp, document, batch_size):
+def run_stanza(nlp, document, batch_size, max_sentence_length: int = 0):
     """Run Stanza and handle possible errors."""
     try:
         doc = nlp(document)
@@ -302,6 +366,9 @@ def run_stanza(nlp, document, batch_size):
                   "configuration.\n" \
                   " - Limit the Stanza batch size by setting the 'stanza.batch_size' config variable to something " \
                   f"lower (current value: {batch_size}).\n" \
+                  " - Exclude excessively long sentences from dependency parsing by setting the " \
+                  "'stanza.max_sentence_length' config variable to something lower (current value: " \
+                  f"{max_sentence_length}).\n" \
                   " - Switch to using CPU by setting the 'stanza.use_gpu' config variable to false."
         else:
             msg = str(e)

@@ -14,5 +14,7 @@ __config__ = [
     Config("stanza.pretrain_dep_model", default="stanza/sv_talbanken.pretrain.pt",
            description="Stanza pretrain dependency model"),
     Config("stanza.use_gpu", default=True, description="Use GPU instead of CPU if available"),
-    Config("stanza.batch_size", default=5000, description="Limit Stanza batch size")
+    Config("stanza.batch_size", default=5000, description="Limit Stanza batch size"),
+    Config("stanza.max_sentence_length", default=250,
+           description="Max length of sentences that will get dependence annotations (set to 0 for no limit)")
 ]
