@@ -45,7 +45,7 @@ setuptools.setup(
         "PyYAML==5.3.1",
         "questionary==1.8.0",
         "rich==9.4.0",
-        "snakemake==5.26.1",
+        "snakemake==5.32.0",
         "stanza==1.1.1",
         "typing-inspect==0.6.0"
     ],

@@ -69,27 +69,22 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
             resources["threads"] = config["threads"] // thread_limit
 
     if create_rule:
-        # Create a named Snakemake rule for annotator (unfortunately we cannot use the regular snakemake syntax for this)
-        @workflow.rule(name=rule_storage.rule_name)
-        @workflow.message(rule_storage.target_name)
-        @workflow.input(rule_storage.inputs)
-        @workflow.output(rule_storage.outputs)
-        @workflow.params(module_name=rule_storage.module_name,
-                         f_name=rule_storage.f_name,
-                         parameters=snake_utils.get_parameters(rule_storage),
-                         export_dirs=rule_storage.export_dirs,
-                         doc=snake_utils.doc_value(rule_storage))
-        @workflow.resources(**resources)
-        # We use "script" instead of "run" since with "run" the whole Snakefile would have to be reloaded for every
-        # single job, due to how Snakemake creates processes for run-jobs.
-        @workflow.script("run_snake.py")
-        @workflow.run
-        def __rule__(input_, output, params, wildcards, threads, resources, log, version, rule, conda_env, container_img,
-                     singularity_args, use_singularity, env_modules, bench_record, jobid, is_shell, bench_iteration,
-                     cleanup_scripts, shadow_dir, edit_notebook):
-            script("run_snake.py", paths.sparv_path / "core", input_, output, params,
-                   wildcards, threads, resources, log, config, rule, conda_env, container_img, singularity_args,
-                   env_modules, bench_record, jobid, bench_iteration, cleanup_scripts, shadow_dir)
+        # Create a Snakemake rule for annotator
+        rule:
+            name: rule_storage.rule_name
+            message: rule_storage.target_name
+            input: rule_storage.inputs
+            output: rule_storage.outputs
+            params:
+                module_name=rule_storage.module_name,
+                f_name=rule_storage.f_name,
+                parameters=snake_utils.get_parameters(rule_storage),
+                export_dirs=rule_storage.export_dirs,
+                doc=snake_utils.doc_value(rule_storage),
+            resources: **resources
+            # We use "script" instead of "run" since with "run" the whole Snakefile would have to be reloaded for every
+            # single job, due to how Snakemake creates processes for run-jobs.
+            script: "run_snake.py"
 
         # Create rule to run this annotation on all input files
         make_all_files_rule(rule_storage)
@@ -119,12 +114,9 @@ def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
     # Convert paths to IOFile objects so Snakemake knows which rule they come from (in case of ambiguity)
     rule_outputs = [snakemake.io.IOFile(f, rule=sm_rule) for f in rule_outputs]
 
-    @workflow.rule(name=rule_storage.target_name)
-    @workflow.input(rule_outputs)
-    @workflow.norun()
-    @workflow.run
-    def __rule__(*_args, **_kwargs):
-        pass
+    rule:
+        name: rule_storage.target_name
+        input: rule_outputs
 
 # Init the storage for some essential variables involving all rules
 snake_storage = snake_utils.SnakeStorage()
