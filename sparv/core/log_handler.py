@@ -485,7 +485,7 @@ class LogHandler:
 
                 # Stop bar
                 self.progress.stop()
-                if self.verbose:
+                if self.verbose and self.max_current_tasks:
                     # Clear table from screen
                     console.control(Control("\r\x1b[2K" + "\x1b[1A\x1b[2K" * (self.max_current_tasks + 3)))
 
