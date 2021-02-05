@@ -229,7 +229,7 @@ class LogHandler:
         internal_filter = InternalFilter()
 
         # stdout logger
-        stream_handler = ModifiedRichHandler(enable_link_path=False, console=console)
+        stream_handler = ModifiedRichHandler(enable_link_path=False, rich_tracebacks=True, console=console)
         stream_handler.setLevel(self.log_level.upper())
         stream_handler.addFilter(internal_filter)
         log_format = "%(message)s" if stream_handler.level > logging.DEBUG else "(%(process)d) - %(message)s"
@@ -425,7 +425,8 @@ class LogHandler:
 
             # Missing output files
             elif "MissingOutputException" in msg["msg"]:
-                msg_contents = re.search(r"Missing files after .*?:\n(.+)\nThis might be due to", msg["msg"])
+                msg_contents = re.search(r"Missing files after .*?:\n(.+)\nThis might be due to", msg["msg"],
+                                         flags=re.DOTALL)
                 missing_files = "\n • ".join(msg_contents.group(1).strip().splitlines())
                 message = f"The following output files were expected but are missing:\n" \
                           f" • {missing_files}\n" \
@@ -433,6 +434,10 @@ class LogHandler:
                           f"the corpus configuration file, like misspelled annotation names or references to " \
                           f"non-existent source annotations."
                 self.messages["error"].append((None, message))
+                handled = True
+            elif "Exiting because a job execution failed." in msg["msg"]:
+                pass
+            elif "run_snake.py\' returned non-zero exit status 1." in msg["msg"]:
                 handled = True
 
             # Unhandled errors
@@ -504,9 +509,12 @@ class LogHandler:
                         self.error(f"\n{error_source}{msg}")
                 else:
                     # Errors from modules have already been logged, so notify user
-                    self.error(
-                        "Job execution failed. See log messages above or {} for details.".format(
-                            os.path.join(paths.log_dir, self.log_filename)))
+                    if self.log_filename:
+                        self.error(
+                            "Job execution failed. See log messages above or {} for details.".format(
+                                os.path.join(paths.log_dir, self.log_filename)))
+                    else:
+                        self.error("Job execution failed. See log messages above for details.")
             # Defer to Snakemake's default log handler for unhandled errors
             elif self.messages["unhandled_error"]:
                 for error in self.messages["unhandled_error"]:
