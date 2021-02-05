@@ -221,7 +221,7 @@ An instance of this class holds a path to a model file relative to the Sparv mod
 used as input to annotator functions.
 
 **Arguments**:
-- `name`: The name of the annotation.
+- `name`: The path to the model file relative to the model directory.
 
 **Properties:**:
 - `path`: The path to the model file as a `pathlib.Path` object.
