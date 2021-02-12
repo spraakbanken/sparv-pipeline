@@ -32,6 +32,7 @@ class SnakeStorage:
         self.all_exporters = {}
         self.all_installers = {}
         self.all_custom_annotators = {}
+        self.all_preloaders = {}
 
         # All named targets available, used in list_targets
         self.named_targets = []
@@ -45,6 +46,7 @@ class SnakeStorage:
         self.source_files = []  # List which will contain all source files
         self.all_rules: List[RuleStorage] = []  # List containing all rules created
         self.ordered_rules = []  # List of rules containing rule order
+        self.preloader_info = {}
 
 
 class RuleStorage:
@@ -69,6 +71,8 @@ class RuleStorage:
         self.missing_config = set()
         self.missing_binaries = set()
         self.export_dirs = None
+        self.has_preloader = bool(annotator_info["preloader"])
+        self.use_preloader = False
 
         self.type = annotator_info["type"].name
         self.annotator = annotator_info["type"] is registry.Annotator.annotator
@@ -154,6 +158,9 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         storage.all_installers.setdefault(rule.module_name, {}).setdefault(rule.f_name,
                                                                            {"description": rule.description,
                                                                             "params": param_dict})
+
+    if rule.has_preloader:
+        storage.all_preloaders.setdefault(rule.module_name, {})[rule.f_name] = rule.annotator_info["preloader_params"]
 
     output_dirs = set()    # Directories where export files are stored
     custom_params = set()
@@ -326,24 +333,21 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         # Model
         elif param_type == Model:
             if param_value is not None:
+                if not isinstance(param_value, list):
+                    param_value = [param_value]
+                model_param = []
+                for model in param_value:
+                    if not isinstance(model, Model):
+                        model = Model(model)
+                    rule.configs.update(registry.find_config_variables(model.name))
+                    rule.classes.update(registry.find_classes(model.name))
+                    rule.missing_config.update(model.expand_variables(rule.full_name))
+                    rule.inputs.append(model.path)
+                    model_param.append(Model(str(model.path)))
                 if param_list:
-                    rule.parameters[param_name] = []
-                    for model in param_value:
-                        if not isinstance(model, Model):
-                            model = Model(param_value)
-                        rule.configs.update(registry.find_config_variables(model.name))
-                        rule.classes.update(registry.find_classes(model.name))
-                        rule.missing_config.update(model.expand_variables(rule.full_name))
-                        rule.inputs.append(model.path)
-                        rule.parameters[param_name].append(Model(str(model.path)))
+                    rule.parameters[param_name] = model_param
                 else:
-                    if not isinstance(param_value, Model):
-                        param_value = Model(param_value)
-                    rule.configs.update(registry.find_config_variables(param_value.name))
-                    rule.classes.update(registry.find_classes(param_value.name))
-                    rule.missing_config.update(param_value.expand_variables(rule.full_name))
-                    rule.inputs.append(param_value.path)
-                    rule.parameters[param_name] = Model(str(param_value.path))
+                    rule.parameters[param_name] = model_param[0]
         # Binary
         elif param.annotation in (Binary, BinaryDir):
             rule.configs.update(registry.find_config_variables(param.default))
@@ -436,6 +440,11 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
     if rule.missing_binaries:
         log_handler.messages["missing_binaries"][rule.full_name].update(rule.missing_binaries)
+
+    # Check if preloader can be used for this rule
+    if storage.preloader_info and rule.target_name in storage.preloader_info:
+        rule.use_preloader = storage.preloader_info[rule.target_name] == {k: rule.parameters[k] for k in
+                                                                          storage.preloader_info[rule.target_name]}
 
     if config.get("debug"):
         print()

@@ -5,7 +5,7 @@ import pkgutil
 import re
 from collections import defaultdict
 from enum import Enum
-from typing import Dict, List, Optional, Tuple, Type, TypeVar
+from typing import Callable, Dict, List, Optional, Tuple, Type, TypeVar
 
 import typing_inspect
 from pkg_resources import iter_entry_points
@@ -73,7 +73,7 @@ explicit_annotations = set()
 explicit_annotations_raw = set()
 
 
-def find_modules(no_import=False, find_custom=False) -> list:
+def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
     """Find Sparv modules and optionally import them.
 
     By importing a module containing annotator functions, the functions will automatically be
@@ -158,7 +158,9 @@ def _get_module_name(module_string: str) -> str:
 def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, file_extension: Optional[str] = None,
                outputs=(), document_annotation=None, structure=None, language: Optional[List[str]] = None,
                config: Optional[List[Config]] = None, order: Optional[int] = None, abstract: bool = False,
-               wildcards: Optional[List[Wildcard]] = None):
+               wildcards: Optional[List[Wildcard]] = None, preloader: Optional[Callable] = None,
+               preloader_params: Optional[List[str]] = None, preloader_target: Optional[str] = None,
+               preloader_cleanup: Optional[Callable] = None, preloader_shared: bool = True):
     """Return a decorator for annotator functions, adding them to annotator registry."""
     def decorator(f):
         """Add wrapped function to registry."""
@@ -177,7 +179,12 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
             "config": config,
             "order": order,
             "abstract": abstract,
-            "wildcards": wildcards
+            "wildcards": wildcards,
+            "preloader": preloader,
+            "preloader_params": preloader_params,
+            "preloader_target": preloader_target,
+            "preloader_cleanup": preloader_cleanup,
+            "preloader_shared": preloader_shared
         })
         return f
 
@@ -186,10 +193,14 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
 
 def annotator(description: str, name: Optional[str] = None, language: Optional[List[str]] = None,
               config: Optional[List[Config]] = None, order: Optional[int] = None,
-              wildcards: Optional[List[Wildcard]] = None):
+              wildcards: Optional[List[Wildcard]] = None, preloader: Optional[Callable] = None,
+              preloader_params: Optional[List[str]] = None, preloader_target: Optional[str] = None,
+              preloader_cleanup: Optional[Callable] = None, preloader_shared: bool = True):
     """Return a decorator for annotator functions, adding them to the annotator registry."""
     return _annotator(description=description, a_type=Annotator.annotator, name=name, language=language,
-                      config=config, order=order, wildcards=wildcards)
+                      config=config, order=order, wildcards=wildcards, preloader=preloader,
+                      preloader_params=preloader_params, preloader_target=preloader_target,
+                      preloader_cleanup=preloader_cleanup, preloader_shared=preloader_shared)
 
 
 def importer(description: str, file_extension: str, name: Optional[str] = None, outputs=None,

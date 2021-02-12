@@ -89,6 +89,7 @@ def main():
         "   run-rule         Run specified rule(s) for creating annotations",
         "   create-file      Create specified file(s)",
         "   run-module       Run annotator module independently",
+        "   preload          Preload annotators and models",
         "",
         "See 'sparv <command> -h' for help with a specific command",
         "For full documentation, visit https://spraakbanken.gu.se/sparv/docs/"
@@ -162,22 +163,28 @@ def main():
     createfile_parser.add_argument("targets", nargs="*", default=["list"], help="File(s) to create")
     createfile_parser.add_argument("-l", "--list", action="store_true", help="List available files that can be created")
 
+    preloader_parser = subparsers.add_parser("preload", description="Preload annotators and models")
+    preloader_parser.add_argument("preload_command", nargs="?", default="start", choices=["start", "stop"])
+    preloader_parser.add_argument("--socket", default="sparv.socket", help="Path to socket file")
+    preloader_parser.add_argument("-j", "--processes", help="Number of processes to use", default=1, type=int)
+    preloader_parser.add_argument("-l", "--list", action="store_true", help="List annotators available for preloading")
+
     # Add common arguments
-    for subparser in [run_parser, install_parser, models_parser, runrule_parser, createfile_parser]:
+    for subparser in [run_parser, runrule_parser]:
+        subparser.add_argument("-d", "--doc", nargs="+", default=[], help="Only annotate specified input document(s)")
+    for subparser in [run_parser, runrule_parser, createfile_parser, models_parser, install_parser]:
         subparser.add_argument("-n", "--dry-run", action="store_true", help="Only dry-run the workflow")
         subparser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel",
                                default=1)
         subparser.add_argument("-v", "--verbose", action="store_true",
                                help="Show more info about currently running tasks")
-    for subparser in [run_parser, runrule_parser]:
-        subparser.add_argument("-d", "--doc", nargs="+", default=[], help="Only annotate specified input document(s)")
-    for subparser in [run_parser, runrule_parser, createfile_parser, models_parser, install_parser]:
         subparser.add_argument("--log", metavar="LOGLEVEL", const="info", help="Set the log level (default: 'warning')",
                                nargs="?", choices=["debug", "info", "warning", "error", "critical"])
         subparser.add_argument("--log-to-file", metavar="LOGLEVEL", const="info",
                                help="Set log level for logging to file (default: 'warning')",
                                nargs="?", choices=["debug", "info", "warning", "error", "critical"])
         subparser.add_argument("--debug", action="store_true", help="Show debug messages")
+        subparser.add_argument("--socket", help="Path to socket file created by the 'preload' command")
 
     # Backward compatibility
     if len(sys.argv) > 1 and sys.argv[1] == "make":
@@ -235,24 +242,31 @@ def main():
     log_file_level = ""
     verbose = False
 
-    if args.command in ("modules", "config", "files", "clean", "presets", "classes"):
+    if args.command in ("modules", "config", "files", "clean", "presets", "classes", "preload"):
         snakemake_args["targets"] = [args.command]
         simple_target = True
         if args.command == "clean":
             config["export"] = args.export
             config["logs"] = args.logs
             config["all"] = args.all
-        if args.command == "config" and args.options:
+        elif args.command == "config" and args.options:
             config["options"] = args.options
-        if args.command == "modules":
+        elif args.command == "modules":
             config["types"] = []
             if args.names:
                 config["names"] = args.names
             for t in ["annotators", "importers", "exporters", "installers", "all"]:
                 if getattr(args, t):
                     config["types"].append(t)
+        elif args.command == "preload":
+            config["socket"] = args.socket
+            config["preloader"] = True
+            config["processes"] = args.processes
+            config["preload_command"] = args.preload_command
+            if args.list:
+                snakemake_args["targets"] = ["preload_list"]
 
-    elif args.command in ("run-rule", "create-file", "run", "install", "build-models"):
+    elif args.command in ("run", "run-rule", "create-file", "install", "build-models"):
         snakemake_args.update({
             "dryrun": args.dry_run,
             "cores": args.cores,
@@ -262,8 +276,16 @@ def main():
         if args.list:
             simple_target = True
 
+        # Command: run
+        if args.command == "run":
+            if args.list:
+                snakemake_args["targets"] = ["list_exports"]
+            elif args.output:
+                snakemake_args["targets"] = args.output
+            else:
+                snakemake_args["targets"] = ["export_corpus"]
         # Command: run-rule
-        if args.command == "run-rule":
+        elif args.command == "run-rule":
             snakemake_args["targets"] = args.targets
             if args.wildcards:
                 config["wildcards"] = args.wildcards
@@ -271,19 +293,11 @@ def main():
                 snakemake_args["targets"] = ["list_targets"]
                 simple_target = True
         # Command: create-file
-        if args.command == "create-file":
+        elif args.command == "create-file":
             snakemake_args["targets"] = args.targets
             if args.list or snakemake_args["targets"] == ["list"]:
                 snakemake_args["targets"] = ["list_files"]
                 simple_target = True
-        # Command: run
-        elif args.command == "run":
-            if args.list:
-                snakemake_args["targets"] = ["list_exports"]
-            elif args.output:
-                snakemake_args["targets"] = args.output
-            else:
-                snakemake_args["targets"] = ["export_corpus"]
         # Command: install
         elif args.command == "install":
             if args.list:
@@ -301,17 +315,20 @@ def main():
             else:
                 snakemake_args["targets"] = ["build_models"]
 
-        # Command: run, run-rule, create-file
-        if args.command in ("run", "run-rule", "create-file", "build-models", "install"):
-            log_level = args.log or "warning"
-            log_file_level = args.log_to_file or "warning"
-            verbose = args.verbose
-            config.update({"debug": args.debug,
-                           "doc": vars(args).get("doc", []),
-                           "log_level": log_level,
-                           "log_file_level": log_file_level,
-                           "targets": snakemake_args["targets"],
-                           "threads": args.cores})
+        log_level = args.log or "warning"
+        log_file_level = args.log_to_file or "warning"
+        verbose = args.verbose
+        config.update({"debug": args.debug,
+                       "doc": vars(args).get("doc", []),
+                       "log_level": log_level,
+                       "log_file_level": log_file_level,
+                       "socket": args.socket,
+                       "targets": snakemake_args["targets"],
+                       "threads": args.cores})
+        # If using socket, make sure that socket file exists
+        if args.socket and not Path(args.socket).is_socket():
+            print(f"Socket file '{args.socket}' doesn't exist or isn't a socket.")
+            sys.exit(1)
 
     if simple_target:
         # Force Snakemake to use threads to prevent unnecessary processes for simple targets

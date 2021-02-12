@@ -103,3 +103,46 @@ called `document1` you could use the following command:
 ```bash
 sparv run-module hunpos msdtag --out segment.token:hunpos.msd --word segment.token:misc.word --sentence segment.sentence --binary hunpos-tag --model hunpos/suc3_suc-tags_default-setting_utf8.model --morphtable hunpos/saldo_suc-tags.morphtable --patterns hunpos/suc.patterns --doc dokument1
 ```
+
+**`sparv preload`:** This command preloads annotators and their models and/or related binaries to speed up
+annotation.
+This is especially useful when annotating multiple smaller source files, where every model otherwise would have to
+be loaded as many times as there are source files. Not every annotator supports preloading; use the `--list`
+argument to see which annotators are supported.
+
+The Sparv preloader can be run from anywhere as long as there is a `config.yaml` file in the same directory.
+While the file follows the same format as all corpus configuration files, it doesn't necessarily have to be tied to a
+corpus. All that is required is a `preload:` section, with a list of annotators to preload (from the list given by
+the command above).
+The listed annotators will be loaded using the settings in the configuration file (in combination with default settings,
+as usual).
+
+The Sparv preloader may be shared between several corpora,
+as long as the configuration for the annotators doesn't differ (e.g. what models are used).
+Sparv will automatically fall back to not using the preloader for a certain annotator if it detects that the preloaded
+version is using a different configuration from what is needed for the corpus.
+
+The preloader uses socket files for communication. Use the `--socket` argument to provide a path to the socket file
+to create. If omitted, the default `sparv.socket` will be used.
+
+The `--processes` argument tells Sparv how many parallel processes to start. If possible, use as many processes as you
+plan on using when running Sparv (e.g. `sparv run -j 4`), or the preloader might become a bottleneck instead of
+speeding things up.
+
+Example of starting the preloader with four parallel processes:
+```bash
+sparv preload --socket my_socket.sock --processes 4
+```
+
+Once the preloader is up and running, use another terminal to annotate your corpus. To make Sparv use the preloader when
+annotating, use the `--socket` argument and point it to the same socket file created by the preloader. For example:
+```bash
+sparv run --socket my_socket.sock
+```
+
+To shut down the preloader, either press Cltr-C in the preloader terminal, or use the command `sparv preload stop`
+while pointing it to the relevant socket. For example:
+
+```bash
+sparv preload stop --socket my_socket.sock
+```

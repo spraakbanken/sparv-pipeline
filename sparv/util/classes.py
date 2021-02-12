@@ -550,6 +550,9 @@ class Model(Base):
     def __init__(self, name):
         super().__init__(name)
 
+    def __eq__(self, other):
+        return type(self) == type(other) and self.name == other.name and self.path == other.path
+
     @property
     def path(self) -> pathlib.Path:
         """Get model path."""

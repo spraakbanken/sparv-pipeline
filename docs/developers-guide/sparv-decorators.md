@@ -20,6 +20,12 @@ tokens, sentences, parts of speeches etc) and outputs one or more new annotation
 - `order`: If several annotators have the same output, this integer value will help decide which to try to use first. A
   lower number indicates higher priority.
 - `wildcards`: List of wildcards used in the annotator function's arguments.
+- `preloader`: Reference to a preloader function, used to preload models or processes.
+- `preloader_params`: A list of names of parameters for the annotator, which will be used as arguments for the
+  preloader.
+- `preloader_target`: The name of the annotator parameter which should receive the return value of the preloader.
+- `preloader_cleanup`: Reference to an optional cleanup function, which will be executed after each annotator use.
+- `preloader_shared`: Set to False if the preloader result should not be shared among preloader processes.
 
 **Example:**
 ```python

@@ -28,6 +28,15 @@ rule do_nothing:
 
 def make_rules(config_missing: bool) -> None:
     """Load all Sparv modules and create Snakemake rules."""
+    # Get preloader info
+    if config.get("socket") and not config.get("preloader"):
+        from sparv.core import preload
+        try:
+            snake_storage.preloader_info = preload.get_preloader_info(config["socket"])
+        except ConnectionRefusedError:
+            raise util.SparvErrorMessage("Could not connect to the socket '{}'".format(config["socket"]))
+
+
     # Create rules for all available annotation functions
     for module_name in registry.modules:
         for f_name, f in registry.modules[module_name].functions.items():
@@ -81,6 +90,8 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
                 parameters=snake_utils.get_parameters(rule_storage),
                 export_dirs=rule_storage.export_dirs,
                 doc=snake_utils.doc_value(rule_storage),
+                use_preloader=rule_storage.use_preloader,
+                socket=config.get("socket")
             resources: **resources
             # We use "script" instead of "run" since with "run" the whole Snakefile would have to be reloaded for every
             # single job, due to how Snakemake creates processes for run-jobs.
@@ -385,3 +396,30 @@ rule list_files:
 rule build_models:
     input:
         snake_storage.model_outputs
+
+
+rule preload:
+    run:
+        from sparv.core import preload
+        if config["preload_command"] == "start":
+            preload.serve(config["socket"], config["processes"], snake_storage)
+        elif config["preload_command"] == "stop":
+            if not Path(config["socket"]).is_socket():
+                raise util.SparvErrorMessage(f"Socket file '{config['socket']}' doesn't exist or isn't a socket.")
+            elif not preload.stop(config.get("socket")):
+                raise util.SparvErrorMessage(f"Could not connect to socket '{config.get('socket')}'.")
+
+
+rule preload_list:
+    run:
+        print()
+        table = Table(title="Annotators available for preloading", box=box.SIMPLE, show_header=False,
+            title_justify="left")
+        table.add_column(no_wrap=True)
+        table.add_column()
+
+        for module, annotators in sorted(snake_storage.all_preloaders.items()):
+            for a in sorted(annotators):
+                table.add_row(f"{module}:{a}", registry.modules[module].functions[a]["description"])
+
+        console.print(table)

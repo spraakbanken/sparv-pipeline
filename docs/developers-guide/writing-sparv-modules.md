@@ -159,3 +159,62 @@ entry_points={"sparv.plugin": ["freeling = freeling"]}
 
 Now the plugin functionality should be available, and it should be treated just like any other module within the Sparv
 pipeline.
+
+
+## Preloaders
+Preloader functions are used by the `sparv preload` command to speed up the annotation process. It works by
+preloading the Python module together with models or processes which would otherwise need to be loaded once for every
+source file.
+
+A preload function is simply a function that takes a subset of the arguments from an annotator, and returns a value that
+is passed on to the annotator. Here is an example:
+
+```python
+from sparv import Annotation, Model, Output, annotator
+
+
+def preloader(model):
+    """Preload POS-model."""
+    return load_model(model)
+
+
+@annotator("Part-of-speech tagging.",
+           preloader=preloader,
+           preloader_params=["model"],
+           preloader_target="model_preloaded")
+def pos_tag(word: Annotation = Annotation("<token:word>"),
+            out: Output = Output("<token>:pos.tag"),
+            model: Model = Model("pos.model"),
+            model_preloaded=None):
+    """Annotate tokens with POS tags."""
+    if model_preloaded:
+        model = model_preloaded
+    else:
+        model = load_model(model)
+```
+
+This annotator uses a model. It also has an extra argument called `model_preloaded` which can optionally take
+an already loaded model. In the decorator we point out the preloader function using the `preloader` parameter.
+`preloader_params` is a list of parameter names from the annotator, which the preloader needs as arguments. In this
+case it's only one: the `model` parameter. `preloader_target` points to a single parameter name of the annotator, which
+is the one that will recieve the return value from the preloader function.
+
+When using the `sparv preload` command with this annotator, the preloader function will be run only once, and every
+time the annotator is used, it will get the preloaded model via the `model_preloaded` parameter.
+
+The three decorator parameters `preloader`, `preloader_params` and `preloader_target` are all required when adding
+a preloader to an annotator. Additionally, there are two optional parameters that can be used: `preloader_shared`
+and `preloader_cleanup`.
+
+`preloader_shared` is a boolean with a default value of True. By default, Sparv will run the preloader function
+only once, and if using `sparv preload` with multiple parallel processes, they will all share the result from the
+preloader. By setting `preloader_shared` to False, the preloader function will instead be run once per process.
+This is usually only needed when preloading processes, rather than models.
+
+`preloader_cleanup` refers to a function, just like the `preloader` parameter. This function will be run after every
+(preloaded) use of the annotator. As arguments the cleanup function should take the same arguments as the preloader
+function, plus an extra argument for receiving the return value of the preloader function. It should return the same
+kind of object as the preloader function, which will then be used by Sparv as the new preloaded value. This is rarely
+needed, but one possible use case is when preloading a process that for some reason needs to be regularly restarted. The
+cleanup function would then keep track of when restarting is needed, call the preloader function to start a new process,
+and then return it.
