@@ -6,10 +6,10 @@ decorator](developers-guide/sparv-decorators) (except for wizard functions) may 
 a list of config parameters, their descriptions and optional default values. The config parameters declared here can
 then be referenced in the function's arguments:
 ```python
-@annotator("Dependency parsing using MALT Parser", language=["swe"], config=[
+@annotator("Dependency parsing using MaltParser", language=["swe"], config=[
     Config("malt.jar", default="maltparser-1.7.2/maltparser-1.7.2.jar",
            description="Path name of the executable .jar file"),
-    Config("malt.model", default="malt/swemalt-1.7.2.mco", description="Path to MALT model")
+    Config("malt.model", default="malt/swemalt-1.7.2.mco", description="Path to Malt model")
 ])
 def annotate(maltjar: Binary = Binary("[malt.jar]"),
              model: Model = Model("[malt.model]"),

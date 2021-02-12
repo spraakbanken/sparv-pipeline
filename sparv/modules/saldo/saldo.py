@@ -15,11 +15,18 @@ log = logging.getLogger(__name__)
 PRECISION_DIFF = 0.01
 
 
+def preloader(models):
+    """Preload SALDO models."""
+    if not isinstance(models, list):
+        models = [models]
+    return {m.path.stem: SaldoLexicon(m.path) for m in models}
+
+
 @annotator("SALDO annotations", language=["swe"], config=[
     Config("saldo.model", default="saldo/saldo.pickle", description="Path to SALDO model"),
     Config("saldo.precision", "",
            description="Format string for appending precision to each value")
-])
+], preloader=preloader, preloader_params=["models"], preloader_target="models_preloaded")
 def annotate(token: Annotation = Annotation("<token>"),
              word: Annotation = Annotation("<token:word>"),
              sentence: Annotation = Annotation("<sentence>"),
@@ -38,7 +45,7 @@ def annotate(token: Annotation = Annotation("<token>"),
              skip_multiword: bool = False,
              allow_multiword_overlap: bool = False,
              word_separator: str = "",
-             lexicons=None):
+             models_preloaded: Optional[dict] = None):
     """Use the Saldo lexicon model (and optionally other older lexicons) to annotate pos-tagged words.
 
     - token, word, msd, sentence, reference: existing annotations
@@ -58,19 +65,18 @@ def annotate(token: Annotation = Annotation("<token>"),
     - allow_multiword_overlap: by default we do some cleanup among overlapping multi word annotations.
       By setting this to True, all overlaps will be allowed.
     - word_separator: an optional character used to split the values of "word" into several word variations
-    - lexicons: this argument cannot be set from the command line, but is used in the catapult.
-      This argument must be last.
+    - models_preloaded: Preloaded models.
     """
     # Allow use of multiple lexicons
     models_list = [(m.path.stem, m) for m in models]
-    if not lexicons:
+    if not models_preloaded:
         lexicon_list = [(name, SaldoLexicon(lex.path)) for name, lex in models_list]
     # Use pre-loaded lexicons (from catapult)
     else:
         lexicon_list = []
         for name, _lex in models_list:
-            assert lexicons.get(name, None) is not None, "Lexicon %s not found!" % name
-            lexicon_list.append((name, lexicons[name]))
+            assert models_preloaded.get(name, None) is not None, "Lexicon %s not found!" % name
+            lexicon_list.append((name, models_preloaded[name]))
 
     # Maximum number of gaps in multi-word units.
     # TODO: Set to 0 for hist-mode? since many (most?) multi-word in the old lexicons are inseparable (half öre etc)

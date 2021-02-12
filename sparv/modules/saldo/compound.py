@@ -24,12 +24,17 @@ PART_DELIM2 = "^2"
 PART_DELIM3 = "^3"
 
 
+def preloader(saldo_comp_model, stats_model):
+    """Preload models."""
+    return SaldoCompLexicon(saldo_comp_model.path), StatsLexicon(stats_model.path)
+
+
 @annotator("Compound analysis", name="compound", language=["swe"], config=[
     Config("saldo.comp_model", default="saldo/saldo.compound.pickle", description="Path to SALDO compound model"),
     Config("saldo.comp_nst_model", default="saldo/nst_comp_pos.pickle",
            description="Path to NST part of speech compound model"),
     Config("saldo.comp_stats_model", default="saldo/stats.pickle", description="Path to statistics model")
-])
+], preloader=preloader, preloader_params=["saldo_comp_model", "stats_model"], preloader_target="preloaded_models")
 def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
                                                description="Compound analysis using lemgrams"),
              out_compwf: Output = Output("<token>:saldo.compwf", description="Compound analysis using wordforms"),
@@ -46,8 +51,7 @@ def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
              compdelim: str = util.COMPSEP,
              affix: str = util.AFFIX,
              cutoff: bool = True,
-             saldo_comp_lexicon=None,
-             stats_lexicon=None):
+             preloaded_models=None):
     """Divide compound words into prefix(es) and suffix.
 
     - out_complemgram is the resulting annotation file for compound lemgrams
@@ -61,20 +65,19 @@ def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
     - stats_model is the statistics model (pickled file)
     - complemgramfmt is a format string for how to print the complemgram and its probability
       (use empty string to omit probablility)
-    - saldo_comp_lexicon, stats_lexicon: these arguments cannot be set from the command line,
-      but are used in the catapult. These arguments must be last.
+    - preloaded_models: Preloaded models if using preloader
     """
     ##################
     # Load models
     ##################
-    if not saldo_comp_lexicon:
+    if preloaded_models:
+        saldo_comp_lexicon, stats_lexicon = preloaded_models
+    else:
         saldo_comp_lexicon = SaldoCompLexicon(saldo_comp_model.path)
+        stats_lexicon = StatsLexicon(stats_model.path)
 
     with open(nst_model.path, "rb") as f:
         nst_model = pickle.load(f)
-
-    if not stats_lexicon:
-        stats_lexicon = StatsLexicon(stats_model.path)
 
     word_msd_baseform_annotations = list(word.read_attributes((word, msd, baseform_tmp)))
 

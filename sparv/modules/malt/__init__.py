@@ -1,3 +1,3 @@
-"""Dependency parsing using MALT Parser."""
+"""Dependency parsing using MaltParser."""
 
 from . import malt
