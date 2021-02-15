@@ -27,7 +27,7 @@ def get_readme(readme_path):
 setuptools.setup(
     name="sparv-pipeline",
     version=get_version("sparv/__init__.py"),
-    description="Språkbanken's corpus annotation pipeline",
+    description="Språkbanken's text analysis tool",
     long_description=get_readme("README.md"),
     long_description_content_type="text/markdown",
     url="https://github.com/spraakbanken/sparv-pipeline/",

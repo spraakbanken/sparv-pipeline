@@ -1,6 +1,6 @@
 # Språkbanken's Sparv Pipeline
 
-The Sparv pipeline is a corpus annotation tool run from the command line. The documentation can be found here:
+The Sparv pipeline is a text analysis tool run from the command line. The documentation can be found here:
 https://spraakbanken.gu.se/sparv/docs.
 
 Check the [changelog](changelog.md) to see what's new!
