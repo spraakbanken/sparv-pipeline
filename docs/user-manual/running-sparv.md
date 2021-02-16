@@ -40,6 +40,7 @@ Advanced commands:
     run-rule         Run specified rule(s) for creating annotations
     create-file      Create specified file(s)
     run-module       Run annotator module independently
+    preload          Preload annotators and models
 ```
 
 Every command in the Sparv command line interface has a help text which can be accessed with the `-h` flag. Below we
