@@ -11,13 +11,14 @@
 - Source document names are now shown in error messages.
 - Added exporter configuration to wizard.
 - Added several new configuration options for Stanza, and helpful error message to help mitigate memory problems.
+- An error message is now displayed when attempting to run annotations without input files.
 
 ### Changed
 
 - Improved progress bar. Shows number of tasks completed and left, instead of estimated time (which wasn't very
   helpful).
 - Slightly quicker startup time.
-- Malt and Stanza no longer performs dependency parsing on tokens not belonging to any sentences.
+- Malt and Stanza no longer perform dependency parsing on tokens not belonging to any sentences.
 
 ### Fixed
 
