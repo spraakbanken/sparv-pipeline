@@ -3,7 +3,7 @@
 The Sparv pipeline is a text analysis tool run from the command line. The documentation can be found here:
 https://spraakbanken.gu.se/sparv/docs.
 
-Check the [changelog](changelog.md) to see what's new!
+Check the [changelog](CHANGELOG.md) to see what's new!
 
 Sparv is developed by [Språkbanken](https://spraakbanken.gu.se/). The source code is available under the [MIT
 license](https://opensource.org/licenses/MIT).
