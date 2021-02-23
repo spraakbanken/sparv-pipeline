@@ -8,7 +8,7 @@
 
 <p class="links">
     <a class="button" target="_blank" href="https://github.com/spraakbanken/sparv-pipeline">Sparv on GitHub</a>
-    <a class="button" target="_blank" href="https://spraakbanken.gu.se/sparv">Sparv v2.2 GUI</a>
+    <a class="button" target="_blank" href="https://spraakbanken.gu.se/sparv/gui">Sparv v2.2 GUI</a>
     <a class="button" href="#/sparv-pipeline">Start Reading</a>
 </p>
 
