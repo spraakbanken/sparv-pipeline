@@ -51,6 +51,7 @@ setuptools.setup(
     ],
     extras_require={
         "dev": [
+            "pandocfilters==1.4.3",
             "pytest==5.4.3",
             "pytest-sugar==0.9.4"
         ]

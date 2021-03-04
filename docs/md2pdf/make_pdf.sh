@@ -57,6 +57,7 @@ author: |
     # Convert markdown to latex/pdf:
     # pandoc -t latex -o $1.tex $1.md \
     pandoc -t latex -o $1.pdf $1.md \
+    --filter filter.py \
     -H settings_template.tex `# include in header` \
     --template template.tex `# use template`  \
     --toc `# table of contents` \
