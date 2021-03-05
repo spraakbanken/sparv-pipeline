@@ -374,7 +374,7 @@ def inherit_config(source: str, target: str) -> None:
         source: Module name of source.
         target: Module name of target.
     """
-    for key in config[source]:
+    for key in config.get(source, []):
         if key in config_structure.get(target, []):
             value = None
             try:
