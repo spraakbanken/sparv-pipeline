@@ -359,14 +359,20 @@ if "install_corpus" in selected_targets:
 rule list_models:
     run:
         print()
-        table = Table(title="Models for current language ({})".format(sparv_config.get("metadata.language")),
-                      box=box.SIMPLE, show_header=False, title_justify="left")
-        table.add_column(no_wrap=True)
-        table.add_column()
-        for target, desc, language in sorted(snake_storage.model_targets):
-            if language and sparv_config.get("metadata.language") in language:
-                table.add_row(target, desc)
-        console.print(table)
+        if sparv_config.get("metadata.language"):
+            if sparv_config.get("metadata.language") not in registry.languages:
+                console.print("Unsupported language: " + sparv_config.get("metadata.language"))
+                return
+            table = Table(title="Models for current language ({})".format(
+                registry.languages[sparv_config.get("metadata.language")]),
+                          box=box.SIMPLE, show_header=False, title_justify="left")
+            table.add_column(no_wrap=True)
+            table.add_column()
+            for target, desc, language in sorted(snake_storage.model_targets):
+                if language and sparv_config.get("metadata.language") in language:
+                    table.add_row(target, desc)
+            console.print(table)
+
         table = Table(title="Language-independent models", box=box.SIMPLE, show_header=False, title_justify="left")
         table.add_column(no_wrap=True)
         table.add_column()
@@ -374,6 +380,18 @@ rule list_models:
             if not language:
                 table.add_row(target, desc)
         console.print(table)
+
+        if not sparv_config.get("metadata.language") in registry.languages:
+            console.print("To list or build models for a specific language, use the '--language' argument together "
+                          "with the language code of one of the supported languages below:")
+            table = Table(box=box.SIMPLE, show_header=False)
+            for language, name in sorted(registry.languages.items(), key=lambda x: x[1]):
+                table.add_row(name, language)
+            console.print(table)
+
+        print()
+        console.print("[i]Note:[/i] The 'build-models' command is entirely optional, as Sparv will download and build "
+                      "models automatically when needed.")
 
 
 # Rule to list all annotations files that can be created

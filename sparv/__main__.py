@@ -83,7 +83,7 @@ def main():
         "Setting up the Sparv pipeline:",
         "   setup            Set up the Sparv data directory",
         "   wizard           Run config wizard to create a corpus config",
-        "   build-models     Download and build the Sparv models",
+        "   build-models     Download and build the Sparv models (optional)",
         "",
         "Advanced commands:",
         "   run-rule         Run specified rule(s) for creating annotations",
@@ -136,15 +136,13 @@ def main():
     setup_parser.add_argument("-d", "--dir", help="Directory to use as Sparv data directory")
 
     models_parser = subparsers.add_parser("build-models",
-                                          description=("Download and build the Sparv models. "
-                                                       "If this command is not run before annotating, "
-                                                       "the models will be downloaded and built as needed. "
-                                                       "This will make things slower when annotating a corpus "
-                                                       "for the first time."))
-    models_parser.add_argument("model", nargs="*", default=[],
-                               help="The model to be built (if omitted all models will be built).")
+                                          description=("Download and build the Sparv models. This is optional, as "
+                                                       "models will be downloaded and built automatically the first "
+                                                       "time they are needed."))
+    models_parser.add_argument("model", nargs="*", default=[], help="The model(s) to be built")
     models_parser.add_argument("-l", "--list", action="store_true", help="List available models")
     models_parser.add_argument("--language", help="Language (ISO 639-3) if different from current corpus language")
+    models_parser.add_argument("--all", action="store_true", help="Build all models for the current language")
     subparsers.add_parser("wizard", description="Run config wizard to create a corpus config")
 
     # Advanced commands
@@ -308,12 +306,13 @@ def main():
         # Command: build-models
         elif args.command == "build-models":
             config["language"] = args.language
-            if args.list:
-                snakemake_args["targets"] = ["list_models"]
-            elif args.model:
+            if args.model:
                 snakemake_args["targets"] = args.model
-            else:
+            elif args.all:
                 snakemake_args["targets"] = ["build_models"]
+            else:
+                snakemake_args["targets"] = ["list_models"]
+                simple_target = True
 
         log_level = args.log or "warning"
         log_file_level = args.log_to_file or "warning"

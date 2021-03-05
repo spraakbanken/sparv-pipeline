@@ -7,6 +7,7 @@ from collections import defaultdict
 from enum import Enum
 from typing import Callable, Dict, List, Optional, Tuple, Type, TypeVar
 
+import iso639
 import typing_inspect
 from pkg_resources import iter_entry_points
 
@@ -60,8 +61,8 @@ all_module_classes = defaultdict(lambda: defaultdict(list))
 # All available wizard functions
 wizards = []
 
-# All available languages
-languages = set()
+# All supported languages
+languages = {}
 
 # All config keys containing lists of automatic annotations (i.e. ExportAnnotations)
 annotation_sources = set()
@@ -267,7 +268,9 @@ def _add_to_registry(annotator):
 
     if annotator["language"]:
         # Add to set of supported languages...
-        languages.update(annotator["language"])
+        for lang in annotator["language"]:
+            if lang not in languages:
+                languages[lang] = iso639.languages.get(part3=lang).name if lang in iso639.languages.part3 else lang
         # ... but skip annotators for other languages than the one specified in the config
         if sparv_config.get("metadata.language") and sparv_config.get("metadata.language") not in annotator["language"]:
             return

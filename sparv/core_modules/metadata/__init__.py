@@ -1,8 +1,6 @@
 """General metadata about corpus."""
 import re
 
-from iso639 import languages
-
 from sparv import Config, wizard
 from sparv.core import registry
 
@@ -24,10 +22,9 @@ __config__ = [
 ])
 def setup_wizard(_: dict):
     """Return wizard steps for setting metadata variables."""
-    language_list = [{"value": lang, "name": languages.get(part3=lang).name if lang in languages.part3 else lang}
-                     for lang in registry.languages]
+    language_list = [{"value": lang, "name": name} for lang, name in registry.languages.items()]
     language_list.sort(key=lambda x: x["name"])
-    language_default = {"value": "swe", "name": languages.get(part3="swe").name}
+    language_default = {"value": "swe", "name": registry.languages.get("swe", "Swedish")}
 
     questions = [
         {
