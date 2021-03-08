@@ -536,7 +536,7 @@ class LogHandler:
                         problems.append("{} warning{}".format(self.log_levelcount["WARNING"],
                                                               "s" if self.log_levelcount["WARNING"] > 1 else ""))
                     self.warning(
-                        "{}Job execution finished but {} occured. See log messages above or {} for details.".format(
+                        "{}Job execution finished but {} occurred. See log messages above or {} for details.".format(
                             spacer, " and ".join(problems), os.path.join(paths.log_dir, self.log_filename)))
 
             if self.show_summary:

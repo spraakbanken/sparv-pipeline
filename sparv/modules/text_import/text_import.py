@@ -13,13 +13,13 @@ from sparv.util.classes import Config, Document, Output, Source, SourceStructure
                                                                 "removed from the text."),
     Config("text_import.normalize", "NFC", description="Normalize input using any of the following forms: "
                                                        "'NFC', 'NFKC', 'NFD', and 'NFKD'.")
-], )
+])
 def parse(doc: Document = Document(),
           source_dir: Source = Source(),
           prefix: str = Config("text_import.prefix"),
           encoding: str = Config("text_import.encoding"),
           keep_control_chars: bool = Config("text_import.keep_control_chars"),
-          normalize: str = Config("text_import.normalize"),) -> None:
+          normalize: str = Config("text_import.normalize")) -> None:
     """Parse plain text file as input to the Sparv pipeline.
 
     Args:

@@ -199,7 +199,7 @@ def _handle_overlaps(spans_dict):
 def calculate_element_hierarchy(doc, spans_list):
     """Calculate the hierarchy for spans with identical start and end positions.
 
-    If two spans A and B have identical start and end positions, go through all occurences of A and B
+    If two spans A and B have identical start and end positions, go through all occurrences of A and B
     and check which element is most often parent to the other. That one will be first.
     """
     # Find elements with identical spans

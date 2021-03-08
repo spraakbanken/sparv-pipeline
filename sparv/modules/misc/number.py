@@ -132,7 +132,7 @@ def number_relative(out: Output = Output("{annotation}:misc.number_rel_{parent}"
 def count_chunks(out: OutputCommonData = OutputCommonData("misc.{annotation}_count"),
                  chunk: AnnotationAllDocs = AnnotationAllDocs("{annotation}"),
                  docs: AllDocuments = AllDocuments()):
-    """Count the number of occurences of 'chunk' in the corpus."""
+    """Count the number of occurrences of 'chunk' in the corpus."""
     # Read 'chunk' annotations and count the number of chunks
     chunk_count = 0
     for doc in docs:
