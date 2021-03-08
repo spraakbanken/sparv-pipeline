@@ -183,6 +183,8 @@ def main():
                                nargs="?", choices=["debug", "info", "warning", "error", "critical"])
         subparser.add_argument("--debug", action="store_true", help="Show debug messages")
         subparser.add_argument("--socket", help="Path to socket file created by the 'preload' command")
+        subparser.add_argument("--force-preloader", action="store_true",
+                               help="Try to wait for preloader when it's busy")
 
     # Backward compatibility
     if len(sys.argv) > 1 and sys.argv[1] == "make":
@@ -322,6 +324,7 @@ def main():
                        "log_level": log_level,
                        "log_file_level": log_file_level,
                        "socket": args.socket,
+                       "force_preloader": args.force_preloader,
                        "targets": snakemake_args["targets"],
                        "threads": args.cores})
         # If using socket, make sure that socket file exists

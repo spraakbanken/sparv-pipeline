@@ -19,6 +19,8 @@ from sparv.util import SparvErrorMessage
 INFO = "INFO"
 STATUS = "STATUS"
 STOP = "STOP"
+PING = "PING"
+PONG = "PONG"
 
 # Set up logging
 log = logging.getLogger("sparv_preloader")
@@ -40,8 +42,18 @@ class Preloader:
         self.preloaded = None
 
 
+def connect_to_socket(socket_path: str, timeout: bool = False) -> socket.socket:
+    """Connect to a socket and return it."""
+    s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    if timeout:
+        s.settimeout(1)
+    s.connect(socket_path)
+    s.settimeout(None)
+    return s
+
+
 @contextmanager
-def socketcontext(socket_path) -> Iterator[socket.socket]:
+def socketcontext(socket_path: str) -> Iterator[socket.socket]:
     """Context manager for socket."""
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     s.connect(socket_path)
@@ -129,7 +141,13 @@ def handle(client_sock, annotators: Dict[str, Preloader]):
             return False
         elif data == INFO:
             send_data(client_sock, {k: v.params for k, v in annotators.items()})
-        return
+            return
+        elif data == PING:
+            try:
+                send_data(client_sock, PONG)
+            except BrokenPipeError:
+                return
+            data = receive_data(client_sock)
 
     log.info("Running %s...", data[0])
 
@@ -178,7 +196,7 @@ def worker(worker_no: int, server_socket, annotators: Dict[str, Preloader], stop
 
     while True:
         try:
-            client_sock, addr = server_socket.accept()  # Accept a connection
+            client_sock, _address = server_socket.accept()  # Accept a connection
         except KeyboardInterrupt:
             stop_event.set()
             return
@@ -257,8 +275,9 @@ def serve(socket_path: str, processes: int, storage: SnakeStorage):
     del annotators
     del annotator_obj
 
-    log.info("The Sparv preloader is ready and waiting for connections. Press Ctrl-C to exit, or use "
-             "the 'sparv preload stop' command in another terminal.")
+    log.info(f"The Sparv preloader is ready and waiting for connections using the socket at {socket_file.absolute()}. "
+             "Run Sparv with the command 'sparv run --socket /path/to/socket' to use the preloader. "
+             "Press Ctrl-C to exit, or run 'sparv preload stop --socket /path/to/socket'.")
 
     # Periodically check whether stop_event is set or not and stop all processes when set
     while True:

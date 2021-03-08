@@ -46,6 +46,28 @@ modules_path = ".".join(("sparv", paths.modules_dir))
 module_name = snakemake.params.module_name
 
 use_preloader = snakemake.params.use_preloader
+preloader_busy = False
+
+if use_preloader:
+    from sparv.core import preload
+    import socket
+    sock = None
+    try:
+        if snakemake.params.force_preloader:
+            sock = preload.connect_to_socket(snakemake.params.socket)
+        else:
+            # Try to connect to the preloader and fall back to running without it if it's unavailable
+            sock = preload.connect_to_socket(snakemake.params.socket, timeout=True)
+            sock.settimeout(0.5)
+            # Ping preloader to verify that it's free
+            preload.send_data(sock, preload.PING)
+            response = preload.receive_data(sock)  # Timeouts if busy
+            sock.settimeout(None)
+    except (BlockingIOError, socket.timeout) as e:
+        use_preloader = False
+        preloader_busy = True
+        if sock is not None:
+            sock.close()
 
 if not use_preloader:
     # Import custom module
@@ -89,6 +111,8 @@ sys.stdout = StreamToLogger(module_logger)
 sys.stderr = StreamToLogger(module_logger, logging.WARNING)
 
 if not use_preloader:
+    if preloader_busy:
+        logger.info("Preloader busy; executing without preloader")
     # Execute function
     try:
         registry.modules[module_name].functions[f_name]["function"](**parameters)
@@ -108,17 +132,16 @@ if not use_preloader:
         sys.stderr = old_stderr
 else:
     try:
-        from sparv.core import preload
-        with preload.socketcontext(snakemake.params.socket) as s:
-            preload.send_data(s, (f"{module_name}:{f_name}", parameters, snakemake.config))
-            response = preload.receive_data(s)
-            if isinstance(response, SparvErrorMessage):
-                exit_with_error_message(response.message, "sparv.modules." + module_name)
-            elif isinstance(response, BaseException):
-                exit_with_error_message(str(response), "sparv.modules." + module_name)
-            elif response is not True:
-                exit_with_error_message("An error ocurred while using the Sparv preloader.",
-                                        f"sparv.modules.{module_name}")
+        preload.send_data(sock, (f"{module_name}:{f_name}", parameters, snakemake.config))
+        response = preload.receive_data(sock)
+        if isinstance(response, SparvErrorMessage):
+            exit_with_error_message(response.message, "sparv.modules." + module_name)
+        elif isinstance(response, BaseException):
+            exit_with_error_message(str(response), "sparv.modules." + module_name)
+        elif response is not True:
+            exit_with_error_message("An error occurred while using the Sparv preloader.",
+                                    f"sparv.modules.{module_name}")
     finally:
+        sock.close()
         sys.stdout = old_stdout
         sys.stderr = old_stderr

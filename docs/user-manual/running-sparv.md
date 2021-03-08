@@ -141,7 +141,10 @@ annotating, use the `--socket` argument and point it to the same socket file cre
 sparv run --socket my_socket.sock
 ```
 
-To shut down the preloader, either press Cltr-C in the preloader terminal, or use the command `sparv preload stop`
+If the preloader is busy, by default Sparv will execute annotators the regular way without using the preloader. If you
+would rather have Sparv wait for the preloader, use the `--force-preloader` flag with the `run` command.
+
+To shut down the preloader, either press Ctrl-C in the preloader terminal, or use the command `sparv preload stop`
 while pointing it to the relevant socket. For example:
 
 ```bash
