@@ -22,7 +22,7 @@ from rich.table import Table
 from rich.text import Text
 from snakemake import logger
 
-from sparv.core import paths
+from sparv.core import io, paths
 from sparv.core.console import console
 from sparv.util.misc import SparvErrorMessage
 
@@ -332,6 +332,51 @@ class LogHandler:
 
             self.messages["error"].append((source, _message))
 
+        def missing_annotations_or_files(source, files):
+            """Create error message when annotations or other files are missing."""
+            errmsg = []
+            missing_annotations = []
+            missing_other = []
+            for f in files.splitlines():
+                f = Path(f)
+                if paths.work_dir in f.parents:
+                    # If the missing file is within the Sparv workdir, it is probably an annotation
+                    f_rel = f.relative_to(paths.work_dir)
+                    *_, annotation, attr = f_rel.parts
+                    if attr == io.SPAN_ANNOTATION:
+                        missing_annotations.append((annotation,))
+                    else:
+                        missing_annotations.append((annotation, attr))
+                else:
+                    missing_other.append(str(f))
+            if missing_annotations:
+                errmsg = [
+                    "The following input annotation{} {} missing:\n"
+                    " • {}\n".format(
+                        "s" if len(missing_annotations) > 1 else "",
+                        "are" if len(missing_annotations) > 1 else "is",
+                        "\n • ".join(":".join(ann) if len(ann) == 2 else ann for ann in missing_annotations)
+                    )
+                ]
+            if missing_other:
+                if errmsg:
+                    errmsg.append("\n")
+                errmsg.append(
+                    "The following input file{} {} missing:\n"
+                    " • {}\n".format(
+                        "s" if len(missing_other) > 1 else "",
+                        "are" if len(missing_other) > 1 else "is",
+                        "\n • ".join(missing_other)
+                    )
+                )
+            if errmsg:
+                errmsg.append(
+                    "\nThere can be many reasons for this. Please make sure that there are no problems with "
+                    "the corpus configuration file, like misspelled annotation names or references to "
+                    "non-existent or implicit source annotations."
+                )
+            self.messages["error"].append((source, "".join(errmsg)))
+
         level = msg["level"]
 
         if level == "run_info" and self.use_progressbar:
@@ -414,14 +459,14 @@ class LogHandler:
                 rule_name, filelist = msg_contents.groups()
                 rule_name = rule_name.replace("::", ":")
                 if self.missing_configs_re.search(filelist):
-                    handled = True
                     missing_config_message(rule_name)
                 elif self.missing_binaries_re.search(filelist):
-                    handled = True
                     missing_binary_message(rule_name)
                 elif self.missing_classes_re.search(filelist):
-                    handled = True
                     missing_class_message(rule_name, self.missing_classes_re.findall(filelist))
+                else:
+                    missing_annotations_or_files(rule_name, filelist)
+                handled = True
 
             # Missing output files
             elif "MissingOutputException" in msg["msg"]:
@@ -432,7 +477,7 @@ class LogHandler:
                           f" • {missing_files}\n" \
                           f"There can be many reasons for this. Please make sure that there are no problems with " \
                           f"the corpus configuration file, like misspelled annotation names or references to " \
-                          f"non-existent source annotations."
+                          f"non-existent or implicit source annotations."
                 self.messages["error"].append((None, message))
                 handled = True
             elif "Exiting because a job execution failed." in msg["msg"]:
