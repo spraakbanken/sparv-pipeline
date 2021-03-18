@@ -38,7 +38,7 @@ def parse(doc: Document = Document(),
         text = util.remove_control_characters(text)
 
     if normalize:
-        text = unicodedata.normalize("NFC", text)
+        text = unicodedata.normalize(normalize, text)
 
     Text(doc).write(text)
 
