@@ -1,0 +1,29 @@
+#===============================================================================
+# Språkbanken's Standard Swedish Annotation Presets
+#===============================================================================
+languages:
+    - swe
+
+
+presets:
+    paragraph:
+        - SWE_DEFAULT.all
+        - DATETIME.all
+        - <token>:saldo.baseform2 as lemma
+        - <token>:saldo.lemgram as lex
+        - <token:dephead_ref> as dephead
+        - <sentence>:geo.geo_context as _geocontext
+        - <paragraph>:geo.geo_context as _geocontext
+    no-paragraph:
+        - paragraph
+        - not <paragraph>:geo.geo_context
+    paragraph-no-date:
+        - SWE_DEFAULT.all
+        - <token>:saldo.baseform2 as lemma
+        - <token>:saldo.lemgram as lex
+        - <token:dephead_ref> as dephead
+        - <sentence>:geo.geo_context as _geocontext
+        - <paragraph>:geo.geo_context as _geocontext
+    no-paragraph-no-date:
+        - paragraph-no-date
+        - not <paragraph>:geo.geo_context
