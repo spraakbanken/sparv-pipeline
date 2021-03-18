@@ -79,6 +79,7 @@ def main():
         "   modules          List available modules and annotations",
         "   presets          List available annotation presets",
         "   classes          List available annotation classes",
+        "   languages        List supported languages",
         "",
         "Setting up the Sparv pipeline:",
         "   setup            Set up the Sparv data directory",
@@ -129,6 +130,7 @@ def main():
 
     subparsers.add_parser("presets", description="Display all available annotation presets.")
     subparsers.add_parser("classes", description="Display all available annotation classes.")
+    subparsers.add_parser("languages", description="List supported languages.")
 
     # Setup
     setup_parser = subparsers.add_parser("setup", description="Set up the Sparv data directory. Run without arguments "
@@ -242,7 +244,7 @@ def main():
     log_file_level = ""
     verbose = False
 
-    if args.command in ("modules", "config", "files", "clean", "presets", "classes", "preload"):
+    if args.command in ("modules", "config", "files", "clean", "presets", "classes", "languages", "preload"):
         snakemake_args["targets"] = [args.command]
         simple_target = True
         if args.command == "clean":

@@ -213,6 +213,12 @@ rule classes:
         snake_prints.print_annotation_classes()
 
 
+# Rule to list all supported languages
+rule languages:
+    run:
+        snake_prints.print_languages()
+
+
 # Rule to list all annotation presets
 rule presets:
     run:

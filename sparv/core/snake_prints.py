@@ -198,6 +198,15 @@ def print_annotation_classes():
     console.print(table)
 
 
+def print_languages():
+    """Print all supported languages."""
+    print()
+    table = Table(title="Supported languages", box=box.SIMPLE, show_header=False, title_justify="left")
+    for language, name in sorted(registry.languages.items(), key=lambda x: x[1]):
+        table.add_row(name, language)
+    console.print(table)
+
+
 def get_custom_module_description(name):
     """Return string with description for custom modules."""
     return "Custom module from corpus directory ({}.py).".format(name.split(".")[1])
