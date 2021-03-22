@@ -99,7 +99,7 @@ def annotate(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
                         pos_model_path=str(pos_model.path),
                         depparse_pretrain_path=str(dep_pretrain_model.path),
                         depparse_model_path=str(dep_model.path),
-                        tokenize_pretokenized=True,  # Assume the text is tokenized by white space and sentence split by
+                        tokenize_pretokenized=True,  # Assume the text is tokenized by whitespace and sentence split by
                                                      # newline. Do not run a model.
                         tokenize_no_ssplit=True,  # Disable sentence segmentation
                         depparse_max_sentence_size=200,  # Create new batch when encountering sentences larger than this
@@ -117,7 +117,7 @@ def annotate(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
                         dir=str(resources_file.path.parent),
                         pos_pretrain_path=str(pos_pretrain_model.path),
                         pos_model_path=str(pos_model.path),
-                        tokenize_pretokenized=True,  # Assume the text is tokenized by white space and sentence split by
+                        tokenize_pretokenized=True,  # Assume the text is tokenized by whitespace and sentence split by
                                                      # newline. Do not run a model.
                         tokenize_no_ssplit=True,  # Disable sentence segmentation
                         pos_batch_size=batch_size,
@@ -203,7 +203,7 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
                 dir=str(resources_file.path.parent),
                 pos_pretrain_path=str(pretrain_model.path),
                 pos_model_path=str(model.path),
-                tokenize_pretokenized=True,  # Assume the text is tokenized by white space and sentence split by
+                tokenize_pretokenized=True,  # Assume the text is tokenized by whitespace and sentence split by
                                              # newline. Do not run a model.
                 tokenize_no_ssplit=True,     # Disable sentence segmentation
                 pos_batch_size=batch_size,
@@ -385,16 +385,19 @@ def run_stanza(nlp, document, batch_size, max_sentence_length: int = 0):
     try:
         doc = nlp(document)
     except RuntimeError as e:
-        if "CUDA out of memory" in str(e):
-            msg = "Stanza ran out of GPU memory. You can try the following options to prevent this from happening:\n" \
+        gpu_error = "CUDA out of memory" in str(e)
+        cpu_error = "DefaultCPUAllocator: can't allocate memory" in str(e)
+        if gpu_error or cpu_error:
+            msg = "Stanza ran out of memory. You can try the following options to prevent this from happening:\n" \
                   " - Limit the number of parallel Stanza processes by using the 'threads' section in your Sparv " \
                   "configuration.\n" \
                   " - Limit the Stanza batch size by setting the 'stanza.batch_size' config variable to something " \
                   f"lower (current value: {batch_size}).\n" \
                   " - Exclude excessively long sentences from dependency parsing by setting the " \
                   "'stanza.max_sentence_length' config variable to something lower (current value: " \
-                  f"{max_sentence_length}).\n" \
-                  " - Switch to using CPU by setting the 'stanza.use_gpu' config variable to false."
+                  f"{max_sentence_length})."
+            if gpu_error:
+                msg += "\n - Switch to using CPU by setting the 'stanza.use_gpu' config variable to false."
         else:
             msg = str(e)
         raise util.SparvErrorMessage(msg)
