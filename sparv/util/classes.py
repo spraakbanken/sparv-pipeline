@@ -557,8 +557,8 @@ class Model(Base):
     def path(self) -> pathlib.Path:
         """Get model path."""
         return_path = pathlib.Path(self.name)
-        # Check if name already includes full path to models dir
-        if models_dir in return_path.parents:
+        # Return as is if path is absolute, models dir is already included, or if relative path to a file that exists
+        if return_path.is_absolute() or models_dir in return_path.parents or return_path.is_file():
             return return_path
         else:
             return models_dir / return_path
