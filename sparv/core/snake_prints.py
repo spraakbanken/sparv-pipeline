@@ -15,7 +15,7 @@ def prettyprint_yaml(in_dict):
     from rich.syntax import Syntax
     yaml_str = config.dump_config(in_dict, resolve_alias=True, sort_keys=True)
     # Print syntax highlighted
-    console.print(Syntax(yaml_str, "yaml"))
+    console.print(Syntax(yaml_str, "yaml", background_color="default"))
 
 
 def print_module_summary(snake_storage):
