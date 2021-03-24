@@ -69,7 +69,12 @@ def annotate(lang: Language = Language(),
     out_pos_annotation = word.create_empty_attribute()
     for sent, tagged_sent in zip(sentences, stdout.strip().split(SENT_SEP)):
         for token_id, tagged_token in zip(sent, tagged_sent.strip().split(TOK_SEP)):
-            tag = tagged_token.strip().split(TAG_SEP)[TAG_COLUMN]
+            cols = tagged_token.strip().split(TAG_SEP)
+            if len(cols) >= TAG_COLUMN + 1:
+                tag = cols[TAG_COLUMN]
+            else:
+                log.warning(f"TreeTagger failed to produce a POS tag for token '{cols[0]}'!")
+                tag = ""
             out_pos_annotation[token_id] = tag
             out_upos_annotation[token_id] = util.tagsets.pos_to_upos(tag, lang, TAG_SETS.get(lang))
     out_pos.write(out_pos_annotation)
@@ -79,7 +84,13 @@ def annotate(lang: Language = Language(),
     out_lemma_annotation = word.create_empty_attribute()
     for sent, tagged_sent in zip(sentences, stdout.strip().split(SENT_SEP)):
         for token_id, tagged_token in zip(sent, tagged_sent.strip().split(TOK_SEP)):
-            lem = tagged_token.strip().split(TAG_SEP)[LEM_COLUMN]
+            cols = tagged_token.strip().split(TAG_SEP)
+            if len(cols) >= LEM_COLUMN + 1:
+                lem = cols[LEM_COLUMN]
+            else:
+                log.warning(f"TreeTagger failed to produce a baseform for token '{cols[0]}'! "
+                            "Using the wordform as baseform.")
+                lem = cols[0]
             out_lemma_annotation[token_id] = lem
     out_baseform.write(out_lemma_annotation)
 
