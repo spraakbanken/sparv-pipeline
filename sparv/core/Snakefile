@@ -431,7 +431,7 @@ rule list_files:
             print("    {}".format(i))
 
 
-# Build all models. Build even the non-optional ones if force_optional_models = True.
+# Build all models
 rule build_models:
     input:
         snake_storage.model_outputs

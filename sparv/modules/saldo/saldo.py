@@ -25,7 +25,7 @@ def preloader(models):
 @annotator("SALDO annotations", language=["swe"], config=[
     Config("saldo.model", default="saldo/saldo.pickle", description="Path to SALDO model"),
     Config("saldo.precision", "",
-           description="Format string for appending precision to each value")
+           description="Format string for appending precision to each value (e.g. ':%.3f')")
 ], preloader=preloader, preloader_params=["models"], preloader_target="models_preloaded")
 def annotate(token: Annotation = Annotation("<token>"),
              word: Annotation = Annotation("<token:word>"),

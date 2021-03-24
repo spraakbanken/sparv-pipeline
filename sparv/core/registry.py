@@ -423,7 +423,9 @@ def find_classes(string, match_objects: bool = False):
 
 
 def expand_variables(string, rule_name: Optional[str] = None, is_annotation: bool = False) -> Tuple[str, List[str]]:
-    """Take a string and replace <class> references with real annotations, and [config] references with config values.
+    """Take a string and replace [config] references with config values, and <class> references with real annotations.
+
+    Config references are replaced before classes.
 
     Args:
         string: The string to process.

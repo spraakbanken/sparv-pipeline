@@ -3,7 +3,7 @@
 #===============================================================================
 
 metadata:
-    # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
+    # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No whitespace characters.)
     id: mini-swe
     # Corpus name (human readable)
     name:
