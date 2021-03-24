@@ -164,13 +164,30 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
     output_dirs = set()    # Directories where export files are stored
     custom_params = set()
+    custom_suffix = None
 
     if custom_rule_obj:
         if custom_rule_obj.get("params"):
+            # This should be either a utility annotator or a custom annotator supplied by the user
+            if not (rule.module_name == registry.custom_name or
+                    storage.all_custom_annotators.get(rule.module_name, {}).get(rule.f_name)):
+                raise util.SparvErrorMessage(
+                    "The custom annotation for annotator '{}' is using 'params' which is not allowed with this type of "
+                    "annotator. Use 'config' instead.".format(custom_rule_obj["annotator"]))
             name_custom_rule(rule, storage)
             custom_params = set(custom_rule_obj.get("params").keys())
+        elif custom_rule_obj.get("config"):
+            # This is a regular annotator but with an alternative config
+            name_custom_rule(rule, storage)
+            try:
+                custom_suffix = custom_rule_obj["suffix"]
+            except KeyError:
+                raise util.SparvErrorMessage("The custom annotation for annotator '{}' is missing the required key "
+                                             "'suffix'.".format(custom_rule_obj["annotator"]))
+            sparv_config.config = sparv_config._merge_dicts(copy.deepcopy(custom_rule_obj["config"]),
+                                                            sparv_config.config)
         else:
-            # This rule has already been populated, so don't process it again
+            # This is a custom rule which doesn't require any parameters, so it has already been processed
             return False
 
     # Go though function parameters and handle based on type
@@ -179,7 +196,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         param_value: Any
 
         # Get parameter value, either from custom rule object or default value
-        if custom_rule_obj:
+        if custom_rule_obj and "params" in custom_rule_obj:
             if param_name in custom_rule_obj["params"]:
                 param_value = custom_rule_obj["params"][param_name]
                 custom_params.remove(param_name)
@@ -190,8 +207,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                     f"Parameter '{param_name}' in custom rule '{rule.full_name}' has no value!", "sparv", "config")
         else:
             if param_default_empty:
-                # This is probably an unused custom rule, so don't process it any further,
-                # but save it in all_custom_annotators and all_annotators
+                # This is a custom annotator, either unused or it will be handled separately later.
+                # Don't process it any further, but save it in all_custom_annotators and all_annotators.
                 storage.all_custom_annotators.setdefault(rule.module_name, {}).setdefault(rule.f_name, {
                     "description": rule.description, "params": param_dict})
                 storage.custom_targets.append((rule.target_name, rule.description))
@@ -209,6 +226,9 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 if not param_value:
                     return False
                 param_value = param_type(param_value)
+            if custom_suffix:
+                # Add suffix to output annotation name
+                param_value.name += custom_suffix
             rule.configs.update(registry.find_config_variables(param_value.name))
             rule.classes.update(registry.find_classes(param_value.name))
             missing_configs = param_value.expand_variables(rule.full_name)
@@ -469,20 +489,22 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
 def name_custom_rule(rule, storage):
     """Create unique name for custom rule."""
-    def create_new_rulename(name, existing_names):
-        """Create a new rule name by appending a number to it."""
+    def get_new_suffix(name: str, existing_names: List[str]) -> str:
+        """Find a numerical suffix that leads to a unique rule name."""
         i = 2
         new_name = name + str(i)
         while new_name in existing_names:
             i += 1
             new_name = name + str(i)
-        return new_name
+        return str(i)
 
     # If rule name already exists, create a new name
     existing_rules = [r.rule_name for r in storage.all_rules]
     if rule.rule_name in existing_rules:
-        rule.rule_name = create_new_rulename(rule.rule_name, existing_rules)
-        rule.target_name = create_new_rulename(rule.target_name, [r.target_name for r in storage.all_rules])
+        suffix = get_new_suffix(rule.rule_name, existing_rules)
+        rule.rule_name += suffix
+        rule.target_name += suffix
+        rule.full_name += suffix
 
 
 def check_ruleorder(storage: SnakeStorage) -> Set[Tuple[RuleStorage, RuleStorage]]:
