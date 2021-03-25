@@ -915,7 +915,8 @@ class Wizard:
                     val["wildcards"] = wildcards
                 selected_annotations[module_name][f_name].append(val)
             else:
-                print(f"Could not parse the annotation '{annotation}'.")
+                print(f"Could not parse the annotation '{annotation}'. Either it's invalid, or it's not supported by "
+                      "the wizard.")
                 sys.exit(1)
 
 
