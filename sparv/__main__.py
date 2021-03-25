@@ -178,10 +178,13 @@ def main():
                                default=1)
         subparser.add_argument("-v", "--verbose", action="store_true",
                                help="Show more info about currently running tasks")
-        subparser.add_argument("--log", metavar="LOGLEVEL", const="info", help="Set the log level (default: 'warning')",
+        subparser.add_argument("--log", metavar="LOGLEVEL", const="info",
+                               help="Set the log level (default: 'warning' if --log is not specified, "
+                                    "'info' if LOGLEVEL is not specified)",
                                nargs="?", choices=["debug", "info", "warning", "error", "critical"])
         subparser.add_argument("--log-to-file", metavar="LOGLEVEL", const="info",
-                               help="Set log level for logging to file (default: 'warning')",
+                               help="Set log level for logging to file (default: 'warning' if --log-to-file is not "
+                                    "specified, 'info' if LOGLEVEL is not specified)",
                                nargs="?", choices=["debug", "info", "warning", "error", "critical"])
         subparser.add_argument("--debug", action="store_true", help="Show debug messages")
         subparser.add_argument("--socket", help="Path to socket file created by the 'preload' command")
