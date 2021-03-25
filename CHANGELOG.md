@@ -12,6 +12,8 @@
 - Added exporter configuration to wizard.
 - Added several new configuration options for Stanza, and helpful error message to help mitigate memory problems.
 - An error message is now displayed when attempting to run annotations without input files.
+- Added new command (`languages`) to show a list of supported languages.
+- You can now refer to models outside the Sparv data dir.
 
 ### Changed
 
@@ -19,6 +21,8 @@
   helpful).
 - Slightly quicker startup time.
 - Malt and Stanza no longer perform dependency parsing on tokens not belonging to any sentences.
+- The `build-models` command no longer builds all models by default unless the `--all` flag is used.
+- Regular annotators used as `custom_annotations` are now configured using `config` instead of `params`.
 
 ### Fixed
 
@@ -28,6 +32,9 @@
 - Fixed support for retaining existing segments in segment module.
 - Fixed crash in SALDO module due to orphaned tokens.
 - Fixed unicode normalization in XML import module.
+- Removed broken unused models from `build-models`.
+- Fixed YAML syntax highlighting which was unreadable in some terminals.
+- Fixed rare TreeTagger crash.
 
 ## [4.0.0] - 2020-12-07
 
