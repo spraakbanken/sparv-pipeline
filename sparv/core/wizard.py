@@ -792,6 +792,9 @@ class Wizard:
             preselected = None
             for module in self.snake_storage.all_annotators:
                 for a in self.snake_storage.all_annotators[module]:
+                    # Skip utility annotators
+                    if self.snake_storage.all_custom_annotators.get(module, {}).get(a):
+                        continue
                     annotators.append({
                         "name": "{:{width}} {}  {}".format(
                             "{}:{}".format(module, a),
