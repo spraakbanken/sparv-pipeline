@@ -1,46 +1,57 @@
 # Installation and Setup
-This section describes how to get the Sparv corpus pipeline developed by [Språkbanken Text](https://spraakbanken.gu.se/)
-up and running on your own machine. It also describes additional software that you may need to install in order to run
-all the analyses provided through Sparv.
+This section describes how to get the Sparv corpus pipeline up and running on your own machine. It also describes
+additional software that you may need to install in order to run all the analyses provided through Sparv.
+
+## Prerequisites
+In order to install Sparv you will need a Unix-like environment (e.g. Linux, macOS or [Windows Subsystem for
+Linux](https://docs.microsoft.com/en-us/windows/wsl/about)) with [Python 3.6.1](http://python.org/) or newer.
+
+> [!NOTE]
+> Most of Sparv's features should work in a Windows environment as well, but since we don't do any testing on Windows
+> we cannot guarantee anything.
 
 ## Installing Sparv
-In order to install Sparv you will need a Unix-like environment (e.g. Linux, OS X or [Windows Subsystem for
-Linux](https://docs.microsoft.com/en-us/windows/wsl/about)) with [Python 3.6.1](http://python.org/) or newer installed
-on it. *Note:* Most things within Sparv should work in a Windows environment as well but we cannot guarantee anything
-since we do not test our software on Windows. 
+Sparv is available on [PyPI](https://pypi.org/project/sparv-pipeline/) and can be installed using
+[pip](https://pip.pypa.io/en/stable/installing) or [pipx](https://pipxproject.github.io/pipx/).
+We recommend using pipx, which will install Sparv in an isolated environment while still making it available to be run
+from anywhere.
 
-The Sparv pipeline can be installed using [pip](https://pip.pypa.io/en/stable/installing). We even recommend using
-[pipx](https://pipxproject.github.io/pipx/) so that you can install the `sparv` command globally:
+Begin by [installing pipx](https://pipxproject.github.io/pipx/installation/) if you haven't already:
 ```bash
 python3 -m pip install --user pipx
 python3 -m pipx ensurepath
+```
+
+Once pipx is installed, run the following command to install the Sparv Pipeline:
+```bash
 pipx install sparv-pipeline
 ```
 
-Alternatively you can install Sparv from the latest release from GitHub:
-```bash
-pipx install https://github.com/spraakbanken/sparv-pipeline/archive/latest.tar.gz
-```
+To verify that your installation of Sparv was successful, run the command `sparv`. The Sparv help should now be
+displayed.
 
-## Setting up Sparv
-To check if your installation of Sparv was successful you can type `sparv` on your command line. The Sparv help should
-now be displayed.
+## Setting Up Sparv
 
+### Sparv Data Directory
 Sparv needs access to a directory on your system where it can store data, such as language models and configuration
 files. This is called the **Sparv data directory**. By running `sparv setup` you can tell Sparv
 where to set up its data directory. This will also populate the data directory with default configurations and presets.
-Instead of setting the data directory path using `sparv setup`, you may use the environment variable `SPARV_DATADIR`.
-This will override any path you have previously configured using the setup process. Note that you still have to run
-the setup command, even when using the environment variable.
 
-If you like, you can pre-build the model files. This step is optional, and the only advantage is that annotating corpora
-will be quicker once all the models are set up. If you skip this step, models will be downloaded and built automatically
-on demand when annotating your first corpus. Pre-building models can be done by running `sparv build-models`. If you do
-this in a directory where there is no [corpus config](user-manual/corpus-configuration.md) you
-have to tell Sparv what language the models should be built for (otherwise the language of the corpus config is chosen
-automatically). The language is provided as a three-letter code with the `--language` flag (check [this
-table](#software-for-analysing-other-languages) for available languages and their codes). For example, if you would like
-to build all the Swedish models you can run `sparv build-models --language swe`.
+> [!TIP]
+> Instead of setting the data directory path using `sparv setup`, you may use the environment variable `SPARV_DATADIR`.
+> This will ignore any path you have previously configured using the setup process. Note that you still have to run
+> the setup command at least once to populate the directory, even when using the environment variable.
+
+### Optional: Pre-build Models
+If you like, you can pre-build the model files. This step is optional, and the only advantage is that annotating your
+first corpus will be quicker since all the models are already set up. If you skip this step, models will be downloaded
+and built automatically on demand when annotating your first corpus. Pre-building models can be done by using the
+command `sparv build-models`. If you do this in a directory where there is no
+[corpus config](user-manual/corpus-configuration.md) you
+have to tell Sparv what language the models should be built for (otherwise the language of the corpus config is used).
+The language is provided as a three-letter code with the `--language` flag (use the `sparv languages` command for
+a list of available languages and their codes). For example, if you would like to build all the Swedish models you
+can run `sparv build-models --language swe`.
 
 ## Installing Additional Third-party Software
 The Sparv Pipeline can be used together with several plugins and third-party software. Installation of the software
@@ -60,7 +71,7 @@ you prior to annotating data.
 |**Dependencies**          		   |[Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
 
 [Sparv wsd](https://github.com/spraakbanken/sparv-wsd) is developed at Språkbanken and runs under the same license as
-the Sparv pipeline. In order to use it within the Sparv Pipeline it is enough to download the saldowsd.jar from GitHub
+the Sparv Pipeline. In order to use it within the Sparv Pipeline it is enough to download the saldowsd.jar from GitHub
 (see download link above) and place it inside your [Sparv data directory](#setting-up-sparv) under `bin/wsd`.
 
 ### hfst-SweNER
@@ -71,7 +82,7 @@ the Sparv pipeline. In order to use it within the Sparv Pipeline it is enough to
 |**Version compatible with Sparv** |0.9.3
 |**Dependencies**          		   |[Python 2](https://www.python.org/download/releases/2.0/#download)
 
-The current version of hfst-SweNER expects to be run in a Python 2 environment while the Sparv pipeline is written in
+The current version of hfst-SweNER expects to be run in a Python 2 environment while the Sparv Pipeline is written in
 Python 3. Before installing hfst-SweNER you need make sure that it will be run with the correct version of Python by
 replacing `python` with `python2` in all the Python scripts in the `hfst-swener-0.9.3/scripts` directory. The first line
 in every script will then look like this:
@@ -104,6 +115,9 @@ sudo apt install ia32-libs
 On Arch Linux, activate the `multilib` repository and install `lib32-gcc-libs`. If that doesn't work, you might have to
 compile Hunpos from source.
 
+On newer macOS you probably have to compile Hunpos from source. [This GitHub repo](https://github.com/mivoq/hunpos) has
+instructions that should work.
+
 When using Sparv with Hunpos on Windows you will have to set the config variable `hunpos.binary: hunpos-tag.exe` in your
 [corpus configuration](user-manual/corpus-configuration.md). You will also have to add the `cygwin1.dll` file that comes
 with Hunpos to your path or copy it into your [Sparv data directory](#setting-up-sparv) along with the Hunpos binaries.
@@ -118,7 +132,7 @@ with Hunpos to your path or copy it into your [Sparv data directory](#setting-up
 |**Dependencies**          		   |[Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
 
 Download and unpack the zip-file from the [MaltParser webpage](http://www.maltparser.org/download.html) and place the
-`maltparser-1.7.2` folder inside the `bin` folder of the [Sparv data directory](#setting-up-sparv).
+`maltparser-1.7.2` directory inside the `bin` directory of the [Sparv data directory](#setting-up-sparv).
 
 ### Corpus Workbench
 |    |           |
@@ -129,19 +143,19 @@ Download and unpack the zip-file from the [MaltParser webpage](http://www.maltpa
 |**Version compatible with Sparv** |beta 3.4.21 (probably works with newer versions)
 
 Refer to the INSTALL text file for instructions on how to build and install on your system. CWB needs two directories
-for storing the corpora, one for the data, and one for the corpus registry. You will have to create these directories
-and you will have to set the environment variables `CWB_DATADIR` and `CORPUS_REGISTRY` and point them to the directories
+for storing the corpora, one for the data, and one for the corpus registry. You will have to create these directories,
+and then set the environment variables `CWB_DATADIR` and `CORPUS_REGISTRY` and point them to the directories
 you created. For example:
 ```bash
 export CWB_DATADIR=~/cwb/data;
 export CORPUS_REGISTRY=~/cwb/registry;
 ```
 
-### Software for Analysing other Languages
+### Software for Analysing Other Languages than Swedish
 Sparv can use different third-party tools for analyzing corpora in other languages than Swedish.
 
-The following is a list over the languages currently supported by the corpus pipeline, their language codes (ISO 639-3)
-and which tools Sparv can use to analyze them:
+The following is a list of the languages currently supported by Sparv, their language codes (ISO 639-3)
+and which tools Sparv can use to analyse them:
 
 Language       |ISO 639-3 Code |Analysis Tool
 :--------------|:--------------|:-------------
@@ -170,11 +184,10 @@ Swedish        |swe            |Sparv
 <!-- Swedish 1800's |sv-1800       |Sparv) -->
 <!-- Swedish development mode |sv-dev        |Sparv) -->
 
-
 #### TreeTagger
 |    |           |
 |:---|:----------|
-|**Purpose**                       |POS-tagging and lemmatisation for [some languages](#software-for-analysing-other-languages)
+|**Purpose**                       |POS-tagging and lemmatisation for [some languages](#software-for-analysing-other-languages-than-swedish)
 |**Download**                      |[TreeTagger webpage](http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/)
 |**License**                       |[TreeTagger license](https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/Tagger-Licence) (freely available for research, education and evaluation)
 |**Version compatible with Sparv** |3.2.3 (may work with newer versions)
@@ -196,7 +209,7 @@ Please download, unzip and place contents inside the [Sparv data directory](#set
 #### FreeLing
 |    |           |
 |:---|:----------|
-|**Purpose**                       |Tokenisation, POS-tagging, lemmatisation and named entity recognition for [some languages](#software-for-analysing-other-languages)
+|**Purpose**                       |Tokenisation, POS-tagging, lemmatisation and named entity recognition for [some languages](#software-for-analysing-other-languages-than-swedish)
 |**Download**                      |[FreeLing on GitHub](https://github.com/TALP-UPC/FreeLing/releases/tag/4.2)
 |**Version compatible with Sparv** |4.2
 |**License**                       |[AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.en.html)
@@ -217,7 +230,19 @@ Please follow the installation instructions given in the fast_align repository a
 `atools` and `fast_align` in your path. Alternatively you can place them in the [Sparv data directory](#setting-up-sparv) under
 `bin/word_alignment`. -->
 
-
 ## Plugins
 The only available plugin for Sparv available so far is [the sparv-freeling
 plugin](https://github.com/spraakbanken/sparv-freeling). Please refer to its GitHub page for installation instructions.
+
+## Uninstalling Sparv
+
+To uninstall Sparv completely, manually delete the [Sparv data directory](#setting-up-sparv), and then run one of the
+following commands, depending on whether you installed Sparv using pipx or pip.
+
+```bash
+pipx uninstall sparv-pipeline
+```
+
+```bash
+pip uninstall sparv-pipeline
+```

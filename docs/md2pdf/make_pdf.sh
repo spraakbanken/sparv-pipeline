@@ -7,7 +7,7 @@
 USER_MANUAL_FILES="
 ../user-manual/installation-and-setup.md
 ../user-manual/running-sparv.md
-../user-manual/requirements-for-input-data.md
+../user-manual/requirements-for-source-files.md
 ../user-manual/corpus-configuration.md
 "
 

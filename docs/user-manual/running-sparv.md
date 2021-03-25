@@ -1,6 +1,6 @@
 # Running Sparv
 Sparv is run from the command line. Typically, you will want to run Sparv from within a corpus directory containing some
-text documents (the corpus) and a [corpus config file](user-manual/corpus-configuration.md). A typical corpus folder
+text documents (the corpus) and a [corpus config file](user-manual/corpus-configuration.md). A typical corpus directory
 structure could look like this:
 
 ```
@@ -30,11 +30,12 @@ Show annotation info:
     modules          List available modules and annotations
     presets          List available annotation presets
     classes          List available annotation classes
+    languages        List supported languages
 
 Setting up the Sparv pipeline:
     setup            Set up the Sparv data directory
     wizard           Run config wizard to create a corpus config
-    build-models     Download and build the Sparv models
+    build-models     Download and build the Sparv models (optional)
 
 Advanced commands:
     run-rule         Run specified rule(s) for creating annotations
@@ -44,26 +45,27 @@ Advanced commands:
 ```
 
 Every command in the Sparv command line interface has a help text which can be accessed with the `-h` flag. Below we
-will give an overview for the most important commands in Sparv.
+will give an overview of the most important commands in Sparv.
 
 ## Annotating a Corpus
 **`sparv run`:** From inside a corpus directory with a config file you can annotate the corpus using `sparv run`. This
-will start the annotation process and produce all the output formats (or exports) listed under `export.default` in your
-config. You can also tell Sparv explicitly what output format to generate, e.g. `sparv run csv_export:csv`. Type `sparv
-run -l` to learn what output formats there are available for your corpus. The output files will be stored in a folder
-called `exports` inside your corpus directory.
+will start the annotation process and produce all the output formats (or _exports_) listed under `export.default` in
+your config. You can also tell Sparv explicitly what output format to generate, e.g. `sparv run csv_export:csv`.
+Type `sparv run -l` to learn what output formats there are available for your corpus. The output files will be
+stored in a directory called `export` inside your corpus directory.
 
-**`sparv install`:** Installing a corpus means deploying it on a remote server. Sparv supports deployment of compressed
-XML exports, CWB data files and SQL data. If you try to install a corpus Sparv will check if the necessary annotations
-have been created. If any annotations are missing, Sparv will run them for you. Therefore you do not need to annotate
-the corpus before installing. You can list the available installations with `sparv install -l`.
+**`sparv install`:** Installing a corpus means deploying it in some way, either locally or on a remote server. Sparv
+supports deployment of compressed XML exports, CWB data files and SQL data. If you try to install a corpus, Sparv will
+check if the necessary annotations have been created. If any annotations are missing, Sparv will run them for you.
+Therefore, you do not need to annotate the corpus before installing. You can list the available installation options
+with `sparv install -l`.
 
-**`sparv clean`:** While annotating Sparv will create a folder called `sparv-workdir` inside your corpus directory. You
-usually don't need to touch the files stored here. Leaving this directory as it is will usually lead to faster
+**`sparv clean`:** While annotating, Sparv will create a directory called `sparv-workdir` inside your corpus directory.
+You normally don't need to touch the files stored here. Leaving this directory as it is will usually lead to faster
 processing of your corpus if you for example want to add a new output format. However, if you would like to delete this
-folder (e.g. because you want to save disk space or because you want to rerun all annotations from scratch) you can do
-so by running `sparv clean`. The export directory and log files can also be removed with the `clean` command by adding
-appropriate flags. Check out the available options (`sparv clean -h`) to learn more.
+directory (e.g. because you want to save disk space or because you want to rerun all annotations from scratch) you
+can do so by running `sparv clean`. The export directory and log files can also be removed with the `clean` command
+by adding appropriate flags. Check out the available options (`sparv clean -h`) to learn more.
 
 ## Show Annotation Info
 **`sparv modules`:** List available modules and annotations.
@@ -74,14 +76,16 @@ appropriate flags. Check out the available options (`sparv clean -h`) to learn m
 **`sparv classes`:** List available annotation classes. You can read more about classes in the [section about annotation
 classes](user-manual/corpus-configuration.md#annotation-classes).
 
+**`sparv languages`:** List supported languages.
+
 ## Inspecting Corpus Details
 **`sparv config`:** This command lets you inspect the configuration for your corpus. You can read more about this in the
 [section about corpus configuration](user-manual/corpus-configuration.md).
 
-**`sparv files`:** By using this command you can list all available input documents belonging to your corpus.
+**`sparv files`:** By using this command you can list all available source documents belonging to your corpus.
 
-## Setting up the Sparv Pipeline
-**`sparv setup`** and **`sparv build-models`:** These commands are explained in the section [Setting up
+## Setting Up the Sparv Pipeline
+**`sparv setup`** and **`sparv build-models`:** These commands are explained in the section [Setting Up
 Sparv](user-manual/installation-and-setup.md#setting-up-sparv).
 
 ## Advanced Commands

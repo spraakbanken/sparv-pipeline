@@ -1,7 +1,7 @@
 - User Manual
     - [Installation and Setup](user-manual/installation-and-setup.md)
     - [Running Sparv](user-manual/running-sparv.md)
-    - [Requirements for Input Data](user-manual/requirements-for-input-data.md)
+    - [Requirements for Source Files](user-manual/requirements-for-source-files.md)
     - [Corpus Configuration](user-manual/corpus-configuration.md)
 - Developer's Guide
     - [General Concepts](developers-guide/general-concepts.md)
