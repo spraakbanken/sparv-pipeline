@@ -171,7 +171,8 @@ class LogHandler:
 
     icon = "\U0001f426"
 
-    def __init__(self, progressbar=True, summary=False, log_level=None, log_file_level=None, verbose=False):
+    def __init__(self, progressbar=True, summary=False, log_level=None, log_file_level=None, verbose=False,
+                 pass_through=False):
         """Initialize log handler.
 
         Args:
@@ -179,10 +180,13 @@ class LogHandler:
             summary: Set to True to write a final summary (elapsed time). Disabled by default.
             log_level: Log level for logging to stdout.
             log_file_level: Log level for logging to file.
+            verbose: Set to True to show more info about currently running tasks.
+            pass_through: Let Snakemake's log messages pass through uninterrupted.
         """
         self.use_progressbar = progressbar
         self.verbose = verbose
         self.show_summary = summary
+        self.pass_through = pass_through
         self.log_level = log_level
         self.log_file_level = log_file_level
         self.log_filename = None
@@ -429,10 +433,13 @@ class LogHandler:
             self.current_tasks.pop(msg["jobid"], None)
 
         elif level == "info":
-            if msg["msg"] == "Nothing to be done.":
+            if self.pass_through or msg["msg"] == "Nothing to be done.":
                 self.info(msg["msg"])
 
         elif level == "error":
+            if self.pass_through:
+                self.messages["unhandled_error"].append(msg)
+                return
             handled = False
 
             # SparvErrorMessage exception from pipeline core
@@ -483,6 +490,12 @@ class LogHandler:
             elif "Exiting because a job execution failed." in msg["msg"]:
                 pass
             elif "run_snake.py\' returned non-zero exit status 1." in msg["msg"]:
+                handled = True
+            elif "Error: Directory cannot be locked." in msg["msg"]:
+                message = "Directory cannot be locked. Please make sure that no other Sparv instance is currently " \
+                          "processing this corpus. If you are sure that no other Sparv instance is using this " \
+                          "directory, run 'sparv run --unlock' to remove the lock."
+                self.messages["error"].append((None, message))
                 handled = True
 
             # Unhandled errors

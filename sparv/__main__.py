@@ -191,6 +191,9 @@ def main():
         subparser.add_argument("--force-preloader", action="store_true",
                                help="Try to wait for preloader when it's busy")
 
+    # Add extra arguments to 'run' that we want to come last
+    run_parser.add_argument("--unlock", action="store_true", help="Unlock the working directory")
+
     # Backward compatibility
     if len(sys.argv) > 1 and sys.argv[1] == "make":
         print("No rule to make target")
@@ -246,6 +249,7 @@ def main():
     log_level = ""
     log_file_level = ""
     verbose = False
+    pass_through = False
 
     if args.command in ("modules", "config", "files", "clean", "presets", "classes", "languages", "preload"):
         snakemake_args["targets"] = [args.command]
@@ -283,6 +287,10 @@ def main():
 
         # Command: run
         if args.command == "run":
+            if args.unlock:
+                snakemake_args["unlock"] = args.unlock
+                simple_target = True
+                pass_through = True
             if args.list:
                 snakemake_args["targets"] = ["list_exports"]
             elif args.output:
@@ -344,7 +352,7 @@ def main():
     # Disable Snakemake's default log handler and use our own
     logger.log_handler = []
     progress = log_handler.LogHandler(progressbar=not simple_target, log_level=log_level, log_file_level=log_file_level,
-                                      verbose=verbose)
+                                      verbose=verbose, pass_through=pass_through)
     snakemake_args["log_handler"] = [progress.log_handler]
 
     config["log_server"] = progress.log_server
