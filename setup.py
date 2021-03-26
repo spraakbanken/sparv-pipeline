@@ -42,7 +42,7 @@ setuptools.setup(
         "iso-639==0.4.5",
         "nltk==3.5",
         "python-dateutil==2.8.1",
-        "PyYAML==5.3.1",
+        "PyYAML==5.4",
         "questionary==1.8.0",
         "rich==9.1.0",
         "snakemake==5.26.1",
