@@ -9,7 +9,7 @@ from sparv import Annotation, Config, Model, Output, annotator
 logger = util.get_logger(__name__)
 
 
-@annotator("POS, lemma and dependency relations from Stanza", order=1)
+@annotator("POS, lemma and dependency relations from Stanza", language=["swe"], order=1)
 def annotate(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
                                       description="Part-of-speeches with morphological descriptions"),
              out_pos: Output = Output("<token>:stanza.pos", cls="token:pos", description="Part-of-speech tags"),
@@ -166,7 +166,7 @@ def annotate(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
     out_deprel.write(deprel)
 
 
-@annotator("Part-of-speech annotation with morphological descriptions from Stanza", order=2)
+@annotator("Part-of-speech annotation with morphological descriptions from Stanza", language=["swe"], order=2)
 def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
                                     description="Part-of-speeches with morphological descriptions"),
            out_pos: Output = Output("<token>:stanza.pos", cls="token:pos", description="Part-of-speech tags"),
@@ -234,7 +234,7 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
     out_feats.write(feats)
 
 
-@annotator("Dependency parsing using Stanza", order=2)
+@annotator("Dependency parsing using Stanza", language=["swe"], order=2)
 def dep_parse(out_dephead: Output = Output("<token>:stanza.dephead", cls="token:dephead",
                                            description="Positions of the dependency heads"),
               out_dephead_ref: Output = Output("<token>:stanza.dephead_ref", cls="token:dephead_ref",
