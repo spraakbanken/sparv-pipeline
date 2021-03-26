@@ -54,7 +54,7 @@ class CustomHelpFormatter(argparse.RawDescriptionHelpFormatter):
 
 
 def main():
-    """Run Sparv pipeline (main entry point for Sparv)."""
+    """Run Sparv Pipeline (main entry point for Sparv)."""
 
     # Set up command line arguments
     parser = CustomArgumentParser(prog="sparv",
@@ -81,7 +81,7 @@ def main():
         "   classes          List available annotation classes",
         "   languages        List supported languages",
         "",
-        "Setting up the Sparv pipeline:",
+        "Setting up the Sparv Pipeline:",
         "   setup            Set up the Sparv data directory",
         "   wizard           Run config wizard to create a corpus config",
         "   build-models     Download and build the Sparv models (optional)",

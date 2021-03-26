@@ -38,7 +38,7 @@
 
 ## [4.0.0] - 2020-12-07
 
-- This version contains a complete make-over of the Sparv pipeline!
+- This version contains a complete make-over of the Sparv Pipeline!
   - Everything is written in Python now (no more Makefiles or bash code).
   - Increased platform independence
   - This facilitates creating new modules, debugging, and maintenance.

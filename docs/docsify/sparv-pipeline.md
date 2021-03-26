@@ -1,6 +1,6 @@
 # Språkbanken's Sparv Pipeline
 
-The Sparv pipeline is a text analysis tool run from the command line.
+The Sparv Pipeline is a text analysis tool run from the command line.
 
 Sparv is developed by [Språkbanken Text](https://spraakbanken.gu.se/). The
 [source code](https://github.com/spraakbanken/sparv-pipeline) is available under the

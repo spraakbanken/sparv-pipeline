@@ -32,7 +32,7 @@ Show annotation info:
     classes          List available annotation classes
     languages        List supported languages
 
-Setting up the Sparv pipeline:
+Setting up the Sparv Pipeline:
     setup            Set up the Sparv data directory
     wizard           Run config wizard to create a corpus config
     build-models     Download and build the Sparv models (optional)

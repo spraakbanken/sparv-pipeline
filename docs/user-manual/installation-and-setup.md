@@ -1,5 +1,5 @@
 # Installation and Setup
-This section describes how to get the Sparv corpus pipeline up and running on your own machine. It also describes
+This section describes how to get the Sparv Pipeline up and running on your own machine. It also describes
 additional software that you may need to install in order to run all the analyses provided through Sparv.
 
 ## Prerequisites

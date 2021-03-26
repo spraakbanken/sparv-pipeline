@@ -20,7 +20,7 @@ def parse(doc: Document = Document(),
           encoding: str = Config("text_import.encoding"),
           keep_control_chars: bool = Config("text_import.keep_control_chars"),
           normalize: str = Config("text_import.normalize")) -> None:
-    """Parse plain text file as input to the Sparv pipeline.
+    """Parse plain text file as input to the Sparv Pipeline.
 
     Args:
         doc: The document name.

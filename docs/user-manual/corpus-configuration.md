@@ -29,7 +29,7 @@ export:
 
 > [!NOTE]
 > Most annotators in Sparv have one or more options that can be fine-tuned using the configuration file. Each module
-> have their own section in the file, like the `metadata` and `export` sections in the example above.
+> has its own section in the file, like the `metadata` and `export` sections in the example above.
 > By using the `sparv modules` command you can get a list of the available configuration keys and their descriptions.
 
 ## Corpus Config Wizard
@@ -193,7 +193,7 @@ only annotations but not the actual text, you could set `export.word: <token>:an
 ```
 > [!NOTE]
 > For technical reasons the export `xml_export:preserved_format` does not respect this setting. The
-> preserved format XML will always include the original corpus text.
+> preserved format XML will always contain the original corpus text.
 
 Each exporter may have additional options which can be listed with `sparv modules --exporters`.
 
@@ -272,7 +272,7 @@ annotations, you can also use classes. To see what classes are available, use th
 Classes are referred to by enclosing the class name with angle brackets: `<token>`.
 
 If a class can be produced by more than one module, you can use the `classes` section in your config file to select
-which to use. Sparv already comes with a few default class settings.
+which one to use. Sparv already comes with a few default class settings.
 
 One example of a config section where you can use classes is the export annotations list. If you want to include
 part-of-speech tags from Stanza you could include `segment.token:stanza.pos` in the annotations list, meaning that you

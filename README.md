@@ -1,6 +1,6 @@
 # Språkbanken's Sparv Pipeline
 
-The Sparv pipeline is a text analysis tool run from the command line. The documentation can be found here:
+The Sparv Pipeline is a text analysis tool run from the command line. The documentation can be found here:
 https://spraakbanken.gu.se/sparv/docs.
 
 Check the [changelog](CHANGELOG.md) to see what's new!
@@ -21,7 +21,7 @@ If you have any questions, problems or suggestions please contact <sb-sparv@sven
 
 ## Installation
 
-The Sparv pipeline can be installed using [pip](https://pip.pypa.io/en/stable/installing). We even recommend using
+The Sparv Pipeline can be installed using [pip](https://pip.pypa.io/en/stable/installing). We even recommend using
 [pipx](https://pipxproject.github.io/pipx/) so that you can install the `sparv` command globally:
 
 ```bash

@@ -2,8 +2,8 @@
 When writing your first Sparv module, a good starting point may be to take a look at an existing module that does
 something similar to your goal.
 
-The Sparv pipeline is comprised of different modules like importers, annotators and exporters. None of these modules are
-hard-coded into the Sparv pipeline and therefore it can easily be extended.
+The Sparv Pipeline is comprised of different modules like importers, annotators and exporters. None of these modules are
+hard-coded into the Sparv Pipeline and therefore it can easily be extended.
 
 A Sparv module is a Python package containing at least one Python script that imports [Sparv
 classes](developers-guide/sparv-classes) (and [util functions](developers-guide/utilities) if needed) which are used for
@@ -145,7 +145,7 @@ sparv-freeling/
 ```
 
 In the above example the `freeling` folder is a Sparv module. The `setup.py` is what really makes it behave as a plugin.
-If the `setup.py` is constructed correctly, the plugin code can then be injected into the Sparv pipeline code using
+If the `setup.py` is constructed correctly, the plugin code can then be injected into the Sparv Pipeline code using
 pipx:
 ```bash
 pipx inject sparv-pipeline ./sparv-freeling
@@ -158,7 +158,7 @@ entry_points={"sparv.plugin": ["freeling = freeling"]}
 ```
 
 Now the plugin functionality should be available, and it should be treated just like any other module within the Sparv
-pipeline.
+Pipeline.
 
 
 ## Preloaders
