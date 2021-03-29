@@ -81,9 +81,10 @@ corpus).
   annotations will be attached to this annotation. For XML source files this refers to one of the XML
   elements. For plain text source files a default `text` root annotation will be created automatically, and you won't
   have to change this setting.
-> [!NOTE]
-> This setting automatically sets the `text` [class](#annotation-classes). If you want to use an automatic
-> annotation as the document annotation, you should not use this setting, and instead set the `text` class directly.
+
+    > [!NOTE]
+    > This setting automatically sets the `text` [class](#annotation-classes). If you want to use an automatic
+    > annotation as the document annotation, you should not use this setting, and instead set the `text` class directly.
 
 - `import.encoding` specifies the encoding of the source documents. It defaults to UTF-8.
 
