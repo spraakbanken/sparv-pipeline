@@ -42,11 +42,11 @@ setuptools.setup(
         "iso-639==0.4.5",
         "nltk==3.5",
         "python-dateutil==2.8.1",
-        "PyYAML==5.3.1",
-        "questionary==1.8.0",
-        "rich==9.4.0",
-        "snakemake==5.32.0",
-        "stanza==1.1.1",
+        "PyYAML==5.4.1",
+        "questionary==1.9.0",
+        "rich==10.0.0",
+        "snakemake==6.0.5",
+        "stanza==1.2",
         "typing-inspect==0.6.0"
     ],
     extras_require={

@@ -16,7 +16,7 @@ from typing import Optional
 
 import rich.box as box
 import rich.progress as progress
-from rich.control import Control
+from rich.control import Control, ControlType
 from rich.logging import RichHandler
 from rich.table import Table
 from rich.text import Text
@@ -550,7 +550,10 @@ class LogHandler:
                 self.progress.stop()
                 if self.verbose and self.max_current_tasks:
                     # Clear table from screen
-                    console.control(Control("\r\x1b[2K" + "\x1b[1A\x1b[2K" * (self.max_current_tasks + 3)))
+                    console.control(Control(
+                        ControlType.CARRIAGE_RETURN,
+                        *((ControlType.CURSOR_UP, 1), (ControlType.ERASE_IN_LINE, 2)) * (self.max_current_tasks + 1)
+                    ))
 
             self.finished = True
             print()
