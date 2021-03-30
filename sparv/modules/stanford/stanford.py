@@ -7,9 +7,14 @@ License for Stanford CoreNLP: GPL2 https://www.gnu.org/licenses/old-licenses/gpl
 """
 
 import re
+import tempfile
+from pathlib import Path
 
 import sparv.util as util
 from sparv import Annotation, BinaryDir, Config, Language, Output, Text, annotator
+
+import logging
+log = logging.getLogger(__name__)
 
 
 @annotator("Parse and annotate with Stanford Parser", language=["eng"], config=[
@@ -36,37 +41,54 @@ def annotate(corpus_text: Text = Text(),
     """Use Stanford Parser to parse and annotate text."""
     args = ["-cp", binary + "/*", "edu.stanford.nlp.pipeline.StanfordCoreNLP",
             "-annotators", "tokenize,ssplit,pos,lemma,depparse,ner",
+            # The output columns are taken from edu.stanford.nlp.ling.AnnotationLookup:
+            "-output.columns", "idx,current,lemma,pos,ner,headidx,deprel,BEGIN_POS,END_POS",
             "-outputFormat", "conll"]
-    process = util.system.call_binary("java", arguments=args, return_command=True)
 
     # Read corpus_text and text_spans
     text_data = corpus_text.read()
-    text_spans = text.read_spans()
+    text_spans = list(text.read_spans())
 
     sentence_segments = []
     all_tokens = []
 
-    # Go through text elements and parse them with Stanford Parser
-    for text_span in text_spans:
-        inputtext = text_data[text_span[0]:text_span[1]]
-        stdout, _ = process.communicate(inputtext.encode(util.UTF8))
-        processed_sentences = _parse_output(stdout.decode(util.UTF8), lang)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpdir = Path(tmpdir)
+        log.debug("Creating temporary directoty: %s", tmpdir)
 
-        # Go through output and try to match tokens with input text to get correct spans
-        index_counter = text_span[0]
-        for sentence in processed_sentences:
-            for token in sentence:
-                all_tokens.append(token)
-                # Get token span
-                match = re.match(r"\s*(%s)" % re.escape(token.word), inputtext)
-                span = match.span(1)
-                token.start = span[0] + index_counter
-                token.end = span[1] + index_counter
-                # Forward inputtext
-                inputtext = inputtext[span[1]:]
-                index_counter += span[1]
-            # Extract sentence span for current sentence
-            sentence_segments.append((sentence[0].start, sentence[-1].end))
+        # Write all texts to temporary files
+        filelist = tmpdir/"filelist.txt"
+        with open(filelist, "w") as LIST:
+            for nr, (start, end) in enumerate(text_spans):
+                filename = tmpdir/f"text-{nr}.txt"
+                print(filename, file=LIST)
+                with open(filename, "w") as F:
+                    print(text_data[start:end], file=F)
+                log.debug("Writing text %d (%d-%d): %r...%r --> %s", nr, start, end,
+                              text_data[start:start+20], text_data[end-20:end], filename.name)
+
+        # Call the Stanford parser with all the text files
+        args += ["-filelist", filelist]
+        args += ["-outputDirectory", tmpdir]
+        util.system.call_binary("java", arguments=args)
+
+        # Read and parse each of the output files
+        for nr, (start, end) in enumerate(text_spans):
+            filename = tmpdir/f"text-{nr}.txt.conll"
+            with open(filename) as F:
+                output = F.read()
+            log.debug("Reading text %d (%d-%d): %s --> %r...%r", nr, start, end,
+                          filename.name, output[:20], output[-20:])
+            processed_sentences = _parse_output(output, lang, start)
+
+            for sentence in processed_sentences:
+                log.debug("Parsed: %s", " ".join(f"{tok.baseform}/{tok.pos}" for tok in sentence))
+                for token in sentence:
+                    all_tokens.append(token)
+                    if token.word != text_data[token.start:token.end]:
+                        log.warning("Surface word (%r) different from Stanford word (%r), using the Stanford word",
+                                        token.word, text_data[token.start:token.end])
+                sentence_segments.append((sentence[0].start, sentence[-1].end))
 
     # Write annotations
     out_sentence.write(sentence_segments)
@@ -81,8 +103,8 @@ def annotate(corpus_text: Text = Text(),
     out_deprel.write([t.deprel for t in all_tokens])
 
 
-def _parse_output(stdout, lang):
-    """Parse the conll format output from the Standford Parser."""
+def _parse_output(stdout, lang, add_to_index):
+    """Parse the CoNLL format output from the Stanford Parser."""
     sentences = []
     sentence = []
     for line in stdout.split("\n"):
@@ -93,16 +115,14 @@ def _parse_output(stdout, lang):
                 sentence = []
         # Create new word with attributes
         else:
-            fields = line.split("\t")
-            ref = fields[0]
-            word = fields[1]
-            lemma = fields[2]
-            pos = fields[3]
+            # -output.columns from the parser (see the args to the parser, in annotate() above):
+            # idx, current, lemma, pos, ner,          headidx,     deprel, BEGIN_POS, END_POS
+            ref,   word,    lemma, pos, named_entity, dephead_ref, deprel, start,     end     =  line.split("\t")
             upos = util.tagsets.pos_to_upos(pos, lang, "Penn")
-            named_entity = fields[4] if fields[4] != "O" else ""  # O = empty name tag
-            deprel = fields[6]
-            dephead_ref = fields[5] if fields[4] != "0" else ""  # 0 = empty dephead
-            token = Token(ref, word, pos, upos, lemma, named_entity, dephead_ref, deprel)
+            if named_entity == "O": named_entity = ""  # O = empty name tag
+            if dephead_ref  == "0": dephead_ref  = ""  # 0 = empty dephead
+            start, end = [add_to_index + int(i) for i in [start, end]]
+            token = Token(ref, word, pos, upos, lemma, named_entity, dephead_ref, deprel, start, end)
             sentence.append(token)
 
     return sentences
@@ -111,7 +131,7 @@ def _parse_output(stdout, lang):
 class Token:
     """Object to store annotation information for a token."""
 
-    def __init__(self, ref, word, pos, upos, baseform, ne, dephead_ref, deprel, start=-1, end=-1):
+    def __init__(self, ref, word, pos, upos, baseform, ne, dephead_ref, deprel, start, end):
         """Set attributes."""
         self.ref = ref
         self.word = word
