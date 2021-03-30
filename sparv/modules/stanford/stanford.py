@@ -86,7 +86,7 @@ def annotate(corpus_text: Text = Text(),
                 for token in sentence:
                     all_tokens.append(token)
                     if token.word != text_data[token.start:token.end]:
-                        log.warning("Surface word (%r) different from Stanford word (%r), using the Stanford word",
+                        log.warning("Stanford word (%r) differs from surface word (%r), using the Stanford word",
                                         token.word, text_data[token.start:token.end])
                 sentence_segments.append((sentence[0].start, sentence[-1].end))
 
