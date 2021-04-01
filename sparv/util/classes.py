@@ -438,23 +438,14 @@ class Text:
 
     def read(self) -> str:
         """Get corpus text."""
-        text_file = io.get_annotation_path(self.doc, io.TEXT_FILE, data=True)
-        with open(text_file) as f:
-            text = f.read()
-        log.debug("Read %d chars: %s", len(text), text_file)
-        return text
+        return io.read_data(self.doc, io.TEXT_FILE)
 
     def write(self, text):
         """Write text to the designated file of a corpus.
 
         text is a unicode string.
         """
-        doc, _, _chunk = self.doc.partition(io.DOC_CHUNK_DELIM)
-        text_file = io.get_annotation_path(doc, io.TEXT_FILE, data=True)
-        os.makedirs(os.path.dirname(text_file), exist_ok=True)
-        with open(text_file, "w") as f:
-            f.write(text)
-        log.info("Wrote %d chars: %s", len(text), text_file)
+        io.write_data(self.doc, io.TEXT_FILE, text)
 
     def __repr__(self):
         return "<Text>"
@@ -474,12 +465,8 @@ class SourceStructure(BaseAnnotation):
 
     def write(self, structure):
         """Sort the document's structural elements and write structure file."""
-        file_path = io.get_annotation_path(self.doc, self, data=True)
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
         structure.sort()
-        with open(file_path, "w") as f:
-            f.write("\n".join(structure))
-        log.info("Wrote: %s", file_path)
+        io.write_data(self.doc, self, "\n".join(structure))
 
 
 class Headers(BaseAnnotation):

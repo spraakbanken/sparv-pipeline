@@ -170,7 +170,7 @@ def _read_single_annotation(doc: str, annotation: str, with_annotation_name: boo
     _log.debug(f"Read {ctr} items: {doc + '/' if doc else ''}{annotation}")
 
 
-def write_data(doc: Optional[str], name: BaseAnnotation, value: str, append: bool = False):
+def write_data(doc: Optional[str], name: Union[BaseAnnotation, str], value: str, append: bool = False):
     """Write arbitrary string data to file in workdir directory."""
     file_path = get_annotation_path(doc, name, data=True)
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -180,16 +180,18 @@ def write_data(doc: Optional[str], name: BaseAnnotation, value: str, append: boo
         f.write(value)
     # Update file modification time even if nothing was written
     os.utime(file_path, None)
-    _log.info(f"Wrote {len(value)} bytes: {doc + '/' if doc else ''}{name.name}")
+    _log.info(f"Wrote {len(value)} bytes: {doc + '/' if doc else ''}"
+              f"{name.name if isinstance(name, BaseAnnotation) else name}")
 
 
-def read_data(doc: Optional[str], name: BaseAnnotation):
+def read_data(doc: Optional[str], name: Union[BaseAnnotation, str]):
     """Read arbitrary string data from file in workdir directory."""
     file_path = get_annotation_path(doc, name, data=True)
 
     with open(file_path) as f:
         data = f.read()
-    _log.debug(f"Read {len(data)} bytes: {doc + '/' if doc else ''}{name.name}")
+    _log.debug(f"Read {len(data)} bytes: {doc + '/' if doc else ''}"
+               f"{name.name if isinstance(name, BaseAnnotation) else name}")
     return data
 
 
@@ -206,7 +208,7 @@ def join_annotation(name: str, attribute: str) -> str:
     return ELEM_ATTR_DELIM.join((name, attribute)) if attribute else name
 
 
-def get_annotation_path(doc: str, annotation: Union[BaseAnnotation, str], root: Path = None,
+def get_annotation_path(doc: Optional[str], annotation: Union[BaseAnnotation, str], root: Path = None,
                         data: bool = False) -> Path:
     """Construct a path to an annotation file given a doc and annotation."""
     chunk = ""
