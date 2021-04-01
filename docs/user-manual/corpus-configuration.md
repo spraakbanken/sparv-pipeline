@@ -462,12 +462,28 @@ similar to a plugin, but is available only to the corpus in the same directory.
 The full documentation for how to write a Sparv annotator can be found in the [developer's
 guide](developers-guide/writing-sparv-modules), but here is a quick example.
 
-Your annotator function must use one of the Sparv decorators (usually `@annotator`), and your
-annotator must be declared in the `custom_annotations` section of your corpus config. Place your python script
-inside your corpus directory and Sparv will automatically find it.
+> [!TIP] The following example uses the `@annotator` decorator for creating an annotator, but it is possible to create
+> your own importer, exporter, installer or model builder using the appropriate Sparv decorator. You can read more about
+> decorators in the [developer's guide](developers-guide/sparv-decorators).
 
-The code for a simple annotator that converts all tokens to upper case looks like this:
+Creating a user-defined custom annotator involves the following three steps:
+1. Create a Python script with an annotator and place it in your corpus directory
+2. Register the annotator in your corpus config
+3. Use your custom annotation by referring to it in an annotations list
 
+**Step 1**: Add your user-defined custom annotator by creating a Python script in your corpus directory, e.g.
+`convert.py`:
+```
+mycorpus/
+├── config.yaml
+├── convert.py
+└── source
+    ├── document1.xml
+    └── document2.xml
+```
+
+Sparv will automatically detect scripts placed here as long as your functions are registered in your
+config (see Step 2). Your annotator function must use one of the Sparv decorators (usually `@annotator`). Here is a code example for a simple annotator that converts all tokens to upper case:
 ```python
 from sparv import Annotation, Output, annotator
 
@@ -478,12 +494,24 @@ def uppercase(word: Annotation = Annotation("<token:word>"),
     out.write([val.upper() for val in word.read()])
 ```
 
-The custom annotator is then declared in your corpus config using the prefix `custom` followed by the file name of the
-Python file (without extension), and finally the annotator name. If the above code is contained in a file called
-`convert.py` it would be referenced like this:
+**Step 2**: Now register your custom annotator in your corpus config in the `custom_annotations` section so Sparv can
+find it. The name of your annotator is composed of:
+- the prefix `custom.`
+- followed by the file name of the Python file without extension (`convert` in our example)
+- followed by a colon
+- and finally the annotator name (`uppercase`)
+
 ```yaml
 custom_annotations:
     - annotator: custom.convert:uppercase
+```
+
+**Step 3**: Now you can go ahead and use the annotation created by your custom annotator. Just add the annotation
+name given by the `out` parameter value to an annotations list in your corpus config:
+```yaml
+export:
+    annotations:
+        - <token>:custom.convert.upper
 ```
 
 In this example all parameters in the annotator function have default values which means that you do not need to supply
@@ -495,9 +523,8 @@ custom_annotations:
           out: <token>:custom.convert.myUppercaseAnnotation
 ```
 
-Now you can add the annotation name given by the `out` parameter value to an annotations list in your corpus config
-(e.g. `export.annotations`). Please note that when using custom annotations from your own code all output
-annotations must be prefixed with `custom`.
+> [!NOTE]
+> When using custom annotations from your own code all output annotations must be prefixed with `custom`.
 
 There is an example of a user-defined custom annotator in the standard-swe
 [example corpus](https://github.com/spraakbanken/sparv-pipeline/releases/latest/download/example_corpora.zip).
@@ -505,4 +532,4 @@ There is an example of a user-defined custom annotator in the standard-swe
 If you need more information on how to write an annotator function please refer to the [developer's
 guide](developers-guide/writing-sparv-modules). If you have written a rather general annotator module, you could
 consider making it into a Sparv plugin. This way other people will be able to use your annotator. Read more about
-writing plugins in the [developer's guide](developers-guide/writing-plugins).
+writing plugins in the [developer's guide](developers-guide/writing-sparv-modules#plugins).
