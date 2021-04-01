@@ -1,20 +1,102 @@
-# Writing Sparv Modules
-When writing your first Sparv module, a good starting point may be to take a look at an existing module that does
-something similar to your goal.
+# Writing Sparv Plugins
+The Sparv Pipeline is comprised of different modules like importers, annotators and exporters. Although many modules are
+shipped with the main Sparv package none of these modules are hard-coded into the Sparv Pipeline and therefore it can
+easily be extended with plugins. A plugin is a Sparv module that is not part of the main Sparv package. Writing a plugin
+is the recommended way of adding a new module to Sparv.
 
-The Sparv Pipeline is comprised of different modules like importers, annotators and exporters. None of these modules are
-hard-coded into the Sparv Pipeline and therefore it can easily be extended.
+When writing your first plugin we recommend that you take a look at the Sparv plugin template (**TODO**: add URL). The
+template contains an example of a small annotation module that converts tokens to uppercase. We will use this template
+in the examples below.
 
+
+## Plugin Structure
+This is what a typical structure of a plugin may look like:
+```
+sparv-uppercase/
+├── uppercase
+│   ├── uppercase.py
+│   └── __init__.py
+├── LICENSE
+├── README.md
+└── setup.py
+```
+
+In the above example the `uppercase` directory is a Sparv module containing the [module code](#module-code) in
+`uppercase.py` and the mandatory [init file](#init-file) `__init__.py`. The [setup file](#setup-file) `setup.py` in the
+root directory is needed in order to install the plugin. A plugin does not have to be stored in any particular place. As
+long as the Sparv Pipeline is installed on your machine, you should be able to inject your plugin into the Sparv
+Pipeline code using pipx (from the directory containing your plugin):
+```bash
+pipx inject sparv-pipeline ./sparv-uppercase
+```
+
+After the injection the plugin functionality should be available, and the plugged-in module should be treated just like
+any other module within the Sparv Pipeline.
+
+The readme and license files are not strictly recommended are not strictly necessary for the plugin to work but we
+strongly recommend that you include these if you want to publish your plugin.
+
+
+## Setup File
+The `setup.py` is needed in order to install a plugin and connect it to the Sparv Pipeline. Here is a minimal example
+of a setup file (taken from the Sparv plugin template (**TODO**: add URL)):
+```python
+import setuptools
+
+setuptools.setup(
+    name="uppercase",
+    version="0.1",
+    description="Uppercase converter (example plug-in for Sparv)",
+    license="MIT",
+    packages=["uppercase"],
+    python_requires=">=3.6",
+    install_requires=["sparv-pipeline>=4"],
+    entry_points={"sparv.plugin": ["uppercase = uppercase"]}
+)
+```
+
+Make sure to include the name of your module (i.e. the directory containing the Sparv code) in `packages`. You also need
+to make sure that there is a `sparv.plugin` entry point in `entry_points` that points to your module.
+
+For more information about Python setup scripts check the [distutils
+documentation](https://docs.python.org/3/distutils/setupscript.html).
+
+
+## Init File
+Each Sparv module must contain a [Python init file](https://docs.python.org/3/reference/import.html#regular-packages)
+(`__init__.py`). Without the init file Sparv will not be able to register the module. The Python scripts containing
+decorated Sparv functions should be imported here. Module-specific configuration parameters may also be declared in this
+file. Furthermore, you should provide a short description (one sentence) for your module which will be displayed to the
+user when running the `sparv modules` command. The description is provided either as an argument to `__description__` or
+as a docstring. In the example below we use both, but only one of them is necessary. If both exist, the value of
+`__description__` is displayed in the `sparv modules` command.
+
+Example of an `__init__.py` file: (**TODO**: Adapt example to `uppercase`)
+```python
+"""Korp-related annotators, exporters and installers."""
+
+from sparv import Config
+from . import install_corpus, lemgram_index, relations, timespan
+
+__config__ = [
+    Config("korp.remote_host", "", description="Remote host to install to")
+]
+
+__description__ = "Korp-related annotators, exporters and installers."
+```
+
+
+## Module Code
 A Sparv module is a Python package containing at least one Python script that imports [Sparv
 classes](developers-guide/sparv-classes) (and [util functions](developers-guide/utilities) if needed) which are used for
-describing dependencies to other entities (e.g. annotations or models) handled or created by the pipeline. Here is an
-example of a small annotation module that converts tokens to uppercase:
+describing dependencies to other entities (e.g. annotations or models) handled or created by the pipeline. Here is the
+code for or uppercase example (taken from the Sparv plugin template (**TODO**: add URL):
 ```python
 from sparv import Annotation, Output, annotator
 
 @annotator("Convert every word to uppercase.")
 def uppercase(word: Annotation = Annotation("<token:word>"),
-              out: Output = Output("<token>:custom.convert.upper")):
+              out: Output = Output("<token>:uppercase.upper")):
     """Convert to uppercase."""
     out.write([val.upper() for val in word.read()])
 ```
@@ -30,14 +112,15 @@ the CLI (e.g. when running `sparv modules`).
 The function's relation to other pipeline components is described by its signature. The function arguments contain type
 hints to the Sparv classes `Annotation` and `Output` which indicate what dependencies (e.g. annotations, models or
 config variables) must be satisfied before the function can do its job, and what it will produce. In this example Sparv
-will make sure that a word annotation exists before it will attempt to call the `uppercase` function because it knows
-that `word` is an input as it is of type `Annotation`. It also knows that the function produces the output annotation
-`<token>:custom.convert.upper`, so if any other module would request this annotation as input, it will run `uppercase`
+will make sure that a word annotation exists before it will attempt to call the `uppercase` function, because it knows
+that `word` is an input since it is of type `Annotation`. It also knows that the function produces the output annotation
+`<token>:uppercase.upper`, so if any other module would request this annotation as input, it will run `uppercase`
 prior to calling that module.
 
 A function decorated with a Sparv decorator should never be actively called by you or by another decorated function.
 When running Sparv through the CLI Sparv's dependency system will calculate a dependency graph and all the functions
 necessary for producing the desired output will be run automatically.
+
 
 ## Reading and Writing Files
 Sparv classes like `Annotation` and `Output` have built-in methods for reading and writing files (like `word.read()` and
@@ -46,26 +129,6 @@ class methods. This is to make sure that files are written to the correct places
 be found by other modules. The read and write methods also make sure that Sparv's internal data format is handled
 correctly. Not using these provided methods can lead to procedures breaking if the internal data format or file
 structure is updated in the future.
-
-
-## Init File
-Each Sparv module must contain a [Python init file](https://docs.python.org/3/reference/import.html#regular-packages)
-(`__init__.py`). The python scripts containing decorated Sparv functions should be imported here. Module-specific
-configuration parameters may also be declared in this file. Furthermore, you should provide a short description (one
-sentence) for your module in the `__init__.py` file. This description will be shown when running the `sparv modules`
-command.
-
-Example of an `__init__.py` file:
-```python
-"""Korp-related annotators, exporters and installers."""
-
-from sparv import Config
-from . import install_corpus, lemgram_index, relations, timespan
-
-__config__ = [
-    Config("korp.remote_host", "", description="Remote host to install to")
-]
-```
 
 
 ## Logging
@@ -80,10 +143,10 @@ logger.error("An error was encountered!")
 
 Any of the officially [Python logging levels](https://docs.python.org/3.6/library/logging.html#levels) may be used.
 
-By default, Sparv will write log output with level WARNING and higher to the terminal. You can change the log level with
-the flag `--log [LOGLEVEL]`. Most commands support this flag. You can also choose to write the log output to a file by
-using the `--log-to-file [LOGLEVEL]` flag. The log file will recieve the current date and timestamp as filename and can
-be found inside `logs` in the corpus directory.
+By default, Sparv will write log output with level WARNING and higher to the terminal. The user can change the log level
+with the flag `--log [LOGLEVEL]`. Most commands support this flag. The user can also choose to write the log output to a
+file by using the `--log-to-file [LOGLEVEL]` flag. The log file will receive the current date and timestamp as filename
+and can be found inside `logs/` in the corpus directory.
 
 
 ## Error Messages
@@ -101,7 +164,7 @@ if not host:
 Sometimes one may want to create multiple Sparv functions that create the same output files (e.g. annotation files,
 export files or model files). In this case Sparv needs to be informed about the priority of these functions. Let's say
 that there are two functions `annotate()` and `annotate_backoff()` that both produce an annotation output called
-`mymodule.foo`. Ideally `mymodule.foo` should be produced by `annotate()` but if this function cannot be run for any
+`mymodule.foo`. Ideally `mymodule.foo` should be produced by `annotate()` but if this function cannot be run for some
 reason (e.g. because it needs another annotation file `mymodule.bar` that cannot be produced for some corpora), then you
 want `mymodule.foo` to be produced by `annotate_backoff()`. The priority of functions is stated with the `order`
 argument in the `@annotator`, `@exporter`, or `@modelbuilder` decorator. The integer value given by `order` will help
@@ -122,43 +185,6 @@ def annotate_backoff(
 
 <!-- Functions with a higher order number can explicitly be called with `sparv run-rule`. Not working at the moment due
 to a bug! -->
-
-
-## Plugins
-A Sparv Plugin is a Sparv module that is not stored together with the Sparv code. Instead, it usually lives in a
-separate repository. Reasons for writing a plugin could be that the author does not want it to be part of the Sparv
-core or that the code cannot be distributed under the same license. Any Sparv module can be converted into a plugin
-by adding a [Python setup script](https://docs.python.org/3/distutils/setupscript.html).
-
-A working sparv plugin is the [sparv-freeling](https://github.com/spraakbanken/sparv-freeling) plugin.
-
-The following is an example of a typical folder structure of a plugin:
-```
-sparv-freeling/
-├── freeling
-│   ├── freeling.py
-│   ├── __init__.py
-│   └── models.py
-├── LICENSE
-├── README.md
-└── setup.py
-```
-
-In the above example the `freeling` folder is a Sparv module. The `setup.py` is what really makes it behave as a plugin.
-If the `setup.py` is constructed correctly, the plugin code can then be injected into the Sparv Pipeline code using
-pipx:
-```bash
-pipx inject sparv-pipeline ./sparv-freeling
-```
-
-In order for this to work you need to make sure that there is a `sparv.plugin` entry point inside the setup script that
-points to your module(s):
-```python
-entry_points={"sparv.plugin": ["freeling = freeling"]}
-```
-
-Now the plugin functionality should be available, and it should be treated just like any other module within the Sparv
-Pipeline.
 
 
 ## Preloaders

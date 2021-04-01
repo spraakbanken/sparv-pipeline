@@ -460,7 +460,7 @@ to all your corpora. An alternative to creating a plugin is creating a user-defi
 similar to a plugin, but is available only to the corpus in the same directory.
 
 The full documentation for how to write a Sparv annotator can be found in the [developer's
-guide](developers-guide/writing-sparv-modules), but here is a quick example.
+guide](developers-guide/writing-sparv-plugins#module-code), but here is a quick example.
 
 > [!TIP] The following example uses the `@annotator` decorator for creating an annotator, but it is possible to create
 > your own importer, exporter, installer or model builder using the appropriate Sparv decorator. You can read more about
@@ -530,6 +530,6 @@ There is an example of a user-defined custom annotator in the standard-swe
 [example corpus](https://github.com/spraakbanken/sparv-pipeline/releases/latest/download/example_corpora.zip).
 
 If you need more information on how to write an annotator function please refer to the [developer's
-guide](developers-guide/writing-sparv-modules). If you have written a rather general annotator module, you could
-consider making it into a Sparv plugin. This way other people will be able to use your annotator. Read more about
-writing plugins in the [developer's guide](developers-guide/writing-sparv-modules#plugins).
+guide](developers-guide/writing-sparv-plugins#module-code). If you have written a rather general annotator module, you
+could consider making it into a Sparv plugin. This way other people will be able to use your annotator. Read more about
+writing plugins in the [developer's guide](developers-guide/writing-sparv-plugins).

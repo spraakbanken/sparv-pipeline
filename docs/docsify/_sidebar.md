@@ -5,7 +5,7 @@
     - [Corpus Configuration](user-manual/corpus-configuration.md)
 - Developer's Guide
     - [General Concepts](developers-guide/general-concepts.md)
-    - [Writing Sparv Modules](developers-guide/writing-sparv-modules.md)
+    - [Writing Sparv Plugins](developers-guide/writing-sparv-plugins.md)
     - [Sparv Decorators](developers-guide/sparv-decorators.md)
     - [Sparv Classes](developers-guide/sparv-classes.md)
     - [Config Parameters](developers-guide/config-parameters.md)
