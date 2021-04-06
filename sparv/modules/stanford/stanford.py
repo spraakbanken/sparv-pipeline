@@ -6,7 +6,6 @@ Please download, unzip and place contents inside sparv-pipeline/bin/stanford_par
 License for Stanford CoreNLP: GPL2 https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 """
 
-import re
 import tempfile
 from pathlib import Path
 
@@ -57,15 +56,15 @@ def annotate(corpus_text: Text = Text(),
         log.debug("Creating temporary directoty: %s", tmpdir)
 
         # Write all texts to temporary files
-        filelist = tmpdir/"filelist.txt"
+        filelist = tmpdir / "filelist.txt"
         with open(filelist, "w") as LIST:
             for nr, (start, end) in enumerate(text_spans):
-                filename = tmpdir/f"text-{nr}.txt"
+                filename = tmpdir / f"text-{nr}.txt"
                 print(filename, file=LIST)
                 with open(filename, "w") as F:
                     print(text_data[start:end], file=F)
                 log.debug("Writing text %d (%d-%d): %r...%r --> %s", nr, start, end,
-                              text_data[start:start+20], text_data[end-20:end], filename.name)
+                          text_data[start:start + 20], text_data[end - 20:end], filename.name)
 
         # Call the Stanford parser with all the text files
         args += ["-filelist", filelist]
@@ -74,11 +73,11 @@ def annotate(corpus_text: Text = Text(),
 
         # Read and parse each of the output files
         for nr, (start, end) in enumerate(text_spans):
-            filename = tmpdir/f"text-{nr}.txt.conll"
+            filename = tmpdir / f"text-{nr}.txt.conll"
             with open(filename) as F:
                 output = F.read()
             log.debug("Reading text %d (%d-%d): %s --> %r...%r", nr, start, end,
-                          filename.name, output[:20], output[-20:])
+                      filename.name, output[:20], output[-20:])
             processed_sentences = _parse_output(output, lang, start)
 
             for sentence in processed_sentences:
@@ -87,7 +86,7 @@ def annotate(corpus_text: Text = Text(),
                     all_tokens.append(token)
                     if token.word != text_data[token.start:token.end]:
                         log.warning("Stanford word (%r) differs from surface word (%r), using the Stanford word",
-                                        token.word, text_data[token.start:token.end])
+                                    token.word, text_data[token.start:token.end])
                 sentence_segments.append((sentence[0].start, sentence[-1].end))
 
     # Write annotations
@@ -117,10 +116,12 @@ def _parse_output(stdout, lang, add_to_index):
         else:
             # -output.columns from the parser (see the args to the parser, in annotate() above):
             # idx, current, lemma, pos, ner,          headidx,     deprel, BEGIN_POS, END_POS
-            ref,   word,    lemma, pos, named_entity, dephead_ref, deprel, start,     end     =  line.split("\t")
+            ref,   word,    lemma, pos, named_entity, dephead_ref, deprel, start,     end     = line.split("\t")
             upos = util.tagsets.pos_to_upos(pos, lang, "Penn")
-            if named_entity == "O": named_entity = ""  # O = empty name tag
-            if dephead_ref  == "0": dephead_ref  = ""  # 0 = empty dephead
+            if named_entity == "O":  # O = empty name tag
+                named_entity = ""
+            if dephead_ref == "0":  # 0 = empty dephead
+                dephead_ref = ""
             start, end = [add_to_index + int(i) for i in [start, end]]
             token = Token(ref, word, pos, upos, lemma, named_entity, dephead_ref, deprel, start, end)
             sentence.append(token)
