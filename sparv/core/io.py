@@ -72,7 +72,7 @@ def _write_single_annotation(source_file: str, annotation: str, values, append: 
     file_path = get_annotation_path(source_file, annotation, root)
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     mode = "a" if append else "w"
-    with open(file_path, mode) as f:
+    with open_annotation_file(file_path, mode) as f:
         ctr = 0
         for value in values:
             if value is None:
@@ -157,7 +157,7 @@ def _read_single_annotation(source_file: str, annotation: str, with_annotation_n
     """Read a single annotation file."""
     ann_file = get_annotation_path(source_file, annotation, root)
 
-    with open(ann_file) as f:
+    with open_annotation_file(ann_file) as f:
         ctr = 0
         for line in f:
             value = line.rstrip("\n\r")
@@ -177,7 +177,7 @@ def write_data(source_file: Optional[str], name: Union[BaseAnnotation, str], val
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     mode = "a" if append else "w"
 
-    with open(file_path, mode) as f:
+    with open_annotation_file(file_path, mode) as f:
         f.write(value)
     # Update file modification time even if nothing was written
     os.utime(file_path, None)
@@ -189,7 +189,7 @@ def read_data(source_file: Optional[str], name: Union[BaseAnnotation, str]):
     """Read arbitrary string data from file in workdir directory."""
     file_path = get_annotation_path(source_file, name, data=True)
 
-    with open(file_path) as f:
+    with open_annotation_file(file_path) as f:
         data = f.read()
     logger.debug(f"Read {len(data)} bytes: {source_file + '/' if source_file else ''}"
                  f"{name.name if isinstance(name, BaseAnnotation) else name}")
@@ -233,3 +233,30 @@ def get_annotation_path(source_file: Optional[str], annotation: Union[BaseAnnota
         path = annotation.root / path
 
     return path
+
+
+######################################################################
+# Reading and writing annotation and data files using 
+# different kinds of compression.
+
+import gzip, bz2, lzma
+
+# The default compression should ideally come from the config file.
+# Until then we default to no compression at all.
+_default_compression = None
+
+_compressed_open = {
+    "gzip": gzip.open,
+    "bz2":  bz2.open,
+    "lzma": lzma.open,
+}
+
+def open_annotation_file(filename, mode="rt", encoding=None, errors=None, newline=None, compression=None):
+    if mode in "rwxa":
+        # Text mode is the default for open(), whereas gzip, bz2 and lzma uses binary mode.
+        # We adopt text mode as default.
+        mode += "t"
+    if not compression:
+        compression = _default_compression
+    opener = _compressed_open.get(compression, open)
+    return opener(filename, mode=mode, encoding=encoding, errors=errors, newline=newline)
