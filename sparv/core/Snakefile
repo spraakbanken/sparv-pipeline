@@ -246,6 +246,10 @@ rule list_targets:
         for target, desc in sorted(snake_storage.install_targets):
             table.add_row("  " + target, desc)
         table.add_row()
+        table.add_row("[b]Importers[/b]")
+        for target, desc in sorted(snake_storage.import_targets):
+            table.add_row("  " + target, desc)
+        table.add_row()
         table.add_row("[b]Annotators[/b]")
         for target, desc in sorted(snake_storage.named_targets):
             table.add_row("  " + target, desc)

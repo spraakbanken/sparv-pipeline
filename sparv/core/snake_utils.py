@@ -37,6 +37,7 @@ class SnakeStorage:
         # All named targets available, used in list_targets
         self.named_targets = []
         self.export_targets = []
+        self.import_targets = []
         self.install_targets = []
         self.model_targets = []
         self.custom_targets = []
@@ -582,6 +583,8 @@ def update_storage(storage, rule):
     if rule.exporter:
         storage.export_targets.append((rule.target_name, rule.description,
                                        rule.annotator_info["language"]))
+    elif rule.importer:
+        storage.import_targets.append((rule.target_name, rule.description))
     elif rule.installer:
         storage.install_targets.append((rule.target_name, rule.description))
     elif rule.modelbuilder:
