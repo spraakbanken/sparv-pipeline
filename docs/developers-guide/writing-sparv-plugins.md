@@ -4,9 +4,9 @@ shipped with the main Sparv package none of these modules are hard-coded into th
 easily be extended with plugins. A plugin is a Sparv module that is not part of the main Sparv package. Writing a plugin
 is the recommended way of adding a new module to Sparv.
 
-When writing your first plugin we recommend that you take a look at the Sparv plugin template (**TODO**: add URL). The
-template contains an example of a small annotation module that converts tokens to uppercase. We will use this template
-in the examples below.
+When writing your first plugin we recommend that you take a look at the [Sparv plugin
+template](https://github.com/spraakbanken/sparv-plugin-template). The template contains an example of a small annotation
+module that converts tokens to uppercase. We will use this template in the examples below.
 
 
 ## Plugin Structure
@@ -38,8 +38,8 @@ strongly recommend that you include these if you want to publish your plugin.
 
 
 ## Setup File
-The `setup.py` is needed in order to install a plugin and connect it to the Sparv Pipeline. Here is a minimal example
-of a setup file (taken from the Sparv plugin template (**TODO**: add URL)):
+The `setup.py` is needed in order to install a plugin and connect it to the Sparv Pipeline. Here is a minimal example of
+a setup file (taken from the [Sparv plugin template](https://github.com/spraakbanken/sparv-plugin-template)):
 ```python
 import setuptools
 
@@ -71,18 +71,19 @@ user when running the `sparv modules` command. The description is provided eithe
 as a docstring. In the example below we use both, but only one of them is necessary. If both exist, the value of
 `__description__` is displayed in the `sparv modules` command.
 
-Example of an `__init__.py` file: (**TODO**: Adapt example to `uppercase`)
+Example of an `__init__.py` file:
 ```python
-"""Korp-related annotators, exporters and installers."""
+"""Example for a Sparv annotator that converts tokens to uppercase."""
 
-from sparv import Config
-from . import install_corpus, lemgram_index, relations, timespan
+# from sparv import Config
 
-__config__ = [
-    Config("korp.remote_host", "", description="Remote host to install to")
-]
+from . import uppercase
 
-__description__ = "Korp-related annotators, exporters and installers."
+# __config__ = [
+#     Config("uppercase.some_setting", "some_default_value", description="Description for this setting")
+# ]
+
+__description__ = "Example for a Sparv annotator that converts tokens to uppercase."
 ```
 
 
@@ -90,7 +91,8 @@ __description__ = "Korp-related annotators, exporters and installers."
 A Sparv module is a Python package containing at least one Python script that imports [Sparv
 classes](developers-guide/sparv-classes) (and [util functions](developers-guide/utilities) if needed) which are used for
 describing dependencies to other entities (e.g. annotations or models) handled or created by the pipeline. Here is the
-code for or uppercase example (taken from the Sparv plugin template (**TODO**: add URL):
+code for or uppercase example (taken from the [Sparv plugin
+template](https://github.com/spraakbanken/sparv-plugin-template):
 ```python
 from sparv import Annotation, Output, annotator
 
@@ -103,7 +105,8 @@ def uppercase(word: Annotation = Annotation("<token:word>"),
 
 In this script we import two classes from Sparv (`Annotation` and `Output`) and the `annotator` decorator. Please note
 that nothing should be imported from the Sparv code unless it is directly available from the sparv package (i.e. `from
-sparv import ...`).
+sparv import ...`), or the `sparv.util` sub-package. Any other sub-packages (like `sparv.core`) are for internal use
+only, and are subject to change without notice.
 
 Our `uppercase` function is decorated with `@annotator` which tells Sparv that this function can be used to produce one
 or more annotations. The first argument in the decorator is its description which is used for displaying help texts in
@@ -141,7 +144,7 @@ logger = util.get_logger(__name__)
 logger.error("An error was encountered!")
 ```
 
-Any of the officially [Python logging levels](https://docs.python.org/3.6/library/logging.html#levels) may be used.
+Any of the official [Python logging levels](https://docs.python.org/3.6/library/logging.html#levels) may be used.
 
 By default, Sparv will write log output with level WARNING and higher to the terminal. The user can change the log level
 with the flag `--log [LOGLEVEL]`. Most commands support this flag. The user can also choose to write the log output to a
@@ -155,12 +158,23 @@ wrong) you should use the [SparvErrorMessage class](developers-guide/utilities#S
 exception (and thus stop the current Sparv process) and notify the user of errors in a friendly way without displaying
 the usual Python traceback.
 ```python
-if not host:
-    raise util.SparvErrorMessage("No host provided! Corpus not installed.")
+@annotator("Convert every word to uppercase")
+def uppercase(word: Annotation = Annotation("<token:word>"),
+              out: Output = Output("<token>:uppercase.upper"),
+              important_config_variable: str = Config("uppercase.some_setting")):
+    """Convert to uppercase."""
+    # Make sure important_config_variable is set by the user
+    if not important_config_variable:
+        raise util.SparvErrorMessage("Please make sure to set the config variable 'uppercase.some_setting'!")
+    ...
 ```
 
 
-## Function Order
+## Advanced Features
+This section contains documentation for more advanced features which may be used but are not necessary for writing
+plugins.
+
+### Function Order
 Sometimes one may want to create multiple Sparv functions that create the same output files (e.g. annotation files,
 export files or model files). In this case Sparv needs to be informed about the priority of these functions. Let's say
 that there are two functions `annotate()` and `annotate_backoff()` that both produce an annotation output called
@@ -187,7 +201,7 @@ def annotate_backoff(
 to a bug! -->
 
 
-## Preloaders
+### Preloaders
 Preloader functions are used by the `sparv preload` command to speed up the annotation process. It works by
 preloading the Python module together with models or processes which would otherwise need to be loaded once for every
 source file.

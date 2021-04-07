@@ -23,6 +23,7 @@
 - Malt and Stanza no longer perform dependency parsing on tokens not belonging to any sentences.
 - The `build-models` command no longer builds all models by default unless the `--all` flag is used.
 - Regular annotators used as `custom_annotations` are now configured using `config` instead of `params`.
+- Updated and improved documentation.
 
 ### Fixed
 
@@ -35,6 +36,7 @@
 - Removed broken unused models from `build-models`.
 - Fixed YAML syntax highlighting which was unreadable in some terminals.
 - Fixed rare TreeTagger crash.
+- Fixed some bugs in Stanford module.
 
 ## [4.0.0] - 2020-12-07
 
