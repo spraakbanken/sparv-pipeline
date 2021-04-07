@@ -161,9 +161,9 @@ def print_modules(modules: dict, module_type: str, reverse_config_usage: dict, s
                     table.add_row("• " + config_key[0], config_key[1] or "")
                 console.print(Padding(table, (0, 0, 0, 4)))
 
-            # Arguments
+            # Parameters
             if (print_params and params) or custom_params:
-                table = Table(title="[b]Arguments[/b]", box=box_style, show_header=False, title_justify="left",
+                table = Table(title="[b]Parameters[/b]", box=box_style, show_header=False, title_justify="left",
                               padding=(0, 2), pad_edge=False, border_style="bright_black")
                 table.add_column(no_wrap=True)
                 table.add_column()
