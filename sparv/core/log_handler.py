@@ -207,7 +207,6 @@ class LogHandler:
         self.bar_started: bool = False
         self.last_percentage = 0
         self.current_tasks = OrderedDict()
-        self.max_current_tasks = 0
 
         # Create a simple TCP socket-based logging receiver
         tcpserver = socketserver.ThreadingTCPServer(("localhost", 0), RequestHandlerClass=LogRecordStreamHandler)
@@ -426,8 +425,6 @@ class LogHandler:
                         "starttime": time.time(),
                         "doc": doc
                     }
-                    if len(self.current_tasks) > self.max_current_tasks:
-                        self.max_current_tasks = len(self.current_tasks)
 
         elif level == "job_finished" and self.use_progressbar:
             self.current_tasks.pop(msg["jobid"], None)
@@ -548,11 +545,11 @@ class LogHandler:
 
                 # Stop bar
                 self.progress.stop()
-                if self.verbose and self.max_current_tasks:
-                    # Clear table from screen
+                if self.verbose and self.bar_started:
+                    # Clear table header from screen
                     console.control(Control(
                         ControlType.CARRIAGE_RETURN,
-                        *((ControlType.CURSOR_UP, 1), (ControlType.ERASE_IN_LINE, 2)) * (self.max_current_tasks + 1)
+                        *((ControlType.CURSOR_UP, 1), (ControlType.ERASE_IN_LINE, 2)) * 2
                     ))
 
             self.finished = True
