@@ -364,9 +364,21 @@ if "export_corpus" in selected_targets:
 
 # Rule for making installations
 if "install_corpus" in selected_targets:
-    rule install_corpus:
-        input:
-            snake_utils.get_install_outputs(snake_storage, config.get("install_types"))
+    install_inputs = snake_utils.get_install_outputs(snake_storage, config.get("install_types"))
+    if config.get("install_types") and not install_inputs:
+        raise util.SparvErrorMessage("Unknown installation{}: {}".format(
+            "s" if len(config.get("install_types")) > 1 else "",
+            ", ".join(config.get("install_types"))
+        ))
+    elif not install_inputs:
+        raise util.SparvErrorMessage("Please specify what you would like to install, either by supplying arguments "
+                                     "(e.g. `sparv install xml_export:install_original`) or by adding installations in "
+                                     "The `install` section of your corpus config file.\n"
+                                     "You can list available installations with `sparv install -l`.")
+    else:
+        rule install_corpus:
+            input:
+                install_inputs
 
 
 # Rule to list all models that can be built/downloaded
