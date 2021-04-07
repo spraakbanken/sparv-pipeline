@@ -179,20 +179,27 @@ def print_modules(modules: dict, module_type: str, reverse_config_usage: dict, s
 def print_annotation_classes():
     """Print info about annotation classes."""
     print()
-    table = Table(title="Available annotation classes", box=box.SIMPLE, show_header=False, title_justify="left")
+    table = Table(box=box.SIMPLE, show_header=False, title_justify="left")
     table.add_column(no_wrap=True)
     table.add_column()
 
-    table.add_row("[b]Defined by pipeline modules[/b]")
+    table.add_row("[b]Available annotation classes[/b]")
     table.add_row("  [i]Class[/i]", "[i]Annotation[/i]")
-    for annotation_class, anns in registry.annotation_classes["module_classes"].items():
+    for annotation_class, anns in sorted(registry.annotation_classes["module_classes"].items()):
         table.add_row("  " + annotation_class, "\n".join(sorted(set(anns), key=anns.index)))
 
     if registry.annotation_classes["config_classes"]:
         table.add_row()
-        table.add_row("[b]From config[/b]")
+        table.add_row("[b]Classes set in config[/b]")
         table.add_row("  [i]Class[/i]", "[i]Annotation[/i]")
         for annotation_class, ann in registry.annotation_classes["config_classes"].items():
+            table.add_row("  " + annotation_class, ann)
+
+    if registry.annotation_classes["implicit_classes"]:
+        table.add_row()
+        table.add_row("[b]Class values inferred from annotation usage[/b]")
+        table.add_row("  [i]Class[/i]", "[i]Annotation[/i]")
+        for annotation_class, ann in registry.annotation_classes["implicit_classes"].items():
             table.add_row("  " + annotation_class, ann)
 
     console.print(table)
