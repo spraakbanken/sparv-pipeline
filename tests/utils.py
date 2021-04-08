@@ -32,7 +32,6 @@ def run_sparv(gold_corpus_dir: pathlib.Path,
     process = subprocess.run(args, capture_output=True)
     # Exclude progress updates and progress bar from output
     stdout = process.stdout.strip().decode()
-    stdout = "\n".join([line for line in stdout.split("\n") if not line.startswith("Progress:")])
     if stdout and process.returncode != 0:
         print_error(f"The following warnings/errors occurred:\n{stdout}")
     elif process.stderr.strip():
