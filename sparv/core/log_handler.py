@@ -35,6 +35,10 @@ TIME_FORMAT = "%H:%M:%S"
 INTERNAL = 100
 logging.addLevelName(INTERNAL, "INTERNAL")
 
+# Add logging level used for progress output (must be lower than INTERNAL)
+PROGRESS = 90
+logging.addLevelName(PROGRESS, "PROGRESS")
+
 
 def export_dirs(self, dirs):
     """Send list of export dirs to log handler."""
@@ -109,6 +113,14 @@ class InternalFilter(logging.Filter):
         return record.levelno < INTERNAL
 
 
+class ProgressInternalFilter(logging.Filter):
+    """Filter out progress and internal log messages."""
+
+    def filter(self, record):
+        """Filter out progress and internal records."""
+        return record.levelno < PROGRESS
+
+
 class InternalLogHandler(logging.Handler):
     """Handler for internal log messages."""
 
@@ -127,7 +139,7 @@ class ModifiedRichHandler(RichHandler):
 
     def emit(self, record: logging.LogRecord) -> None:
         """Replace path with name and call parent method."""
-        record.pathname = record.name
+        record.pathname = record.name if not record.name == "sparv_logging" else ""
         record.lineno = 0
         super().emit(record)
 
@@ -200,6 +212,7 @@ class LogHandler:
         self.export_dirs = set()
         self.start_time = time.time()
         self.jobs = {}
+        self.logger = None
 
         # Progress bar related variables
         self.progress: Optional[progress.Progress] = None
@@ -228,8 +241,9 @@ class LogHandler:
         if not self.log_level or not self.log_file_level:
             return
 
-        sparv_logger = logging.getLogger("sparv_logging")
+        self.logger = logging.getLogger("sparv_logging")
         internal_filter = InternalFilter()
+        progress_internal_filter = ProgressInternalFilter()
 
         # stdout logger
         stream_handler = ModifiedRichHandler(enable_link_path=False, rich_tracebacks=True, console=console)
@@ -237,27 +251,27 @@ class LogHandler:
         stream_handler.addFilter(internal_filter)
         log_format = "%(message)s" if stream_handler.level > logging.DEBUG else "(%(process)d) - %(message)s"
         stream_handler.setFormatter(logging.Formatter(log_format, datefmt=TIME_FORMAT))
-        sparv_logger.addHandler(stream_handler)
+        self.logger.addHandler(stream_handler)
 
         # File logger
         self.log_filename = "{}.log".format(datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S.%f"))
         file_handler = FileHandlerWithDirCreation(os.path.join(paths.log_dir, self.log_filename), mode="w",
                                                   encoding="UTF-8", delay=True)
         file_handler.setLevel(self.log_file_level.upper())
-        file_handler.addFilter(internal_filter)
+        file_handler.addFilter(progress_internal_filter)
         log_format = LOG_FORMAT if file_handler.level > logging.DEBUG else LOG_FORMAT_DEBUG
         file_handler.setFormatter(logging.Formatter(log_format))
-        sparv_logger.addHandler(file_handler)
+        self.logger.addHandler(file_handler)
 
         # Level counter
         levelcount_handler = LogLevelCounterHandler(self.log_levelcount)
         levelcount_handler.setLevel(logging.WARNING)
-        sparv_logger.addHandler(levelcount_handler)
+        self.logger.addHandler(levelcount_handler)
 
         # Internal log handler
         internal_handler = InternalLogHandler(self.export_dirs)
         internal_handler.setLevel(INTERNAL)
-        sparv_logger.addHandler(internal_handler)
+        self.logger.addHandler(internal_handler)
 
     def setup_bar(self):
         """Initialize the progress bar but don't start it yet."""
@@ -405,7 +419,7 @@ class LogHandler:
                     percentage = (100 * msg["done"]) // msg["total"]
                     if percentage > self.last_percentage:
                         self.last_percentage = percentage
-                        print(f"Progress: {percentage}%")
+                        self.logger.log(PROGRESS, f"{percentage}%")
 
             if msg["done"] == msg["total"]:
                 self.stop()
@@ -616,7 +630,7 @@ class LogHandler:
                     pass
 
 
-def setup_logging(log_server, log_level: Optional[str] = "warning", log_file_level: Optional[str] = "warning"):
+def setup_logging(log_server, log_level: str = "warning", log_file_level: str = "warning"):
     """Set up logging with socket handler."""
     # Use the lowest log level, but never higher than warning
     log_level = min(logging.WARNING, getattr(logging, log_level.upper()), getattr(logging, log_file_level.upper()))
