@@ -238,7 +238,7 @@ def main():
         sys.exit(0)
 
     # Check that a corpus config file is available in the working dir
-    if args.command not in ("build-models",):
+    if args.command not in ("build-models", "languages"):
         if not Path(args.dir or Path.cwd(), paths.config_file).is_file():
             print(f"No config file ({paths.config_file}) found in working directory.")
             sys.exit(1)
