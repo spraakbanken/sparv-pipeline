@@ -14,6 +14,9 @@
 - An error message is now displayed when attempting to run annotations without input files.
 - Added new command (`languages`) to show a list of supported languages.
 - You can now refer to models outside the Sparv data dir.
+- Added importers section to `sparv run-rule --list`.
+- Class values inferred from annotation usage is now shown when running `sparv classes`.
+- Dry-running (`sparv run -n`) now shows a summary of tasks.
 
 ### Changed
 
