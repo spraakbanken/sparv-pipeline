@@ -196,8 +196,8 @@ class LogHandler:
             pass_through: Let Snakemake's log messages pass through uninterrupted.
         """
         self.use_progressbar = progressbar
-        self.verbose = verbose
         self.show_summary = summary
+        self.verbose = verbose and console.is_terminal
         self.pass_through = pass_through
         self.log_level = log_level
         self.log_file_level = log_file_level
