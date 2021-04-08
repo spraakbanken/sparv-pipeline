@@ -173,7 +173,8 @@ def main():
     for subparser in [run_parser, runrule_parser]:
         subparser.add_argument("-d", "--doc", nargs="+", default=[], help="Only annotate specified input document(s)")
     for subparser in [run_parser, runrule_parser, createfile_parser, models_parser, install_parser]:
-        subparser.add_argument("-n", "--dry-run", action="store_true", help="Only dry-run the workflow")
+        subparser.add_argument("-n", "--dry-run", action="store_true",
+                               help="Print summary of tasks without running them")
         subparser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel",
                                default=1)
         subparser.add_argument("-v", "--verbose", action="store_true",
@@ -250,6 +251,7 @@ def main():
     log_file_level = ""
     verbose = False
     pass_through = False
+    dry_run = False
 
     if args.command in ("modules", "config", "files", "clean", "presets", "classes", "languages", "preload"):
         snakemake_args["targets"] = [args.command]
@@ -281,9 +283,11 @@ def main():
             "cores": args.cores,
             "resources": {"threads": args.cores}
         })
-        # Never show progress bar for list commands
-        if args.list:
+        # Never show progress bar for list commands or dry run
+        if args.list or args.dry_run:
             simple_target = True
+
+        dry_run = args.dry_run
 
         # Command: run
         if args.command == "run":
@@ -352,7 +356,7 @@ def main():
     # Disable Snakemake's default log handler and use our own
     logger.log_handler = []
     progress = log_handler.LogHandler(progressbar=not simple_target, log_level=log_level, log_file_level=log_file_level,
-                                      verbose=verbose, pass_through=pass_through)
+                                      verbose=verbose, pass_through=pass_through, dry_run=dry_run)
     snakemake_args["log_handler"] = [progress.log_handler]
 
     config["log_server"] = progress.log_server

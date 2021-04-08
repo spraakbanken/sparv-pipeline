@@ -183,22 +183,22 @@ class LogHandler:
 
     icon = "\U0001f426"
 
-    def __init__(self, progressbar=True, summary=False, log_level=None, log_file_level=None, verbose=False,
-                 pass_through=False):
+    def __init__(self, progressbar=True, log_level=None, log_file_level=None, verbose=False,
+                 pass_through=False, dry_run=False):
         """Initialize log handler.
 
         Args:
             progressbar: Set to False to disable progress bar. Enabled by default.
-            summary: Set to True to write a final summary (elapsed time). Disabled by default.
             log_level: Log level for logging to stdout.
             log_file_level: Log level for logging to file.
             verbose: Set to True to show more info about currently running tasks.
             pass_through: Let Snakemake's log messages pass through uninterrupted.
+            dry_run: Set to True to print summary about jobs.
         """
         self.use_progressbar = progressbar
-        self.show_summary = summary
         self.verbose = verbose and console.is_terminal
         self.pass_through = pass_through
+        self.dry_run = dry_run
         self.log_level = log_level
         self.log_file_level = log_file_level
         self.log_filename = None
@@ -396,7 +396,7 @@ class LogHandler:
 
         level = msg["level"]
 
-        if level == "run_info" and self.use_progressbar:
+        if level == "run_info":
             # Parse list of jobs do to and total job count
             lines = msg["msg"].splitlines()[2:]
             total_jobs = lines[-1].strip()
@@ -404,7 +404,7 @@ class LogHandler:
                 _, count, job = j.split("\t")
                 self.jobs[job.replace("::", ":")] = int(count)
 
-            if not self.bar_started:
+            if self.use_progressbar and not self.bar_started:
                 # Get number of jobs and start progress bar
                 if total_jobs.isdigit():
                     self.start_bar(int(total_jobs))
@@ -544,7 +544,7 @@ class LogHandler:
                     raise BrokenPipeError()
 
     def stop(self):
-        """Stop the progress bar and output any error messages."""
+        """Stop the progress bar and output any messages."""
         # Make sure this is only run once
         if not self.finished:
             # Stop progress bar
@@ -610,12 +610,16 @@ class LogHandler:
                     self.warning(
                         "{}Job execution finished but {} occurred. See log messages above or {} for details.".format(
                             spacer, " and ".join(problems), os.path.join(paths.log_dir, self.log_filename)))
-
-            if self.show_summary:
-                if self.messages:
-                    print()
-                elapsed = round(time.time() - self.start_time)
-                self.info("Time elapsed: {}".format(timedelta(seconds=elapsed)))
+                elif self.dry_run:
+                    console.print("The following tasks were scheduled but not run:")
+                    table = Table(show_header=False, box=box.SIMPLE)
+                    table.add_column(justify="right")
+                    table.add_column()
+                    for job in self.jobs:
+                        table.add_row(str(self.jobs[job]), job)
+                    table.add_row()
+                    table.add_row(str(sum(self.jobs.values())), "Total number of tasks")
+                    console.print(table)
 
     @staticmethod
     def cleanup():
