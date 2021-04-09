@@ -195,7 +195,7 @@ class LogHandler:
             pass_through: Let Snakemake's log messages pass through uninterrupted.
             dry_run: Set to True to print summary about jobs.
         """
-        self.use_progressbar = progressbar
+        self.use_progressbar = progressbar and console.is_terminal
         self.verbose = verbose and console.is_terminal
         self.pass_through = pass_through
         self.dry_run = dry_run
@@ -414,12 +414,12 @@ class LogHandler:
                 # Advance progress
                 self.progress.advance(self.bar)
 
-                # Print regular updates if output is not a terminal (i.e. doesn't support the progress bar)
-                if not console.is_terminal:
-                    percentage = (100 * msg["done"]) // msg["total"]
-                    if percentage > self.last_percentage:
-                        self.last_percentage = percentage
-                        self.logger.log(PROGRESS, f"{percentage}%")
+            # Print regular updates if output is not a terminal (i.e. doesn't support the progress bar)
+            elif self.logger and not console.is_terminal:
+                percentage = (100 * msg["done"]) // msg["total"]
+                if percentage > self.last_percentage:
+                    self.last_percentage = percentage
+                    self.logger.log(PROGRESS, f"{percentage}%")
 
             if msg["done"] == msg["total"]:
                 self.stop()
