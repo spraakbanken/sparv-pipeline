@@ -91,7 +91,7 @@ class LogLevelCounterHandler(logging.Handler):
 
     def emit(self, record):
         """Increment level counter for each log message."""
-        if record.levelno != INTERNAL:
+        if record.levelno < PROGRESS:
             self.levelcount[record.levelname] += 1
 
 
