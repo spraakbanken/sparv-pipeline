@@ -48,6 +48,8 @@ def read_yaml(yaml_file):
     try:
         with open(yaml_file) as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
+    except yaml.parser.ParserError as e:
+        raise util.SparvErrorMessage("Could not parse the configuration file:\n" + str(e))
     except yaml.scanner.ScannerError as e:
         raise util.SparvErrorMessage("An error occurred while reading the configuration file:\n" + str(e))
     except FileNotFoundError:
