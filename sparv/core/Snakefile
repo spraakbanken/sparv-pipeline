@@ -144,6 +144,16 @@ config_missing = snake_utils.load_config(config)
 # Find and load Sparv modules
 registry.find_modules(find_custom=bool(sparv_config.get("custom_annotations")))
 
+# Resolve presets in config
+sparv_config.apply_presets()
+
+# Add classes from config to registry
+registry.annotation_classes["config_classes"] = sparv_config.config.get("classes", {})
+
+# Set text class from document annotation
+if not config_missing:
+    sparv_config.handle_document_annotation()
+
 # Let exporters and importers inherit config values from 'export' and 'import' sections
 for module in registry.modules:
     for a in registry.modules[module].functions.values():

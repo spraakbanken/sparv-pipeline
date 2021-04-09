@@ -669,9 +669,6 @@ def load_config(snakemake_config):
         config_missing = False
         # Read config
         sparv_config.load_config(corpus_config_file)
-
-        # Add classes from config to registry
-        registry.annotation_classes["config_classes"] = sparv_config.config.get("classes", {})
     else:
         config_missing = True
 

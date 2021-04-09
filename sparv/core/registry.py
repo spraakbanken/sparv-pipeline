@@ -65,7 +65,7 @@ wizards = []
 languages = {}
 
 # All config keys containing lists of automatic annotations (i.e. ExportAnnotations)
-annotation_sources = set()
+annotation_sources = {"export.annotations"}
 
 # All explicitly used annotations (with classes expanded)
 explicit_annotations = set()
