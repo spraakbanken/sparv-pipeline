@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
 
 
-@installer("Install lemgram SQL on remote host")
+@installer("Install lemgram SQL on remote host", language=["swe"])
 def install_lemgrams(sqlfile: ExportInput = ExportInput("korp_lemgram_index/lemgram_index.sql"),
                      marker: OutputCommonData = OutputCommonData("korp.install_lemgram_marker"),
                      db_name: str = Config("korp.mysql_dbname"),
@@ -33,7 +33,7 @@ def install_lemgrams(sqlfile: ExportInput = ExportInput("korp_lemgram_index/lemg
     marker.write("")
 
 
-@exporter("Lemgram index SQL file for use in Korp")
+@exporter("Lemgram index SQL file for use in Korp", language=["swe"])
 def lemgram_sql(corpus: Corpus = Corpus(),
                 docs: AllDocuments = AllDocuments(),
                 out: Export = Export("korp_lemgram_index/lemgram_index.sql"),

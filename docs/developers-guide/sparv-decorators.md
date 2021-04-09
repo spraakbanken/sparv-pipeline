@@ -115,6 +115,7 @@ A function decorated with `@installer` is used to copy a corpus export to a remo
 - `description`: Description of the installer. Used for displaying help texts in the CLI.
 - `name`: Optional name to use instead of the function name.
 - `config`: List of Config instances defining config options for the installer.
+- `language`: List of supported languages. If no list is supplied all languages are supported.
 
 **Example:**
 ```python

@@ -18,7 +18,7 @@ MAX_STRINGEXTRA_LENGTH = 32
 MAX_POS_LENGTH = 5
 
 
-@installer("Install Korp's Word Picture SQL on remote host")
+@installer("Install Korp's Word Picture SQL on remote host", language=["swe"])
 def install_relations(sqlfile: ExportInput = ExportInput("korp_wordpicture/relations.sql"),
                       out: OutputCommonData = OutputCommonData("korp.install_relations_marker"),
                       db_name: str = Config("korp.mysql_dbname"),
@@ -263,7 +263,7 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
     return x_rel_y * math.log((rel * x_rel_y) / (x_rel * rel_y * 1.0), 2)
 
 
-@exporter("Word Picture SQL for use in Korp")
+@exporter("Word Picture SQL for use in Korp", language=["swe"])
 def relations_sql(corpus: Corpus = Corpus(),
                   out: Export = Export("korp_wordpicture/relations.sql"),
                   relations: AnnotationDataAllDocs = AnnotationDataAllDocs("korp.relations"),

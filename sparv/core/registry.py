@@ -248,9 +248,10 @@ def exporter(description: str, name: Optional[str] = None, config: Optional[List
                       order=order, abstract=abstract)
 
 
-def installer(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None):
+def installer(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
+              language: Optional[List[str]] = None):
     """Return a decorator for installer functions."""
-    return _annotator(description=description, a_type=Annotator.installer, name=name, config=config)
+    return _annotator(description=description, a_type=Annotator.installer, name=name, config=config, language=language)
 
 
 def modelbuilder(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
