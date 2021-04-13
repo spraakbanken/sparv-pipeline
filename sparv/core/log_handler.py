@@ -57,6 +57,9 @@ messages = {
     "missing_classes": defaultdict(set)
 }
 
+missing_annotations_msg = "There can be many reasons for this. Please make sure that there are no problems with the " \
+                          "corpus configuration file, like misspelled annotation names (including unintentional " \
+                          "whitespace characters) or references to non-existent or implicit source annotations."
 
 class LogRecordStreamHandler(socketserver.StreamRequestHandler):
     """Handler for streaming logging requests."""
@@ -387,11 +390,7 @@ class LogHandler:
                     )
                 )
             if errmsg:
-                errmsg.append(
-                    "\nThere can be many reasons for this. Please make sure that there are no problems with "
-                    "the corpus configuration file, like misspelled annotation names or references to "
-                    "non-existent or implicit source annotations."
-                )
+                errmsg.append("\n" + missing_annotations_msg)
             self.messages["error"].append((source, "".join(errmsg)))
 
         level = msg["level"]
@@ -492,10 +491,7 @@ class LogHandler:
                                          flags=re.DOTALL)
                 missing_files = "\n • ".join(msg_contents.group(1).strip().splitlines())
                 message = f"The following output files were expected but are missing:\n" \
-                          f" • {missing_files}\n" \
-                          f"There can be many reasons for this. Please make sure that there are no problems with " \
-                          f"the corpus configuration file, like misspelled annotation names or references to " \
-                          f"non-existent or implicit source annotations."
+                          f" • {missing_files}\n" + missing_annotations_msg
                 self.messages["error"].append((None, message))
                 handled = True
             elif "Exiting because a job execution failed." in msg["msg"]:
