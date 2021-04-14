@@ -1,7 +1,7 @@
 # Språkbanken's Sparv Pipeline
 
 The Sparv Pipeline is a text analysis tool run from the command line. The documentation can be found here:
-https://spraakbanken.gu.se/sparv/docs.
+https://spraakbanken.gu.se/sparv.
 
 Check the [changelog](CHANGELOG.md) to see what's new!
 
@@ -33,14 +33,7 @@ pipx install sparv-pipeline
 Now you should be ready to run the Sparv command! Try it by typing `sparv --help`.
 
 The Sparv Pipeline can be used together with several plugins and third-party software. Please check the [Sparv user
-manual](https://spraakbanken.gu.se/en/tools/sparv/pipeline/installation) for more details!
-
-## Roadmap
-
-* Export of corpus metadata to META-SHARE format
-* Support for Swedish historic texts
-* Support for parallel corpora
-* Preprocessing of indata with automatic chunking
+manual](https://spraakbanken.gu.se/sparv/#/user-manual/installation-and-setup) for more details!
 
 ## Running tests
 
