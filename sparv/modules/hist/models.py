@@ -8,7 +8,7 @@ from sparv.util.lmflexicon import lmf_to_pickle
 log = logging.getLogger(__name__)
 
 
-@modelbuilder("Dalin morphology model", language=["swe"])
+# @modelbuilder("Dalin morphology model", language=["swe"])
 def build_dalin(out: ModelOutput = ModelOutput("hist/dalin.pickle")):
     """Download Dalin morphology XML and save as a pickle file."""
     # Download dalinm.xml
@@ -22,7 +22,7 @@ def build_dalin(out: ModelOutput = ModelOutput("hist/dalin.pickle")):
     xml_model.remove()
 
 
-@modelbuilder("Swedberg morphology model", language=["swe"])
+# @modelbuilder("Swedberg morphology model", language=["swe"])
 def build_swedberg(out: ModelOutput = ModelOutput("hist/swedberg.pickle")):
     """Download Swedberg morphology XML and save as a pickle file."""
     # Download diapivot.xml

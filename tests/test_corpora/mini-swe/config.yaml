@@ -3,7 +3,7 @@
 #===============================================================================
 
 metadata:
-    # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No white spaces.)
+    # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No whitespace characters.)
     id: mini-swe
     # Corpus name (human readable)
     name:
@@ -14,6 +14,7 @@ metadata:
             This test corpus includes:
             - some Swedish standard token and text-level annotations that can be done quickly
             - re-naming of attributes ("as" notation)
+            - combined XML export
 
 #===============================================================================
 # Import Settings
@@ -48,6 +49,7 @@ export:
         - xml_export:pretty
         - xml_export:preserved_format
         - xml_export:scrambled
+        - xml_export:combined
     # Automatic annotations to be included in the export
     annotations:
         - <sentence>:misc.id

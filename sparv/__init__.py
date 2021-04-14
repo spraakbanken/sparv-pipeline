@@ -6,7 +6,7 @@ from sparv.util.classes import (AllDocuments, Annotation, AnnotationAllDocs, Ann
                                 OutputAllDocs, OutputCommonData, OutputData, OutputDataAllDocs, Source,
                                 SourceAnnotations, SourceStructure, SourceStructureParser, Text, Wildcard)
 
-__version__ = "4.0.0"
+__version__ = "4.1.0"
 
 # Only expose classes and functions that are meant to be used in modules
 __all__ = [

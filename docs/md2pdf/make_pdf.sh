@@ -7,13 +7,13 @@
 USER_MANUAL_FILES="
 ../user-manual/installation-and-setup.md
 ../user-manual/running-sparv.md
-../user-manual/requirements-for-input-data.md
+../user-manual/requirements-for-source-files.md
 ../user-manual/corpus-configuration.md
 "
 
 DEVELOPERS_GUIDE_FILES="
 ../developers-guide/general-concepts.md
-../developers-guide/writing-sparv-modules.md
+../developers-guide/writing-sparv-plugins.md
 ../developers-guide/sparv-decorators.md
 ../developers-guide/sparv-classes.md
 ../developers-guide/config-parameters.md
@@ -56,7 +56,9 @@ author: |
 
     # Convert markdown to latex/pdf:
     # pandoc -t latex -o $1.tex $1.md \
+    # pandoc -t native $1.md \
     pandoc -t latex -o $1.pdf $1.md \
+    --filter filter.py \
     -H settings_template.tex `# include in header` \
     --template template.tex `# use template`  \
     --toc `# table of contents` \

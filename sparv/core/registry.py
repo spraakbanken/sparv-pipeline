@@ -5,8 +5,9 @@ import pkgutil
 import re
 from collections import defaultdict
 from enum import Enum
-from typing import Dict, List, Optional, Tuple, Type, TypeVar
+from typing import Callable, Dict, List, Optional, Tuple, Type, TypeVar
 
+import iso639
 import typing_inspect
 from pkg_resources import iter_entry_points
 
@@ -60,11 +61,11 @@ all_module_classes = defaultdict(lambda: defaultdict(list))
 # All available wizard functions
 wizards = []
 
-# All available languages
-languages = set()
+# All supported languages
+languages = {}
 
 # All config keys containing lists of automatic annotations (i.e. ExportAnnotations)
-annotation_sources = set()
+annotation_sources = {"export.annotations"}
 
 # All explicitly used annotations (with classes expanded)
 explicit_annotations = set()
@@ -73,7 +74,7 @@ explicit_annotations = set()
 explicit_annotations_raw = set()
 
 
-def find_modules(no_import=False, find_custom=False) -> list:
+def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
     """Find Sparv modules and optionally import them.
 
     By importing a module containing annotator functions, the functions will automatically be
@@ -158,7 +159,9 @@ def _get_module_name(module_string: str) -> str:
 def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, file_extension: Optional[str] = None,
                outputs=(), document_annotation=None, structure=None, language: Optional[List[str]] = None,
                config: Optional[List[Config]] = None, order: Optional[int] = None, abstract: bool = False,
-               wildcards: Optional[List[Wildcard]] = None):
+               wildcards: Optional[List[Wildcard]] = None, preloader: Optional[Callable] = None,
+               preloader_params: Optional[List[str]] = None, preloader_target: Optional[str] = None,
+               preloader_cleanup: Optional[Callable] = None, preloader_shared: bool = True):
     """Return a decorator for annotator functions, adding them to annotator registry."""
     def decorator(f):
         """Add wrapped function to registry."""
@@ -177,7 +180,12 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
             "config": config,
             "order": order,
             "abstract": abstract,
-            "wildcards": wildcards
+            "wildcards": wildcards,
+            "preloader": preloader,
+            "preloader_params": preloader_params,
+            "preloader_target": preloader_target,
+            "preloader_cleanup": preloader_cleanup,
+            "preloader_shared": preloader_shared
         })
         return f
 
@@ -186,10 +194,14 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
 
 def annotator(description: str, name: Optional[str] = None, language: Optional[List[str]] = None,
               config: Optional[List[Config]] = None, order: Optional[int] = None,
-              wildcards: Optional[List[Wildcard]] = None):
+              wildcards: Optional[List[Wildcard]] = None, preloader: Optional[Callable] = None,
+              preloader_params: Optional[List[str]] = None, preloader_target: Optional[str] = None,
+              preloader_cleanup: Optional[Callable] = None, preloader_shared: bool = True):
     """Return a decorator for annotator functions, adding them to the annotator registry."""
     return _annotator(description=description, a_type=Annotator.annotator, name=name, language=language,
-                      config=config, order=order, wildcards=wildcards)
+                      config=config, order=order, wildcards=wildcards, preloader=preloader,
+                      preloader_params=preloader_params, preloader_target=preloader_target,
+                      preloader_cleanup=preloader_cleanup, preloader_shared=preloader_shared)
 
 
 def importer(description: str, file_extension: str, name: Optional[str] = None, outputs=None,
@@ -236,9 +248,10 @@ def exporter(description: str, name: Optional[str] = None, config: Optional[List
                       order=order, abstract=abstract)
 
 
-def installer(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None):
+def installer(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
+              language: Optional[List[str]] = None):
     """Return a decorator for installer functions."""
-    return _annotator(description=description, a_type=Annotator.installer, name=name, config=config)
+    return _annotator(description=description, a_type=Annotator.installer, name=name, config=config, language=language)
 
 
 def modelbuilder(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
@@ -256,7 +269,9 @@ def _add_to_registry(annotator):
 
     if annotator["language"]:
         # Add to set of supported languages...
-        languages.update(annotator["language"])
+        for lang in annotator["language"]:
+            if lang not in languages:
+                languages[lang] = iso639.languages.get(part3=lang).name if lang in iso639.languages.part3 else lang
         # ... but skip annotators for other languages than the one specified in the config
         if sparv_config.get("metadata.language") and sparv_config.get("metadata.language") not in annotator["language"]:
             return
@@ -301,17 +316,19 @@ def _add_to_registry(annotator):
                     print("Malformed class name: '{}'".format(cls))
 
                 if cls_target:
-                    if annotator["language"]:
-                        if not annotator["language"]:
+                    if not annotator["language"]:
+                        if cls_target not in all_module_classes[None][cls]:
                             all_module_classes[None][cls].append(cls_target)
-                        else:
-                            for language in annotator["language"]:
+                    else:
+                        for language in annotator["language"]:
+                            if cls_target not in all_module_classes[language][cls]:
                                 all_module_classes[language][cls].append(cls_target)
 
                     # Only add classes for relevant languages
                     if not annotator["language"] or (
                             annotator["language"] and sparv_config.get("metadata.language") in annotator["language"]):
-                        annotation_classes["module_classes"][cls].append(cls_target)
+                        if cls_target not in annotation_classes["module_classes"][cls]:
+                            annotation_classes["module_classes"][cls].append(cls_target)
 
         elif isinstance(val.default, ModelOutput):
             modeldir = val.default.name.split("/")[0]
@@ -407,7 +424,9 @@ def find_classes(string, match_objects: bool = False):
 
 
 def expand_variables(string, rule_name: Optional[str] = None, is_annotation: bool = False) -> Tuple[str, List[str]]:
-    """Take a string and replace <class> references with real annotations, and [config] references with config values.
+    """Take a string and replace [config] references with config values, and <class> references with real annotations.
+
+    Config references are replaced before classes.
 
     Args:
         string: The string to process.

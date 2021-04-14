@@ -27,7 +27,7 @@ def get_readme(readme_path):
 setuptools.setup(
     name="sparv-pipeline",
     version=get_version("sparv/__init__.py"),
-    description="Språkbanken's corpus annotation pipeline",
+    description="Språkbanken's text analysis tool",
     long_description=get_readme("README.md"),
     long_description_content_type="text/markdown",
     url="https://github.com/spraakbanken/sparv-pipeline/",
@@ -42,15 +42,16 @@ setuptools.setup(
         "iso-639==0.4.5",
         "nltk==3.5",
         "python-dateutil==2.8.1",
-        "PyYAML==5.3.1",
-        "questionary==1.8.0",
-        "rich==9.1.0",
-        "snakemake==5.26.1",
-        "stanza==1.1.1",
+        "PyYAML==5.4.1",
+        "questionary==1.9.0",
+        "rich==10.0.0",
+        "snakemake==6.0.5",
+        "stanza==1.2",
         "typing-inspect==0.6.0"
     ],
     extras_require={
         "dev": [
+            "pandocfilters==1.4.3",
             "pytest==5.4.3",
             "pytest-sugar==0.9.4"
         ]

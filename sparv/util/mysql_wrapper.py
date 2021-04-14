@@ -100,7 +100,7 @@ class MySQL:
     def unlock(self):
         self.execute("UNLOCK TABLES;")
 
-    def set_names(self, encoding="utf8"):
+    def set_names(self, encoding="utf8mb4"):
         self.execute("SET NAMES %s;" % encoding)
 
     def delete_rows(self, table, conditions):

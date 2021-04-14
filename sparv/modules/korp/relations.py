@@ -18,7 +18,7 @@ MAX_STRINGEXTRA_LENGTH = 32
 MAX_POS_LENGTH = 5
 
 
-@installer("Install Korp's Word Picture SQL on remote host")
+@installer("Install Korp's Word Picture SQL on remote host", language=["swe"])
 def install_relations(sqlfile: ExportInput = ExportInput("korp_wordpicture/relations.sql"),
                       out: OutputCommonData = OutputCommonData("korp.install_relations_marker"),
                       db_name: str = Config("korp.mysql_dbname"),
@@ -75,10 +75,14 @@ def relations(out: OutputData = OutputData("korp.relations"),
     for sentid, sent in zip(sentence_ids, sentence_tokens):
         incomplete = {}  # Tokens looking for heads, with head as key
         tokens = {}   # Tokens in same sentence, with token_index as key
+        skip_sentence = False
 
         # Link the tokens together
         for token_index in sent:
             token_word, token_pos, token_lem, token_dh, token_dr, token_ref, token_bf = annotations[token_index]
+            if not token_dr:
+                skip_sentence = True
+                break
             token_word = token_word.lower()
 
             if token_lem == "|":
@@ -106,6 +110,9 @@ def relations(out: OutputData = OutputData("korp.relations"),
                     tokens[t[0]]["head"] = this
                     this["dep"].append(t[1])
                 del incomplete[token_index]
+
+        if skip_sentence:
+            continue
 
         assert not incomplete, "incomplete is not empty"
 
@@ -256,7 +263,7 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
     return x_rel_y * math.log((rel * x_rel_y) / (x_rel * rel_y * 1.0), 2)
 
 
-@exporter("Word Picture SQL for use in Korp")
+@exporter("Word Picture SQL for use in Korp", language=["swe"])
 def relations_sql(corpus: Corpus = Corpus(),
                   out: Export = Export("korp_wordpicture/relations.sql"),
                   relations: AnnotationDataAllDocs = AnnotationDataAllDocs("korp.relations"),
@@ -519,9 +526,9 @@ MYSQL_RELATIONS = {"columns": [("id", int, 0, "NOT NULL"),
                                "head dep bfhead bfdep rel freq id",
                                "dep head bfhead bfdep rel freq id"],
                    "constraints": [("UNIQUE INDEX", "relation", ("head", "rel", "dep"))],
-                   "default charset": "utf8",
+                   "default charset": "utf8mb4",
                    "row_format": "compressed"
-                   # "collate": "utf8_bin"
+                   # "collate": "utf8mb4_bin"
                    }
 
 MYSQL_STRINGS = {"columns": [("id", int, 0, "NOT NULL"),
@@ -530,8 +537,8 @@ MYSQL_STRINGS = {"columns": [("id", int, 0, "NOT NULL"),
                              ("pos", "varchar(%d)" % MAX_POS_LENGTH, "", "NOT NULL")],
                  "primary": "string id pos stringextra",
                  "indexes": ["id string pos stringextra"],
-                 "default charset": "utf8",
-                 "collate": "utf8_bin",
+                 "default charset": "utf8mb4",
+                 "collate": "utf8mb4_bin",
                  "row_format": "compressed"
                  }
 
@@ -540,8 +547,8 @@ MYSQL_REL = {"columns": [("rel", rel_enum, RELNAMES[0], "NOT NULL"),
              "primary": "rel freq",
              "indexes": [],
              "constraints": [("UNIQUE INDEX", "relation", ("rel",))],
-             "default charset": "utf8",
-             "collate": "utf8_bin",
+             "default charset": "utf8mb4",
+             "collate": "utf8mb4_bin",
              "row_format": "compressed"
              }
 
@@ -551,8 +558,8 @@ MYSQL_HEAD_REL = {"columns": [("head", int, 0, "NOT NULL"),
                   "primary": "head rel freq",
                   "indexes": [],
                   "constraints": [("UNIQUE INDEX", "relation", ("head", "rel"))],
-                  "default charset": "utf8",
-                  "collate": "utf8_bin",
+                  "default charset": "utf8mb4",
+                  "collate": "utf8mb4_bin",
                   "row_format": "compressed"
                   }
 
@@ -562,8 +569,8 @@ MYSQL_DEP_REL = {"columns": [("dep", int, 0, "NOT NULL"),
                  "primary": "dep rel freq",
                  "indexes": [],
                  "constraints": [("UNIQUE INDEX", "relation", ("dep", "rel"))],
-                 "default charset": "utf8",
-                 "collate": "utf8_bin",
+                 "default charset": "utf8mb4",
+                 "collate": "utf8mb4_bin",
                  "row_format": "compressed"
                  }
 
@@ -572,7 +579,7 @@ MYSQL_SENTENCES = {"columns": [("id", int, None, ""),
                                ("start", int, None, ""),
                                ("end", int, None, "")],
                    "indexes": ["id"],
-                   "default charset": "utf8",
-                   "collate": "utf8_bin",
+                   "default charset": "utf8mb4",
+                   "collate": "utf8mb4_bin",
                    "row_format": "compressed"
                    }

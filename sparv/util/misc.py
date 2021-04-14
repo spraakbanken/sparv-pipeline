@@ -220,3 +220,23 @@ class PickledLexicon:
     def lookup(self, key, default=set()):
         """Lookup a key in the lexicon."""
         return self.lexicon.get(key, default)
+
+
+def indent_xml(elem, level=0, indentation="  ") -> None:
+    """Add pretty-print indentation to XML tree.
+
+    From http://effbot.org/zone/element-lib.htm#prettyprint
+    """
+    i = "\n" + level * indentation
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + indentation
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for elem in elem:
+            indent_xml(elem, level + 1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i

@@ -32,7 +32,7 @@ def tokenize(text: Text = Text(),
              out: Output = Output("segment.token", cls="token", description="Token segments"),
              chunk: Annotation = Annotation("[segment.token_chunk]"),
              segmenter: str = Config("segment.token_segmenter"),
-             existing_segments: Optional[str] = Config("segment.existing_tokens"),
+             existing_segments: Optional[Annotation] = Annotation("[segment.existing_tokens]"),
              model: Optional[Model] = Model("[segment.tokenizer_config]"),
              token_list: Optional[Model] = Model("[segment.token_list]")):
     """Tokenize text."""
@@ -51,7 +51,7 @@ def sentence(text: Text = Text(),
              out: Output = Output("segment.sentence", cls="sentence", description="Sentence segments"),
              chunk: Optional[Annotation] = Annotation("[segment.sentence_chunk]"),
              segmenter: str = Config("segment.sentence_segmenter"),
-             existing_segments: Optional[str] = Config("segment.existing_sentences"),
+             existing_segments: Optional[Annotation] = Annotation("[segment.existing_sentences]"),
              model: Optional[Model] = Model("[segment.sentence_model]")):
     """Split text into sentences."""
     do_segmentation(text=text, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,
@@ -68,15 +68,16 @@ def paragraph(text: Text = Text(),
               out: Output = Output("segment.paragraph", cls="paragraph", description="Paragraph segments"),
               chunk: Optional[Annotation] = Annotation("[segment.paragraph_chunk]"),
               segmenter: str = Config("segment.paragraph_segmenter"),
-              existing_segments: Optional[str] = Config("segment.existing_paragraphs"),
+              existing_segments: Optional[Annotation] = Annotation("[segment.existing_paragraphs]"),
               model: Optional[Model] = None):
     """Split text into paragraphs."""
     do_segmentation(text=text, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,
                     model=model)
 
 
-def do_segmentation(text: Text, out: Output, segmenter, chunk: Optional[Annotation] = None, existing_segments=None,
-                    model: Optional[Model] = None, token_list: Optional[Model] = None):
+def do_segmentation(text: Text, out: Output, segmenter, chunk: Optional[Annotation] = None,
+                    existing_segments: Optional[Annotation] = None, model: Optional[Model] = None,
+                    token_list: Optional[Model] = None):
     """Segment all chunks (e.g. sentences) into smaller "tokens" (e.g. words), and annotate them as "element" (e.g. w).
 
     Segmentation is done by the given "segmenter"; some segmenters take
@@ -85,7 +86,7 @@ def do_segmentation(text: Text, out: Output, segmenter, chunk: Optional[Annotati
     segmenter_args = []
     if model:
         if model.path.suffix in ["pickle", "pkl"]:
-            with open(model, "rb") as M:
+            with open(model.path, "rb") as M:
                 model_arg = pickle.load(M, encoding="UTF-8")
         else:
             model_arg = str(model.path)
@@ -162,7 +163,7 @@ def build_tokenlist(saldo_model: Model = Model("saldo/saldo.pickle"),
     segmenter_args = []
     if model:
         if model.path.suffix in ["pickle", "pkl"]:
-            with open(model, "rb") as m:
+            with open(model.path, "rb") as m:
                 model_arg = pickle.load(m)
         else:
             model_arg = model.path
@@ -335,7 +336,8 @@ class BetterWordTokenizer:
                 self._word_tokenize_fmt %
                 {
                     "tokens": ("(?:" + "|".join(self.patterns["tokens"]) + ")|") if self.patterns["tokens"] else "",
-                    "abbrevs": ("(?:" + "|".join(re.escape(a + ".") for a in self.abbreviations) + ")|") if self.abbreviations else "",
+                    "abbrevs": ("(?:" + "|".join(
+                        re.escape(a + ".") for a in self.abbreviations) + ")|") if self.abbreviations else "",
                     "misc": "|".join(self.patterns["misc"]),
                     "number": self.patterns["number"],
                     "within": self.patterns["within"],

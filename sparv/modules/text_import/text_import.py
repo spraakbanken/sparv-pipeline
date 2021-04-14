@@ -1,7 +1,6 @@
 """Import module for plain text source files."""
 
 import unicodedata
-from pathlib import Path
 
 from sparv import importer, util
 from sparv.util.classes import Config, Document, Output, Source, SourceStructure, Text
@@ -14,37 +13,32 @@ from sparv.util.classes import Config, Document, Output, Source, SourceStructure
                                                                 "removed from the text."),
     Config("text_import.normalize", "NFC", description="Normalize input using any of the following forms: "
                                                        "'NFC', 'NFKC', 'NFD', and 'NFKD'.")
-], )
+])
 def parse(doc: Document = Document(),
           source_dir: Source = Source(),
           prefix: str = Config("text_import.prefix"),
           encoding: str = Config("text_import.encoding"),
           keep_control_chars: bool = Config("text_import.keep_control_chars"),
-          normalize: str = Config("text_import.normalize"),) -> None:
-    """Parse plain text file as input to the Sparv pipeline.
+          normalize: str = Config("text_import.normalize")) -> None:
+    """Parse plain text file as input to the Sparv Pipeline.
 
     Args:
         doc: The document name.
         source_dir: The source directory.
         prefix: Optional prefix for output annotation.
         encoding: Encoding of source file. Default is UTF-8.
+        keep_control_chars: Set to True to keep control characters in the text.
         normalize: Normalize input text using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.
             'NFC' is used by default.
     """
-    # Source path
-    if ":" in doc:
-        doc, _, doc_chunk = doc.partition(":")
-        source_file = Path(source_dir, doc, doc_chunk + ".txt")
-    else:
-        source_file = Path(source_dir, doc + ".txt")
-
+    source_file = source_dir.get_path(doc, ".txt")
     text = source_file.read_text(encoding=encoding)
 
     if not keep_control_chars:
         text = util.remove_control_characters(text)
 
     if normalize:
-        text = unicodedata.normalize("NFC", text)
+        text = unicodedata.normalize(normalize, text)
 
     Text(doc).write(text)
 

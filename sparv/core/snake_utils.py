@@ -32,10 +32,12 @@ class SnakeStorage:
         self.all_exporters = {}
         self.all_installers = {}
         self.all_custom_annotators = {}
+        self.all_preloaders = {}
 
         # All named targets available, used in list_targets
         self.named_targets = []
         self.export_targets = []
+        self.import_targets = []
         self.install_targets = []
         self.model_targets = []
         self.custom_targets = []
@@ -45,6 +47,7 @@ class SnakeStorage:
         self.source_files = []  # List which will contain all source files
         self.all_rules: List[RuleStorage] = []  # List containing all rules created
         self.ordered_rules = []  # List of rules containing rule order
+        self.preloader_info = {}
 
 
 class RuleStorage:
@@ -69,6 +72,8 @@ class RuleStorage:
         self.missing_config = set()
         self.missing_binaries = set()
         self.export_dirs = None
+        self.has_preloader = bool(annotator_info["preloader"])
+        self.use_preloader = False
 
         self.type = annotator_info["type"].name
         self.annotator = annotator_info["type"] is registry.Annotator.annotator
@@ -155,15 +160,35 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                                                                            {"description": rule.description,
                                                                             "params": param_dict})
 
+    if rule.has_preloader:
+        storage.all_preloaders.setdefault(rule.module_name, {})[rule.f_name] = rule.annotator_info["preloader_params"]
+
     output_dirs = set()    # Directories where export files are stored
     custom_params = set()
+    custom_suffix = None
 
     if custom_rule_obj:
         if custom_rule_obj.get("params"):
+            # This should be either a utility annotator or a custom annotator supplied by the user
+            if not (rule.module_name == registry.custom_name or
+                    storage.all_custom_annotators.get(rule.module_name, {}).get(rule.f_name)):
+                raise util.SparvErrorMessage(
+                    "The custom annotation for annotator '{}' is using 'params' which is not allowed with this type of "
+                    "annotator. Use 'config' instead.".format(custom_rule_obj["annotator"]))
             name_custom_rule(rule, storage)
             custom_params = set(custom_rule_obj.get("params").keys())
+        elif custom_rule_obj.get("config"):
+            # This is a regular annotator but with an alternative config
+            name_custom_rule(rule, storage)
+            try:
+                custom_suffix = custom_rule_obj["suffix"]
+            except KeyError:
+                raise util.SparvErrorMessage("The custom annotation for annotator '{}' is missing the required key "
+                                             "'suffix'.".format(custom_rule_obj["annotator"]))
+            sparv_config.config = sparv_config._merge_dicts(copy.deepcopy(custom_rule_obj["config"]),
+                                                            sparv_config.config)
         else:
-            # This rule has already been populated, so don't process it again
+            # This is a custom rule which doesn't require any parameters, so it has already been processed
             return False
 
     # Go though function parameters and handle based on type
@@ -172,7 +197,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         param_value: Any
 
         # Get parameter value, either from custom rule object or default value
-        if custom_rule_obj:
+        if custom_rule_obj and "params" in custom_rule_obj:
             if param_name in custom_rule_obj["params"]:
                 param_value = custom_rule_obj["params"][param_name]
                 custom_params.remove(param_name)
@@ -183,8 +208,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                     f"Parameter '{param_name}' in custom rule '{rule.full_name}' has no value!", "sparv", "config")
         else:
             if param_default_empty:
-                # This is probably an unused custom rule, so don't process it any further,
-                # but save it in all_custom_annotators and all_annotators
+                # This is a custom annotator, either unused or it will be handled separately later.
+                # Don't process it any further, but save it in all_custom_annotators and all_annotators.
                 storage.all_custom_annotators.setdefault(rule.module_name, {}).setdefault(rule.f_name, {
                     "description": rule.description, "params": param_dict})
                 storage.custom_targets.append((rule.target_name, rule.description))
@@ -202,6 +227,9 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 if not param_value:
                     return False
                 param_value = param_type(param_value)
+            if custom_suffix:
+                # Add suffix to output annotation name
+                param_value.name += custom_suffix
             rule.configs.update(registry.find_config_variables(param_value.name))
             rule.classes.update(registry.find_classes(param_value.name))
             missing_configs = param_value.expand_variables(rule.full_name)
@@ -326,24 +354,21 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         # Model
         elif param_type == Model:
             if param_value is not None:
+                if not isinstance(param_value, list):
+                    param_value = [param_value]
+                model_param = []
+                for model in param_value:
+                    if not isinstance(model, Model):
+                        model = Model(model)
+                    rule.configs.update(registry.find_config_variables(model.name))
+                    rule.classes.update(registry.find_classes(model.name))
+                    rule.missing_config.update(model.expand_variables(rule.full_name))
+                    rule.inputs.append(model.path)
+                    model_param.append(Model(str(model.path)))
                 if param_list:
-                    rule.parameters[param_name] = []
-                    for model in param_value:
-                        if not isinstance(model, Model):
-                            model = Model(param_value)
-                        rule.configs.update(registry.find_config_variables(model.name))
-                        rule.classes.update(registry.find_classes(model.name))
-                        rule.missing_config.update(model.expand_variables(rule.full_name))
-                        rule.inputs.append(model.path)
-                        rule.parameters[param_name].append(Model(str(model.path)))
+                    rule.parameters[param_name] = model_param
                 else:
-                    if not isinstance(param_value, Model):
-                        param_value = Model(param_value)
-                    rule.configs.update(registry.find_config_variables(param_value.name))
-                    rule.classes.update(registry.find_classes(param_value.name))
-                    rule.missing_config.update(param_value.expand_variables(rule.full_name))
-                    rule.inputs.append(param_value.path)
-                    rule.parameters[param_name] = Model(str(param_value.path))
+                    rule.parameters[param_name] = model_param[0]
         # Binary
         elif param.annotation in (Binary, BinaryDir):
             rule.configs.update(registry.find_config_variables(param.default))
@@ -437,6 +462,11 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
     if rule.missing_binaries:
         log_handler.messages["missing_binaries"][rule.full_name].update(rule.missing_binaries)
 
+    # Check if preloader can be used for this rule
+    if storage.preloader_info and rule.target_name in storage.preloader_info:
+        rule.use_preloader = storage.preloader_info[rule.target_name] == {k: rule.parameters[k] for k in
+                                                                          storage.preloader_info[rule.target_name]}
+
     if config.get("debug"):
         print()
         console.print("[b]{}:[/b] {}".format(rule.module_name.upper(), rule.f_name))
@@ -460,20 +490,22 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
 def name_custom_rule(rule, storage):
     """Create unique name for custom rule."""
-    def create_new_rulename(name, existing_names):
-        """Create a new rule name by appending a number to it."""
+    def get_new_suffix(name: str, existing_names: List[str]) -> str:
+        """Find a numerical suffix that leads to a unique rule name."""
         i = 2
         new_name = name + str(i)
         while new_name in existing_names:
             i += 1
             new_name = name + str(i)
-        return new_name
+        return str(i)
 
     # If rule name already exists, create a new name
     existing_rules = [r.rule_name for r in storage.all_rules]
     if rule.rule_name in existing_rules:
-        rule.rule_name = create_new_rulename(rule.rule_name, existing_rules)
-        rule.target_name = create_new_rulename(rule.target_name, [r.target_name for r in storage.all_rules])
+        suffix = get_new_suffix(rule.rule_name, existing_rules)
+        rule.rule_name += suffix
+        rule.target_name += suffix
+        rule.full_name += suffix
 
 
 def check_ruleorder(storage: SnakeStorage) -> Set[Tuple[RuleStorage, RuleStorage]]:
@@ -502,6 +534,13 @@ def check_ruleorder(storage: SnakeStorage) -> Set[Tuple[RuleStorage, RuleStorage
                             "Please make sure to set their 'order' arguments to different values.")
 
     return ordered_rules
+
+
+def doc_value(rule_params):
+    """Get doc name for use as parameter to rule."""
+    def _doc_value(wildcards):
+        return get_doc_value(wildcards, rule_params.annotator)
+    return _doc_value
 
 
 def get_parameters(rule_params):
@@ -544,6 +583,8 @@ def update_storage(storage, rule):
     if rule.exporter:
         storage.export_targets.append((rule.target_name, rule.description,
                                        rule.annotator_info["language"]))
+    elif rule.importer:
+        storage.import_targets.append((rule.target_name, rule.description))
     elif rule.installer:
         storage.install_targets.append((rule.target_name, rule.description))
     elif rule.modelbuilder:
@@ -628,9 +669,6 @@ def load_config(snakemake_config):
         config_missing = False
         # Read config
         sparv_config.load_config(corpus_config_file)
-
-        # Add classes from config to registry
-        registry.annotation_classes["config_classes"] = sparv_config.config.get("classes", {})
     else:
         config_missing = True
 

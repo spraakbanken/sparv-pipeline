@@ -4,9 +4,11 @@ import heapq
 import logging
 import os
 import re
+from pathlib import Path
+from typing import Union, Tuple, List, Optional
 
 from sparv.core import paths
-from sparv.util.classes import BaseAnnotation, Annotation
+from sparv.util.classes import BaseAnnotation, BaseOutput
 
 _log = logging.getLogger(__name__)
 
@@ -18,38 +20,37 @@ STRUCTURE_FILE = "@structure"
 HEADERS_FILE = "@headers"
 
 
-def annotation_exists(doc, annotation):
+def annotation_exists(doc: str, annotation: BaseAnnotation):
     """Check if an annotation file exists."""
     annotation_path = get_annotation_path(doc, annotation)
     return os.path.exists(annotation_path)
 
 
-def data_exists(doc, name):
+def data_exists(doc: str, name: BaseAnnotation):
     """Check if an annotation data file exists."""
     annotation_path = get_annotation_path(doc, name, data=True)
     return os.path.isfile(annotation_path)
 
 
-def write_annotation(doc, annotation, values, append=False, allow_newlines=False):
+def write_annotation(doc: str, annotation: BaseOutput, values, append: bool = False,
+                     allow_newlines: bool = False) -> None:
     """Write an annotation to one or more files. The file is overwritten if it exists.
 
     The annotation should be a list of values.
     """
-    if isinstance(annotation, BaseAnnotation):
-        annotation = annotation.name.split()
-    elif isinstance(annotation, str):
-        annotation = annotation.split()
+    annotations = annotation.name.split()
 
-    if len(annotation) == 1:
+    if len(annotations) == 1:
         # Handle single annotation
-        _write_single_annotation(doc, annotation[0], values, append, allow_newlines)
+        _write_single_annotation(doc, annotations[0], values, append, annotation.root, allow_newlines)
     else:
-        elem_attrs = dict(split_annotation(ann) for ann in annotation)
+        elem_attrs = dict(split_annotation(ann) for ann in annotations)
         # Handle multiple annotations used as one
-        assert all(elem_attrs.values()), "Span annotations can not be written while treating multiple annotations as one."
+        assert all(
+            elem_attrs.values()), "Span annotations can not be written while treating multiple annotations as one."
         # Get spans and associated names for annotations. We need this information to figure out which value goes to
         # which annotation.
-        spans = read_annotation(doc, elem_attrs.keys(), with_annotation_name=True)
+        spans = read_annotation(doc, annotation, with_annotation_name=True, spans=True)
         annotation_values = {elem: [] for elem in elem_attrs.keys()}
 
         for value, (_, annotation_name) in zip(values, spans):
@@ -57,17 +58,17 @@ def write_annotation(doc, annotation, values, append=False, allow_newlines=False
 
         for annotation_name in annotation_values:
             _write_single_annotation(doc, join_annotation(annotation_name, elem_attrs[annotation_name]),
-                                     annotation_values[annotation_name], append, allow_newlines)
+                                     annotation_values[annotation_name], append, annotation.root, allow_newlines)
 
 
-def _write_single_annotation(doc, annotation, values, append, allow_newlines=False):
+def _write_single_annotation(doc: str, annotation: str, values, append: bool, root: Path, allow_newlines: bool = False):
     """Write an annotation to a file."""
     is_span = not split_annotation(annotation)[1]
 
     if is_span:
         # Make sure that spans are sorted
         assert all(values[i] <= values[i + 1] for i in range(len(values) - 1)), "Annotation spans must be sorted."
-    file_path = get_annotation_path(doc, annotation)
+    file_path = get_annotation_path(doc, annotation, root)
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
     mode = "a" if append else "w"
     with open(file_path, mode) as f:
@@ -98,83 +99,62 @@ def _write_single_annotation(doc, annotation, values, append, allow_newlines=Fal
     _log.info(f"Wrote {ctr} items: {doc + '/' if doc else ''}{annotation}")
 
 
-def create_empty_attribute(annotation):
-    """Return a list filled with None of the same size as 'annotation'.
-
-    Args:
-        annotation: One of the following:
-          - an Annotation object
-          - a list (i.e. an annotation that has already been loaded)
-          - an integer
-
-    Returns:
-        A list filled with None of the same size as 'annotation'.
-    """
-    assert isinstance(annotation, (Annotation, list, int))
-
-    if isinstance(annotation, Annotation):
-        length = len(list(annotation.read_spans()))
-    elif isinstance(annotation, list):
-        length = len(annotation)
-    else:  # int
-        length = annotation
-    return [None] * length
-
-
-def read_annotation_spans(doc, annotation, decimals=False, with_annotation_name=False):
+def read_annotation_spans(doc: str, annotation: BaseAnnotation, decimals: bool = False,
+                          with_annotation_name: bool = False):
     """Iterate over the spans of an annotation."""
-    if isinstance(annotation, BaseAnnotation):
-        annotation = annotation.name
     # Strip any annotation attributes
-    annotation = [split_annotation(ann)[0] for ann in annotation.split()]
-    for span in read_annotation(doc, annotation, with_annotation_name):
+    for span in read_annotation(doc, annotation, with_annotation_name, spans=True):
         if not decimals:
             yield tuple(v[0] for v in span)
         else:
             yield span
 
 
-def read_annotation(doc, annotation, with_annotation_name=False, allow_newlines=False):
+def read_annotation(doc: str, annotation: BaseAnnotation, with_annotation_name: bool = False,
+                    allow_newlines: bool = False, spans: bool = False):
     """Yield each line from an annotation file."""
-    if isinstance(annotation, BaseAnnotation):
-        annotation = annotation.name.split()
-    elif isinstance(annotation, str):
-        annotation = annotation.split()
-    if len(annotation) == 1:
+    if spans:
+        annotations = [split_annotation(ann)[0] for ann in annotation.name.split()]
+    else:
+        annotations = annotation.name.split()
+    root = annotation.root
+    if len(annotations) == 1:
         # Handle single annotation
-        yield from _read_single_annotation(doc, annotation[0], with_annotation_name, allow_newlines)
+        yield from _read_single_annotation(doc, annotations[0], with_annotation_name, root, allow_newlines)
     else:
         # Handle multiple annotations used as one
 
         # Make sure we don't have multiple attributes on the same annotation
-        assert len(annotation) == len(set(split_annotation(ann)[0]
-                                          for ann in annotation)), "Reading multiple attributes on the same " \
-                                                                   "annotation is not allowed."
+        assert len(annotations) == len(set(split_annotation(ann)[0]
+                                           for ann in annotations)), "Reading multiple attributes on the same " \
+                                                                     "annotation is not allowed."
 
         # Get iterators for all annotations
-        all_annotations = {split_annotation(ann)[0]: _read_single_annotation(doc, ann, with_annotation_name,
+        all_annotations = {split_annotation(ann)[0]: _read_single_annotation(doc, ann, with_annotation_name, root,
                                                                              allow_newlines)
-                           for ann in annotation}
+                           for ann in annotations}
 
         # We need to read the annotation spans to be able to interleave the values in the correct order
         for _, ann in heapq.merge(*[_read_single_annotation(doc, split_annotation(ann)[0], with_annotation_name=True,
-                                                            allow_newlines=allow_newlines)
-                                    for ann in annotation]):
+                                                            root=root, allow_newlines=allow_newlines)
+                                    for ann in annotations]):
             yield next(all_annotations[ann])
 
 
-def read_annotation_attributes(doc, annotations, with_annotation_name=False, allow_newlines=False):
+def read_annotation_attributes(doc: str, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]],
+                               with_annotation_name: bool = False, allow_newlines: bool = False):
     """Yield tuples of multiple attributes on the same annotation."""
     assert isinstance(annotations, (tuple, list)), "'annotations' argument must be tuple or list"
-    assert len(set(split_annotation(annotation)[0] for annotation in annotations)), "All attributes need to be for " \
-                                                                                    "the same annotation spans"
+    assert len(set(split_annotation(annotation)[0] for annotation in annotations)) == 1, "All attributes need to be " \
+                                                                                         "for the same annotation"
     return zip(*[read_annotation(doc, annotation, with_annotation_name, allow_newlines)
                  for annotation in annotations])
 
 
-def _read_single_annotation(doc, annotation, with_annotation_name, allow_newlines=False):
+def _read_single_annotation(doc: str, annotation: str, with_annotation_name: bool, root: Path = None,
+                            allow_newlines: bool = False):
     """Read a single annotation file."""
-    ann_file = get_annotation_path(doc, annotation)
+    ann_file = get_annotation_path(doc, annotation, root)
 
     with open(ann_file) as f:
         ctr = 0
@@ -190,7 +170,7 @@ def _read_single_annotation(doc, annotation, with_annotation_name, allow_newline
     _log.debug(f"Read {ctr} items: {doc + '/' if doc else ''}{annotation}")
 
 
-def write_data(doc, name, value, append=False):
+def write_data(doc: Optional[str], name: Union[BaseAnnotation, str], value: str, append: bool = False):
     """Write arbitrary string data to file in workdir directory."""
     file_path = get_annotation_path(doc, name, data=True)
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -200,20 +180,22 @@ def write_data(doc, name, value, append=False):
         f.write(value)
     # Update file modification time even if nothing was written
     os.utime(file_path, None)
-    _log.info(f"Wrote {len(value)} bytes: {doc + '/' if doc else ''}{name}")
+    _log.info(f"Wrote {len(value)} bytes: {doc + '/' if doc else ''}"
+              f"{name.name if isinstance(name, BaseAnnotation) else name}")
 
 
-def read_data(doc, name):
+def read_data(doc: Optional[str], name: Union[BaseAnnotation, str]):
     """Read arbitrary string data from file in workdir directory."""
     file_path = get_annotation_path(doc, name, data=True)
 
     with open(file_path) as f:
         data = f.read()
-    _log.debug(f"Read {len(data)} bytes: {doc + '/' if doc else ''}{name}")
+    _log.debug(f"Read {len(data)} bytes: {doc + '/' if doc else ''}"
+               f"{name.name if isinstance(name, BaseAnnotation) else name}")
     return data
 
 
-def split_annotation(annotation):
+def split_annotation(annotation: Union[BaseAnnotation, str]) -> Tuple[str, str]:
     """Split annotation into annotation name and attribute."""
     if isinstance(annotation, BaseAnnotation):
         annotation = annotation.name
@@ -221,24 +203,32 @@ def split_annotation(annotation):
     return elem, attr
 
 
-def join_annotation(name, attribute):
+def join_annotation(name: str, attribute: str) -> str:
     """Join annotation name and attribute."""
     return ELEM_ATTR_DELIM.join((name, attribute)) if attribute else name
 
 
-def get_annotation_path(doc, annotation, data=False):
+def get_annotation_path(doc: Optional[str], annotation: Union[BaseAnnotation, str], root: Path = None,
+                        data: bool = False) -> Path:
     """Construct a path to an annotation file given a doc and annotation."""
+    chunk = ""
     if doc:
         doc, _, chunk = doc.partition(DOC_CHUNK_DELIM)
     elem, attr = split_annotation(annotation)
 
     if data:
         if doc:
-            path = os.path.join(paths.work_dir, doc, chunk, elem)
+            path = paths.work_dir / doc / chunk / elem
         else:
-            path = os.path.join(paths.work_dir, elem)
+            path = paths.work_dir / elem
     else:
         if not attr:
             attr = SPAN_ANNOTATION
-        path = os.path.join(paths.work_dir, doc, chunk, elem, attr)
+        path = paths.work_dir / doc / chunk / elem / attr
+
+    if root:
+        path = root / path
+    elif isinstance(annotation, BaseAnnotation):
+        path = annotation.root / path
+
     return path

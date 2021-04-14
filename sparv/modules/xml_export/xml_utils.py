@@ -102,32 +102,12 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token_name: s
             node_stack.pop()
 
     # Pretty formatting of XML tree
-    indent(root_span.node)
+    util.indent_xml(root_span.node, indentation=INDENTATION)
 
     # We use write() instead of tostring() here to be able to get an XML declaration
     stream = io.StringIO()
     etree.ElementTree(root_span.node).write(stream, encoding="unicode", method="xml", xml_declaration=True)
     return stream.getvalue()
-
-
-def indent(elem, level=0) -> None:
-    """Add pretty-print indentation to XML tree.
-
-    From http://effbot.org/zone/element-lib.htm#prettyprint
-    """
-    i = "\n" + level * INDENTATION
-    if len(elem):
-        if not elem.text or not elem.text.strip():
-            elem.text = i + INDENTATION
-        if not elem.tail or not elem.tail.strip():
-            elem.tail = i
-        for elem in elem:
-            indent(elem, level + 1)
-        if not elem.tail or not elem.tail.strip():
-            elem.tail = i
-    else:
-        if level and (not elem.tail or not elem.tail.strip()):
-            elem.tail = i
 
 
 def valid_root(first_item, last_item):
@@ -151,11 +131,17 @@ def combine(corpus, out, docs, xml_input):
     xml_files = [xml_input.replace("{doc}", doc) for doc in docs]
     xml_files.sort()
     with open(out, "w") as outf:
+        print("<?xml version='1.0' encoding='UTF-8'?>", file=outf)
         print('<corpus id="%s">' % corpus.replace("&", "&amp;").replace('"', "&quot;"), file=outf)
         for infile in xml_files:
             log.info("Read: %s", infile)
             with open(infile) as inf:
-                print(inf.read(), file=outf)
+                for n, line in enumerate(inf):
+                    # Skip xml declaration
+                    if n == 0 and line.startswith("<?xml"):
+                        continue
+                    # Indent line
+                    outf.write(f"{INDENTATION}{line}")
         print("</corpus>", file=outf)
         log.info("Exported: %s" % out)
 
@@ -172,7 +158,7 @@ def compress(xmlfile, out):
 def install_compressed_xml(corpus, xmlfile, out, export_path, host):
     """Install xml file on remote server."""
     if not host:
-        raise(Exception("No host provided! Export not installed."))
+        raise Exception("No host provided! Export not installed.")
     filename = corpus + ".xml.bz2"
     remote_file_path = os.path.join(export_path, filename)
     util.install_file(host, xmlfile, remote_file_path)

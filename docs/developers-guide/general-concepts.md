@@ -2,7 +2,7 @@
 This section will give a brief overview of how Sparv modules work and introduce some general concepts. More details are
 provided in the following chapters.
 
-The Sparv pipeline is comprised of some core functionality and many different modules containing Sparv functions that
+The Sparv Pipeline is comprised of some core functionality and many different modules containing Sparv functions that
 serve different purposes like reading and parsing source documents, building or downloading models, producing
 annotations and producing output documents that contain the source text and annotations. All of these modules (i.e. the
 code inside the `sparv/modules` directory) are replacable. A Sparv function is decorated with a special

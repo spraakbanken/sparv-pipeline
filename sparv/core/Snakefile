@@ -22,12 +22,23 @@ if config.get("run_by_sparv") and logger.log_handler and logger.log_handler[0] =
 rule do_nothing:
     input: []
 
+selected_targets = config.get("targets", [])  # Explicitly selected rule names
+
 # ==============================================================================
 # Dynamic Creation of Snakemake Rules
 # ==============================================================================
 
 def make_rules(config_missing: bool) -> None:
     """Load all Sparv modules and create Snakemake rules."""
+    # Get preloader info
+    if config.get("socket") and not config.get("preloader"):
+        from sparv.core import preload
+        try:
+            snake_storage.preloader_info = preload.get_preloader_info(config["socket"])
+        except ConnectionRefusedError:
+            raise util.SparvErrorMessage("Could not connect to the socket '{}'".format(config["socket"]))
+
+
     # Create rules for all available annotation functions
     for module_name in registry.modules:
         for f_name, f in registry.modules[module_name].functions.items():
@@ -59,28 +70,38 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
     rule_storage = snake_utils.RuleStorage(module_name, f_name, annotator_info)
 
     # Process rule parameters and update rule storage
+    # Save original config and restore afterwards, as custom rules may replace the config
+    original_config = sparv_config.config
     create_rule = snake_utils.rule_helper(rule_storage, config, snake_storage, config_missing, custom_rule_obj)
+    sparv_config.config = original_config
+
+    # Limit number of parallel threads for this rule if requested in config
+    resources = {}
+    if "threads" in config:
+        thread_limit = sparv_config.get(sparv_config.MAX_THREADS, {}).get(rule_storage.target_name)
+        if thread_limit:
+            resources["threads"] = config["threads"] // thread_limit
 
     if create_rule:
-        # Create a named Snakemake rule for annotator (unfortunately we cannot use the regular snakemake syntax for this)
-        @workflow.rule(name=rule_storage.rule_name)
-        @workflow.message(rule_storage.target_name)
-        @workflow.input(rule_storage.inputs)
-        @workflow.output(rule_storage.outputs)
-        @workflow.params(module_name=rule_storage.module_name,
-                         f_name=rule_storage.f_name,
-                         parameters=snake_utils.get_parameters(rule_storage),
-                         export_dirs=rule_storage.export_dirs)
-        # We use "script" instead of "run" since with "run" the whole Snakefile would have to be reloaded for every
-        # single job, due to how Snakemake creates processes for run-jobs.
-        @workflow.script("run_snake.py")
-        @workflow.run
-        def __rule__(input_, output, params, wildcards, threads, resources, log, version, rule, conda_env, container_img,
-                     singularity_args, use_singularity, env_modules, bench_record, jobid, is_shell, bench_iteration,
-                     cleanup_scripts, shadow_dir, edit_notebook):
-            script("run_snake.py", paths.sparv_path / "core", input_, output, params,
-                   wildcards, threads, resources, log, config, rule, conda_env, container_img, singularity_args,
-                   env_modules, bench_record, jobid, bench_iteration, cleanup_scripts, shadow_dir)
+        # Create a Snakemake rule for annotator
+        rule:
+            name: rule_storage.rule_name
+            message: rule_storage.target_name
+            input: rule_storage.inputs
+            output: rule_storage.outputs
+            params:
+                module_name=rule_storage.module_name,
+                f_name=rule_storage.f_name,
+                parameters=snake_utils.get_parameters(rule_storage),
+                export_dirs=rule_storage.export_dirs,
+                doc=snake_utils.doc_value(rule_storage),
+                use_preloader=rule_storage.use_preloader,
+                socket=config.get("socket"),
+                force_preloader=config.get("force_preloader", False)
+            resources: **resources
+            # We use "script" instead of "run" since with "run" the whole Snakefile would have to be reloaded for every
+            # single job, due to how Snakemake creates processes for run-jobs.
+            script: "run_snake.py"
 
         # Create rule to run this annotation on all input files
         make_all_files_rule(rule_storage)
@@ -89,7 +110,7 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
 def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
     """Create named rule to run an annotation on all input files."""
     # Only create rule when explicitly called
-    if config.get("run_by_sparv") and rule_storage.target_name not in config.get("targets", []):
+    if config.get("run_by_sparv") and rule_storage.target_name not in selected_targets:
         return
 
     # Get Snakemake rule object
@@ -110,12 +131,9 @@ def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
     # Convert paths to IOFile objects so Snakemake knows which rule they come from (in case of ambiguity)
     rule_outputs = [snakemake.io.IOFile(f, rule=sm_rule) for f in rule_outputs]
 
-    @workflow.rule(name=rule_storage.target_name)
-    @workflow.input(rule_outputs)
-    @workflow.norun()
-    @workflow.run
-    def __rule__(*_args, **_kwargs):
-        pass
+    rule:
+        name: rule_storage.target_name
+        input: rule_outputs
 
 # Init the storage for some essential variables involving all rules
 snake_storage = snake_utils.SnakeStorage()
@@ -124,7 +142,17 @@ snake_storage = snake_utils.SnakeStorage()
 config_missing = snake_utils.load_config(config)
 
 # Find and load Sparv modules
-registry.find_modules(find_custom=sparv_config.get("custom_annotations"))
+registry.find_modules(find_custom=bool(sparv_config.get("custom_annotations")))
+
+# Resolve presets in config
+sparv_config.apply_presets()
+
+# Add classes from config to registry
+registry.annotation_classes["config_classes"] = sparv_config.config.get("classes", {})
+
+# Set text class from document annotation
+if not config_missing:
+    sparv_config.handle_document_annotation()
 
 # Let exporters and importers inherit config values from 'export' and 'import' sections
 for module in registry.modules:
@@ -159,6 +187,13 @@ sparv_config.validate_config()
 # Get reverse_config_usage dict for look-ups
 reverse_config_usage = snake_utils.get_reverse_config_usage()
 
+# Abort if all selected targets require source files but no files are available
+if not config_missing and selected_targets and not snake_utils.get_source_files(snake_storage.source_files):
+    named_targets = set(i for i, _ in snake_storage.named_targets)
+    named_targets.update(("export_corpus", "install_corpus"))
+    if set(selected_targets).issubset(named_targets):
+        raise util.SparvErrorMessage("No source files available!")
+
 # ==============================================================================
 # Static Snakemake Rules
 # ==============================================================================
@@ -191,6 +226,12 @@ rule classes:
         snake_prints.print_annotation_classes()
 
 
+# Rule to list all supported languages
+rule languages:
+    run:
+        snake_prints.print_languages()
+
+
 # Rule to list all annotation presets
 rule presets:
     run:
@@ -213,6 +254,10 @@ rule list_targets:
         table.add_row()
         table.add_row("[b]Installers[/b]")
         for target, desc in sorted(snake_storage.install_targets):
+            table.add_row("  " + target, desc)
+        table.add_row()
+        table.add_row("[b]Importers[/b]")
+        for target, desc in sorted(snake_storage.import_targets):
             table.add_row("  " + target, desc)
         table.add_row()
         table.add_row("[b]Annotators[/b]")
@@ -320,30 +365,50 @@ rule list_installs:
 
 
 # Rule for making exports defined in corpus config
-rule export_corpus:
-    input:
-        snake_utils.get_export_targets(snake_storage, rules, doc=snake_utils.get_doc_values(config, snake_storage),
-                                       wildcards=snake_utils.get_wildcard_values(config))
+if "export_corpus" in selected_targets:
+    rule export_corpus:
+        input:
+            snake_utils.get_export_targets(snake_storage, rules, doc=snake_utils.get_doc_values(config, snake_storage),
+                                           wildcards=snake_utils.get_wildcard_values(config))
 
 
 # Rule for making installations
-rule install_corpus:
-    input:
-        snake_utils.get_install_outputs(snake_storage, config.get("install_types"))
+if "install_corpus" in selected_targets:
+    install_inputs = snake_utils.get_install_outputs(snake_storage, config.get("install_types"))
+    if config.get("install_types") and not install_inputs:
+        raise util.SparvErrorMessage("Unknown installation{}: {}".format(
+            "s" if len(config.get("install_types")) > 1 else "",
+            ", ".join(config.get("install_types"))
+        ))
+    elif not install_inputs:
+        raise util.SparvErrorMessage("Please specify what you would like to install, either by supplying arguments "
+                                     "(e.g. `sparv install xml_export:install_original`) or by adding installations in "
+                                     "The `install` section of your corpus config file.\n"
+                                     "You can list available installations with `sparv install -l`.")
+    else:
+        rule install_corpus:
+            input:
+                install_inputs
 
 
 # Rule to list all models that can be built/downloaded
 rule list_models:
     run:
         print()
-        table = Table(title="Models for current language ({})".format(sparv_config.get("metadata.language")),
-                      box=box.SIMPLE, show_header=False, title_justify="left")
-        table.add_column(no_wrap=True)
-        table.add_column()
-        for target, desc, language in sorted(snake_storage.model_targets):
-            if language and sparv_config.get("metadata.language") in language:
-                table.add_row(target, desc)
-        console.print(table)
+        if sparv_config.get("metadata.language"):
+            if sparv_config.get("metadata.language") not in registry.languages:
+                console.print("Unsupported language: " + sparv_config.get("metadata.language"))
+                return
+            table = Table(title="Models for current language ({})".format(
+                registry.languages[sparv_config.get("metadata.language")]),
+                          box=box.SIMPLE, show_header=False, title_justify="left")
+            table.add_column(no_wrap=True)
+            table.add_column()
+            for target, desc, language in sorted(snake_storage.model_targets):
+                if language and sparv_config.get("metadata.language") in language:
+                    table.add_row(target, desc)
+            console.print(table)
+
         table = Table(title="Language-independent models", box=box.SIMPLE, show_header=False, title_justify="left")
         table.add_column(no_wrap=True)
         table.add_column()
@@ -351,6 +416,18 @@ rule list_models:
             if not language:
                 table.add_row(target, desc)
         console.print(table)
+
+        if not sparv_config.get("metadata.language") in registry.languages:
+            console.print("To list or build models for a specific language, use the '--language' argument together "
+                          "with the language code of one of the supported languages below:")
+            table = Table(box=box.SIMPLE, show_header=False)
+            for language, name in sorted(registry.languages.items(), key=lambda x: x[1]):
+                table.add_row(name, language)
+            console.print(table)
+
+        print()
+        console.print("[i]Note:[/i] The 'build-models' command is entirely optional, as Sparv will download and build "
+                      "models automatically when needed.")
 
 
 # Rule to list all annotations files that can be created
@@ -380,7 +457,34 @@ rule list_files:
             print("    {}".format(i))
 
 
-# Build all models. Build even the non-optional ones if force_optional_models = True.
+# Build all models
 rule build_models:
     input:
         snake_storage.model_outputs
+
+
+rule preload:
+    run:
+        from sparv.core import preload
+        if config["preload_command"] == "start":
+            preload.serve(config["socket"], config["processes"], snake_storage)
+        elif config["preload_command"] == "stop":
+            if not Path(config["socket"]).is_socket():
+                raise util.SparvErrorMessage(f"Socket file '{config['socket']}' doesn't exist or isn't a socket.")
+            elif not preload.stop(config.get("socket")):
+                raise util.SparvErrorMessage(f"Could not connect to socket '{config.get('socket')}'.")
+
+
+rule preload_list:
+    run:
+        print()
+        table = Table(title="Annotators available for preloading", box=box.SIMPLE, show_header=False,
+            title_justify="left")
+        table.add_column(no_wrap=True)
+        table.add_column()
+
+        for module, annotators in sorted(snake_storage.all_preloaders.items()):
+            for a in sorted(annotators):
+                table.add_row(f"{module}:{a}", registry.modules[module].functions[a]["description"])
+
+        console.print(table)

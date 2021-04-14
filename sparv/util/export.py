@@ -5,7 +5,7 @@ import xml.etree.ElementTree as etree
 from collections import OrderedDict, defaultdict
 from copy import deepcopy
 from itertools import combinations
-from typing import Any, List, Optional, Set, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 
 from sparv import util
 from sparv.core import io
@@ -199,7 +199,7 @@ def _handle_overlaps(spans_dict):
 def calculate_element_hierarchy(doc, spans_list):
     """Calculate the hierarchy for spans with identical start and end positions.
 
-    If two spans A and B have identical start and end positions, go through all occurences of A and B
+    If two spans A and B have identical start and end positions, go through all occurrences of A and B
     and check which element is most often parent to the other. That one will be first.
     """
     # Find elements with identical spans
@@ -244,8 +244,8 @@ def calculate_element_hierarchy(doc, spans_list):
     return hierarchy
 
 
-def get_available_source_annotations(doc: Optional[str] = None, docs: Optional[List[str]] = None) -> Set[str]:
-    """Get the set of available annotations generated from the source, either for a single document or multiple."""
+def get_available_source_annotations(doc: Optional[str] = None, docs: Optional[List[str]] = None) -> List[str]:
+    """Get a list of available annotations generated from the source, either for a single document or multiple."""
     assert doc or docs, "Either 'doc' or 'docs' must be provided"
     available_source_annotations = set()
     if docs:
@@ -254,7 +254,7 @@ def get_available_source_annotations(doc: Optional[str] = None, docs: Optional[L
     else:
         available_source_annotations.update(SourceStructure(doc).read().split())
 
-    return sorted(list(available_source_annotations))
+    return sorted(available_source_annotations)
 
 
 def get_source_annotations(source_annotation_names: Optional[List[str]], doc: Optional[str] = None,

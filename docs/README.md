@@ -5,7 +5,7 @@ Sparv's documentation is written in markdown and can be rendered as HTML or PDF.
 
 ## Setup HTML documentation
 
-Create symlinks to documentation folders:
+Create symlinks to documentation directories if needed:
 ```bash
 cd docsify
 ln -s ../user-manual user-manual

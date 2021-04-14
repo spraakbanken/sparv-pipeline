@@ -52,7 +52,7 @@
     captionpos=b,
     breaklines=true,
     % postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\color{red}\hookrightarrow\space}},
-    breakatwhitespace=true,
+    breakatwhitespace=false,
     breakautoindent=true,
     linewidth=\textwidth,
     inputencoding=utf8,
@@ -82,5 +82,23 @@
 
 % New page for new chapter
 \newcommand{\sectionbreak}{\clearpage}
+
+% Prettier block quotes
+\usepackage[most]{tcolorbox}
+\let\oldquote=\quote
+\let\endoldquote=\endquote
+\definecolor{bkg-color}{gray}{0.95}
+\definecolor{mark-color}{HTML}{17a2b8}
+\newtcolorbox{myblockquote}{
+    breakable, % IMPORTANT
+    left=0pt,right=0pt,
+    colback=bkg-color,
+    boxrule=0pt,
+    arc=0pt,
+    boxsep=0pt,
+    enhanced jigsaw,
+    borderline west={4pt}{0pt}{mark-color},
+}
+\renewenvironment{quote}{\begin{myblockquote}\begin{oldquote}}{\end{oldquote}\end{myblockquote}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

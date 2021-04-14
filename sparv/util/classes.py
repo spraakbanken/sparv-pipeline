@@ -25,6 +25,7 @@ class Base(ABC):
         assert isinstance(name, str)
         self.name = name
         self.original_name = name
+        self.root = pathlib.Path.cwd()  # Save current working dir as root
 
     def expand_variables(self, rule_name: str = "") -> List[str]:
         """Update name by replacing <class> references with annotation names, and [config] references with config values.
@@ -108,11 +109,11 @@ class Annotation(BaseAnnotation):
 
     def exists(self) -> bool:
         """Return True if annotation file exists."""
-        return io.annotation_exists(self.doc, self.name)
+        return io.annotation_exists(self.doc, self)
 
     def read(self, allow_newlines: bool = False):
         """Yield each line from the annotation."""
-        return io.read_annotation(self.doc, self.name, allow_newlines=allow_newlines)
+        return io.read_annotation(self.doc, self, allow_newlines=allow_newlines)
 
     def get_children(self, child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False):
         """Return two lists.
@@ -124,7 +125,7 @@ class Annotation(BaseAnnotation):
         preserve_parent_annotation_order is set to True, in which case the parents keep the order from the parent
         annotation.
         """
-        parent_spans, child_spans = self.read_parents_and_children(self.name, child)
+        parent_spans, child_spans = self.read_parents_and_children(self, child)
         parent_children = []
         orphans = []
         previous_parent_i = None
@@ -171,7 +172,7 @@ class Annotation(BaseAnnotation):
 
         Return None when no parent is found.
         """
-        parent_spans, child_spans = self.read_parents_and_children(parent, self.name)
+        parent_spans, child_spans = self.read_parents_and_children(parent, self)
         child_parents = []
         previous_parent_i = None
         try:
@@ -201,41 +202,38 @@ class Annotation(BaseAnnotation):
 
         return child_parents
 
-    def read_parents_and_children(self, parent, child):
+    def read_parents_and_children(self, parent: BaseAnnotation, child: BaseAnnotation):
         """Read parent and child annotations.
 
         Reorder them according to span position, but keep original index information.
         """
-        if isinstance(parent, (BaseAnnotation, str)):
-            parent = sorted(enumerate(io.read_annotation_spans(self.doc, parent, decimals=True)), key=lambda x: x[1])
-        if isinstance(child, (BaseAnnotation, str)):
-            child = sorted(enumerate(io.read_annotation_spans(self.doc, child, decimals=True)), key=lambda x: x[1])
+        parent_spans = sorted(enumerate(io.read_annotation_spans(self.doc, parent, decimals=True)), key=lambda x: x[1])
+        child_spans = sorted(enumerate(io.read_annotation_spans(self.doc, child, decimals=True)), key=lambda x: x[1])
 
         # Only use sub-positions if both parent and child have them
-        if parent and child:
-            if len(parent[0][1][0]) == 1 or len(child[0][1][0]) == 1:
-                parent = [(p[0], (p[1][0][0], p[1][1][0])) for p in parent]
-                child = [(c[0], (c[1][0][0], c[1][1][0])) for c in child]
+        if parent_spans and child_spans:
+            if len(parent_spans[0][1][0]) == 1 or len(child_spans[0][1][0]) == 1:
+                parent_spans = [(p[0], (p[1][0][0], p[1][1][0])) for p in parent_spans]
+                child_spans = [(c[0], (c[1][0][0], c[1][1][0])) for c in child_spans]
 
-        return iter(parent), iter(child)
+        return iter(parent_spans), iter(child_spans)
 
     def read_attributes(self, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]],
                         with_annotation_name: bool = False, allow_newlines: bool = False):
         """Yield tuples of multiple attributes on the same annotation."""
-        annotation_names = [a.name for a in annotations]
-        return io.read_annotation_attributes(self.doc, annotation_names, with_annotation_name=with_annotation_name,
+        return io.read_annotation_attributes(self.doc, annotations, with_annotation_name=with_annotation_name,
                                              allow_newlines=allow_newlines)
 
     def read_spans(self, decimals=False, with_annotation_name=False):
         """Yield the spans of the annotation."""
-        return io.read_annotation_spans(self.doc, self.name, decimals=decimals,
+        return io.read_annotation_spans(self.doc, self, decimals=decimals,
                                         with_annotation_name=with_annotation_name)
 
     def create_empty_attribute(self):
         """Return a list filled with None of the same size as this annotation."""
         if self.size is None:
             self.size = len(list(self.read_spans()))
-        return io.create_empty_attribute(self.size)
+        return [None] * self.size
 
 
 class AnnotationData(BaseAnnotation):
@@ -248,11 +246,11 @@ class AnnotationData(BaseAnnotation):
 
     def read(self, doc: Optional[str] = None):
         """Read arbitrary string data from annotation file."""
-        return io.read_data(self.doc or doc, self.name)
+        return io.read_data(self.doc or doc, self)
 
     def exists(self):
         """Return True if annotation file exists."""
-        return io.data_exists(self.doc, self.name)
+        return io.data_exists(self.doc, self)
 
 
 class AnnotationAllDocs(BaseAnnotation):
@@ -269,30 +267,28 @@ class AnnotationAllDocs(BaseAnnotation):
 
     def read(self, doc: str):
         """Yield each line from the annotation."""
-        return io.read_annotation(doc, self.name)
+        return io.read_annotation(doc, self)
 
     def read_spans(self, doc: str, decimals=False, with_annotation_name=False):
         """Yield the spans of the annotation."""
-        return io.read_annotation_spans(doc, self.name, decimals=decimals,
-                                        with_annotation_name=with_annotation_name)
+        return io.read_annotation_spans(doc, self, decimals=decimals, with_annotation_name=with_annotation_name)
 
     @staticmethod
     def read_attributes(doc: str, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]],
                         with_annotation_name: bool = False, allow_newlines: bool = False):
         """Yield tuples of multiple attributes on the same annotation."""
-        annotation_names = [a.name for a in annotations]
-        return io.read_annotation_attributes(doc, annotation_names, with_annotation_name=with_annotation_name,
+        return io.read_annotation_attributes(doc, annotations, with_annotation_name=with_annotation_name,
                                              allow_newlines=allow_newlines)
 
     def create_empty_attribute(self, doc: str):
         """Return a list filled with None of the same size as this annotation."""
         if self.size is None:
             self.size = len(list(self.read_spans(doc)))
-        return io.create_empty_attribute(self.size)
+        return [None] * self.size
 
     def exists(self, doc: str):
         """Return True if annotation file exists."""
-        return io.annotation_exists(doc, self.name)
+        return io.annotation_exists(doc, self)
 
 
 class AnnotationDataAllDocs(BaseAnnotation):
@@ -306,11 +302,11 @@ class AnnotationDataAllDocs(BaseAnnotation):
 
     def read(self, doc: str):
         """Read arbitrary string data from annotation file."""
-        return io.read_data(doc, self.name)
+        return io.read_data(doc, self)
 
     def exists(self, doc: str):
         """Return True if annotation file exists."""
-        return io.data_exists(doc, self.name)
+        return io.data_exists(doc, self)
 
 
 class AnnotationCommonData(BaseAnnotation):
@@ -324,7 +320,7 @@ class AnnotationCommonData(BaseAnnotation):
 
     def read(self):
         """Read arbitrary corpus level string data from annotation file."""
-        return io.read_data(None, self.name)
+        return io.read_data(None, self)
 
 
 class BaseOutput(BaseAnnotation):
@@ -353,11 +349,11 @@ class Output(BaseOutput):
 
         'values' should be a list of values.
         """
-        io.write_annotation(self.doc or doc, self.name, values, append, allow_newlines)
+        io.write_annotation(self.doc or doc, self, values, append, allow_newlines)
 
     def exists(self):
         """Return True if annotation file exists."""
-        return io.annotation_exists(self.doc, self.name)
+        return io.annotation_exists(self.doc, self)
 
 
 class OutputAllDocs(BaseOutput):
@@ -373,11 +369,11 @@ class OutputAllDocs(BaseOutput):
 
         'values' should be a list of values.
         """
-        io.write_annotation(doc, self.name, values, append, allow_newlines)
+        io.write_annotation(doc, self, values, append, allow_newlines)
 
     def exists(self, doc: str):
         """Return True if annotation file exists."""
-        return io.annotation_exists(doc, self.name)
+        return io.annotation_exists(doc, self)
 
 
 class OutputData(BaseOutput):
@@ -391,11 +387,11 @@ class OutputData(BaseOutput):
 
     def write(self, value, append: bool = False):
         """Write arbitrary string data to annotation file."""
-        io.write_data(self.doc, self.name, value, append)
+        io.write_data(self.doc, self, value, append)
 
     def exists(self):
         """Return True if annotation file exists."""
-        return io.data_exists(self.doc, self.name)
+        return io.data_exists(self.doc, self)
 
 
 class OutputDataAllDocs(BaseOutput):
@@ -409,7 +405,7 @@ class OutputDataAllDocs(BaseOutput):
 
     def read(self, doc: str):
         """Read arbitrary string data from annotation file."""
-        return io.read_data(doc, self.name)
+        return io.read_data(doc, self)
 
     def write(self, value, doc: str, append: bool = False):
         """Write arbitrary string data to annotation file."""
@@ -417,7 +413,7 @@ class OutputDataAllDocs(BaseOutput):
 
     def exists(self, doc: str):
         """Return True if annotation file exists."""
-        return io.data_exists(doc, self.name)
+        return io.data_exists(doc, self)
 
 
 class OutputCommonData(BaseOutput):
@@ -442,65 +438,56 @@ class Text:
 
     def read(self) -> str:
         """Get corpus text."""
-        text_file = io.get_annotation_path(self.doc, io.TEXT_FILE, data=True)
-        with open(text_file) as f:
-            text = f.read()
-        log.debug("Read %d chars: %s", len(text), text_file)
-        return text
+        return io.read_data(self.doc, io.TEXT_FILE)
 
     def write(self, text):
         """Write text to the designated file of a corpus.
 
         text is a unicode string.
         """
-        doc, _, _chunk = self.doc.partition(io.DOC_CHUNK_DELIM)
-        text_file = io.get_annotation_path(doc, io.TEXT_FILE, data=True)
-        os.makedirs(os.path.dirname(text_file), exist_ok=True)
-        with open(text_file, "w") as f:
-            f.write(text)
-        log.info("Wrote %d chars: %s", len(text), text_file)
+        io.write_data(self.doc, io.TEXT_FILE, text)
 
     def __repr__(self):
         return "<Text>"
 
 
-class SourceStructure:
+class SourceStructure(BaseAnnotation):
     """Every annotation available in a source document."""
 
+    data = True
+
     def __init__(self, doc):
-        self.doc = doc
+        super().__init__(io.STRUCTURE_FILE, doc)
 
     def read(self):
         """Read structure file."""
-        return io.read_data(self.doc, io.STRUCTURE_FILE)
+        return io.read_data(self.doc, self)
 
     def write(self, structure):
         """Sort the document's structural elements and write structure file."""
-        file_path = io.get_annotation_path(self.doc, io.STRUCTURE_FILE, data=True)
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
         structure.sort()
-        with open(file_path, "w") as f:
-            f.write("\n".join(structure))
-        log.info("Wrote: %s", file_path)
+        io.write_data(self.doc, self, "\n".join(structure))
 
 
-class Headers:
+class Headers(BaseAnnotation):
     """List of header annotation names."""
 
+    data = True
+
     def __init__(self, doc):
-        self.doc = doc
+        super().__init__(io.HEADERS_FILE, doc)
 
     def read(self) -> List[str]:
         """Read headers file."""
-        return io.read_data(self.doc, io.HEADERS_FILE).splitlines()
+        return io.read_data(self.doc, self).splitlines()
 
     def write(self, header_annotations: List[str]):
         """Write headers file."""
-        io.write_data(self.doc, io.HEADERS_FILE, "\n".join(header_annotations))
+        io.write_data(self.doc, self, "\n".join(header_annotations))
 
     def exists(self):
         """Return True if headers file exists."""
-        return io.data_exists(self.doc, io.HEADERS_FILE)
+        return io.data_exists(self.doc, self)
 
 
 class Document(str):
@@ -550,12 +537,15 @@ class Model(Base):
     def __init__(self, name):
         super().__init__(name)
 
+    def __eq__(self, other):
+        return type(self) == type(other) and self.name == other.name and self.path == other.path
+
     @property
     def path(self) -> pathlib.Path:
         """Get model path."""
         return_path = pathlib.Path(self.name)
-        # Check if name already includes full path to models dir
-        if models_dir in return_path.parents:
+        # Return as is if path is absolute, models dir is already included, or if relative path to a file that exists
+        if return_path.is_absolute() or models_dir in return_path.parents or return_path.is_file():
             return return_path
         else:
             return models_dir / return_path
@@ -646,8 +636,22 @@ class BinaryDir(str):
     """Path to directory containing executable binaries."""
 
 
-class Source(str):
+class Source:
     """Path to directory containing input files."""
+
+    def __init__(self, source_dir: str = ""):
+        self.source_dir = source_dir
+
+    def get_path(self, doc: Document, extension: str):
+        """Get the path of a document."""
+        if not extension.startswith("."):
+            extension = "." + extension
+        if ":" in doc:
+            doc_name, _, doc_chunk = doc.partition(":")
+            source_file = pathlib.Path(self.source_dir, doc_name, doc_chunk + extension)
+        else:
+            source_file = pathlib.Path(self.source_dir, doc + extension)
+        return source_file
 
 
 class Export(str):

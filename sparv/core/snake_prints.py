@@ -6,27 +6,16 @@ from rich.panel import Panel
 from rich.rule import Rule
 from rich.table import Table
 
-from sparv.core import registry, snake_utils
+from sparv.core import config, registry, snake_utils
 from sparv.core.console import console
 
 
 def prettyprint_yaml(in_dict):
     """Pretty-print YAML."""
     from rich.syntax import Syntax
-    import yaml
-
-    class MyDumper(yaml.Dumper):
-        """Customized YAML dumper that indents lists."""
-
-        def increase_indent(self, flow=False, indentless=False):
-            """Force indentation."""
-            return super(MyDumper, self).increase_indent(flow)
-
-    # Resolve aliases and replace them with their anchors' contents
-    yaml.Dumper.ignore_aliases = lambda *args: True
-    yaml_str = yaml.dump(in_dict, default_flow_style=False, Dumper=MyDumper, indent=4, allow_unicode=True)
+    yaml_str = config.dump_config(in_dict, resolve_alias=True, sort_keys=True)
     # Print syntax highlighted
-    console.print(Syntax(yaml_str, "yaml"))
+    console.print(Syntax(yaml_str, "yaml", background_color="default"))
 
 
 def print_module_summary(snake_storage):
@@ -172,9 +161,9 @@ def print_modules(modules: dict, module_type: str, reverse_config_usage: dict, s
                     table.add_row("• " + config_key[0], config_key[1] or "")
                 console.print(Padding(table, (0, 0, 0, 4)))
 
-            # Arguments
+            # Parameters
             if (print_params and params) or custom_params:
-                table = Table(title="[b]Arguments[/b]", box=box_style, show_header=False, title_justify="left",
+                table = Table(title="[b]Parameters[/b]", box=box_style, show_header=False, title_justify="left",
                               padding=(0, 2), pad_edge=False, border_style="bright_black")
                 table.add_column(no_wrap=True)
                 table.add_column()
@@ -190,22 +179,38 @@ def print_modules(modules: dict, module_type: str, reverse_config_usage: dict, s
 def print_annotation_classes():
     """Print info about annotation classes."""
     print()
-    table = Table(title="Available annotation classes", box=box.SIMPLE, show_header=False, title_justify="left")
+    table = Table(box=box.SIMPLE, show_header=False, title_justify="left")
     table.add_column(no_wrap=True)
     table.add_column()
 
-    table.add_row("[b]Defined by pipeline modules[/b]")
+    table.add_row("[b]Available annotation classes[/b]")
     table.add_row("  [i]Class[/i]", "[i]Annotation[/i]")
-    for annotation_class, anns in registry.annotation_classes["module_classes"].items():
-        table.add_row("  " + annotation_class, "\n".join(anns))
+    for annotation_class, anns in sorted(registry.annotation_classes["module_classes"].items()):
+        table.add_row("  " + annotation_class, "\n".join(sorted(set(anns), key=anns.index)))
 
     if registry.annotation_classes["config_classes"]:
         table.add_row()
-        table.add_row("[b]From config[/b]")
+        table.add_row("[b]Classes set in config[/b]")
         table.add_row("  [i]Class[/i]", "[i]Annotation[/i]")
         for annotation_class, ann in registry.annotation_classes["config_classes"].items():
             table.add_row("  " + annotation_class, ann)
 
+    if registry.annotation_classes["implicit_classes"]:
+        table.add_row()
+        table.add_row("[b]Class values inferred from annotation usage[/b]")
+        table.add_row("  [i]Class[/i]", "[i]Annotation[/i]")
+        for annotation_class, ann in registry.annotation_classes["implicit_classes"].items():
+            table.add_row("  " + annotation_class, ann)
+
+    console.print(table)
+
+
+def print_languages():
+    """Print all supported languages."""
+    print()
+    table = Table(title="Supported languages", box=box.SIMPLE, show_header=False, title_justify="left")
+    for language, name in sorted(registry.languages.items(), key=lambda x: x[1]):
+        table.add_row(name, language)
     console.print(table)
 
 

@@ -31,7 +31,7 @@ def install_mysql(host, db_name, sqlfile):
     sqlfile may be a whitespace separated list of SQL files.
     """
     if not host:
-        raise(Exception("No host provided! Installations aborted."))
+        raise Exception("No host provided! Installations aborted.")
 
     sqlfiles = sqlfile.split()
     file_count = 0

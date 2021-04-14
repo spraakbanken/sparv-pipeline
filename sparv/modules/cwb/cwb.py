@@ -119,7 +119,7 @@ def encode(corpus: Corpus = Corpus(),
            docs: AllDocuments = AllDocuments(),
            words: AnnotationAllDocs = AnnotationAllDocs("[export.word]"),
            vrtfiles: ExportInput = ExportInput("vrt/{doc}.vrt", all_docs=True),
-           out: Export = Export("[cwb.corpus_registry]/[metadata.id]", absolute_path=True),
+           _out: Export = Export("[cwb.corpus_registry]/[metadata.id]", absolute_path=True),
            out_marker: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.original_marker", absolute_path=True),
            token: AnnotationAllDocs = AnnotationAllDocs("<token>"),
            bin_path: Config = Config("cwb.bin_path"),
@@ -132,7 +132,7 @@ def encode(corpus: Corpus = Corpus(),
            skip_compression: Optional[bool] = Config("cwb.skip_compression"),
            skip_validation: Optional[bool] = Config("cwb.skip_validation")):
     """Do cwb encoding with vrt files in original order."""
-    cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, out, out_marker, token.name,
+    cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, out_marker, token.name,
                bin_path, encoding, datadir, registry, remove_namespaces, sparv_namespace, source_namespace,
                skip_compression, skip_validation)
 
@@ -144,7 +144,7 @@ def encode_scrambled(corpus: Corpus = Corpus(),
                      docs: AllDocuments = AllDocuments(),
                      words: AnnotationAllDocs = AnnotationAllDocs("[export.word]"),
                      vrtfiles: ExportInput = ExportInput("vrt_scrambled/{doc}.vrt", all_docs=True),
-                     out: Export = Export("[cwb.corpus_registry]/[metadata.id]", absolute_path=True),
+                     _out: Export = Export("[cwb.corpus_registry]/[metadata.id]", absolute_path=True),
                      out_marker: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.scrambled_marker",
                                                  absolute_path=True),
                      token: AnnotationAllDocs = AnnotationAllDocs("<token>"),
@@ -158,12 +158,12 @@ def encode_scrambled(corpus: Corpus = Corpus(),
                      skip_compression: Optional[bool] = Config("cwb.skip_compression"),
                      skip_validation: Optional[bool] = Config("cwb.skip_validation")):
     """Do cwb encoding with vrt files in scrambled order."""
-    cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, out, out_marker, token.name,
+    cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, out_marker, token.name,
                bin_path, encoding, datadir, registry, remove_namespaces, sparv_namespace, source_namespace,
                skip_compression, skip_validation)
 
 
-def cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, out, out_marker, token_name: str,
+def cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, out_marker, token_name: str,
                bin_path, encoding, datadir, registry, remove_namespaces, sparv_namespace, source_namespace,
                skip_compression, skip_validation):
     """Encode a number of vrt files, by calling cwb-encode."""

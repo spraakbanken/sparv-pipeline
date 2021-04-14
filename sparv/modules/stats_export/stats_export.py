@@ -55,7 +55,7 @@ def freq_list(corpus: Corpus = Corpus(),
     write_csv(out, freq_dict, delimiter, cutoff)
 
 
-@exporter("Corpus word frequency list (withouth Swedish annotations)", order=2, config=[
+@exporter("Corpus word frequency list (without Swedish annotations)", order=2, config=[
     Config("stats_export.delimiter", default="\t", description="Delimiter separating columns"),
     Config("stats_export.cutoff", default=1,
            description="The minimum frequency a word must have in order to be included in the result"),

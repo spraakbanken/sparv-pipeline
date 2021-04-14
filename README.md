@@ -1,9 +1,9 @@
 # Språkbanken's Sparv Pipeline
 
-The Sparv pipeline is a corpus annotation tool run from the command line. The documentation can be found here:
+The Sparv Pipeline is a text analysis tool run from the command line. The documentation can be found here:
 https://spraakbanken.gu.se/sparv/docs.
 
-Check the [changelog](changelog.md) to see what's new!
+Check the [changelog](CHANGELOG.md) to see what's new!
 
 Sparv is developed by [Språkbanken](https://spraakbanken.gu.se/). The source code is available under the [MIT
 license](https://opensource.org/licenses/MIT).
@@ -13,27 +13,21 @@ If you have any questions, problems or suggestions please contact <sb-sparv@sven
 ## Prerequisites
 
 * A Unix-like environment (e.g. Linux, OS X or [Windows Subsystem for
-  Linux](https://docs.microsoft.com/en-us/windows/wsl/about)) *Note:* Most things within Sparv should work in a Windows
-  environment as well but we cannot guarantee anything since we do not test our software on Windows.
+  Linux](https://docs.microsoft.com/en-us/windows/wsl/about)) *Note:* Most of Sparv's features should work in a Windows
+  environment as well, but since we don't do any testing on Windows we cannot guarantee anything.
 * [Python 3.6.1](http://python.org/) or newer
-* [Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) (if you want to run
-  Swedish dependency parsing, Swedish word sense disambiguation or the Stanford Parser)
 
 ## Installation
 
-The Sparv pipeline can be installed using [pip](https://pip.pypa.io/en/stable/installing). We even recommend using
-[pipx](https://pipxproject.github.io/pipx/) so that you can install the `sparv` command globally:
+Sparv is available on [PyPI](https://pypi.org/project/sparv-pipeline/) and can be installed using
+[pip](https://pip.pypa.io/en/stable/installing) or [pipx](https://pipxproject.github.io/pipx/).
+We recommend using pipx, which will install Sparv in an isolated environment while still making it available to be run
+from anywhere.
 
 ```bash
 python3 -m pip install --user pipx
 python3 -m pipx ensurepath
 pipx install sparv-pipeline
-```
-
-Alternatively you can install Sparv from the latest release from GitHub:
-
-```bash
-pipx install https://github.com/spraakbanken/sparv-pipeline/archive/latest.tar.gz
 ```
 
 Now you should be ready to run the Sparv command! Try it by typing `sparv --help`.

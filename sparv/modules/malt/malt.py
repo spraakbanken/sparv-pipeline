@@ -1,4 +1,4 @@
-"""Dependency parsing using MALT Parser."""
+"""Dependency parsing using MaltParser."""
 
 import logging
 import re
@@ -9,7 +9,7 @@ from sparv import Annotation, Binary, Config, Model, ModelOutput, Output, annota
 log = logging.getLogger(__name__)
 
 
-# Running malt processes are only kept if the input is small: otherwise
+# Running Malt processes are only kept if the input is small: otherwise
 # flush() on stdin blocks, and readline() on stdout is too slow to be
 # practical on long texts. We cannot use read() because it reads to EOF.
 # The value of this constant is a bit arbitrary, and could probably be longer.
@@ -23,11 +23,32 @@ DEPREL_COLUMN = 7
 UNDEF = "_"
 
 
-@annotator("Dependency parsing using MALT Parser", language=["swe"], config=[
+def preloader(maltjar, model, encoding):
+    """Preload MaltParser executable."""
+    process = maltstart(maltjar, model, encoding, send_empty_sentence=True)
+    process_dict = {
+        "process": process,
+        "restart": False
+    }
+    return process_dict
+
+
+def cleanup(maltjar, model, encoding, process_dict):
+    """Cleanup function used by preloader to restart Malt."""
+    if process_dict["restart"]:
+        util.system.kill_process(process_dict["process"])
+        log.info("Restarting MaltParser process")
+        process_dict = preloader(maltjar, model, encoding)
+    return process_dict
+
+
+@annotator("Dependency parsing using MaltParser", language=["swe"], config=[
     Config("malt.jar", default="maltparser-1.7.2/maltparser-1.7.2.jar",
            description="Path name of the executable .jar file"),
-    Config("malt.model", default="malt/swemalt-1.7.2.mco", description="Path to MALT model")
-])
+    Config("malt.model", default="malt/swemalt-1.7.2.mco", description="Path to Malt model")
+    ],
+           preloader=preloader, preloader_params=["maltjar", "model", "encoding"], preloader_target="process_dict",
+           preloader_cleanup=cleanup, preloader_shared=False)
 def annotate(maltjar: Binary = Binary("[malt.jar]"),
              model: Model = Model("[malt.model]"),
              out_dephead: Output = Output("<token>:malt.dephead", cls="token:dephead",
@@ -60,7 +81,9 @@ def annotate(maltjar: Binary = Binary("[malt.jar]"),
             process_dict["process"] = process
 
     sentences, orphans = sentence.get_children(token)
-    sentences.append(orphans)
+    if orphans:
+        log.warning(f"Found {len(orphans)} tokens not belonging to any sentence. These will not be annotated with "
+                    f"dependency relations.")
 
     word_annotation = list(word.read())
     pos_annotation = list(pos.read())
@@ -133,7 +156,7 @@ def maltstart(maltjar, model, encoding, send_empty_sentence=False):
     malt_args = ["-ic", encoding, "-oc", encoding, "-m", "parse"]
     if str(model).startswith("http://") or str(model).startswith("https://"):
         malt_args += ["-u", str(model)]
-        log.info("Using MALT model from URL: %s", model)
+        log.info("Using Malt model from URL: %s", model)
     else:
         model_dir = model.path.parent
         model_file = model.path.name
@@ -142,7 +165,7 @@ def maltstart(maltjar, model, encoding, send_empty_sentence=False):
         if model_dir:
             malt_args += ["-w", model_dir]
         malt_args += ["-c", model_file]
-        log.info("Using local MALT model: %s (in directory %s)", model_file, model_dir or ".")
+        log.info("Using local Malt model: %s (in directory %s)", model_file, model_dir or ".")
 
     process = util.system.call_java(maltjar, malt_args, options=java_opts, encoding=encoding, return_command=True)
 
@@ -159,10 +182,10 @@ def maltstart(maltjar, model, encoding, send_empty_sentence=False):
     return process
 
 
-@modelbuilder("Model for MALT Parser", language=["swe"])
+@modelbuilder("Model for MaltParser", language=["swe"])
 def build_model(out: ModelOutput = ModelOutput("malt/swemalt-1.7.2.mco"),
                 _maltjar: Binary = Binary("[malt.jar]")):
-    """Download model for MALT Parser.
+    """Download model for MaltParser.
 
     Won't download model unless maltjar has been installed.
     """
