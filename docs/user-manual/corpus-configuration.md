@@ -300,6 +300,22 @@ export:
         - <token>:malt.dephead_ref
 ```
 
+Re-defining annotation classes may also be necessary when your corpus data contains annotations (such as sentences or
+tokens) that should be used as input to annotators. For example, if you have done manual sentence segmentation and
+enclosed each sentence in an `<s>` element, you can skip Sparv's automatic sentence segmentation by setting the sentence
+class to this element:
+```yaml
+classes:
+    sentence: s
+
+xml_import:
+    elements:
+        - s
+```
+> [!ATTENTION] Please note that you need to tell Sparv that `s` is an annotation imported from your corpus data. This is
+> done by listing `s` under `xml_import.elements` as is done in the above example.
+
+
 ## Annotation Presets
 Annotation presets are collections of annotations which can be used instead of listing the contained annotations. For
 example, instead of listing all the SALDO annotations in your list of automatic annotations like this:
