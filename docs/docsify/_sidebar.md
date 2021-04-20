@@ -1,4 +1,5 @@
 - User Manual
+    - [Quick Start](user-manual/quick-start.md)
     - [Installation and Setup](user-manual/installation-and-setup.md)
     - [Running Sparv](user-manual/running-sparv.md)
     - [Requirements for Source Files](user-manual/requirements-for-source-files.md)
