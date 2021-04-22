@@ -694,12 +694,11 @@ def get_export_targets(snake_storage, rules, doc, wildcards):
 
     for rule in snake_storage.all_rules:
         if rule.type == "exporter" and rule.target_name in sparv_config.get("export.default", []):
-            # Get Snakemake rule object
-            sm_rule = getattr(rules, rule.rule_name).rule
             # Get all output files for all documents
             rule_outputs = expand(rule.outputs if not rule.abstract else rule.inputs, doc=doc, **wildcards)
-            # Convert paths to IOFile objects so Snakemake knows which rule they come from (in case of ambiguity)
-            all_outputs.extend([snakemake.io.IOFile(f, rule=sm_rule) for f in rule_outputs])
+            # Get Snakemake rule object
+            sm_rule = getattr(rules, rule.rule_name).rule
+            all_outputs.append((sm_rule if not rule.abstract else None, rule_outputs))
 
     return all_outputs
 

@@ -128,12 +128,17 @@ def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
                           doc=snake_utils.get_doc_values(config, snake_storage),
                           **snake_utils.get_wildcard_values(config))
 
-    # Convert paths to IOFile objects so Snakemake knows which rule they come from (in case of ambiguity)
-    rule_outputs = [snakemake.io.IOFile(f, rule=sm_rule) for f in rule_outputs]
-
     rule:
         name: rule_storage.target_name
         input: rule_outputs
+
+    if not rule_storage.abstract:
+        # Set rule dependencies for every file, so Snakemake knows which rule to use in case of ambiguity.
+        # Converting the values of rule_outputs to snakemake.io.IOFile objects is not enough, since file paths must match
+        # for that to work (which they don't do once we've expanded the {doc} wildcard).
+        this_sm_rule = getattr(rules, rule_storage.target_name).rule
+        for f in this_sm_rule.input:
+            this_sm_rule.dependencies[f] = sm_rule
 
 # Init the storage for some essential variables involving all rules
 snake_storage = snake_utils.SnakeStorage()
@@ -366,11 +371,18 @@ rule list_installs:
 
 # Rule for making exports defined in corpus config
 if "export_corpus" in selected_targets:
-    rule export_corpus:
-        input:
-            snake_utils.get_export_targets(snake_storage, rules, doc=snake_utils.get_doc_values(config, snake_storage),
-                                           wildcards=snake_utils.get_wildcard_values(config))
+    export_targets = snake_utils.get_export_targets(snake_storage, rules,
+        doc=snake_utils.get_doc_values(config, snake_storage), wildcards=snake_utils.get_wildcard_values(config))
 
+    rule export_corpus:
+        input: [f for r in export_targets for f in r[1]]
+
+    # Set rule dependencies for every file, so Snakemake knows which rule to use in case of ambiguity
+    for r, ff in export_targets:
+        if r is None:
+            continue
+        for f in ff:
+            rules.export_corpus.rule.dependencies[f] = r
 
 # Rule for making installations
 if "install_corpus" in selected_targets:
