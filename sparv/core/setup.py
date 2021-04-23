@@ -52,6 +52,26 @@ def copy_resource_files(data_dir: pathlib.Path):
                 shutil.copy(f, data_dir / rel_f)
 
 
+def reset():
+    """Remove the data dir config file."""
+    if paths.sparv_config_file.is_file():
+        data_dir = paths.read_sparv_config().get("sparv_data")
+        try:
+            # Delete config file
+            paths.sparv_config_file.unlink()
+            # Delete config dir if empty
+            if not any(paths.sparv_config_file.parent.iterdir()):
+                paths.sparv_config_file.parent.rmdir()
+        except:
+            console.print("An error occurred while trying to reset the configuration.")
+            sys.exit(1)
+        console.print("Sparv's data directory information has been reset.")
+        if data_dir and pathlib.Path(data_dir).is_dir():
+            console.print(f"The data directory itself has not been removed, and is still available at:\n{data_dir}")
+    else:
+        console.print("Nothing to reset.")
+
+
 def run(sparv_datadir: Optional[str] = None):
     """Query user about data dir path unless provided by argument, and populate path with files."""
     default_dir = pathlib.Path(appdirs.user_data_dir("sparv"))

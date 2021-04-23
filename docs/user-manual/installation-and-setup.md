@@ -236,13 +236,17 @@ plugin](https://github.com/spraakbanken/sparv-freeling). Please refer to its Git
 
 ## Uninstalling Sparv
 
-To uninstall Sparv completely, manually delete the [Sparv data directory](#setting-up-sparv), and then run one of the
-following commands, depending on whether you installed Sparv using pipx or pip.
+To uninstall Sparv completely, follow these steps:
 
-```bash
-pipx uninstall sparv-pipeline
-```
+1. Run `sparv setup --reset` to unset [Sparv's data directory](#setting-up-sparv). The directory itself will not be
+   removed, but its location (if available) will be printed.
+2. Manually delete the data directory.
+3. Run one of the following commands, depending on whether you installed Sparv using pipx or pip:
 
-```bash
-pip uninstall sparv-pipeline
-```
+    ```bash
+    pipx uninstall sparv-pipeline
+    ```
+
+    ```bash
+    pip uninstall sparv-pipeline
+    ```

@@ -136,6 +136,7 @@ def main():
     setup_parser = subparsers.add_parser("setup", description="Set up the Sparv data directory. Run without arguments "
                                                               "for interactive setup.")
     setup_parser.add_argument("-d", "--dir", help="Directory to use as Sparv data directory")
+    setup_parser.add_argument("--reset", action="store_true", help="Reset data directory setting.")
 
     models_parser = subparsers.add_parser("build-models",
                                           description=("Download and build the Sparv models. This is optional, as "
@@ -230,7 +231,10 @@ def main():
             sys.exit(1)
 
     if args.command == "setup":
-        setup.run(args.dir)
+        if args.reset:
+            setup.reset()
+        else:
+            setup.run(args.dir)
         sys.exit(0)
     elif args.command == "wizard":
         from sparv.core.wizard import Wizard
