@@ -1,8 +1,5 @@
 """Util functions used in stanza."""
 
-from contextlib import redirect_stderr
-from os import devnull
-
 import sparv.util as util
 
 
@@ -28,14 +25,3 @@ def run_stanza(nlp, document, batch_size, max_sentence_length: int = 0):
             msg = str(e)
         raise util.SparvErrorMessage(msg)
     return doc
-
-
-def init_stanza_pipeline(pipeline_args):
-    """Initialize and return a Stanza Pipeline with the given pipeline_args."""
-    import stanza
-
-    # Temporarily suppress stderr to silence warning about not having an NVIDIA GPU
-    with open(devnull, "w") as fnull:
-        with redirect_stderr(fnull):
-            nlp = stanza.Pipeline(**pipeline_args)
-    return nlp

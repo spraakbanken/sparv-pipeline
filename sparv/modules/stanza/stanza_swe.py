@@ -36,6 +36,8 @@ def annotate_swe(
         max_sentence_length: int = Config("stanza.max_sentence_length"),
         cpu_fallback: bool = Config("stanza.cpu_fallback")):
     """Do dependency parsing using Stanza."""
+    import stanza
+
     # cpu_fallback only makes sense if use_gpu is True
     cpu_fallback = cpu_fallback and use_gpu
 
@@ -103,13 +105,13 @@ def annotate_swe(
                          f" (using {'GPU' if use_gpu and not fallback else 'CPU'}).")
             nlp_args["processors"] = "tokenize,pos,lemma,depparse"  # Comma-separated list of processors to use
             nlp_args["use_gpu"] = use_gpu and not fallback,
-            nlp = stanza_utils.init_stanza_pipeline(nlp_args)
+            nlp = stanza.Pipeline(**nlp_args)
 
         else:
             logger.debug(f"Running POS-taggning on {len(sentences)} sentences.")
             nlp_args["processors"] = "tokenize,pos"  # Comma-separated list of processors to use
             nlp_args["use_gpu"] = use_gpu
-            nlp = stanza_utils.init_stanza_pipeline(nlp_args)
+            nlp = stanza.Pipeline(**nlp_args)
 
         # Format document for stanza: separate tokens by whitespace and sentences by double new lines
         document = "\n\n".join([" ".join(word_list[i] for i in sent) for sent in sentences])
@@ -158,6 +160,8 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
            use_gpu: bool = Config("stanza.use_gpu"),
            batch_size: int = Config("stanza.batch_size")):
     """Do dependency parsing using Stanza."""
+    import stanza
+
     sentences, orphans = sentence.get_children(token)
     sentences.append(orphans)
     word_list = list(word.read())
@@ -169,7 +173,7 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
     document = "\n\n".join([" ".join(word_list[i] for i in sent) for sent in sentences])
 
     # Init Stanza Pipeline
-    nlp = stanza_utils.init_stanza_pipeline({
+    nlp = stanza.Pipeline({
         "lang": "sv",
         "processors": "tokenize,pos",
         "dir": str(resources_file.path.parent),
@@ -280,7 +284,7 @@ def dep_parse(out_dephead: Output = Output("<token>:stanza.dephead", cls="token:
                               ref_vals)
 
         # Init Stanza Pipeline
-        nlp = stanza_utils.init_stanza_pipeline({
+        nlp = stanza.Pipeline({
             "lang": "sv",
             "dir": str(resources_file.path.parent),
             "processors": "depparse",

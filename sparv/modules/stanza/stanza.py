@@ -1,15 +1,11 @@
 """POS tagging, lemmatisation and dependency parsing with Stanza."""
 
-from contextlib import redirect_stderr
-from os import devnull
 from typing import Optional
 
 import iso639
-import stanza
 
 import sparv.util as util
 from sparv import Annotation, Config, Language, Model, Output, Text, annotator
-
 from . import stanza_utils
 
 logger = util.get_logger(__name__)
@@ -109,10 +105,12 @@ def annotate(corpus_text: Text = Text(),
 
 def process_tokens(sentences, token_spans, text_data, nlp_args, stanza_args):
     """Process pre-tokenized text with Stanza."""
+    import stanza
+
     # Init Stanza pipeline
     nlp_args["tokenize_pretokenized"] = True
     nlp_args["tokenize_no_ssplit"] = True
-    nlp = stanza_utils.init_stanza_pipeline(nlp_args)
+    nlp = stanza.Pipeline(**nlp_args)
 
     # Format document for stanza: separate tokens by whitespace and sentences by double new lines
     document = "\n\n".join([" ".join(text_data[token_spans[i][0][0]:token_spans[i][1][0]] for i in s)
@@ -161,9 +159,11 @@ def process_tokens(sentences, token_spans, text_data, nlp_args, stanza_args):
 
 def process_sentences(sentence_spans, text_data, nlp_args, stanza_args):
     """Process pre-sentence segmented text with Stanza."""
+    import stanza
+
     # Init Stanza pipeline
     nlp_args["tokenize_no_ssplit"] = True
-    nlp = stanza_utils.init_stanza_pipeline(nlp_args)
+    nlp = stanza.Pipeline(**nlp_args)
 
     # Format document for stanza: separate sentences by double new lines
     document = "\n\n".join([text_data[sent_span[0]:sent_span[1]].replace("\n", " ") for sent_span in sentence_spans])
@@ -211,8 +211,10 @@ def process_sentences(sentence_spans, text_data, nlp_args, stanza_args):
 
 def process_text(text_spans, text_data, nlp_args, stanza_args):
     """Process text with Stanza (including sentence segmentation)."""
+    import stanza
+
     # Init Stanza pipeline
-    nlp = stanza_utils.init_stanza_pipeline(nlp_args)
+    nlp = stanza.Pipeline(**nlp_args)
 
     sentence_segments = []
     all_tokens = []
