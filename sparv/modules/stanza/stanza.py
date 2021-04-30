@@ -124,20 +124,17 @@ def process_tokens(sentences, token_spans, text_data, nlp_args, stanza_args):
     token_dephead_count = 0
     token_positions = []
 
-    if len(sentences) != len(doc.sentences):
-        raise util.SparvErrorMessage(
-            "The Stanza pipeline did not seem to respect the given sentence segmentation!")
+    stanza_utils.check_sentence_respect(len(list(s for s in sentences if s)), len(doc.sentences))
     for sent_span, tagged_sent in zip(sentences, doc.sentences):
-        if len(sent_span) != len(tagged_sent.words):
-            raise util.SparvErrorMessage(
-                "Stanza POS tagger did not seem to respect the given tokenisation! Do your tokens contain whitespaces?")
         current_sentence_len = 0
         for w_index, tagged_w in zip(sent_span, tagged_sent.words):
+            stanza_utils.check_token_valid(text_data[token_spans[w_index][0][0]:token_spans[w_index][1][0]])
             token = Token(tagged_w, offset=0, token_dephead_count=token_dephead_count)
             all_tokens.append(token)
             current_sentence_len += 1
             token_positions.append((token.start, token.end, token_spans[w_index][0][0], token_spans[w_index][1][0]))
         token_dephead_count += current_sentence_len
+        stanza_utils.check_token_respect(len(sent_span), len(tagged_sent.words))
 
     # Get named entities
     token_positions = iter(token_positions)
@@ -178,9 +175,7 @@ def process_sentences(sentence_spans, text_data, nlp_args, stanza_args):
     sentence_offsets = []
     previous_sentence_end_position = -2
 
-    if len(sentence_spans) != len(doc.sentences):
-        raise util.SparvErrorMessage(
-            "The Stanza pipeline did not seem to respect the given sentence segmentation!")
+    stanza_utils.check_sentence_respect(len(sentence_spans), len(doc.sentences))
     for sent_span, tagged_sent in zip(sentence_spans, doc.sentences):
         # Calculate the difference between the positions in the document and the ones from Stanza.
         # -2 is to compensate for two line breaks between sentences in the Stanza input

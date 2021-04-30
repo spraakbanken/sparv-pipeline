@@ -25,3 +25,24 @@ def run_stanza(nlp, document, batch_size, max_sentence_length: int = 0):
             msg = str(e)
         raise util.SparvErrorMessage(msg)
     return doc
+
+
+def check_token_valid(token: str):
+    """Interrupt if token contains a white space or tab character."""
+    if " " in token or "\t" in token:
+        raise util.SparvErrorMessage(f"Token '{token}' contains whitespaces! "
+                                     "Stanza does not allow spaces within tokens!")
+
+
+def check_sentence_respect(sparv_sent_len: int, stanza_sent_len: int):
+    """Check whether Stanza respected the given sentence segmentation."""
+    if sparv_sent_len != stanza_sent_len:
+        raise util.SparvErrorMessage(
+            "The Stanza pipeline did not seem to respect the given sentence segmentation!")
+
+
+def check_token_respect(sparv_token_len: int, stanza_token_len: int):
+    """Check whether Stanza respected the given tokenization."""
+    if sparv_token_len != stanza_token_len:
+        raise util.SparvErrorMessage(
+            "Stanza pipeline did not seem to respect the given tokenisation!")

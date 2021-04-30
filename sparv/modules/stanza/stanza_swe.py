@@ -117,10 +117,12 @@ def annotate_swe(
         document = "\n\n".join([" ".join(word_list[i] for i in sent) for sent in sentences])
 
         doc = stanza_utils.run_stanza(nlp, document, batch_size, max_sentence_length)
+        stanza_utils.check_sentence_respect(len(list(s for s in sentences if s)), len(doc.sentences))
         word_count_real = sum(len(s) for s in sentences)
         word_count = 0
         for sent, tagged_sent in zip(sentences, doc.sentences):
             for w_index, w in zip(sent, tagged_sent.words):
+                stanza_utils.check_token_valid(word_list[w_index])
                 feats_str = util.cwbset(w.feats.split("|") if w.feats else "")
                 msd[w_index] = w.xpos
                 pos[w_index] = w.upos
@@ -131,10 +133,7 @@ def annotate_swe(
                     dephead_ref[w_index] = str(w.head) if w.head > 0 else ""
                     deprel[w_index] = w.deprel
             word_count += len(tagged_sent.words)
-
-        if word_count != word_count_real:
-            raise util.SparvErrorMessage(
-                "Stanza POS tagger did not seem to respect the given tokenisation! Do your tokens contain whitespaces?")
+        stanza_utils.check_token_respect(word_count_real, word_count)
 
     out_msd.write(msd)
     out_pos.write(pos)
@@ -187,18 +186,17 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
     })
 
     doc = stanza_utils.run_stanza(nlp, document, batch_size)
+    stanza_utils.check_sentence_respect(len(list(s for s in sentences if s)), len(doc.sentences))
     word_count = 0
     for sent, tagged_sent in zip(sentences, doc.sentences):
         for w_index, w in zip(sent, tagged_sent.words):
+            stanza_utils.check_token_valid(word_list[w_index])
             word_count += 1
             feats_str = util.cwbset(w.feats.split("|") if w.feats else "")
             msd[w_index] = w.xpos
             pos[w_index] = w.upos
             feats[w_index] = feats_str
-
-    if len(word_list) != word_count:
-        raise util.SparvErrorMessage(
-            "Stanza POS tagger did not seem to respect the given tokenisation! Do your tokens contain whitespaces?")
+    stanza_utils.check_token_respect(len(word_list), word_count)
 
     out_msd.write(msd)
     out_pos.write(pos)
