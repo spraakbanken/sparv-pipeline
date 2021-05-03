@@ -9,7 +9,6 @@ languages:
 classes:
     sentence: stanford.sentence
     token: stanford.token
-    "token:word": stanford.token:stanford.word
     "token:pos": stanford.token:stanford.pos
     "token:baseform": stanford.token:stanford.baseform
     "token:deprel": <token>:stanford.deprel
@@ -22,7 +21,7 @@ presets:
         - sentence
 
     token:
-        - stanford.token:stanford.ref
+        - stanford.token:misc.number_rel_stanford.sentence as ref
         - stanford.token:stanford.pos
         - stanford.token:stanford.upos
         - stanford.token:stanford.baseform

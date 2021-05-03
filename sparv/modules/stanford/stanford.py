@@ -24,8 +24,6 @@ def annotate(corpus_text: Text = Text(),
              text: Annotation = Annotation("<text>"),
              out_sentence: Output = Output("stanford.sentence", cls="sentence", description="Sentence segments"),
              out_token: Output = Output("stanford.token", cls="token", description="Token segments"),
-             out_word: Output = Output("<token>:stanford.word", cls="token:word", description="Token strings"),
-             out_ref: Output = Output("<token>:stanford.ref", description="Token ID relative to sentence"),
              out_baseform: Output = Output("<token>:stanford.baseform", description="Baseforms from Stanford Parser"),
              out_upos: Output = Output("<token>:stanford.upos", cls="token:upos", description="Part-of-speeches in UD"),
              out_pos: Output = Output("<token>:stanford.pos", cls="token:pos",
@@ -92,8 +90,6 @@ def annotate(corpus_text: Text = Text(),
     # Write annotations
     out_sentence.write(sentence_segments)
     out_token.write([(t.start, t.end) for t in all_tokens])
-    out_ref.write([t.ref for t in all_tokens])
-    out_word.write([t.word for t in all_tokens])
     out_baseform.write([t.baseform for t in all_tokens])
     out_upos.write([t.upos for t in all_tokens])
     out_pos.write([t.pos for t in all_tokens])

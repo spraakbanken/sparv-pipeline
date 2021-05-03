@@ -70,5 +70,4 @@ export:
     annotations:
         - <text>:readability.lix
         - DATETIME.all
-        - s:misc.id
-        - FREELING_FULL.token
+        - FREELING_FULL.all

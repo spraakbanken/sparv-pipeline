@@ -13,7 +13,6 @@ languages:
 classes:
     sentence: freeling.sentence
     token: freeling.token
-    "token:word": freeling.token:freeling.word
     "token:pos": freeling.token:freeling.pos
     "token:baseform": freeling.token:freeling.baseform
 
@@ -30,4 +29,4 @@ presets:
         - freeling.token:freeling.ne_type
 
     sentence:
-        - freeling.sentence:misc.id
+        - <sentence>:misc.id
