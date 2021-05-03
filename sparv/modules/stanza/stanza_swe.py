@@ -82,7 +82,6 @@ def annotate_swe(
         "lang": "sv",
         "dir": str(resources_file.path.parent),
         "tokenize_pretokenized": True,  # Assume the text is tokenized by whitespace and sentence split by newline.
-        "tokenize_no_ssplit": True,  # Disable sentence segmentation
         "lemma_model_path": str(lem_model.path),
         "pos_pretrain_path": str(pos_pretrain_model.path),
         "pos_model_path": str(pos_model.path),
@@ -113,8 +112,8 @@ def annotate_swe(
             nlp_args["use_gpu"] = use_gpu
             nlp = stanza.Pipeline(**nlp_args)
 
-        # Format document for stanza: separate tokens by whitespace and sentences by double new lines
-        document = "\n\n".join([" ".join(word_list[i] for i in sent) for sent in sentences])
+        # Format document for stanza: list of lists of string
+        document = [[word_list[i] for i in s] for s in sentences]
 
         doc = stanza_utils.run_stanza(nlp, document, batch_size, max_sentence_length)
         stanza_utils.check_sentence_respect(len(list(s for s in sentences if s)), len(doc.sentences))
@@ -122,7 +121,6 @@ def annotate_swe(
         word_count = 0
         for sent, tagged_sent in zip(sentences, doc.sentences):
             for w_index, w in zip(sent, tagged_sent.words):
-                stanza_utils.check_token_valid(word_list[w_index])
                 feats_str = util.cwbset(w.feats.split("|") if w.feats else "")
                 msd[w_index] = w.xpos
                 pos[w_index] = w.upos
@@ -168,8 +166,8 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
     pos = word.create_empty_attribute()
     feats = word.create_empty_attribute()
 
-    # Format document for stanza: separate tokens by whitespace and sentences by double new lines
-    document = "\n\n".join([" ".join(word_list[i] for i in sent) for sent in sentences])
+    # Format document for stanza: list of lists of string
+    document = [[word_list[i] for i in s] for s in sentences]
 
     # Init Stanza Pipeline
     nlp = stanza.Pipeline({
@@ -177,7 +175,6 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
         "processors": "tokenize,pos",
         "dir": str(resources_file.path.parent),
         "tokenize_pretokenized": True,  # Assume the text is tokenized by whitespace and sentence split by newline.
-        "tokenize_no_ssplit": True,  # Disable sentence segmentation
         "pos_pretrain_path": str(pretrain_model.path),
         "pos_model_path": str(model.path),
         "pos_batch_size": batch_size,
@@ -190,7 +187,6 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
     word_count = 0
     for sent, tagged_sent in zip(sentences, doc.sentences):
         for w_index, w in zip(sent, tagged_sent.words):
-            stanza_utils.check_token_valid(word_list[w_index])
             word_count += 1
             feats_str = util.cwbset(w.feats.split("|") if w.feats else "")
             msd[w_index] = w.xpos

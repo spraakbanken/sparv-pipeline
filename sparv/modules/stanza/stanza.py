@@ -109,12 +109,10 @@ def process_tokens(sentences, token_spans, text_data, nlp_args, stanza_args):
 
     # Init Stanza pipeline
     nlp_args["tokenize_pretokenized"] = True
-    nlp_args["tokenize_no_ssplit"] = True
     nlp = stanza.Pipeline(**nlp_args)
 
-    # Format document for stanza: separate tokens by whitespace and sentences by double new lines
-    document = "\n\n".join([" ".join(text_data[token_spans[i][0][0]:token_spans[i][1][0]] for i in s)
-                            for s in sentences])
+    # Format document for stanza: list of lists of string
+    document = [[text_data[token_spans[i][0][0]:token_spans[i][1][0]] for i in s] for s in sentences]
 
     # Run Stanza and process output
     doc = stanza_utils.run_stanza(nlp, document, stanza_args["batch_size"], stanza_args["max_sentence_length"])
@@ -128,7 +126,6 @@ def process_tokens(sentences, token_spans, text_data, nlp_args, stanza_args):
     for sent_span, tagged_sent in zip(sentences, doc.sentences):
         current_sentence_len = 0
         for w_index, tagged_w in zip(sent_span, tagged_sent.words):
-            stanza_utils.check_token_valid(text_data[token_spans[w_index][0][0]:token_spans[w_index][1][0]])
             token = Token(tagged_w, offset=0, token_dephead_count=token_dephead_count)
             all_tokens.append(token)
             current_sentence_len += 1
