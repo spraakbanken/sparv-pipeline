@@ -66,7 +66,7 @@ Next, use your favourite plain text editor (i.e. not Word) to create a source fi
 `document.xml`
 ```xml
 <text title="My first corpus document" author="me">
-    Words, words, words. Here are some more words.
+    Ord, ord, ord. Här kommer några fler ord.
 </text>
 ```
 
@@ -95,7 +95,7 @@ Add the following to the configuration file and save it:
 
 ```yaml
 metadata:
-    language: eng
+    language: swe
 import:
     importer: xml_import:parse
 export:
@@ -104,8 +104,8 @@ export:
         - <token>
 ```
 
-The configuration file consists of different sections, each containing configuration variables and their values.
-First, we have told Sparv the language of our corpus. Second, in the `import` section, we have specified which of
+The configuration file consists of different sections, each containing configuration variables and their values. First,
+we have told Sparv the language of our corpus (Swedish). Second, in the `import` section, we have specified which of
 Sparv's importer modules to use (we want the one for XML). Finally, in the `export` section, we have listed what
 automatic annotations we want Sparv to add. For this simple corpus we only ask for sentence segmentation and
 tokenisation.
@@ -125,19 +125,19 @@ After a short while, Sparv will tell you where the resulting files are saved. Le
 <?xml version='1.0' encoding='UTF-8'?>
 <text author="me" title="My first corpus document">
   <sentence>
-    <token>Words</token>
+    <token>Ord</token>
     <token>,</token>
-    <token>words</token>
+    <token>ord</token>
     <token>,</token>
-    <token>words</token>
+    <token>ord</token>
     <token>.</token>
   </sentence>
   <sentence>
-    <token>Here</token>
-    <token>are</token>
-    <token>some</token>
-    <token>more</token>
-    <token>words</token>
+    <token>Här</token>
+    <token>kommer</token>
+    <token>några</token>
+    <token>fler</token>
+    <token>ord</token>
     <token>.</token>
   </sentence>
 </text>
