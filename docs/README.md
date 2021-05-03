@@ -6,7 +6,7 @@ Sparv's documentation is written in markdown and can be rendered as HTML or PDF.
 ## Setup HTML documentation
 
 Create symlinks to documentation directories if needed:
-```bash
+```
 cd docsify
 ln -s ../user-manual user-manual
 ln -s ../developers-guide developers-guide
@@ -15,19 +15,19 @@ cd ..
 ```
 
 Set Sparv version number:
-```bash
+```
 cd doscify
 ./set_version.sh
 cd ..
 ```
 
 Serve documentation with python:
-```bash
+```
 python3 -m http.server --directory docsify 3000
 ```
 
 *or* with docsify:
-```bash
+```
 npm i docsify-cli -g
 docsify serve docsify --port 3000
 ```
@@ -43,7 +43,7 @@ Sync HTML documentation to server:
 ## Render documentation as PDF
 
 Convert User Manual and Developer's Guide from markdown to PDF (requires markdown and latex):
-```bash
+```
 cd md2pdf
 ./make_pdf.sh
 ```

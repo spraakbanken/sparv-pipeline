@@ -24,7 +24,7 @@ Sparv is available on [PyPI](https://pypi.org/project/sparv-pipeline/) and can b
 We recommend using pipx, which will install Sparv in an isolated environment while still making it available to be run
 from anywhere.
 
-```bash
+```
 python3 -m pip install --user pipx
 python3 -m pipx ensurepath
 pipx install sparv-pipeline
@@ -47,7 +47,7 @@ otherwise.
 We recommend that you set up a virtual environment and install the dependencies (including the dev dependencies) listed
 in `setup.py`:
 
-```bash
+```
 python3 -m venv venv
 source venv/bin/activate
 pip install -e .[dev]

@@ -93,19 +93,19 @@ Sparv](user-manual/installation-and-setup.md#setting-up-sparv).
 the specified file. Multiple arguments can be supplied.
 
 Example running the Stanza annotations (part-of-speech tagging and dependency parsing) for all input files:
-```bash
+```
 sparv run-rule stanza:annotate
 ```
 
 Example creating the part-of-speech annotation for the input file `document1`:
-```bash
+```
 sparv create-file annotations/dokument1/segment.token/stanza.pos
 ```
 
 **`sparv run-module`:** Run an annotator module independently (mostly for debugging). You must supply the module and the
 function you want to run and all the mandatory arguments. E.g. to run the hunpos msd tagging module on the input file
 called `document1` you could use the following command:
-```bash
+```
 sparv run-module hunpos msdtag --out segment.token:hunpos.msd --word segment.token:misc.word --sentence segment.sentence --binary hunpos-tag --model hunpos/suc3_suc-tags_default-setting_utf8.model --morphtable hunpos/saldo_suc-tags.morphtable --patterns hunpos/suc.patterns --doc dokument1
 ```
 
@@ -135,13 +135,13 @@ plan on using when running Sparv (e.g. `sparv run -j 4`), or the preloader might
 speeding things up.
 
 Example of starting the preloader with four parallel processes:
-```bash
+```
 sparv preload --socket my_socket.sock --processes 4
 ```
 
 Once the preloader is up and running, use another terminal to annotate your corpus. To make Sparv use the preloader when
 annotating, use the `--socket` argument and point it to the same socket file created by the preloader. For example:
-```bash
+```
 sparv run --socket my_socket.sock
 ```
 
@@ -151,6 +151,6 @@ would rather have Sparv wait for the preloader, use the `--force-preloader` flag
 To shut down the preloader, either press Ctrl-C in the preloader terminal, or use the command `sparv preload stop`
 while pointing it to the relevant socket. For example:
 
-```bash
+```
 sparv preload stop --socket my_socket.sock
 ```

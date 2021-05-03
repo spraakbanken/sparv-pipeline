@@ -26,7 +26,7 @@ In the above example the `uppercase` directory is a Sparv module containing the 
 root directory is needed in order to install the plugin. A plugin does not have to be stored in any particular place. As
 long as the Sparv Pipeline is installed on your machine, you should be able to inject your plugin into the Sparv
 Pipeline code using pipx (from the directory containing your plugin):
-```bash
+```
 pipx inject sparv-pipeline ./sparv-uppercase
 ```
 

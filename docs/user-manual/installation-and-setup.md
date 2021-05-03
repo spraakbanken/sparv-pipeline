@@ -17,13 +17,13 @@ We recommend using pipx, which will install Sparv in an isolated environment whi
 from anywhere.
 
 Begin by [installing pipx](https://pipxproject.github.io/pipx/installation/) if you haven't already:
-```bash
+```
 python3 -m pip install --user pipx
 python3 -m pipx ensurepath
 ```
 
 Once pipx is installed, run the following command to install the Sparv Pipeline:
-```bash
+```
 pipx install sparv-pipeline
 ```
 
@@ -91,7 +91,7 @@ in every script will then look like this:
 ```
 On Unix systems this can be done by running the following command from within the `hfst-swener-0.9.3/scripts`
 directory:
-```bash
+```
 sed -i 's:#! \/usr/bin/env python:#! /usr/bin/env python2:g' *.py
 ```
 
@@ -109,7 +109,7 @@ Installation is done by unpacking and then adding the executables to your path (
 Alternatively you can place the binaries inside your [Sparv data directory](#setting-up-sparv) under `bin`.
 
 If you are running a 64-bit OS, you might also have to install 32-bit compatibility libraries if Hunpos won't run:
-```bash
+```
 sudo apt install ia32-libs
 ```
 On Arch Linux, activate the `multilib` repository and install `lib32-gcc-libs`. If that doesn't work, you might have to
@@ -146,7 +146,7 @@ Refer to the INSTALL text file for instructions on how to build and install on y
 for storing the corpora, one for the data, and one for the corpus registry. You will have to create these directories,
 and then set the environment variables `CWB_DATADIR` and `CORPUS_REGISTRY` and point them to the directories
 you created. For example:
-```bash
+```
 export CWB_DATADIR=~/cwb/data;
 export CORPUS_REGISTRY=~/cwb/registry;
 ```
@@ -243,10 +243,10 @@ To uninstall Sparv completely, follow these steps:
 2. Manually delete the data directory.
 3. Run one of the following commands, depending on whether you installed Sparv using pipx or pip:
 
-    ```bash
+    ```
     pipx uninstall sparv-pipeline
     ```
 
-    ```bash
+    ```
     pip uninstall sparv-pipeline
     ```
