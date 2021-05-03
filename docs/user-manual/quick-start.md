@@ -15,29 +15,32 @@ user guide, please refer to the full documentation.
 
 Begin by making sure that you have [Python 3.6.1](http://python.org/) or newer installed by running the following
 in your terminal:
-```bash
+```
 python3 --version
 ```
 
+> [!NOTE]
+> On some systems, the command may be called `python` instead of `python3`.
+
 Continue by [installing pipx](https://pipxproject.github.io/pipx/installation/) if you haven't already:
-```bash
+```
 python3 -m pip install --user pipx
 python3 -m pipx ensurepath
 ```
 
 Once pipx is installed, run the following command to install the Sparv Pipeline:
-```bash
+```
 pipx install sparv-pipeline
 ```
 
 To verify that the installation was successful, try running Sparv which should print Sparv's command line help:
-```bash
+```
 sparv
 ```
 
 Finish the installation by running the [Sparv setup](user-manual/installation-and-setup.md#sparv-data-directory)
 command, to select a location for Sparv to save its models and configuration:
-```bash
+```
 sparv setup
 ```
 
@@ -46,14 +49,14 @@ sparv setup
 Now that Sparv is installed and working, let's try it out on a small corpus.
 
 Each corpus needs its own directory, so begin by creating one called `mycorpus`:
-```bash
+```
 mkdir mycorpus
 cd mycorpus
 ```
 
 In this directory, create another directory called `source`, where we will put the corpus source files (the files
 containing the text we want to annotate):
-```bash
+```
 mkdir source
 ```
 
@@ -109,8 +112,9 @@ tokenisation.
 
 ## Running Sparv
 
-If you have followed the above steps, everything should now be ready, and you can run Sparv by typing:
-```bash
+If you have followed the above steps, everything should now be ready. Make sure that you are in the `mycorpus` folder,
+and then run Sparv by typing:
+```
 sparv run
 ```
 

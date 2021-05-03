@@ -6,12 +6,12 @@ how to process it. The [corpus config wizard](#corpus-config-wizard) can help yo
 examples of config files you can download the [example
 corpora](https://github.com/spraakbanken/sparv-pipeline/releases/latest/download/example_corpora.zip).
 
-A minimal config file contains a corpus ID and a list of (automatic) annotations you want to be included in the output.
+A minimal config file contains a list of (automatic) annotations you want to be included in the output.
 Here is an example of a small config file:
 ```yaml
 metadata:
-    # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No whitespace characters.)
-    id: mini-swe
+    # Language of the source files
+    language: swe
 export:
     # Automatic annotations to be included in the export
     annotations:
@@ -53,11 +53,10 @@ options usually have default values which are defined by the module itself.
 When running Sparv your corpus config will be read and combined with Sparv's default config file (`config_default.yaml`
 in the [Sparv data directory](user-manual/installation-and-setup.md#setting-up-sparv)) and the default values defined by
 different Sparv modules. You can view the resulting configuration by running `sparv config`. Using the `config` command
-you can also inspect specific config variables, e.g. `sparv config metadata` or `sparv config metadata.id`. All
+you can also inspect specific config variables, e.g. `sparv config metadata` or `sparv config metadata.language`. All
 default values can be overridden in your own corpus config.
 
 There are a few config options that must be set (either through the default config or the corpus config):
-  - `metadata.id`
   - `metadata.language` (default: `swe`)
   - `import.importer` (default: `xml_import:parse`)
   - `export.annotations`
