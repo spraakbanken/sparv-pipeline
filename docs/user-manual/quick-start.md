@@ -149,6 +149,9 @@ Try adding some more annotations to your corpus by extending the annotations lis
 out what annotations are available, use the `sparv modules` command. You can also try out the corpus configuration
 wizard by running `sparv wizard`.
 
+It is also possible to annotate texts in other languages, e.g., English. Just change the line `language: swe` to
+`language: eng` in the file `config.yaml`. Run `sparv languages` to see what languages are available in Sparv.
+
 > [!NOTE]
 > Some annotations may require
 > [additional software to be installed](user-manual/installation-and-setup.md#installing-additional-third-party-software)
