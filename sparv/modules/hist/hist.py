@@ -1,8 +1,8 @@
+"""Annotators for historical Swedish."""
+
 import sparv.modules.saldo.saldo as saldo
 import sparv.util as util
-import sparv.diapivot as diapivot
 import re
-import itertools
 import os
 
 # The minimun precision difference for two annotations to be considered equal
@@ -96,28 +96,6 @@ def annotate_fallback(out, word, msd, lemgram, models, key="lemgram", lexicons=N
     annotate_standard(out, lemgram, annotate_empties)
 
 
-def annotate_diachron(out, lemgram, model, extralemgrams="", delimiter="|", affix="|"):
-    """Annotate each lemgram with its corresponding saldo_id, according to model (diapivot.pickle).
-
-    - out is the resulting annotation file
-    - lemgram is the existing annotations for lemgram
-    - model is the diapivot model
-    - delimiter is the delimiter character to put between ambiguous results
-    - affix is an optional character to put before and after results
-    """
-    lexicon = diapivot.PivotLexicon(model)
-
-    def diachronlink(tokid, thelems):
-        all_lemgrams = thelems
-        for lemgram in thelems:
-            s_i = lexicon.get_exactMatch(lemgram)
-            if s_i:
-                all_lemgrams += [s_i]
-        return all_lemgrams
-
-    annotate_standard(out, lemgram, diachronlink, extralemgrams)
-
-
 def mergemany(out, annotations, separator="|"):
     """Concatenate values from two or more annotations, with an optional separator.
 
@@ -171,7 +149,7 @@ def annotate_standard(out, input_annotation, annotator, extra_input="", delimite
     No support for multiword expressions
     - out is the output file
     - input_annotation is the given input annotation
-    - f is the function which is to be applied to the input annotation
+    - annotator is the function which is to be applied to the input annotation
     - extra_input is an extra input annotation
     - delimiter is the delimiter character to put between ambiguous results
     - affix is an optional character to put before and after results
@@ -384,66 +362,6 @@ def remove_unwanted_overlaps(complete_multis):
         del complete_multis[a]
 
 
-def annotate_mwe(variants, word, reference, sentence, out, annotations, models, delimiter="|", affix="|", precision_filter=":%.3f", filter=None, lexicons=None):
-    """Annotate multi words only."""
-    max_gaps = 0  # Maximum number of gaps in multi-word units.
-
-    annotations = annotations.split()
-    out = out.split()
-    assert len(out) == len(annotations), "Number of target files and annotations must be the same"
-
-    # we allow multiple lexicons, each word will get annotations from only one of the lexicons, starting the lookup in the first lexicon in the list
-    if lexicons is None:
-        models = models.split()
-        lexicons = [saldo.SaldoLexicon(lex) for lex in models]
-    WORD = util.read_annotation(variants)
-    REALWORD = util.read_annotation(word)
-    REF = util.read_annotation(reference)
-
-    for out_file in out:
-        clear_annotation(out_file)
-
-    sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
-    OUT = {}
-
-    for sent in sentences:
-        incomplete_multis = []  # :: [{annotation, words, [ref], is_particle, lastwordWasGap, numberofgaps}]
-        complete_multis = []  # :: ([ref], annotation, [text])
-        sentence_tokens = {}
-
-        for tokid in sent:
-            thewords = [w for w in WORD[tokid].split("|") if w]
-            ref = REF[tokid]
-            word = REALWORD[tokid]
-
-            annotation_info = {}
-            sentence_tokens[ref] = {"tokid": tokid, "word": word, "variant": thewords, "annotations": annotation_info}
-
-            endword = len(thewords) - 1
-            for i, theword in enumerate(thewords):
-
-                ann_tags_words = saldo.find_single_word([theword], lexicons, "", annotation_info)  # emtpy msd tag
-                # For multi-word expressions
-                find_multiword_expressions(incomplete_multis, complete_multis, theword, word, ref, max_gaps, ann_tags_words, i == endword)
-
-                # Loop to next token
-
-        # Check that we don't have any unwanted overlaps
-        remove_unwanted_overlaps(complete_multis)
-
-        # Then save the rest of the multi word expressions in sentence_tokens
-        saldo.save_multiwords(complete_multis, sentence_tokens)
-
-        for token in list(sentence_tokens.values()):
-            OUT[token["tokid"]] = saldo._join_annotation(token["annotations"], delimiter, affix)
-
-        # Loop to next sentence
-
-    for out_file, annotation in zip(out, annotations):
-        print("adding", [(tok, OUT[tok].get(annotation, affix)) for tok in OUT])
-        util.write_annotation(out_file, [(tok, OUT[tok].get(annotation, affix)) for tok in OUT], append=True)
-
-
 def find_multiword_expressions(incomplete_multis, complete_multis, theword, textword, ref, max_gaps, ann_tags_words, increase):
     # use normal findvariant instead, only textword is different, but not used anyway
     todelfromincomplete = []  # list to keep track of which expressions that have been completed
@@ -501,6 +419,4 @@ if __name__ == "__main__":
                   posset=posset,
                   annotate_full=annotate_full,
                   annotate_fallback=annotate_fallback,
-                  annotate_mwe=annotate_mwe,
-                  annotate_diachron=annotate_diachron
                   )
