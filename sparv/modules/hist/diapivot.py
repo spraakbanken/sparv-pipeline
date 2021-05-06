@@ -40,7 +40,7 @@ def diapivot_annotate(out: Output = Output("<token>:hist.diapivot", description=
     out.write(out_annotation)
 
 
-# @modelbuilder("Diapivot model", language=["swe"])
+@modelbuilder("Diapivot model", language=["swe-1800"])
 def build_diapivot(out: ModelOutput = ModelOutput("hist/diapivot.pickle")):
     """Download diapivot XML dictionary and save as a pickle file."""
     # Download diapivot.xml
