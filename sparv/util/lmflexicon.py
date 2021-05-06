@@ -156,7 +156,7 @@ def try_translate(params):
                 break
         if m is not None:
             sucfilter = m.expand(post).replace(" ", r"\.").replace("+", r"\+")
-            return set(suctag for suctag in util.tagsets.mappings["suc_tags"] if re.match(sucfilter, suctag))
+            return set(suctag for suctag in util.tagsets.tags["suc_tags"] if re.match(sucfilter, suctag))
     return []
 
 

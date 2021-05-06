@@ -60,8 +60,8 @@ def extract_pos(out, lemgrams, extralemgrams=""):
 
     def mkpos(_tokid, thelems):
         pos = [re.search(r"\.\.(.*?)\.", lem) for lem in thelems]
-        # The function lag18002pos has been moved into the corpus (SVN)!
-        pos_lists = [util.tagsets.lag18002pos(p.group(1)) for p in pos if oktag(p)]
+        mapping = util.tagsets.mappings["saldo_to_suc_simple"]
+        pos_lists = [mapping.get(p.group(1), []) for p in pos if oktag(p)]
         return set([y for x in pos_lists for y in x])
 
     annotate_standard(out, lemgrams, mkpos, extralemgrams)
