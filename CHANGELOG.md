@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+### Changed
+
+### Fixed
+
+- Fixed bugs in segmenter module.
+
 ## [4.1.0] - 2021-04-14
 
 ### Added
