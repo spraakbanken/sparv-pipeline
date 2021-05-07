@@ -1,5 +1,6 @@
 """Segmentation mostly based on NLTK."""
 
+import inspect
 import logging
 import pickle
 import re
@@ -83,17 +84,21 @@ def do_segmentation(text: Text, out: Output, segmenter, chunk: Optional[Annotati
     Segmentation is done by the given "segmenter"; some segmenters take
     an extra argument which is a pickled "model" object.
     """
-    segmenter_args = []
-    if model:
+    assert segmenter in SEGMENTERS, "Available segmenters: %s" % ", ".join(sorted(SEGMENTERS))
+    segmenter = SEGMENTERS[segmenter]
+
+    segmenter_args = {}
+    if model and "model" in inspect.getfullargspec(segmenter).args:
         if model.path.suffix in ["pickle", "pkl"]:
             with open(model.path, "rb") as M:
                 model_arg = pickle.load(M, encoding="UTF-8")
         else:
             model_arg = str(model.path)
-        segmenter_args.append(model_arg)
-    assert segmenter in SEGMENTERS, "Available segmenters: %s" % ", ".join(sorted(SEGMENTERS))
-    segmenter = SEGMENTERS[segmenter]
-    segmenter = segmenter(*segmenter_args)
+        segmenter_args["model"] = model_arg
+    if token_list and "token_list" in inspect.getfullargspec(segmenter).args:
+        segmenter_args["token_list"] = str(token_list.path)
+
+    segmenter = segmenter(**segmenter_args)
     assert hasattr(segmenter, "span_tokenize"), "Segmenter needs a 'span_tokenize' method: %r" % segmenter
 
     corpus_text = text.read()
