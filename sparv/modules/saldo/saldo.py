@@ -22,10 +22,23 @@ def preloader(models):
     return {m.path.stem: SaldoLexicon(m.path) for m in models}
 
 
-@annotator("SALDO annotations", language=["swe"], config=[
+@annotator("SALDO annotations", language=["swe", "swe-1800"], config=[
     Config("saldo.model", default="saldo/saldo.pickle", description="Path to SALDO model"),
+    Config("saldo.delimiter", default=util.DELIM, description="Character to put between ambiguous results"),
+    Config("saldo.affix", default=util.AFFIX, description="Character to put before and after sets of results"),
     Config("saldo.precision", "",
-           description="Format string for appending precision to each value (e.g. ':%.3f')")
+           description="Format string for appending precision to each value (e.g. ':%.3f')"),
+    Config("saldo.precision_filter", default="max", description=("Precision filter with values 'max' ",
+           "(only use the annotations that are most probable), 'first' (only use the most probable annotation(s)), ",
+           "'none' (use all annotations)")),
+    Config("saldo.min_precision", default=0.66,
+           description="Only use annotations with a probability score higher than this"),
+    Config("saldo.skip_multiword", default=False, description="Whether to enable annotations of multiword expressions"),
+    Config("saldo.max_gaps", default=1, description="Max amount of gaps allowed within a multiword expression"),
+    Config("saldo.allow_multiword_overlap", default=False,
+           description="Whether multiword expressions may overlap with each other"),
+    Config("saldo.word_separator", default="",
+           description="Character used to split the values of 'word' into several word variations"),
 ], preloader=preloader, preloader_params=["models"], preloader_target="models_preloaded")
 def annotate(token: Annotation = Annotation("<token>"),
              word: Annotation = Annotation("<token:word>"),
@@ -37,14 +50,15 @@ def annotate(token: Annotation = Annotation("<token>"),
                                            description="Baseform from SALDO"),
              models: List[Model] = [Model("[saldo.model]")],
              msd: Optional[Annotation] = Annotation("<token:msd>"),
-             delimiter: str = util.DELIM,
-             affix: str = util.AFFIX,
+             delimiter: str = Config("saldo.delimiter"),
+             affix: str = Config("saldo.affix"),
              precision: str = Config("saldo.precision"),
-             precision_filter: str = "max",
-             min_precision: float = 0.66,
-             skip_multiword: bool = False,
-             allow_multiword_overlap: bool = False,
-             word_separator: str = "",
+             precision_filter: str = Config("saldo.precision_filter"),
+             min_precision: float = Config("saldo.min_precision"),
+             skip_multiword: bool = Config("saldo.skip_multiword"),
+             max_gaps: int = Config("saldo.max_gaps"),
+             allow_multiword_overlap: bool = Config("saldo.allow_multiword_overlap"),
+             word_separator: str = Config("saldo.word_separator"),
              models_preloaded: Optional[dict] = None):
     """Use the Saldo lexicon model (and optionally other older lexicons) to annotate pos-tagged words.
 
@@ -71,7 +85,7 @@ def annotate(token: Annotation = Annotation("<token>"),
     models_list = [(m.path.stem, m) for m in models]
     if not models_preloaded:
         lexicon_list = [(name, SaldoLexicon(lex.path)) for name, lex in models_list]
-    # Use pre-loaded lexicons (from catapult)
+    # Use pre-loaded lexicons
     else:
         lexicon_list = []
         for name, _lex in models_list:
@@ -82,7 +96,7 @@ def annotate(token: Annotation = Annotation("<token>"),
     # TODO: Set to 0 for hist-mode? since many (most?) multi-word in the old lexicons are inseparable (half öre etc)
     max_gaps = 1
 
-    # Combine annotation names i SALDO lexicon with out annotations
+    # Combine annotation names in SALDO lexicon with out annotations
     annotations = []
     if out_baseform:
         annotations.append((out_baseform, "gf"))
@@ -301,11 +315,19 @@ def find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref
 
 
 def remove_unwanted_overlaps(complete_multis):
+    """Remove certain overlapping MWEs if they have identical POS (remove 'a' if 'b1 a1 b2 a2' or 'a1 b1 ab2')."""
     remove = set()
     for ai, a in enumerate(complete_multis):
+        # For historical texts: Since we allow many words for one token (spelling variations) we must make sure that
+        # two words of an MWE are not made up by two variants of one token. That is, that the same ref ID is not
+        # used twice in an MWE.
+        if len(set(a[0])) != len(a[0]):
+            remove.add(ai)
+            continue
         for b in complete_multis:
             # Check if both are of same POS
-            if not a == b and re.search(r"\.(\w\w?)m?\.", a[1]["lem"][0]).groups()[0] == re.search(r"\.(\w\w?)m?\.", b[1]["lem"][0]).groups()[0]:
+            if not a == b and re.search(r"\.(\w\w?)m?\.", a[1]["lem"][0]).groups()[0] == re.search(
+                    r"\.(\w\w?)m?\.", b[1]["lem"][0]).groups()[0]:
                 if b[0][0] < a[0][0] < b[0][-1] < a[0][-1]:
                     # A case of b1 a1 b2 a2. Remove a.
                     remove.add(ai)
@@ -333,7 +355,8 @@ def save_multiwords(complete_multis, sentence_tokens):
 
 def _join_annotation(annotation, delimiter, affix):
     seen = set()
-    return dict([(a, affix + delimiter.join(b for b in annotation[a] if b not in seen and not seen.add(b)) + affix) for a in annotation])
+    return dict([(a, affix + delimiter.join(b for b in annotation[a] if b not in seen and not seen.add(b)) + affix)
+                 for a in annotation])
 
 
 def get_precision(msd, msdtags):

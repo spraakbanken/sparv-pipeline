@@ -1,13 +1,13 @@
 """Annotators for historical Swedish."""
 
-import os
 import re
+from typing import List, Optional
 
 import sparv.modules.saldo.saldo as saldo
 import sparv.util as util
+from sparv import Annotation, Config, Model, Output, annotator
 
-# The minimun precision difference for two annotations to be considered equal
-PRECISION_DIFF = 0.01
+log = util.get_logger(__name__)
 
 
 def annotate_variants(word, out, spellmodel, model=None):
@@ -48,67 +48,116 @@ def annotate_variants(word, out, spellmodel, model=None):
     annotate_standard(out, word, findvariants, split=False)
 
 
-def extract_pos(out, lemgrams, extralemgrams=""):
+@annotator("Extract POS tags (homograph sets) from lemgrams", language=["swe-1800"], order=2)
+def extract_pos(out: Output = Output("<token>:hist.homograph_set", description="Sets of POS extracted from lemgrams"),
+                lemgrams: Annotation = Annotation("<token>:saldo.lemgram"),
+                extralemgrams: Optional[Annotation] = Annotation("[hist.extralemgrams]")):
     """Extract POS tags from lemgrams.
 
-    - out is the resulting annotation file
-    - lemgrams is the existing annotation for lemgram
-    - extralemgrams is an optional extra annotation from which more pos-tags can be extracted
+    Args:
+        out (Output): The output annotation. Defaults to Output("<token>:hist.homograph_set").
+        lemgrams (Annotation): Input lemgram annotation. Defaults to Annotation("<token>:saldo.lemgram").
+        extralemgrams (Optional[Annotation], optional): Additional annotation from which more pos-tags can be extracted.
+            Defaults to Annotation("[hist.extralemgrams]").
     """
     def oktag(tag):
         return tag is not None and tag.group(1) not in ["e", "sxc", "mxc"]
 
-    def mkpos(_tokid, thelems):
+    def mkpos(thelems):
         pos = [re.search(r"\.\.(.*?)\.", lem) for lem in thelems]
-        mapping = util.tagsets.mappings["saldo_to_suc_simple"]
+        mapping = util.tagsets.mappings["saldo_pos_to_suc"]
         pos_lists = [mapping.get(p.group(1), []) for p in pos if oktag(p)]
         return set([y for x in pos_lists for y in x])
 
     annotate_standard(out, lemgrams, mkpos, extralemgrams)
 
 
-def annotate_fallback(out, word, msd, lemgram, models, key="lemgram", lexicons=None):
+# TODO: Split into fallback_lemgram and fallback_baseform?
+@annotator("Convert POS into sets", language=["swe-1800"], config=[
+    Config("hist.lemgram_key", default="lemgram", description="Key to lookup in the lexicon"),
+])  # preloader=preloader, preloader_params=["models"], preloader_target="models_preloaded")
+def annotate_fallback(
+    out: Output = Output("<token>:hist.lemgram", description="Fallback lemgrams from Dalin or Swedberg"),
+    word: Annotation = Annotation("<token:word>"),
+    msd: Annotation = Annotation("<token:msd>"),
+    lemgram: Annotation = Annotation("<token>:saldo.lemgram"),
+    models: List[Model] = [Model("[hist.dalin_model]"), Model("[hist.swedberg_model]")],
+    key: str = Config("hist.lemgram_key"),
+    models_preloaded: Optional[dict] = None
+):
     """Lookup lemgrams in models for words that do not already have a lemgram.
 
-    - out is the resulting annotation file
-    - word is the words to be annotated
-    - lemgram is the existing annotation for lemgram
-    - model is the crosslink model
-    """
-    # catalaunch stuff
-    if lexicons is None:
-        models = models.split()
-        lexicons = [saldo.SaldoLexicon(lex) for lex in models]
+    Args:
+        out (Output): The output annotation. Defaults to Output("<token>:hist.lemgram").
+        word (Annotation): Input annotation with token strings. Defaults to Annotation("<token:word>").
+        msd (Annotation): Input annotation with POS and morphosyntactig desciptions. Defaults to Annotation("<token:msd>").
+        lemgram (Annotation): Input annotation with SALDO lemgrams. Defaults to Annotation("<token>:saldo.lemgram").
+        models (List[Model], optional): A list of lexicon models. Defaults to [Model("[hist.dalin_model]"), Model("[hist.swedberg_model]")].
+        key (str): Key to lookup in the models. Defaults to Config("hist.lemgram_key").
+        models_preloaded (dict, optional): ??
 
-    WORD = util.read_annotation(word)
-    MSD = util.read_annotation(msd)
+    """
+    # Allow use of multiple lexicons
+    models_list = [(m.path.stem, m) for m in models]
+    if not models_preloaded:
+        lexicon_list = [(name, saldo.SaldoLexicon(lex.path)) for name, lex in models_list]
+    # Use pre-loaded lexicons
+    else:
+        lexicon_list = []
+        for name, _lex in models_list:
+            assert models_preloaded.get(name, None) is not None, "Lexicon %s not found!" % name
+            lexicon_list.append((name, models_preloaded[name]))
+
+    word_annotation = list(word.read())
+    msd_annotation = list(msd.read())
 
     def annotate_empties(tokid, lemgrams):
         fallbacks = []
         if not lemgrams:
-            word = WORD[tokid]
-            msdtag = MSD[tokid]
-            fallbacks.extend(get_single_annotation(lexicons, word, key, msdtag))
-
+            word = word_annotation[tokid]
+            msdtag = msd_annotation[tokid]
+            fallbacks.extend(get_single_annotation(lexicon_list, word, key, msdtag))
         return fallbacks
 
     annotate_standard(out, lemgram, annotate_empties)
 
 
-def posset(out, pos):
+@annotator("Convert POS into sets", language=["swe-1800"], order=1)
+def posset(out: Output = Output("<token>:hist.homograph_set", description="POS converted into sets"),
+           pos: Annotation = Annotation("<token:pos>")):
     """Annotate with POS sets by converting a single POS into a set."""
-    def makeset(_tokid, thepos):
+    def makeset(thepos):
         """Annotate thepos with separators (dummy function)."""
         return [thepos]
 
     annotate_standard(out, pos, makeset, split=False)
 
 
-def annotate_full(word, sentence, reference, out, annotations, models, msd="",
-                  delimiter="|", affix="|", precision=":%.3f", precision_filter=None, min_precision=0.0,
-                  skip_multiword=False, lexicons=None):
-    # TODO almost the same as normal saldo.annotate, but doesn't use msd or saldo-specific stuff
-    """Use a lmf-lexicon model to annotate (pos-tagged) words.
+@annotator("Convert POS into sets", language=["swe-1800"], config=[
+    Config("hist.precision", "",
+           description="Format string for appending precision to each value (e.g. ':%.3f')")
+]) # preloader=preloader, preloader_params=["models"], preloader_target="models_preloaded")
+def annotate_full(token: Annotation = Annotation("<token>"),
+                  word: Annotation = Annotation("<token:word>"),
+                  sentence: Annotation = Annotation("<sentence>"),
+                  reference: Annotation = Annotation("<token>:misc.number_rel_<sentence>"),
+                  out_sense: Output = Output("<token>:hist.sense", cls="token:sense", description="SALDO identifier"),
+                  out_lemgram: Output = Output("<token>:hist.lemgram", description="SALDO lemgram"),
+                  out_baseform: Output = Output("<token>:hist.baseform", cls="token:baseform",
+                                                description="Baseform from SALDO"),
+                  models: List[Model] = [Model("[saldo.model]"), Model("[hist.dalin_model]"), Model("[hist.swedberg_model]")],
+                  msd: Optional[Annotation] = Annotation("<token:msd>"),
+                  delimiter: str = util.DELIM,
+                  affix: str = util.AFFIX,
+                  precision: str = Config("hist.precision"),
+                  precision_filter: str = "",
+                  min_precision: float = 0.0,
+                  skip_multiword: bool = False,
+                  allow_multiword_overlap: bool = False,
+                  word_separator: str = "",
+                  models_preloaded: Optional[dict] = None):
+    # TODO merge with saldo.py
+    """Use an lmf-lexicon model to annotate (pos-tagged) words.
 
     - word, msd are existing annotations for wordforms and part-of-speech
     - sentence is an existing annotation for sentences and their children (words)
@@ -131,219 +180,141 @@ def annotate_full(word, sentence, reference, out, annotations, models, msd="",
     - lexicon: this argument cannot be set from the command line,
       but is used in the catapult. This argument must be last.
     """
-    # allow use of multiple lexicons
-    if not lexicons:
-        models = [(os.path.basename(m).rstrip(".pickle"), m) for m in models.split()]
-        lexicons = [(name, saldo.SaldoLexicon(lex)) for name, lex in models]
+    # Allow use of multiple lexicons
+    models_list = [(m.path.stem, m) for m in models]
+    if not models_preloaded:
+        lexicon_list = [(name, saldo.SaldoLexicon(lex.path)) for name, lex in models_list]
+    # Use pre-loaded lexicons
+    else:
+        lexicon_list = []
+        for name, _lex in models_list:
+            assert models_preloaded.get(name, None) is not None, "Lexicon %s not found!" % name
+            lexicon_list.append((name, models_preloaded[name]))
 
-    max_gaps = 0  # Maximum number of gaps in multi-word units.
-                  # Set to 0 since many (most?) multi-word in the old lexicons are unseparable (half öre etc)
+    # Maximum number of gaps in multi-word units.
+    # Set to 0 since many (most?) multi-word in the old lexicons are unseparable (half öre etc)
+    max_gaps = 0
 
-    annotations = annotations.split()
-    out = out.split()
-    assert len(out) == len(annotations), "Number of target files and annotations must be the same"
+    # Combine annotation names in SALDO lexicon with out annotations
+    annotations = []
+    if out_baseform:
+        annotations.append((out_baseform, "gf"))
+    if out_lemgram:
+        annotations.append((out_lemgram, "lem"))
+    if out_sense:
+        annotations.append((out_sense, "saldo"))
 
-    if isinstance(skip_multiword, str):
-        skip_multiword = (skip_multiword.lower() == "true")
     if skip_multiword:
-        util.log.info("Skipping multi word annotations")
+        log.info("Skipping multi word annotations")
 
     min_precision = float(min_precision)
 
-    WORD = util.read_annotation(word)
-    REF = util.read_annotation(reference)
-    if msd:
-        MSD = util.read_annotation(msd)
-    for out_file in out:
-        clear_annotation("", out_file)
+    # If min_precision is 0, skip almost all part-of-speech checking (verb multi-word expressions still won't be
+    # allowed to span over other verbs)
+    skip_pos_check = (min_precision == 0.0)
 
-    sentences = [sent.split() for _, sent in util.read_annotation_iteritems(sentence)]
-    OUT = {}
+    word_annotation = list(word.read())
+    ref_annotation = list(reference.read())
+    if msd:
+        msd_annotation = list(msd.read())
+
+    sentences, orphans = sentence.get_children(token)
+    sentences.append(orphans)
+
+    if orphans:
+        log.warning(f"Found {len(orphans)} tokens not belonging to any sentence. These will not be annotated.")
+
+    out_annotation = word.create_empty_attribute()
 
     for sent in sentences:
         incomplete_multis = []  # [{annotation, words, [ref], is_particle, lastwordWasGap, numberofgaps}]
         complete_multis = []    # ([ref], annotation)
         sentence_tokens = {}
 
-        for tokid in sent:
-            thewords = [w for w in WORD[tokid].split("|") if w]
-            ref = REF[tokid]
-            if msd:
-                msdtag = MSD[tokid]
-            else:
-                msdtag = ""
+        for token_index in sent:
+            theword = word_annotation[token_index]
+            ref = ref_annotation[token_index]
+            msdtag = msd_annotation[token_index] if msd else ""
 
             annotation_info = {}
-            sentence_tokens[ref] = {"tokid": tokid, "word": thewords, "msd": msdtag, "annotations": annotation_info}
+            sentence_tokens[ref] = {"token_index": token_index, "annotations": annotation_info}
 
-            for theword in thewords:
+            # Support for multiple values of word
+            if word_separator:
+                thewords = [w for w in theword.split(word_separator) if w]
+            else:
+                thewords = [theword]
 
-                # First use MSD tags to find the most probable single word annotations
-                ann_tags_words = saldo.find_single_word([theword], lexicons, msdtag, precision, min_precision,
-                                                        precision_filter, annotation_info)
+            # First use MSD tags to find the most probable single word annotations
+            ann_tags_words = saldo.find_single_word(thewords, lexicon_list, msdtag, precision, min_precision,
+                                                    precision_filter, annotation_info)
+            # Find multi-word expressions
+            if not skip_multiword:
+                saldo.find_multiword_expressions(incomplete_multis, complete_multis, thewords, ref, msdtag, max_gaps,
+                                                 ann_tags_words, msd_annotation, sent, skip_pos_check)
 
-                # Find multi-word expressions
-                if not skip_multiword:
-                    find_multiword_expressions(incomplete_multis, complete_multis, theword, ref, max_gaps,
-                                               ann_tags_words)
+            # Loop to next token
 
-                # Loop to next token
-
-        # Check that we don't have any unwanted overlaps
-        remove_unwanted_overlaps(complete_multis)
+        if not allow_multiword_overlap:
+            # Check that we don't have any unwanted overlaps
+            saldo.remove_unwanted_overlaps(complete_multis)
 
         # Then save the rest of the multi word expressions in sentence_tokens
         saldo.save_multiwords(complete_multis, sentence_tokens)
 
-        for token in list(sentence_tokens.values()):
-            OUT[token["tokid"]] = saldo._join_annotation(token["annotations"], delimiter, affix)
+        for tok in list(sentence_tokens.values()):
+            out_annotation[tok["token_index"]] = saldo._join_annotation(tok["annotations"], delimiter, affix)
 
         # Loop to next sentence
 
-    for out_file, annotation in zip(out, annotations):
-        util.write_annotation(out_file, [(tok, OUT[tok].get(annotation, affix)) for tok in OUT], append=True)
+    for out_annotation_obj, annotation_name in annotations:
+        out_annotation_obj.write([v.get(annotation_name, delimiter) if v is not None else None for v in out_annotation])
 
 
 ################################################################################
 # Auxiliaries
 ################################################################################
 
-def annotate_standard(out, input_annotation, annotator, extra_input="", delimiter="|", affix="|", split=True):
+def annotate_standard(out, input_annotation, annotator, extra_input="", delimiter: str = util.DELIM,
+                      affix: str = util.AFFIX, split=True):
     """Apply the 'annotator' function to the annotations in 'input_annotation' and write the new output to 'out'.
 
-    The annotator function should have type :: token_id -> oldannotations -> newannotations
-    No support for multiword expressions
-    - out is the output file
-    - input_annotation is the given input annotation
-    - annotator is the function which is to be applied to the input annotation
-    - extra_input is an extra input annotation
-    - delimiter is the delimiter character to put between ambiguous results
-    - affix is an optional character to put before and after results
-    - split defines if the input annatoation is a set, with elements separated by delimiter
-      if so, return a list. Else, return one single element
+    Args:
+        out: The output annotation.
+        input_annotation: The input annotation.
+        annotator: function which is to be applied to the input annotation.
+            It should have type :: oldannotations -> newannotations
+        extra_input (str, optional): An additional input annotation. Defaults to "".
+        delimiter (str, optional): Delimiter character to put between ambiguous results. Defaults to "|".
+        affix (str, optional): Character to put before and after results. Defaults to "|".
+        split (bool, optional): Defines whether the input annatoation is a set, with elements separated by delimiter.
+            If so, return a list. Else, return one single element. Defaults to True.
     """
-    def merge(d1, d2):
-        result = dict(d1)
-        for k, v in list(d2.items()):
-            if k in result:
-                result[k] = result[k] + delimiter + v
-            else:
-                result[k] = v
-        return result
-
-    LEMS = util.read_annotation(input_annotation)
+    # Join input_annotation and extra_input with delimiter
+    annotations = input_annotation.read()
     if extra_input:
-        LEMS = merge(LEMS, util.read_annotation(extra_input))
+        annotations = [delimiter.join([x, y]) for x, y in zip(annotations, extra_input.read())]
 
-    clear_annotation("", out)
-    OUT = {}
-
-    for tokid in LEMS:
-        thelems = LEMS[tokid]
+    out_annotation = []
+    for annot in annotations:
         if split:
-            thelems = [x for x in thelems.split(delimiter) if x != ""]
+            annot = [x for x in annot.split(delimiter) if x != ""]
 
-        output_annotation = set(annotator(tokid, thelems))
-        OUT[tokid] = affix + delimiter.join(list(output_annotation)) + affix if output_annotation else affix
+        # Pass annot to annotator and convert into cwbset
+        out_annotation.append(util.cwbset(set(annotator(annot)), delimiter=delimiter, affix=affix))
 
-    util.write_annotation(out, OUT)
-
-
-def find_multiword_expressions(incomplete_multis, complete_multis, theword, ref, max_gaps, ann_tags_words):
-    todelfromincomplete = []  # list to keep track of which expressions that have been completed
-
-    for i, x in enumerate(incomplete_multis):
-        seeking_word = x["words"][0]  # The next word we are looking for in this multi-word expression
-
-        # TODO "*" only in saldo
-        if seeking_word == "*":
-            if x["words"][1].lower() == theword.lower():
-                seeking_word = x["words"][1]
-                del x["words"][0]
-
-        if x["numberofgaps"] > max_gaps:
-            todelfromincomplete.append(i)
-
-        elif seeking_word.lower() == theword.lower():
-            x["lastwordwasgap"] = False
-            del x["words"][0]
-            x["ref"].append(ref)
-
-            # Is current word the last word we are looking for?
-            if len(x["words"]) == 0:
-                todelfromincomplete.append(i)
-                complete_multis.append((x["ref"], x["annotation"]))
-        else:
-            # Increment gap counter if previous word was not part of a gap
-            if not x["lastwordwasgap"]:
-                x["numberofgaps"] += 1
-            x["lastwordwasgap"] = True  # Marking that previous word was part of a gap
-
-    # Remove found word from incompletes-list
-    for x in todelfromincomplete[::-1]:
-        del incomplete_multis[x]
-
-    # Is this word a possible start for multi-word units?
-    looking_for = [{"annotation": annotation, "words": words, "ref": [ref],
-                    "is_particle": is_particle, "lastwordwasgap": False, "numberofgaps": 0}
-                   for (annotation, _, wordslist, _, is_particle, _) in ann_tags_words if wordslist for words in
-                   wordslist]
-    if len(looking_for) > 0:
-        incomplete_multis.extend(looking_for)
+    out.write(out_annotation)
 
 
 def get_single_annotation(lexicons, word, key, msdtag):
+    """Get 'key' from lexicon(s) for each token."""
     annotation = []
-    # TODO the translation of tags is not fully working yet.
-    # the precision must be set to 0.25 in order for the lemgrams to be kept.
-
-    for lexicon in lexicons:
-        res = [(saldo.get_precision(msdtag, msdtags), ann) for (ann, msdtags, wordslist, _, _) in lexicon.lookup(word)
-               if not wordslist]
-        res = [a for x, a in sorted(res, reverse=True) if x >= 0.25]  # TODO use saldo.py for this!!!
-        if res:
-            annotation = res
+    for _, lexicon in lexicons:
+        # Get precision and 'key' annotation
+        annotation = [(saldo.get_precision(msdtag, msdtags), ann) for (ann, msdtags, wordslist, _, _) in lexicon.lookup(word)
+                      if not wordslist]
+        if annotation:
             break
-    annotation_lists = [a.get(key) for a in annotation]
+    # Sort by precision (descending) and remove precision values
+    annotation_lists = [a.get(key) for _, a in sorted(annotation, reverse=True)]
     return [y for x in annotation_lists for y in x]
-
-
-def remove_unwanted_overlaps(complete_multis):
-    remove = set()
-    for ai, a in enumerate(complete_multis):
-        for b in complete_multis:
-            if re.search(r"(.*)--.*", a[1]["lemgram"][0]).groups()[0] != re.search(r"(.*)--.*", b[1]["lemgram"][0]).groups()[0]:
-                # Both are from the same lexicon
-                remove.add(ai)
-            elif len(set(a[0])) != len(a[0]):
-                # Since we allow many words for one token (when using spelling variation)
-                # we must make sure that two words of a mwe are not made up by two variants of one token
-                # that is, that the same reference-id is not used twice in a mwe
-                remove.add(ai)
-            elif re.search(r"\.\.(\w+)\.", a[1]["lemgram"][0]).groups()[0] == re.search(r"\.\.(\w+)\.", b[1]["lemgram"][0]).groups()[0]:
-                # Both are of same POS
-                if b[0][0] < a[0][0] and b[0][-1] > a[0][0] and b[0][-1] < a[0][-1]:
-                    # A case of x1 y1 x2 y2. Remove y.
-                    remove.add(ai)
-                elif a[0][0] < b[0][0] and b[0][-1] == a[0][-1]:
-                    # A case of x1 y1 xy2. Remove x.
-                    remove.add(ai)
-
-    for a in sorted(remove, reverse=True):
-        del complete_multis[a]
-
-
-def clear_annotation(doc, annotation):
-    """Remove an annotation file if it exists."""
-    annotation_path = util.get_annotation_path(doc, annotation)
-    if os.path.exists(annotation_path):
-        os.remove(annotation_path)
-
-
-if __name__ == "__main__":
-    util.run.main(annotate_variants=annotate_variants,
-                  extract_pos=extract_pos,
-                  posset=posset,
-                  annotate_full=annotate_full,
-                  annotate_fallback=annotate_fallback,
-                  )
