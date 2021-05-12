@@ -28,7 +28,8 @@ def download_saldo(out: ModelOutput = ModelOutput("saldo/saldom.xml")):
 def build_saldo(out: ModelOutput = ModelOutput("saldo/saldo.pickle"),
                 saldom: Model = Model("saldo/saldom.xml")):
     """Save SALDO morphology as a pickle file."""
-    lmf_to_pickle(saldom.path, out.path)
+    tagmap = util.tagsets.mappings["saldo_to_suc"]
+    lmf_to_pickle(saldom.path, out.path, tagmap)
 
 
 class SaldoLexicon:
@@ -133,21 +134,19 @@ def split_triple(annotation_tag_words):
 ################################################################################
 
 
-def lmf_to_pickle(xml, filename, annotation_elements=("gf", "lem", "saldo")):
+def lmf_to_pickle(xml, filename, tagmap, annotation_elements=("gf", "lem", "saldo")):
     """Read an XML dictionary and save as a pickle file."""
-    xml_lexicon = read_lmf(xml, annotation_elements)
+    xml_lexicon = read_lmf(xml, tagmap, annotation_elements)
     SaldoLexicon.save_to_picklefile(filename, xml_lexicon)
 
 
-def read_lmf(xml, annotation_elements=("gf", "lem", "saldo"), tagset="SUC", verbose=True):
+def read_lmf(xml, tagmap, annotation_elements=("gf", "lem", "saldo"), verbose=True):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml).
 
     Return a lexicon dictionary, {wordform: {{annotation-type: annotation}: ( set(possible tags), set(tuples with following words) )}}
      - annotation_element is the XML element for the annotation value (currently: 'gf' for baseform, 'lem' for lemgram or 'saldo' for SALDO id)
      - tagset is the tagset for the possible tags (currently: 'SUC', 'Parole', 'Saldo')
     """
-    # assert annotation_element in ("gf", "lem", "saldo"), "Invalid annotation element"
-    tagmap = util.tagsets.mappings["saldo_to_" + tagset.lower()]
     if verbose:
         log.info("Reading XML lexicon")
     lexicon = {}
