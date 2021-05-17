@@ -6,9 +6,8 @@ import re
 from collections import defaultdict
 from typing import Optional
 
-import sparv.util as util
-from sparv import (AllDocuments, Annotation, AnnotationDataAllDocs, Config, Corpus, Export, ExportInput,
-                   OutputCommonData, OutputData, annotator, exporter, installer)
+from sparv.api import (AllDocuments, Annotation, AnnotationDataAllDocs, Config, Corpus, Export, ExportInput,
+                       OutputCommonData, OutputData, annotator, exporter, installer, util)
 from sparv.util.mysql_wrapper import MySQL
 
 log = logging.getLogger(__name__)

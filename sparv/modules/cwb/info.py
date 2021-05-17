@@ -5,9 +5,8 @@ import os
 import time
 from datetime import datetime
 
-import sparv.util as util
-from sparv import (AllDocuments, Config, Corpus, Export, ExportInput, annotator, exporter,
-                   AnnotationAllDocs, OutputCommonData, AnnotationCommonData)
+from sparv.api import (AllDocuments, Config, Corpus, Export, ExportInput, annotator, exporter,
+                       AnnotationAllDocs, OutputCommonData, AnnotationCommonData, util)
 
 log = logging.getLogger(__name__)
 

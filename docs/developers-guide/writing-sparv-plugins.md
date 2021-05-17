@@ -75,7 +75,7 @@ Example of an `__init__.py` file:
 ```python
 """Example for a Sparv annotator that converts tokens to uppercase."""
 
-# from sparv import Config
+# from sparv.api import Config
 
 from . import uppercase
 
@@ -94,7 +94,7 @@ describing dependencies to other entities (e.g. annotations or models) handled o
 code for or uppercase example (taken from the [Sparv plugin
 template](https://github.com/spraakbanken/sparv-plugin-template):
 ```python
-from sparv import Annotation, Output, annotator
+from sparv.api import Annotation, Output, annotator
 
 @annotator("Convert every word to uppercase.")
 def uppercase(word: Annotation = Annotation("<token:word>"),
@@ -104,9 +104,9 @@ def uppercase(word: Annotation = Annotation("<token:word>"),
 ```
 
 In this script we import two classes from Sparv (`Annotation` and `Output`) and the `annotator` decorator. Please note
-that nothing should be imported from the Sparv code unless it is directly available from the sparv package (i.e. `from
-sparv import ...`), or the `sparv.util` sub-package. Any other sub-packages (like `sparv.core`) are for internal use
-only, and are subject to change without notice.
+that nothing should be imported from the Sparv code unless it is directly available from the sparv.api package (i.e.
+`from sparv.api import ...`). Any other sub-packages (like `sparv.core`) are for internal use only, and are subject
+to change without notice.
 
 Our `uppercase` function is decorated with `@annotator` which tells Sparv that this function can be used to produce one
 or more annotations. The first argument in the decorator is its description which is used for displaying help texts in
@@ -139,7 +139,7 @@ Logging from Sparv modules is done with [Python's logging library](https://docs.
 Please use the provided `get_logger` wrapper when declaring your logger which takes care of importing the logging
 library and sets the correct module name in the log output:
 ```python
-import sparv.util as util
+from sparv.api import util
 logger = util.get_logger(__name__)
 logger.error("An error was encountered!")
 ```
@@ -210,7 +210,7 @@ A preload function is simply a function that takes a subset of the arguments fro
 is passed on to the annotator. Here is an example:
 
 ```python
-from sparv import Annotation, Model, Output, annotator
+from sparv.api import Annotation, Model, Output, annotator
 
 
 def preloader(model):

@@ -1,7 +1,6 @@
 """POS tagging, lemmatisation and dependency parsing with Stanza."""
 
-import sparv.util as util
-from sparv import Annotation, Config, Model, Output, annotator
+from sparv.api import Annotation, Config, Model, Output, annotator, util
 from . import stanza_utils
 
 logger = util.get_logger(__name__)

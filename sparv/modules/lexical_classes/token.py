@@ -3,8 +3,7 @@
 import logging
 from typing import List
 
-import sparv.util as util
-from sparv import Annotation, Config, Model, Output, annotator
+from sparv.api import Annotation, Config, Model, Output, annotator, util
 
 log = logging.getLogger(__name__)
 

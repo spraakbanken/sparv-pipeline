@@ -4,8 +4,7 @@ from typing import Optional
 
 import iso639
 
-import sparv.util as util
-from sparv import Annotation, Config, Language, Model, Output, Text, annotator
+from sparv.api import Annotation, Config, Language, Model, Output, Text, annotator, util
 from . import stanza_utils
 
 logger = util.get_logger(__name__)

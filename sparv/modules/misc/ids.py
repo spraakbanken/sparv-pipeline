@@ -5,7 +5,7 @@ import random
 from binascii import hexlify
 from typing import Optional
 
-from sparv import AllDocuments, Annotation, AnnotationData, Document, Output, Wildcard, OutputDataAllDocs, annotator
+from sparv.api import AllDocuments, Annotation, AnnotationData, Document, Output, Wildcard, OutputDataAllDocs, annotator
 
 _ID_LENGTH = 10
 

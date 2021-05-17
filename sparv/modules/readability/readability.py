@@ -3,7 +3,7 @@
 from math import log
 from typing import List
 
-from sparv import Annotation, Output, annotator
+from sparv.api import Annotation, Output, annotator
 
 
 @annotator("Annotate text chunks with LIX values")

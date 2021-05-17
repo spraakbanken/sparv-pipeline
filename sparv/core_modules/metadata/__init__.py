@@ -1,7 +1,7 @@
 """General metadata about corpus."""
 import re
 
-from sparv import Config, wizard
+from sparv.api import Config, wizard
 from sparv.core import registry
 
 __config__ = [

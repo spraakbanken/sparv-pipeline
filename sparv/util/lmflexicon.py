@@ -13,7 +13,7 @@ import logging
 import re
 import xml.etree.ElementTree as etree
 
-import sparv.util as util
+from sparv.api import util
 from sparv.modules.saldo.saldo_model import HashableDict, SaldoLexicon
 
 log = logging.getLogger(__name__)

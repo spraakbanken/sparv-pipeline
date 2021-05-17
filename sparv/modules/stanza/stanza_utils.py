@@ -1,6 +1,6 @@
 """Util functions used in stanza."""
 
-import sparv.util as util
+from sparv.api import util
 
 
 def run_stanza(nlp, document, batch_size, max_sentence_length: int = 0):

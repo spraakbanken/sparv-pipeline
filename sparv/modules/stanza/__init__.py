@@ -1,6 +1,6 @@
 """POS tagging, lemmatisation and dependency parsing with Stanza."""
 
-from sparv import Config
+from sparv.api import Config
 
 from . import models, stanza, stanza_swe
 

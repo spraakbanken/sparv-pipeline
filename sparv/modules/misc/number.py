@@ -5,7 +5,7 @@ import re
 from binascii import hexlify
 from collections import defaultdict
 
-from sparv import AllDocuments, Annotation, AnnotationAllDocs, Output, OutputCommonData, Wildcard, annotator, util
+from sparv.api import AllDocuments, Annotation, AnnotationAllDocs, Output, OutputCommonData, Wildcard, annotator, util
 
 START_DEFAULT = 1
 

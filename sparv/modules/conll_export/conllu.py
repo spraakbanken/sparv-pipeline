@@ -3,8 +3,7 @@
 import os
 from typing import Optional
 
-import sparv.util as util
-from sparv import Annotation, Config, Document, Export, SourceAnnotations, exporter
+from sparv.api import Annotation, Config, Document, Export, SourceAnnotations, exporter, util
 
 logger = util.get_logger(__name__)
 

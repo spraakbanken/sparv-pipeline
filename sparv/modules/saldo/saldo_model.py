@@ -6,8 +6,7 @@ import pickle
 import re
 import xml.etree.ElementTree as etree
 
-import sparv.util as util
-from sparv import Model, ModelOutput, modelbuilder
+from sparv.api import Model, ModelOutput, modelbuilder, util
 
 log = logging.getLogger(__name__)
 

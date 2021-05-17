@@ -4,7 +4,7 @@ import csv
 import logging
 from collections import defaultdict
 
-from sparv import AllDocuments, AnnotationAllDocs, Corpus, Export, exporter, Config
+from sparv.api import AllDocuments, AnnotationAllDocs, Corpus, Export, exporter, Config
 
 log = logging.getLogger(__name__)
 

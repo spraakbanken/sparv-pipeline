@@ -1,4 +1,4 @@
-from sparv import Config, SourceStructureParser, wizard
+from sparv.api import Config, SourceStructureParser, wizard
 
 __config__ = [
     Config("export.default", description="List of exporters to use by default"),

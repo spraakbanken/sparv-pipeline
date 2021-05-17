@@ -5,8 +5,7 @@ import logging
 import re
 from typing import List, Optional
 
-import sparv.util as util
-from sparv import Annotation, Config, Model, Output, annotator
+from sparv.api import Annotation, Config, Model, Output, annotator, util
 from sparv.modules.saldo.saldo_model import SaldoLexicon
 
 log = logging.getLogger(__name__)

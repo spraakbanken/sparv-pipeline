@@ -4,8 +4,7 @@ import logging
 import os
 import re
 
-import sparv.util as util
-from sparv import Config, Corpus, ExportInput, OutputCommonData, installer
+from sparv.api import Config, Corpus, ExportInput, OutputCommonData, installer, util
 
 log = logging.getLogger(__name__)
 

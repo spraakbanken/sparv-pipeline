@@ -1,7 +1,6 @@
 """Snakefile used by Snakemake."""
 from pathlib import Path
 
-import snakemake.io
 from rich import box
 from rich.highlighter import ReprHighlighter
 from rich.padding import Padding

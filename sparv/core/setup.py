@@ -8,7 +8,6 @@ from typing import Optional
 
 import appdirs
 import pkg_resources
-import yaml
 from rich.padding import Padding
 from rich.prompt import Confirm
 

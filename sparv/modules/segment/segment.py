@@ -8,8 +8,7 @@ from typing import Optional
 
 import nltk
 
-import sparv.util as util
-from sparv import Annotation, Config, Model, ModelOutput, Output, Text, annotator, modelbuilder
+from sparv.api import Annotation, Config, Model, ModelOutput, Output, Text, annotator, modelbuilder, util
 from sparv.modules.saldo.saldo_model import split_triple
 
 try:

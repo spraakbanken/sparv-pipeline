@@ -3,9 +3,8 @@
 import logging
 import os
 
-import sparv.util as util
-from sparv import (AllDocuments, Annotation, AnnotationData, Config, Corpus, Document, Export, ExportAnnotations,
-                   ExportInput, OutputCommonData, SourceAnnotations, exporter, installer)
+from sparv.api import (AllDocuments, Annotation, AnnotationData, Config, Corpus, Document, Export, ExportAnnotations,
+                       ExportInput, OutputCommonData, SourceAnnotations, exporter, installer, util)
 from . import xml_utils
 
 log = logging.getLogger(__name__)

@@ -8,8 +8,7 @@ You do not need to download any parameter files as Sparv will download these for
 
 import logging
 
-import sparv.util as util
-from sparv import Annotation, Binary, Config, Language, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv.api import Annotation, Binary, Config, Language, Model, ModelOutput, Output, annotator, modelbuilder, util
 
 log = logging.getLogger(__name__)
 

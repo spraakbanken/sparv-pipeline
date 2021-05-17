@@ -4,8 +4,7 @@ import logging
 from collections import defaultdict
 from typing import Optional
 
-import sparv.util as util
-from sparv import Annotation, Config, Model, Output, annotator
+from sparv.api import Annotation, Config, Model, Output, annotator, util
 
 log = logging.getLogger(__name__)
 

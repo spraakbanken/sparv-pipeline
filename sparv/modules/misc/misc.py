@@ -3,7 +3,7 @@
 import re
 from typing import List, Optional
 
-from sparv import Annotation, Config, Output, Text, Wildcard, annotator, util
+from sparv.api import Annotation, Config, Output, Text, Wildcard, annotator, util
 
 
 @annotator("Text value of a span (usually a token)", config=[

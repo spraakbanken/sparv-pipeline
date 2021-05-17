@@ -5,8 +5,7 @@ import re
 import xml.etree.ElementTree as etree
 import xml.sax.saxutils
 
-import sparv.util as util
-from sparv import Annotation, Binary, Config, Output, annotator
+from sparv.api import Annotation, Binary, Config, Output, annotator, util
 
 log = logging.getLogger(__name__)
 

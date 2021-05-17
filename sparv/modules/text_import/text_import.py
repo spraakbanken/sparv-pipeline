@@ -2,7 +2,7 @@
 
 import unicodedata
 
-from sparv import importer, util
+from sparv.api import importer, util
 from sparv.util.classes import Config, Document, Output, Source, SourceStructure, Text
 
 

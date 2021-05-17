@@ -2,8 +2,7 @@
 
 import logging
 
-import sparv.util as util
-from sparv import Annotation, Binary, Config, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv.api import Annotation, Binary, Config, Model, ModelOutput, Output, annotator, modelbuilder, util
 
 log = logging.getLogger(__name__)
 

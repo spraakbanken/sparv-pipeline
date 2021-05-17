@@ -13,7 +13,7 @@ from prompt_toolkit.shortcuts import clear as clear_screen
 from prompt_toolkit.styles import Style
 from questionary import prompt
 
-from sparv import SourceStructureParser, Wildcard
+from sparv.api import SourceStructureParser, Wildcard
 from sparv.core import registry, paths, config, snake_utils
 from sparv.core.console import console
 

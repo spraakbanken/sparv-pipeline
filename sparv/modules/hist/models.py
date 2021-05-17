@@ -2,8 +2,7 @@
 
 import logging
 
-from sparv import Model, ModelOutput, modelbuilder
-from sparv.util.lmflexicon import lmf_to_pickle
+from sparv.api import Model, ModelOutput, modelbuilder
 
 log = logging.getLogger(__name__)
 

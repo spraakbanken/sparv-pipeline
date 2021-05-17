@@ -6,7 +6,7 @@ import re
 
 from nltk import FreqDist, LidstoneProbDist
 
-from sparv import Model, ModelOutput, modelbuilder
+from sparv.api import Model, ModelOutput, modelbuilder
 
 log = logging.getLogger(__name__)
 

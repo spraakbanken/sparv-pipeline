@@ -500,7 +500,7 @@ mycorpus/
 Sparv will automatically detect scripts placed here as long as your functions are registered in your
 config (see Step 2). Your annotator function must use one of the Sparv decorators (usually `@annotator`). Here is a code example for a simple annotator that converts all tokens to upper case:
 ```python
-from sparv import Annotation, Output, annotator
+from sparv.api import Annotation, Output, annotator
 
 @annotator("Convert every word to uppercase.")
 def uppercase(word: Annotation = Annotation("<token:word>"),

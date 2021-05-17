@@ -2,8 +2,7 @@
 
 import re
 
-import sparv.util as util
-from sparv import Model, ModelOutput, modelbuilder
+from sparv.api import Model, ModelOutput, modelbuilder, util
 
 # Constants
 SALDO_TO_SUC = util.tagsets.mappings["saldo_to_suc"]

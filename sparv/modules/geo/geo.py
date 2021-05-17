@@ -4,8 +4,7 @@ import logging
 import pickle
 from collections import defaultdict
 
-import sparv.util as util
-from sparv import Annotation, Config, Model, ModelOutput, Output, Wildcard, annotator, modelbuilder
+from sparv.api import Annotation, Config, Model, ModelOutput, Output, Wildcard, annotator, modelbuilder, util
 
 log = logging.getLogger(__name__)
 

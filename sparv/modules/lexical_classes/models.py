@@ -7,8 +7,7 @@ import sys
 import xml.etree.ElementTree as etree
 from collections import defaultdict
 
-import sparv.util as util
-from sparv import Model, ModelOutput, modelbuilder
+from sparv.api import Model, ModelOutput, modelbuilder, util
 
 log = logging.getLogger(__name__)
 

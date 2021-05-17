@@ -7,7 +7,7 @@ from typing import Optional
 
 from dateutil.relativedelta import relativedelta
 
-from sparv import Annotation, Config, Output, OutputCommonData, annotator
+from sparv.api import Annotation, Config, Output, OutputCommonData, annotator
 
 log = logging.getLogger(__name__)
 

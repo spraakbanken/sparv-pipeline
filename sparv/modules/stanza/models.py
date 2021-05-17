@@ -5,8 +5,7 @@ import logging
 
 import iso639
 
-import sparv.util as util
-from sparv import Language, Model, ModelOutput, modelbuilder
+from sparv.api import Language, Model, ModelOutput, modelbuilder, util
 
 logger = util.get_logger(__name__)
 

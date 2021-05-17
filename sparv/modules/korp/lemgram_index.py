@@ -3,9 +3,8 @@
 import logging
 from collections import defaultdict
 
-import sparv.util as util
-from sparv import (AllDocuments, AnnotationAllDocs, Config, Corpus, Export, ExportInput, OutputCommonData, exporter,
-                   installer)
+from sparv.api import (AllDocuments, AnnotationAllDocs, Config, Corpus, Export, ExportInput, OutputCommonData, exporter,
+                       installer, util)
 from sparv.util.mysql_wrapper import MySQL
 
 log = logging.getLogger(__name__)

@@ -1,6 +1,6 @@
 import os
 
-from sparv import Config, wizard
+from sparv.api import Config, wizard
 from sparv.core import paths, registry
 
 __config__ = [

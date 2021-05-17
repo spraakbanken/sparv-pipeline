@@ -4,7 +4,7 @@ import logging
 import pprint
 from collections import defaultdict
 
-from sparv import Annotation, Output, annotator
+from sparv.api import Annotation, Output, annotator
 
 log = logging.getLogger(__name__)
 

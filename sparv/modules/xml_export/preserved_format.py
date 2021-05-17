@@ -4,8 +4,8 @@ import logging
 import os
 import xml.etree.ElementTree as etree
 
-import sparv.util as util
-from sparv import (AnnotationData, Config, Document, Export, ExportAnnotations, SourceAnnotations, Text, exporter)
+from sparv.api import (AnnotationData, Config, Document, Export, ExportAnnotations, SourceAnnotations, Text, exporter,
+                       util)
 from . import xml_utils
 
 log = logging.getLogger(__name__)

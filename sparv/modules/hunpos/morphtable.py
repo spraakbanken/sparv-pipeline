@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 
-from sparv import Model, ModelOutput, modelbuilder
+from sparv.api import Model, ModelOutput, modelbuilder
 from sparv.modules.saldo import saldo
 
 

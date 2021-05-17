@@ -4,8 +4,7 @@ import logging
 import pickle
 import xml.etree.ElementTree as etree
 
-import sparv.util as util
-from sparv import Annotation, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv.api import Annotation, Model, ModelOutput, Output, util
 
 log = logging.getLogger(__name__)
 

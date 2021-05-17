@@ -7,9 +7,8 @@ from glob import glob
 from pathlib import Path
 from typing import Optional
 
-import sparv.util as util
-from sparv import (AllDocuments, Annotation, AnnotationAllDocs, Config, Corpus, Document, Export, ExportAnnotations,
-                   ExportInput, SourceAnnotations, exporter)
+from sparv.api import (AllDocuments, Annotation, AnnotationAllDocs, Config, Corpus, Document, Export, ExportAnnotations,
+                       ExportInput, SourceAnnotations, exporter, util)
 from sparv.core import paths
 
 log = logging.getLogger(__name__)

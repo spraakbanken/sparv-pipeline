@@ -9,8 +9,7 @@ License for Stanford CoreNLP: GPL2 https://www.gnu.org/licenses/old-licenses/gpl
 import tempfile
 from pathlib import Path
 
-import sparv.util as util
-from sparv import Annotation, BinaryDir, Config, Language, Output, Text, annotator
+from sparv.api import Annotation, BinaryDir, Config, Language, Output, Text, annotator, util
 
 import logging
 log = logging.getLogger(__name__)
