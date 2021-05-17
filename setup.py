@@ -40,12 +40,12 @@ setuptools.setup(
     install_requires=[
         "appdirs==1.4.4",
         "iso-639==0.4.5",
-        "nltk==3.5",
+        "nltk==3.6.2",
         "python-dateutil==2.8.1",
         "PyYAML==5.4.1",
         "questionary==1.9.0",
-        "rich==10.0.0",
-        "snakemake==6.0.5",
+        "rich==10.2.0",
+        "snakemake==6.3.0",
         "stanza==1.2",
         "torch>=1.8.0",  # Used by Stanza; see https://github.com/spraakbanken/sparv-pipeline/issues/82
         "typing-inspect==0.6.0"
@@ -53,7 +53,7 @@ setuptools.setup(
     extras_require={
         "dev": [
             "pandocfilters==1.4.3",
-            "pytest==5.4.3",
+            "pytest==6.2.4",
             "pytest-sugar==0.9.4"
         ]
     },
