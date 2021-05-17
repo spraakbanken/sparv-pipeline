@@ -9,7 +9,6 @@ from typing import Callable, Dict, List, Optional, Tuple, Type, TypeVar
 
 import iso639
 import typing_inspect
-from pkg_resources import iter_entry_points
 
 from sparv.core import config as sparv_config
 from sparv.core import paths
@@ -87,6 +86,8 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
     Returns:
         A list of available module names.
     """
+    from pkg_resources import iter_entry_points
+
     modules_full_path = paths.sparv_path / paths.modules_dir
     core_modules_full_path = paths.sparv_path / paths.core_modules_dir
 

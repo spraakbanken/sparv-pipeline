@@ -3,13 +3,7 @@
 import argparse
 import sys
 from pathlib import Path
-
-import snakemake
-from snakemake.logging import logger
-
 from sparv import __version__
-from sparv.core import log_handler, paths, setup
-from sparv.core.paths import sparv_path
 
 # Check Python version
 if sys.version_info < (3, 6, 1):
@@ -210,6 +204,9 @@ def main():
         run.main(unknown_args, log_level=args.log)
         sys.exit()
     else:
+        import snakemake
+        from snakemake.logging import logger
+        from sparv.core import log_handler, paths, setup
         args = parser.parse_args()
 
     if args.command not in ("setup",):
@@ -366,7 +363,7 @@ def main():
     config["log_server"] = progress.log_server
 
     # Run Snakemake
-    success = snakemake.snakemake(sparv_path / "core" / "Snakefile", config=config, **snakemake_args)
+    success = snakemake.snakemake(paths.sparv_path / "core" / "Snakefile", config=config, **snakemake_args)
 
     progress.stop()
     progress.cleanup()
