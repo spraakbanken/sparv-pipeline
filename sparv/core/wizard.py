@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Callable, List, Optional, Tuple, Union
 
 import questionary.prompts.common
-import yaml
 from prompt_toolkit.shortcuts import clear as clear_screen
 from prompt_toolkit.styles import Style
 from questionary import prompt
@@ -205,9 +204,11 @@ class Wizard:
                            "again. Select Y to continue or N to abort.".format(paths.config_file)
             }, clear=True, save_prompt=False)["answer"]
             if use_config_file:
-                with open(self.config_file) as f:
-                    self.corpus_config = yaml.load(f, Loader=yaml.FullLoader)
+                self.corpus_config = config.read_yaml(self.config_file)
                 config.load_config(self.config_file)
+                if not self.corpus_config:
+                    # If config is completely empty, treat as if config is missing
+                    return False
                 return True
             else:
                 sys.exit()
