@@ -24,7 +24,7 @@ def annotate_saldo(
         out_lemgram: Output = Output("<token>:hist.lemgram", cls="token:lemgram",
                                      description="Lemgrams from SALDO, Dalin and Swedberg"),
         out_baseform: Output = Output("<token>:hist.baseform", cls="token:baseform",
-                                      description="Baseforms from SALDO, Dadlin and Swedberg"),
+                                      description="Baseforms from SALDO, Dalin and Swedberg"),
         models: List[Model] = [Model("[saldo.model]"), Model("[hist.dalin_model]"), Model("[hist.swedberg_model]")],
         msd: Optional[Annotation] = Annotation("<token:msd>"),
         delimiter: str = Config("hist.delimiter"),
@@ -97,7 +97,7 @@ def extract_pos(out: Output = Output("<token>:hist.homograph_set", description="
     def oktag(tag):
         return tag is not None and tag.group(1) not in ["e", "sxc", "mxc"]
 
-    def mkpos(thelems):
+    def mkpos(_, thelems):
         pos = [re.search(r"\.\.(.*?)\.", lem) for lem in thelems]
         mapping = util.tagsets.mappings["saldo_pos_to_suc"]
         pos_lists = [mapping.get(p.group(1), []) for p in pos if oktag(p)]
@@ -184,23 +184,23 @@ def posset(pos: Annotation = Annotation("<token:pos>"),
         delimiter (str): Character to put between ambiguous results. Defaults to Config("hist.delimiter").
         affix (str): Character to put before and after sets of results. Defaults to Config("hist.affix").
     """
-    def makeset(thepos):
+    def makeset(_, thepos):
         """Annotate thepos with separators (dummy function)."""
         return [thepos]
 
     _annotate_standard(out, pos, makeset, delimiter=delimiter, affix=affix, split=False)
 
 
-# TODO: Finish conversion!
-# @annotator("Get spelling variants from spelling model", language=["swe-1800"],
-#            preloader=saldo.preloader, preloader_params=["model"], preloader_target="model_preloaded")
-def annotate_variants(word: Annotation = Annotation("<token:word>"),
-                      out: Output = Output(""),  # ??
+@annotator("Get spelling variants from spelling model", language=["swe-fsv"],
+           preloader=saldo.preloader, preloader_params=["model"], preloader_target="model_preloaded")
+def spelling_variants(word: Annotation = Annotation("<token:word>"),
+                      out: Output = Output("<token>:hist.spelling_variants", description="token spelling variants"),
                       spellingmodel: Model = Model("[hist.fsv_spelling]"),
-                      model=Model("[hist.fsv_model]"),
+                      # model: Model = Model("[hist.fsv_model]"),
                       delimiter: str = Config("hist.delimiter"),
                       affix: str = Config("hist.affix"),
-                      model_preloaded: Optional[dict] = None):
+                      # model_preloaded: Optional[dict] = None
+                      ):
     """Use a lexicon model and a spelling model to annotate words with their spelling variants.
 
     Args:
@@ -210,15 +210,16 @@ def annotate_variants(word: Annotation = Annotation("<token:word>"),
         model (Model): The lexicon model. Defaults to Model("[hist.fsv_model]")
         delimiter (str): Character to put between ambiguous results. Defaults to Config("hist.delimiter").
         affix (str): Character to put before and after sets of results. Defaults to Config("hist.affix").
+        model_preloaded (dict, optional): Preloaded morphology model. Defaults to None.
     """
-    # Load model
-    model_name = model.path.stem
-    if not model_preloaded:
-        lexicon = (model_name, saldo.SaldoLexicon(model))
-    # Use pre-loaded lexicon
-    else:
-        assert model_preloaded.get(model_name, None) is not None, "Lexicon %s not found!" % model_name
-        lexicon = (model_name, model_preloaded[model_name])
+    # # Load model
+    # model_name = model.path.stem
+    # if not model_preloaded:
+    #     lexicon = (model_name, saldo.SaldoLexicon(model.path))
+    # # Use pre-loaded lexicon
+    # else:
+    #     assert model_preloaded.get(model_name, None) is not None, "Lexicon %s not found!" % model_name
+    #     lexicon = (model_name, model_preloaded[model_name])
 
     def parsevariant(modelfile):
         # spellingmodel -> {word : [(variant, dist)]}
@@ -236,13 +237,13 @@ def annotate_variants(word: Annotation = Annotation("<token:word>"),
                 addword(d, wd, info)
         return d
 
-    variations = parsevariant(spellingmodel)
+    variations = parsevariant(spellingmodel.path)
 
-    def findvariants(_tokid, theword):
+    def findvariants(_, theword):
         variants = [x_d for x_d in variations.get(theword.lower(), []) if x_d[0] != theword]
-        # return set([v for v, d in variants])
-        variants_lists = [_get_single_annotation([lexicon], v, "lemgram", "") for v, _d in variants]
-        return set([y for x in variants_lists for y in x])
+        return set([v for v, d in variants])
+        # variants_lists = [_get_single_annotation([lexicon], v, "lem", "") for v, _d in variants]
+        # return set([y for x in variants_lists for y in x])
 
     _annotate_standard(out, word, findvariants, delimiter=delimiter, affix=affix, split=False)
 
@@ -272,12 +273,12 @@ def _annotate_standard(out, input_annotation, annotator, extra_input="", delimit
         annotations = [delimiter.join([x, y]) for x, y in zip(annotations, extra_input.read())]
 
     out_annotation = []
-    for annot in annotations:
+    for token_index, annot in enumerate(annotations):
         if split:
             annot = [x for x in annot.split(delimiter) if x != ""]
 
         # Pass annot to annotator and convert into cwbset
-        out_annotation.append(util.cwbset(set(annotator(annot)), delimiter=delimiter, affix=affix))
+        out_annotation.append(util.cwbset(set(annotator(token_index, annot)), delimiter=delimiter, affix=affix))
 
     out.write(out_annotation)
 
@@ -298,11 +299,11 @@ def _annotate_fallback(out, word, msd, main_annotation, key, models, delimiter, 
     word_annotation = list(word.read())
     msd_annotation = list(msd.read())
 
-    def annotate_empties(tokid, annotation):
+    def annotate_empties(token_index, annotation):
         fallbacks = []
         if not annotation:
-            word = word_annotation[tokid]
-            msdtag = msd_annotation[tokid]
+            word = word_annotation[token_index]
+            msdtag = msd_annotation[token_index]
             fallbacks.extend(_get_single_annotation(lexicon_list, word, key, msdtag))
         return fallbacks
 
@@ -319,5 +320,5 @@ def _get_single_annotation(lexicons, word, key, msdtag):
         if annotation:
             break
     # Sort by precision (descending) and remove precision values
-    annotation_lists = [a.get(key) for _, a in sorted(annotation, reverse=True)]
+    annotation_lists = [a.get(key) for _, a in sorted(annotation, reverse=True, key=lambda x: x[0])]
     return [y for x in annotation_lists for y in x]

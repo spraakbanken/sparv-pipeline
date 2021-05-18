@@ -133,12 +133,14 @@ def main(token, word, sentence, reference, out_sense, out_lemgram, out_baseform,
 
     # If min_precision is 0, skip almost all part-of-speech checking (verb multi-word expressions still won't be
     # allowed to span over other verbs)
-    skip_pos_check = (min_precision == 0.0)
+    skip_pos_check = (min_precision == 0.0) or not msd
 
     word_annotation = list(word.read())
     ref_annotation = list(reference.read())
     if msd:
         msd_annotation = list(msd.read())
+    else:
+        msd_annotation = word.create_empty_attribute()
 
     sentences, orphans = sentence.get_children(token)
     sentences.append(orphans)

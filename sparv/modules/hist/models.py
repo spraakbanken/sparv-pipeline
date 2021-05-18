@@ -52,9 +52,9 @@ def build_fsvm(out: ModelOutput = ModelOutput("hist/fsvm.pickle")):
 
 
 @modelbuilder("Fornsvenska spelling variants list", language=["swe-fsv"])
-def build_fsv_spelling(out: ModelOutput = ModelOutput("hist/fsv-spelling_variants.txt")):
+def build_fsv_spelling(out: ModelOutput = ModelOutput("hist/fsv-spelling-variants.txt")):
     """Download spelling variants list for fornsvenska."""
-    out.download("")
+    out.download("https://github.com/spraakbanken/sparv-models/raw/master/hist/fsv-spelling-variants.txt")
 
 
 ################################################################################
