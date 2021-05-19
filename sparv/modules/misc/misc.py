@@ -297,3 +297,25 @@ def roundfloat(chunk: Annotation,
     decimals = int(decimals)
     strformat = "%." + str(decimals) + "f"
     out.write((strformat % round(float(val), decimals) for val in chunk.read()))
+
+
+@annotator("Merge two annotations (which may be sets) into one set")
+def merge_to_set(out: Output,
+                 left: Annotation,
+                 right: Annotation,
+                 unique: bool = True,
+                 sort: bool = True):
+    """Merge two sets of annotations (which may be sets) into one set.
+
+    Setting unique to True will remove duplicate values.
+    Setting sort to True will sort the values within the new set.
+    """
+    le = left.read()
+    ri = right.read()
+    out_annotation = []
+    for left_annot, right_annot in zip(le, ri):
+        annots = util.set_to_list(left_annot) + util.set_to_list(right_annot)
+        if unique:
+            annots = list(dict.fromkeys(annots))
+        out_annotation.append(util.cwbset(annots, sort=sort))
+    out.write(out_annotation)

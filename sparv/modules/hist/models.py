@@ -38,7 +38,7 @@ def build_swedberg(out: ModelOutput = ModelOutput("hist/swedberg.pickle")):
     xml_model.remove()
 
 
-@modelbuilder("Fornsvenska morphology model", language=["swe-fsv"])
+@modelbuilder("Morphology model for Old Swedish", language=["swe-fsv"])
 def build_fsvm(out: ModelOutput = ModelOutput("hist/fsvm.pickle")):
     """Download pickled model for fornsvenska."""
     xml_model = Model("hist/fsvm.xml")
@@ -51,7 +51,7 @@ def build_fsvm(out: ModelOutput = ModelOutput("hist/fsvm.pickle")):
     xml_model.remove()
 
 
-@modelbuilder("Fornsvenska spelling variants list", language=["swe-fsv"])
+@modelbuilder("Spelling variants list for Old Swedish", language=["swe-fsv"])
 def build_fsv_spelling(out: ModelOutput = ModelOutput("hist/fsv-spelling-variants.txt")):
     """Download spelling variants list for fornsvenska."""
     out.download("https://github.com/spraakbanken/sparv-models/raw/master/hist/fsv-spelling-variants.txt")
