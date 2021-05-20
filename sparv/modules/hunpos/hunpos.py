@@ -12,14 +12,7 @@ TAG_SEP = "\t"
 TAG_COLUMN = 1
 
 
-@annotator("Part-of-speech annotation with morphological descriptions", language=["swe"], config=[
-           Config("hunpos.binary", default="hunpos-tag", description="Hunpos executable"),
-           Config("hunpos.model", default="hunpos/suc3_suc-tags_default-setting_utf8.model",
-                  description="Path to Hunpos model"),
-           Config("hunpos.morphtable", default="hunpos/saldo_suc-tags.morphtable",
-                  description="Path to optional Hunpos morphtable file"),
-           Config("hunpos.patterns", default="hunpos/suc.patterns", description="Path to optional patterns file")
-           ])
+@annotator("Part-of-speech annotation with morphological descriptions", language=["swe"])
 def msdtag(out: Output = Output("<token>:hunpos.msd", cls="token:msd",
                                 description="Part-of-speeches with morphological descriptions"),
            word: Annotation = Annotation("<token:word>"),
@@ -28,8 +21,29 @@ def msdtag(out: Output = Output("<token>:hunpos.msd", cls="token:msd",
            model: Model = Model("[hunpos.model]"),
            morphtable: Optional[Model] = Model("[hunpos.morphtable]"),
            patterns: Optional[Model] = Model("[hunpos.patterns]"),
-           tag_mapping=None,
-           encoding: str = util.UTF8):
+           tag_mapping: Optional[str] = Config("hunpos.tag_mapping"),
+           encoding: str = Config("hunpos.encoding")):
+    """POS/MSD tag modern Swedish texts using the Hunpos tagger."""
+    main(out, word, sentence, binary, model, morphtable=morphtable, patterns=patterns, tag_mapping=tag_mapping,
+         encoding=encoding)
+
+
+@annotator("Part-of-speech annotation with morphological descriptions for older Swedish", language=["swe-1800"])
+def msdtag_hist(out: Output = Output("<token>:hunpos.msd", cls="token:msd",
+                                     description="Part-of-speeches with morphological descriptions"),
+                word: Annotation = Annotation("<token:word>"),
+                sentence: Annotation = Annotation("<sentence>"),
+                binary: Binary = Binary("[hunpos.binary]"),
+                model: Model = Model("[hunpos.model_hist]"),
+                morphtable: Optional[Model] = Model("[hunpos.morphtable_hist]"),
+                tag_mapping: Optional[str] = Config("hunpos.tag_mapping_hist"),
+                encoding: str = Config("hunpos.encoding")):
+    """POS/MSD tag modern Swedish texts using the Hunpos tagger."""
+    main(out, word, sentence, binary, model, morphtable=morphtable, patterns=None, tag_mapping=tag_mapping,
+         encoding=encoding)
+
+
+def main(out, word, sentence, binary, model, morphtable=None, patterns=None, tag_mapping=None, encoding=util.UTF8):
     """POS/MSD tag using the Hunpos tagger."""
     if isinstance(tag_mapping, str) and tag_mapping:
         tag_mapping = util.tagsets.mappings[tag_mapping]
@@ -71,7 +85,7 @@ def msdtag(out: Output = Output("<token>:hunpos.msd", cls="token:msd",
     out.write(out_annotation)
 
 
-@annotator("Extract POS from MSD", language=["swe"])
+@annotator("Extract POS from MSD", language=["swe", "swe-1800"])
 def postag(out: Output = Output("<token>:hunpos.pos", cls="token:pos", description="Part-of-speech tags"),
            msd: Annotation = Annotation("<token>:hunpos.msd")):
     """Extract POS from MSD."""
