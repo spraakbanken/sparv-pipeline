@@ -12,9 +12,10 @@ log = logging.getLogger(__name__)
 PART_DELIM1 = "^1"
 
 
-# @annotator("Diapivot annotation", language=["swe-1800"])
-def diapivot_annotate(out: Output = Output("<token>:hist.diapivot", description="SALDO IDs corresponding to lemgrams"),
-                      lemgram: Annotation = Annotation("<token>:saldo.lemgram"),
+@annotator("Diapivot annotation", language=["swe-1800"])
+def diapivot_annotate(out: Output = Output("<token>:hist.diapivot", cls="token:lemgram",
+                                           description="SALDO lemgrams inferred from the diapivot model"),
+                      lemgram: Annotation = Annotation("<token>:hist.lemgram"),
                       model: Model = Model("hist/diapivot.pickle")):
     """Annotate each lemgram with its corresponding saldo_id according to model.
 
@@ -24,7 +25,7 @@ def diapivot_annotate(out: Output = Output("<token>:hist.diapivot", description=
         lemgram (str, optional): Existing lemgram annotation. Defaults to Annotation("<token>:saldo.lemgram").
         model (str, optional): Crosslink model. Defaults to Model("hist/diapivot.pickle").
     """
-    lexicon = PivotLexicon(model)
+    lexicon = PivotLexicon(model.path)
     lemgram_annotation = list(lemgram.read())
 
     out_annotation = []
@@ -38,6 +39,16 @@ def diapivot_annotate(out: Output = Output("<token>:hist.diapivot", description=
         out_annotation.append(util.AFFIX + util.DELIM.join(set(saldo_ids)) + util.AFFIX if saldo_ids else util.AFFIX)
 
     out.write(out_annotation)
+
+
+@annotator("Combine lemgrams from SALDO, Dalin, Swedberg and the diapivot", language=["swe-1800"])
+def combine_lemgrams(out: Output = Output("<token>:hist.combined_lemgrams", cls="token:lemgram",
+                                   description="SALDO lemgrams combined from SALDO, Dalin, Swedberg and the diapivot"),
+                     diapivot: Annotation = Annotation("<token>:hist.diapivot"),
+                     lemgram: Annotation = Annotation("<token>:hist.lemgram")):
+    """Combine lemgrams from SALDO, Dalin, Swedberg and the diapivot into a set of annotations."""
+    from sparv.modules.misc import misc
+    misc.merge_to_set(out, left=diapivot, right=lemgram, unique=True, sort=False)
 
 
 @modelbuilder("Diapivot model", language=["swe-1800"])

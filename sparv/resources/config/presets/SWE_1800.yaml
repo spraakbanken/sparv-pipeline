@@ -12,7 +12,7 @@ classes:
     "token:pos": <token>:hunpos.pos
     "token:msd": <token>:hunpos.msd
     "token:baseform": <token>:hist.baseform
-    "token:lemgram": <token>:hist.lemgram
+    "token:lemgram": <token>:hist.combined_lemgrams
     "token:sense": <token>:hist.sense
     "token:deprel": <token>:stanza.deprel
     "token:dephead": <token>:stanza.dephead
@@ -41,9 +41,9 @@ presets:
         - <token>:hunpos.pos
         - <token>:hunpos.msd
         - <token>:hist.baseform
-        - <token>:hist.lemgram
+        - <token>:hist.combined_lemgrams as lemgram
         - <token>:hist.sense
-        - <token>:hist.homograph_set
+        # - <token>:hist.homograph_set
     
     # stanza-depparse:
     #     - <token>:stanza.deprel
