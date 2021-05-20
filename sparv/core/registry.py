@@ -334,8 +334,8 @@ def _add_to_registry(annotator):
 
                     # Only add classes for relevant languages
                     if not annotator["language"] or (
-                        annotator["language"] and check_language(sparv_config.get("metadata.language"),
-                                                                 annotator["language"])):
+                        annotator["language"] and sparv_config.get("metadata.language")
+                            and check_language(sparv_config.get("metadata.language"), annotator["language"])):
                         if cls_target not in annotation_classes["module_classes"][cls]:
                             annotation_classes["module_classes"][cls].append(cls_target)
 

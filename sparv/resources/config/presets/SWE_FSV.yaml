@@ -1,0 +1,31 @@
+#===============================================================================
+# Annotations for Old Swedish (swe-fsv)
+#===============================================================================
+languages:
+    - swe-fsv
+
+
+classes:
+    sentence: segment.sentence
+    token: segment.token
+    "token:word": <token>:misc.word
+    "token:baseform": <token>:hist.baseform
+    "token:lemgram": <token>:hist.lemgram
+
+presets:
+    all:
+        - sentence
+        - token-annotations
+
+    #====================================
+    # Token Annotations
+    #====================================
+
+    token-annotations:
+        - <token>:hist.baseform
+        - <token>:hist.lemgram
+        - <token>:hist.homograph_set
+        - <token>:hist.spelling_variants
+
+    sentence:
+        - <sentence>:misc.id

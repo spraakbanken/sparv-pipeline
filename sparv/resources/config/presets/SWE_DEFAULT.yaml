@@ -14,6 +14,7 @@ classes:
     "token:msd": <token>:stanza.msd
     "token:baseform": <token>:saldo.baseform2
     "token:sense": <token>:wsd.sense
+    "token:lemgram": <token>:saldo.lemgram
     "token:deprel": <token>:stanza.deprel
     "token:dephead": <token>:stanza.dephead
     "token:dephead_ref": <token>:stanza.dephead_ref

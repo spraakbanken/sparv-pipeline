@@ -849,6 +849,43 @@ saldo_tags = {
 }
 
 
+# Mapping from SALDO POS tags (as found in lemgrams) to SUC POS tags
+saldo_pos_to_suc = {
+    "nn": ["NN"],
+    "av": ["JJ"],
+    "vb": ["VB"],
+    "pm": ["PM"],
+    "ab": ["AB"],
+    "in": ["IN"],
+    "pp": ["PP"],
+    "pn": ["PN"],
+    "sn": ["SN"],
+    "kn": ["KN"],
+    "ie": ["IE"],
+    "abh": ["AB"],
+    "nnm": ["NN"],
+    "nna": ["NN"],
+    "avh": ["JJ"],
+    "avm": ["JJ"],
+    "ava": ["JJ"],
+    "vbm": ["VB"],
+    "pmm": ["PM"],
+    "abm": ["AB"],
+    "aba": ["AB"],
+    "pnm": ["PN"],
+    "inm": ["IN"],
+    "ppm": ["PP"],
+    "ppa": ["PP"],
+    "knm": ["KN"],
+    "kna": ["KN"],
+    "snm": ["SN"],
+    "nl": ["RG", "RO"],
+    "nlm": ["RG", "RO"],
+    "al": ["DT"],
+    "pma": ["PM"]
+}
+
+
 suc_to_parole = {
     "AB": "RG0S",
     "AB.AN": "RG0A",
@@ -1366,6 +1403,7 @@ mappings = {
     "saldo_to_saldo": saldo_to_saldo,
     "saldo_to_suc_compound": saldo_to_suc_compound,
     "saldo_to_suc": saldo_to_suc,
+    "saldo_pos_to_suc": saldo_pos_to_suc,
     "suc_descriptions": suc_descriptions,
     "suc_to_granska": suc_to_granska,
     "suc_to_parole": suc_to_parole,
