@@ -272,9 +272,16 @@ def _add_to_registry(annotator):
         # Add to set of supported languages...
         for lang in annotator["language"]:
             if lang not in languages:
-                languages[lang] = iso639.languages.get(part3=lang).name if lang in iso639.languages.part3 else lang
+                langcode, _, suffix = lang.partition("-")
+                if suffix:
+                    suffix = f" ({suffix})"
+                if langcode in iso639.languages.part3:
+                    languages[lang] = iso639.languages.get(part3=langcode).name + suffix
+                else:
+                    languages[lang] = lang
         # ... but skip annotators for other languages than the one specified in the config
-        if sparv_config.get("metadata.language") and sparv_config.get("metadata.language") not in annotator["language"]:
+        if sparv_config.get("metadata.language") and not check_language(
+                sparv_config.get("metadata.language"), annotator["language"]):
             return
 
     # Add config variables to config
@@ -327,7 +334,8 @@ def _add_to_registry(annotator):
 
                     # Only add classes for relevant languages
                     if not annotator["language"] or (
-                            annotator["language"] and sparv_config.get("metadata.language") in annotator["language"]):
+                        annotator["language"] and check_language(sparv_config.get("metadata.language"),
+                                                                 annotator["language"])):
                         if cls_target not in annotation_classes["module_classes"][cls]:
                             annotation_classes["module_classes"][cls].append(cls_target)
 
@@ -516,3 +524,11 @@ def get_type_hint_type(type_hint):
         type_ = type_hint
 
     return type_, is_list, optional
+
+
+def check_language(corpus_lang: str, langs: List[str]) -> bool:
+    """Check if corpus language is among a list of languages.
+
+    Any suffix on corpus_lang will be ignored.
+    """
+    return corpus_lang in langs or corpus_lang.split("-")[0] in langs
