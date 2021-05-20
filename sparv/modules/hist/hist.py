@@ -43,7 +43,7 @@ def annotate_saldo(
                word_separator=word_separator, models_preloaded=models_preloaded)
 
 
-@annotator("Annotations from SALDO, Schlyter and Soderwall", language=["swe-fsv"],
+@annotator("Annotations from Schlyter and Söderwall", language=["swe-fsv"],
            preloader=saldo.preloader, preloader_params=["models"], preloader_target="models_preloaded",
            config=[Config("hist.fsv_min_precision", default=0.25,
                    description="Only use annotations with a probability score higher than this")])
@@ -55,9 +55,9 @@ def annotate_saldo_fsv(
         out_sense: Output = Output("<token>:hist.sense", cls="token:sense",
                                    description="Sense identifiers from SALDO (empty dummy annotation)"),
         out_lemgram: Output = Output("<token>:hist.lemgram", cls="token:lemgram",
-                                     description="Lemgrams from SALDO, Schlyter and Söderwall"),
+                                     description="Lemgrams from Schlyter and Söderwall"),
         out_baseform: Output = Output("<token>:hist.baseform", cls="token:baseform",
-                                      description="Baseforms from SALDO, Schlyter and Söderwall"),
+                                      description="Baseforms from Schlyter and Söderwall"),
         models: List[Model] = [Model("[hist.fsv_model]")],
         delimiter: str = Config("hist.delimiter"),
         affix: str = Config("hist.affix"),
