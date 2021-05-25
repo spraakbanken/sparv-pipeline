@@ -8,6 +8,7 @@ __config__ = [
     Config("metadata.id", description="Machine name of corpus (a-z, 0-9, -)"),
     Config("metadata.name", description="Human readable name of corpus"),
     Config("metadata.language", description="Language of source files (ISO 639-3)"),
+    Config("metadata.language_subtype", description="Language subtype of source files (if applicable)"),
     Config("metadata.description", description="Description of corpus")
 ]
 

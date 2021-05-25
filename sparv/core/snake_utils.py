@@ -109,7 +109,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
     # Skip any annotator that is not available for the selected corpus language
     if rule.annotator_info["language"] and sparv_config.get("metadata.language") and \
-            not registry.check_language(sparv_config.get("metadata.language"), rule.annotator_info["language"]):
+            not registry.check_language(sparv_config.get("metadata.language"), rule.annotator_info["language"],
+                                        sparv_config.get("metadata.language_subtype")):
         return False
 
     # Get this function's parameters

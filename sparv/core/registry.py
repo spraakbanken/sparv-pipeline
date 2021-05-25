@@ -281,7 +281,7 @@ def _add_to_registry(annotator):
                     languages[lang] = lang
         # ... but skip annotators for other languages than the one specified in the config
         if sparv_config.get("metadata.language") and not check_language(
-                sparv_config.get("metadata.language"), annotator["language"]):
+                sparv_config.get("metadata.language"), annotator["language"], sparv_config.get("metadata.language_subtype")):
             return
 
     # Add config variables to config
@@ -295,7 +295,7 @@ def _add_to_registry(annotator):
             sparv_config.set_value("import.document_annotation", annotator["document_annotation"])
             sparv_config.handle_document_annotation()
 
-    for param, val in inspect.signature(annotator["function"]).parameters.items():
+    for _param, val in inspect.signature(annotator["function"]).parameters.items():
         if isinstance(val.default, BaseOutput):
             ann = val.default
             cls = val.default.cls
@@ -335,7 +335,8 @@ def _add_to_registry(annotator):
                     # Only add classes for relevant languages
                     if not annotator["language"] or (
                         annotator["language"] and sparv_config.get("metadata.language")
-                            and check_language(sparv_config.get("metadata.language"), annotator["language"])):
+                            and check_language(sparv_config.get("metadata.language"), annotator["language"],
+                                               sparv_config.get("metadata.language_subtype"))):
                         if cls_target not in annotation_classes["module_classes"][cls]:
                             annotation_classes["module_classes"][cls].append(cls_target)
 
@@ -363,7 +364,6 @@ def _add_to_registry(annotator):
 
 def find_implicit_classes() -> None:
     """Figure out implicitly defined classes from annotation usage."""
-
     annotation_to_class = defaultdict(set)
     for class_source in ("module_classes", "config_classes"):
         for cls, anns in annotation_classes[class_source].items():
@@ -526,9 +526,11 @@ def get_type_hint_type(type_hint):
     return type_, is_list, optional
 
 
-def check_language(corpus_lang: str, langs: List[str]) -> bool:
+def check_language(corpus_lang: str, langs: List[str], corpus_lang_suffix: Optional[str] = None) -> bool:
     """Check if corpus language is among a list of languages.
 
     Any suffix on corpus_lang will be ignored.
     """
+    if corpus_lang_suffix:
+        corpus_lang = corpus_lang + "-" + corpus_lang_suffix
     return corpus_lang in langs or corpus_lang.split("-")[0] in langs
