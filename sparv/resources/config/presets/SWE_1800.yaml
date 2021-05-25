@@ -39,7 +39,7 @@ presets:
 
     hist-token-annotations:
         - <token>:hunpos.pos
-        - <token>:hunpos.msd_hist
+        - <token>:hunpos.msd_hist as msd
         - <token>:hist.baseform
         - <token>:hist.combined_lemgrams as lemgram
         - <token>:hist.sense

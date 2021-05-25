@@ -10,7 +10,7 @@ classes:
     token: segment.token
     "token:word": <token>:misc.word
     "token:baseform": <token>:hist.baseform
-    "token:lemgram": <token>:hist.lemgram
+    "token:lemgram": <token>:hist.combined_lemgrams
 
 presets:
     all:
@@ -23,7 +23,7 @@ presets:
 
     token-annotations:
         - <token>:hist.baseform
-        - <token>:hist.lemgram
+        - <token>:hist.combined_lemgrams as lemgram
         - <token>:hist.homograph_set
         - <token>:hist.spelling_variants
 

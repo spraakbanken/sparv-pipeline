@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 PART_DELIM1 = "^1"
 
 
-@annotator("Diapivot annotation", language=["swe-1800"])
+@annotator("Diapivot annotation", language=["swe-1800", "swe-fsv"])
 def diapivot_annotate(out: Output = Output("<token>:hist.diapivot", cls="token:lemgram",
                                            description="SALDO lemgrams inferred from the diapivot model"),
                       lemgram: Annotation = Annotation("<token>:hist.lemgram"),
@@ -40,7 +40,7 @@ def diapivot_annotate(out: Output = Output("<token>:hist.diapivot", cls="token:l
     out.write(out_annotation)
 
 
-@annotator("Combine lemgrams from SALDO, Dalin, Swedberg and the diapivot", language=["swe-1800"])
+@annotator("Combine lemgrams from SALDO, Dalin, Swedberg and the diapivot", language=["swe-1800", "swe-fsv"])
 def combine_lemgrams(out: Output = Output("<token>:hist.combined_lemgrams", cls="token:lemgram",
                                    description="SALDO lemgrams combined from SALDO, Dalin, Swedberg and the diapivot"),
                      diapivot: Annotation = Annotation("<token>:hist.diapivot"),
@@ -50,7 +50,7 @@ def combine_lemgrams(out: Output = Output("<token>:hist.combined_lemgrams", cls=
     misc.merge_to_set(out, left=diapivot, right=lemgram, unique=True, sort=False)
 
 
-@modelbuilder("Diapivot model", language=["swe-1800"])
+@modelbuilder("Diapivot model", language=["swe-1800", "swe-fsv"])
 def build_diapivot(out: ModelOutput = ModelOutput("hist/diapivot.pickle")):
     """Download diapivot XML dictionary and save as a pickle file."""
     # Download diapivot.xml

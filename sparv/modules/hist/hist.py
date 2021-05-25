@@ -76,7 +76,7 @@ def annotate_saldo_fsv(
                word_separator=word_separator, models_preloaded=models_preloaded)
 
 
-@annotator("Extract POS tags (homograph sets) from lemgrams", language=["swe-1800", "swe-fsv"], order=2)
+@annotator("Extract POS tags (homograph sets) from lemgrams", language=["swe-fsv"])
 def extract_pos(out: Output = Output("<token>:hist.homograph_set", description="Sets of POS extracted from lemgrams"),
                 lemgrams: Annotation = Annotation("<token:lemgram>"),
                 extralemgrams: Optional[Annotation] = Annotation("[hist.extralemgrams]"),
@@ -168,7 +168,7 @@ def baseform_fallback(
                        affix=affix, models_preloaded=models_preloaded)
 
 
-@annotator("Convert POS into sets", language=["swe-1800", "swe-fsv"], order=1)
+@annotator("Convert POS into sets", language=["swe-1800"])
 def posset(pos: Annotation = Annotation("<token:pos>"),
            out: Output = Output("<token>:hist.homograph_set", description="POS converted into sets"),
            delimiter: str = Config("hist.delimiter"),
