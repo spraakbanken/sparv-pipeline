@@ -86,7 +86,7 @@ def main(out, word, sentence, binary, model, morphtable=None, patterns=None, tag
 
 @annotator("Extract POS from MSD", language=["swe", "swe-1800"])
 def postag(out: Output = Output("<token>:hunpos.pos", cls="token:pos", description="Part-of-speech tags"),
-           msd: Annotation = Annotation("<token>:hunpos.msd")):
+           msd: Annotation = Annotation("<token:msd>")):
     """Extract POS from MSD."""
     from sparv.modules.misc import misc
     misc.select(out, msd, index=0, separator=".")
