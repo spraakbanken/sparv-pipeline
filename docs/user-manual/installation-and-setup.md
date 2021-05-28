@@ -110,10 +110,8 @@ Alternatively you can place the binaries inside your [Sparv data directory](#set
 
 If you are running a 64-bit OS, you might also have to install 32-bit compatibility libraries if Hunpos won't run:
 ```
-sudo apt install ia32-libs
+sudo apt install lib32z1
 ```
-On Arch Linux, activate the `multilib` repository and install `lib32-gcc-libs`. If that doesn't work, you might have to
-compile Hunpos from source.
 
 On newer macOS you probably have to compile Hunpos from source. [This GitHub repo](https://github.com/mivoq/hunpos) has
 instructions that should work.
