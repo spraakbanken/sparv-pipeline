@@ -4,11 +4,20 @@
 
 ### Added
 
+- Added a quick start guide in the documentation.
+- Added Support for language subtypes.
+- Re-introduced analyses for Old Swedish and Swedish from the 1800's.
+
 ### Changed
+
+- Significantly improved the CLI startup time.
 
 ### Fixed
 
-- Fixed bugs in segmenter module.
+- Fixed rule ambiguity problems (functions with an order higher than 1 were not accessible).
+- Fixed bugs in the segmenter module.
+- Stanza can now handle tokens containing whitespaces.
+
 
 ## [4.1.0] - 2021-04-14
 
