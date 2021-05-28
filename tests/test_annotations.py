@@ -45,6 +45,17 @@ def test_standard_swe(tmp_path):
     utils.cmp_export(gold_corpus_dir, test_corpus_dir)
 
 
+@pytest.mark.swe
+@pytest.mark.swehist
+@pytest.mark.slow
+def test_swe_1800(tmp_path):
+    """Run corpus standard-swe and compare the annotations and exports to gold standard."""
+    gold_corpus_dir = pathlib.Path("tests/test_corpora/swe-1800")
+    test_corpus_dir = utils.run_sparv(gold_corpus_dir, tmp_path)
+    utils.cmp_workdir(gold_corpus_dir, test_corpus_dir)
+    utils.cmp_export(gold_corpus_dir, test_corpus_dir)
+
+
 @pytest.mark.freeling
 @pytest.mark.skipif(not find_binary("analyze"), reason="FreeLing is not installed")
 def test_freeling_eng_slevel(tmp_path):
