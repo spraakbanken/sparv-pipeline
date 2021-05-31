@@ -23,18 +23,10 @@ sparv-uppercase/
 
 In the above example the `uppercase` directory is a Sparv module containing the [module code](#module-code) in
 `uppercase.py` and the mandatory [init file](#init-file) `__init__.py`. The [setup file](#setup-file) `setup.py` in the
-root directory is needed in order to install the plugin. A plugin does not have to be stored in any particular place. As
-long as the Sparv Pipeline is installed on your machine, you should be able to inject your plugin into the Sparv
-Pipeline code using pipx (from the directory containing your plugin):
-```
-pipx inject sparv-pipeline ./sparv-uppercase
-```
+root directory is needed in order to install the plugin.
 
-After the injection the plugin functionality should be available, and the plugged-in module should be treated just like
-any other module within the Sparv Pipeline.
-
-The readme and license files are not strictly recommended are not strictly necessary for the plugin to work but we
-strongly recommend that you include these if you want to publish your plugin.
+The readme and license files are not strictly necessary for the plugin to work but we strongly recommend that you
+include these if you want to publish your plugin.
 
 
 ## Setup File
@@ -44,7 +36,7 @@ a setup file (taken from the [Sparv plugin template](https://github.com/spraakba
 import setuptools
 
 setuptools.setup(
-    name="uppercase",
+    name="sparv-uppercase",
     version="0.1",
     description="Uppercase converter (example plug-in for Sparv)",
     license="MIT",
@@ -170,6 +162,40 @@ def uppercase(word: Annotation = Annotation("<token:word>"),
 ```
 
 
+## Installing and Uninstalling Plugins
+
+A Sparv plugin can be installed from the [Python Package Index (PyPI)](https://pypi.org/), a remote public repository,
+or from a local directory stored anywhere on your machine. As long as the Sparv Pipeline is installed on your machine,
+you should be able to inject your plugin into the Sparv Pipeline code using pipx:
+```
+pipx inject sparv-pipeline [pointer-to-sparv-plugin]
+```
+
+So if you are trying to install the `sparv-uppercase` plugin and it exists on PyPI you can install it like this:
+```
+pipx inject sparv-pipeline sparv-uppercase
+```
+
+For installing it from a public repository from GitHub the install command looks something like this:
+```
+pipx inject sparv-pipeline https://github.com/spraakbanken/sparv-plugin-template/archive/main.zip
+```
+
+For installation from a local directory run this (from the directory containing your plugin):
+```
+pipx inject sparv-pipeline  ./sparv-uppercase
+```
+
+After the injection the plugin functionality should be available, and the plugged-in module should be treated just like
+any other module within the Sparv Pipeline.
+
+You can uninstall the plugin by running:
+```
+pipx runpip sparv-pipeline uninstall [name-of-sparv-plugin]
+```
+In this example `name-of-sparv-plugin` is `sparv-uppercase`.
+
+
 ## Advanced Features
 This section contains documentation for more advanced features which may be used but are not necessary for writing
 plugins.
@@ -191,7 +217,7 @@ def annotate(
     ...
 
 
-@annotator("Create foo annotation for when bar is not available", order=2)
+@annotator("Create foo annotation when bar is not available", order=2)
 def annotate_backoff(
     out: Output = Output("mymodule.foo")):
     ...

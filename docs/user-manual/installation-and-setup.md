@@ -229,8 +229,25 @@ Please follow the installation instructions given in the fast_align repository a
 `bin/word_alignment`. -->
 
 ## Plugins
-The only available plugin for Sparv available so far is [the sparv-freeling
-plugin](https://github.com/spraakbanken/sparv-freeling). Please refer to its GitHub page for installation instructions.
+
+If you have the Sparv Pipeline installed on your machine, you can install plugins by injecting them into the Sparv
+Pipeline code using pipx:
+```
+pipx inject sparv-pipeline [pointer-to-sparv-plugin]
+```
+
+The `pointer-to-sparv-plugin` can be a package available on the [Python Package Index (PyPI)](https://pypi.org/), a
+remote public repository, or a local directory on your machine.
+
+For now there are two plugins available for Sparv: [sparv-freeling](https://github.com/spraakbanken/sparv-freeling) and
+[sparv-sbx-metadata](https://github.com/spraakbanken/sparv-sbx-metadata) The only available plugin for Sparv available
+so far is [the sparv-freeling plugin](https://github.com/spraakbanken/sparv-freeling). Please refer to their GitHub page
+for more information.
+
+Plugins can be uninstalled by running:
+```
+pipx runpip sparv-pipeline uninstall [name-of-sparv-plugin]
+```
 
 ## Uninstalling Sparv
 
