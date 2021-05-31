@@ -35,7 +35,8 @@ def diapivot_annotate(out: Output = Output("<token>:hist.diapivot", cls="token:l
             s_i = lexicon.get_exactMatch(lemgram)
             if s_i:
                 saldo_ids += [s_i]
-        out_annotation.append(util.AFFIX + util.DELIM.join(set(saldo_ids)) + util.AFFIX if saldo_ids else util.AFFIX)
+
+        out_annotation.append(util.cwbset(set(saldo_ids), sort=True))
 
     out.write(out_annotation)
 
@@ -47,7 +48,7 @@ def combine_lemgrams(out: Output = Output("<token>:hist.combined_lemgrams", cls=
                      lemgram: Annotation = Annotation("<token>:hist.lemgram")):
     """Combine lemgrams from SALDO, Dalin, Swedberg and the diapivot into a set of annotations."""
     from sparv.modules.misc import misc
-    misc.merge_to_set(out, left=diapivot, right=lemgram, unique=True, sort=False)
+    misc.merge_to_set(out, left=diapivot, right=lemgram, unique=True, sort=True)
 
 
 @modelbuilder("Diapivot model", language=["swe-1800", "swe-fsv"])

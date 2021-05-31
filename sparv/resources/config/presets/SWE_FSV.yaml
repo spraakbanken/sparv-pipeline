@@ -22,10 +22,10 @@ presets:
     #====================================
 
     token-annotations:
+        - <token>:hist.spelling_variants
         - <token>:hist.baseform
         - <token>:hist.combined_lemgrams as lemgram
         - <token>:hist.homograph_set
-        - <token>:hist.spelling_variants
 
     sentence:
         - <sentence>:misc.id

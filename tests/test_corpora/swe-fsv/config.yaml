@@ -1,0 +1,33 @@
+#===============================================================================
+# Meta Data
+#===============================================================================
+metadata:
+    id: swe-fsv
+    language: swe
+    language_subtype: fsv
+    description:
+        eng: |
+            This test corpus is for testing the standard annotations for Old
+            Swedish.
+
+#===============================================================================
+# Import Settings
+#===============================================================================
+import:
+    document_annotation: text
+
+#===============================================================================
+# Export Settings
+#===============================================================================
+export:
+    # Use the classes and annotations from the SWE_1800 preset
+    annotations:
+        - SWE_FSV.all
+    # Exports to create by default when running 'sparv run'
+    default:
+        - csv_export:csv
+        - cwb:info
+        - cwb:vrt
+        - stats_export:freq_list_fsv
+        - xml_export:pretty
+        - xml_export:preserved_format

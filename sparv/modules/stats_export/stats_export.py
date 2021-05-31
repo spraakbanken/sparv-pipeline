@@ -4,18 +4,13 @@ import csv
 import logging
 from collections import defaultdict
 
-from sparv.api import AllDocuments, AnnotationAllDocs, Corpus, Export, exporter, Config
+from sparv.api import AllDocuments, AnnotationAllDocs, Config, Export, exporter
 
 log = logging.getLogger(__name__)
 
 
-@exporter("Corpus word frequency list", language=["swe"], order=1, config=[
-    Config("stats_export.include_all_compounds", default=False,
-           description="Whether to include compound analyses for every word or just for the words that are lacking "
-                       "a sense annotation")
-])
-def freq_list(corpus: Corpus = Corpus(),
-              docs: AllDocuments = AllDocuments(),
+@exporter("Corpus word frequency list", language=["swe"], order=1)
+def freq_list(docs: AllDocuments = AllDocuments(),
               word: AnnotationAllDocs = AnnotationAllDocs("<token:word>"),
               msd: AnnotationAllDocs = AnnotationAllDocs("<token:msd>"),
               baseform: AnnotationAllDocs = AnnotationAllDocs("<token:baseform>"),
@@ -29,7 +24,6 @@ def freq_list(corpus: Corpus = Corpus(),
     """Create a word frequency list for the entire corpus.
 
     Args:
-        corpus (str, optional): The corpus ID. Defaults to Corpus.
         docs (list, optional): The documents belonging to this corpus. Defaults to AllDocuments.
         word (str, optional): Word annotations. Defaults to AnnotationAllDocs("<token:word>").
         msd (str, optional): MSD annotations. Defaults to AnnotationAllDocs("<token:msd>").
@@ -55,13 +49,8 @@ def freq_list(corpus: Corpus = Corpus(),
     write_csv(out, freq_dict, delimiter, cutoff)
 
 
-@exporter("Corpus word frequency list (without Swedish annotations)", order=2, config=[
-    Config("stats_export.delimiter", default="\t", description="Delimiter separating columns"),
-    Config("stats_export.cutoff", default=1,
-           description="The minimum frequency a word must have in order to be included in the result"),
-])
-def freq_list_simple(corpus: Corpus = Corpus(),
-                     docs: AllDocuments = AllDocuments(),
+@exporter("Corpus word frequency list (without Swedish annotations)", order=2)
+def freq_list_simple(docs: AllDocuments = AllDocuments(),
                      word: AnnotationAllDocs = AnnotationAllDocs("<token:word>"),
                      pos: AnnotationAllDocs = AnnotationAllDocs("<token:pos>"),
                      baseform: AnnotationAllDocs = AnnotationAllDocs("<token:baseform>"),
@@ -83,13 +72,37 @@ def freq_list_simple(corpus: Corpus = Corpus(),
     write_csv(out, freq_dict, delimiter, cutoff)
 
 
-def update_freqs(tokens, freq_dict, include_all_compounds=False):
+@exporter("Corpus word frequency list for Old Swedish (without part-of-speech)", language=["swe-fsv"], order=3)
+def freq_list_fsv(docs: AllDocuments = AllDocuments(),
+                  word: AnnotationAllDocs = AnnotationAllDocs("<token:word>"),
+                  baseform: AnnotationAllDocs = AnnotationAllDocs("<token:baseform>"),
+                  lemgram: AnnotationAllDocs = AnnotationAllDocs("<token:lemgram>"),
+                  out: Export = Export("frequency_list/stats_[metadata.id].csv"),
+                  delimiter: str = Config("stats_export.delimiter"),
+                  cutoff: int = Config("stats_export.cutoff")):
+    """Create a word frequency list for a corpus without sense, lemgram and complemgram annotations."""
+    freq_dict = defaultdict(int)
+
+    for doc in docs:
+        simple_tokens = word.read_attributes(doc, [word, baseform, lemgram])
+
+        # Add empty annotations for sense, lemgram and complemgram
+        tokens = []
+        for w, b, lem in simple_tokens:
+            tokens.append((w, "", b, "|", lem, "|"))
+        update_freqs(tokens, freq_dict, include_all_lemgrams=True, include_all_baseforms=True)
+
+    write_csv(out, freq_dict, delimiter, cutoff)
+
+
+def update_freqs(tokens, freq_dict, include_all_compounds=False, include_all_lemgrams=False, include_all_baseforms=False):
     """Extract annotation info and update frequencies."""
     for word, msd, baseform, sense, lemgram, complemgram in tokens:
-        if "|" in baseform:
+        if "|" in baseform and not include_all_baseforms:
             baseform = baseform.split("|")[1]
         sense = sense.split("|")[1].split(":")[0]
-        lemgram = lemgram.split("|")[1].split(":")[0]
+        if not include_all_lemgrams:
+            lemgram = lemgram.split("|")[1].split(":")[0]
         complemgram = complemgram.split("|")[1].split(":")[0]
         if not include_all_compounds:
             if sense:
