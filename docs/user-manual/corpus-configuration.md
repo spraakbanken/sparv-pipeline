@@ -64,6 +64,25 @@ There are a few config options that must be set (either through the default conf
   - `classes.sentence` (default: `segment.sentence`)
 
 
+## Metadata Options
+The `metadata` section of your corpus config contains metadata about your corpus that may be used by any Sparv module.
+
+- `metadata.id` defines the machine name of the corpus. It is required by some exporter modules. This string may contain
+  ascii letters, digits and dashes.
+
+- `metadata.name` is an optional human readable name of the corpus. This option is split into two fields, `eng` and
+  `swe` for defining a name in English and in Swedish.
+
+- `metadata.language` defines the language of the source files in the corpus. This should be an ISO 639-3 code. If not
+  specified it defaults to `swe`. Run `sparv languages` to list the supported languages along with their language codes.
+
+- `metadata.language_subtype` is an optional field containing the language subtype of source files (if applicable). Run
+  `sparv languages` to list the supported subtypes for each language.
+
+- `metadata.description` is an optional description for the corpus. It may consist of multiple lines. This option is
+  split into two fields, `eng` and `swe` for defining a name in English and in Swedish.
+
+
 ## Import Options
 The `import` section of your corpus config is used to give Sparv some information about your input documents (i.e. your
 corpus).

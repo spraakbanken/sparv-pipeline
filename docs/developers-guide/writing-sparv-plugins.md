@@ -161,6 +161,31 @@ def uppercase(word: Annotation = Annotation("<token:word>"),
     ...
 ```
 
+## Languages and Language subtypes
+It is possible to restrict the use of an annotator, exporter, installer or modelbuilder to one or more specific
+language(s). This is done by passing a list of ISO 639-3 language codes to the optional `language` parameter in the
+decorator:
+```python
+@annotator("Convert every word to uppercase", language=["swe", "eng"])
+def ...
+```
+
+Sparv functions are only available for use if one of their languages match the language in the [corpus config
+file](user-manual/corpus-configuration.md). If no language codes are provided in the decorator, the function is
+available for any corpus.
+
+Sparv also supports language subtypes which is useful when you want to write Sparv functions for a specific variety of a
+language. For instance, Sparv has some built-in annotators that are restricted to corpora with historical Swedish from
+the 1800's. They are marked with the language code `swe-1800`, where `swe` is the ISO 639-3 code for Swedish and `1800`
+is an arbitrary string for this specific language subtype. Sparv functions marked with `swe-1800` are available for
+corpora that are configured as follows:
+```yaml
+metadata:
+    language: swe
+    language_subtype: "1800"
+```
+Note that all functions marked with `swe` will also be available for these corpora.
+
 
 ## Installing and Uninstalling Plugins
 
@@ -183,7 +208,7 @@ pipx inject sparv-pipeline https://github.com/spraakbanken/sparv-plugin-template
 
 For installation from a local directory run this (from the directory containing your plugin):
 ```
-pipx inject sparv-pipeline  ./sparv-uppercase
+pipx inject sparv-pipeline ./sparv-uppercase
 ```
 
 After the injection the plugin functionality should be available, and the plugged-in module should be treated just like
@@ -193,7 +218,7 @@ You can uninstall the plugin by running:
 ```
 pipx runpip sparv-pipeline uninstall [name-of-sparv-plugin]
 ```
-In this example `name-of-sparv-plugin` is `sparv-uppercase`.
+In this example `[name-of-sparv-plugin]` is `sparv-uppercase`.
 
 
 ## Advanced Features
