@@ -20,7 +20,7 @@ def annotate(out_phrase: Output = Output("phrase_structure.phrase", description=
              sentence: Annotation = Annotation("<sentence>"),
              pos: Annotation = Annotation("<token:pos>"),
              msd: Annotation = Annotation("<token:msd>"),
-             ref: Annotation = Annotation("<token>:misc.number_rel_<sentence>"),
+             ref: Annotation = Annotation("<token:ref>"),
              dephead_ref: Annotation = Annotation("<token:dephead_ref>"),
              deprel: Annotation = Annotation("<token:deprel>")):
     """Annotate sentence with phrase structures."""

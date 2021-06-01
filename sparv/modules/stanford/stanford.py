@@ -97,6 +97,16 @@ def annotate(corpus_text: Text = Text(),
     out_deprel.write([t.deprel for t in all_tokens])
 
 
+@annotator("Annotate tokens with IDs relative to their sentences", language=["eng"])
+def make_ref(out: Output = Output("<token>:stanford.ref", cls="token:ref",
+                                  description="Token IDs relative to their sentences"),
+             sentence: Annotation = Annotation("<sentence>"),
+             token: Annotation = Annotation("<token>")):
+    """Annotate tokens with IDs relative to their sentences."""
+    from sparv.modules.misc import number
+    number.number_relative(out, sentence, token)
+
+
 def _parse_output(stdout, lang, add_to_index):
     """Parse the CoNLL format output from the Stanford Parser."""
     sentences = []

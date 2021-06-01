@@ -16,6 +16,7 @@ classes:
     "token:deprel": <token>:stanza.deprel
     "token:dephead": <token>:stanza.dehead
     "token:dephead_ref": <token>:stanza.dehead_ref
+    "token:ref": <token>:stanza.ref
 
 
 presets:
@@ -31,7 +32,7 @@ presets:
         - <token>:stanza.ufeats
         - <token>:stanza.dephead_ref
         - <token>:stanza.deprel
-        - <token>:misc.number_rel_<sentence> as ref
+        - <token>:stanza.ref
 
     sentence:
         - <sentence>:misc.id

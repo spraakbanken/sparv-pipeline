@@ -1,6 +1,16 @@
 """Util functions used in stanza."""
 
-from sparv.api import util
+from sparv.api import Annotation, Output, annotator, util
+
+
+@annotator("Annotate tokens with IDs relative to their sentences")
+def make_ref(out: Output = Output("<token>:stanza.ref", cls="token:ref",
+                                  description="Token IDs relative to their sentences"),
+             sentence: Annotation = Annotation("<sentence>"),
+             token: Annotation = Annotation("<token>")):
+    """Annotate tokens with IDs relative to their sentences."""
+    from sparv.modules.misc import number
+    number.number_relative(out, sentence, token)
 
 
 def run_stanza(nlp, document, batch_size, max_sentence_length: int = 0):

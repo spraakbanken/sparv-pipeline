@@ -42,7 +42,7 @@ def relations(out: OutputData = OutputData("korp.relations"),
               dephead: Annotation = Annotation("<token:dephead>"),
               deprel: Annotation = Annotation("<token:deprel>"),
               sentence_id: Annotation = Annotation("<sentence>:misc.id"),
-              ref: Annotation = Annotation("<token>:misc.number_rel_<sentence>"),
+              ref: Annotation = Annotation("<token:ref>"),
               baseform: Annotation = Annotation("<token>:saldo.baseform")):
     """Find certain dependencies between words, to be used by the Word Picture feature in Korp."""
     sentence_ids = sentence_id.read()

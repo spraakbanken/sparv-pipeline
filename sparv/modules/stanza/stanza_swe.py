@@ -210,7 +210,7 @@ def dep_parse(out_dephead: Output = Output("<token>:stanza.dephead", cls="token:
               baseform: Annotation = Annotation("<token:baseform>"),
               msd: Annotation = Annotation("<token:msd>"),
               feats: Annotation = Annotation("<token:ufeats>"),
-              ref: Annotation = Annotation("<token>:misc.number_rel_<sentence>"),
+              ref: Annotation = Annotation("<token>:stanza.ref"),
               sentence: Annotation = Annotation("<sentence>"),
               model: Model = Model("[stanza.swe_dep_model]"),
               pretrain_model: Model = Model("[stanza.swe_pretrain_dep_model]"),

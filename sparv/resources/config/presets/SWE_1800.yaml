@@ -17,6 +17,7 @@ classes:
     "token:deprel": <token>:stanza.deprel
     "token:dephead": <token>:stanza.dephead
     "token:dephead_ref": <token>:stanza.dephead_ref
+    "token:ref": <token>:stanza.ref
 
 presets:
     all:
@@ -48,4 +49,4 @@ presets:
     stanza-depparse:
         - <token>:stanza.deprel
         - <token>:stanza.dephead_ref
-        - <token>:misc.number_rel_<sentence> as ref
+        - <token>:stanza.ref

@@ -22,6 +22,7 @@ classes:
     sentence: segment.sentence
     token: segment.token
     "token:word": <token>:misc.word
+    "token:ref": <token>:misc.ref
 
 #===============================================================================
 # Export Settings

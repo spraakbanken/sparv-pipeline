@@ -59,7 +59,7 @@ def annotate(maltjar: Binary = Binary("[malt.jar]"),
              word: Annotation = Annotation("<token:word>"),
              pos: Annotation = Annotation("<token:pos>"),
              msd: Annotation = Annotation("<token:msd>"),
-             ref: Annotation = Annotation("<token>:misc.number_rel_<sentence>"),
+             ref: Annotation = Annotation("<token>:malt.ref"),
              sentence: Annotation = Annotation("<sentence>"),
              token: Annotation = Annotation("<token>"),
              encoding: str = util.UTF8,
@@ -147,6 +147,16 @@ def annotate(maltjar: Binary = Binary("[malt.jar]"),
     out_dephead.write(out_dephead_annotation)
     out_dephead_ref.write(out_dephead_ref_annotation)
     out_deprel.write(out_deprel_annotation)
+
+
+@annotator("Annotate tokens with IDs relative to their sentences", language=["swe"])
+def make_ref(out: Output = Output("<token>:malt.ref", cls="token:ref",
+                                  description="Token IDs relative to their sentences"),
+             sentence: Annotation = Annotation("<sentence>"),
+             token: Annotation = Annotation("<token>")):
+    """Annotate tokens with IDs relative to their sentences."""
+    from sparv.modules.misc import number
+    number.number_relative(out, sentence, token)
 
 
 def maltstart(maltjar, model, encoding, send_empty_sentence=False):

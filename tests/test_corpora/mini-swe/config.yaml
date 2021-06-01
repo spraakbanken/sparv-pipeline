@@ -32,6 +32,7 @@ classes:
     "token:pos": <token>:stanza.pos
     "token:msd": <token>:stanza.msd
     "token:baseform": <token>:saldo.baseform
+    "token:ref": <token>:stanza.ref
 
 #===============================================================================
 # Export Settings

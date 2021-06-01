@@ -127,6 +127,15 @@ def number_relative(out: Output = Output("{annotation}:misc.number_rel_{parent}"
     out.write(result)
 
 
+@annotator("Annotate tokens with IDs relative to their sentences")
+def make_ref(out: Output = Output("<token>:misc.ref", cls="token:ref",
+                                  description="Token IDs relative to their sentences"),
+             sentence: Annotation = Annotation("<sentence>"),
+             token: Annotation = Annotation("<token>")):
+    """Annotate tokens with IDs relative to their sentences."""
+    number_relative(out, sentence, token)
+
+
 @annotator("Chunk count file with number of {annotation} chunks in corpus", order=1, wildcards=[
            Wildcard("annotation", Wildcard.ANNOTATION)])
 def count_chunks(out: OutputCommonData = OutputCommonData("misc.{annotation}_count"),

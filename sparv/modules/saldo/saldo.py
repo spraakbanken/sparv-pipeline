@@ -43,7 +43,7 @@ def preloader(models):
 def annotate(token: Annotation = Annotation("<token>"),
              word: Annotation = Annotation("<token:word>"),
              sentence: Annotation = Annotation("<sentence>"),
-             reference: Annotation = Annotation("<token>:misc.number_rel_<sentence>"),
+             reference: Annotation = Annotation("<token:ref>"),
              out_sense: Output = Output("<token>:saldo.sense", cls="token:sense", description="SALDO identifiers"),
              out_lemgram: Output = Output("<token>:saldo.lemgram", cls="token:lemgram", description="SALDO lemgrams"),
              out_baseform: Output = Output("<token>:saldo.baseform", cls="token:baseform",
@@ -67,7 +67,7 @@ def annotate(token: Annotation = Annotation("<token>"),
         word (Annotation): Input annotation with token strings. Defaults to Annotation("<token:word>").
         sentence (Annotation): Input annotation with sentence spans. Defaults to Annotation("<sentence>").
         reference (Annotation): Input annotation with token indices for each sentence.
-            Defaults to Annotation("<token>:misc.number_rel_<sentence>").
+            Defaults to Annotation("<token:ref>").
         out_sense (Output): Output annotation with senses from SALDO. Defaults to Output("<token>:saldo.sense").
         out_lemgram (Output): Output annotation with lemgrams from SALDO. Defaults to Output("<token>:saldo.lemgram").
         out_baseform (Output): Output annotation with baseforms from SALDO.
