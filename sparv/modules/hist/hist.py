@@ -105,13 +105,14 @@ def extract_pos(out: Output = Output("<token>:hist.homograph_set", description="
 
 
 @annotator("Get fallback lemgrams from Dalin or Swedberg", language=["swe-1800"], order=2, config=[
-    Config("hist.lemgram_key", default="lemgram", description="Key to lookup in the lexicon"),
+    Config("hist.lemgram_key", default="lem", description="Key to lookup in the lexicon"),
 ], preloader=saldo.preloader, preloader_params=["models"], preloader_target="models_preloaded")
 def lemgram_fallback(
-    out: Output = Output("<token>:hist.lemgram", description="Fallback lemgrams from Dalin or Swedberg"),
+    out: Output = Output("<token>:hist.lemgram", cls="token:lemgram",
+                         description="Fallback lemgrams from Dalin or Swedberg"),
     word: Annotation = Annotation("<token:word>"),
     msd: Annotation = Annotation("<token:msd>"),
-    lemgram: Annotation = Annotation("<token:lemgram>"),
+    lemgram: Annotation = Annotation("<token>:saldo.lemgram"),
     key: str = Config("hist.lemgram_key"),
     models: List[Model] = [Model("[hist.dalin_model]"), Model("[hist.swedberg_model]")],
     delimiter: str = Config("hist.delimiter"),
@@ -137,13 +138,14 @@ def lemgram_fallback(
 
 
 @annotator("Get fallback baseforms from Dalin or Swedberg", language=["swe-1800"], order=2, config=[
-    Config("hist.baseform_key", default="writtenForm", description="Key to lookup in the lexicon"),
+    Config("hist.baseform_key", default="gf", description="Key to lookup in the lexicon"),
 ], preloader=saldo.preloader, preloader_params=["models"], preloader_target="models_preloaded")
 def baseform_fallback(
-    out: Output = Output("<token>:hist.baseform", description="Fallback baseforms from Dalin or Swedberg"),
+    out: Output = Output("<token>:hist.baseform", cls="token:baseform",
+                         description="Fallback baseforms from Dalin or Swedberg"),
     word: Annotation = Annotation("<token:word>"),
     msd: Annotation = Annotation("<token:msd>"),
-    baseform: Annotation = Annotation("<token:baseform>"),
+    baseform: Annotation = Annotation("<token>:saldo.baseform"),
     key: str = Config("hist.baseform_key"),
     models: List[Model] = [Model("[hist.dalin_model]"), Model("[hist.swedberg_model]")],
     delimiter: str = Config("hist.delimiter"),
@@ -329,5 +331,5 @@ def _get_single_annotation(lexicons, word, key, msdtag):
         if annotation:
             break
     # Sort by precision (descending) and remove precision values
-    annotation_lists = [a.get(key) for _, a in sorted(annotation, reverse=True, key=lambda x: x[0])]
+    annotation_lists = [a.get(key, []) for _, a in sorted(annotation, reverse=True, key=lambda x: x[0])]
     return [y for x in annotation_lists for y in x]
