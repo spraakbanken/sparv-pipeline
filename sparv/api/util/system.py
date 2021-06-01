@@ -5,7 +5,6 @@ import logging
 import os
 import shutil
 import subprocess
-import sys
 from typing import Optional, Union
 
 import sparv.core.paths as paths

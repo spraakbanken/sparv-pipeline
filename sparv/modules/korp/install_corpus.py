@@ -4,7 +4,7 @@ import logging
 import os
 import re
 
-from sparv.api import Config, Corpus, ExportInput, OutputCommonData, installer, util
+from sparv.api import Config, Corpus, ExportInput, OutputCommonData, SparvErrorMessage, installer, util
 
 log = logging.getLogger(__name__)
 
@@ -25,16 +25,16 @@ def install_corpus(corpus: Corpus = Corpus(),
                    target_registry: str = Config("korp.remote_cwb_registry")):
     """Install CWB datafiles on server, by rsyncing datadir and registry."""
     if not corpus:
-        raise util.SparvErrorMessage("Missing corpus name. Corpus not installed.")
+        raise SparvErrorMessage("Missing corpus name. Corpus not installed.")
 
     if not host:
-        raise util.SparvErrorMessage("No host provided! Corpus not installed.")
+        raise SparvErrorMessage("No host provided! Corpus not installed.")
 
     if not target_datadir:
-        raise util.SparvErrorMessage("Configuration variable korp.remote_cwb_datadir not set! Corpus not installed.")
+        raise SparvErrorMessage("Configuration variable korp.remote_cwb_datadir not set! Corpus not installed.")
 
     if not target_registry:
-        raise util.SparvErrorMessage("Configuration variable korp.remote_cwb_registry not set! Corpus not installed.")
+        raise SparvErrorMessage("Configuration variable korp.remote_cwb_registry not set! Corpus not installed.")
 
     target = os.path.join(target_datadir, corpus)
     util.system.rsync(os.path.join(datadir, corpus), host, target)

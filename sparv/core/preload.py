@@ -14,7 +14,7 @@ from rich.logging import RichHandler
 from sparv.core import config, log_handler
 from sparv.core.console import console
 from sparv.core.snake_utils import SnakeStorage
-from sparv.util import SparvErrorMessage
+from sparv.core.misc import SparvErrorMessage
 
 INFO = "INFO"
 STATUS = "STATUS"

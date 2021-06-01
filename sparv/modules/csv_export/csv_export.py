@@ -2,9 +2,10 @@
 
 import os
 
-from sparv.api import Annotation, Config, Document, Export, ExportAnnotations, SourceAnnotations, exporter, util
+from sparv.api import (Annotation, Config, Document, Export, ExportAnnotations, SourceAnnotations, exporter, get_logger,
+                       util)
 
-logger = util.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 @exporter("CSV export", config=[
@@ -35,12 +36,10 @@ def csv(doc: Document = Document(),
     word_annotation = list(word.read())
 
     # Get annotation spans, annotations list etc.
-    annotation_list, token_attributes, export_names = util.get_annotation_names(annotations, source_annotations,
-                                                                                doc=doc, token_name=token_name,
-                                                                                remove_namespaces=remove_namespaces,
-                                                                                sparv_namespace=sparv_namespace,
-                                                                                source_namespace=source_namespace)
-    span_positions, annotation_dict = util.gather_annotations(annotation_list, export_names, doc=doc)
+    annotation_list, token_attributes, export_names = util.export.get_annotation_names(
+        annotations, source_annotations, doc=doc, token_name=token_name, remove_namespaces=remove_namespaces,
+        sparv_namespace=sparv_namespace, source_namespace=source_namespace)
+    span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names, doc=doc)
 
     # Make csv header
     csv_data = [_make_header(token_name, token_attributes, export_names, delimiter)]
@@ -84,7 +83,7 @@ def _make_token_line(word, token, token_attributes, annotation_dict, index, deli
     line = [word.replace(delimiter, " ")]
     for attr in token_attributes:
         if attr not in annotation_dict[token]:
-            attr_str = util.UNDEF
+            attr_str = util.constants.UNDEF
         else:
             attr_str = annotation_dict[token][attr][index]
         line.append(attr_str)

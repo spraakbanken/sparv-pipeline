@@ -6,7 +6,7 @@ import re
 from typing import List, Optional
 
 from sparv.api import Annotation, Config, Model, Output, annotator, util
-from sparv.modules.saldo.saldo_model import SaldoLexicon
+from .saldo_model import SaldoLexicon
 
 log = logging.getLogger(__name__)
 
@@ -23,8 +23,8 @@ def preloader(models):
 
 @annotator("SALDO annotations", language=["swe"], config=[
     Config("saldo.model", default="saldo/saldo.pickle", description="Path to SALDO model"),
-    Config("saldo.delimiter", default=util.DELIM, description="Character to put between ambiguous results"),
-    Config("saldo.affix", default=util.AFFIX, description="Character to put before and after sets of results"),
+    Config("saldo.delimiter", default=util.constants.DELIM, description="Character to put between ambiguous results"),
+    Config("saldo.affix", default=util.constants.AFFIX, description="Character to put before and after sets of results"),
     Config("saldo.precision", "",
            description="Format string for appending precision to each value (e.g. ':%.3f')"),
     Config("saldo.precision_filter", default="max",
@@ -376,7 +376,7 @@ def _save_multiwords(complete_multis, sentence_tokens):
 
 def _join_annotation(annotation, delimiter, affix):
     """Convert annotations into cwb sets with unique values."""
-    return dict([(a, util.cwbset(list(dict.fromkeys(annotation[a])), delimiter=delimiter, affix=affix))
+    return dict([(a, util.misc.cwbset(list(dict.fromkeys(annotation[a])), delimiter=delimiter, affix=affix))
                  for a in annotation])
 
 

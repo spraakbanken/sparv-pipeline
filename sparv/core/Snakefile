@@ -8,7 +8,7 @@ from rich.table import Table
 from rich.text import Text
 from snakemake.logging import logger
 
-from sparv import util
+from sparv.api import SparvErrorMessage, util
 from sparv.core import config as sparv_config
 from sparv.core import paths, registry, snake_utils, snake_prints
 from sparv.core.console import console
@@ -35,7 +35,7 @@ def make_rules(config_missing: bool) -> None:
         try:
             snake_storage.preloader_info = preload.get_preloader_info(config["socket"])
         except ConnectionRefusedError:
-            raise util.SparvErrorMessage("Could not connect to the socket '{}'".format(config["socket"]))
+            raise SparvErrorMessage("Could not connect to the socket '{}'".format(config["socket"]))
 
 
     # Create rules for all available annotation functions
@@ -168,7 +168,7 @@ for module in registry.modules:
 
 # Collect list of all explicitly used annotations (without class expansion)
 for key in registry.annotation_sources:
-    registry.explicit_annotations_raw.update(a[0] for a in util.parse_annotation_list(sparv_config.get(key, [])))
+    registry.explicit_annotations_raw.update(a[0] for a in util.misc.parse_annotation_list(sparv_config.get(key, [])))
 
 # Figure out classes from annotation usage
 registry.find_implicit_classes()
@@ -177,7 +177,7 @@ registry.find_implicit_classes()
 for key in registry.annotation_sources:
     registry.explicit_annotations.update(
         registry.expand_variables(a[0])[0]
-        for a in util.parse_annotation_list(sparv_config.get(key, [])))
+        for a in util.misc.parse_annotation_list(sparv_config.get(key, [])))
 
 # Load modules and create automatic rules
 make_rules(config_missing)
@@ -196,7 +196,7 @@ if not config_missing and selected_targets and not snake_utils.get_source_files(
     named_targets = set(i for i, _ in snake_storage.named_targets)
     named_targets.update(("export_corpus", "install_corpus"))
     if set(selected_targets).issubset(named_targets):
-        raise util.SparvErrorMessage("No source files available!")
+        raise SparvErrorMessage("No source files available!")
 
 # ==============================================================================
 # Static Snakemake Rules
@@ -388,15 +388,15 @@ if "export_corpus" in selected_targets:
 if "install_corpus" in selected_targets:
     install_inputs = snake_utils.get_install_outputs(snake_storage, config.get("install_types"))
     if config.get("install_types") and not install_inputs:
-        raise util.SparvErrorMessage("Unknown installation{}: {}".format(
+        raise SparvErrorMessage("Unknown installation{}: {}".format(
             "s" if len(config.get("install_types")) > 1 else "",
             ", ".join(config.get("install_types"))
         ))
     elif not install_inputs:
-        raise util.SparvErrorMessage("Please specify what you would like to install, either by supplying arguments "
-                                     "(e.g. `sparv install xml_export:install_original`) or by adding installations in "
-                                     "The `install` section of your corpus config file.\n"
-                                     "You can list available installations with `sparv install -l`.")
+        raise SparvErrorMessage("Please specify what you would like to install, either by supplying arguments "
+                                "(e.g. `sparv install xml_export:install_original`) or by adding installations in "
+                                "The `install` section of your corpus config file.\n"
+                                "You can list available installations with `sparv install -l`.")
     else:
         rule install_corpus:
             input:
@@ -483,9 +483,9 @@ rule preload:
             preload.serve(config["socket"], config["processes"], snake_storage)
         elif config["preload_command"] == "stop":
             if not Path(config["socket"]).is_socket():
-                raise util.SparvErrorMessage(f"Socket file '{config['socket']}' doesn't exist or isn't a socket.")
+                raise SparvErrorMessage(f"Socket file '{config['socket']}' doesn't exist or isn't a socket.")
             elif not preload.stop(config.get("socket")):
-                raise util.SparvErrorMessage(f"Could not connect to socket '{config.get('socket')}'.")
+                raise SparvErrorMessage(f"Could not connect to socket '{config.get('socket')}'.")
 
 
 rule preload_list:

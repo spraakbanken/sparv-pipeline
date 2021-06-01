@@ -3,9 +3,9 @@
 import os
 from typing import Optional
 
-from sparv.api import Annotation, Config, Document, Export, SourceAnnotations, exporter, util
+from sparv.api import Annotation, Config, Document, Export, SourceAnnotations, exporter, get_logger, util
 
-logger = util.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 @exporter("CoNLL-U (SBX version) export", language=["swe"], config=[
@@ -71,10 +71,10 @@ def conllu(doc: Document = Document(),
     # want to use here.
     annotations = [sentence, sentence_id, token] + conll_fields
     annotations = [(annot, None) for annot in annotations]
-    annotation_list, _, export_names = util.get_annotation_names(annotations, source_annotations,
-                                                                 remove_namespaces=True,
-                                                                 doc=doc, token_name=token_name)
-    span_positions, annotation_dict = util.gather_annotations(annotation_list, export_names, doc=doc)
+    annotation_list, _, export_names = util.export.get_annotation_names(annotations, source_annotations,
+                                                                        remove_namespaces=True,
+                                                                        doc=doc, token_name=token_name)
+    span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names, doc=doc)
 
     csv_data = ["# global.columns = ID FORM LEMMA UPOS XPOS FEATS HEAD DEPREL DEPS MISC"]
     # Go through spans_dict and add to csv, line by line
@@ -115,7 +115,7 @@ def _make_conll_token_line(conll_fields, token, annotation_dict, index, delimite
             attr_str = annotation_dict[token][annot.attribute_name][index].strip("|") or "_"
         # If there are multiple lemmas, use the first one
         if i == 2:
-            attr_str = util.set_to_list(attr_str)[0]
+            attr_str = util.misc.set_to_list(attr_str)[0]
         # Set head (index 6 in conll_fields) to '0' when root
         if i == 6 and attr_str == "_":
             attr_str = "0"

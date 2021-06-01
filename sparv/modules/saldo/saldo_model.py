@@ -7,6 +7,7 @@ import re
 import xml.etree.ElementTree as etree
 
 from sparv.api import Model, ModelOutput, modelbuilder, util
+from sparv.api.util.tagsets import tagmappings
 
 log = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ def download_saldo(out: ModelOutput = ModelOutput("saldo/saldom.xml")):
 def build_saldo(out: ModelOutput = ModelOutput("saldo/saldo.pickle"),
                 saldom: Model = Model("saldo/saldom.xml")):
     """Save SALDO morphology as a pickle file."""
-    tagmap = util.tagsets.mappings["saldo_to_suc"]
+    tagmap = tagmappings.mappings["saldo_to_suc"]
     lmf_to_pickle(saldom.path, out.path, tagmap)
 
 
@@ -48,7 +49,7 @@ class SaldoLexicon:
             lexicon = self.lexicon = {}
             with open(saldofile, "rb") as F:
                 for line in F:
-                    row = line.decode(util.UTF8).split()
+                    row = line.decode(util.constants.UTF8).split()
                     word = row.pop(0)
                     lexicon[word] = row
         if verbose:
@@ -108,7 +109,7 @@ class SaldoLexicon:
             for word in sorted(lexicon):
                 annotations = [PART_DELIM.join([annotation] + sorted(postags))
                                for annotation, postags in list(lexicon[word].items())]
-                print(" ".join([word] + annotations).encode(util.UTF8), file=F)
+                print(" ".join([word] + annotations).encode(util.constants.UTF8), file=F)
         if verbose:
             log.info("OK, saved")
 
@@ -223,7 +224,7 @@ def read_lmf(xml, tagmap, annotation_elements=("gf", "lem", "saldo"), verbose=Tr
                  "formar",
                  "in",
                  "datorrelaterade"]
-    util.test_lexicon(lexicon, testwords)
+    util.misc.test_lexicon(lexicon, testwords)
 
     if verbose:
         log.info("OK, read")

@@ -8,7 +8,7 @@ import re
 import xml.etree.ElementTree as etree
 from typing import Optional
 
-import sparv.util as util
+from sparv.api import SparvErrorMessage, util
 
 log = logging.getLogger(__name__)
 
@@ -23,9 +23,9 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token_name: s
     """
     # Root tag sanity check
     if not valid_root(span_positions[0], span_positions[-1]):
-        raise util.SparvErrorMessage("Root tag is missing! If you have manually specified which elements to include, "
-                                     "make sure to include an element that encloses all other included elements and "
-                                     "text content.")
+        raise SparvErrorMessage("Root tag is missing! If you have manually specified which elements to include, "
+                                "make sure to include an element that encloses all other included elements and "
+                                "text content.")
 
     # Create root node
     root_span = span_positions[0][2]
@@ -54,7 +54,7 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token_name: s
         # Handle headers
         if span.is_header:
             if instruction == "open":
-                header = annotation_dict[span.name][util.HEADER_CONTENTS][span.index]
+                header = annotation_dict[span.name][util.constants.HEADER_CONTENTS][span.index]
                 # Replace any leading tabs with spaces
                 header = re.sub(r"^\t+", lambda m: INDENTATION * len(m.group()), header, flags=re.MULTILINE)
                 header_xml = etree.fromstring(header)
@@ -69,9 +69,10 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token_name: s
             add_attrs(span.node, span.name, annotation_dict, export_names, span.index, include_empty_attributes)
             if span.overlap_id:
                 if sparv_namespace:
-                    span.node.set(f"{sparv_namespace}.{util.OVERLAP_ATTR}", f"{docid}-{span.overlap_id}")
+                    span.node.set(f"{sparv_namespace}.{util.constants.OVERLAP_ATTR}", f"{docid}-{span.overlap_id}")
                 else:
-                    span.node.set(f"{util.SPARV_DEFAULT_NAMESPACE}.{util.OVERLAP_ATTR}", f"{docid}-{span.overlap_id}")
+                    span.node.set(f"{util.constants.SPARV_DEFAULT_NAMESPACE}.{util.constants.OVERLAP_ATTR}",
+                                  f"{docid}-{span.overlap_id}")
 
             # Add text if this node is a token
             if span.name == token_name:
@@ -102,7 +103,7 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token_name: s
             node_stack.pop()
 
     # Pretty formatting of XML tree
-    util.indent_xml(root_span.node, indentation=INDENTATION)
+    util.misc.indent_xml(root_span.node, indentation=INDENTATION)
 
     # We use write() instead of tostring() here to be able to get an XML declaration
     stream = io.StringIO()
@@ -150,7 +151,7 @@ def compress(xmlfile, out):
     """Compress xmlfile to out."""
     with open(xmlfile) as f:
         file_data = f.read()
-        compressed_data = bz2.compress(file_data.encode(util.UTF8))
+        compressed_data = bz2.compress(file_data.encode(util.constants.UTF8))
     with open(out, "wb") as f:
         f.write(compressed_data)
 
@@ -161,5 +162,5 @@ def install_compressed_xml(corpus, xmlfile, out, export_path, host):
         raise Exception("No host provided! Export not installed.")
     filename = corpus + ".xml.bz2"
     remote_file_path = os.path.join(export_path, filename)
-    util.install_file(host, xmlfile, remote_file_path)
+    util.install.install_file(host, xmlfile, remote_file_path)
     out.write("")

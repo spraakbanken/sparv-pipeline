@@ -3,10 +3,11 @@
 import re
 import xml.etree.ElementTree as etree
 
-from sparv.api import Model, ModelOutput, modelbuilder, util
+from sparv.api import Model, ModelOutput, modelbuilder, get_logger, util
+from sparv.api.util.tagsets import tagmappings
 from sparv.modules.saldo.saldo_model import HashableDict, SaldoLexicon
 
-log = util.get_logger(__name__)
+log = get_logger(__name__)
 
 
 @modelbuilder("Dalin morphology model", language=["swe-1800"])
@@ -164,7 +165,7 @@ def read_lmf(xml, annotation_elements=("writtenForm", "lemgram"), verbose=True, 
                      "stöpljus",
                      "katt",
                      "doktor"]
-        util.test_lexicon(lexicon, testwords)
+        util.misc.test_lexicon(lexicon, testwords)
         log.info(f"OK, read {len(lexicon)} entries")
     return lexicon
 
@@ -187,7 +188,7 @@ def _findval(elems, key):
 
 def _convert_default(pos, inhs, param):
     """Try to convert SALDO tags into SUC tags."""
-    tagmap = util.tagsets.mappings["saldo_to_suc"]
+    tagmap = tagmappings.mappings["saldo_to_suc"]
     saldotag = " ".join(([pos] + inhs + [param]))
     tags = tagmap.get(saldotag)
     if tags:
@@ -217,21 +218,21 @@ def _try_translate(params):
         params_list.append(re.sub(" f ", " u ", params))
     for params in params_list:
         params = params.split()
-        # Copied from util.tagsets.tagmappings._make_saldo_to_suc(), try to convert the tag
+        # Copied from tagmappings._make_saldo_to_suc(), try to convert the tag
         # but allow m (the match) to be None if the tag still can't be translated
-        paramstr = " ".join(util.tagsets.mappings["saldo_params_to_suc"].get(prm, prm.upper()) for prm in params)
-        for (pre, post) in util.tagsets.tagmappings._suc_tag_replacements:
+        paramstr = " ".join(tagmappings.mappings["saldo_params_to_suc"].get(prm, prm.upper()) for prm in params)
+        for (pre, post) in tagmappings._suc_tag_replacements:
             m = re.match(pre, paramstr)
             if m:
                 break
         if m is not None:
             sucfilter = m.expand(post).replace(" ", r"\.").replace("+", r"\+")
-            return set(suctag for suctag in util.tagsets.tags["suc_tags"] if re.match(sucfilter, suctag))
+            return set(suctag for suctag in tagmappings.tags["suc_tags"] if re.match(sucfilter, suctag))
     return []
 
 
 def _pos_from_lemgram(lemgram):
     """Get SUC POS tag from POS in lemgram."""
     pos = lemgram.split(".")[2]
-    tagmap = util.tagsets.mappings["saldo_pos_to_suc"]
+    tagmap = tagmappings.mappings["saldo_pos_to_suc"]
     return tagmap.get(pos, [])

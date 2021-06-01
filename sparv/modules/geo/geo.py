@@ -214,4 +214,4 @@ def most_populous(locations):
 
 def _format_location(location_data):
     """Format location as city;country;latitude;longitude."""
-    return util.cwbset(";".join((y[0], y[3], y[1], y[2])) for x, y in location_data)
+    return util.misc.cwbset(";".join((y[0], y[3], y[1], y[2])) for x, y in location_data)

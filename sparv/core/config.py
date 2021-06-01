@@ -10,7 +10,7 @@ from typing import Any, Optional
 import yaml
 import yaml.scanner
 
-from sparv import util
+from sparv.core.misc import SparvErrorMessage
 from sparv.core import paths, registry
 
 log = logging.getLogger(__name__)
@@ -49,11 +49,11 @@ def read_yaml(yaml_file):
         with open(yaml_file) as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
     except yaml.parser.ParserError as e:
-        raise util.SparvErrorMessage("Could not parse the configuration file:\n" + str(e))
+        raise SparvErrorMessage("Could not parse the configuration file:\n" + str(e))
     except yaml.scanner.ScannerError as e:
-        raise util.SparvErrorMessage("An error occurred while reading the configuration file:\n" + str(e))
+        raise SparvErrorMessage("An error occurred while reading the configuration file:\n" + str(e))
     except FileNotFoundError:
-        raise util.SparvErrorMessage(f"Could not find the config file '{yaml_file}'")
+        raise SparvErrorMessage(f"Could not find the config file '{yaml_file}'")
 
     return data or {}
 
@@ -79,7 +79,7 @@ def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) 
         global _config_user
         _config_user = read_yaml(config_file) or {}
 
-        def handle_parents(cfg, current_dir="."):
+        def handle_parents(cfg, current_dir=Path(".")) -> dict:
             """Combine parent configs recursively."""
             combined_parents = {}
             if cfg.get(PARENT):
@@ -87,7 +87,7 @@ def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) 
                 if isinstance(parents, str):
                     parents = [parents]
                 for parent in parents:
-                    parent_path = Path(current_dir, parent)
+                    parent_path = current_dir / parent
                     config_parent = read_yaml(parent_path)
                     config_parent = handle_parents(config_parent, parent_path.parent)
                     combined_parents = _merge_dicts(config_parent, combined_parents)
@@ -110,8 +110,8 @@ def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) 
         if key == PARENT:
             continue
         if not isinstance(config[key], (dict, list)):
-            raise util.SparvErrorMessage(f"The config section '{key}' could not be parsed.", module="sparv",
-                                         function="config")
+            raise SparvErrorMessage(f"The config section '{key}' could not be parsed.", module="sparv",
+                                    function="config")
 
 
 def dump_config(data, resolve_alias=False, sort_keys=False):
@@ -237,7 +237,7 @@ def validate_module_config():
             _get(config_key, config_structure)
         except KeyError:
             annotators = config_usage[config_key]
-            raise util.SparvErrorMessage(
+            raise SparvErrorMessage(
                 "The annotator{} {} {} trying to access the config key '{}' which isn't declared anywhere.".format(
                     "s" if len(annotators) > 1 else "", ", ".join(annotators),
                     "are" if len(annotators) > 1 else "is", config_key), "sparv", "config")
@@ -251,13 +251,13 @@ def validate_config(config_dict=None, structure=None, parent=""):
         path = (parent + "." + key) if parent else key
         if key not in structure:
             if not parent:
-                raise util.SparvErrorMessage(f"Unknown key in config file: '{path}'. No module with that name found.",
-                                             module="sparv", function="config")
+                raise SparvErrorMessage(f"Unknown key in config file: '{path}'. No module with that name found.",
+                                        module="sparv", function="config")
             else:
                 module_name = parent.split(".", 1)[0]
-                raise util.SparvErrorMessage(f"Unknown key in config file: '{path}'. The module '{module_name}' "
-                                             f"doesn't have an option with that name.",
-                                             module="sparv", function="config")
+                raise SparvErrorMessage(f"Unknown key in config file: '{path}'. The module '{module_name}' "
+                                        f"doesn't have an option with that name.",
+                                        module="sparv", function="config")
         elif not structure[key].get("_source"):
             validate_config(config_dict[key], structure[key], path)
 
@@ -341,7 +341,7 @@ def handle_document_annotation():
 
     # Make sure that if both classes.text and import.document_annotation are set, that they have the same value
     if get("classes.text") and doc_elem and get("classes.text") != doc_elem:
-        raise util.SparvErrorMessage(
+        raise SparvErrorMessage(
             "The config keys 'classes.text' and 'import.document_annotation' can't have different values.",
             "sparv", "config")
 

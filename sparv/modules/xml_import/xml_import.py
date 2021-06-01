@@ -8,7 +8,7 @@ from itertools import chain
 from typing import List
 
 from sparv.api import (Config, Document, Headers, Output, Source, SourceStructureParser, SourceStructure, Text,
-                       importer, util)
+                       SparvErrorMessage, importer, util)
 
 log = logging.getLogger(__name__)
 
@@ -56,7 +56,7 @@ class XMLStructure(SourceStructureParser):
     Config("xml_import.header_data", [], description="List of header elements and attributes from which to extract "
                                                      "metadata."),
     Config("xml_import.prefix", "", description="Optional prefix to add to annotation names."),
-    Config("xml_import.encoding", util.UTF8, description="Encoding of source document. Defaults to UTF-8."),
+    Config("xml_import.encoding", util.constants.UTF8, description="Encoding of source document. Defaults to UTF-8."),
     Config("xml_import.keep_control_chars", False, description="Set to True if control characters should not be "
                                                                "removed from the text."),
     Config("xml_import.normalize", "NFC", description="Normalize input using any of the following forms: "
@@ -98,7 +98,8 @@ class SparvXMLParser:
     """XML parser class for parsing XML."""
 
     def __init__(self, elements: list, skip: list, header_elements: list, headers: list, source_dir: Source,
-                 encoding: str = util.UTF8, prefix: str = "", keep_control_chars: bool = True, normalize: str = "NFC"):
+                 encoding: str = util.constants.UTF8, prefix: str = "", keep_control_chars: bool = True,
+                 normalize: str = "NFC"):
         """Initialize XML parser."""
         self.source_dir = source_dir
         self.encoding = encoding
@@ -126,7 +127,7 @@ class SparvXMLParser:
         all_elems = set()
         renames = {}
         # Element list needs to be sorted to handle plain elements before attributes
-        for element, target in sorted(util.parse_annotation_list(elements)):
+        for element, target in sorted(util.misc.parse_annotation_list(elements)):
             element, attr = elsplit(element)
             all_elems.add((element, attr))
 
@@ -153,7 +154,7 @@ class SparvXMLParser:
         for header in headers:
             header_source, _, header_target = header.partition(" as ")
             if not header_target:
-                raise util.SparvErrorMessage("The header '{}' needs to be bound to a target element.".format(header))
+                raise SparvErrorMessage("The header '{}' needs to be bound to a target element.".format(header))
             header_source, _, header_source_attrib = header_source.partition(":")
             header_source_root, _, header_source_rest = header_source.partition("/")
             self.headers.setdefault(header_source_root, {})
@@ -213,10 +214,10 @@ class SparvXMLParser:
             # Save header as XML
             tmp_element = copy.deepcopy(element)
             tmp_element.tail = ""
-            self.data.setdefault(element.tag, {"attrs": {util.HEADER_CONTENTS}, "elements": []})
+            self.data.setdefault(element.tag, {"attrs": {util.constants.HEADER_CONTENTS}, "elements": []})
             self.data[element.tag]["elements"].append(
                 (start_pos, start_subpos, start_pos, start_subpos, element.tag,
-                 {util.HEADER_CONTENTS: etree.tostring(tmp_element, method="xml", encoding="UTF-8").decode()})
+                 {util.constants.HEADER_CONTENTS: etree.tostring(tmp_element, method="xml", encoding="UTF-8").decode()})
             )
 
             handle_header_data(element)
@@ -282,7 +283,7 @@ class SparvXMLParser:
         else:
             text = source_file.read_text()
             if not self.keep_control_chars:
-                text = util.remove_control_characters(text)
+                text = util.misc.remove_control_characters(text)
             if self.normalize:
                 text = unicodedata.normalize(self.normalize, text)
             root = etree.fromstring(text)

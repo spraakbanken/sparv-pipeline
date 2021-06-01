@@ -5,7 +5,7 @@ import os
 import subprocess
 from glob import glob
 
-from sparv.util import system
+from sparv.api.util import system
 
 log = logging.getLogger(__name__)
 

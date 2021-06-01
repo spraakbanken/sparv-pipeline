@@ -38,7 +38,7 @@ import setuptools
 setuptools.setup(
     name="sparv-uppercase",
     version="0.1",
-    description="Uppercase converter (example plug-in for Sparv)",
+    description="Uppercase converter (example plugin for Sparv)",
     license="MIT",
     packages=["uppercase"],
     python_requires=">=3.6",
@@ -131,8 +131,8 @@ Logging from Sparv modules is done with [Python's logging library](https://docs.
 Please use the provided `get_logger` wrapper when declaring your logger which takes care of importing the logging
 library and sets the correct module name in the log output:
 ```python
-from sparv.api import util
-logger = util.get_logger(__name__)
+from sparv.api import get_logger
+logger = get_logger(__name__)
 logger.error("An error was encountered!")
 ```
 
@@ -150,6 +150,8 @@ wrong) you should use the [SparvErrorMessage class](developers-guide/utilities#S
 exception (and thus stop the current Sparv process) and notify the user of errors in a friendly way without displaying
 the usual Python traceback.
 ```python
+from sparv.api import SparvErrorMessage
+
 @annotator("Convert every word to uppercase")
 def uppercase(word: Annotation = Annotation("<token:word>"),
               out: Output = Output("<token>:uppercase.upper"),
@@ -157,7 +159,7 @@ def uppercase(word: Annotation = Annotation("<token:word>"),
     """Convert to uppercase."""
     # Make sure important_config_variable is set by the user
     if not important_config_variable:
-        raise util.SparvErrorMessage("Please make sure to set the config variable 'uppercase.some_setting'!")
+        raise SparvErrorMessage("Please make sure to set the config variable 'uppercase.some_setting'!")
     ...
 ```
 

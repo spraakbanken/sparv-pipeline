@@ -196,7 +196,7 @@ def build_tokenlist(saldo_model: Model = Model("saldo/saldo.pickle"),
 
 ######################################################################
 
-def train_punkt_segmenter(textfiles, modelfile, encoding=util.UTF8, protocol=-1):
+def train_punkt_segmenter(textfiles, modelfile, encoding=util.constants.UTF8, protocol=-1):
     """Train a Punkt sentence tokenizer."""
     if isinstance(textfiles, str):
         textfiles = textfiles.split()

@@ -5,9 +5,9 @@ import logging
 
 import iso639
 
-from sparv.api import Language, Model, ModelOutput, modelbuilder, util
+from sparv.api import Language, Model, ModelOutput, modelbuilder, get_logger
 
-logger = util.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 @modelbuilder("Stanza resources file for Swedish", language=["swe"])

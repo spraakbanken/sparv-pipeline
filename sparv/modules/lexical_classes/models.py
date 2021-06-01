@@ -1,15 +1,14 @@
 """Handle models for lexical classes."""
 
-import logging
 import os
 import subprocess
 import sys
 import xml.etree.ElementTree as etree
 from collections import defaultdict
 
-from sparv.api import Model, ModelOutput, modelbuilder, util
+from sparv.api import Model, ModelOutput, modelbuilder, get_logger, util
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 # Path to the cwb binaries
 CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
@@ -114,7 +113,7 @@ def read_blingbring(tsv, classmap, verbose=True):
                  "behjälplig..1",
                  "köra_ner..1"
                  ]
-    util.test_lexicon(lexicon, testwords)
+    util.misc.test_lexicon(lexicon, testwords)
 
     if verbose:
         log.info("OK, read")
@@ -144,7 +143,7 @@ def read_rogetmap(xml, verbose=True):
                  "Health",
                  "Amusement",
                  "Marriage"]
-    util.test_lexicon(lexicon, testwords)
+    util.misc.test_lexicon(lexicon, testwords)
 
     if verbose:
         log.info("OK, read.")
@@ -182,16 +181,16 @@ def read_swefn(xml, verbose=True):
                  "granne..1",
                  "sisådär..1",
                  "mjölkcentral..1"]
-    util.test_lexicon(lexicon, testwords)
+    util.misc.test_lexicon(lexicon, testwords)
 
     if verbose:
         log.info("OK, read.")
     return lexicon
 
 
-def create_freq_pickle(corpus, annotation, model, class_set=None, score_separator=util.SCORESEP):
+def create_freq_pickle(corpus, annotation, model, class_set=None, score_separator=util.constants.SCORESEP):
     """Build pickle with relative frequency for a given annotation in one or more reference corpora."""
-    lexicon = util.PickledLexicon(model)
+    lexicon = util.misc.PickledLexicon(model)
     # Create a set of all possible classes
     if class_set:
         all_classes = set(cc for c in lexicon.lexicon.values() for cc in c[class_set])

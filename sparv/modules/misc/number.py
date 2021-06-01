@@ -5,11 +5,12 @@ import re
 from binascii import hexlify
 from collections import defaultdict
 
-from sparv.api import AllDocuments, Annotation, AnnotationAllDocs, Output, OutputCommonData, Wildcard, annotator, util
+from sparv.api import (AllDocuments, Annotation, AnnotationAllDocs, Output, OutputCommonData, Wildcard, annotator,
+                       get_logger)
 
 START_DEFAULT = 1
 
-logger = util.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 @annotator("Number {annotation} by position", wildcards=[Wildcard("annotation", Wildcard.ANNOTATION)])

@@ -1,12 +1,12 @@
 """Annotate text chunks with lexical classes from Blingbring or SweFN."""
 
-import logging
 from collections import defaultdict
 from typing import Optional
 
-from sparv.api import Annotation, Config, Model, Output, annotator, util
+from sparv.api import Annotation, Config, Model, Output, annotator, get_logger, util
+from sparv.api.util.constants import AFFIX, DELIM, SCORESEP
 
-log = logging.getLogger(__name__)
+log = get_logger(__name__)
 
 
 @annotator("Annotate text chunks with Blingbring classes", language=["swe"], config=[
@@ -21,8 +21,8 @@ def blingbring_text(out: Output = Output("<text>:lexical_classes.blingbring",
                     saldoids: Optional[Annotation] = Annotation("<token:sense>"),
                     cutoff: int = 3,
                     types: bool = False,
-                    delimiter: str = util.DELIM,
-                    affix: str = util.AFFIX,
+                    delimiter: str = DELIM,
+                    affix: str = AFFIX,
                     freq_model: Model = Model("[lexical_classes.bb_freq_model]"),
                     decimals: int = 3):
     """Annotate text chunks with Blingbring classes."""
@@ -43,8 +43,8 @@ def swefn_text(out: Output = Output("<text>:lexical_classes.swefn",
                saldoids: Optional[Annotation] = Annotation("<token:sense>"),
                cutoff: int = 3,
                types: bool = False,
-               delimiter: str = util.DELIM,
-               affix: str = util.AFFIX,
+               delimiter: str = DELIM,
+               affix: str = AFFIX,
                freq_model: Model = Model("[lexical_classes.swefn_freq_model]"),
                decimals: int = 3):
     """Annotate text chunks with SweFN classes."""
@@ -77,7 +77,7 @@ def annotate_text(out: Output, lexical_classes_token: Annotation, text: Annotati
     sense = list(saldoids.read()) if types else None
 
     if freq_model:
-        freq_model = util.PickledLexicon(freq_model.path)
+        freq_model = util.misc.PickledLexicon(freq_model.path)
 
     out_annotation = text.create_empty_attribute()
 
@@ -88,13 +88,13 @@ def annotate_text(out: Output, lexical_classes_token: Annotation, text: Annotati
         for token_index in words:
             # Count only sense types
             if types:
-                senses = str(sorted([s.split(util.SCORESEP)[0] for s in sense[token_index].strip(util.AFFIX).split(util.DELIM)]))
+                senses = str(sorted([s.split(SCORESEP)[0] for s in sense[token_index].strip(AFFIX).split(DELIM)]))
                 if senses in seen_types:
                     continue
                 else:
                     seen_types.add(senses)
 
-            rogwords = classes[token_index].strip(util.AFFIX).split(util.DELIM) if classes[token_index] != util.AFFIX else []
+            rogwords = classes[token_index].strip(AFFIX).split(DELIM) if classes[token_index] != AFFIX else []
             for w in rogwords:
                 class_freqs[w] += 1
 
@@ -122,7 +122,7 @@ def annotate_text(out: Output, lexical_classes_token: Annotation, text: Annotati
             ordered_words = [w for w in ordered_words if w[1] >= cutoff_freq]
 
         # Join words and frequencies/dominances
-        ordered_words = [util.SCORESEP.join([word, str(round(freq, decimals))]) for word, freq in ordered_words]
-        out_annotation[text_index] = util.cwbset(ordered_words, delimiter, affix) if ordered_words else affix
+        ordered_words = [SCORESEP.join([word, str(round(freq, decimals))]) for word, freq in ordered_words]
+        out_annotation[text_index] = util.misc.cwbset(ordered_words, delimiter, affix) if ordered_words else affix
 
     out.write(out_annotation)

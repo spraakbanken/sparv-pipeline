@@ -69,7 +69,7 @@ needed as input in another part of the pipeline.
 def parse(doc: Document = Document(),
           source_dir: Source = Source(),
           prefix: str = "",
-          encoding: str = util.UTF8,
+          encoding: str = util.constants.UTF8,
           normalize: str = "NFC") -> None:
     ...
 ```

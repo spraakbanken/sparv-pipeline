@@ -1,12 +1,11 @@
 """Create or edit .info file."""
 
 import logging
-import os
 import time
 from datetime import datetime
 
-from sparv.api import (AllDocuments, Config, Corpus, Export, ExportInput, annotator, exporter,
-                       AnnotationAllDocs, OutputCommonData, AnnotationCommonData, util)
+from sparv.api import (AllDocuments, Config, Export, annotator, exporter, AnnotationAllDocs, OutputCommonData,
+                       AnnotationCommonData)
 
 log = logging.getLogger(__name__)
 

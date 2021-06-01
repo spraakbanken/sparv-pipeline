@@ -62,7 +62,7 @@ def annotate(maltjar: Binary = Binary("[malt.jar]"),
              ref: Annotation = Annotation("<token>:malt.ref"),
              sentence: Annotation = Annotation("<sentence>"),
              token: Annotation = Annotation("<token>"),
-             encoding: str = util.UTF8,
+             encoding: str = util.constants.UTF8,
              process_dict=None):
     """
     Run the malt parser, in an already started process defined in process_dict, or start a new process (default).
@@ -111,7 +111,7 @@ def annotate(maltjar: Binary = Binary("[malt.jar]"),
     if keep_process:
         # Chatting with malt: send a SENT_SEP and read correct number of lines
         stdin_fd, stdout_fd = process.stdin, process.stdout
-        stdin_fd.write(stdin + SENT_SEP.encode(util.UTF8))
+        stdin_fd.write(stdin + SENT_SEP.encode(util.constants.UTF8))
         stdin_fd.flush()
 
         malt_sentences = []
@@ -183,7 +183,7 @@ def maltstart(maltjar, model, encoding, send_empty_sentence=False):
         # for subsequent requests.
         stdin_fd, stdout_fd = process.stdin, process.stdout
         log.info("Sending empty sentence to malt")
-        stdin_fd.write("1\t.\t_\tMAD\tMAD\tMAD\n\n\n".encode(util.UTF8))
+        stdin_fd.write("1\t.\t_\tMAD\tMAD\tMAD\n\n\n".encode(util.constants.UTF8))
         stdin_fd.flush()
         stdout_fd.readline()
         stdout_fd.readline()

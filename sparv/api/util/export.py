@@ -7,11 +7,10 @@ from copy import deepcopy
 from itertools import combinations
 from typing import Any, List, Optional, Tuple, Union
 
-from sparv import util
 from sparv.core import io
-from sparv.util import SPARV_DEFAULT_NAMESPACE, misc
-from sparv.util.classes import (Annotation, AnnotationAllDocs, ExportAnnotations, ExportAnnotationsAllDocs, Headers,
-                                SourceStructure)
+from .constants import SPARV_DEFAULT_NAMESPACE
+from sparv.api import (Annotation, AnnotationAllDocs, ExportAnnotations, ExportAnnotationsAllDocs, Headers,
+                       SourceStructure, util)
 
 log = logging.getLogger(__name__)
 
@@ -120,8 +119,8 @@ def gather_annotations(annotations: List[Annotation],
             if attr and not annotation_dict[base_name].get(attr):
                 annotation_dict[base_name][attr] = list(annotation.read())
             elif is_header:
-                annotation_dict[base_name][util.HEADER_CONTENTS] = list(
-                    Annotation(f"{base_name}:{util.HEADER_CONTENTS}", doc=doc).read(allow_newlines=True))
+                annotation_dict[base_name][util.constants.HEADER_CONTENTS] = list(
+                    Annotation(f"{base_name}:{util.constants.HEADER_CONTENTS}", doc=doc).read(allow_newlines=True))
 
     # Calculate hierarchy (if needed) and sort the span objects
     elem_hierarchy = calculate_element_hierarchy(doc, spans_list)
@@ -271,7 +270,7 @@ def get_source_annotations(source_annotation_names: Optional[List[str]], doc: Op
     available_source_annotations = get_available_source_annotations(doc, docs)
 
     # Parse source_annotation_names
-    annotation_names = misc.parse_annotation_list(source_annotation_names, available_source_annotations)
+    annotation_names = util.misc.parse_annotation_list(source_annotation_names, available_source_annotations)
 
     # Make sure source_annotations doesn't include annotations not in source
     source_annotations = [(Annotation(a[0], doc) if doc else AnnotationAllDocs(a[0]), a[1]) for a in
@@ -341,7 +340,7 @@ def get_header_names(header_annotation_names: Optional[List[str]],
         source_header_names = Headers(doc).read()
 
     # Parse header_annotation_names and convert to annotations
-    annotation_names = misc.parse_annotation_list(header_annotation_names, source_header_names)
+    annotation_names = util.misc.parse_annotation_list(header_annotation_names, source_header_names)
     header_annotations = [(Annotation(a[0], doc) if doc else AnnotationAllDocs(a[0]), a[1]) for a in
                           annotation_names]
 

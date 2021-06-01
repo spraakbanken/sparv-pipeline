@@ -10,6 +10,7 @@ import tempfile
 from pathlib import Path
 
 from sparv.api import Annotation, BinaryDir, Config, Language, Output, Text, annotator, util
+from sparv.api.util.tagsets import pos_to_upos
 
 import logging
 log = logging.getLogger(__name__)
@@ -48,8 +49,8 @@ def annotate(corpus_text: Text = Text(),
     sentence_segments = []
     all_tokens = []
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmpdir = Path(tmpdir)
+    with tempfile.TemporaryDirectory() as tmpdirstr:
+        tmpdir = Path(tmpdirstr)
         log.debug("Creating temporary directoty: %s", tmpdir)
 
         # Write all texts to temporary files
@@ -122,7 +123,7 @@ def _parse_output(stdout, lang, add_to_index):
             # -output.columns from the parser (see the args to the parser, in annotate() above):
             # idx, current, lemma, pos, ner,          headidx,     deprel, BEGIN_POS, END_POS
             ref,   word,    lemma, pos, named_entity, dephead_ref, deprel, start,     end     = line.split("\t")
-            upos = util.tagsets.pos_to_upos(pos, lang, "Penn")
+            upos = pos_to_upos(pos, lang, "Penn")
             if named_entity == "O":  # O = empty name tag
                 named_entity = ""
             if dephead_ref == "0":  # 0 = empty dephead

@@ -7,36 +7,9 @@ import unicodedata
 from collections import defaultdict, OrderedDict
 from typing import List, Optional, Union, Tuple
 
-from .classes import Annotation, Model
+from sparv.api.classes import Annotation, Model
 
 _log = logging.getLogger(__name__)
-
-
-class SparvErrorMessage(Exception):
-    """Exception used to notify users of errors in a friendly way without displaying traceback."""
-
-    start_marker = "<<<START>>>"
-    end_marker = "<<<END>>>"
-
-    def __init__(self, message, module="", function=""):
-        """Raise an error and notify user of the problem in a friendly way.
-
-        Args:
-            message: Error message.
-            module: Name of module where error occurred (optional, not used in Sparv modules)
-            function: Name of function where error occurred (optional, not used in Sparv modules)
-        """
-        self.message = message
-        # Alter message before calling base class
-        super().__init__("{}{}\n{}\n{}{}".format(SparvErrorMessage.start_marker, module, function, message,
-                                                 SparvErrorMessage.end_marker))
-
-
-def get_logger(name):
-    """Get a logger that is a child of 'sparv.modules'."""
-    if not name.startswith("sparv.modules"):
-        name = "sparv.modules." + name
-    return logging.getLogger(name)
 
 
 def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations: Optional[List[str]] = None,

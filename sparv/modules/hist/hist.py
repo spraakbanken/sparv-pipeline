@@ -4,9 +4,10 @@ import re
 from typing import List, Optional
 
 import sparv.modules.saldo.saldo as saldo
-from sparv.api import Annotation, Config, Model, Output, annotator, util
+from sparv.api import Annotation, Config, Model, Output, annotator, get_logger, util
+from sparv.api.util.tagsets import tagmappings
 
-logger = util.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 @annotator("Annotations from SALDO, Dalin and Swedberg", language=["swe-1800"], order=1, preloader=saldo.preloader,
@@ -97,7 +98,7 @@ def extract_pos(out: Output = Output("<token>:hist.homograph_set", description="
 
     def mkpos(_, thelems):
         pos = [re.search(r"\.\.(.*?)\.", lem) for lem in thelems]
-        mapping = util.tagsets.mappings["saldo_pos_to_suc"]
+        mapping = tagmappings.mappings["saldo_pos_to_suc"]
         pos_lists = [mapping.get(p.group(1), []) for p in pos if oktag(p)]
         return sorted(list(set([y for x in pos_lists for y in x])))
 
@@ -262,8 +263,8 @@ def all_spelling_variants(
 # Auxiliaries
 ################################################################################
 
-def _annotate_standard(out, input_annotation, annotator, extra_input="", delimiter: str = util.DELIM,
-                       affix: str = util.AFFIX, split=True):
+def _annotate_standard(out, input_annotation, annotator, extra_input="", delimiter: str = util.constants.DELIM,
+                       affix: str = util.constants.AFFIX, split=True):
     """Apply the 'annotator' function to the annotations in 'input_annotation' and write the new output to 'out'.
 
     Args:
@@ -272,8 +273,9 @@ def _annotate_standard(out, input_annotation, annotator, extra_input="", delimit
         annotator: function which is to be applied to the input annotation.
             It should have type :: oldannotations -> newannotations
         extra_input (str, optional): An additional input annotation. Defaults to "".
-        delimiter (str, optional): Delimiter character to put between ambiguous results. Defaults to util.DELIM.
-        affix (str, optional): Character to put before and after results. Defaults to util.AFFIX.
+        delimiter (str, optional): Delimiter character to put between ambiguous results. Defaults to
+            util.constants.DELIM.
+        affix (str, optional): Character to put before and after results. Defaults to util.constants.AFFIX.
         split (bool, optional): Defines whether the input annatoation is a set, with elements separated by delimiter.
             If so, return a list. Else, return one single element. Defaults to True.
     """
@@ -289,7 +291,7 @@ def _annotate_standard(out, input_annotation, annotator, extra_input="", delimit
 
         # Pass annot to annotator and convert into cwbset
         annots = list(dict.fromkeys(annotator(token_index, annot)))
-        out_annotation.append(util.cwbset(annots, delimiter=delimiter, affix=affix))
+        out_annotation.append(util.misc.cwbset(annots, delimiter=delimiter, affix=affix))
 
     out.write(out_annotation)
 

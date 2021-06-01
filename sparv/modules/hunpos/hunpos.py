@@ -4,6 +4,7 @@ import re
 from typing import Optional
 
 from sparv.api import Annotation, Binary, Config, Model, ModelOutput, Output, annotator, modelbuilder, util
+from sparv.api.util.tagsets import tagmappings
 
 SENT_SEP = "\n\n"
 TOK_SEP = "\n"
@@ -42,10 +43,11 @@ def msdtag_hist(out: Output = Output("<token>:hunpos.msd_hist", cls="token:msd",
          encoding=encoding)
 
 
-def main(out, word, sentence, binary, model, morphtable=None, patterns=None, tag_mapping=None, encoding=util.UTF8):
+def main(out, word, sentence, binary, model, morphtable=None, patterns=None, tag_mapping=None,
+         encoding=util.constants.UTF8):
     """POS/MSD tag using the Hunpos tagger."""
     if isinstance(tag_mapping, str) and tag_mapping:
-        tag_mapping = util.tagsets.mappings[tag_mapping]
+        tag_mapping = tagmappings.mappings[tag_mapping]
     elif tag_mapping is None or tag_mapping == "":
         tag_mapping = {}
 

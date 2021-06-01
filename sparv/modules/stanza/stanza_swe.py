@@ -1,9 +1,9 @@
 """POS tagging, lemmatisation and dependency parsing with Stanza."""
 
-from sparv.api import Annotation, Config, Model, Output, annotator, util
+from sparv.api import Annotation, Config, Model, Output, annotator, get_logger, util
 from . import stanza_utils
 
-logger = util.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 @annotator("POS, lemma and dependency relations from Stanza", language=["swe"], order=1)
@@ -120,7 +120,7 @@ def annotate_swe(
         word_count = 0
         for sent, tagged_sent in zip(sentences, doc.sentences):
             for w_index, w in zip(sent, tagged_sent.words):
-                feats_str = util.cwbset(w.feats.split("|") if w.feats else "")
+                feats_str = util.misc.cwbset(w.feats.split("|") if w.feats else "")
                 msd[w_index] = w.xpos
                 pos[w_index] = w.upos
                 feats[w_index] = feats_str
@@ -187,7 +187,7 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
     for sent, tagged_sent in zip(sentences, doc.sentences):
         for w_index, w in zip(sent, tagged_sent.words):
             word_count += 1
-            feats_str = util.cwbset(w.feats.split("|") if w.feats else "")
+            feats_str = util.misc.cwbset(w.feats.split("|") if w.feats else "")
             msd[w_index] = w.xpos
             pos[w_index] = w.upos
             feats[w_index] = feats_str
@@ -310,13 +310,13 @@ def _build_doc(sentences, word, baseform, msd, feats, ref):
         in_sent = []
         for i in sent:
             # Format feats
-            feats_list = util.set_to_list(feats[i])
+            feats_list = util.misc.set_to_list(feats[i])
             if not feats_list:
                 feats_str = "_"
             else:
                 feats_str = "|".join(feats_list)
             # Format baseform
-            baseform_list = util.set_to_list(baseform[i])
+            baseform_list = util.misc.set_to_list(baseform[i])
             if not baseform_list:
                 baseform_str = word[i]
             else:

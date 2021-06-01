@@ -38,7 +38,7 @@ def annotate(out_ne: Output = Output("swener.ne", cls="named_entity", descriptio
     - process_dict is used in the catapult and should never be set from the command line
     """
     if process_dict is None:
-        process = swenerstart(binary, "", util.UTF8, verbose=False)
+        process = swenerstart(binary, "", util.constants.UTF8, verbose=False)
     # else:
     #     process = process_dict["process"]
     #     # If process seems dead, spawn a new one
@@ -74,10 +74,10 @@ def annotate(out_ne: Output = Output("swener.ne", cls="named_entity", descriptio
     # else:
     # Otherwise use communicate which buffers properly
     # log.info("STDIN %s %s", type(stdin.encode(encoding)), stdin.encode(encoding))
-    stdout, _ = process.communicate(stdin.encode(util.UTF8))
+    stdout, _ = process.communicate(stdin.encode(util.constants.UTF8))
     # log.info("STDOUT %s %s", type(stdout.decode(encoding)), stdout.decode(encoding))
 
-    parse_swener_output(sentences, token, stdout.decode(util.UTF8), out_ne, out_ne_ex, out_ne_type, out_ne_subtype,
+    parse_swener_output(sentences, token, stdout.decode(util.constants.UTF8), out_ne, out_ne_ex, out_ne_type, out_ne_subtype,
                         out_ne_name)
 
 

@@ -1,13 +1,14 @@
 # Utilities
 
-Sparv has a number of utility functions, classes and constants that are not specific to any particular module. They are
-imported from `sparv.util`, e.g.:
+Sparv has a number of utility functions, classes and constants that are not specific to any particular module.
+Most of them are imported from `sparv.api.util` and its submodules, e.g.:
 ```python
-from sparv.util import UTF8
+from sparv.api.util.system import call_binary
 ```
 
 
 ## Constants
+`sparv.api.util.constants` contains the following constants:
 
 - `DELIM = "|"`
   Delimiter char to put between ambiguous results
@@ -32,7 +33,7 @@ from sparv.util import UTF8
 
 
 ## Export Utils
-Util functions used for preparing data for export.
+`sparv.api.util.export` provides util functions used for preparing data for export.
 
 ### gather_annotations()
 Calculate the span hierarchy and the annotation_dict containing all annotation elements and attributes. Returns a
@@ -88,7 +89,7 @@ Reorder chunks according to `chunk_order` and open/close tags in the correct ord
 
 
 ## Install Utils
-Util functions used for installing corpora onto remote servers.
+`sparv.api.util.install` provides util functions used for installing corpora onto remote locations.
 
 
 ### install_directory()
@@ -132,7 +133,7 @@ Copy selected tables (including data) from local to remote MySQL database.
 
 
 ## System Utils
-Util functions related to staring and stopping processes, creating directories etc.
+`sparv.api.util.system` provides functions related to starting and stopping processes, creating directories etc.
 
 
 ### call_binary()
@@ -215,9 +216,9 @@ deleted.
 
 
 ## Tagsets
-Functions and objects related to tagset conversions.
+`sparv.api.util.tagsets` is a subpackage with modules containing functions and objects related to tagset conversions.
 
-### tagsets.join_tag()
+### tagmappings.join_tag()
 Convert a complex SUC or SALDO tag record into a string.
 
 **Arguments:**
@@ -226,13 +227,13 @@ Convert a complex SUC or SALDO tag record into a string.
 - `sep`: The separator to be used. Default: "."
 
 
-### tagsets.mappings
+### tagmappings.mappings
 Dictionary containing mappings (dictionaries) for of part-of-speech tag mappings between different tag sets.
 
 
-### tagsets.pos_to_upos()
-Map POS tags to Universal Depenendy POS tags. This only works if there is a conversion function in `util.pos_to_upos`
-for the given language and tagset.
+### pos_to_upos()
+Map POS tags to Universal Depenendy POS tags. This only works if there is a conversion function in
+`util.tagsets.pos_to_upos` for the given language and tagset.
 
 **Arguments:**
 
@@ -241,7 +242,7 @@ for the given language and tagset.
 - `tagset`: The name of the tagset that `pos` belongs to.
 
 
-### tagsets.split_tag()
+### tagmappings.split_tag()
 Split a SUC or Saldo tag string ('X.Y.Z') into a tuple ('X', 'Y.Z') where 'X' is a part of speech and 'Y', 'Z' etc. are
 morphologic features (i.e. MSD tags).
 
@@ -251,7 +252,7 @@ morphologic features (i.e. MSD tags).
 - `sep`: The separator to split on. Default: "."
 
 
-### tagsets.suc_to_feats()
+### suc_to_feats()
 Convert SUC MSD tags into UCoNNL feature list (universal morphological features). Returns a list of universal features.
 
 **Arguments:**
@@ -261,12 +262,12 @@ Convert SUC MSD tags into UCoNNL feature list (universal morphological features)
 - `delim`: The delimiter separating the features in `msd`. Default: "."
 
 
-### tagsets.tags
+### tagmappings.tags
 Dictionary containing sets of part-of-speech tags.
 
 
 ## Miscellaneous Utils
-Miscellaneous utils functions.
+`sparv.api.util.misc` provides miscellaneous util functions.
 
 
 <!-- ### chain() -->
@@ -283,14 +284,6 @@ Take an iterable object and return a set in the format used by Corpus Workbench.
 - `sort: Set to `True` if you want to values to be sorted. Default: `False`
 - `maxlength`: Maximum length in characters for the resulting set. Default: 4095
 - `encoding`: Encoding of `values`. Default: "UTF-8"
-
-
-### get_logger()
-Get a logger that is a child of `sparv.modules`.
-
-**Arguments:**
-
-- `name`: The name of the current module (usually `__name__`)
 
 
 ### indent_xml()
@@ -360,16 +353,6 @@ Turn a set string into a list.
 - `affix`: Character that `setstring` starts and ends with. that Default: "|"
 
 
-### SparvErrorMessage
-Exception (class) used to notify users of errors in a friendly way without displaying traceback.
-
-**Arguments:**
-
-- `message`: The error message to display.
-- `module`: Name of the module where the error occurred (optional, not used in Sparv modules). Default: ""
-- `function`: Name of the function where the error occurred (optional, not used in Sparv modules). Default: ""
-
-
 ### test_lexicon()
 Test the validity of a lexicon. Takes a dictionary (lexicon) and a list of test words that are expected to occur as keys
 in the lexicon. Prints the value for each test word.
@@ -378,3 +361,31 @@ in the lexicon. Prints the value for each test word.
 
 - `lexicon`: A dictionary.
 - `testwords`: An iterable containing strings that are expected to occur as keys in `lexicon`.
+
+
+## Error Messages and Logging
+The `SparvErrorMessage` exception and `get_logger` function are integral parts of the Sparv pipeline, and unlike other
+utilities on this page, they are found directly under `sparv.api`.
+
+
+### SparvErrorMessage
+Exception (class) used to notify users of errors in a friendly way without displaying traceback. Its usage is described
+in the [Writing Sparv Plugins](developers-guide/writing-sparv-plugins#error-messages) section.
+
+> [!NOTE]
+> Only the `message` argument should be used when raisning this exception in a Sparv module.
+
+**Arguments:**
+
+- `message`: The error message to display.
+- `module`: Name of the module where the error occurred (optional, not used in Sparv modules). Default: ""
+- `function`: Name of the function where the error occurred (optional, not used in Sparv modules). Default: ""
+
+
+### get_logger()
+Get a logger that is a child of `sparv.modules`. Its usage is described in the
+[Writing Sparv Plugins](developers-guide/writing-sparv-plugins#logging) section.
+
+**Arguments:**
+
+- `name`: The name of the current module (usually `__name__`)

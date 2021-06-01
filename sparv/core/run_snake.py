@@ -8,7 +8,7 @@ from pkg_resources import iter_entry_points
 
 from sparv.core import log_handler, paths
 from sparv.core import registry
-from sparv.util import SparvErrorMessage
+from sparv.core.misc import SparvErrorMessage
 
 custom_name = "custom"
 plugin_name = "plugin"

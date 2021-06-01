@@ -4,10 +4,10 @@ from typing import Optional
 
 import iso639
 
-from sparv.api import Annotation, Config, Language, Model, Output, Text, annotator, util
+from sparv.api import Annotation, Config, Language, Model, Output, Text, annotator, get_logger, util
 from . import stanza_utils
 
-logger = util.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 @annotator("POS, lemma and dependency relations from Stanza", language=["eng"])
@@ -246,7 +246,7 @@ class Token:
         self.pos = stanza_w.xpos
         self.baseform = stanza_w.lemma
         # Format feats
-        feats_list = util.set_to_list(stanza_w.feats or "")
+        feats_list = util.misc.set_to_list(stanza_w.feats or "")
         if not feats_list:
             feats_str = "_"
         else:

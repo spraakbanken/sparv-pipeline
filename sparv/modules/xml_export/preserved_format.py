@@ -4,8 +4,8 @@ import logging
 import os
 import xml.etree.ElementTree as etree
 
-from sparv.api import (AnnotationData, Config, Document, Export, ExportAnnotations, SourceAnnotations, Text, exporter,
-                       util)
+from sparv.api import (AnnotationData, Config, Document, Export, ExportAnnotations, SourceAnnotations,
+                       SparvErrorMessage, Text, exporter, util)
 from . import xml_utils
 
 log = logging.getLogger(__name__)
@@ -52,21 +52,21 @@ def preserved_format(doc: Document = Document(),
     docid = docid.read()
 
     # Get annotation spans, annotations list etc.
-    annotation_list, _, export_names = util.get_annotation_names(annotations, source_annotations, doc=doc,
-                                                                 remove_namespaces=remove_namespaces,
-                                                                 sparv_namespace=sparv_namespace,
-                                                                 source_namespace=source_namespace)
-    h_annotations, h_export_names = util.get_header_names(header_annotations, doc=doc)
+    annotation_list, _, export_names = util.export.get_annotation_names(annotations, source_annotations, doc=doc,
+                                                                        remove_namespaces=remove_namespaces,
+                                                                        sparv_namespace=sparv_namespace,
+                                                                        source_namespace=source_namespace)
+    h_annotations, h_export_names = util.export.get_header_names(header_annotations, doc=doc)
     export_names.update(h_export_names)
-    span_positions, annotation_dict = util.gather_annotations(annotation_list, export_names, h_annotations, doc=doc,
-                                                              flatten=False, split_overlaps=True)
+    span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names, h_annotations,
+                                                                     doc=doc, flatten=False, split_overlaps=True)
     sorted_positions = [(pos, span[0], span[1]) for pos, spans in sorted(span_positions.items()) for span in spans]
 
     # Root tag sanity check
     if not xml_utils.valid_root(sorted_positions[0], sorted_positions[-1]):
-        raise util.SparvErrorMessage("Root tag is missing! If you have manually specified which elements to include, "
-                                     "make sure to include an element that encloses all other included elements and "
-                                     "text content.")
+        raise SparvErrorMessage("Root tag is missing! If you have manually specified which elements to include, "
+                                "make sure to include an element that encloses all other included elements and "
+                                "text content.")
 
     # Create root node
     root_span = sorted_positions[0][2]
@@ -86,7 +86,7 @@ def preserved_format(doc: Document = Document(),
 
             # Handle headers
             if span.is_header:
-                header = annotation_dict[span.name][util.HEADER_CONTENTS][span.index]
+                header = annotation_dict[span.name][util.constants.HEADER_CONTENTS][span.index]
                 header_xml = etree.fromstring(header)
                 header_xml.tag = span.export  # Rename element if needed
                 span.node = header_xml
@@ -99,9 +99,9 @@ def preserved_format(doc: Document = Document(),
                                     include_empty_attributes)
                 if span.overlap_id:
                     if sparv_namespace:
-                        span.node.set(f"{sparv_namespace}.{util.OVERLAP_ATTR}", f"{docid}-{span.overlap_id}")
+                        span.node.set(f"{sparv_namespace}.{util.constants.OVERLAP_ATTR}", f"{docid}-{span.overlap_id}")
                     else:
-                        span.node.set(f"{util.SPARV_DEFAULT_NAMESPACE}.{util.OVERLAP_ATTR}",
+                        span.node.set(f"{util.constants.SPARV_DEFAULT_NAMESPACE}.{util.constants.OVERLAP_ATTR}",
                                       f"{docid}-{span.overlap_id}")
                 node_stack.append(span)
 

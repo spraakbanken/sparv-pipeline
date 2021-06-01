@@ -4,7 +4,7 @@ import logging
 import os
 
 from sparv.api import (AllDocuments, Annotation, AnnotationData, Config, Corpus, Document, Export, ExportAnnotations,
-                       ExportInput, OutputCommonData, SourceAnnotations, exporter, installer, util)
+                       ExportInput, OutputCommonData, SourceAnnotations, SparvErrorMessage, exporter, installer, util)
 from . import xml_utils
 
 log = logging.getLogger(__name__)
@@ -28,16 +28,16 @@ def scrambled(doc: Document = Document(),
               include_empty_attributes: bool = Config("xml_export.include_empty_attributes")):
     """Export annotations to scrambled XML."""
     # Get annotation spans, annotations list etc.
-    annotation_list, _, export_names = util.get_annotation_names(annotations, source_annotations, doc=doc,
-                                                                 token_name=token.name,
-                                                                 remove_namespaces=remove_namespaces,
-                                                                 sparv_namespace=sparv_namespace,
-                                                                 source_namespace=source_namespace)
+    annotation_list, _, export_names = util.export.get_annotation_names(annotations, source_annotations, doc=doc,
+                                                                        token_name=token.name,
+                                                                        remove_namespaces=remove_namespaces,
+                                                                        sparv_namespace=sparv_namespace,
+                                                                        source_namespace=source_namespace)
     if chunk not in annotation_list:
-        raise util.SparvErrorMessage(
+        raise SparvErrorMessage(
             "The annotation used for scrambling ({}) needs to be included in the output.".format(chunk))
-    span_positions, annotation_dict = util.gather_annotations(annotation_list, export_names, doc=doc,
-                                                              split_overlaps=True)
+    span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names, doc=doc,
+                                                                     split_overlaps=True)
 
     # Read words and document ID
     word_annotation = list(word.read())
@@ -45,7 +45,7 @@ def scrambled(doc: Document = Document(),
     docid_annotation = docid.read()
 
     # Reorder chunks
-    new_span_positions = util.scramble_spans(span_positions, chunk.name, chunk_order)
+    new_span_positions = util.export.scramble_spans(span_positions, chunk.name, chunk_order)
 
     # Construct XML string
     xmlstr = xml_utils.make_pretty_xml(new_span_positions, annotation_dict, export_names, token.name, word_annotation,

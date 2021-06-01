@@ -63,15 +63,15 @@ def pretty(doc: Document = Document(),
     docid_annotation = docid.read()
 
     # Get annotation spans, annotations list etc.
-    annotation_list, _, export_names = util.get_annotation_names(annotations, source_annotations, doc=doc,
-                                                                 token_name=token_name,
-                                                                 remove_namespaces=remove_namespaces,
-                                                                 sparv_namespace=sparv_namespace,
-                                                                 source_namespace=source_namespace)
-    h_annotations, h_export_names = util.get_header_names(header_annotations, doc=doc)
+    annotation_list, _, export_names = util.export.get_annotation_names(annotations, source_annotations, doc=doc,
+                                                                        token_name=token_name,
+                                                                        remove_namespaces=remove_namespaces,
+                                                                        sparv_namespace=sparv_namespace,
+                                                                        source_namespace=source_namespace)
+    h_annotations, h_export_names = util.export.get_header_names(header_annotations, doc=doc)
     export_names.update(h_export_names)
-    span_positions, annotation_dict = util.gather_annotations(annotation_list, export_names, h_annotations,
-                                                              doc=doc, split_overlaps=True)
+    span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names, h_annotations,
+                                                                     doc=doc, split_overlaps=True)
     xmlstr = xml_utils.make_pretty_xml(span_positions, annotation_dict, export_names, token_name, word_annotation,
                                        docid_annotation, include_empty_attributes, sparv_namespace)
 

@@ -1,6 +1,6 @@
 """Util functions used in stanza."""
 
-from sparv.api import Annotation, Output, annotator, util
+from sparv.api import Annotation, Output, SparvErrorMessage, annotator, util
 
 
 @annotator("Annotate tokens with IDs relative to their sentences")
@@ -33,19 +33,17 @@ def run_stanza(nlp, document, batch_size, max_sentence_length: int = 0):
                 msg += "\n - Switch to using CPU by setting the 'stanza.use_gpu' config variable to false."
         else:
             msg = str(e)
-        raise util.SparvErrorMessage(msg)
+        raise SparvErrorMessage(msg)
     return doc
 
 
 def check_sentence_respect(sparv_sent_len: int, stanza_sent_len: int):
     """Check whether Stanza respected the given sentence segmentation."""
     if sparv_sent_len != stanza_sent_len:
-        raise util.SparvErrorMessage(
-            "The Stanza pipeline did not seem to respect the given sentence segmentation!")
+        raise SparvErrorMessage("The Stanza pipeline did not seem to respect the given sentence segmentation!")
 
 
 def check_token_respect(sparv_token_len: int, stanza_token_len: int):
     """Check whether Stanza respected the given tokenization."""
     if sparv_token_len != stanza_token_len:
-        raise util.SparvErrorMessage(
-            "Stanza pipeline did not seem to respect the given tokenisation!")
+        raise SparvErrorMessage("Stanza pipeline did not seem to respect the given tokenisation!")

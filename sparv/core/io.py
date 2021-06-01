@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Union, Tuple, List, Optional
 
 from sparv.core import paths
-from sparv.util.classes import BaseAnnotation, BaseOutput
+from sparv.api.classes import BaseAnnotation, BaseOutput
 
 _log = logging.getLogger(__name__)
 
@@ -203,7 +203,7 @@ def split_annotation(annotation: Union[BaseAnnotation, str]) -> Tuple[str, str]:
     return elem, attr
 
 
-def join_annotation(name: str, attribute: str) -> str:
+def join_annotation(name: str, attribute: Optional[str]) -> str:
     """Join annotation name and attribute."""
     return ELEM_ATTR_DELIM.join((name, attribute)) if attribute else name
 

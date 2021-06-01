@@ -6,7 +6,7 @@ from . import hunpos, morphtable, morphtable_hist
 
 __config__ = [
     Config("hunpos.binary", default="hunpos-tag", description="Hunpos executable"),
-    Config("hunpos.encoding", default=util.UTF8, description="Encoding of the input text"),
+    Config("hunpos.encoding", default=util.constants.UTF8, description="Encoding of the input text"),
 
     # Config for modern Swedish
     Config("hunpos.model", default="hunpos/suc3_suc-tags_default-setting_utf8.model",

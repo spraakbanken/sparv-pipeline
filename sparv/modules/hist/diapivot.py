@@ -31,12 +31,12 @@ def diapivot_annotate(out: Output = Output("<token>:hist.diapivot", cls="token:l
 
     for lemgrams in lemgram_annotation:
         saldo_ids = []
-        for lemgram in lemgrams.split(util.DELIM):
+        for lemgram in lemgrams.split(util.constants.DELIM):
             s_i = lexicon.get_exactMatch(lemgram)
             if s_i:
                 saldo_ids += [s_i]
 
-        out_annotation.append(util.cwbset(set(saldo_ids), sort=True))
+        out_annotation.append(util.misc.cwbset(set(saldo_ids), sort=True))
 
     out.write(out_annotation)
 
@@ -146,7 +146,7 @@ def read_xml(xml):
     testwords = ["tigerhjerta..nn.1",
                  "lågland..nn.1",
                  "gud..nn.1"]
-    util.test_lexicon(lexicon, testwords)
+    util.misc.test_lexicon(lexicon, testwords)
 
     log.info("OK, read")
     return lexicon

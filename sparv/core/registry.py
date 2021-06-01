@@ -12,8 +12,8 @@ import typing_inspect
 
 from sparv.core import config as sparv_config
 from sparv.core import paths
-from sparv.util.classes import (BaseOutput, Config, ExportAnnotations, ExportAnnotationsAllDocs, SourceStructureParser,
-                                ModelOutput, Wildcard)
+from sparv.api.classes import (BaseOutput, Config, ExportAnnotations, ExportAnnotationsAllDocs, SourceStructureParser,
+                               ModelOutput, Wildcard)
 
 modules_path = ".".join(("sparv", paths.modules_dir))
 core_modules_path = ".".join(("sparv", paths.core_modules_dir))

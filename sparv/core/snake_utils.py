@@ -11,14 +11,14 @@ from typing import Any, List, Optional, Set, Tuple
 import snakemake
 from snakemake.io import expand
 
-from sparv import util
+from sparv.api import util, SparvErrorMessage
 from sparv.core import config as sparv_config
 from sparv.core import io, log_handler, paths, registry
 from sparv.core.console import console
-from sparv.util.classes import (AllDocuments, Annotation, AnnotationAllDocs, AnnotationData, Base, BaseAnnotation,
-                                BaseOutput, Binary, BinaryDir, Config, Corpus, Document, Export, ExportAnnotations,
-                                ExportAnnotationsAllDocs, ExportInput, Language, Model, ModelOutput, Output, OutputData,
-                                Source, SourceAnnotations, Text)
+from sparv.api.classes import (AllDocuments, Annotation, AnnotationAllDocs, AnnotationData, Base, BaseAnnotation,
+                               BaseOutput, Binary, BinaryDir, Config, Corpus, Document, Export, ExportAnnotations,
+                               ExportAnnotationsAllDocs, ExportInput, Language, Model, ModelOutput, Output, OutputData,
+                               Source, SourceAnnotations, Text)
 
 
 class SnakeStorage:
@@ -132,7 +132,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 annotations_ = set()
                 renames = {}
                 # Annotation list needs to be sorted to handle plain annotations before attributes
-                for ann, target in sorted(util.parse_annotation_list(rule.import_outputs)):
+                for ann, target in sorted(util.misc.parse_annotation_list(rule.import_outputs)):
                     # Handle annotations renamed during import
                     if target:
                         source_ann, source_attr = BaseAnnotation(ann).split()
@@ -173,7 +173,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             # This should be either a utility annotator or a custom annotator supplied by the user
             if not (rule.module_name == registry.custom_name or
                     storage.all_custom_annotators.get(rule.module_name, {}).get(rule.f_name)):
-                raise util.SparvErrorMessage(
+                raise SparvErrorMessage(
                     "The custom annotation for annotator '{}' is using 'params' which is not allowed with this type of "
                     "annotator. Use 'config' instead.".format(custom_rule_obj["annotator"]))
             name_custom_rule(rule, storage)
@@ -184,8 +184,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             try:
                 custom_suffix = custom_rule_obj["suffix"]
             except KeyError:
-                raise util.SparvErrorMessage("The custom annotation for annotator '{}' is missing the required key "
-                                             "'suffix'.".format(custom_rule_obj["annotator"]))
+                raise SparvErrorMessage("The custom annotation for annotator '{}' is missing the required key "
+                                        "'suffix'.".format(custom_rule_obj["annotator"]))
             sparv_config.config = sparv_config._merge_dicts(copy.deepcopy(custom_rule_obj["config"]),
                                                             sparv_config.config)
         else:
@@ -205,7 +205,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             elif not param_default_empty:
                 param_value = copy.deepcopy(param.default)
             else:
-                raise util.SparvErrorMessage(
+                raise SparvErrorMessage(
                     f"Parameter '{param_name}' in custom rule '{rule.full_name}' has no value!", "sparv", "config")
         else:
             if param_default_empty:
@@ -299,7 +299,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             annotations = sparv_config.get(f"{source}", [])
             if not annotations:
                 rule.missing_config.add(f"{source}")
-            export_annotations = util.parse_annotation_list(annotations, add_plain_annotations=False)
+            export_annotations = util.misc.parse_annotation_list(annotations, add_plain_annotations=False)
             annotation_type = Annotation if param_type == ExportAnnotations else AnnotationAllDocs
             plain_annotations = set()
             possible_plain_annotations = []
@@ -376,7 +376,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             rule.classes.update(registry.find_classes(param.default))
             param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
             rule.missing_config.update(missing_configs)
-            binary = util.find_binary(param_value, executable=False, allow_dir=param.annotation == BinaryDir)
+            binary = util.system.find_binary(param_value, executable=False, allow_dir=param.annotation == BinaryDir)
             if not binary:
                 rule.missing_binaries.add(param_value)
             binary = Path(binary if binary else param_value)
@@ -623,12 +623,12 @@ def get_source_files(source_files) -> List[str]:
     """Get list of all available source files."""
     if not source_files:
         if not sparv_config.get("import.importer"):
-            raise util.SparvErrorMessage("The config variable 'import.importer' must not be empty.", "sparv")
+            raise SparvErrorMessage("The config variable 'import.importer' must not be empty.", "sparv")
         try:
             importer_module, _, importer_function = sparv_config.get("import.importer").partition(":")
             file_extension = registry.modules[importer_module].functions[importer_function]["file_extension"]
         except KeyError:
-            raise util.SparvErrorMessage(
+            raise SparvErrorMessage(
                 "Could not find the importer '{}'. Make sure the 'import.importer' config value refers to an "
                 "existing importer.".format(sparv_config.get("import.importer")), "sparv")
         source_files = [f[1][0] for f in snakemake.utils.listfiles(

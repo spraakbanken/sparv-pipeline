@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 from sparv.api import (AllDocuments, Annotation, AnnotationAllDocs, Config, Corpus, Document, Export, ExportAnnotations,
-                       ExportInput, SourceAnnotations, exporter, util)
+                       ExportInput, SourceAnnotations, SparvErrorMessage, exporter, util)
 from sparv.core import paths
 
 log = logging.getLogger(__name__)
@@ -42,12 +42,10 @@ def vrt(doc: Document = Document(),
     word_annotation = list(word.read())
 
     # Get annotation spans, annotations list etc.
-    annotation_list, token_attributes, export_names = util.get_annotation_names(annotations, source_annotations,
-                                                                                doc=doc, token_name=token.name,
-                                                                                remove_namespaces=remove_namespaces,
-                                                                                sparv_namespace=sparv_namespace,
-                                                                                source_namespace=source_namespace)
-    span_positions, annotation_dict = util.gather_annotations(annotation_list, export_names, doc=doc)
+    annotation_list, token_attributes, export_names = util.export.get_annotation_names(
+        annotations, source_annotations, doc=doc, token_name=token.name, remove_namespaces=remove_namespaces,
+        sparv_namespace=sparv_namespace, source_namespace=source_namespace)
+    span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names, doc=doc)
     vrt_data = create_vrt(span_positions, token.name, word_annotation, token_attributes, annotation_dict,
                           export_names)
 
@@ -73,23 +71,21 @@ def vrt_scrambled(doc: Document = Document(),
                   source_namespace: str = Config("export.source_namespace")):
     """Export annotations to vrt in scrambled order."""
     # Get annotation spans, annotations list etc.
-    annotation_list, token_attributes, export_names = util.get_annotation_names(annotations, source_annotations,
-                                                                                doc=doc, token_name=token.name,
-                                                                                remove_namespaces=remove_namespaces,
-                                                                                sparv_namespace=sparv_namespace,
-                                                                                source_namespace=source_namespace)
+    annotation_list, token_attributes, export_names = util.export.get_annotation_names(
+        annotations, source_annotations, doc=doc, token_name=token.name, remove_namespaces=remove_namespaces,
+        sparv_namespace=sparv_namespace, source_namespace=source_namespace)
     if chunk not in annotation_list:
-        raise util.SparvErrorMessage(
+        raise SparvErrorMessage(
             "The annotation used for scrambling ({}) needs to be included in the output.".format(chunk))
-    span_positions, annotation_dict = util.gather_annotations(annotation_list, export_names, doc=doc,
-                                                              split_overlaps=True)
+    span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names, doc=doc,
+                                                                     split_overlaps=True)
 
     # Read words and document ID
     word_annotation = list(word.read())
     chunk_order_data = list(chunk_order.read())
 
     # Reorder chunks and open/close tags in correct order
-    new_span_positions = util.scramble_spans(span_positions, chunk.name, chunk_order_data)
+    new_span_positions = util.export.scramble_spans(span_positions, chunk.name, chunk_order_data)
 
     # Make vrt format
     vrt_data = create_vrt(new_span_positions, token.name, word_annotation, token_attributes, annotation_dict,
@@ -177,12 +173,9 @@ def cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, o
     annotations.insert(0, (words, None))
 
     # Get annotation names
-    annotation_list, token_attributes, export_names = util.get_annotation_names(annotations, source_annotations,
-                                                                                docs=docs, token_name=token_name,
-                                                                                remove_namespaces=remove_namespaces,
-                                                                                sparv_namespace=sparv_namespace,
-                                                                                source_namespace=source_namespace,
-                                                                                keep_struct_names=True)
+    annotation_list, token_attributes, export_names = util.export.get_annotation_names(
+        annotations, source_annotations, docs=docs, token_name=token_name, remove_namespaces=remove_namespaces,
+        sparv_namespace=sparv_namespace, source_namespace=source_namespace, keep_struct_names=True)
 
     # Get VRT columns
     token_attributes = [(token_name + ":" + i) for i in token_attributes]
@@ -213,7 +206,7 @@ def cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, o
         if col != "-":
             encode_args += ["-P", col]
     for struct, attrs in structs:
-        attrs2 = "+".join(attr for attr, _n in attrs if not attr == util.UNDEF)
+        attrs2 = "+".join(attr for attr, _n in attrs if not attr == util.constants.UNDEF)
         if attrs2:
             attrs2 = "+" + attrs2
         encode_args += ["-S", "%s:0%s" % (struct, attrs2)]
@@ -348,13 +341,13 @@ def make_token_line(word, token, token_attributes, annotation_dict, index):
     line = [word.replace(" ", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")]
     for attr in token_attributes:
         if attr not in annotation_dict[token]:
-            attr_str = util.UNDEF
+            attr_str = util.constants.UNDEF
         else:
             attr_str = annotation_dict[token][attr][index]
         line.append(
             attr_str.replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
     line = "\t".join(line)
-    return util.remove_control_characters(line)
+    return util.misc.remove_control_characters(line)
 
 
 def parse_structural_attributes(structural_atts):
@@ -377,7 +370,7 @@ def parse_structural_attributes(structural_atts):
             elem, attr = struct.split(":")
         else:
             elem = struct
-            attr = util.UNDEF
+            attr = util.constants.UNDEF
         if struct and not struct == "-":
             if elem not in structs:
                 structs[elem] = []
@@ -401,4 +394,4 @@ def truncateset(string, maxlength=4095, delimiter="|", affix="|", encoding="UTF-
         for i, value in enumerate(values):
             length += len(value.encode(encoding)) + 1
             if length > maxlength:
-                return util.cwbset(values[:i], delimiter, affix)
+                return util.misc.cwbset(values[:i], delimiter, affix)

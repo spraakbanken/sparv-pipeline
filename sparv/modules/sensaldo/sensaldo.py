@@ -31,17 +31,16 @@ def annotate(sense: Annotation = Annotation("<token:sense>"),
       but is used in the catapult. This argument must be last.
     """
     if not lexicon:
-        lexicon = util.PickledLexicon(model.path)
+        lexicon = util.misc.PickledLexicon(model.path)
     # Otherwise use pre-loaded lexicon (from catapult)
 
-    sense = sense.read()
     result_scores = []
     result_labels = []
 
-    for token in sense:
+    for token in sense.read():
         # Get set of senses for each token and sort them according to their probabilities
-        token_senses = [tuple(s.rsplit(util.SCORESEP, 1)) if util.SCORESEP in s else (s, -1.0)
-                        for s in token.split(util.DELIM) if s]
+        token_senses = [tuple(s.rsplit(util.constants.SCORESEP, 1)) if util.constants.SCORESEP in s else (s, -1.0)
+                        for s in token.split(util.constants.DELIM) if s]
         token_senses.sort(key=lambda x: float(x[1]), reverse=True)
 
         # Lookup the sentiment score for the most probable sense and assign a sentiment label
@@ -103,7 +102,7 @@ def read_sensaldo(tsv, verbose=True):
                  "ödmjukhet..1",
                  "handla..1"
                  ]
-    util.test_lexicon(lexicon, testwords)
+    util.misc.test_lexicon(lexicon, testwords)
 
     if verbose:
         log.info("OK, read")

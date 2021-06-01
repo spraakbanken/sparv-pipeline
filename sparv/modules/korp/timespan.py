@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from sparv.api import (AllDocuments, Annotation, AnnotationAllDocs, Config, Corpus, Export, ExportInput, OutputCommonData,
                        annotator, exporter, installer, util)
-from sparv.util.mysql_wrapper import MySQL
+from sparv.api.util.mysql_wrapper import MySQL
 
 log = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ def install_timespan(sqlfile: ExportInput = ExportInput("korp_timespan/timespan.
         db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname").
         host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host").
     """
-    util.install_mysql(host, db_name, sqlfile)
+    util.install.install_mysql(host, db_name, sqlfile)
     out.write("")
 
 

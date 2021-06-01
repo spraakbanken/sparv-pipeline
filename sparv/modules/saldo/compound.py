@@ -10,6 +10,7 @@ import xml.etree.ElementTree as etree
 from functools import reduce
 
 from sparv.api import Annotation, Config, Model, ModelOutput, Output, annotator, modelbuilder, util
+from sparv.api.util.tagsets import tagmappings
 
 log = logging.getLogger(__name__)
 
@@ -45,10 +46,10 @@ def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
              saldo_comp_model: Model = Model("[saldo.comp_model]"),
              nst_model: Model = Model("[saldo.comp_nst_model]"),
              stats_model: Model = Model("[saldo.comp_stats_model]"),
-             complemgramfmt: str = util.SCORESEP + "%.3e",
-             delimiter: str = util.DELIM,
-             compdelim: str = util.COMPSEP,
-             affix: str = util.AFFIX,
+             complemgramfmt: str = util.constants.SCORESEP + "%.3e",
+             delimiter: str = util.constants.DELIM,
+             compdelim: str = util.constants.COMPSEP,
+             affix: str = util.constants.AFFIX,
              cutoff: bool = True,
              preloaded_models=None):
     """Divide compound words into prefix(es) and suffix.
@@ -212,7 +213,7 @@ class StatsLexicon:
 
 
 class InFileLexicon:
-    """A dictionary of all words occuring in the input file.
+    """A dictionary of all words occurring in the input file.
 
     keys = words, values =  MSD tags
     """
@@ -528,8 +529,8 @@ def make_complem_and_compwf(out_complem, out_compwf, complemgramfmt, compounds, 
             compwf_list.append(wf)
 
     # Add to annotations
-    out_complem.append(util.cwbset(complem_list, delimiter, affix) if compounds and complem_list else affix)
-    out_compwf.append(util.cwbset(compwf_list, delimiter, affix) if compounds else affix)
+    out_complem.append(util.misc.cwbset(complem_list, delimiter, affix) if compounds and complem_list else affix)
+    out_compwf.append(util.misc.cwbset(compwf_list, delimiter, affix) if compounds else affix)
 
 
 def make_new_baseforms(out_baseform, msd_tag, compounds, stats_lexicon, altlexicon, delimiter, affix):
@@ -559,12 +560,12 @@ def make_new_baseforms(out_baseform, msd_tag, compounds, stats_lexicon, altlexic
                 baseform_list.append(baseform)
 
     # Add to annotation
-    out_baseform.append(util.cwbset(baseform_list, delimiter, affix) if (compounds and baseform_list) else affix)
+    out_baseform.append(util.misc.cwbset(baseform_list, delimiter, affix) if (compounds and baseform_list) else affix)
 
 
 def read_lmf(xml: pathlib.Path, tagset: str = "SUC"):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml)."""
-    tagmap = util.tagsets.mappings["saldo_to_" + tagset.lower() + "_compound"]
+    tagmap = tagmappings.mappings["saldo_to_" + tagset.lower() + "_compound"]
     log.info("Reading XML lexicon")
     lexicon = {}
 

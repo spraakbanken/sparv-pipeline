@@ -9,6 +9,7 @@ You do not need to download any parameter files as Sparv will download these for
 import logging
 
 from sparv.api import Annotation, Binary, Config, Language, Model, ModelOutput, Output, annotator, modelbuilder, util
+from sparv.api.util.tagsets import pos_to_upos
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ def annotate(lang: Language = Language(),
              out_baseform: Output = Output("<token>:treetagger.baseform", description="Baseforms from TreeTagger"),
              word: Annotation = Annotation("<token:word>"),
              sentence: Annotation = Annotation("<sentence>"),
-             encoding: str = util.UTF8):
+             encoding: str = util.constants.UTF8):
     """POS/MSD tag and lemmatize using TreeTagger."""
     sentences, _orphans = sentence.get_children(word)
     word_annotation = list(word.read())
@@ -75,7 +76,7 @@ def annotate(lang: Language = Language(),
                 log.warning(f"TreeTagger failed to produce a POS tag for token '{cols[0]}'!")
                 tag = ""
             out_pos_annotation[token_id] = tag
-            out_upos_annotation[token_id] = util.tagsets.pos_to_upos(tag, lang, TAG_SETS.get(lang))
+            out_upos_annotation[token_id] = pos_to_upos(tag, lang, TAG_SETS.get(lang))
     out_pos.write(out_pos_annotation)
     out_upos.write(out_upos_annotation)
 
