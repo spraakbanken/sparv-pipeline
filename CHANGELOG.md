@@ -7,10 +7,16 @@
 - Added a quick start guide in the documentation.
 - Added Support for language subtypes.
 - Re-introduced analyses for Old Swedish and Swedish from the 1800's.
+- Added Stanza support for English.
+- Added better install and uninstall instructions for plugins.
+- Added explicit `ref` annotations (indexing tokens within sentences) for Stanza, Malt and Stanford.
+- Added a `--reset` flag to the `sparv setup` command for resetting the data directory setting.
 
 ### Changed
 
 - Significantly improved the CLI startup time.
+- Everything needed by Sparv modules (including `utils`) is now available through the `sparv.api` package.
+- Empty corpus config files are treated as missing config files.
 
 ### Fixed
 
