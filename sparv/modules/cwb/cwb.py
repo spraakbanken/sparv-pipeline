@@ -1,6 +1,5 @@
 """Tools for exporting, encoding and aligning corpora for Corpus Workbench."""
 
-import logging
 import os
 import re
 from glob import glob
@@ -8,10 +7,10 @@ from pathlib import Path
 from typing import Optional
 
 from sparv.api import (AllDocuments, Annotation, AnnotationAllDocs, Config, Corpus, Document, Export, ExportAnnotations,
-                       ExportInput, SourceAnnotations, SparvErrorMessage, exporter, util)
+                       ExportInput, SourceAnnotations, SparvErrorMessage, exporter, get_logger, util)
 from sparv.core import paths
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @exporter("VRT export", config=[
@@ -52,7 +51,7 @@ def vrt(doc: Document = Document(),
     # Write result to file
     with open(out, "w") as f:
         f.write(vrt_data)
-    log.info("Exported: %s", out)
+    logger.info("Exported: %s", out)
 
 
 @exporter("Scrambled VRT export", config=[
@@ -97,7 +96,7 @@ def vrt_scrambled(doc: Document = Document(),
     # Write result to file
     with open(out, "w") as f:
         f.write(vrt_data)
-    log.info("Exported: %s", out)
+    logger.info("Exported: %s", out)
 
 
 @exporter("CWB encode", order=2, config=[
@@ -217,27 +216,27 @@ def cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, o
 
     index_args = ["-V", "-r", registry, corpus.upper()]
     util.system.call_binary(os.path.join(bin_path, "cwb-makeall"), index_args)
-    log.info("Encoded and indexed %d columns, %d structs", len(columns), len(structs))
+    logger.info("Encoded and indexed %d columns, %d structs", len(columns), len(structs))
 
     if not skip_compression:
-        log.info("Compressing corpus files...")
+        logger.info("Compressing corpus files...")
         compress_args = ["-A", corpus.upper()]
         if skip_validation:
             compress_args.insert(0, "-T")
-            log.info("Skipping validation")
+            logger.info("Skipping validation")
         # Compress token stream
         util.system.call_binary(os.path.join(bin_path, "cwb-huffcode"), compress_args)
-        log.info("Removing uncompressed token stream...")
+        logger.info("Removing uncompressed token stream...")
         for f in glob(os.path.join(corpus_datadir, "*.corpus")):
             os.remove(f)
         # Compress index files
         util.system.call_binary(os.path.join(bin_path, "cwb-compress-rdx"), compress_args)
-        log.info("Removing uncompressed index files...")
+        logger.info("Removing uncompressed index files...")
         for f in glob(os.path.join(corpus_datadir, "*.corpus.rev")):
             os.remove(f)
         for f in glob(os.path.join(corpus_datadir, "*.corpus.rdx")):
             os.remove(f)
-        log.info("Compression done.")
+        logger.info("Compression done.")
 
     # Write marker file
     Path(out_marker).touch()
@@ -249,7 +248,7 @@ def cwb_align(corpus, other, link, aligndir="annotations/align", bin_path="",
     """Align 'corpus' with 'other' corpus, using the 'link' annotation for alignment."""
     os.makedirs(aligndir, exist_ok=True)
     alignfile = os.path.join(aligndir, corpus + ".align")
-    log.info("Aligning %s <-> %s", corpus, other)
+    logger.info("Aligning %s <-> %s", corpus, other)
 
     try:
         [(link_name, [(link_attr, _path)])] = parse_structural_attributes(link)
@@ -263,10 +262,10 @@ def cwb_align(corpus, other, link, aligndir="annotations/align", bin_path="",
     with open(alignfile + ".result", "w") as F:
         print(result, file=F)
     _, lastline = result.rsplit("Alignment complete.", 1)
-    log.info("%s", lastline.strip())
+    logger.info("%s", lastline.strip())
     if " 0 alignment" in lastline.strip():
-        log.warning("No alignment regions created")
-    log.info("Alignment file/result: %s/.result", alignfile)
+        logger.warning("No alignment regions created")
+    logger.info("Alignment file/result: %s/.result", alignfile)
 
     # Add alignment parameter to registry
     # cwb-regedit is not installed by default, so we skip it and modify the regfile directly instead:
@@ -279,15 +278,15 @@ def cwb_align(corpus, other, link, aligndir="annotations/align", bin_path="",
             print(file=F)
             print("# Added by cwb.py", file=F)
             print("ALIGNED", other, file=F)
-        log.info("Added alignment to registry: %s", regfile)
+        logger.info("Added alignment to registry: %s", regfile)
     # args = [corpus, ":add", ":a", other]
     # result, _ = util.system.call_binary(os.path.join(bin_path, "cwb-regedit"), args)
-    # log.info("%s", result.strip())
+    # logger.info("%s", result.strip())
 
     # Encode the alignments into CWB
     args = ["-v", "-D", alignfile]
     result, _ = util.system.call_binary(os.path.join(bin_path, "cwb-align-encode"), args, encoding=encoding)
-    log.info("%s", result.strip())
+    logger.info("%s", result.strip())
 
 
 ################################################################################

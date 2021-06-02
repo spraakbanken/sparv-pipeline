@@ -1,14 +1,14 @@
 """Create annotations from SALDO."""
 
 import itertools
-import logging
 import re
 from typing import List, Optional
 
-from sparv.api import Annotation, Config, Model, Output, annotator, util
+from sparv.api import Annotation, Config, Model, Output, annotator, get_logger, util
+
 from .saldo_model import SaldoLexicon
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # The minimum precision difference for two annotations to be considered equal
 PRECISION_DIFF = 0.01
@@ -126,7 +126,7 @@ def main(token, word, sentence, reference, out_sense, out_lemgram, out_baseform,
         annotations.append((out_sense, "saldo"))
 
     if skip_multiword:
-        log.info("Skipping multi word annotations")
+        logger.info("Skipping multi word annotations")
 
     min_precision = float(min_precision)
 
@@ -145,7 +145,7 @@ def main(token, word, sentence, reference, out_sense, out_lemgram, out_baseform,
     sentences.append(orphans)
 
     if orphans:
-        log.warning(f"Found {len(orphans)} tokens not belonging to any sentence. These will not be annotated.")
+        logger.warning(f"Found {len(orphans)} tokens not belonging to any sentence. These will not be annotated.")
 
     out_annotation = word.create_empty_attribute()
 

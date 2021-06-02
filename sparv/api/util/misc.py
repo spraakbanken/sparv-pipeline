@@ -1,15 +1,15 @@
 """Misc util functions."""
 
-import logging
 import pathlib
 import re
 import unicodedata
-from collections import defaultdict, OrderedDict
-from typing import List, Optional, Union, Tuple
+from collections import OrderedDict, defaultdict
+from typing import List, Optional, Tuple, Union
 
+from sparv.api import get_logger
 from sparv.api.classes import Annotation, Model
 
-_log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations: Optional[List[str]] = None,
@@ -171,9 +171,9 @@ def test_lexicon(lexicon: dict, testwords):
     Takes a dictionary ('lexicon') and a list of test words that are expected to occur as keys in 'lexicon'.
     Prints the value for each test word.
     """
-    _log.info("Testing annotations...")
+    logger.info("Testing annotations...")
     for key in testwords:
-        _log.info("  %s = %s", key, lexicon.get(key))
+        logger.info("  %s = %s", key, lexicon.get(key))
 
 
 class PickledLexicon:
@@ -184,11 +184,11 @@ class PickledLexicon:
         import pickle
         picklefile_path: pathlib.Path = picklefile.path if isinstance(picklefile, Model) else picklefile
         if verbose:
-            _log.info("Reading lexicon: %s", picklefile)
+            logger.info("Reading lexicon: %s", picklefile)
         with open(picklefile_path, "rb") as F:
             self.lexicon = pickle.load(F)
         if verbose:
-            _log.info("OK, read %d words", len(self.lexicon))
+            logger.info("OK, read %d words", len(self.lexicon))
 
     def lookup(self, key, default=set()):
         """Lookup a key in the lexicon."""

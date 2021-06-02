@@ -1,7 +1,6 @@
 """Classes used as default input for annotator functions."""
 
 import gzip
-import logging
 import os
 import pathlib
 import pickle
@@ -12,9 +11,10 @@ from typing import Any, List, Optional, Tuple, Union
 
 import sparv.core
 from sparv.core import io
+from sparv.core.misc import get_logger
 from sparv.core.paths import models_dir
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class Base(ABC):
@@ -148,8 +148,8 @@ class Annotation(BaseAnnotation):
                         break
             if parent_span is None or parent_span[0] > child_span[0]:
                 if orphan_alert:
-                    log.warning("Child '%s' missing parent; closest parent is %s",
-                                child_i, parent_i or previous_parent_i)
+                    logger.warning("Child '%s' missing parent; closest parent is %s",
+                                   child_i, parent_i or previous_parent_i)
                 orphans.append(child_i)
             else:
                 parent_children[-1][1].append(child_i)
@@ -191,8 +191,8 @@ class Annotation(BaseAnnotation):
                     break
             if parent_span is None or parent_span[0] > child_span[0]:
                 if orphan_alert:
-                    log.warning("Child '%s' missing parent; closest parent is %s",
-                                child_i, parent_i or previous_parent_i)
+                    logger.warning("Child '%s' missing parent; closest parent is %s",
+                                   child_i, parent_i or previous_parent_i)
                 child_parents.append((child_i, None))
             else:
                 child_parents.append((child_i, parent_i))
@@ -558,14 +558,14 @@ class Model(Base):
             f.write(data)
         # Update file modification time even if nothing was written
         os.utime(file_path, None)
-        log.info("Wrote %d bytes: %s", len(data), self.name)
+        logger.info("Wrote %d bytes: %s", len(data), self.name)
 
     def read(self):
         """Read arbitrary string data from file in models directory."""
         file_path = self.path
         with open(file_path) as f:
             data = f.read()
-        log.debug("Read %d bytes: %s", len(data), self.name)
+        logger.debug("Read %d bytes: %s", len(data), self.name)
         return data
 
     def write_pickle(self, data, protocol=-1):
@@ -576,14 +576,14 @@ class Model(Base):
             pickle.dump(data, f, protocol=protocol)
         # Update file modification time even if nothing was written
         os.utime(file_path, None)
-        log.info("Wrote %d bytes: %s", len(data), self.name)
+        logger.info("Wrote %d bytes: %s", len(data), self.name)
 
     def read_pickle(self):
         """Read pickled data from file in models directory."""
         file_path = self.path
         with open(file_path, "rb") as f:
             data = pickle.load(f)
-        log.debug("Read %d bytes: %s", len(data), self.name)
+        logger.debug("Read %d bytes: %s", len(data), self.name)
         return data
 
     def download(self, url: str):
@@ -591,9 +591,9 @@ class Model(Base):
         os.makedirs(self.path.parent, exist_ok=True)
         try:
             urllib.request.urlretrieve(url, self.path)
-            log.info("Successfully downloaded %s", self.name)
+            logger.info("Successfully downloaded %s", self.name)
         except Exception as e:
-            log.error("Download from %s failed", url)
+            logger.error("Download from %s failed", url)
             raise e
 
     def unzip(self):
@@ -601,7 +601,7 @@ class Model(Base):
         out_dir = self.path.parent
         with zipfile.ZipFile(self.path) as z:
             z.extractall(out_dir)
-        log.info("Successfully unzipped %s", self.name)
+        logger.info("Successfully unzipped %s", self.name)
 
     def ungzip(self, out: str):
         """Unzip gzip file inside modeldir."""
@@ -609,7 +609,7 @@ class Model(Base):
             data = z.read()
             with open(out, "wb") as f:
                 f.write(data)
-        log.info("Successfully unzipped %s", out)
+        logger.info("Successfully unzipped %s", out)
 
     def remove(self, raise_errors: bool = False):
         """Remove model file from disk."""
@@ -734,7 +734,8 @@ class SourceStructureParser(ABC):
     def setup(self):
         """Return a list of wizard dictionaries with questions needed for setting up the class.
 
-        Answers to the questions will automatically be saved to self.answers."""
+        Answers to the questions will automatically be saved to self.answers.
+        """
         return {}
 
     @abstractmethod
@@ -749,5 +750,6 @@ class SourceStructureParser(ABC):
     def get_plain_annotations(self, corpus_config: dict) -> List[str]:
         """Return a list of plain annotations without attributes.
 
-        Each value has the format 'annotation'."""
+        Each value has the format 'annotation'.
+        """
         return [e for e in self.get_annotations(corpus_config) if ":" not in e]

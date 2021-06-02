@@ -1,12 +1,11 @@
 """Build word frequency list."""
 
 import csv
-import logging
 from collections import defaultdict
 
-from sparv.api import AllDocuments, AnnotationAllDocs, Config, Export, exporter
+from sparv.api import AllDocuments, AnnotationAllDocs, Config, Export, exporter, get_logger
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @exporter("Corpus word frequency list", language=["swe"], order=1)
@@ -119,4 +118,4 @@ def write_csv(out, freq_dict, delimiter, cutoff):
             if cutoff and cutoff > freq:
                 break
             csv_writer.writerow([wordform, msd, lemma, sense, lemgram, complemgram, freq])
-    log.info("Exported: %s", out)
+    logger.info("Exported: %s", out)

@@ -2,7 +2,7 @@
 
 from sparv.api import Annotation, Binary, Config, Model, ModelOutput, Output, annotator, modelbuilder, get_logger, util
 
-log = get_logger(__name__)
+logger = get_logger(__name__)
 
 SENT_SEP = "$SENT$"
 
@@ -68,7 +68,7 @@ def annotate(wsdjar: Binary = Binary("[wsd.jar]"),
     # Problem is that regular messages "Reading sense vectors.." are also piped to stderr.
     if len(stderr) > 52:
         util.system.kill_process(process)
-        log.error(str(stderr))
+        logger.error(str(stderr))
         return
 
     if encoding:

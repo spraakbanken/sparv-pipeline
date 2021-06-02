@@ -1,16 +1,15 @@
 """Parse XML source file."""
 
 import copy
-import logging
 import unicodedata
 import xml.etree.ElementTree as etree
 from itertools import chain
 from typing import List
 
-from sparv.api import (Config, Document, Headers, Output, Source, SourceStructureParser, SourceStructure, Text,
-                       SparvErrorMessage, importer, util)
+from sparv.api import (Config, Document, Headers, Output, Source, SourceStructure, SourceStructureParser,
+                       SparvErrorMessage, Text, get_logger, importer, util)
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class XMLStructure(SourceStructureParser):
@@ -291,7 +290,7 @@ class SparvXMLParser:
         iter_tree(root)
 
         if header_data:
-            log.warning("Some header data could not be bound to target elements.")
+            logger.warning("Some header data could not be bound to target elements.")
 
     def save(self):
         """Save text data and annotation files to disk."""

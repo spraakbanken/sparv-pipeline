@@ -1,12 +1,9 @@
 """Module for installing Korp-related corpus files on remote host."""
 
-import logging
 import os
 import re
 
 from sparv.api import Config, Corpus, ExportInput, OutputCommonData, SparvErrorMessage, installer, util
-
-log = logging.getLogger(__name__)
 
 
 @installer("Install CWB datafiles on remote host", config=[

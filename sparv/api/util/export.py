@@ -1,18 +1,17 @@
 """Util functions for corpus export."""
 
-import logging
 import xml.etree.ElementTree as etree
 from collections import OrderedDict, defaultdict
 from copy import deepcopy
 from itertools import combinations
 from typing import Any, List, Optional, Tuple, Union
 
+from sparv.api import (Annotation, AnnotationAllDocs, ExportAnnotations, ExportAnnotationsAllDocs, Headers,
+                       SourceStructure, get_logger, util)
 from sparv.core import io
 from .constants import SPARV_DEFAULT_NAMESPACE
-from sparv.api import (Annotation, AnnotationAllDocs, ExportAnnotations, ExportAnnotationsAllDocs, Headers,
-                       SourceStructure, util)
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def gather_annotations(annotations: List[Annotation],
@@ -481,15 +480,15 @@ def _check_name_collision(export_names, source_annotations):
                 source_annot = annots[0] if annots[0].name in source_names else annots[1]
                 new_name = SPARV_DEFAULT_NAMESPACE + "." + export_names[sparv_annot.name]
                 export_names[sparv_annot.name] = new_name
-                log.info("Changing name of automatic annotation '{}' to '{}' due to collision with '{}'.".format(
-                         sparv_annot.name, new_name, source_annot.name))
+                logger.info("Changing name of automatic annotation '{}' to '{}' due to collision with '{}'.".format(
+                            sparv_annot.name, new_name, source_annot.name))
             # Warn the user if we cannot resolve collisions automatically
             else:
                 annots_string = "\n".join([f"{a.name} ({'source' if a.name in source_names else 'sparv'} annotation)"
                                            for a in annots])
-                log.warning("The following annotations are exported with the same name ({}) and might overwrite "
-                            "each other: \n\n{}\n\nIf you want to keep all of these annotations you can change their "
-                            "export names.".format(attr, annots_string))
+                logger.warning("The following annotations are exported with the same name ({}) and might overwrite "
+                               "each other: \n\n{}\n\nIf you want to keep all of these annotations you can change "
+                               "their export names.".format(attr, annots_string))
     return export_names
 
 ################################################################################

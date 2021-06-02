@@ -32,6 +32,7 @@ log.addHandler(handler)
 
 class Preloader:
     """Class representing a preloader."""
+
     def __init__(self, function, target, preloader, params, cleanup, shared):
         self.function = function
         self.target = target

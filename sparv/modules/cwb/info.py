@@ -1,13 +1,12 @@
 """Create or edit .info file."""
 
-import logging
 import time
 from datetime import datetime
 
-from sparv.api import (AllDocuments, Config, Export, annotator, exporter, AnnotationAllDocs, OutputCommonData,
-                       AnnotationCommonData)
+from sparv.api import (AllDocuments, AnnotationAllDocs, AnnotationCommonData, Config, Export, OutputCommonData,
+                       annotator, exporter, get_logger)
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @exporter("CWB .info file")
@@ -38,7 +37,7 @@ def info(out: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_
     with open(out, "w") as o:
         o.writelines(content)
 
-    log.info("Exported: %s", out)
+    logger.info("Exported: %s", out)
 
 
 @annotator("datefirst and datelast files for .info", order=1)
@@ -75,7 +74,7 @@ def info_date(docs: AllDocuments = AllDocuments(),
 def info_date_unknown(out_datefirst: OutputCommonData = OutputCommonData("cwb.datefirst"),
                       out_datelast: OutputCommonData = OutputCommonData("cwb.datelast")):
     """Create empty datefirst and datelast file (needed for .info file) if corpus has no date information."""
-    log.info("No date information found in corpus")
+    logger.info("No date information found in corpus")
 
     # Write datefirst and datelast files
     out_datefirst.write("")

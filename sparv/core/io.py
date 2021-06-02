@@ -1,16 +1,16 @@
 """Corpus-related util functions like reading and writing annotations."""
 
 import heapq
-import logging
 import os
 import re
 from pathlib import Path
-from typing import Union, Tuple, List, Optional
+from typing import List, Optional, Tuple, Union
 
-from sparv.core import paths
 from sparv.api.classes import BaseAnnotation, BaseOutput
+from sparv.core import paths
+from sparv.core.misc import get_logger
 
-_log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 DOC_CHUNK_DELIM = ":"
 ELEM_ATTR_DELIM = ":"
@@ -96,7 +96,7 @@ def _write_single_annotation(doc: str, annotation: str, values, append: bool, ro
             ctr += 1
     # Update file modification time even if nothing was written
     os.utime(file_path, None)
-    _log.info(f"Wrote {ctr} items: {doc + '/' if doc else ''}{annotation}")
+    logger.info(f"Wrote {ctr} items: {doc + '/' if doc else ''}{annotation}")
 
 
 def read_annotation_spans(doc: str, annotation: BaseAnnotation, decimals: bool = False,
@@ -167,7 +167,7 @@ def _read_single_annotation(doc: str, annotation: str, with_annotation_name: boo
                 value = re.sub(r"((?<!\\)(?:\\\\)*)\\n", r"\1\n", value).replace(r"\\", "\\")
             yield value if not with_annotation_name else (value, annotation)
             ctr += 1
-    _log.debug(f"Read {ctr} items: {doc + '/' if doc else ''}{annotation}")
+    logger.debug(f"Read {ctr} items: {doc + '/' if doc else ''}{annotation}")
 
 
 def write_data(doc: Optional[str], name: Union[BaseAnnotation, str], value: str, append: bool = False):
@@ -180,8 +180,8 @@ def write_data(doc: Optional[str], name: Union[BaseAnnotation, str], value: str,
         f.write(value)
     # Update file modification time even if nothing was written
     os.utime(file_path, None)
-    _log.info(f"Wrote {len(value)} bytes: {doc + '/' if doc else ''}"
-              f"{name.name if isinstance(name, BaseAnnotation) else name}")
+    logger.info(f"Wrote {len(value)} bytes: {doc + '/' if doc else ''}"
+                f"{name.name if isinstance(name, BaseAnnotation) else name}")
 
 
 def read_data(doc: Optional[str], name: Union[BaseAnnotation, str]):
@@ -190,8 +190,8 @@ def read_data(doc: Optional[str], name: Union[BaseAnnotation, str]):
 
     with open(file_path) as f:
         data = f.read()
-    _log.debug(f"Read {len(data)} bytes: {doc + '/' if doc else ''}"
-               f"{name.name if isinstance(name, BaseAnnotation) else name}")
+    logger.debug(f"Read {len(data)} bytes: {doc + '/' if doc else ''}"
+                 f"{name.name if isinstance(name, BaseAnnotation) else name}")
     return data
 
 

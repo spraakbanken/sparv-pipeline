@@ -2,15 +2,14 @@
 
 import bz2
 import io
-import logging
 import os
 import re
 import xml.etree.ElementTree as etree
 from typing import Optional
 
-from sparv.api import SparvErrorMessage, util
+from sparv.api import SparvErrorMessage, get_logger, util
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 INDENTATION = "  "
 
@@ -135,7 +134,7 @@ def combine(corpus, out, docs, xml_input):
         print("<?xml version='1.0' encoding='UTF-8'?>", file=outf)
         print('<corpus id="%s">' % corpus.replace("&", "&amp;").replace('"', "&quot;"), file=outf)
         for infile in xml_files:
-            log.info("Read: %s", infile)
+            logger.info("Read: %s", infile)
             with open(infile) as inf:
                 for n, line in enumerate(inf):
                     # Skip xml declaration
@@ -144,7 +143,7 @@ def combine(corpus, out, docs, xml_input):
                     # Indent line
                     outf.write(f"{INDENTATION}{line}")
         print("</corpus>", file=outf)
-        log.info("Exported: %s" % out)
+        logger.info("Exported: %s" % out)
 
 
 def compress(xmlfile, out):

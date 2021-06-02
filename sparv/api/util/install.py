@@ -1,13 +1,13 @@
 """Util functions for installations on remote servers."""
 
-import logging
 import os
 import subprocess
 from glob import glob
 
+from sparv.api import get_logger
 from sparv.api.util import system
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def install_file(host, local_file, remote_file):
@@ -40,11 +40,11 @@ def install_mysql(host, db_name, sqlfile):
     for sqlf in sqlfiles:
         file_count += 1
         if not os.path.exists(sqlf):
-            log.error("Missing SQL file: %s", sqlf)
+            logger.error("Missing SQL file: %s", sqlf)
         elif os.path.getsize(sqlf) < 10:
-            log.info("Skipping empty file: %s (%d/%d)", sqlf, file_count, file_total)
+            logger.info("Skipping empty file: %s (%d/%d)", sqlf, file_count, file_total)
         else:
-            log.info("Installing MySQL database: %s, source: %s (%d/%d)", db_name, sqlf, file_count, file_total)
+            logger.info("Installing MySQL database: %s, source: %s (%d/%d)", db_name, sqlf, file_count, file_total)
             subprocess.check_call('cat %s | ssh %s "mysql %s"' % (sqlf, host, db_name), shell=True)
 
 
@@ -52,6 +52,6 @@ def install_mysql_dump(host, db_name, tables):
     """Copy selected tables (including data) from local to remote MySQL database."""
     if isinstance(tables, str):
         tables = tables.split()
-    log.info("Copying MySQL database: %s, tables: %s", db_name, ", ".join(tables))
+    logger.info("Copying MySQL database: %s, tables: %s", db_name, ", ".join(tables))
     subprocess.check_call('mysqldump %s %s | ssh %s "mysql %s"' %
                           (db_name, " ".join(tables), host, db_name), shell=True)

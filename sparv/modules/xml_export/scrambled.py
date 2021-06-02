@@ -1,13 +1,13 @@
 """Export annotated corpus data to scrambled xml."""
 
-import logging
 import os
 
 from sparv.api import (AllDocuments, Annotation, AnnotationData, Config, Corpus, Document, Export, ExportAnnotations,
-                       ExportInput, OutputCommonData, SourceAnnotations, SparvErrorMessage, exporter, installer, util)
+                       ExportInput, OutputCommonData, SourceAnnotations, SparvErrorMessage, exporter, get_logger,
+                       installer, util)
 from . import xml_utils
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @exporter("Scrambled XML export", config=[
@@ -57,7 +57,7 @@ def scrambled(doc: Document = Document(),
     # Write XML to file
     with open(out, mode="w") as outfile:
         outfile.write(xmlstr)
-    log.info("Exported: %s", out)
+    logger.info("Exported: %s", out)
 
 
 @exporter("Combined scrambled XML export")

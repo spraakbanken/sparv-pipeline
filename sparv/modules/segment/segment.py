@@ -1,14 +1,13 @@
 """Segmentation mostly based on NLTK."""
 
 import inspect
-import logging
 import pickle
 import re
 from typing import Optional
 
 import nltk
 
-from sparv.api import Annotation, Config, Model, ModelOutput, Output, Text, annotator, modelbuilder, util
+from sparv.api import Annotation, Config, Model, ModelOutput, Output, Text, annotator, get_logger, modelbuilder, util
 from sparv.modules.saldo.saldo_model import split_triple
 
 try:
@@ -16,7 +15,7 @@ try:
 except ImportError:
     pass
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @annotator("Automatic tokenization", config=[
@@ -126,7 +125,7 @@ def do_segmentation(text: Text, out: Output, segmenter, chunk: Optional[Annotati
                 chunk_start = segment_end
                 chunk_spans[n] = (chunk_start, chunk_end)
         chunk_spans.sort()
-        log.info("Reorganized into %d chunks" % len(chunk_spans))
+        logger.info("Reorganized into %d chunks" % len(chunk_spans))
     else:
         segments = []
 
@@ -201,18 +200,18 @@ def train_punkt_segmenter(textfiles, modelfile, encoding=util.constants.UTF8, pr
     if isinstance(textfiles, str):
         textfiles = textfiles.split()
 
-    log.info("Reading files")
+    logger.info("Reading files")
     text = u""
     for filename in textfiles:
         with open(filename, encoding=encoding) as stream:
             text += stream.read()
-    log.info("Training model")
+    logger.info("Training model")
     trainer = nltk.tokenize.PunktTrainer(text, verbose=True)
-    log.info("Saving pickled model")
+    logger.info("Saving pickled model")
     params = trainer.get_params()
     with open(modelfile, "wb") as stream:
         pickle.dump(params, stream, protocol=protocol)
-    log.info("OK")
+    logger.info("OK")
 
 
 ######################################################################
@@ -310,7 +309,7 @@ class BetterWordTokenizer:
                         try:
                             key, val = line.strip().split(None, 1)
                         except ValueError as e:
-                            log.error("Error parsing configuration file: %s", line)
+                            logger.error("Error parsing configuration file: %s", line)
                             raise e
                         key = key[:-1]
 

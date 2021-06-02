@@ -1,14 +1,13 @@
 """Export annotated corpus data to format-preserved xml."""
 
-import logging
 import os
 import xml.etree.ElementTree as etree
 
 from sparv.api import (AnnotationData, Config, Document, Export, ExportAnnotations, SourceAnnotations,
-                       SparvErrorMessage, Text, exporter, util)
+                       SparvErrorMessage, Text, exporter, get_logger, util)
 from . import xml_utils
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @exporter("XML export preserving whitespaces from source file", config=[
@@ -133,4 +132,4 @@ def preserved_format(doc: Document = Document(),
 
     # Write xml to file
     etree.ElementTree(root_span.node).write(out, encoding="unicode", method="xml", xml_declaration=True)
-    log.info("Exported: %s", out)
+    logger.info("Exported: %s", out)

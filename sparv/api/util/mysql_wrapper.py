@@ -1,11 +1,11 @@
 """Util function for creating mysql files."""
 
-import logging
 import os
 
+from sparv.api import get_logger
 from . import system
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Max size of SQL statement
 MAX_ALLOWED_PACKET = 900000
@@ -42,9 +42,9 @@ class MySQL:
             # Execute SQL statement
             out, err = system.call_binary(self.binaries, self.arguments, sql % args, encoding=self.encoding)
             if out:
-                log.info("MySQL: %s", out)
+                logger.info("MySQL: %s", out)
             if err:
-                log.error("MySQL: %s", err)
+                logger.error("MySQL: %s", err)
         # return out
 
     def create_table(self, table, drop, columns, primary=None, indexes=None, constraints=None, **kwargs):

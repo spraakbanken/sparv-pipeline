@@ -1,15 +1,15 @@
 """SALDO Model builders."""
 
-import logging
 import pathlib
 import pickle
 import re
 import xml.etree.ElementTree as etree
 
-from sparv.api import Model, ModelOutput, modelbuilder, util
+from sparv.api import Model, ModelOutput, get_logger, modelbuilder, util
 from sparv.api.util.tagsets import tagmappings
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
+
 
 # SALDO: Delimiters that hopefully are never found in an annotation or in a POS tag:
 PART_DELIM = "^"
@@ -41,7 +41,7 @@ class SaldoLexicon:
     def __init__(self, saldofile: pathlib.Path, verbose=True):
         """Read lexicon."""
         if verbose:
-            log.info("Reading Saldo lexicon: %s", saldofile)
+            logger.info("Reading Saldo lexicon: %s", saldofile)
         if saldofile.suffix == ".pickle":
             with open(saldofile, "rb") as F:
                 self.lexicon = pickle.load(F)
@@ -53,7 +53,7 @@ class SaldoLexicon:
                     word = row.pop(0)
                     lexicon[word] = row
         if verbose:
-            log.info("OK, read %d words", len(self.lexicon))
+            logger.info("OK, read %d words", len(self.lexicon))
 
     def lookup(self, word):
         """Lookup a word in the lexicon.
@@ -74,7 +74,7 @@ class SaldoLexicon:
           - lexicon = {wordform: {{annotation-type: annotation}: (set(possible tags), set(tuples with following words), gap-allowed-boolean, is-particle-verb-boolean)}}
         """
         if verbose:
-            log.info("Saving LMF lexicon in Pickle format")
+            logger.info("Saving LMF lexicon in Pickle format")
 
         picklex = {}
         for word in lexicon:
@@ -93,7 +93,7 @@ class SaldoLexicon:
         with open(saldofile, "wb") as F:
             pickle.dump(picklex, F, protocol=protocol)
         if verbose:
-            log.info("OK, saved")
+            logger.info("OK, saved")
 
     @staticmethod
     def save_to_textfile(saldofile, lexicon, verbose=True):
@@ -104,14 +104,14 @@ class SaldoLexicon:
         NOT UP TO DATE
         """
         if verbose:
-            log.info("Saving LMF lexicon in text format")
+            logger.info("Saving LMF lexicon in text format")
         with open(saldofile, "w") as F:
             for word in sorted(lexicon):
                 annotations = [PART_DELIM.join([annotation] + sorted(postags))
                                for annotation, postags in list(lexicon[word].items())]
                 print(" ".join([word] + annotations).encode(util.constants.UTF8), file=F)
         if verbose:
-            log.info("OK, saved")
+            logger.info("OK, saved")
 
 
 def split_triple(annotation_tag_words):
@@ -148,7 +148,7 @@ def read_lmf(xml, tagmap, annotation_elements=("gf", "lem", "saldo"), verbose=Tr
      - tagset is the tagset for the possible tags (currently: 'SUC', 'Parole', 'Saldo')
     """
     if verbose:
-        log.info("Reading XML lexicon")
+        logger.info("Reading XML lexicon")
     lexicon = {}
 
     context = etree.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
@@ -227,7 +227,7 @@ def read_lmf(xml, tagmap, annotation_elements=("gf", "lem", "saldo"), verbose=Tr
     util.misc.test_lexicon(lexicon, testwords)
 
     if verbose:
-        log.info("OK, read")
+        logger.info("OK, read")
     return lexicon
 
 
@@ -255,7 +255,7 @@ def save_to_cstlemmatizer(cstfile, lexicon, encoding="latin-1", verbose=True):
     The default encoding of the resulting file is ISO-8859-1 (Latin-1).
     """
     if verbose:
-        log.info("Saving CST lexicon")
+        logger.info("Saving CST lexicon")
     with open(cstfile, "w") as F:
         for word in sorted(lexicon):
             for lemma in sorted(lexicon[word]):
@@ -265,7 +265,7 @@ def save_to_cstlemmatizer(cstfile, lexicon, encoding="latin-1", verbose=True):
                     line = "%s\t%s\t%s" % (word, lemma, postag)
                     print(line.encode(encoding), file=F)
     if verbose:
-        log.info("OK, saved")
+        logger.info("OK, saved")
 
 
 def extract_tags(lexicon):

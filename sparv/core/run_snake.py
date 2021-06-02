@@ -63,7 +63,7 @@ if use_preloader:
             preload.send_data(sock, preload.PING)
             response = preload.receive_data(sock)  # Timeouts if busy
             sock.settimeout(None)
-    except (BlockingIOError, socket.timeout) as e:
+    except (BlockingIOError, socket.timeout):
         use_preloader = False
         preloader_busy = True
         if sock is not None:
@@ -123,7 +123,7 @@ if not use_preloader:
         # Instead we log the error message and exit with a non-zero status to signal to Snakemake that
         # something went wrong.
         exit_with_error_message(e.message, "sparv.modules." + module_name)
-    except Exception as e:
+    except Exception:
         logger.exception("An error occurred while executing:")
         sys.exit(123)
     finally:

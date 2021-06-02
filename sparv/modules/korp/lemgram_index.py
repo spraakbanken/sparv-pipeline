@@ -1,13 +1,13 @@
 """Create files needed for the lemgram search in Korp."""
 
-import logging
 from collections import defaultdict
 
 from sparv.api import (AllDocuments, AnnotationAllDocs, Config, Corpus, Export, ExportInput, OutputCommonData, exporter,
-                       installer, util)
+                       get_logger, installer, util)
 from sparv.api.util.mysql_wrapper import MySQL
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
+
 
 # Path to the cwb-scan-corpus binary
 CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
@@ -38,7 +38,6 @@ def lemgram_sql(corpus: Corpus = Corpus(),
                 out: Export = Export("korp_lemgram_index/lemgram_index.sql"),
                 lemgram: AnnotationAllDocs = AnnotationAllDocs("<token>:saldo.lemgram")):
     """Create lemgram index SQL file."""
-
     corpus = corpus.upper()
     result = defaultdict(int)
 
@@ -59,9 +58,9 @@ def lemgram_sql(corpus: Corpus = Corpus(),
             "lemgram": lemgram,
             "corpus": corpus,
             "freq": freq
-       })
+        })
 
-    log.info("Creating SQL")
+    logger.info("Creating SQL")
     mysql.add_row(MYSQL_TABLE, rows)
 
 

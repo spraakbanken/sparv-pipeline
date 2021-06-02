@@ -9,11 +9,10 @@ License for Stanford CoreNLP: GPL2 https://www.gnu.org/licenses/old-licenses/gpl
 import tempfile
 from pathlib import Path
 
-from sparv.api import Annotation, BinaryDir, Config, Language, Output, Text, annotator, util
+from sparv.api import Annotation, BinaryDir, Config, Language, Output, Text, annotator, get_logger, util
 from sparv.api.util.tagsets import pos_to_upos
 
-import logging
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @annotator("Parse and annotate with Stanford Parser", language=["eng"], config=[
@@ -51,7 +50,7 @@ def annotate(corpus_text: Text = Text(),
 
     with tempfile.TemporaryDirectory() as tmpdirstr:
         tmpdir = Path(tmpdirstr)
-        log.debug("Creating temporary directoty: %s", tmpdir)
+        logger.debug("Creating temporary directoty: %s", tmpdir)
 
         # Write all texts to temporary files
         filelist = tmpdir / "filelist.txt"
@@ -61,8 +60,8 @@ def annotate(corpus_text: Text = Text(),
                 print(filename, file=LIST)
                 with open(filename, "w") as F:
                     print(text_data[start:end], file=F)
-                log.debug("Writing text %d (%d-%d): %r...%r --> %s", nr, start, end,
-                          text_data[start:start + 20], text_data[end - 20:end], filename.name)
+                logger.debug("Writing text %d (%d-%d): %r...%r --> %s", nr, start, end,
+                             text_data[start:start + 20], text_data[end - 20:end], filename.name)
 
         # Call the Stanford parser with all the text files
         args += ["-filelist", filelist]
@@ -74,17 +73,17 @@ def annotate(corpus_text: Text = Text(),
             filename = tmpdir / f"text-{nr}.txt.conll"
             with open(filename) as F:
                 output = F.read()
-            log.debug("Reading text %d (%d-%d): %s --> %r...%r", nr, start, end,
-                      filename.name, output[:20], output[-20:])
+            logger.debug("Reading text %d (%d-%d): %s --> %r...%r", nr, start, end,
+                         filename.name, output[:20], output[-20:])
             processed_sentences = _parse_output(output, lang, start)
 
             for sentence in processed_sentences:
-                log.debug("Parsed: %s", " ".join(f"{tok.baseform}/{tok.pos}" for tok in sentence))
+                logger.debug("Parsed: %s", " ".join(f"{tok.baseform}/{tok.pos}" for tok in sentence))
                 for token in sentence:
                     all_tokens.append(token)
                     if token.word != text_data[token.start:token.end]:
-                        log.warning("Stanford word (%r) differs from surface word (%r), using the Stanford word",
-                                    token.word, text_data[token.start:token.end])
+                        logger.warning("Stanford word (%r) differs from surface word (%r), using the Stanford word",
+                                       token.word, text_data[token.start:token.end])
                 sentence_segments.append((sentence[0].start, sentence[-1].end))
 
     # Write annotations

@@ -1,14 +1,13 @@
 """Train a POS probability model on the NST lexicon."""
 
-import logging
 import pickle
 import re
 
 from nltk import FreqDist, LidstoneProbDist
 
-from sparv.api import Model, ModelOutput, modelbuilder
+from sparv.api import Model, ModelOutput, get_logger, modelbuilder
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @modelbuilder("Compound POS model", language=["swe"], order=1)
@@ -25,7 +24,7 @@ def build_nst_comp(out: ModelOutput = ModelOutput("saldo/nst_comp_pos.pickle"),
     The NST lexicon can be retrieved from SVN with credentials:
     svn export https://svn.spraakdata.gu.se/sb-arkiv/lexikon/NST_svensk_leksikon/nst_utf8.txt saldo/nst_utf8.txt
     """
-    log.info("Building compound POS probability model...")
+    logger.info("Building compound POS probability model...")
     make_model(nst_lexicon, out)
 
 

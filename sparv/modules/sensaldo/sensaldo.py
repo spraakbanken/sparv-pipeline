@@ -1,10 +1,9 @@
 """Sentiment annotation per token using SenSALDO."""
 
-import logging
 
-from sparv.api import Annotation, Config, Model, ModelOutput, Output, annotator, modelbuilder, util
+from sparv.api import Annotation, Config, Model, ModelOutput, Output, annotator, get_logger, modelbuilder, util
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 SENTIMENT_LABLES = {
     -1: "negative",
@@ -86,7 +85,7 @@ def read_sensaldo(tsv, verbose=True):
     Return a lexicon dictionary: {senseid: (class, ranking)}
     """
     if verbose:
-        log.info("Reading TSV lexicon")
+        logger.info("Reading TSV lexicon")
     lexicon = {}
 
     f = tsv.read()
@@ -105,5 +104,5 @@ def read_sensaldo(tsv, verbose=True):
     util.misc.test_lexicon(lexicon, testwords)
 
     if verbose:
-        log.info("OK, read")
+        logger.info("OK, read")
     return lexicon

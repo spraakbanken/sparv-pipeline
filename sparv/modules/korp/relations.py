@@ -1,16 +1,16 @@
 """Create files needed for the word picture in Korp."""
 
-import logging
 import math
 import re
 from collections import defaultdict
 from typing import Optional
 
 from sparv.api import (AllDocuments, Annotation, AnnotationDataAllDocs, Config, Corpus, Export, ExportInput,
-                       OutputCommonData, OutputData, annotator, exporter, installer, util)
+                       OutputCommonData, OutputData, annotator, exporter, get_logger, installer, util)
 from sparv.api.util.mysql_wrapper import MySQL
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
+
 
 MAX_STRING_LENGTH = 100
 MAX_STRINGEXTRA_LENGTH = 32
@@ -374,7 +374,7 @@ def relations_sql(corpus: Corpus = Corpus(),
     _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_table, split,
                first=(doc_count == 1), last=True)
 
-    log.info("Done creating SQL files")
+    logger.info("Done creating SQL files")
 
 
 def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, sql_file, db_table,
@@ -500,7 +500,7 @@ def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_coun
 
         mysql.enable_checks()
 
-    log.info("%s written", sql_file)
+    logger.info("%s written", sql_file)
 
 
 ################################################################################

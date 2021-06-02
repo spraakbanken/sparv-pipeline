@@ -6,7 +6,7 @@ from typing import Optional
 from sparv.api import Annotation, Config, Model, Output, annotator, get_logger, util
 from sparv.api.util.constants import AFFIX, DELIM, SCORESEP
 
-log = get_logger(__name__)
+logger = get_logger(__name__)
 
 
 @annotator("Annotate text chunks with Blingbring classes", language=["swe"], config=[
@@ -105,7 +105,7 @@ def annotate_text(out: Output, lexical_classes_token: Annotation, text: Annotati
                 # Calculate class dominance
                 ref_freq = freq_model.lookup(c.replace("_", " "), 0)
                 if not ref_freq:
-                    log.error("Class '%s' is missing" % ref_freq)
+                    logger.error("Class '%s' is missing" % ref_freq)
                 class_freqs[c] = (rel / ref_freq)
 
         # Sort words according to frequency/dominance

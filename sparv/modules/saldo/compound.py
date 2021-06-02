@@ -1,7 +1,6 @@
 """Compound analysis."""
 
 import itertools
-import logging
 import pathlib
 import pickle
 import re
@@ -9,10 +8,11 @@ import time
 import xml.etree.ElementTree as etree
 from functools import reduce
 
-from sparv.api import Annotation, Config, Model, ModelOutput, Output, annotator, modelbuilder, util
+from sparv.api import Annotation, Config, Model, ModelOutput, Output, annotator, get_logger, modelbuilder, util
 from sparv.api.util.tagsets import tagmappings
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
+
 
 SPLIT_LIMIT = 200
 COMP_LIMIT = 100
@@ -148,11 +148,11 @@ class SaldoCompLexicon:
     def __init__(self, saldofile: pathlib.Path, verbose=True):
         """Load lexicon."""
         if verbose:
-            log.info("Reading Saldo lexicon: %s", saldofile)
+            logger.info("Reading Saldo lexicon: %s", saldofile)
         with open(saldofile, "rb") as F:
             self.lexicon = pickle.load(F)
         if verbose:
-            log.info("OK, read %d words", len(self.lexicon))
+            logger.info("OK, read %d words", len(self.lexicon))
 
     def lookup(self, word):
         """Lookup a word in the lexicon."""
@@ -197,11 +197,11 @@ class StatsLexicon:
     def __init__(self, stats_model: pathlib.Path, verbose=True):
         """Load lexicon."""
         if verbose:
-            log.info("Reading statistics model: %s", stats_model)
+            logger.info("Reading statistics model: %s", stats_model)
         with open(stats_model, "rb") as s:
             self.lexicon = pickle.load(s)
         if verbose:
-            log.info("Done")
+            logger.info("Done")
 
     def lookup_prob(self, word):
         """Look up the probability of the word."""
@@ -275,11 +275,11 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
             iterations += 1
             if iterations > MAX_ITERATIONS:
                 giveup = True
-                log.info("Too many iterations for word '%s'", w)
+                logger.info("Too many iterations for word '%s'", w)
                 break
             if time.time() - start_time > MAX_TIME:
                 giveup = True
-                log.info("Compound analysis took to long for word '%s'", w)
+                logger.info("Compound analysis took to long for word '%s'", w)
                 break
 
             if first:
@@ -377,7 +377,7 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
                 counter += 1
                 if counter > SPLIT_LIMIT:
                     giveup = True
-                    log.info("Too many possible compounds for word '%s'" % w)
+                    logger.info("Too many possible compounds for word '%s'" % w)
                     break
                 yield comp
 
@@ -566,7 +566,7 @@ def make_new_baseforms(out_baseform, msd_tag, compounds, stats_lexicon, altlexic
 def read_lmf(xml: pathlib.Path, tagset: str = "SUC"):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml)."""
     tagmap = tagmappings.mappings["saldo_to_" + tagset.lower() + "_compound"]
-    log.info("Reading XML lexicon")
+    logger.info("Reading XML lexicon")
     lexicon = {}
 
     context = etree.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
@@ -602,7 +602,7 @@ def read_lmf(xml: pathlib.Path, tagset: str = "SUC"):
             if elem.tag in ["LexicalEntry", "frame", "resFrame"]:
                 root.clear()
 
-    log.info("OK, read")
+    logger.info("OK, read")
     return lexicon
 
 
@@ -613,7 +613,7 @@ def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
       - lexicon = {wordform: {lemgram: {"msd": set(), "pos": str}}}
     """
     if verbose:
-        log.info("Saving Saldo lexicon in Pickle format")
+        logger.info("Saving Saldo lexicon in Pickle format")
 
     picklex = {}
     for word in lexicon:
@@ -629,4 +629,4 @@ def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
     with open(saldofile, "wb") as F:
         pickle.dump(picklex, F, protocol=protocol)
     if verbose:
-        log.info("OK, saved")
+        logger.info("OK, saved")

@@ -1,12 +1,11 @@
 """Create diapivot annotation."""
 
-import logging
 import pickle
 import xml.etree.ElementTree as etree
 
-from sparv.api import Annotation, Model, ModelOutput, Output, annotator, modelbuilder, util
+from sparv.api import Annotation, Model, ModelOutput, Output, annotator, get_logger, modelbuilder, util
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 PART_DELIM1 = "^1"
 
@@ -60,7 +59,7 @@ def build_diapivot(out: ModelOutput = ModelOutput("hist/diapivot.pickle")):
 
     # Create pickle file
     xml_lexicon = read_xml(xml_model.path)
-    log.info("Saving cross lexicon in Pickle format")
+    logger.info("Saving cross lexicon in Pickle format")
     picklex = {}
     for lem in xml_lexicon:
         lemgrams = []
@@ -88,11 +87,11 @@ class PivotLexicon:
     def __init__(self, crossfile, verbose=True):
         """Read pickled lexicon."""
         if verbose:
-            log.info("Reading cross lexicon: %s", crossfile)
+            logger.info("Reading cross lexicon: %s", crossfile)
         with open(crossfile, "rb") as F:
             self.lexicon = pickle.load(F)
         if verbose:
-            log.info("OK, read %d words", len(self.lexicon))
+            logger.info("OK, read %d words", len(self.lexicon))
 
     def lookup(self, lem):
         """Lookup a word in the lexicon."""
@@ -115,7 +114,7 @@ def _split_val(key_val):
 
 def read_xml(xml):
     """Read the XML version of crosslinked lexicon."""
-    log.info("Reading XML lexicon")
+    logger.info("Reading XML lexicon")
     lexicon = {}
 
     context = etree.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
@@ -148,7 +147,7 @@ def read_xml(xml):
                  "gud..nn.1"]
     util.misc.test_lexicon(lexicon, testwords)
 
-    log.info("OK, read")
+    logger.info("OK, read")
     return lexicon
 
 

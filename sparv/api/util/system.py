@@ -1,15 +1,15 @@
 """System utility functions."""
 
 import errno
-import logging
 import os
 import shutil
 import subprocess
 from typing import Optional, Union
 
 import sparv.core.paths as paths
+from sparv.api import get_logger
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def kill_process(process):
@@ -64,7 +64,7 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
 
     If return_command is set, then the process is returned.
     """
-    from subprocess import Popen, PIPE
+    from subprocess import PIPE, Popen
     assert isinstance(arguments, (list, tuple))
     assert isinstance(stdin, (str, list, tuple))
 
@@ -80,7 +80,7 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
         stdin = "\n".join(stdin)
     if encoding is not None and isinstance(stdin, str):
         stdin = stdin.encode(encoding)
-    log.info("CALL: %s", " ".join(str(c) for c in command) if not raw_command else command)
+    logger.info("CALL: %s", " ".join(str(c) for c in command) if not raw_command else command)
     command = Popen(command, shell=use_shell,
                     stdin=PIPE, stdout=PIPE,
                     stderr=(None if verbose else PIPE),
@@ -91,9 +91,9 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
         stdout, stderr = command.communicate(stdin)
         if not allow_error and command.returncode:
             if stdout:
-                log.info(stdout.decode())
+                logger.info(stdout.decode())
             if stderr:
-                log.warning(stderr.decode())
+                logger.warning(stderr.decode())
             raise OSError("%s returned error code %d" % (binary, command.returncode))
         if encoding:
             stdout = stdout.decode(encoding)
@@ -155,11 +155,11 @@ def rsync(local, host, remote=None):
         remote = local
     if os.path.isdir(local):
         remote_dir = os.path.dirname(remote)
-        log.info("Copying directory: %s => %s", local, remote)
+        logger.info("Copying directory: %s => %s", local, remote)
         args = ["--recursive", "--delete", "%s/" % local]
     else:
         remote_dir = os.path.dirname(remote)
-        log.info("Copying file: %s => %s", local, remote)
+        logger.info("Copying file: %s => %s", local, remote)
         args = [local]
     subprocess.check_call(["ssh", host, "mkdir -p '%s'" % remote_dir])
     subprocess.check_call(["rsync"] + args + ["%s:%s" % (host, remote)])

@@ -1,13 +1,12 @@
 """Create timespan SQL data for use in Korp."""
 
-import logging
 from collections import defaultdict
 
-from sparv.api import (AllDocuments, Annotation, AnnotationAllDocs, Config, Corpus, Export, ExportInput, OutputCommonData,
-                       annotator, exporter, installer, util)
+from sparv.api import (AllDocuments, Annotation, AnnotationAllDocs, Config, Corpus, Export, ExportInput,
+                       OutputCommonData, annotator, exporter, get_logger, installer, util)
 from sparv.api.util.mysql_wrapper import MySQL
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @installer("Install timespan SQL on remote host")
@@ -111,7 +110,7 @@ def timespan_sql_no_dateinfo(corpus: Corpus = Corpus(),
 
 def create_sql(corpus_name: str, out: Export, rows_date, rows_datetime):
     """Create timespans SQL file."""
-    log.info("Creating SQL")
+    logger.info("Creating SQL")
     mysql = MySQL(output=out)
     mysql.create_table(MYSQL_TABLE, drop=False, **MYSQL_TIMESPAN)
     mysql.create_table(MYSQL_TABLE_DATE, drop=False, **MYSQL_TIMESPAN_DATE)

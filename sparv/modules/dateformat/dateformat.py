@@ -1,15 +1,14 @@
 """Formats dates and times."""
 
 import datetime
-import logging
 import re
 from typing import Optional
 
 from dateutil.relativedelta import relativedelta
 
-from sparv.api import Annotation, Config, Output, OutputCommonData, annotator
+from sparv.api import Annotation, Config, Output, OutputCommonData, annotator, get_logger
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @annotator("Convert existing dates to specified output format", config=[
@@ -261,7 +260,7 @@ def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Outpu
                 break
             except ValueError:
                 if tries == len(informat):
-                    log.error("Could not parse: %s", str(vals))
+                    logger.error("Could not parse: %s", str(vals))
                     raise
                 continue
 
@@ -335,7 +334,7 @@ def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Outpu
                     break
                 except ValueError:
                     if tries == len(informat):
-                        log.error("Could not parse: %s", str(vals))
+                        logger.error("Could not parse: %s", str(vals))
                         raise
                     continue
 

@@ -5,7 +5,7 @@ from typing import List
 from sparv.api import Annotation, Config, Model, Output, annotator, get_logger, util
 from sparv.api.util.constants import AFFIX, DELIM, SCORESEP
 
-log = get_logger(__name__)
+logger = get_logger(__name__)
 
 
 @annotator("Annotate tokens with Blingbring classes", language=["swe"], config=[
@@ -29,7 +29,7 @@ def blingbring_words(out: Output = Output("<token>:lexical_classes.blingbring",
     # pos_limit="NN VB JJ AB" | None
 
     if class_set not in ["bring", "roget_head", "roget_subsection", "roget_section", "roget_class"]:
-        log.warning("Class '%s' not available. Fallback to 'bring'.")
+        logger.warning("Class '%s' not available. Fallback to 'bring'.")
         class_set = "bring"
 
     # Blingbring annotation function

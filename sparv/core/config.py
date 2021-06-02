@@ -1,7 +1,6 @@
 """Functions for parsing the Sparv configuration files."""
 
 import copy
-import logging
 from collections import defaultdict
 from functools import reduce
 from pathlib import Path
@@ -10,10 +9,10 @@ from typing import Any, Optional
 import yaml
 import yaml.scanner
 
-from sparv.core.misc import SparvErrorMessage
 from sparv.core import paths, registry
+from sparv.core.misc import SparvErrorMessage, get_logger
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 DEFAULT_CONFIG = paths.default_config_file
 PRESETS_DIR = paths.presets_dir
@@ -32,7 +31,7 @@ config_structure = {
     "install": {"_source": "core"},
     PARENT: {"_source": "core"},
     MAX_THREADS: {"_source": "core"},
-    "preload":  {"_source": "core"}
+    "preload": {"_source": "core"}
 }
 
 config_usage = defaultdict(set)  # For each config key, a list of annotators using that key
@@ -40,6 +39,7 @@ config_usage = defaultdict(set)  # For each config key, a list of annotators usi
 
 class Unset:
     """Class used to represent a config value that isn't set."""
+
     pass
 
 
@@ -71,7 +71,7 @@ def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) 
     if DEFAULT_CONFIG.is_file():
         _config_default = read_yaml(DEFAULT_CONFIG)
     else:
-        log.warning("Default config file is missing: {}".format(DEFAULT_CONFIG))
+        logger.warning("Default config file is missing: {}".format(DEFAULT_CONFIG))
         _config_default = {}
 
     if config_file:

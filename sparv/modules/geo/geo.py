@@ -1,12 +1,12 @@
 """Annotate geographical features."""
 
-import logging
 import pickle
 from collections import defaultdict
 
-from sparv.api import Annotation, Config, Model, ModelOutput, Output, Wildcard, annotator, modelbuilder, util
+from sparv.api import (Annotation, Config, Model, ModelOutput, Output, Wildcard, annotator, get_logger, modelbuilder,
+                       util)
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @annotator("Annotate {chunk} with location data, based on locations contained within the text", language=["swe"],
@@ -55,7 +55,7 @@ def contextual(out: Output = Output("{chunk}:geo.geo_context", description="Geog
                         chunk_locations[ch].append((location_text, list(location_data)))
                     else:
                         pass
-                        # log.info("No location found for %s" % ne_name_annotation[n].replace("%", "%%"))
+                        # logger.info("No location found for %s" % ne_name_annotation[n].replace("%", "%%"))
 
         chunk_locations = most_populous(chunk_locations)
 
@@ -140,7 +140,7 @@ def pickle_model(geonames, alternative_names, out):
 
     Add alternative names for each city.
     """
-    log.info("Reading geonames: %s", geonames.name)
+    logger.info("Reading geonames: %s", geonames.name)
     result = {}
 
     model_file = geonames.read()
@@ -159,7 +159,7 @@ def pickle_model(geonames, alternative_names, out):
             }
 
     # Parse file with alternative names of locations, paired with language codes
-    log.info("Reading alternative names: %s", alternative_names.name)
+    logger.info("Reading alternative names: %s", alternative_names.name)
 
     model_file = alternative_names.read()
     for line in model_file.split("\n"):
@@ -170,7 +170,7 @@ def pickle_model(geonames, alternative_names, out):
                 result[geonameid]["alternative_names"].setdefault(isolanguage, [])
                 result[geonameid]["alternative_names"][isolanguage].append(altname)
 
-    log.info("Saving geomodel in Pickle format")
+    logger.info("Saving geomodel in Pickle format")
     out.write_pickle(result)
 
 
@@ -181,7 +181,7 @@ def pickle_model(geonames, alternative_names, out):
 
 def load_model(model: Model, language=()):
     """Load geo model and return as dict."""
-    log.info("Reading geomodel: %s", model)
+    logger.info("Reading geomodel: %s", model)
     with open(model.path, "rb") as infile:
         m = pickle.load(infile)
 
@@ -194,7 +194,7 @@ def load_model(model: Model, language=()):
                     result[altname.lower()].add(
                         (l["name"], l["latitude"], l["longitude"], l["country"], l["population"]))
 
-    log.info("Read %d geographical names", len(result))
+    logger.info("Read %d geographical names", len(result))
 
     return result
 

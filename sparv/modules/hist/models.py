@@ -3,11 +3,11 @@
 import re
 import xml.etree.ElementTree as etree
 
-from sparv.api import Model, ModelOutput, modelbuilder, get_logger, util
+from sparv.api import Model, ModelOutput, get_logger, modelbuilder, util
 from sparv.api.util.tagsets import tagmappings
 from sparv.modules.saldo.saldo_model import HashableDict, SaldoLexicon
 
-log = get_logger(__name__)
+logger = get_logger(__name__)
 
 
 @modelbuilder("Dalin morphology model", language=["swe-1800"])
@@ -94,7 +94,7 @@ def read_lmf(xml, annotation_elements=("writtenForm", "lemgram"), verbose=True, 
             {wordform: {{annotation-type: annotation}: (set(possible tags), set(tuples with following words) )}}
     """
     if verbose:
-        log.info("Reading XML lexicon")
+        logger.info("Reading XML lexicon")
     lexicon = {}
 
     context = etree.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
@@ -166,7 +166,7 @@ def read_lmf(xml, annotation_elements=("writtenForm", "lemgram"), verbose=True, 
                      "katt",
                      "doktor"]
         util.misc.test_lexicon(lexicon, testwords)
-        log.info(f"OK, read {len(lexicon)} entries")
+        logger.info(f"OK, read {len(lexicon)} entries")
     return lexicon
 
 

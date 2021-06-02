@@ -15,7 +15,6 @@ Docstring testing:
 
 import itertools as it
 import json
-import logging
 import sys
 import tempfile
 from collections import Counter, OrderedDict, defaultdict, namedtuple
@@ -24,9 +23,9 @@ import pylibvw
 from vowpalwabbit import pyvw
 
 import sparv.util as util
-from sparv import Annotation, Config, Document, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv.api import Annotation, Config, Document, Model, ModelOutput, Output, annotator, get_logger, modelbuilder
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @annotator("Report the weight for each label for each word", config=[
@@ -191,7 +190,7 @@ def train(doc: str = Document,
     answer = {}
     for i, (label, occurences) in enumerate(iter(list(labels.items())), start=1):
         w = float(N) / occurences
-        log.info(f"{label}: occurences: {occurences}, weight: {w}")
+        logger.info(f"{label}: occurences: {occurences}, weight: {w}")
         answer[label] = ("%s:%s | " % (i, w)).encode()
         label_to_index[label] = i
         index_to_label[i] = label
@@ -200,7 +199,7 @@ def train(doc: str = Document,
         from pprint import pprint
         pprint(labels.most_common())
         print(json.dumps({l: l for l in labels}, indent=2))
-        log.info(f"texts: {N}, labels: {k}")
+        logger.info(f"texts: {N}, labels: {k}")
         sys.exit()
 
     def itertexts():
@@ -247,7 +246,7 @@ def train(doc: str = Document,
         confusion_matrix=confusion_matrix(target, predicted, order))
     with open(jsonfile, "w") as f:
         json.dump(info, f, sort_keys=True, indent=2)
-    log.info(f"Wrote {jsonfile}")
+    logger.info(f"Wrote {jsonfile}")
 
 
 def make_testdata(corpus_desc="abcd abcd dcba cbad", docs=1000):
@@ -280,7 +279,7 @@ def texts(order_struct_parent_word_pos, map_label, min_word_length, banned_pos):
     for order, struct, parent, word, pos in order_struct_parent_word_pos:
         x = 0
         s = 0
-        log.info(f"Processing {struct} {parent} {word}")
+        logger.info(f"Processing {struct} {parent} {word}")
         # TODO: needs re-writing! cwb.tokens_and_vrt and cwb.vrt_iterate don't exist anymore
         tokens, vrt = cwb.tokens_and_vrt(order, [(struct, parent)], [word] + ([pos] if pos else []))
         for (label, span), cols in cwb.vrt_iterate(tokens, vrt):
@@ -294,10 +293,10 @@ def texts(order_struct_parent_word_pos, map_label, min_word_length, banned_pos):
                 yield Text(mapped_label, span, words)
             else:
                 s += 1
-        log.info(f"Texts from {struct}: {x} (skipped: {s})")
+        logger.info(f"Texts from {struct}: {x} (skipped: {s})")
         X += x
         S += s
-    log.info(f"Total texts: {X} (skipped: {S})")
+    logger.info(f"Total texts: {X} (skipped: {S})")
 
 
 Example = namedtuple("Example", "label features tag")
@@ -352,7 +351,7 @@ def vw_predict(args, data, raw=False):
 
 def _vw_run(args, data, predict_and_yield):
     vw = pyvw.vw(" ".join(args))
-    log.info("Running: vw " + " ".join(args))
+    logger.info("Running: vw " + " ".join(args))
     for d in data:
         ex = vw.example((d.label or b"") + b" | " + d.features + b"\n")
         if predict_and_yield:
