@@ -4,7 +4,7 @@
 metadata:
     id: swe-1800
     language: swe
-    language_subtype: "1800"
+    variety: "1800"
     description:
         eng: |
             This test corpus is for testing the standard annotations for Swedish

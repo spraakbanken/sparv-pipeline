@@ -281,7 +281,7 @@ def _add_to_registry(annotator):
                     languages[lang] = lang
         # ... but skip annotators for other languages than the one specified in the config
         if sparv_config.get("metadata.language") and not check_language(
-                sparv_config.get("metadata.language"), annotator["language"], sparv_config.get("metadata.language_subtype")):
+                sparv_config.get("metadata.language"), annotator["language"], sparv_config.get("metadata.variety")):
             return
 
     # Add config variables to config
@@ -336,7 +336,7 @@ def _add_to_registry(annotator):
                     if not annotator["language"] or (
                         annotator["language"] and sparv_config.get("metadata.language")
                             and check_language(sparv_config.get("metadata.language"), annotator["language"],
-                                               sparv_config.get("metadata.language_subtype"))):
+                                               sparv_config.get("metadata.variety"))):
                         if cls_target not in annotation_classes["module_classes"][cls]:
                             annotation_classes["module_classes"][cls].append(cls_target)
 

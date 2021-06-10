@@ -293,7 +293,7 @@ rule list_exports:
 
         for target, desc, language in sorted(snake_storage.export_targets):
             if not language or registry.check_language(sparv_config.get("metadata.language"), language,
-                                                       sparv_config.get("metadata.language_subtype")):
+                                                       sparv_config.get("metadata.variety")):
                 table.add_row(target, desc)
         console.print(table)
         console.print("  Default: xml_export:pretty")
@@ -418,7 +418,7 @@ rule list_models:
             table.add_column()
             for target, desc, language in sorted(snake_storage.model_targets):
                 if language and registry.check_language(sparv_config.get("metadata.language"), language,
-                                                        sparv_config.get("metadata.language_subtype")):
+                                                        sparv_config.get("metadata.variety")):
                     table.add_row(target, desc)
             console.print(table)
 

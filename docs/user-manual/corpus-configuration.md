@@ -76,8 +76,8 @@ The `metadata` section of your corpus config contains metadata about your corpus
 - `metadata.language` defines the language of the source files in the corpus. This should be an ISO 639-3 code. If not
   specified it defaults to `swe`. Run `sparv languages` to list the supported languages along with their language codes.
 
-- `metadata.language_subtype` is an optional field containing the language subtype of source files (if applicable). Run
-  `sparv languages` to list the supported subtypes for each language.
+- `metadata.variety` is an optional field containing the language variety of source files (if applicable). Run
+  `sparv languages` to list the supported varieties for each language.
 
 - `metadata.description` is an optional description for the corpus. It may consist of multiple lines. This option is
   split into two fields, `eng` and `swe` for defining a name in English and in Swedish.

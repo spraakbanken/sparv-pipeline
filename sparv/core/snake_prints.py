@@ -217,8 +217,8 @@ def print_languages():
     sub_langs = dict((k, v) for k, v in registry.languages.items() if "-" in k)
     if sub_langs:
         print()
-        table = Table(title="Supported language subtypes", box=box.SIMPLE, show_header=False, title_justify="left")
-        table.add_row("[b]Name[/b]", "[b]Language[/b]", "[b]Language Subtype[/b]")
+        table = Table(title="Supported language varieties", box=box.SIMPLE, show_header=False, title_justify="left")
+        table.add_row("[b]Name[/b]", "[b]Language[/b]", "[b]Variety[/b]")
         for language, name in sorted(sub_langs.items(), key=lambda x: x[1]):
             lang, _, sublang = language.partition("-")
             table.add_row(name, lang, sublang)

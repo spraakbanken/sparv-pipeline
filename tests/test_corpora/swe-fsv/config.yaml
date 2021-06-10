@@ -4,7 +4,7 @@
 metadata:
     id: swe-fsv
     language: swe
-    language_subtype: fsv
+    variety: fsv
     description:
         eng: |
             This test corpus is for testing the standard annotations for Old

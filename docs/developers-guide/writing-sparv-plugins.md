@@ -163,7 +163,7 @@ def uppercase(word: Annotation = Annotation("<token:word>"),
     ...
 ```
 
-## Languages and Language subtypes
+## Languages and varieties
 It is possible to restrict the use of an annotator, exporter, installer or modelbuilder to one or more specific
 language(s). This is done by passing a list of ISO 639-3 language codes to the optional `language` parameter in the
 decorator:
@@ -176,15 +176,15 @@ Sparv functions are only available for use if one of their languages match the l
 file](user-manual/corpus-configuration.md). If no language codes are provided in the decorator, the function is
 available for any corpus.
 
-Sparv also supports language subtypes which is useful when you want to write Sparv functions for a specific variety of a
-language. For instance, Sparv has some built-in annotators that are restricted to corpora with historical Swedish from
+Sparv also supports language varieties which is useful when you want to write Sparv functions for a specific variety of
+a language. For instance, Sparv has some built-in annotators that are restricted to corpora with historical Swedish from
 the 1800's. They are marked with the language code `swe-1800`, where `swe` is the ISO 639-3 code for Swedish and `1800`
-is an arbitrary string for this specific language subtype. Sparv functions marked with `swe-1800` are available for
+is an arbitrary string for this specific language variety. Sparv functions marked with `swe-1800` are available for
 corpora that are configured as follows:
 ```yaml
 metadata:
-    language: swe
-    language_subtype: "1800"
+    language: "swe"
+    variety: "1800"
 ```
 Note that all functions marked with `swe` will also be available for these corpora.
 

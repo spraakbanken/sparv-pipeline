@@ -262,13 +262,13 @@ def validate_config(config_dict=None, structure=None, parent=""):
             validate_config(config_dict[key], structure[key], path)
 
 
-def load_presets(lang, lang_subtype):
+def load_presets(lang, lang_variety):
     """Read presets files, set global presets variable and return dictionary with preset classes."""
     global presets
     class_dict = {}
     full_lang = lang
-    if lang_subtype:
-        full_lang = lang + "-" + lang_subtype
+    if lang_variety:
+        full_lang = lang + "-" + lang_variety
 
     for f in PRESETS_DIR.rglob("*.yaml"):
         presets_yaml = read_yaml(f)
@@ -311,7 +311,7 @@ def resolve_presets(annotations):
 def apply_presets():
     """Resolve annotations from presets and set preset classes."""
     # Load annotation presets and classes
-    class_dict = load_presets(get("metadata.language"), get("metadata.language_subtype"))
+    class_dict = load_presets(get("metadata.language"), get("metadata.variety"))
 
     preset_classes = {}  # Classes set by presets
 

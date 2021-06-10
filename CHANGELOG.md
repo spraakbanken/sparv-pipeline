@@ -5,7 +5,7 @@
 ### Added
 
 - Added a quick start guide in the documentation.
-- Added Support for language subtypes.
+- Added Support for language varieties.
 - Re-introduced analyses for Old Swedish and Swedish from the 1800's.
 - Added Stanza support for English.
 - Added better install and uninstall instructions for plugins.

@@ -415,11 +415,11 @@ class Wizard:
         for w in self.wizard_from_module["metadata"]:
             questions.extend(self.get_module_wizard(w))
         self.update_config(self.q(questions, clear=True))
-        # Split language into language and subtype if necessary and save in config
+        # Split language into language and variety if necessary and save in config
         langcode, _, suffix = config.get("metadata.language", "").partition("-")
         if suffix:
             config.set_value("metadata.language", langcode, config_dict=self.corpus_config)
-            config.set_value("metadata.language_subtype", suffix, config_dict=self.corpus_config)
+            config.set_value("metadata.variety", suffix, config_dict=self.corpus_config)
 
         # Now that we know the language, update the class dict in registry...
         self.update_class_registry()
