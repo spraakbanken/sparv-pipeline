@@ -74,6 +74,7 @@ def main():
         "   presets          List available annotation presets",
         "   classes          List available annotation classes",
         "   languages        List supported languages",
+        "   plugins          List supported Sparv plugins",
         "",
         "Setting up the Sparv Pipeline:",
         "   setup            Set up the Sparv data directory",
@@ -125,6 +126,10 @@ def main():
     subparsers.add_parser("presets", description="Display all available annotation presets.")
     subparsers.add_parser("classes", description="Display all available annotation classes.")
     subparsers.add_parser("languages", description="List supported languages.")
+
+    # Plugins
+    plugin_parser = subparsers.add_parser("plugins", description="List supported Sparv plugins.")
+    plugin_parser.add_argument("plugin", nargs="*", default=[], help="Specific plugin(s) to display more info about")
 
     # Setup
     setup_parser = subparsers.add_parser("setup", description="Set up the Sparv data directory. Run without arguments "
@@ -236,6 +241,14 @@ def main():
         from sparv.core.wizard import Wizard
         wizard = Wizard()
         wizard.run()
+        sys.exit(0)
+    elif args.command == "plugins":
+        if args.plugin:
+            from sparv.core.plugins import plugin_info
+            plugin_info(args.plugin)
+        else:
+            from sparv.core.plugins import list_plugins
+            list_plugins()
         sys.exit(0)
 
     # Check that a corpus config file is available in the working dir
