@@ -62,10 +62,10 @@ def preserved_format(doc: Document = Document(),
     sorted_positions = [(pos, span[0], span[1]) for pos, spans in sorted(span_positions.items()) for span in spans]
 
     # Root tag sanity check
-    if not xml_utils.valid_root(sorted_positions[0], sorted_positions[-1]):
+    if not xml_utils.valid_root(sorted_positions[0], sorted_positions[-1], true_root=True):
         raise SparvErrorMessage("Root tag is missing! If you have manually specified which elements to include, "
                                 "make sure to include an element that encloses all other included elements and "
-                                "text content.")
+                                "text content (including whitespace characters such as newlines).")
 
     # Create root node
     root_span = sorted_positions[0][2]

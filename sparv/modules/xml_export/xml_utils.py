@@ -110,12 +110,13 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token_name: s
     return stream.getvalue()
 
 
-def valid_root(first_item, last_item):
+def valid_root(first_item, last_item, true_root: bool = False):
     """Check the validity of the root tag."""
     return (first_item[1] == "open"
             and last_item[1] == "close"
             and first_item[2].name == last_item[2].name
-            and first_item[2].index == last_item[2].index)
+            and first_item[2].index == last_item[2].index
+            and (not true_root or (first_item[0] == 0)))
 
 
 def add_attrs(node, annotation, annotation_dict, export_names, index, include_empty_attributes: bool):
