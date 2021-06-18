@@ -91,7 +91,7 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
     core_modules_full_path = paths.sparv_path / paths.core_modules_dir
 
     for full_path, path in ((core_modules_full_path, core_modules_path), (modules_full_path, modules_path)):
-        found_modules = pkgutil.iter_modules([full_path])
+        found_modules = pkgutil.iter_modules([str(full_path)])
         module_names = []
         for module in found_modules:
             module_names.append(module.name)
@@ -101,7 +101,7 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
 
     if find_custom:
         # Also search for modules in corpus dir
-        custom_modules = pkgutil.iter_modules([paths.corpus_dir])
+        custom_modules = pkgutil.iter_modules([str(paths.corpus_dir)])
         for module in custom_modules:
             module_name = f"{custom_name}.{module.name}"
             module_names.append(module_name)
