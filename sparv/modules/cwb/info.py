@@ -53,10 +53,10 @@ def info_date(docs: AllDocuments = AllDocuments(),
     last_date = None
 
     for doc in docs:
-        from_dates = sorted((int(x[0]), x[1]) for x in datefrom.read_attributes(doc, (datefrom, timefrom)))
+        from_dates = sorted((int(x[0]), x[1]) for x in datefrom.read_attributes(doc, (datefrom, timefrom)) if x[0])
         if first_date is None or from_dates[0] < first_date:
             first_date = from_dates[0]
-        to_dates = sorted((int(x[0]), x[1]) for x in dateto.read_attributes(doc, (dateto, timeto)))
+        to_dates = sorted((int(x[0]), x[1]) for x in dateto.read_attributes(doc, (dateto, timeto)) if x[0])
         if last_date is None or to_dates[-1] > last_date:
             last_date = to_dates[-1]
 
