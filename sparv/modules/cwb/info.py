@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 
 from sparv.api import (AllDocuments, AnnotationAllDocs, AnnotationCommonData, Config, Export, OutputCommonData,
-                       annotator, exporter, get_logger)
+                       SparvErrorMessage, annotator, exporter, get_logger)
 
 logger = get_logger(__name__)
 
@@ -54,11 +54,14 @@ def info_date(docs: AllDocuments = AllDocuments(),
 
     for doc in docs:
         from_dates = sorted((int(x[0]), x[1]) for x in datefrom.read_attributes(doc, (datefrom, timefrom)) if x[0])
-        if first_date is None or from_dates[0] < first_date:
+        if from_dates and (first_date is None or from_dates[0] < first_date):
             first_date = from_dates[0]
         to_dates = sorted((int(x[0]), x[1]) for x in dateto.read_attributes(doc, (dateto, timeto)) if x[0])
-        if last_date is None or to_dates[-1] > last_date:
+        if to_dates and (last_date is None or to_dates[-1] > last_date):
             last_date = to_dates[-1]
+
+    if not first_date or not last_date:
+        raise SparvErrorMessage("Corpus is configured as having date information, but no dates were found.")
 
     # Parse and re-format dates (zero-padding dates with less than 8 digits, needed by strptime)
     first_date_d = datetime.strptime(f"{str(first_date[0]).zfill(8)} {first_date[1]}", "%Y%m%d %H%M%S")
