@@ -131,5 +131,5 @@ def install_freq_list(freq_list: ExportInput = ExportInput("frequency_list/stats
                       host: str = Config("stats_export.remote_host"),
                       target_dir: str = Config("stats_export.remote_dir")):
     """Install frequency list on server by rsyncing."""
-    util.system.rsync(freq_list, host, target_dir)
+    util.install.install_file(freq_list, host, target_dir)
     out.write("")
