@@ -3,8 +3,8 @@
 import time
 from datetime import datetime
 
-from sparv.api import (AllDocuments, AnnotationAllDocs, AnnotationCommonData, Config, Export, OutputCommonData,
-                       SparvErrorMessage, annotator, exporter, get_logger)
+from sparv.api import (AllDocuments, AnnotationAllDocs, AnnotationCommonData, Config, Export, ExportInput,
+                       OutputCommonData, SparvErrorMessage, annotator, exporter, get_logger)
 
 logger = get_logger(__name__)
 
@@ -15,6 +15,9 @@ def info(out: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_
          firstdate: AnnotationCommonData = AnnotationCommonData("cwb.datefirst"),
          lastdate: AnnotationCommonData = AnnotationCommonData("cwb.datelast"),
          resolution: AnnotationCommonData = AnnotationCommonData("dateformat.resolution"),
+         # Add CWB registry file as a dependency to ensure that CWB encoding occurs before .info file creation,
+         # or the .info file will get deleted during CWB encoding
+         _registry: ExportInput = ExportInput("[cwb.corpus_registry]/[metadata.id]", absolute_path=True),
          protected: bool = Config("korp.protected")):
     """Save information to the file specified by 'out'."""
     content = []
