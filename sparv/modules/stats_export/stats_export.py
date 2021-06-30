@@ -3,7 +3,8 @@
 import csv
 from collections import defaultdict
 
-from sparv.api import AllDocuments, AnnotationAllDocs, Config, Export, exporter, get_logger
+from sparv.api import (AllDocuments, AnnotationAllDocs, Config, Export, ExportInput, OutputCommonData, exporter,
+                       get_logger, installer, util)
 
 logger = get_logger(__name__)
 
@@ -119,3 +120,16 @@ def write_csv(out, freq_dict, delimiter, cutoff):
                 break
             csv_writer.writerow([wordform, msd, lemma, sense, lemgram, complemgram, freq])
     logger.info("Exported: %s", out)
+
+
+@installer("Install word frequency list on remote host", config=[
+    Config("stats_export.remote_host", "", description="Remote host to install to"),
+    Config("stats_export.remote_dir", "", description="Path on remote host to install to")
+])
+def install_freq_list(freq_list: ExportInput = ExportInput("frequency_list/stats_[metadata.id].csv"),
+                      out: OutputCommonData = OutputCommonData("stats_export.install_freq_list_marker"),
+                      host: str = Config("stats_export.remote_host"),
+                      target_dir: str = Config("stats_export.remote_dir")):
+    """Install frequency list on server by rsyncing."""
+    util.system.rsync(freq_list, host, target_dir)
+    out.write("")
