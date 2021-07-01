@@ -7,7 +7,7 @@ languages:
 
 presets:
     paragraph:
-        - SWE_DEFAULT_1800.all
+        - SWE_1800.all
         - DATETIME.all
         - <token:baseform> as lemma
         - <token:lemgram> as lex
@@ -18,7 +18,7 @@ presets:
         - paragraph
         - not <paragraph>:geo.geo_context
     paragraph-no-date:
-        - SWE_DEFAULT_1800.all
+        - SWE_1800.all
         - <token:baseform> as lemma
         - <token:lemgram> as lex
         - <token:dephead_ref> as dephead
