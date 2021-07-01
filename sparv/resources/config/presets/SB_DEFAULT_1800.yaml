@@ -1,0 +1,29 @@
+#===============================================================================
+# Språkbanken's Standard Annotation Presets for Swedish from the 1800's
+#===============================================================================
+languages:
+    - swe-1800
+
+
+presets:
+    paragraph:
+        - SWE_DEFAULT_1800.all
+        - DATETIME.all
+        - <token:baseform> as lemma
+        - <token:lemgram> as lex
+        - <token:dephead_ref> as dephead
+        - <sentence>:geo.geo_context as _geocontext
+        - <paragraph>:geo.geo_context as _geocontext
+    no-paragraph:
+        - paragraph
+        - not <paragraph>:geo.geo_context
+    paragraph-no-date:
+        - SWE_DEFAULT_1800.all
+        - <token:baseform> as lemma
+        - <token:lemgram> as lex
+        - <token:dephead_ref> as dephead
+        - <sentence>:geo.geo_context as _geocontext
+        - <paragraph>:geo.geo_context as _geocontext
+    no-paragraph-no-date:
+        - paragraph-no-date
+        - not <paragraph>:geo.geo_context
