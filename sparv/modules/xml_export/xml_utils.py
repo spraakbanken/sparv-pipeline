@@ -5,6 +5,7 @@ import io
 import os
 import re
 import xml.etree.ElementTree as etree
+from shutil import copyfileobj
 from typing import Optional
 
 from sparv.api import SparvErrorMessage, get_logger, util
@@ -148,12 +149,15 @@ def combine(corpus, out, docs, xml_input):
 
 
 def compress(xmlfile, out):
-    """Compress xmlfile to out."""
-    with open(xmlfile) as f:
-        file_data = f.read()
-        compressed_data = bz2.compress(file_data.encode(util.constants.UTF8))
-    with open(out, "wb") as f:
-        f.write(compressed_data)
+    """Compress XML file using bzip2.
+
+    Args:
+        xmlfile: Path to source file.
+        out: Path to target bz2 file.
+    """
+    with open(xmlfile, "rb") as infile:
+        with bz2.BZ2File(out, "wb") as outfile:
+            copyfileobj(infile, outfile)
 
 
 def install_compressed_xml(corpus, bz2file, out, export_path, host):
