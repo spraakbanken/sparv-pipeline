@@ -21,7 +21,6 @@ classes:
 
 presets:
     all:
-        - SWE_DEFAULT.sentence
         - SWE_DEFAULT.swener
         - SWE_DEFAULT.sentence
         - SWE_DEFAULT.text-lexical-class
