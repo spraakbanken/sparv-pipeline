@@ -107,8 +107,8 @@ Rsync a file to a target host.
 
 **Arguments:**
 
-- `host`: The remote host to install to.
 - `local_file`: Path to the local file to sync.
+- `host`: The remote host to install to.
 - `remote_file`: The name of the resulting file on the remote host.
 
 
