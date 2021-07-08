@@ -210,7 +210,9 @@ def cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, o
             attrs2 = "+" + attrs2
         encode_args += ["-S", "%s:0%s" % (struct, attrs2)]
 
-    util.system.call_binary(os.path.join(bin_path, "cwb-encode"), encode_args, verbose=True)
+    _, stderr = util.system.call_binary(os.path.join(bin_path, "cwb-encode"), encode_args)
+    if stderr:
+        logger.warning(stderr.decode().strip())
     # Use xargs to avoid "Argument list too long" problems
     # util.system.call_binary(os.path.join(bin_path, "cwb-encode"), raw_command="cat %s | xargs cat | %%s %s" % (vrtfiles, " ".join(encode_args)), use_shell=True)
 
