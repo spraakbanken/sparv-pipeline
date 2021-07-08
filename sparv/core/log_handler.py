@@ -375,7 +375,7 @@ class LogHandler:
                     " • {}\n".format(
                         "s" if len(missing_annotations) > 1 else "",
                         "are" if len(missing_annotations) > 1 else "is",
-                        "\n • ".join(":".join(ann) if len(ann) == 2 else ann for ann in missing_annotations)
+                        "\n • ".join(":".join(ann) if len(ann) == 2 else ann[0] for ann in missing_annotations)
                     )
                 ]
             if missing_other:
