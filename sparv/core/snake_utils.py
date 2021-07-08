@@ -692,14 +692,22 @@ def get_install_outputs(snake_storage: SnakeStorage, install_types: Optional[Lis
 def get_export_targets(snake_storage, rules, doc, wildcards):
     """Get export targets from sparv_config."""
     all_outputs = []
+    config_exports = set(sparv_config.get("export.default", []))
 
     for rule in snake_storage.all_rules:
-        if rule.type == "exporter" and rule.target_name in sparv_config.get("export.default", []):
+        if rule.type == "exporter" and rule.target_name in config_exports:
+            config_exports.remove(rule.target_name)
             # Get all output files for all documents
             rule_outputs = expand(rule.outputs if not rule.abstract else rule.inputs, doc=doc, **wildcards)
             # Get Snakemake rule object
             sm_rule = getattr(rules, rule.rule_name).rule
             all_outputs.append((sm_rule if not rule.abstract else None, rule_outputs))
+
+    if config_exports:
+        raise SparvErrorMessage(
+            "Unknown output format{} specified in export.default:\n • {}".format(
+                "s" if len(config_exports) > 1 else "",
+                "\n • ".join(config_exports)))
 
     return all_outputs
 
