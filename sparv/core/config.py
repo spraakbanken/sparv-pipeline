@@ -20,7 +20,6 @@ PARENT = "parent"
 MAX_THREADS = "threads"
 
 config = {}  # Full configuration
-presets = {}  # Annotation presets
 _config_user = {}  # Local corpus config
 _config_default = {}  # Default config
 
@@ -196,15 +195,15 @@ def update_config(new_config):
     config = _merge_dicts(copy.deepcopy(new_config), config)
 
 
-def _merge_dicts(user, default):
-    """Merge corpus config with default config, letting user values override default values."""
-    if isinstance(user, dict) and isinstance(default, dict):
+def _merge_dicts(d: dict, default: dict):
+    """Merge dict 'd' with dict 'default', letting values from 'd' override default values."""
+    if isinstance(d, dict) and isinstance(default, dict):
         for k, v in default.items():
-            if k not in user:
-                user[k] = v
+            if k not in d:
+                d[k] = v
             else:
-                user[k] = _merge_dicts(user[k], v)
-    return user
+                d[k] = _merge_dicts(d[k], v)
+    return d
 
 
 def add_to_structure(name, default=None, description=None, annotator: Optional[str] = None):
@@ -263,8 +262,8 @@ def validate_config(config_dict=None, structure=None, parent=""):
 
 
 def load_presets(lang, lang_variety):
-    """Read presets files, set global presets variable and return dictionary with preset classes."""
-    global presets
+    """Read presets files and return dictionaries with all available presets annotations and preset classes."""
+    presets = {}
     class_dict = {}
     full_lang = lang
     if lang_variety:
@@ -294,38 +293,38 @@ def load_presets(lang, lang_variety):
             presets[k_name] = value
             if c:
                 class_dict[k_name] = c
-    return class_dict
+    return presets, class_dict
 
 
-def resolve_presets(annotations):
+def resolve_presets(annotations, presets, class_dict, preset_classes=None):
     """Resolve annotation presets into actual annotations."""
-    result = []
+    if not preset_classes:
+        preset_classes = {}
+    result_annotations = []
     for annotation in annotations:
         if annotation in presets:
-            result.extend(resolve_presets(presets[annotation]))
+            if annotation in class_dict:
+                preset_classes = _merge_dicts(preset_classes, class_dict[annotation])
+            result_annotations.extend(resolve_presets(presets[annotation], presets, class_dict, preset_classes)[0])
         else:
-            result.append(annotation)
-    return result
+            result_annotations.append(annotation)
+    return result_annotations, preset_classes
 
 
 def apply_presets():
     """Resolve annotations from presets and set preset classes."""
     # Load annotation presets and classes
-    class_dict = load_presets(get("metadata.language"), get("metadata.variety"))
-
-    preset_classes = {}  # Classes set by presets
+    presets, class_dict = load_presets(get("metadata.language"), get("metadata.variety"))
 
     # Go through annotation lists in config to find references to presets
     for a in registry.annotation_sources:
         annotations = get(a)
         if not annotations:
             continue
-        # Update classes set by presets
-        for annotation in annotations:
-            preset_classes.update(class_dict.get(annotation, {}))
 
         # Resolve presets and update annotation list in config
-        set_value(a, resolve_presets(annotations))
+        annotations, preset_classes = resolve_presets(annotations, presets, class_dict)
+        set_value(a, annotations)
 
     # Update classes
     default_classes = _config_default.get("classes", {})
