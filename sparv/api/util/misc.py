@@ -44,7 +44,7 @@ def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations
     result: OrderedDict = OrderedDict()
     for a in annotation_names:
         # Check if this annotation should be omitted
-        if a.startswith("not "):
+        if a.startswith("not ") and " as " not in a:
             omit_annotations.add(a[4:])
         elif a == "...":
             include_rest = True

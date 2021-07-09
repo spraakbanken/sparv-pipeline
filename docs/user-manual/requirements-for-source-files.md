@@ -10,10 +10,7 @@ requirements:
 
 3. Your source documents must all use the same file format, same file extension and (if applicable) the same markup.
 
-4. If your corpus is in XML format, make sure you don't have any elements or attributes called "not" as this is a
-   reserved keyword in the Sparv Pipeline.
-
-5. If your source documents are very large or if your corpus consists of a large number of tiny documents, Sparv
+4. If your source documents are very large or if your corpus consists of a large number of tiny documents, Sparv
    may become quite slow. Very large files may also lead to memory problems. Try keeping the maximum file size per
    document around 5-10 MB, and in the case of many tiny files, combining them into larger files if possible.
    If your machine has a lot of memory, processing larger documents may work just fine.
