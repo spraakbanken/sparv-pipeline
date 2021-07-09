@@ -315,6 +315,7 @@ def apply_presets():
     """Resolve annotations from presets and set preset classes."""
     # Load annotation presets and classes
     presets, class_dict = load_presets(get("metadata.language"), get("metadata.variety"))
+    preset_classes = {}
 
     # Go through annotation lists in config to find references to presets
     for a in registry.annotation_sources:
