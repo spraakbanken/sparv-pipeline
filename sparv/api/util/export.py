@@ -465,7 +465,8 @@ def _check_name_collision(export_names, source_annotations):
     # Get annotations with identical export attribute names
     reverse_index = defaultdict(set)
     for k, v in export_names.items():
-        reverse_index[v].add(k)
+        if ":" in k:
+            reverse_index[v].add(k)
     possible_collisions = {k: [Annotation(v) for v in values] for k, values in reverse_index.items() if len(values) > 1}
     # Only keep the ones with matching element names
     for attr, values in possible_collisions.items():
