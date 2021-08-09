@@ -296,10 +296,8 @@ def load_presets(lang, lang_variety):
     return presets, class_dict
 
 
-def resolve_presets(annotations, presets, class_dict, preset_classes=None):
+def resolve_presets(annotations, presets, class_dict, preset_classes):
     """Resolve annotation presets into actual annotations."""
-    if not preset_classes:
-        preset_classes = {}
     result_annotations = []
     for annotation in annotations:
         if annotation in presets:
@@ -324,7 +322,7 @@ def apply_presets():
             continue
 
         # Resolve presets and update annotation list in config
-        annotations, preset_classes = resolve_presets(annotations, presets, class_dict)
+        annotations, preset_classes = resolve_presets(annotations, presets, class_dict, preset_classes)
         set_value(a, annotations)
 
     # Update classes
