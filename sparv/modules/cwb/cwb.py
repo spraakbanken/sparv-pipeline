@@ -164,6 +164,9 @@ def cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, o
     assert datadir, "CWB_DATADIR not specified"
     assert registry, "CORPUS_REGISTRY not specified"
 
+    if not corpus.strip():
+        raise SparvErrorMessage("metadata.id needs to be set.")
+
     # Get vrt files
     vrtfiles = [vrtfiles.replace("{doc}", doc) for doc in docs]
     vrtfiles.sort()
@@ -189,7 +192,12 @@ def cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, o
 
     corpus_registry = os.path.join(registry, corpus)
     corpus_datadir = os.path.join(datadir, corpus)
-    util.system.clear_directory(corpus_datadir)
+    os.makedirs(corpus_datadir, exist_ok=True)
+
+    # Remove any existing files in datadir except for the .info file
+    for f in Path(corpus_datadir).glob("*"):
+        if not f.name == ".info":
+            f.unlink()
 
     encode_args = ["-s", "-p", "-",
                    "-d", corpus_datadir,
