@@ -16,7 +16,7 @@ def info(out: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_
          lastdate: AnnotationCommonData = AnnotationCommonData("cwb.datelast"),
          resolution: AnnotationCommonData = AnnotationCommonData("dateformat.resolution"),
          protected: bool = Config("korp.protected"),
-         korp_mode: bool = Config("korp.mode"),
+         korp_modes: list = Config("korp.modes"),
          # Add CWB registry file as a dependency to ensure that CWB encoding occurs before .info file creation,
          # or the .info file will get deleted during CWB encoding
          _registry: ExportInput = ExportInput("[cwb.corpus_registry]/[metadata.id]", absolute_path=True)):
@@ -30,7 +30,7 @@ def info(out: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_
                            ("DateResolution", resolution),
                            ("Updated", time.strftime("%Y-%m-%d")),
                            ("Protected", protected_str),
-                           ("KorpMode", korp_mode)]:
+                           ("KorpModes", ",".join(korp_modes))]:
         if isinstance(value_obj, AnnotationCommonData):
             value = value_obj.read()
         else:
