@@ -285,18 +285,37 @@ rule list_targets:
 # Rule to list all exports
 rule list_exports:
     run:
-        print()
-        table = Table(title="Available corpus output formats (exports)", box=box.SIMPLE, show_header=False,
-                      title_justify="left")
-        table.add_column(no_wrap=True)
-        table.add_column()
+        selected_export_names = sparv_config.get("export.default", [])
+        selected_exports = [(t, d, l) for t, d, l in sorted(snake_storage.export_targets) if t in selected_export_names]
+        other_exports = [(t, d, l) for t, d, l in sorted(snake_storage.export_targets) if not t in selected_export_names]
 
-        for target, desc, language in sorted(snake_storage.export_targets):
-            if not language or registry.check_language(sparv_config.get("metadata.language"), language,
-                                                       sparv_config.get("metadata.variety")):
-                table.add_row(target, desc)
-        console.print(table)
-        console.print("  Default: xml_export:pretty")
+        if selected_exports:
+            print()
+            table = Table(title="Selected corpus exports (output formats)", box=box.SIMPLE, show_header=False,
+                          title_justify="left")
+            table.add_column(no_wrap=True)
+            table.add_column()
+            for target, desc, language in selected_exports:
+                if not language or registry.check_language(sparv_config.get("metadata.language"), language,
+                                                        sparv_config.get("metadata.variety")):
+                    table.add_row(target, desc)
+            console.print(table)
+
+        if other_exports:
+            print()
+            title = "Other available corpus exports (output formats)"
+            table = Table(title=title, box=box.SIMPLE, show_header=False, title_justify="left")
+            table.add_column(no_wrap=True)
+            table.add_column()
+            for target, desc, language in other_exports:
+                if not language or registry.check_language(sparv_config.get("metadata.language"), language,
+                                            sparv_config.get("metadata.variety")):
+                    table.add_row(target, desc)
+            console.print(table)
+
+        console.print("[i]Note:[/i] Use the 'export.default' section in your corpus configuration to select what "
+                      "exports should be produced when running 'sparv run' without arguments. If 'export.default' is "
+                      "not specified, 'xml_export:pretty' is run by default.")
 
 
 # Rule to list all input files
