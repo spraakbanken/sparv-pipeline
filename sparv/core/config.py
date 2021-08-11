@@ -20,6 +20,7 @@ PARENT = "parent"
 MAX_THREADS = "threads"
 
 config = {}  # Full configuration
+presets = {}  # Annotation presets, needs to be global (accessed by Snakefile)
 _config_user = {}  # Local corpus config
 _config_default = {}  # Default config
 
@@ -263,7 +264,7 @@ def validate_config(config_dict=None, structure=None, parent=""):
 
 def load_presets(lang, lang_variety):
     """Read presets files and return dictionaries with all available presets annotations and preset classes."""
-    presets = {}
+    global presets
     class_dict = {}
     full_lang = lang
     if lang_variety:
@@ -293,17 +294,18 @@ def load_presets(lang, lang_variety):
             presets[k_name] = value
             if c:
                 class_dict[k_name] = c
-    return presets, class_dict
+    return class_dict
 
 
-def resolve_presets(annotations, presets, class_dict, preset_classes):
+def resolve_presets(annotations, class_dict, preset_classes):
     """Resolve annotation presets into actual annotations."""
+    global presets
     result_annotations = []
     for annotation in annotations:
         if annotation in presets:
             if annotation in class_dict:
                 preset_classes = _merge_dicts(preset_classes, class_dict[annotation])
-            result_annotations.extend(resolve_presets(presets[annotation], presets, class_dict, preset_classes)[0])
+            result_annotations.extend(resolve_presets(presets[annotation], class_dict, preset_classes)[0])
         else:
             result_annotations.append(annotation)
     return result_annotations, preset_classes
@@ -312,7 +314,7 @@ def resolve_presets(annotations, presets, class_dict, preset_classes):
 def apply_presets():
     """Resolve annotations from presets and set preset classes."""
     # Load annotation presets and classes
-    presets, class_dict = load_presets(get("metadata.language"), get("metadata.variety"))
+    class_dict = load_presets(get("metadata.language"), get("metadata.variety"))
     preset_classes = {}
 
     # Go through annotation lists in config to find references to presets
@@ -322,7 +324,7 @@ def apply_presets():
             continue
 
         # Resolve presets and update annotation list in config
-        annotations, preset_classes = resolve_presets(annotations, presets, class_dict, preset_classes)
+        annotations, preset_classes = resolve_presets(annotations, class_dict, preset_classes)
         set_value(a, annotations)
 
     # Update classes

@@ -239,8 +239,10 @@ rule languages:
 # Rule to list all annotation presets
 rule presets:
     run:
-        resolved_presets = dict(
-            (preset, sparv_config.resolve_presets(sparv_config.presets[preset])) for preset in sparv_config.presets)
+        resolved_presets = {}
+        for preset, annots in sparv_config.presets.items():
+            preset_annotations, _ = sparv_config.resolve_presets(sparv_config.presets[preset], {}, {})
+            resolved_presets[preset] = preset_annotations
         snake_prints.prettyprint_yaml(resolved_presets)
 
 
