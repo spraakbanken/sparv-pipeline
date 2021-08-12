@@ -65,17 +65,3 @@ segment:
     sentence_chunk: <paragraph>, <text>
     # Chunk to use for automatic tokenisation
     token_chunk: <sentence>
-
-# korp:
-    # Password protected corpus
-    # protected: false
-
-    # Remote host name for installation of both corpus data and database
-    # remote_host:
-
-    # Paths on remote server (targets for install_corpus)
-    # remote_cwb_datadir:
-    # remote_cwb_registry:
-
-    # Database name for relations, lemgram index and timespan
-    # mysql_dbname:

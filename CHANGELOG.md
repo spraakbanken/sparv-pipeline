@@ -11,12 +11,21 @@
 - Added better install and uninstall instructions for plugins.
 - Added explicit `ref` annotations (indexing tokens within sentences) for Stanza, Malt and Stanford.
 - Added a `--reset` flag to the `sparv setup` command for resetting the data directory setting.
+- Added a separate installer for installing scrambled cwb files
 
 ### Changed
 
 - Significantly improved the CLI startup time.
 - Everything needed by Sparv modules (including `utils`) is now available through the `sparv.api` package.
 - Empty corpus config files are treated as missing config files.
+- Moved cwb corpus installer from `korp` module into `cwb` module.
+  This lead to some name changes of variables used in the corpus config:
+    - `korp.remote_cwb_datadir` is now called `cwb.remote_datadir`
+    - `korp.remote_cwb_registry` is now called `cwb.remote_registry`
+    - `korp.remote_host` has been split into `korp.remote_host` (host for SQL files) and `cwb.remote_host` (host for cwb
+       files)
+    - install target `korp:install_corpus` has been renamed and split into `cwb:install_corpus` and 
+      `cwb:install_corpus_scrambled`
 
 ### Fixed
 
