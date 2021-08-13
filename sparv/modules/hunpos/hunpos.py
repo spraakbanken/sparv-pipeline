@@ -3,8 +3,11 @@
 import re
 from typing import Optional
 
-from sparv.api import Annotation, Binary, Config, Model, ModelOutput, Output, annotator, modelbuilder, util
+from sparv.api import (Annotation, Binary, Config, Model, ModelOutput, Output, SparvErrorMessage, annotator, get_logger,
+                       modelbuilder, util)
 from sparv.api.util.tagsets import tagmappings
+
+logger = get_logger(__name__)
 
 SENT_SEP = "\n\n"
 TOK_SEP = "\n"
@@ -95,7 +98,34 @@ def postag(out: Output = Output("<token>:hunpos.pos", cls="token:pos", descripti
 
 
 @modelbuilder("Hunpos model", language=["swe"])
-def hunpos_model(model: ModelOutput = ModelOutput("hunpos/suc3_suc-tags_default-setting_utf8.model")):
+def hunpos_model(model: ModelOutput = ModelOutput("hunpos/suc3_suc-tags_default-setting_utf8.model"),
+                 binary: Binary = Binary("[hunpos.binary]")):
     """Download the Hunpos model."""
-    model.download(
-        "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc3_suc-tags_default-setting_utf8.model")
+
+    def test_hunpos(model):
+        stdin = TOK_SEP.join(["jag", "och", "du"]) + SENT_SEP
+        util.system.call_binary(binary, [model.path], stdin, encoding="UTF-8")
+
+    tmp_model = Model("hunpos/hunpos-model.tmp")
+    reg_model = "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc3_suc-tags_default-setting_utf8.model"
+    mac_model = "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc3_suc-tags_default-setting_utf8-mac.model"
+
+    # Download the regular Hunpos model and test it by running hunpos on a single test sentence
+    tmp_model.download(reg_model)
+    try:
+        logger.info("Testing regular Hunpos model")
+        test_hunpos(tmp_model)
+    except (RuntimeError, OSError):
+        # Download the MacOS hunpos model and test again
+        tmp_model.remove()
+        tmp_model.download(mac_model)
+        try:
+            logger.info("Testing MacOS Hunpos model")
+            test_hunpos(tmp_model)
+        except RuntimeError:
+            raise SparvErrorMessage(
+                "Hunpos does not seem to be working on your system with any of the available models.")
+
+    # Rename and Clean up
+    tmp_model.rename(model.path)
+    tmp_model.remove()

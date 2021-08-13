@@ -11,7 +11,7 @@ from typing import Any, List, Optional, Tuple, Union
 
 import sparv.core
 from sparv.core import io
-from sparv.core.misc import get_logger
+from sparv.core.misc import SparvErrorMessage, get_logger
 from sparv.core.paths import models_dir
 
 logger = get_logger(__name__)
@@ -610,6 +610,20 @@ class Model(Base):
             with open(out, "wb") as f:
                 f.write(data)
         logger.info("Successfully unzipped %s", out)
+
+    def rename(self, new_name: Union[str, pathlib.Path]):
+        """Rename a movel file where new_name is either the full name of the model or an absolute path."""
+        if isinstance(new_name, str):
+            new_name = pathlib.Path(new_name)
+        # Check if the new name has at least one parent
+        if len(new_name.parents) < 2:
+            raise SparvErrorMessage("When renaming a model the full model name (including its module name) or an "
+                                    "absolute path must be provided!")
+        if new_name.is_absolute() or models_dir in new_name.parents:
+            new_path = new_name
+        else:
+            new_path = models_dir / new_name
+        self.path.rename(new_path)
 
     def remove(self, raise_errors: bool = False):
         """Remove model file from disk."""
