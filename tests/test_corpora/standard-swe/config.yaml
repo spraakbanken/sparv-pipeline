@@ -76,7 +76,7 @@ export:
         - PARAGRAPH_SWE.all
         - SWE_DEFAULT.all
         - not <token>:wsd.sense
-        - <token>:misc.word.affixed
+        - <token>:misc.affixed
         - <token>:custom.convert.upper
 
 #===============================================================================
@@ -85,7 +85,7 @@ export:
 custom_annotations:
     - annotator: misc:affix
       params:
-          out: <token>:misc.word.affixed
+          out: <token>:misc.affixed
           chunk: <token:word>
           prefix: "|"
           suffix: "|"

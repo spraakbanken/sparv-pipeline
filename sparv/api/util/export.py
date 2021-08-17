@@ -373,10 +373,19 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
                 segment.token -> token
                 segment.token:saldo.baseform -> segment.token:baseform
             """
+            def remove_before_dot(name):
+                # Always remove "custom."
+                if name.startswith("custom."):
+                    name = name[7:]
+                # Remove everything before first "."
+                if "." in name:
+                    name = name.split(".", 1)[1]
+                return name
+
             if annotation.attribute_name:
-                short = io.join_annotation(annotation.annotation_name, annotation.attribute_name.split(".")[-1])
+                short = io.join_annotation(annotation.annotation_name, remove_before_dot(annotation.attribute_name))
             else:
-                short = io.join_annotation(annotation.annotation_name.split(".")[-1], None)
+                short = io.join_annotation(remove_before_dot(annotation.annotation_name), None)
             return short
 
         # Create short names dictionary and count
