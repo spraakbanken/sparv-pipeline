@@ -3,7 +3,7 @@
 import re
 from typing import List, Optional
 
-from sparv.api import Annotation, Config, Output, SparvErrorMessage, Text, Wildcard, annotator, util
+from sparv.api import Annotation, Config, Document, Output, SparvErrorMessage, Text, Wildcard, annotator, util
 from sparv.api.util.tagsets import tagmappings, pos_to_upos, suc_to_feats
 
 
@@ -320,3 +320,11 @@ def merge_to_set(out: Output,
             annots = list(dict.fromkeys(annots))
         out_annotation.append(util.misc.cwbset(annots, sort=sort))
     out.write(out_annotation)
+
+
+@annotator("Source filename as attribute on document annotation")
+def source(out: Output = Output("<text>:misc.source"),
+           name: Document = Document(),
+           text: Annotation = Annotation("<text>")):
+    """Create a document attribute based on the filename of the source file."""
+    out.write(name for _ in text.read())
