@@ -40,6 +40,7 @@ setuptools.setup(
     install_requires=[
         "appdirs==1.4.4",
         "iso-639==0.4.5",
+        "docx2python==1.27.1",
         "nltk==3.6.2",
         "python-dateutil==2.8.1",
         "PyYAML==5.4.1",
