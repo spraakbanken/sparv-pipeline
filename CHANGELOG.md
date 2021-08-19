@@ -5,6 +5,7 @@
 ### Added
 
 - Added a quick start guide in the documentation.
+- Added importers for more file formats: docx and odt.
 - Added Support for language varieties.
 - Re-introduced analyses for Old Swedish and Swedish from the 1800's.
 - Added Stanza support for English.
