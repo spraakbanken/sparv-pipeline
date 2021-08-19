@@ -192,7 +192,7 @@ sparv_config.validate_config()
 reverse_config_usage = snake_utils.get_reverse_config_usage()
 
 # Abort if all selected targets require source files but no files are available
-if not config_missing and selected_targets and not snake_utils.get_source_files(snake_storage.source_files):
+if not config_missing and selected_targets and not snake_storage.source_files:
     named_targets = set(i for i, _ in snake_storage.named_targets)
     named_targets.update(("export_corpus", "install_corpus"))
     if set(selected_targets).issubset(named_targets):
@@ -325,7 +325,7 @@ rule files:
     run:
         from rich.columns import Columns
         print("Available input files:\n")
-        console.print(Columns(sorted(snake_utils.get_source_files(snake_storage.source_files)), column_first=True,
+        console.print(Columns(sorted(snake_storage.source_files), column_first=True,
                               padding=(0, 3)))
 
 
