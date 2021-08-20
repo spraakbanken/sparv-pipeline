@@ -63,8 +63,19 @@ class SnakeStorage:
                 raise SparvErrorMessage(
                     "Could not find the importer '{}'. Make sure the 'import.importer' config value refers to an "
                     "existing importer.".format(sparv_config.get("import.importer")), "sparv")
-            self._source_files = [f[1][0] for f in snakemake.utils.listfiles(
-                Path(get_source_path(), "{file}." + file_extension))]
+            sf = [f[1][0] for f in snakemake.utils.listfiles(Path(get_source_path(), "{file}"))]
+            self._source_files = [f[:-len(file_extension) - 1] for f in sf if f.endswith(file_extension)]
+            # Collect files that don't match the file extension provided by the corpus config
+            wrong_ext = [f for f in sf if not f.endswith(file_extension)]
+            if wrong_ext:
+                console.print("[yellow]\nThere {} file{} in your source directory that do{} not match the file "
+                              "extension '{}' in the corpus config: {}{} will not be processed.\n[/yellow]".format(
+                                "is one" if len(wrong_ext) == 1 else "are",
+                                "" if len(wrong_ext) == 1 else "s",
+                                "es" if len(wrong_ext) == 1 else "",
+                                file_extension,
+                                f"'{wrong_ext[0]}'" if len(wrong_ext) == 1 else "\n  • " + "\n  • ".join(wrong_ext),
+                                ". This file" if len(wrong_ext) == 1 else "\nThese files"), highlight=False)
         return self._source_files
 
 

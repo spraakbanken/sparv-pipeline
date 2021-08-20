@@ -13,6 +13,8 @@
 - Added explicit `ref` annotations (indexing tokens within sentences) for Stanza, Malt and Stanford.
 - Added a `--reset` flag to the `sparv setup` command for resetting the data directory setting.
 - Added a separate installer for installing scrambled cwb files
+- A warning message is printed when Sparv discovers source files that don't match the file extension in the corpus
+  config.
 
 ### Changed
 
@@ -33,6 +35,7 @@
 - Fixed rule ambiguity problems (functions with an order higher than 1 were not accessible).
 - Fixed bugs in the segmenter module.
 - Stanza can now handle tokens containing whitespaces.
+- Fixed a bug which lead to computing the source file list multiple times.
 
 
 ## [4.1.0] - 2021-04-14
