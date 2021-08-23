@@ -1,7 +1,7 @@
 """Exports, encodes and aligns corpora for Corpus Workbench."""
 
 from sparv.api import Config
-from . import cwb, info
+from . import cwb, info, install_corpus
 
 __config__ = [
     Config("cwb.remote_host", description="Remote host to install CWB files to"),
