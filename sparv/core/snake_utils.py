@@ -58,15 +58,16 @@ class SnakeStorage:
                 raise SparvErrorMessage("The config variable 'import.importer' must not be empty.", "sparv")
             try:
                 importer_module, _, importer_function = sparv_config.get("import.importer").partition(":")
-                file_extension = registry.modules[importer_module].functions[importer_function]["file_extension"]
+                file_extension = "." + registry.modules[importer_module].functions[importer_function]["file_extension"]
             except KeyError:
                 raise SparvErrorMessage(
                     "Could not find the importer '{}'. Make sure the 'import.importer' config value refers to an "
                     "existing importer.".format(sparv_config.get("import.importer")), "sparv")
-            sf = [f[1][0] for f in snakemake.utils.listfiles(Path(get_source_path(), "{file}"))]
-            self._source_files = [f[:-len(file_extension) - 1] for f in sf if f.endswith(file_extension)]
+            # Collect files in source dir
+            sf = [f for f in snakemake.utils.listfiles(Path(get_source_path(), "{file}"))]
+            self._source_files = [f[1][0][:-len(file_extension)] for f in sf if f[1][0].endswith(file_extension)]
             # Collect files that don't match the file extension provided by the corpus config
-            wrong_ext = [f for f in sf if not f.endswith(file_extension)]
+            wrong_ext = [f[1][0] for f in sf if not f[1][0].endswith(file_extension) and not Path(f[0]).is_dir()]
             if wrong_ext:
                 console.print("[yellow]\nThere {} file{} in your source directory that do{} not match the file "
                               "extension '{}' in the corpus config: {}{} will not be processed.\n[/yellow]".format(
