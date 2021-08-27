@@ -284,7 +284,7 @@ class Wizard:
             # Start with metadata questions
             self.metadata_questions()
 
-            # Questions related to the source documents
+            # Questions related to the source files
             self.source_questions()
 
             # Select annotations
@@ -324,7 +324,7 @@ class Wizard:
                         "value": "metadata"
                     },
                     {
-                        "name": "Edit settings related to the source documents",
+                        "name": "Edit settings related to the source files",
                         "value": "source"
                     },
                     {
@@ -427,7 +427,7 @@ class Wizard:
         self.update_annotators()
 
     def source_questions(self):
-        """As questions related to the source documents."""
+        """As questions related to the source files."""
         # Importer choice
         questions = []
         for w in self.wizard_from_module["import"]:

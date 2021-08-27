@@ -5,7 +5,7 @@ import unicodedata
 from docx2python import docx2python
 from docx2python.iterators import iter_at_depth
 
-from sparv.api import Config, Document, Output, Source, SourceStructure, Text, importer, util
+from sparv.api import Config, SourceFilename, Output, Source, SourceStructure, Text, importer, util
 
 
 
@@ -16,7 +16,7 @@ from sparv.api import Config, Document, Output, Source, SourceStructure, Text, i
     Config("docx_import.normalize", "NFC", description="Normalize input using any of the following forms: "
                                                        "'NFC', 'NFKC', 'NFD', and 'NFKD'.")
 ])
-def parse(doc: Document = Document(),
+def parse(source_file: SourceFilename = SourceFilename(),
           source_dir: Source = Source(),
           prefix: str = Config("docx_import.prefix"),
           keep_control_chars: bool = Config("docx_import.keep_control_chars"),
@@ -24,14 +24,14 @@ def parse(doc: Document = Document(),
     """Parse docx file as input to the Sparv Pipeline.
 
     Args:
-        doc: The document name.
+        source_file: The source filename.
         source_dir: The source directory.
         prefix: Optional prefix for output annotation.
         keep_control_chars: Set to True to keep control characters in the text.
         normalize: Normalize input text using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.
             'NFC' is used by default.
     """
-    source_file = source_dir.get_path(doc, ".docx")
+    source_file = source_dir.get_path(source_file, ".docx")
     d = docx2python(source_file)
 
     # Extract all text from the body, ignoring headers and footers
@@ -43,9 +43,9 @@ def parse(doc: Document = Document(),
     if normalize:
         text = unicodedata.normalize(normalize, text)
 
-    Text(doc).write(text)
+    Text(source_file).write(text)
 
     # Make up a text annotation surrounding the whole file
     text_annotation = "{}.text".format(prefix) if prefix else "text"
-    Output(text_annotation, doc=doc).write([(0, len(text))])
-    SourceStructure(doc).write([text_annotation])
+    Output(text_annotation, source_file=source_file).write([(0, len(text))])
+    SourceStructure(source_file).write([text_annotation])

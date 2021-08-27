@@ -2,7 +2,7 @@
 
 import os
 
-from sparv.api import (Annotation, Config, Document, Export, ExportAnnotations, SourceAnnotations, exporter, get_logger,
+from sparv.api import (Annotation, Config, SourceFilename, Export, ExportAnnotations, SourceAnnotations, exporter, get_logger,
                        util)
 
 logger = get_logger(__name__)
@@ -15,8 +15,8 @@ logger = get_logger(__name__)
                        "included by default."),
     Config("csv_export.annotations", description="Sparv annotations to include.")
 ])
-def csv(doc: Document = Document(),
-        out: Export = Export("csv/{doc}.csv"),
+def csv(source_file: SourceFilename = SourceFilename(),
+        out: Export = Export("csv/{file}.csv"),
         token: Annotation = Annotation("<token>"),
         word: Annotation = Annotation("[export.word]"),
         sentence: Annotation = Annotation("<sentence>"),
@@ -37,9 +37,10 @@ def csv(doc: Document = Document(),
 
     # Get annotation spans, annotations list etc.
     annotation_list, token_attributes, export_names = util.export.get_annotation_names(
-        annotations, source_annotations, doc=doc, token_name=token_name, remove_namespaces=remove_namespaces,
-        sparv_namespace=sparv_namespace, source_namespace=source_namespace)
-    span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names, doc=doc)
+        annotations, source_annotations, source_file=source_file, token_name=token_name,
+        remove_namespaces=remove_namespaces, sparv_namespace=sparv_namespace, source_namespace=source_namespace)
+    span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names,
+                                                                     source_file=source_file)
 
     # Make csv header
     csv_data = [_make_header(token_name, token_attributes, export_names, delimiter)]

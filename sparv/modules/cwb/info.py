@@ -3,7 +3,7 @@
 import time
 from datetime import datetime
 
-from sparv.api import (AllDocuments, AnnotationAllDocs, AnnotationCommonData, Config, Export,
+from sparv.api import (AllSourceFilenames, AnnotationAllSourceFiles, AnnotationCommonData, Config, Export,
                        OutputCommonData, SparvErrorMessage, annotator, exporter, get_logger)
 
 logger = get_logger(__name__)
@@ -43,22 +43,22 @@ def info(out: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_
 
 
 @annotator("datefirst and datelast files for .info", order=1)
-def info_date(docs: AllDocuments = AllDocuments(),
+def info_date(source_files: AllSourceFilenames = AllSourceFilenames(),
               out_datefirst: OutputCommonData = OutputCommonData("cwb.datefirst"),
               out_datelast: OutputCommonData = OutputCommonData("cwb.datelast"),
-              datefrom: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation]:dateformat.datefrom"),
-              dateto: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation]:dateformat.dateto"),
-              timefrom: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation]:dateformat.timefrom"),
-              timeto: AnnotationAllDocs = AnnotationAllDocs("[dateformat.out_annotation]:dateformat.timeto")):
+              datefrom: AnnotationAllSourceFiles = AnnotationAllSourceFiles("[dateformat.out_annotation]:dateformat.datefrom"),
+              dateto: AnnotationAllSourceFiles = AnnotationAllSourceFiles("[dateformat.out_annotation]:dateformat.dateto"),
+              timefrom: AnnotationAllSourceFiles = AnnotationAllSourceFiles("[dateformat.out_annotation]:dateformat.timefrom"),
+              timeto: AnnotationAllSourceFiles = AnnotationAllSourceFiles("[dateformat.out_annotation]:dateformat.timeto")):
     """Create datefirst and datelast file (needed for .info file)."""
     first_date = None
     last_date = None
 
-    for doc in docs:
-        from_dates = sorted((int(x[0]), x[1]) for x in datefrom.read_attributes(doc, (datefrom, timefrom)) if x[0])
+    for file in source_files:
+        from_dates = sorted((int(x[0]), x[1]) for x in datefrom.read_attributes(file, (datefrom, timefrom)) if x[0])
         if from_dates and (first_date is None or from_dates[0] < first_date):
             first_date = from_dates[0]
-        to_dates = sorted((int(x[0]), x[1]) for x in dateto.read_attributes(doc, (dateto, timeto)) if x[0])
+        to_dates = sorted((int(x[0]), x[1]) for x in dateto.read_attributes(file, (dateto, timeto)) if x[0])
         if to_dates and (last_date is None or to_dates[-1] > last_date):
             last_date = to_dates[-1]
 

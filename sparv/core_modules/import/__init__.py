@@ -10,7 +10,7 @@ __config__ = [
     Config("import.keep_control_chars", False, description="Set to True to keep control characters"),
     Config("import.normalize", "NFC", description="Normalize input using any of the following forms: "
                                                   "'NFC', 'NFKC', 'NFD', and 'NFKD'"),
-    Config("import.encoding", "UTF-8", description="Encoding of source documents"),
+    Config("import.encoding", "UTF-8", description="Encoding of source files"),
 ]
 
 

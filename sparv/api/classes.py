@@ -59,12 +59,12 @@ class BaseAnnotation(Base):
     """An annotation or attribute used as input."""
 
     data = False
-    all_docs = False
+    all_files = False
     common = False
 
-    def __init__(self, name: str = "", doc: Optional[str] = None):
+    def __init__(self, name: str = "", source_file: Optional[str] = None):
         super().__init__(name)
-        self.doc = doc
+        self.source_file = source_file
 
     def expand_variables(self, rule_name: str = "") -> List[str]:
         """Update name by replacing <class> references with annotation names, and [config] references with config values.
@@ -94,26 +94,26 @@ class BaseAnnotation(Base):
         return self.split()[1] or None
 
     def __eq__(self, other):
-        return type(self) == type(other) and self.name == other.name and self.doc == other.doc
+        return type(self) == type(other) and self.name == other.name and self.source_file == other.source_file
 
     def __hash__(self):
-        return hash(repr(self) + repr(self.doc))
+        return hash(repr(self) + repr(self.source_file))
 
 
 class Annotation(BaseAnnotation):
-    """Regular Annotation tied to one document."""
+    """Regular Annotation tied to one source file."""
 
-    def __init__(self, name: str = "", doc: Optional[str] = None):
-        super().__init__(name, doc=doc)
+    def __init__(self, name: str = "", source_file: Optional[str] = None):
+        super().__init__(name, source_file=source_file)
         self.size = None
 
     def exists(self) -> bool:
         """Return True if annotation file exists."""
-        return io.annotation_exists(self.doc, self)
+        return io.annotation_exists(self.source_file, self)
 
     def read(self, allow_newlines: bool = False):
         """Yield each line from the annotation."""
-        return io.read_annotation(self.doc, self, allow_newlines=allow_newlines)
+        return io.read_annotation(self.source_file, self, allow_newlines=allow_newlines)
 
     def get_children(self, child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False):
         """Return two lists.
@@ -121,7 +121,7 @@ class Annotation(BaseAnnotation):
         The first one is a list with n (= total number of parents) elements where every element is a list
         of indices in the child annotation.
         The second one is a list of orphans, i.e. containing indices in the child annotation that have no parent.
-        Both parents and children are sorted according to their position in the source document, unless
+        Both parents and children are sorted according to their position in the source file, unless
         preserve_parent_annotation_order is set to True, in which case the parents keep the order from the parent
         annotation.
         """
@@ -207,8 +207,8 @@ class Annotation(BaseAnnotation):
 
         Reorder them according to span position, but keep original index information.
         """
-        parent_spans = sorted(enumerate(io.read_annotation_spans(self.doc, parent, decimals=True)), key=lambda x: x[1])
-        child_spans = sorted(enumerate(io.read_annotation_spans(self.doc, child, decimals=True)), key=lambda x: x[1])
+        parent_spans = sorted(enumerate(io.read_annotation_spans(self.source_file, parent, decimals=True)), key=lambda x: x[1])
+        child_spans = sorted(enumerate(io.read_annotation_spans(self.source_file, child, decimals=True)), key=lambda x: x[1])
 
         # Only use sub-positions if both parent and child have them
         if parent_spans and child_spans:
@@ -221,12 +221,12 @@ class Annotation(BaseAnnotation):
     def read_attributes(self, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]],
                         with_annotation_name: bool = False, allow_newlines: bool = False):
         """Yield tuples of multiple attributes on the same annotation."""
-        return io.read_annotation_attributes(self.doc, annotations, with_annotation_name=with_annotation_name,
+        return io.read_annotation_attributes(self.source_file, annotations, with_annotation_name=with_annotation_name,
                                              allow_newlines=allow_newlines)
 
     def read_spans(self, decimals=False, with_annotation_name=False):
         """Yield the spans of the annotation."""
-        return io.read_annotation_spans(self.doc, self, decimals=decimals,
+        return io.read_annotation_spans(self.source_file, self, decimals=decimals,
                                         with_annotation_name=with_annotation_name)
 
     def create_empty_attribute(self):
@@ -241,72 +241,72 @@ class AnnotationData(BaseAnnotation):
 
     data = True
 
-    def __init__(self, name: str = "", doc: Optional[str] = None):
-        super().__init__(name, doc=doc)
+    def __init__(self, name: str = "", source_file: Optional[str] = None):
+        super().__init__(name, source_file=source_file)
 
-    def read(self, doc: Optional[str] = None):
+    def read(self, source_file: Optional[str] = None):
         """Read arbitrary string data from annotation file."""
-        return io.read_data(self.doc or doc, self)
+        return io.read_data(self.source_file or source_file, self)
 
     def exists(self):
         """Return True if annotation file exists."""
-        return io.data_exists(self.doc, self)
+        return io.data_exists(self.source_file, self)
 
 
-class AnnotationAllDocs(BaseAnnotation):
-    """Regular annotation but document must be specified for all actions.
+class AnnotationAllSourceFiles(BaseAnnotation):
+    """Regular annotation but source file must be specified for all actions.
 
-    Use as input to an annotator to require the specificed annotation for every document in the corpus.
+    Use as input to an annotator to require the specificed annotation for every source file in the corpus.
     """
 
-    all_docs = True
+    all_files = True
 
     def __init__(self, name: str = ""):
         super().__init__(name)
         self.size = None
 
-    def read(self, doc: str):
+    def read(self, source_file: str):
         """Yield each line from the annotation."""
-        return io.read_annotation(doc, self)
+        return io.read_annotation(source_file, self)
 
-    def read_spans(self, doc: str, decimals=False, with_annotation_name=False):
+    def read_spans(self, source_file: str, decimals=False, with_annotation_name=False):
         """Yield the spans of the annotation."""
-        return io.read_annotation_spans(doc, self, decimals=decimals, with_annotation_name=with_annotation_name)
+        return io.read_annotation_spans(source_file, self, decimals=decimals, with_annotation_name=with_annotation_name)
 
     @staticmethod
-    def read_attributes(doc: str, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]],
+    def read_attributes(source_file: str, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]],
                         with_annotation_name: bool = False, allow_newlines: bool = False):
         """Yield tuples of multiple attributes on the same annotation."""
-        return io.read_annotation_attributes(doc, annotations, with_annotation_name=with_annotation_name,
+        return io.read_annotation_attributes(source_file, annotations, with_annotation_name=with_annotation_name,
                                              allow_newlines=allow_newlines)
 
-    def create_empty_attribute(self, doc: str):
+    def create_empty_attribute(self, source_file: str):
         """Return a list filled with None of the same size as this annotation."""
         if self.size is None:
-            self.size = len(list(self.read_spans(doc)))
+            self.size = len(list(self.read_spans(source_file)))
         return [None] * self.size
 
-    def exists(self, doc: str):
+    def exists(self, source_file: str):
         """Return True if annotation file exists."""
-        return io.annotation_exists(doc, self)
+        return io.annotation_exists(source_file, self)
 
 
-class AnnotationDataAllDocs(BaseAnnotation):
-    """Data annotation but document must be specified for all actions."""
+class AnnotationDataAllSourceFiles(BaseAnnotation):
+    """Data annotation but source file must be specified for all actions."""
 
-    all_docs = True
+    all_files = True
     data = True
 
     def __init__(self, name: str = ""):
         super().__init__(name)
 
-    def read(self, doc: str):
+    def read(self, source_file: str):
         """Read arbitrary string data from annotation file."""
-        return io.read_data(doc, self)
+        return io.read_data(source_file, self)
 
-    def exists(self, doc: str):
+    def exists(self, source_file: str):
         """Return True if annotation file exists."""
-        return io.data_exists(doc, self)
+        return io.data_exists(source_file, self)
 
 
 class AnnotationCommonData(BaseAnnotation):
@@ -327,12 +327,12 @@ class BaseOutput(BaseAnnotation):
     """Base class for all Output classes."""
 
     data = False
-    all_docs = False
+    all_files = False
     common = False
 
     def __init__(self, name: str = "", cls: Optional[str] = None, description: Optional[str] = None,
-                 doc: Optional[str] = None):
-        super().__init__(name, doc)
+                 source_file: Optional[str] = None):
+        super().__init__(name, source_file)
         self.cls = cls
         self.description = description
 
@@ -341,39 +341,39 @@ class Output(BaseOutput):
     """Regular annotation or attribute used as output."""
 
     def __init__(self, name: str = "", cls: Optional[str] = None, description: Optional[str] = None,
-                 doc: Optional[str] = None):
-        super().__init__(name, cls, description=description, doc=doc)
+                 source_file: Optional[str] = None):
+        super().__init__(name, cls, description=description, source_file=source_file)
 
-    def write(self, values, append: bool = False, allow_newlines: bool = False, doc: Optional[str] = None):
+    def write(self, values, append: bool = False, allow_newlines: bool = False, source_file: Optional[str] = None):
         """Write an annotation to file. Existing annotation will be overwritten.
 
         'values' should be a list of values.
         """
-        io.write_annotation(self.doc or doc, self, values, append, allow_newlines)
+        io.write_annotation(self.source_file or source_file, self, values, append, allow_newlines)
 
     def exists(self):
         """Return True if annotation file exists."""
-        return io.annotation_exists(self.doc, self)
+        return io.annotation_exists(self.source_file, self)
 
 
-class OutputAllDocs(BaseOutput):
-    """Regular annotation or attribute used as output, but document must be specified for all actions."""
+class OutputAllSourceFiles(BaseOutput):
+    """Regular annotation or attribute used as output, but source file must be specified for all actions."""
 
-    all_docs = True
+    all_files = True
 
     def __init__(self, name: str = "", cls: Optional[str] = None, description: Optional[str] = None):
         super().__init__(name, cls, description=description)
 
-    def write(self, values, doc: str, append: bool = False, allow_newlines: bool = False):
+    def write(self, values, source_file: str, append: bool = False, allow_newlines: bool = False):
         """Write an annotation to file. Existing annotation will be overwritten.
 
         'values' should be a list of values.
         """
-        io.write_annotation(doc, self, values, append, allow_newlines)
+        io.write_annotation(source_file, self, values, append, allow_newlines)
 
-    def exists(self, doc: str):
+    def exists(self, source_file: str):
         """Return True if annotation file exists."""
-        return io.annotation_exists(doc, self)
+        return io.annotation_exists(source_file, self)
 
 
 class OutputData(BaseOutput):
@@ -382,38 +382,38 @@ class OutputData(BaseOutput):
     data = True
 
     def __init__(self, name: str = "", cls: Optional[str] = None, description: Optional[str] = None,
-                 doc: Optional[str] = None):
-        super().__init__(name, cls, description=description, doc=doc)
+                 source_file: Optional[str] = None):
+        super().__init__(name, cls, description=description, source_file=source_file)
 
     def write(self, value, append: bool = False):
         """Write arbitrary string data to annotation file."""
-        io.write_data(self.doc, self, value, append)
+        io.write_data(self.source_file, self, value, append)
 
     def exists(self):
         """Return True if annotation file exists."""
-        return io.data_exists(self.doc, self)
+        return io.data_exists(self.source_file, self)
 
 
-class OutputDataAllDocs(BaseOutput):
-    """Data annotation used as output, but document must be specified for all actions."""
+class OutputDataAllSourceFiles(BaseOutput):
+    """Data annotation used as output, but source file must be specified for all actions."""
 
-    all_docs = True
+    all_files = True
     data = True
 
     def __init__(self, name: str = "", cls: Optional[str] = None, description: Optional[str] = None):
         super().__init__(name, cls, description=description)
 
-    def read(self, doc: str):
+    def read(self, source_file: str):
         """Read arbitrary string data from annotation file."""
-        return io.read_data(doc, self)
+        return io.read_data(source_file, self)
 
-    def write(self, value, doc: str, append: bool = False):
+    def write(self, value, source_file: str, append: bool = False):
         """Write arbitrary string data to annotation file."""
-        io.write_data(doc, self, value, append)
+        io.write_data(source_file, self, value, append)
 
-    def exists(self, doc: str):
+    def exists(self, source_file: str):
         """Return True if annotation file exists."""
-        return io.data_exists(doc, self)
+        return io.data_exists(source_file, self)
 
 
 class OutputCommonData(BaseOutput):
@@ -433,40 +433,40 @@ class OutputCommonData(BaseOutput):
 class Text:
     """Corpus text."""
 
-    def __init__(self, doc: Optional[str] = None):
-        self.doc = doc
+    def __init__(self, source_file: Optional[str] = None):
+        self.source_file = source_file
 
     def read(self) -> str:
         """Get corpus text."""
-        return io.read_data(self.doc, io.TEXT_FILE)
+        return io.read_data(self.source_file, io.TEXT_FILE)
 
     def write(self, text):
         """Write text to the designated file of a corpus.
 
         text is a unicode string.
         """
-        io.write_data(self.doc, io.TEXT_FILE, text)
+        io.write_data(self.source_file, io.TEXT_FILE, text)
 
     def __repr__(self):
         return "<Text>"
 
 
 class SourceStructure(BaseAnnotation):
-    """Every annotation available in a source document."""
+    """Every annotation available in a source file."""
 
     data = True
 
-    def __init__(self, doc):
-        super().__init__(io.STRUCTURE_FILE, doc)
+    def __init__(self, source_file):
+        super().__init__(io.STRUCTURE_FILE, source_file)
 
     def read(self):
         """Read structure file."""
-        return io.read_data(self.doc, self)
+        return io.read_data(self.source_file, self)
 
     def write(self, structure):
-        """Sort the document's structural elements and write structure file."""
+        """Sort the source file's structural elements and write structure file."""
         structure.sort()
-        io.write_data(self.doc, self, "\n".join(structure))
+        io.write_data(self.source_file, self, "\n".join(structure))
 
 
 class Headers(BaseAnnotation):
@@ -474,32 +474,32 @@ class Headers(BaseAnnotation):
 
     data = True
 
-    def __init__(self, doc):
-        super().__init__(io.HEADERS_FILE, doc)
+    def __init__(self, source_file):
+        super().__init__(io.HEADERS_FILE, source_file)
 
     def read(self) -> List[str]:
         """Read headers file."""
-        return io.read_data(self.doc, self).splitlines()
+        return io.read_data(self.source_file, self).splitlines()
 
     def write(self, header_annotations: List[str]):
         """Write headers file."""
-        io.write_data(self.doc, self, "\n".join(header_annotations))
+        io.write_data(self.source_file, self, "\n".join(header_annotations))
 
     def exists(self):
         """Return True if headers file exists."""
-        return io.data_exists(self.doc, self)
+        return io.data_exists(self.source_file, self)
 
 
-class Document(str):
-    """Name of a source document."""
+class SourceFilename(str):
+    """Name of a source file."""
 
 
 class Corpus(str):
     """Name of the corpus."""
 
 
-class AllDocuments(List[str]):
-    """List with names of all source documents."""
+class AllSourceFilenames(List[str]):
+    """List with names of all source files."""
 
 
 class Config(str):
@@ -642,15 +642,15 @@ class Source:
     def __init__(self, source_dir: str = ""):
         self.source_dir = source_dir
 
-    def get_path(self, doc: Document, extension: str):
-        """Get the path of a document."""
+    def get_path(self, source_file: SourceFilename, extension: str):
+        """Get the path of a source file."""
         if not extension.startswith("."):
             extension = "." + extension
-        if ":" in doc:
-            doc_name, _, doc_chunk = doc.partition(":")
-            source_file = pathlib.Path(self.source_dir, doc_name, doc_chunk + extension)
+        if ":" in source_file:
+            file_name, _, file_chunk = source_file.partition(":")
+            source_file = pathlib.Path(self.source_dir, file_name, file_chunk + extension)
         else:
-            source_file = pathlib.Path(self.source_dir, doc + extension)
+            source_file = pathlib.Path(self.source_dir, source_file + extension)
         return source_file
 
 
@@ -670,8 +670,8 @@ class ExportInput(str):
     def __new__(_cls, val: str, *args, **kwargs):
         return super().__new__(_cls, val)
 
-    def __init__(self, val: str, all_docs: bool = False, absolute_path: bool = False):
-        self.all_docs = all_docs
+    def __init__(self, val: str, all_files: bool = False, absolute_path: bool = False):
+        self.all_files = all_files
         self.absolute_path = absolute_path
 
 
@@ -687,7 +687,7 @@ class ExportAnnotations(List[Tuple[Annotation, Optional[str]]]):
         self.is_input = is_input
 
 
-class ExportAnnotationsAllDocs(List[Tuple[AnnotationAllDocs, Optional[str]]]):
+class ExportAnnotationsAllSourceFiles(List[Tuple[AnnotationAllSourceFiles, Optional[str]]]):
     """List of annotations to include in export."""
 
     # If is_input = False the annotations won't be added to the rule's input.

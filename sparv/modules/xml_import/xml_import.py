@@ -6,7 +6,7 @@ import xml.etree.ElementTree as etree
 from itertools import chain
 from typing import List
 
-from sparv.api import (Config, Document, Headers, Output, Source, SourceStructure, SourceStructureParser,
+from sparv.api import (Config, SourceFilename, Headers, Output, Source, SourceStructure, SourceStructureParser,
                        SparvErrorMessage, Text, get_logger, importer, util)
 
 logger = get_logger(__name__)
@@ -45,7 +45,7 @@ class XMLStructure(SourceStructureParser):
 
 
 @importer("XML import", file_extension="xml", outputs=Config("xml_import.elements", []), config=[
-    Config("xml_import.elements", [], description="List of elements and attributes in source document. Only needed for "
+    Config("xml_import.elements", [], description="List of elements and attributes in source file. Only needed for "
                                                   "renaming or when used as input to other annotations, as everything "
                                                   "is parsed whether listed or not."),
     Config("xml_import.skip", [], description="Elements and attributes to skip. "
@@ -55,13 +55,13 @@ class XMLStructure(SourceStructureParser):
     Config("xml_import.header_data", [], description="List of header elements and attributes from which to extract "
                                                      "metadata."),
     Config("xml_import.prefix", "", description="Optional prefix to add to annotation names."),
-    Config("xml_import.encoding", util.constants.UTF8, description="Encoding of source document. Defaults to UTF-8."),
+    Config("xml_import.encoding", util.constants.UTF8, description="Encoding of source file. Defaults to UTF-8."),
     Config("xml_import.keep_control_chars", False, description="Set to True if control characters should not be "
                                                                "removed from the text."),
     Config("xml_import.normalize", "NFC", description="Normalize input using any of the following forms: "
                                                       "'NFC', 'NFKC', 'NFD', and 'NFKD'.")
 ], structure=XMLStructure)
-def parse(doc: Document = Document(),
+def parse(filename: SourceFilename = SourceFilename(),
           source_dir: Source = Source(),
           elements: list = Config("xml_import.elements"),
           skip: list = Config("xml_import.skip"),
@@ -74,22 +74,22 @@ def parse(doc: Document = Document(),
     """Parse XML source file and create annotation files.
 
     Args:
-        doc: Source document name.
-        source_dir: Directory containing source documents.
-        elements: List of elements and attributes in source document. Only needed for renaming, as everything is
+        filename: Source filename.
+        source_dir: Directory containing source files.
+        elements: List of elements and attributes in source file. Only needed for renaming, as everything is
             parsed whether listed or not.
         skip: Elements and attributes to skip. Use elementname:@contents to skip contents as well.
         header_elements: Elements containing header metadata. Contents will not be included in corpus text.
         header_data: List of header elements and attributes from which to extract metadata.
         prefix: Optional prefix to add to annotations.
-        encoding: Encoding of source document. Defaults to UTF-8.
+        encoding: Encoding of source file. Defaults to UTF-8.
         keep_control_chars: Set to True to keep control characters in the text.
         normalize: Normalize input using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.
             Defaults to 'NFC'.
     """
     parser = SparvXMLParser(elements, skip, header_elements, header_data, source_dir, encoding, prefix,
                             keep_control_chars, normalize)
-    parser.parse(doc)
+    parser.parse(filename)
     parser.save()
 
 
@@ -104,14 +104,14 @@ class SparvXMLParser:
         self.encoding = encoding
         self.keep_control_chars = keep_control_chars
         self.normalize = normalize
-        self.doc = None
+        self.file = None
         self.prefix = prefix
         self.header_elements = header_elements
         self.headers = {}
 
         self.targets = {}  # Index of elements and attributes that will be renamed during import
         self.data = {}  # Metadata collected during parsing
-        self.text = []  # Text data of the document collected during parsing
+        self.text = []  # Text data of the source file collected during parsing
 
         # Parse elements argument
 
@@ -166,11 +166,11 @@ class SparvXMLParser:
         self.skipped_elems = set(elsplit(elem) for elem in skip)
         assert self.skipped_elems.isdisjoint(all_elems), "skip and elements must be disjoint"
 
-    def parse(self, doc):
+    def parse(self, file):
         """Parse XML and build data structure."""
-        self.doc = doc
+        self.file = file
         header_data = {}
-        source_file = self.source_dir.get_path(self.doc, ".xml")
+        source_file = self.source_dir.get_path(self.file, ".xml")
 
         def handle_element(element):
             """Handle element renaming, skipping and collection of data."""
@@ -295,7 +295,7 @@ class SparvXMLParser:
     def save(self):
         """Save text data and annotation files to disk."""
         text = "".join(self.text)
-        Text(self.doc).write(text)
+        Text(self.file).write(text)
         structure = []
         header_elements = []
 
@@ -325,21 +325,21 @@ class SparvXMLParser:
             else:
                 spans.sort()
 
-            Output(full_element, doc=self.doc).write(spans)
+            Output(full_element, source_file=self.file).write(spans)
 
             for attr in attributes:
                 full_attr = "{}.{}".format(self.prefix, attr) if self.prefix else attr
-                Output("{}:{}".format(full_element, full_attr), doc=self.doc).write(attributes[attr],
-                                                                                    allow_newlines=is_header)
+                Output("{}:{}".format(full_element, full_attr), source_file=self.file).write(attributes[attr],
+                                                                                             allow_newlines=is_header)
                 if element not in self.header_elements:
                     structure.append("{}:{}".format(full_element, full_attr))
 
         # Save list of all elements and attributes to a file (needed for export)
-        SourceStructure(self.doc).write(structure)
+        SourceStructure(self.file).write(structure)
 
         if header_elements:
             # Save list of all header elements to a file
-            Headers(self.doc).write(header_elements)
+            Headers(self.file).write(header_elements)
 
 
 def analyze_xml(source_file):

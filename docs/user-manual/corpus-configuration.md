@@ -84,15 +84,15 @@ The `metadata` section of your corpus config contains metadata about your corpus
 
 
 ## Import Options
-The `import` section of your corpus config is used to give Sparv some information about your input documents (i.e. your
+The `import` section of your corpus config is used to give Sparv some information about your input files (i.e. your
 corpus).
 
-- `import.source_dir` defines the location of your input documents and it defaults to `source`. Sparv will check the
-  source directory recursively for valid input documents to process.
+- `import.source_dir` defines the location of your input files and it defaults to `source`. Sparv will check the
+  source directory recursively for valid input files to process.
 
-- `import.importer` is used to tell Sparv which importer to use when processing your source documents. The setting you
-  want to choose depends on the format of your input documents. If your corpus is in XML you should choose
-  `xml_import:parse` (this is the default setting). If your corpus documents are in plain text, you should choose
+- `import.importer` is used to tell Sparv which importer to use when processing your source files. The setting you
+  want to choose depends on the format of your input files. If your corpus is in XML you should choose
+  `xml_import:parse` (this is the default setting). If your corpus files are in plain text, you should choose
   `text_import:parse` instead.
 
 - `import.document_annotation` specifies the annotation representing _one text document_, and any automatic text-level
@@ -104,7 +104,7 @@ corpus).
     > This setting automatically sets the `text` [class](#annotation-classes). If you want to use an automatic
     > annotation as the document annotation, you should not use this setting, and instead set the `text` class directly.
 
-- `import.encoding` specifies the encoding of the source documents. It defaults to UTF-8.
+- `import.encoding` specifies the encoding of the source files. It defaults to UTF-8.
 
 - `import.normalize` lets you normalize unicode symbols in the input using any of the following forms: 'NFC', 'NFKC',
   'NFD', and 'NFKD'. It defaults to `NFC`.
@@ -124,11 +124,11 @@ would like to keep in your output data (this only applies if your input data is 
 everything will be kept in the output. If you do not want any source annotations to be included in your output you
 can set this option to `[]`. This will cause errors in the XML exports though because the root element must be
 listed as a source annotation. If you do list anything here, make sure that you include the root element (i.e. the
-element that encloses all other included elements and text content) for each of your input documents. If you don't,
+element that encloses all other included elements and text content) for each of your input files. If you don't,
 the resulting output XML will be invalid and Sparv won't be able to produce XML files. If you only want to produce
 other output formats than XML, you don't need to worry about this.
 
-It is possible to rename elements and attributes present in your input data. Let's say your documents contain elements
+It is possible to rename elements and attributes present in your input data. Let's say your files contain elements
  like this `<article name="Scandinavian Furniture" date="2020-09-28">` and you would like them to look like this in the
  output `<text title="Scandinavian Furniture" date="2020-09-28">` (so you want to rename the element "article" and the
  attribute "name" to "text" and "title" respectively). For this you can use the following syntax:
@@ -531,7 +531,7 @@ def uppercase(word: Annotation = Annotation("<token:word>"),
 **Step 2**: Now register your custom annotator in your corpus config in the `custom_annotations` section so Sparv can
 find it. The name of your annotator is composed of:
 - the prefix `custom.`
-- followed by the file name of the Python file without extension (`convert` in our example)
+- followed by the filename of the Python file without extension (`convert` in our example)
 - followed by a colon
 - and finally the annotator name (`uppercase`)
 

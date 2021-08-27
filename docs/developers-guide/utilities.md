@@ -44,7 +44,7 @@ Calculate the span hierarchy and the annotation_dict containing all annotation e
 - `annotations`: A list of annotations to include.
 - `export_names`: Dictionary that maps from annotation names to export names.
 - `header_annotations`: A list of header annotations.
-- `doc`: The document name.
+- `source_file`: The source filename.
 - `flatten`: Whether to return the spans as a flat list. Default: `True`
 - `split_overlaps`: Whether to split up overlapping spans. Default: `False`
 
@@ -55,10 +55,10 @@ Get a list of annotations, token attributes and a dictionary with translations f
 **Arguments:**
 
 - `annotations`: List of elements:attributes (annotations) to include.
-- `source_annotations`: List of elements:attributes from the original document to include. If not specified, everything
+- `source_annotations`: List of elements:attributes from the source file to include. If not specified, everything
   will be included.
-- `doc`: Name of the source document.
-- `docs`: List of names of source documents (alternative to `doc`).
+- `source_file`: Name of the source file.
+- `source_files`: List of names of source files (alternative to `source_file`).
 - `token_name`: Name of the token annotation.
 - `remove_namespaces`: Remove all namespaces in export_names unless names are ambiguous. Default: `False`
 - `keep_struct_names`: For structural attributes (anything other than token), include the annotation base name
@@ -72,10 +72,10 @@ Get a list of header annotations and a dictionary for renamed annotations.
 
 **Arguments:**
 
-- `header_annotation_names`: List of header elements:attributes from the original document to include. If not specified,
+- `header_annotation_names`: List of header elements:attributes from the source file to include. If not specified,
   everything will be included.
-- `doc`: Name of the source document.
-- `docs`: List of names of source documents (alternative to `doc`).
+- `source_file`: Name of the source file.
+- `source_files`: List of names of source files (alternative to `source_file`).
 
 
 ### scramble_spans()
@@ -316,7 +316,7 @@ Class for reading basic pickled lexicon and looking up keys.
 
 **Arguments:**
 
-- default argument: A `pathlib.Path` or `Model` object pointing to a pickled lexicon.
+- `picklefile`: A `pathlib.Path` or `Model` object pointing to a pickled lexicon.
 - `verbose`: Logs status updates upon reading the lexicon if set to `True`. Default: `True`
 
 **Methods:**

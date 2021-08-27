@@ -168,14 +168,14 @@ class ProgressWithTable(progress.Progress):
         if self.all_tasks:
             table = Table(show_header=False, box=box.SIMPLE, expand=True)
             table.add_column("Task", no_wrap=True, min_width=self.task_max_len + 2, ratio=1)
-            table.add_column("Document", no_wrap=True)
+            table.add_column("File", no_wrap=True)
             table.add_column("Elapsed", no_wrap=True, width=8, justify="right", style="progress.remaining")
-            table.add_row("[b]Task[/]", "[b]Document[/]", "[default b]Elapsed[/]")
+            table.add_row("[b]Task[/]", "[b]File[/]", "[default b]Elapsed[/]")
             for task in self.current_tasks.values():
                 elapsed = round(time.time() - task["starttime"])
                 table.add_row(
                     task["name"],
-                    f"[dim]{task['doc']}[/dim]",
+                    f"[dim]{task['file']}[/dim]",
                     str(timedelta(seconds=elapsed))
                 )
             yield table
@@ -429,14 +429,14 @@ class LogHandler:
                 self.progress.update(self.bar, text=msg["msg"] if not self.verbose else "")
 
                 if self.verbose:
-                    doc = msg["wildcards"].get("doc", "")
-                    if doc.startswith(str(paths.work_dir)):
-                        doc = doc[len(str(paths.work_dir)) + 1:]
+                    file = msg["wildcards"].get("file", "")
+                    if file.startswith(str(paths.work_dir)):
+                        file = file[len(str(paths.work_dir)) + 1:]
 
                     self.current_tasks[msg["jobid"]] = {
                         "name": msg["msg"],
                         "starttime": time.time(),
-                        "doc": doc
+                        "file": file
                     }
 
         elif level == "job_finished" and self.use_progressbar:

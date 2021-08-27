@@ -5,7 +5,7 @@ import re
 from collections import defaultdict
 from typing import Optional
 
-from sparv.api import (AllDocuments, Annotation, AnnotationDataAllDocs, Config, Corpus, Export, ExportInput,
+from sparv.api import (AllSourceFilenames, Annotation, AnnotationDataAllSourceFiles, Config, Corpus, Export, ExportInput,
                        OutputCommonData, OutputData, annotator, exporter, get_logger, installer, util)
 from sparv.api.util.mysql_wrapper import MySQL
 
@@ -265,19 +265,21 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
 @exporter("Word Picture SQL for use in Korp", language=["swe"])
 def relations_sql(corpus: Corpus = Corpus(),
                   out: Export = Export("korp_wordpicture/relations.sql"),
-                  relations: AnnotationDataAllDocs = AnnotationDataAllDocs("korp.relations"),
-                  docs: Optional[AllDocuments] = AllDocuments(),
-                  doclist: str = "",
+                  relations: AnnotationDataAllSourceFiles = AnnotationDataAllSourceFiles("korp.relations"),
+                  source_files: Optional[AllSourceFilenames] = AllSourceFilenames(),
+                  source_files_list: str = "",
                   split: bool = False):
     """Calculate statistics of the dependencies and saves to SQL files.
 
-    - corpus is the corpus name.
-    - out is the name for the SQL file which will contain the resulting SQL statements.
-    - relations is the name of the relations annotation.
-    - docs is a list of documents.
-    - doclist can be used instead of docs, and should be a file containing the name of docs, one per row.
-    - split set to true leads to SQL commands being split into several parts, requiring less memory during creation,
-     but installing the data will take much longer.
+    Args:
+        corpus: the corpus name
+        out: the name for the SQL file which will contain the resulting SQL statements
+        relations: the name of the relations annotation
+        source_files: a list of source filenames
+        source_files_list: can be used instead of source_files, and should be a file containing the name of source
+            files, one per row
+        split: when set to true leads to SQL commands being split into several parts, requiring less memory during
+            creation, but installing the data will take much longer
     """
     db_table = MYSQL_TABLE + "_" + corpus.upper()
 
@@ -297,27 +299,27 @@ def relations_sql(corpus: Corpus = Corpus(),
     strings = {}  # ID -> string table
     freq_index = {}
     sentence_count = defaultdict(int)
-    doc_count = 0
+    file_count = 0
 
-    assert (docs or doclist), "Missing source"
+    assert (source_files or source_files_list), "Missing source"
 
-    if doclist:
-        with open(doclist) as insource:
-            docs = [line.strip() for line in insource]
+    if source_files_list:
+        with open(source_files_list) as insource:
+            source_files = [line.strip() for line in insource]
 
-    if len(docs) == 1:
+    if len(source_files) == 1:
         split = False
 
-    for doc in docs:
-        doc_count += 1
+    for file in source_files:
+        file_count += 1
         sentences = {}
-        if doc_count == 1 or split:
+        if file_count == 1 or split:
             freq = {}                           # Frequency of (head, rel, dep)
             rel_count = defaultdict(int)        # Frequency of (rel)
             head_rel_count = defaultdict(int)   # Frequency of (head, rel)
             dep_rel_count = defaultdict(int)    # Frequency of (rel, dep)
 
-        relations_data = relations.read(doc)
+        relations_data = relations.read(file)
 
         for triple in relations_data.splitlines():
             head, headpos, rel, dep, deppos, extra, sid, refh, refd, bfhead, bfdep, wfhead, wfdep = triple.split(u"\t")
@@ -361,18 +363,18 @@ def relations_sql(corpus: Corpus = Corpus(),
                 dep_rel_count[(dep, rel)] += 1
 
         # If not the last file
-        if not doc_count == len(docs):
+        if not file_count == len(source_files):
             if split:
                 # Don't print string table until the last file
                 _write_sql({}, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_table, split,
-                           first=(doc_count == 1))
+                           first=(file_count == 1))
             else:
                 # Only save sentences data, save the rest for the last file
-                _write_sql({}, sentences, {}, {}, {}, {}, out, db_table, split, first=(doc_count == 1))
+                _write_sql({}, sentences, {}, {}, {}, {}, out, db_table, split, first=(file_count == 1))
 
     # Create the final file, including the string table
     _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_table, split,
-               first=(doc_count == 1), last=True)
+               first=(file_count == 1), last=True)
 
     logger.info("Done creating SQL files")
 

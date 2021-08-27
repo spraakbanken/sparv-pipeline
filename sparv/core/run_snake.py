@@ -24,8 +24,8 @@ except NameError:
 def exit_with_error_message(message, logger_name):
     """Log error message and exit with non-zero status."""
     error_logger = logging.getLogger(logger_name)
-    if snakemake.params.doc:
-        message += f"\n\n(document: {snakemake.params.doc})"
+    if snakemake.params.source_file:
+        message += f"\n\n(file: {snakemake.params.source_file})"
     error_logger.error(message)
     sys.exit(123)
 

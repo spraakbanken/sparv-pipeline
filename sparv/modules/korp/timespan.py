@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 
-from sparv.api import (AllDocuments, Annotation, AnnotationAllDocs, Config, Corpus, Export, ExportInput,
+from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Config, Corpus, Export, ExportInput,
                        OutputCommonData, annotator, exporter, get_logger, installer, util)
 from sparv.api.util.mysql_wrapper import MySQL
 
@@ -35,23 +35,23 @@ def timespan_sql(_sql: ExportInput = ExportInput("korp_timespan/timespan.sql")):
 @annotator("Timespan SQL data for use in Korp", order=1)
 def timespan_sql_with_dateinfo(corpus: Corpus = Corpus(),
                                out: Export = Export("korp_timespan/timespan.sql"),
-                               docs: AllDocuments = AllDocuments(),
-                               token: AnnotationAllDocs = AnnotationAllDocs("<token>"),
-                               datefrom: AnnotationAllDocs = AnnotationAllDocs("<text>:dateformat.datefrom"),
-                               dateto: AnnotationAllDocs = AnnotationAllDocs("<text>:dateformat.dateto"),
-                               timefrom: AnnotationAllDocs = AnnotationAllDocs("<text>:dateformat.timefrom"),
-                               timeto: AnnotationAllDocs = AnnotationAllDocs("<text>:dateformat.timeto")):
+                               source_files: AllSourceFilenames = AllSourceFilenames(),
+                               token: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>"),
+                               datefrom: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<text>:dateformat.datefrom"),
+                               dateto: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<text>:dateformat.dateto"),
+                               timefrom: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<text>:dateformat.timefrom"),
+                               timeto: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<text>:dateformat.timeto")):
     """Create timespan SQL data for use in Korp."""
     corpus_name = corpus.upper()
     datespans = defaultdict(int)
     datetimespans = defaultdict(int)
 
-    for doc in docs:
-        text_tokens, orphans = Annotation(datefrom.name, doc=doc).get_children(token)
+    for file in source_files:
+        text_tokens, orphans = Annotation(datefrom.name, source_file=file).get_children(token)
         if orphans:
             datespans[("0" * 8, "0" * 8)] += len(orphans)
             datetimespans[("0" * 14, "0" * 14)] += len(orphans)
-        dateinfo = datefrom.read_attributes(doc, (datefrom, dateto, timefrom, timeto))
+        dateinfo = datefrom.read_attributes(file, (datefrom, dateto, timefrom, timeto))
         for text in text_tokens:
             d = next(dateinfo)
             datespans[(d[0].zfill(8), d[1].zfill(8))] += len(text)
@@ -82,14 +82,14 @@ def timespan_sql_with_dateinfo(corpus: Corpus = Corpus(),
 @annotator("Timespan SQL data for use in Korp, for when the corpus has no date metadata.", order=2)
 def timespan_sql_no_dateinfo(corpus: Corpus = Corpus(),
                              out: Export = Export("korp_timespan/timespan.sql"),
-                             docs: AllDocuments = AllDocuments(),
-                             token: AnnotationAllDocs = AnnotationAllDocs("<token>")):
+                             source_files: AllSourceFilenames = AllSourceFilenames(),
+                             token: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>")):
     """Create timespan SQL data for use in Korp."""
     corpus_name = corpus.upper()
     token_count = 0
 
-    for doc in docs:
-        tokens = token.read_spans(doc)
+    for file in source_files:
+        tokens = token.read_spans(file)
         token_count += len(list(tokens))
 
     rows_date = [{

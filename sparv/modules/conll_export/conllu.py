@@ -3,7 +3,7 @@
 import os
 from typing import Optional
 
-from sparv.api import Annotation, Config, Document, Export, SourceAnnotations, exporter, get_logger, util
+from sparv.api import Annotation, Config, SourceFilename, Export, SourceAnnotations, exporter, get_logger, util
 
 logger = get_logger(__name__)
 
@@ -29,8 +29,8 @@ logger = get_logger(__name__)
     Config("conll_export.conll_fields.misc", default=None,
            description="Annotation in MISC field of CoNLL-U output")
 ])
-def conllu(doc: Document = Document(),
-           out: Export = Export("conll/{doc}.conllu"),
+def conllu(source_file: SourceFilename = SourceFilename(),
+           out: Export = Export("conll/{file}.conllu"),
            token: Annotation = Annotation("<token>"),
            sentence: Annotation = Annotation("<sentence>"),
            sentence_id: Annotation = Annotation("[conll_export.conll_fields.sentid]"),
@@ -73,8 +73,9 @@ def conllu(doc: Document = Document(),
     annotations = [(annot, None) for annot in annotations]
     annotation_list, _, export_names = util.export.get_annotation_names(annotations, source_annotations,
                                                                         remove_namespaces=True,
-                                                                        doc=doc, token_name=token_name)
-    span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names, doc=doc)
+                                                                        source_file=source_file, token_name=token_name)
+    span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names,
+                                                                     source_file=source_file)
 
     csv_data = ["# global.columns = ID FORM LEMMA UPOS XPOS FEATS HEAD DEPREL DEPS MISC"]
     # Go through spans_dict and add to csv, line by line

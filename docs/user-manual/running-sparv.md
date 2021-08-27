@@ -1,6 +1,6 @@
 # Running Sparv
 Sparv is run from the command line. Typically, you will want to run Sparv from within a corpus directory containing some
-text documents (the corpus) and a [corpus config file](user-manual/corpus-configuration.md). A typical corpus directory
+text files (the corpus) and a [corpus config file](user-manual/corpus-configuration.md). A typical corpus directory
 structure could look like this:
 
 ```
@@ -24,7 +24,7 @@ Annotating a corpus:
 
 Inspecting corpus details:
     config           Display the corpus config
-    files            List available corpus documents (input for Sparv)
+    files            List available corpus source files (input for Sparv)
 
 Show annotation info:
     modules          List available modules and annotations
@@ -82,7 +82,7 @@ classes](user-manual/corpus-configuration.md#annotation-classes).
 **`sparv config`:** This command lets you inspect the configuration for your corpus. You can read more about this in the
 [section about corpus configuration](user-manual/corpus-configuration.md).
 
-**`sparv files`:** By using this command you can list all available source documents belonging to your corpus.
+**`sparv files`:** By using this command you can list all available source files belonging to your corpus.
 
 ## Setting Up the Sparv Pipeline
 **`sparv setup`** and **`sparv build-models`:** These commands are explained in the section [Setting Up
@@ -106,7 +106,7 @@ sparv create-file annotations/dokument1/segment.token/stanza.pos
 function you want to run and all the mandatory arguments. E.g. to run the hunpos msd tagging module on the input file
 called `document1` you could use the following command:
 ```
-sparv run-module hunpos msdtag --out segment.token:hunpos.msd --word segment.token:misc.word --sentence segment.sentence --binary hunpos-tag --model hunpos/suc3_suc-tags_default-setting_utf8.model --morphtable hunpos/saldo_suc-tags.morphtable --patterns hunpos/suc.patterns --doc dokument1
+sparv run-module hunpos msdtag --out segment.token:hunpos.msd --word segment.token:misc.word --sentence segment.sentence --binary hunpos-tag --model hunpos/suc3_suc-tags_default-setting_utf8.model --morphtable hunpos/saldo_suc-tags.morphtable --patterns hunpos/suc.patterns --encoding UTF-8 --source_file dokument1
 ```
 
 **`sparv preload`:** This command preloads annotators and their models and/or related binaries to speed up

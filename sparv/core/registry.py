@@ -12,7 +12,7 @@ import typing_inspect
 
 from sparv.core import config as sparv_config
 from sparv.core import paths
-from sparv.api.classes import (BaseOutput, Config, ExportAnnotations, ExportAnnotationsAllDocs, SourceStructureParser,
+from sparv.api.classes import (BaseOutput, Config, ExportAnnotations, ExportAnnotationsAllSourceFiles, SourceStructureParser,
                                ModelOutput, Wildcard)
 
 modules_path = ".".join(("sparv", paths.modules_dir))
@@ -220,7 +220,7 @@ def importer(description: str, file_extension: str, name: Optional[str] = None, 
             to use as input for annotator functions.
         document_annotation: An annotation from 'outputs' that should be used as the value for the
             import.document_annotation config variable, unless it or classes.text has been set manually.
-        structure: A class used to parse and return the structure of source documents.
+        structure: A class used to parse and return the structure of source files.
         config: List of Config instances defining config options for the importer.
 
     Returns:
@@ -347,7 +347,7 @@ def _add_to_registry(annotator):
                                  "name as sub directory.".format(val.default, module_name))
         elif isinstance(val.default, Config):
             sparv_config.add_config_usage(val.default.name, rule_name)
-        elif isinstance(val.default, (ExportAnnotations, ExportAnnotationsAllDocs)):
+        elif isinstance(val.default, (ExportAnnotations, ExportAnnotationsAllSourceFiles)):
             sparv_config.add_config_usage(val.default.config_name, rule_name)
             annotation_sources.add(val.default.config_name)
 

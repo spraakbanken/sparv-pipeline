@@ -15,7 +15,7 @@ logger = get_logger(__name__)
 INDENTATION = "  "
 
 
-def make_pretty_xml(span_positions, annotation_dict, export_names, token_name: str, word_annotation, docid,
+def make_pretty_xml(span_positions, annotation_dict, export_names, token_name: str, word_annotation, fileid,
                     include_empty_attributes: bool, sparv_namespace: Optional[str] = None):
     """Create a pretty formatted XML string from span_positions.
 
@@ -69,10 +69,10 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token_name: s
             add_attrs(span.node, span.name, annotation_dict, export_names, span.index, include_empty_attributes)
             if span.overlap_id:
                 if sparv_namespace:
-                    span.node.set(f"{sparv_namespace}.{util.constants.OVERLAP_ATTR}", f"{docid}-{span.overlap_id}")
+                    span.node.set(f"{sparv_namespace}.{util.constants.OVERLAP_ATTR}", f"{fileid}-{span.overlap_id}")
                 else:
                     span.node.set(f"{util.constants.SPARV_DEFAULT_NAMESPACE}.{util.constants.OVERLAP_ATTR}",
-                                  f"{docid}-{span.overlap_id}")
+                                  f"{fileid}-{span.overlap_id}")
 
             # Add text if this node is a token
             if span.name == token_name:
@@ -128,9 +128,9 @@ def add_attrs(node, annotation, annotation_dict, export_names, index, include_em
             node.set(export_name, attrib_values[index])
 
 
-def combine(corpus, out, docs, xml_input):
+def combine(corpus, out, source_files, xml_input):
     """Combine xml_files into one single file."""
-    xml_files = [xml_input.replace("{doc}", doc) for doc in docs]
+    xml_files = [xml_input.replace("{file}", file) for file in source_files]
     xml_files.sort()
     with open(out, "w") as outf:
         print("<?xml version='1.0' encoding='UTF-8'?>", file=outf)

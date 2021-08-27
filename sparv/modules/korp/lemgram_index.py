@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 
-from sparv.api import (AllDocuments, AnnotationAllDocs, Config, Corpus, Export, ExportInput, OutputCommonData, exporter,
+from sparv.api import (AllSourceFilenames, AnnotationAllSourceFiles, Config, Corpus, Export, ExportInput, OutputCommonData, exporter,
                        get_logger, installer, util)
 from sparv.api.util.mysql_wrapper import MySQL
 
@@ -34,15 +34,15 @@ def install_lemgrams(sqlfile: ExportInput = ExportInput("korp_lemgram_index/lemg
 
 @exporter("Lemgram index SQL file for use in Korp", language=["swe"])
 def lemgram_sql(corpus: Corpus = Corpus(),
-                docs: AllDocuments = AllDocuments(),
+                source_files: AllSourceFilenames = AllSourceFilenames(),
                 out: Export = Export("korp_lemgram_index/lemgram_index.sql"),
-                lemgram: AnnotationAllDocs = AnnotationAllDocs("<token>:saldo.lemgram")):
+                lemgram: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>:saldo.lemgram")):
     """Create lemgram index SQL file."""
     corpus = corpus.upper()
     result = defaultdict(int)
 
-    for doc in docs:
-        for lg in lemgram.read(doc):
+    for file in source_files:
+        for lg in lemgram.read(file):
             for value in lg.split("|"):
                 if value and ":" not in value:
                     result[value] += 1

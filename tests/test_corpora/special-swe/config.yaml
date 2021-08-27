@@ -55,12 +55,12 @@ export:
         - xml_export:pretty
         - xml_export:preserved_format
         - xml_export:scrambled
-    # Annotations from original documents to include in the output. If nothing is specified, everything is kept.
+    # Annotations from source files to include in the output. If nothing is specified, everything is kept.
     source_annotations:
         - dokument as document
         - not text:subtitle
         - ...
-    # Headers from the original documents that we want to include in the output
+    # Headers from the source files that we want to include in the output
     header_annotations:
         - header
     # Automatic annotations to be included in the export

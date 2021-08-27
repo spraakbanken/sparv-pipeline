@@ -67,7 +67,7 @@ def main():
         "",
         "Inspecting corpus details:",
         "   config           Display the corpus config",
-        "   files            List available corpus documents (input for Sparv)",
+        "   files            List available corpus source files (input for Sparv)",
         "",
         "Show annotation info:",
         "   modules          List available modules and annotations",
@@ -111,7 +111,7 @@ def main():
     # Inspect
     config_parser = subparsers.add_parser("config", description="Display the corpus configuration.")
     config_parser.add_argument("options", nargs="*", default=[], help="Specific options(s) in config to display")
-    subparsers.add_parser("files", description="List available corpus documents that can be annotated by Sparv.")
+    subparsers.add_parser("files", description="List available corpus source files that can be annotated by Sparv.")
 
     # Annotation info
     modules_parser = subparsers.add_parser("modules", description="List available modules and annotations.")
@@ -166,7 +166,7 @@ def main():
 
     # Add common arguments
     for subparser in [run_parser, runrule_parser]:
-        subparser.add_argument("-d", "--doc", nargs="+", default=[], help="Only annotate specified input document(s)")
+        subparser.add_argument("-f", "--file", nargs="+", default=[], help="Only annotate specified input file(s)")
     for subparser in [run_parser, runrule_parser, createfile_parser, models_parser, install_parser]:
         subparser.add_argument("-n", "--dry-run", action="store_true",
                                help="Print summary of tasks without running them")
@@ -338,7 +338,7 @@ def main():
         log_file_level = args.log_to_file or "warning"
         verbose = args.verbose
         config.update({"debug": args.debug,
-                       "doc": vars(args).get("doc", []),
+                       "file": vars(args).get("file", []),
                        "log_level": log_level,
                        "log_file_level": log_file_level,
                        "socket": args.socket,

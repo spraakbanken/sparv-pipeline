@@ -2,7 +2,7 @@
 
 import os
 
-from sparv.api import (AllDocuments, Annotation, AnnotationData, Config, Corpus, Document, Export, ExportAnnotations,
+from sparv.api import (AllSourceFilenames, Annotation, AnnotationData, Config, Corpus, SourceFilename, Export, ExportAnnotations,
                        ExportInput, OutputCommonData, SourceAnnotations, exporter, get_logger, installer, util)
 from . import xml_utils
 
@@ -10,8 +10,8 @@ logger = get_logger(__name__)
 
 
 @exporter("XML export with one token element per line", config=[
-    Config("xml_export.filename", default="{doc}_export.xml",
-           description="Filename pattern for resulting XML files, with '{doc}' representing the source name."),
+    Config("xml_export.filename", default="{file}_export.xml",
+           description="Filename pattern for resulting XML files, with '{file}' representing the source name."),
     Config("xml_export.annotations", description="Sparv annotations to include."),
     Config("xml_export.source_annotations",
            description="List of annotations and attributes from the source data to include. Everything will be "
@@ -21,8 +21,8 @@ logger = get_logger(__name__)
     Config("xml_export.include_empty_attributes", False,
            description="Whether to include attributes even when they are empty.")
 ])
-def pretty(doc: Document = Document(),
-           docid: AnnotationData = AnnotationData("<docid>"),
+def pretty(source_file: SourceFilename = SourceFilename(),
+           fileid: AnnotationData = AnnotationData("<fileid>"),
            out: Export = Export("xml_pretty/[xml_export.filename]"),
            token: Annotation = Annotation("<token>"),
            word: Annotation = Annotation("[export.word]"),
@@ -36,15 +36,15 @@ def pretty(doc: Document = Document(),
     """Export annotations to pretty XML in export_dir.
 
     Args:
-        doc: Name of the original document.
-        docid: Annotation with document IDs.
+        source_file: Name of the source file.
+        fileid: Annotation with file IDs.
         out: Path and filename pattern for resulting file.
         token: Annotation containing the token strings.
         word: Annotation containing the token strings.
         annotations: List of elements:attributes (annotations) to include.
-        source_annotations: List of elements:attributes from the original document
+        source_annotations: List of elements:attributes from the source file
             to be kept. If not specified, everything will be kept.
-        header_annotations: List of header elements from the original document to include
+        header_annotations: List of header elements from the source file to include
             in the export. If not specified, all headers will be kept.
         remove_namespaces: Whether to remove module "namespaces" from element and attribute names.
             Disabled by default.
@@ -57,22 +57,22 @@ def pretty(doc: Document = Document(),
 
     token_name = token.name
 
-    # Read words and document ID
+    # Read words and file ID
     word_annotation = list(word.read())
-    docid_annotation = docid.read()
+    fileid_annotation = fileid.read()
 
     # Get annotation spans, annotations list etc.
-    annotation_list, _, export_names = util.export.get_annotation_names(annotations, source_annotations, doc=doc,
+    annotation_list, _, export_names = util.export.get_annotation_names(annotations, source_annotations, source_file=source_file,
                                                                         token_name=token_name,
                                                                         remove_namespaces=remove_namespaces,
                                                                         sparv_namespace=sparv_namespace,
                                                                         source_namespace=source_namespace)
-    h_annotations, h_export_names = util.export.get_header_names(header_annotations, doc=doc)
+    h_annotations, h_export_names = util.export.get_header_names(header_annotations, source_file=source_file)
     export_names.update(h_export_names)
     span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names, h_annotations,
-                                                                     doc=doc, split_overlaps=True)
+                                                                     source_file=source_file, split_overlaps=True)
     xmlstr = xml_utils.make_pretty_xml(span_positions, annotation_dict, export_names, token_name, word_annotation,
-                                       docid_annotation, include_empty_attributes, sparv_namespace)
+                                       fileid_annotation, include_empty_attributes, sparv_namespace)
 
     # Write XML to file
     with open(out, mode="w") as outfile:
@@ -86,10 +86,10 @@ def pretty(doc: Document = Document(),
 ])
 def combined(corpus: Corpus = Corpus(),
              out: Export = Export("[xml_export.filename_combined]"),
-             docs: AllDocuments = AllDocuments(),
-             xml_input: ExportInput = ExportInput("xml_pretty/[xml_export.filename]", all_docs=True)):
+             source_files: AllSourceFilenames = AllSourceFilenames(),
+             xml_input: ExportInput = ExportInput("xml_pretty/[xml_export.filename]", all_files=True)):
     """Combine XML export files into a single XML file."""
-    xml_utils.combine(corpus, out, docs, xml_input)
+    xml_utils.combine(corpus, out, source_files, xml_input)
 
 
 @exporter("Compressed combined XML export", config=[

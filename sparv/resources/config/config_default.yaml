@@ -3,7 +3,7 @@
 #===============================================================================
 
 metadata:
-    # Language of the input documents, specified as ISO 639-3 code
+    # Language of the input files, specified as ISO 639-3 code
     language: swe
 
 #===============================================================================

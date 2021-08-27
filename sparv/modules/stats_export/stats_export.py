@@ -3,20 +3,20 @@
 import csv
 from collections import defaultdict
 
-from sparv.api import (AllDocuments, AnnotationAllDocs, Config, Export, ExportInput, OutputCommonData, exporter,
+from sparv.api import (AllSourceFilenames, AnnotationAllSourceFiles, Config, Export, ExportInput, OutputCommonData, exporter,
                        get_logger, installer, util)
 
 logger = get_logger(__name__)
 
 
 @exporter("Corpus word frequency list", language=["swe"], order=1)
-def freq_list(docs: AllDocuments = AllDocuments(),
-              word: AnnotationAllDocs = AnnotationAllDocs("<token:word>"),
-              msd: AnnotationAllDocs = AnnotationAllDocs("<token:msd>"),
-              baseform: AnnotationAllDocs = AnnotationAllDocs("<token:baseform>"),
-              sense: AnnotationAllDocs = AnnotationAllDocs("<token:sense>"),
-              lemgram: AnnotationAllDocs = AnnotationAllDocs("<token>:saldo.lemgram"),
-              complemgram: AnnotationAllDocs = AnnotationAllDocs("<token>:saldo.complemgram"),
+def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
+              word: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:word>"),
+              msd: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:msd>"),
+              baseform: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:baseform>"),
+              sense: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:sense>"),
+              lemgram: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>:saldo.lemgram"),
+              complemgram: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>:saldo.complemgram"),
               out: Export = Export("frequency_list/stats_[metadata.id].csv"),
               delimiter: str = Config("stats_export.delimiter"),
               cutoff: int = Config("stats_export.cutoff"),
@@ -24,14 +24,14 @@ def freq_list(docs: AllDocuments = AllDocuments(),
     """Create a word frequency list for the entire corpus.
 
     Args:
-        docs (list, optional): The documents belonging to this corpus. Defaults to AllDocuments.
-        word (str, optional): Word annotations. Defaults to AnnotationAllDocs("<token:word>").
-        msd (str, optional): MSD annotations. Defaults to AnnotationAllDocs("<token:msd>").
-        baseform (str, optional): Baseform annotations. Defaults to AnnotationAllDocs("<token:baseform>").
-        sense (str, optional): Sense annotations. Defaults to AnnotationAllDocs("<token:sense>").
-        lemgram (str, optional): Lemgram annotations. Defaults to AnnotationAllDocs("<token>:saldo.lemgram").
+        source_files (list, optional): The source files belonging to this corpus. Defaults to AllSourceFilenames.
+        word (str, optional): Word annotations. Defaults to AnnotationAllSourceFiles("<token:word>").
+        msd (str, optional): MSD annotations. Defaults to AnnotationAllSourceFiles("<token:msd>").
+        baseform (str, optional): Baseform annotations. Defaults to AnnotationAllSourceFiles("<token:baseform>").
+        sense (str, optional): Sense annotations. Defaults to AnnotationAllSourceFiles("<token:sense>").
+        lemgram (str, optional): Lemgram annotations. Defaults to AnnotationAllSourceFiles("<token>:saldo.lemgram").
         complemgram (str, optional): Compound lemgram annotations.
-            Defaults to AnnotationAllDocs("<token>:saldo.complemgram").
+            Defaults to AnnotationAllSourceFiles("<token>:saldo.complemgram").
         out (str, optional): The output word frequency file. Defaults to Export("frequency_list/[metadata.id].csv").
         delimiter (str, optional): Column delimiter to use in the csv. Defaults to Config("stats_export.delimiter").
         cutoff (int, optional): The minimum frequency a word must have in order to be included in the result.
@@ -42,26 +42,26 @@ def freq_list(docs: AllDocuments = AllDocuments(),
     """
     freq_dict = defaultdict(int)
 
-    for doc in docs:
-        tokens = word.read_attributes(doc, [word, msd, baseform, sense, lemgram, complemgram])
+    for source_file in source_files:
+        tokens = word.read_attributes(source_file, [word, msd, baseform, sense, lemgram, complemgram])
         update_freqs(tokens, freq_dict, include_all_compounds)
 
     write_csv(out, freq_dict, delimiter, cutoff)
 
 
 @exporter("Corpus word frequency list (without Swedish annotations)", order=2)
-def freq_list_simple(docs: AllDocuments = AllDocuments(),
-                     word: AnnotationAllDocs = AnnotationAllDocs("<token:word>"),
-                     pos: AnnotationAllDocs = AnnotationAllDocs("<token:pos>"),
-                     baseform: AnnotationAllDocs = AnnotationAllDocs("<token:baseform>"),
+def freq_list_simple(source_files: AllSourceFilenames = AllSourceFilenames(),
+                     word: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:word>"),
+                     pos: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:pos>"),
+                     baseform: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:baseform>"),
                      out: Export = Export("frequency_list/stats_[metadata.id].csv"),
                      delimiter: str = Config("stats_export.delimiter"),
                      cutoff: int = Config("stats_export.cutoff")):
     """Create a word frequency list for a corpus without sense, lemgram and complemgram annotations."""
     freq_dict = defaultdict(int)
 
-    for doc in docs:
-        simple_tokens = word.read_attributes(doc, [word, pos, baseform])
+    for source_file in source_files:
+        simple_tokens = word.read_attributes(source_file, [word, pos, baseform])
 
         # Add empty annotations for sense, lemgram and complemgram
         tokens = []
@@ -73,18 +73,18 @@ def freq_list_simple(docs: AllDocuments = AllDocuments(),
 
 
 @exporter("Corpus word frequency list for Old Swedish (without part-of-speech)", language=["swe-fsv"], order=3)
-def freq_list_fsv(docs: AllDocuments = AllDocuments(),
-                  word: AnnotationAllDocs = AnnotationAllDocs("<token:word>"),
-                  baseform: AnnotationAllDocs = AnnotationAllDocs("<token:baseform>"),
-                  lemgram: AnnotationAllDocs = AnnotationAllDocs("<token:lemgram>"),
+def freq_list_fsv(source_files: AllSourceFilenames = AllSourceFilenames(),
+                  word: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:word>"),
+                  baseform: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:baseform>"),
+                  lemgram: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:lemgram>"),
                   out: Export = Export("frequency_list/stats_[metadata.id].csv"),
                   delimiter: str = Config("stats_export.delimiter"),
                   cutoff: int = Config("stats_export.cutoff")):
     """Create a word frequency list for a corpus without sense, lemgram and complemgram annotations."""
     freq_dict = defaultdict(int)
 
-    for doc in docs:
-        simple_tokens = word.read_attributes(doc, [word, baseform, lemgram])
+    for source_file in source_files:
+        simple_tokens = word.read_attributes(source_file, [word, baseform, lemgram])
 
         # Add empty annotations for sense, lemgram and complemgram
         tokens = []

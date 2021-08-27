@@ -32,7 +32,7 @@ def annotate(out_ne: Output = Output("swener.ne", cls="named_entity", descriptio
 
     SweNER is either run in an already started process defined in
     process_dict, or a new process is started(default)
-    - doc, word, sentence, token: existing annotations
+    - word, sentence, token: existing annotations
     - out_ne_ex, out_ne_type, out_ne_subtype: resulting annotation files for the named entities
     - process_dict is used in the catapult and should never be set from the command line
     """

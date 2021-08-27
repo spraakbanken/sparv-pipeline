@@ -2,9 +2,9 @@
 
 import os
 
-from sparv.api import (AllDocuments, Annotation, AnnotationData, Config, Corpus, Document, Export, ExportAnnotations,
-                       ExportInput, OutputCommonData, SourceAnnotations, SparvErrorMessage, exporter, get_logger,
-                       installer, util)
+from sparv.api import (AllSourceFilenames, Annotation, AnnotationData, Config, Corpus, SourceFilename, Export,
+                       ExportAnnotations, ExportInput, OutputCommonData, SourceAnnotations, SparvErrorMessage, exporter,
+                       get_logger, installer, util)
 from . import xml_utils
 
 logger = get_logger(__name__)
@@ -13,8 +13,8 @@ logger = get_logger(__name__)
 @exporter("Scrambled XML export", config=[
     Config("xml_export.scramble_on", description="Annotation to use for scrambling.")
 ])
-def scrambled(doc: Document = Document(),
-              docid: AnnotationData = AnnotationData("<docid>"),
+def scrambled(source_file: SourceFilename = SourceFilename(),
+              fileid: AnnotationData = AnnotationData("<fileid>"),
               out: Export = Export("xml_scrambled/[xml_export.filename]"),
               chunk: Annotation = Annotation("[xml_export.scramble_on]"),
               chunk_order: Annotation = Annotation("[xml_export.scramble_on]:misc.number_random"),
@@ -28,7 +28,8 @@ def scrambled(doc: Document = Document(),
               include_empty_attributes: bool = Config("xml_export.include_empty_attributes")):
     """Export annotations to scrambled XML."""
     # Get annotation spans, annotations list etc.
-    annotation_list, _, export_names = util.export.get_annotation_names(annotations, source_annotations, doc=doc,
+    annotation_list, _, export_names = util.export.get_annotation_names(annotations, source_annotations,
+                                                                        source_file=source_file,
                                                                         token_name=token.name,
                                                                         remove_namespaces=remove_namespaces,
                                                                         sparv_namespace=sparv_namespace,
@@ -36,20 +37,20 @@ def scrambled(doc: Document = Document(),
     if chunk not in annotation_list:
         raise SparvErrorMessage(
             "The annotation used for scrambling ({}) needs to be included in the output.".format(chunk))
-    span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names, doc=doc,
-                                                                     split_overlaps=True)
+    span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names,
+                                                                     source_file=source_file, split_overlaps=True)
 
-    # Read words and document ID
+    # Read words and file ID
     word_annotation = list(word.read())
     chunk_order = list(chunk_order.read())
-    docid_annotation = docid.read()
+    fileid_annotation = fileid.read()
 
     # Reorder chunks
     new_span_positions = util.export.scramble_spans(span_positions, chunk.name, chunk_order)
 
     # Construct XML string
     xmlstr = xml_utils.make_pretty_xml(new_span_positions, annotation_dict, export_names, token.name, word_annotation,
-                                       docid_annotation, include_empty_attributes, sparv_namespace)
+                                       fileid_annotation, include_empty_attributes, sparv_namespace)
 
     # Create export dir
     os.makedirs(os.path.dirname(out), exist_ok=True)
@@ -63,10 +64,10 @@ def scrambled(doc: Document = Document(),
 @exporter("Combined scrambled XML export")
 def combined_scrambled(corpus: Corpus = Corpus(),
                        out: Export = Export("[metadata.id]_scrambled.xml"),
-                       docs: AllDocuments = AllDocuments(),
-                       xml_input: ExportInput = ExportInput("xml_scrambled/[xml_export.filename]", all_docs=True)):
+                       source_files: AllSourceFilenames = AllSourceFilenames(),
+                       xml_input: ExportInput = ExportInput("xml_scrambled/[xml_export.filename]", all_files=True)):
     """Combine XML export files into a single XML file."""
-    xml_utils.combine(corpus, out, docs, xml_input)
+    xml_utils.combine(corpus, out, source_files, xml_input)
 
 
 @exporter("Compressed combined scrambled XML export")

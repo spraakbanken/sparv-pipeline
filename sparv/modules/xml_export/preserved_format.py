@@ -3,7 +3,7 @@
 import os
 import xml.etree.ElementTree as etree
 
-from sparv.api import (AnnotationData, Config, Document, Export, ExportAnnotations, SourceAnnotations,
+from sparv.api import (AnnotationData, Config, SourceFilename, Export, ExportAnnotations, SourceAnnotations,
                        SparvErrorMessage, Text, exporter, get_logger, util)
 from . import xml_utils
 
@@ -11,12 +11,12 @@ logger = get_logger(__name__)
 
 
 @exporter("XML export preserving whitespaces from source file", config=[
-    Config("xml_export.filename_formatted", default="{doc}_export.xml",
-           description="Filename pattern for resulting XML files, with '{doc}' representing the source name.")
+    Config("xml_export.filename_formatted", default="{file}_export.xml",
+           description="Filename pattern for resulting XML files, with '{file}' representing the source name.")
 ])
-def preserved_format(doc: Document = Document(),
+def preserved_format(source_file: SourceFilename = SourceFilename(),
                      text: Text = Text(),
-                     docid: AnnotationData = AnnotationData("<docid>"),
+                     fileid: AnnotationData = AnnotationData("<fileid>"),
                      out: Export = Export("xml_preserved_format/[xml_export.filename_formatted]"),
                      annotations: ExportAnnotations = ExportAnnotations("xml_export.annotations"),
                      source_annotations: SourceAnnotations = SourceAnnotations("xml_export.source_annotations"),
@@ -28,14 +28,14 @@ def preserved_format(doc: Document = Document(),
     """Export annotations to XML in export_dir and keep whitespaces and indentation from original file.
 
     Args:
-        doc: Name of the original document.
+        source_file: Name of the source file.
         text: The corpus text.
-        docid: Annotation with document IDs.
+        fileid: Annotation with file IDs.
         out: Path and filename pattern for resulting file.
         annotations: List of elements:attributes (annotations) to include.
-        source_annotations: List of elements:attributes from the original document
+        source_annotations: List of elements:attributes from the source file
             to be kept. If not specified, everything will be kept.
-        header_annotations: List of header elements from the original document to include
+        header_annotations: List of header elements from the source file to include
             in the export. If not specified, all headers will be kept.
         remove_namespaces: Whether to remove module "namespaces" from element and attribute names.
             Disabled by default.
@@ -46,19 +46,19 @@ def preserved_format(doc: Document = Document(),
     # Create export dir
     os.makedirs(os.path.dirname(out), exist_ok=True)
 
-    # Read corpus text and document ID
+    # Read corpus text and file ID
     corpus_text = text.read()
-    docid = docid.read()
+    fileid = fileid.read()
 
     # Get annotation spans, annotations list etc.
-    annotation_list, _, export_names = util.export.get_annotation_names(annotations, source_annotations, doc=doc,
+    annotation_list, _, export_names = util.export.get_annotation_names(annotations, source_annotations, source_file=source_file,
                                                                         remove_namespaces=remove_namespaces,
                                                                         sparv_namespace=sparv_namespace,
                                                                         source_namespace=source_namespace)
-    h_annotations, h_export_names = util.export.get_header_names(header_annotations, doc=doc)
+    h_annotations, h_export_names = util.export.get_header_names(header_annotations, source_file=source_file)
     export_names.update(h_export_names)
     span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names, h_annotations,
-                                                                     doc=doc, flatten=False, split_overlaps=True)
+                                                                     source_file=source_file, flatten=False, split_overlaps=True)
     sorted_positions = [(pos, span[0], span[1]) for pos, spans in sorted(span_positions.items()) for span in spans]
 
     # Root tag sanity check
@@ -98,10 +98,10 @@ def preserved_format(doc: Document = Document(),
                                     include_empty_attributes)
                 if span.overlap_id:
                     if sparv_namespace:
-                        span.node.set(f"{sparv_namespace}.{util.constants.OVERLAP_ATTR}", f"{docid}-{span.overlap_id}")
+                        span.node.set(f"{sparv_namespace}.{util.constants.OVERLAP_ATTR}", f"{fileid}-{span.overlap_id}")
                     else:
                         span.node.set(f"{util.constants.SPARV_DEFAULT_NAMESPACE}.{util.constants.OVERLAP_ATTR}",
-                                      f"{docid}-{span.overlap_id}")
+                                      f"{fileid}-{span.overlap_id}")
                 node_stack.append(span)
 
                 # Set text if there should be any between this node and the next one

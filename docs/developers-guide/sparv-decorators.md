@@ -66,7 +66,7 @@ needed as input in another part of the pipeline.
 **Example:**
 ```python
 @importer("TXT import", file_extension="txt", outputs=["text"])
-def parse(doc: Document = Document(),
+def parse(source_file: SourceFilename = SourceFilename(),
           source_dir: Source = Source(),
           prefix: str = "",
           encoding: str = util.constants.UTF8,
@@ -97,10 +97,10 @@ files into one output file.
     Config("stats_export.cutoff", default=1, description="The minimum frequency a word must have in order to be included in the result")
 ])
 def freq_list_simple(corpus: Corpus = Corpus(),
-                     docs: AllDocuments = AllDocuments(),
-                     word: AnnotationAllDocs = AnnotationAllDocs("<token:word>"),
-                     pos: AnnotationAllDocs = AnnotationAllDocs("<token:pos>"),
-                     baseform: AnnotationAllDocs = AnnotationAllDocs("<token:baseform>"),
+                     source_files: AllSourceFilenames = AllSourceFilenames(),
+                     word: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:word>"),
+                     pos: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:pos>"),
+                     baseform: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:baseform>"),
                      out: Export = Export("frequency_list/stats_[metadata.id].csv"),
                      delimiter: str = Config("stats_export.delimiter"),
                      cutoff: int = Config("stats_export.cutoff")):

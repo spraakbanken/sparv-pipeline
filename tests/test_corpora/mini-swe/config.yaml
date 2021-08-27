@@ -57,7 +57,7 @@ export:
         - <token:baseform>
         - <token:pos>
         - <token>:sensaldo.sentiment_label
-    # Annotations from original documents to include in the output. If nothing is specified, everything is kept.
+    # Annotations from source files to include in the output. If nothing is specified, everything is kept.
     source_annotations:
         - dokument as document
         - text:forfattare as author

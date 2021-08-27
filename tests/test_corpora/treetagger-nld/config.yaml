@@ -8,7 +8,7 @@ metadata:
     # Corpus name (human readable)
     name:
         eng: TreeTagger test corpus
-    # Language of the input documents, specified as ISO 639-3 code
+    # Language of the source files, specified as ISO 639-3 code
     language: nld
 
     description:

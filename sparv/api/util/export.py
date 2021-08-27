@@ -6,7 +6,7 @@ from copy import deepcopy
 from itertools import combinations
 from typing import Any, List, Optional, Tuple, Union
 
-from sparv.api import (Annotation, AnnotationAllDocs, ExportAnnotations, ExportAnnotationsAllDocs, Headers,
+from sparv.api import (Annotation, AnnotationAllSourceFiles, ExportAnnotations, ExportAnnotationsAllSourceFiles, Headers,
                        SourceStructure, get_logger, util)
 from sparv.core import io
 from .constants import SPARV_DEFAULT_NAMESPACE
@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 def gather_annotations(annotations: List[Annotation],
                        export_names,
                        header_annotations=None,
-                       doc: Optional[str] = None,
+                       source_file: Optional[str] = None,
                        flatten: bool = True,
                        split_overlaps: bool = False):
     """Calculate the span hierarchy and the annotation_dict containing all annotation elements and attributes.
@@ -26,7 +26,7 @@ def gather_annotations(annotations: List[Annotation],
         annotations: List of annotations to include
         export_names: Dictionary that maps from annotation names to export names
         header_annotations: List of header annotations
-        doc: The document name
+        source_file: The source filename
         flatten: Whether to return the spans as a flat list
         split_overlaps: Whether to split up overlapping spans
     """
@@ -119,10 +119,10 @@ def gather_annotations(annotations: List[Annotation],
                 annotation_dict[base_name][attr] = list(annotation.read())
             elif is_header:
                 annotation_dict[base_name][util.constants.HEADER_CONTENTS] = list(
-                    Annotation(f"{base_name}:{util.constants.HEADER_CONTENTS}", doc=doc).read(allow_newlines=True))
+                    Annotation(f"{base_name}:{util.constants.HEADER_CONTENTS}", source_file=source_file).read(allow_newlines=True))
 
     # Calculate hierarchy (if needed) and sort the span objects
-    elem_hierarchy = calculate_element_hierarchy(doc, spans_list)
+    elem_hierarchy = calculate_element_hierarchy(source_file, spans_list)
     sorted_spans = sorted(spans_list)
 
     # Add position information to sorted_spans
@@ -194,7 +194,7 @@ def _handle_overlaps(spans_dict):
                         subposition_shift += 1
 
 
-def calculate_element_hierarchy(doc, spans_list):
+def calculate_element_hierarchy(source_file, spans_list):
     """Calculate the hierarchy for spans with identical start and end positions.
 
     If two spans A and B have identical start and end positions, go through all occurrences of A and B
@@ -214,8 +214,8 @@ def calculate_element_hierarchy(doc, spans_list):
     # Order each pair into [parent, children]
     ordered_pairs = set()
     for a, b in relation_pairs:
-        a_annot = Annotation(a, doc=doc)
-        b_annot = Annotation(b, doc=doc)
+        a_annot = Annotation(a, source_file=source_file)
+        b_annot = Annotation(b, source_file=source_file)
         a_parent = len([i for i in (b_annot.get_parents(a_annot)) if i is not None])
         b_parent = len([i for i in (a_annot.get_parents(b_annot)) if i is not None])
         if a_parent > b_parent:
@@ -242,21 +242,22 @@ def calculate_element_hierarchy(doc, spans_list):
     return hierarchy
 
 
-def get_available_source_annotations(doc: Optional[str] = None, docs: Optional[List[str]] = None) -> List[str]:
-    """Get a list of available annotations generated from the source, either for a single document or multiple."""
-    assert doc or docs, "Either 'doc' or 'docs' must be provided"
+def get_available_source_annotations(source_file: Optional[str] = None,
+                                     source_files: Optional[List[str]] = None) -> List[str]:
+    """Get a list of available annotations generated from the source, either for a single source file or multiple."""
+    assert source_file or source_files, "Either 'source_file' or 'source_files' must be provided"
     available_source_annotations = set()
-    if docs:
-        for d in docs:
+    if source_files:
+        for d in source_files:
             available_source_annotations.update(SourceStructure(d).read().split())
     else:
-        available_source_annotations.update(SourceStructure(doc).read().split())
+        available_source_annotations.update(SourceStructure(source_file).read().split())
 
     return sorted(available_source_annotations)
 
 
-def get_source_annotations(source_annotation_names: Optional[List[str]], doc: Optional[str] = None,
-                           docs: Optional[List[str]] = None):
+def get_source_annotations(source_annotation_names: Optional[List[str]], source_file: Optional[str] = None,
+                           source_files: Optional[List[str]] = None):
     """Given a list of source annotation names (and possible export names), return a list of annotation objects.
 
     If no names are provided all available source annotations will be returnd.
@@ -266,21 +267,21 @@ def get_source_annotations(source_annotation_names: Optional[List[str]], doc: Op
         return []
 
     # Get list of available source annotation names
-    available_source_annotations = get_available_source_annotations(doc, docs)
+    available_source_annotations = get_available_source_annotations(source_file, source_files)
 
     # Parse source_annotation_names
     annotation_names = util.misc.parse_annotation_list(source_annotation_names, available_source_annotations)
 
     # Make sure source_annotations doesn't include annotations not in source
-    source_annotations = [(Annotation(a[0], doc) if doc else AnnotationAllDocs(a[0]), a[1]) for a in
+    source_annotations = [(Annotation(a[0], source_file) if source_file else AnnotationAllSourceFiles(a[0]), a[1]) for a in
                           annotation_names if a[0] in available_source_annotations]
 
     return source_annotations
 
 
-def get_annotation_names(annotations: Union[ExportAnnotations, ExportAnnotationsAllDocs],
+def get_annotation_names(annotations: Union[ExportAnnotations, ExportAnnotationsAllSourceFiles],
                          source_annotations=None,
-                         doc: Optional[str] = None, docs: Optional[List[str]] = None,
+                         source_file: Optional[str] = None, source_files: Optional[List[str]] = None,
                          token_name: Optional[str] = None,
                          remove_namespaces=False, keep_struct_names=False,
                          sparv_namespace: Optional[str] = None,
@@ -289,10 +290,10 @@ def get_annotation_names(annotations: Union[ExportAnnotations, ExportAnnotations
 
     Args:
         annotations: List of elements:attributes (annotations) to include.
-        source_annotations: List of elements:attributes from the original document to include. If not specified,
+        source_annotations: List of elements:attributes from the source file to include. If not specified,
             everything will be included.
-        doc: Name of the source document.
-        docs: List of names of source documents (alternative to `doc`).
+        source_file: Name of the source file.
+        source_files: List of names of source files (alternative to `source_file`).
         token_name: Name of the token annotation.
         remove_namespaces: Remove all namespaces in export_names unless names are ambiguous.
         keep_struct_names: For structural attributes (anything other than token), include the annotation base name
@@ -305,7 +306,7 @@ def get_annotation_names(annotations: Union[ExportAnnotations, ExportAnnotations
         export names.
     """
     # Get source annotations
-    source_annotations = get_source_annotations(source_annotations, doc, docs)
+    source_annotations = get_source_annotations(source_annotations, source_file, source_files)
 
     # Combine all annotations
     all_annotations = _remove_duplicates(annotations + source_annotations)
@@ -324,23 +325,23 @@ def get_annotation_names(annotations: Union[ExportAnnotations, ExportAnnotations
 
 
 def get_header_names(header_annotation_names: Optional[List[str]],
-                     doc: Optional[str] = None,
-                     docs: Optional[List[str]] = None):
+                     source_file: Optional[str] = None,
+                     source_files: Optional[List[str]] = None):
     """Get a list of header annotations and a dictionary for renamed annotations."""
     # Get source_header_names from headers file if it exists
     source_header_names = []
-    if docs:
-        for d in docs:
-            h = Headers(d)
+    if source_files:
+        for f in source_files:
+            h = Headers(f)
             if h.exists():
                 source_header_names.extend(h.read())
         source_header_names = list(set(source_header_names))
-    elif Headers(doc).exists():
-        source_header_names = Headers(doc).read()
+    elif Headers(source_file).exists():
+        source_header_names = Headers(source_file).read()
 
     # Parse header_annotation_names and convert to annotations
     annotation_names = util.misc.parse_annotation_list(header_annotation_names, source_header_names)
-    header_annotations = [(Annotation(a[0], doc) if doc else AnnotationAllDocs(a[0]), a[1]) for a in
+    header_annotations = [(Annotation(a[0], source_file) if source_file else AnnotationAllSourceFiles(a[0]), a[1]) for a in
                           annotation_names]
 
     export_names = _create_export_names(header_annotations, None, False, keep_struct_names=False)
@@ -357,7 +358,7 @@ def _remove_duplicates(annotation_tuples):
     return list(new_annotations.items())
 
 
-def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAllDocs], Any]],
+def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAllSourceFiles], Any]],
                          token_name: Optional[str],
                          remove_namespaces: bool,
                          keep_struct_names: bool,
@@ -393,7 +394,7 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
         short_names = {}
         for annotation, new_name in annotations:
             name = annotation.name
-            # Don't remove namespaces from elements and attributes contained in the original documents
+            # Don't remove namespaces from elements and attributes contained in the source files
             if (annotation, new_name) in source_annotations:
                 short_name = name
             else:
@@ -447,7 +448,7 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
 
 
 def _add_global_namespaces(export_names: dict,
-                           annotations: List[Tuple[Union[Annotation, AnnotationAllDocs], Any]],
+                           annotations: List[Tuple[Union[Annotation, AnnotationAllSourceFiles], Any]],
                            source_annotations: list,
                            sparv_namespace: Optional[str] = None,
                            source_namespace: Optional[str] = None):
