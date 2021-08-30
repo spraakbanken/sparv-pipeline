@@ -106,28 +106,23 @@ def hunpos_model(model: ModelOutput = ModelOutput("hunpos/suc3_suc-tags_default-
     def test_hunpos(model):
         stdin = TOK_SEP.join(["jag", "och", "du"]) + SENT_SEP
         stdout, _ = util.system.call_binary(binary, [model.path], stdin, encoding="UTF-8")
-        logger.debug(stdout)
+        logger.debug("Output from 'hunpos-tag' with test input:\n%s", stdout)
 
-    tmp_model = Model("hunpos/hunpos-model.tmp")
-    reg_model = (
-        "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc3_suc-tags_default-setting_utf8.model")
-    mac_model =  (
-        "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc3_suc-tags_default-setting_utf8-mac.model")
-
-    if platform == "darwin":
-        logger.info("Downloading hunpos model for MacOS")
-        tmp_model.download(mac_model)
+    # Run "hunpos-tag -h" to check what version was installed
+    stdout, _ = util.system.call_binary(binary, ["-h"], allow_error=True)
+    logger.debug("Output from 'hunpos-tag -h': %s", stdout)
+    # Search for keyword "verbose" in help message
+    matchobj = re.match("verbose", stdout.decode())
+    if matchobj is not None:
+        model.download(
+        "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc3_suc-tags_default-setting_utf8-mivoq.model")
     else:
-        logger.info("Downloading regular hunpos model")
-        tmp_model.download(reg_model)
+        model.download(
+        "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc3_suc-tags_default-setting_utf8.model")
 
     try:
         logger.info("Testing Hunpos model")
-        test_hunpos(tmp_model)
+        test_hunpos(model)
     except (RuntimeError, OSError):
-        tmp_model.remove()
+        model.remove()
         raise SparvErrorMessage("Hunpos does not seem to be working on your system with any of the available models.")
-
-    # Rename and Clean up
-    tmp_model.rename(model.path)
-    tmp_model.remove()
