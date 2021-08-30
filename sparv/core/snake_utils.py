@@ -695,11 +695,21 @@ def load_config(snakemake_config):
 
 def get_install_outputs(snake_storage: SnakeStorage, install_types: Optional[List] = None):
     """Collect files to be created for all installations given as argument or listed in config.install."""
-    install_inputs = []
+    unknown = []
+    install_outputs = []
     for installation in install_types or sparv_config.get("install", []):
-        install_inputs.extend(snake_storage.install_outputs[installation])
+        if installation not in snake_storage.install_outputs:
+            unknown.append(installation)
+        else:
+            install_outputs.extend(snake_storage.install_outputs[installation])
 
-    return install_inputs
+    if unknown:
+        raise SparvErrorMessage("Unknown installation{} selected:\n • {}".format(
+            "s" if len(unknown) > 1 else "",
+            "\n • ".join(unknown)
+        ))
+
+    return install_outputs
 
 
 def get_export_targets(snake_storage, rules, file, wildcards):

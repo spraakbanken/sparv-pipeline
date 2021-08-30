@@ -408,12 +408,7 @@ if "export_corpus" in selected_targets:
 # Rule for making installations
 if "install_corpus" in selected_targets:
     install_inputs = snake_utils.get_install_outputs(snake_storage, config.get("install_types"))
-    if config.get("install_types") and not install_inputs:
-        raise SparvErrorMessage("Unknown installation{}: {}".format(
-            "s" if len(config.get("install_types")) > 1 else "",
-            ", ".join(config.get("install_types"))
-        ))
-    elif not install_inputs:
+    if not install_inputs:
         raise SparvErrorMessage("Please specify what you would like to install, either by supplying arguments "
                                 "(e.g. `sparv install xml_export:install_original`) or by adding installations in "
                                 "The `install` section of your corpus config file.\n"
