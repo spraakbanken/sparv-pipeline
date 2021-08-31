@@ -3,8 +3,11 @@
 import re
 from typing import Optional
 
-from sparv.api import Annotation, Binary, Config, Model, ModelOutput, Output, annotator, modelbuilder, util
+from sparv.api import (Annotation, Binary, Config, Model, ModelOutput, Output, SparvErrorMessage, annotator, get_logger,
+                       modelbuilder, util)
 from sparv.api.util.tagsets import tagmappings
+
+logger = get_logger(__name__)
 
 SENT_SEP = "\n\n"
 TOK_SEP = "\n"
@@ -95,7 +98,32 @@ def postag(out: Output = Output("<token>:hunpos.pos", cls="token:pos", descripti
 
 
 @modelbuilder("Hunpos model", language=["swe"])
-def hunpos_model(model: ModelOutput = ModelOutput("hunpos/suc3_suc-tags_default-setting_utf8.model")):
+def hunpos_model(model: ModelOutput = ModelOutput("hunpos/suc3_suc-tags_default-setting_utf8.model"),
+                 binary: Binary = Binary("[hunpos.binary]")):
     """Download the Hunpos model."""
-    model.download(
+    from sys import platform
+
+    def test_hunpos(model):
+        stdin = TOK_SEP.join(["jag", "och", "du"]) + SENT_SEP
+        stdout, _ = util.system.call_binary(binary, [model.path], stdin, encoding="UTF-8")
+        logger.debug("Output from 'hunpos-tag' with test input:\n%s", stdout)
+        if stdout.split() != "jag PN.UTR.SIN.DEF.SUB och KN du PN.UTR.SIN.DEF.SUB".split():
+            raise SparvErrorMessage("Hunpos model does not work correctly.")
+
+    # Run "hunpos-tag -h" to check what version was installed
+    stdout, _ = util.system.call_binary(binary, ["-h"], allow_error=True)
+    logger.debug("Output from 'hunpos-tag -h': %s", stdout)
+    # Search for keyword "--verbose" in help message
+    if "--verbose" in stdout.decode():
+        model.download(
+        "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc3_suc-tags_default-setting_utf8-mivoq.model")
+    else:
+        model.download(
         "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc3_suc-tags_default-setting_utf8.model")
+
+    try:
+        logger.info("Testing Hunpos model")
+        test_hunpos(model)
+    except (RuntimeError, OSError):
+        model.remove()
+        raise SparvErrorMessage("Hunpos does not seem to be working on your system with any of the available models.")

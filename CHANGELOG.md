@@ -34,6 +34,7 @@
 
 - Fixed rule ambiguity problems (functions with an order higher than 1 were not accessible).
 - Fixed bugs in the segmenter module.
+- Automatically download correct Hunpos model depending on the Hunpos version installed.
 - Stanza can now handle tokens containing whitespaces.
 - Fixed a bug which lead to computing the source file list multiple times.
 

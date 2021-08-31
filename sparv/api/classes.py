@@ -11,7 +11,7 @@ from typing import Any, List, Optional, Tuple, Union
 
 import sparv.core
 from sparv.core import io
-from sparv.core.misc import get_logger
+from sparv.core.misc import SparvErrorMessage, get_logger
 from sparv.core.paths import models_dir
 
 logger = get_logger(__name__)
@@ -589,11 +589,12 @@ class Model(Base):
     def download(self, url: str):
         """Download file from url and save to modeldir."""
         os.makedirs(self.path.parent, exist_ok=True)
+        logger.debug("Downloading from: %s", url)
         try:
             urllib.request.urlretrieve(url, self.path)
             logger.info("Successfully downloaded %s", self.name)
         except Exception as e:
-            logger.error("Download from %s failed", url)
+            logger.error("Download of %s from %s failed", self.name, url)
             raise e
 
     def unzip(self):
