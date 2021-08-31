@@ -114,8 +114,7 @@ def hunpos_model(model: ModelOutput = ModelOutput("hunpos/suc3_suc-tags_default-
     stdout, _ = util.system.call_binary(binary, ["-h"], allow_error=True)
     logger.debug("Output from 'hunpos-tag -h': %s", stdout)
     # Search for keyword "--verbose" in help message
-    matchobj = re.search("--verbose", stdout.decode())
-    if matchobj is not None:
+    if "--verbose" in stdout.decode():
         model.download(
         "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc3_suc-tags_default-setting_utf8-mivoq.model")
     else:
