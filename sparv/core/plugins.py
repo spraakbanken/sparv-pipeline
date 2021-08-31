@@ -1,9 +1,10 @@
 """Functions for reading and displaying plugin information."""
 
+import json
 import sys
+import urllib.request
 
 import iso639
-import yaml
 from pkg_resources import Requirement, iter_entry_points
 from rich import box
 from rich.padding import Padding
@@ -14,31 +15,39 @@ from rich.text import Text
 from sparv import __version__
 from sparv.core import paths
 from sparv.core.console import console
-from sparv.core.misc import SparvErrorMessage, get_logger
+from sparv.core.misc import get_logger
 
 logger = get_logger(__name__)
 SYSTEM_PYTHON = f"{sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]}"
 
 
-def load_manifests(yaml_file):
-    """Read YAML file and handle errors."""
+def load_manifests(url):
+    """Get manifests from url and handle errors."""
+    data = {}
+    req = urllib.request.Request(url)
     try:
-        with open(yaml_file) as f:
-            data = yaml.load(f, Loader=yaml.FullLoader)
-    except yaml.parser.ParserError as e:
-        raise SparvErrorMessage("Could not parse the plugin manifests file:\n" + str(e))
-    except yaml.scanner.ScannerError as e:
-        raise SparvErrorMessage("An error occurred while reading the plugin manifests file:\n" + str(e))
-    except FileNotFoundError:
-        raise SparvErrorMessage(f"Could not find the plugin manifests")
+        r = urllib.request.urlopen(req).read()
+        data = json.loads(r.decode())
+        if len(data) < 1:
+            console.print(f"\n[red]Something went wrong. No plugins found![/red]")
+            exit(1)
+    except (urllib.error.URLError, urllib.error.HTTPError):
+        console.print(f"\n[red]Failed to retrieve plugin manifests from '{url}'![/red]")
+        exit(1)
+    except json.decoder.JSONDecodeError:
+        console.print(f"\n[red]Failed to retrieve plugin manifests due to invalid JSON![/red]")
+        exit(1)
+    except Exception as e:
+        console.print(f"\n[red]Failed to retrieve plugin manifests! Reason:\n{e}[/red]", highlight=False)
+        exit(1)
 
-    return data or {}
+    return data
 
 
 def list_plugins():
     """Print all supported plugins."""
     print()
-    manifests = load_manifests(paths.plugins_manifest)
+    manifests = load_manifests(paths.plugins_url)
     installed = get_installed_plugins()
     incompatible_plugins = []
     table = Table(title="Supported Sparv plugins", box=box.SIMPLE, show_header=False, title_justify="left")
@@ -71,7 +80,7 @@ def list_plugins():
 
 def plugin_info(plugin_names):
     """Print info about a specific plugin."""
-    manifests = load_manifests(paths.plugins_manifest)
+    manifests = load_manifests(paths.plugins_url)
     plugins = dict((obj["name"], obj) for obj in manifests)
     missing_plugins = []
     installed = get_installed_plugins()
@@ -108,7 +117,7 @@ def plugin_info(plugin_names):
             table = Table(box=box.SIMPLE, show_header=False, padding=(0, 2), pad_edge=False,
                           border_style="bright_black")
             table.add_row("author", f"{plugin.get('author')} ({plugin.get('author_email')})")
-            table.add_row("source", f"{plugin.get('url')}")
+            table.add_row("source", f"{plugin.get('source')}")
             table.add_row("version", f"{plugin.get('version')}")
             table.add_row("license", f"{plugin.get('license')}")
             if plugin.get("languages"):

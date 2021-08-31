@@ -58,7 +58,6 @@ default_config_file = get_data_path(config_dir / "config_default.yaml")
 presets_dir = get_data_path(config_dir / "presets")
 models_dir = get_data_path("models")
 bin_dir = get_data_path("bin")
-plugins_dir = get_data_path("plugins")
 
 # Corpus relative paths
 corpus_dir = Path(os.environ.get("CORPUS_DIR", ""))
@@ -67,9 +66,11 @@ log_dir = "logs"
 source_dir = "source"
 export_dir = Path("export")
 config_file = "config.yaml"
-plugins_manifest = get_data_path("plugins") / "manifests.yaml"
 
 # CWB variables
 cwb_encoding = os.environ.get("CWB_ENCODING", "utf8")
 cwb_datadir = os.environ.get("CWB_DATADIR")
 corpus_registry = os.environ.get("CORPUS_REGISTRY")
+
+# URLs
+plugins_url = "https://spraakbanken.gu.se/sparv/plugins/api/"
