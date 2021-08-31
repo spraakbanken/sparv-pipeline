@@ -107,12 +107,14 @@ def hunpos_model(model: ModelOutput = ModelOutput("hunpos/suc3_suc-tags_default-
         stdin = TOK_SEP.join(["jag", "och", "du"]) + SENT_SEP
         stdout, _ = util.system.call_binary(binary, [model.path], stdin, encoding="UTF-8")
         logger.debug("Output from 'hunpos-tag' with test input:\n%s", stdout)
+        if stdout.split() != "jag PN.UTR.SIN.DEF.SUB och KN du PN.UTR.SIN.DEF.SUB".split():
+            raise SparvErrorMessage("Hunpos model does not work correctly.")
 
     # Run "hunpos-tag -h" to check what version was installed
     stdout, _ = util.system.call_binary(binary, ["-h"], allow_error=True)
     logger.debug("Output from 'hunpos-tag -h': %s", stdout)
-    # Search for keyword "verbose" in help message
-    matchobj = re.match("verbose", stdout.decode())
+    # Search for keyword "--verbose" in help message
+    matchobj = re.search("--verbose", stdout.decode())
     if matchobj is not None:
         model.download(
         "https://github.com/spraakbanken/sparv-models/raw/master/hunpos/suc3_suc-tags_default-setting_utf8-mivoq.model")
