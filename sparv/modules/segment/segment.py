@@ -87,7 +87,7 @@ def do_segmentation(text: Text, out: Output, segmenter, chunk: Optional[Annotati
 
     segmenter_args = {}
     if model and "model" in inspect.getfullargspec(segmenter).args:
-        if model.path.suffix in ["pickle", "pkl"]:
+        if model.path.suffix in [".pickle", ".pkl"]:
             with open(model.path, "rb") as M:
                 model_arg = pickle.load(M, encoding="UTF-8")
         else:
@@ -165,7 +165,7 @@ def build_tokenlist(saldo_model: Model = Model("saldo/saldo.pickle"),
     """Build a list of words from a SALDO model, to help BetterWordTokenizer."""
     segmenter_args = []
     if model:
-        if model.path.suffix in ["pickle", "pkl"]:
+        if model.path.suffix in [".pickle", ".pkl"]:
             with open(model.path, "rb") as m:
                 model_arg = pickle.load(m)
         else:
@@ -382,6 +382,14 @@ class BetterWordTokenizer:
             begin += len(w)
 
 
+class PunktSentenceTokenizer(nltk.PunktSentenceTokenizer):
+    """A simple subclass of nltk.PunktSentenceTokenizer to add the required 'model' parameter."""
+
+    def __init__(self, model):
+        """Call __init__ of superclass."""
+        super().__init__(model)
+
+
 class CRFTokenizer:
     """Tokenization based on Conditional Random Fields.
 
@@ -431,7 +439,7 @@ class FSVParagraphSplitter:
 SEGMENTERS = dict(whitespace=nltk.WhitespaceTokenizer,
                   linebreaks=LinebreakTokenizer,
                   blanklines=nltk.BlanklineTokenizer,
-                  punkt_sentence=nltk.PunktSentenceTokenizer,
+                  punkt_sentence=PunktSentenceTokenizer,
                   punctuation=PunctuationTokenizer,
                   better_word=BetterWordTokenizer,
                   crf_tokenizer=CRFTokenizer,
