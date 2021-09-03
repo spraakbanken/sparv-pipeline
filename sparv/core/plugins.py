@@ -1,6 +1,7 @@
 """Functions for reading and displaying plugin information."""
 
 import json
+import re
 import sys
 import urllib.request
 
@@ -13,6 +14,7 @@ from rich.table import Table
 from rich.text import Text
 
 from sparv import __version__
+import sparv
 from sparv.core import paths
 from sparv.core.console import console
 from sparv.core.misc import get_logger
@@ -23,7 +25,6 @@ SYSTEM_PYTHON = f"{sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[
 
 def load_manifests(url):
     """Get manifests from url and handle errors."""
-    data = {}
     req = urllib.request.Request(url)
     try:
         r = urllib.request.urlopen(req).read()
@@ -31,6 +32,7 @@ def load_manifests(url):
         if len(data) < 1:
             console.print(f"\n[red]Something went wrong. No plugins found![/red]")
             exit(1)
+        return data
     except (urllib.error.URLError, urllib.error.HTTPError):
         console.print(f"\n[red]Failed to retrieve plugin manifests from '{url}'![/red]")
         exit(1)
@@ -41,41 +43,123 @@ def load_manifests(url):
         console.print(f"\n[red]Failed to retrieve plugin manifests! Reason:\n{e}[/red]", highlight=False)
         exit(1)
 
-    return data
+
+def parse_manifest(manifest, installed_plugins):
+    """Parse a plugin manifest and add information."""
+    # Go through versions and collect info
+    all_versions = {}
+    for version_dict in manifest.get("versions"):
+        for k, v in manifest.items():
+            if k == "versions":
+                continue
+            version_dict[k] = v
+        python_compatible, sparv_compatible = valid_version(version_dict.get("python_requires"),
+                                                            version_dict.get("sparv_pipeline_requires"))
+        version_dict["python_compatible"] = python_compatible
+        version_dict["sparv_compatible"] = sparv_compatible
+        version_dict["compatible"] = python_compatible and sparv_compatible
+        all_versions[version_dict["version"]] = version_dict
+    sorted_versions = sorted(all_versions.keys(), reverse=True)
+
+    # Check if plugin is installed
+    if manifest["name"] in installed_plugins:
+        installed_version = installed_plugins[manifest["name"]]
+    else:
+        installed_version = None
+
+    # Check compatibiliy and newest version
+    compatible_versions = [v for v in sorted_versions if all_versions[v]["compatible"]]
+    newest_version = sorted_versions[0]
+    if all_versions[newest_version]["compatible"]:
+        newest_compatible = newest_version
+    else:
+        for v in compatible_versions:
+            if all_versions[v]["compatible"]:
+                newest_compatible = v
+                break
+
+    return {
+        "installed_version": installed_version,
+        "compatible_versions": compatible_versions,
+        "newest_compatible": newest_compatible,
+        "versions": all_versions
+    }
 
 
 def list_plugins():
     """Print all supported plugins."""
-    print()
     manifests = load_manifests(paths.plugins_url)
-    installed = get_installed_plugins()
-    incompatible_plugins = []
-    table = Table(title="Supported Sparv plugins", box=box.SIMPLE, show_header=False, title_justify="left")
-    for plugin in sorted(manifests, key=lambda x: x["name"]):
-        python_compatible, sparv_compatible= valid_version(plugin.get("python_requires"),
-                                                            plugin.get("sparv_pipeline_requires"))
-        if not (python_compatible and sparv_compatible):
-            incompatible_plugins.append((plugin, python_compatible, sparv_compatible))
-        else:
-            table.add_row(f"[green]{plugin['name']}[/green]" if plugin["name"] in installed else plugin["name"],
-                          plugin["description"],)
-    console.print(table)
+    # installed_plugins = get_installed_plugins()
+    installed_plugins = []
+    incompatible_ones = []
+    installed_uptodate_ones = []
+    installed_outdated_ones = []
 
-    if incompatible_plugins:
-        console.print("\n[i]The following plugin{} {} not compatible with your system:[/i]".format(
-            "s" if len(incompatible_plugins) > 1 else "",
-            "are" if len(incompatible_plugins) > 1 else "is"))
+    print()
+    table = Table(title="Available Sparv plugins", box=box.SIMPLE, show_header=False, title_justify="left")
+    for pl in sorted(manifests, key=lambda x: x["name"]):
+        data = parse_manifest(pl, installed_plugins)
+        installed_v = data["installed_version"]
+        newest_compatible = data["newest_compatible"]
+        # Feature the version that is installed or the newest compatible version
+        featured = data["versions"].get(installed_v, None) or data["versions"].get(newest_compatible, None)
+        if data["installed_version"]:
+            if installed_v == newest_compatible:
+                installed_uptodate_ones.append(data["versions"][installed_v])
+            else:
+                installed_outdated_ones.append((data["versions"][installed_v], newest_compatible))
+
+        elif data["versions"].get(newest_compatible, None):
+            featured = data["versions"].get(newest_compatible, None)
+            table.add_row(featured["name"], featured["description"])
+        else:
+            incompatible_ones.append(data["versions"][0])
+    if len(table.rows):
+        console.print(table)
+        print()
+    else:
+        console.print("[green]There are no new plugins for you to install![/green]\n")
+
+    # List plugins that should be updated
+    if installed_outdated_ones:
+        console.print("[i]The following plugin{} should be updated:[/i]".format(
+            "s" if len(installed_outdated_ones) > 1 else ""))
+        table = Table("", box=box.SIMPLE, show_header=False, title_justify="left")
+        table.add_row("[b]Name[/b]", "[b]Description[/b]", "[b]Most recent version[/b]", "[b]Installed version[/b]")
+        for plugin, newest_version in installed_outdated_ones:
+            table.add_row(f"[red]{plugin['name']}[/red]", plugin["description"], newest_version, plugin["version"])
+        console.print(table)
+        print()
+
+    # List installed plugins that are up-to-date
+    if installed_uptodate_ones:
+        console.print("[i]The following plugin{} {} installed and up-to-date:[/i]".format(
+            "s" if len(installed_uptodate_ones) > 1 else "",
+            "are" if len(installed_uptodate_ones) > 1 else "is"))
+        table = Table("", box=box.SIMPLE, show_header=False, title_justify="left")
+        for plugin in installed_uptodate_ones:
+            table.add_row(f"[green]{plugin['name']}[/green]", plugin["description"])
+        console.print(table)
+        print()
+
+    # List incompatible plugins
+    if incompatible_ones:
+        console.print("[i]The following plugin{} {} incompatible with your system:[/i]".format(
+            "s" if len(incompatible_ones) > 1 else "",
+            "are" if len(incompatible_ones) > 1 else "is"))
         table = Table("", box=box.SIMPLE, show_header=False, title_justify="left")
         table.add_row("[b]Name[/b]", "[b]Description[/b]", "[b]Python requirement[/b]", "[b]Sparv requirement[/b]")
-        for plugin, python_comp, sparv_comp in incompatible_plugins:
+        for plugin in incompatible_ones:
             table.add_row(plugin.get("name"),
                           plugin.get("description"),
-                          plugin.get("python_requires") if python_comp else
+                          plugin.get("python_requires") if plugin["python_compatible"] else
                               f"[red]{plugin.get('python_requires')}[/red]",
-                          plugin.get("sparv_pipeline_requires") if sparv_comp else
+                          plugin.get("sparv_pipeline_requires") if plugin["sparv_compatible"] else
                               f"[red]{plugin.get('sparv_pipeline_requires')}[/red]")
         console.print(table)
 
+    console.print("For more details about a specific plugin run [green]'sparv plugins \\[plugin name]'[/green].\n",
+                  highlight=False)
 
 
 def plugin_info(plugin_names):
@@ -142,7 +226,7 @@ def plugin_info(plugin_names):
 
             # Additional software info
             if plugin.get("requires_additional_installs", False):
-                console.print(Padding("[cyan]This plugin requires additional software to be installed.[/cyan]\n",
+                console.print(Padding("⚠  This plugin requires additional software to be installed.\n",
                               padding))
 
             # Print separator
