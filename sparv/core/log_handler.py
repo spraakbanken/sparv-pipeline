@@ -186,7 +186,7 @@ class LogHandler:
 
     icon = "\U0001f426"
 
-    def __init__(self, progressbar=True, log_level=None, log_file_level=None, verbose=False,
+    def __init__(self, progressbar=True, log_level=None, log_file_level=None, simple=False,
                  pass_through=False, dry_run=False):
         """Initialize log handler.
 
@@ -194,12 +194,12 @@ class LogHandler:
             progressbar: Set to False to disable progress bar. Enabled by default.
             log_level: Log level for logging to stdout.
             log_file_level: Log level for logging to file.
-            verbose: Set to True to show more info about currently running tasks.
+            simple: Set to True to show less info about currently running tasks.
             pass_through: Let Snakemake's log messages pass through uninterrupted.
             dry_run: Set to True to print summary about jobs.
         """
         self.use_progressbar = progressbar and console.is_terminal
-        self.verbose = verbose and console.is_terminal
+        self.simple = simple or not console.is_terminal
         self.pass_through = pass_through
         self.dry_run = dry_run
         self.log_level = log_level
@@ -281,16 +281,16 @@ class LogHandler:
         print()
         progress_layout = [
             progress.SpinnerColumn("dots2"),
-            progress.BarColumn(bar_width=None if self.verbose else 40),
+            progress.BarColumn(bar_width=None if not self.simple else 40),
             progress.TextColumn("[progress.description]{task.description}"),
             progress.TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
             progress.TextColumn("[progress.remaining]{task.completed} of {task.total} tasks"),
             progress.TextColumn("{task.fields[text]}")
         ]
-        if self.verbose:
-            self.progress = ProgressWithTable(self.jobs, self.current_tasks, *progress_layout, console=console)
-        else:
+        if self.simple:
             self.progress = progress.Progress(*progress_layout, console=console)
+        else:
+            self.progress = ProgressWithTable(self.jobs, self.current_tasks, *progress_layout, console=console)
         self.progress.start()
         self.bar = self.progress.add_task(self.icon, start=False, total=0, text="[dim]Preparing...[/dim]")
 
@@ -425,10 +425,10 @@ class LogHandler:
 
         elif level == "job_info" and self.use_progressbar:
             if msg["msg"] and self.bar is not None:
-                # Update progress status message
-                self.progress.update(self.bar, text=msg["msg"] if not self.verbose else "")
-
-                if self.verbose:
+                if self.simple:
+                    # Update progress status message
+                    self.progress.update(self.bar, text=msg["msg"])
+                else:
                     file = msg["wildcards"].get("file", "")
                     if file.startswith(str(paths.work_dir)):
                         file = file[len(str(paths.work_dir)) + 1:]
@@ -555,7 +555,7 @@ class LogHandler:
 
                 # Stop bar
                 self.progress.stop()
-                if self.verbose and self.bar_started:
+                if not self.simple and self.bar_started:
                     # Clear table header from screen
                     console.control(Control(
                         ControlType.CARRIAGE_RETURN,

@@ -172,8 +172,6 @@ def main():
                                help="Print summary of tasks without running them")
         subparser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel",
                                default=1)
-        subparser.add_argument("-v", "--verbose", action="store_true",
-                               help="Show more info about currently running tasks")
         subparser.add_argument("--log", metavar="LOGLEVEL", const="info",
                                help="Set the log level (default: 'warning' if --log is not specified, "
                                     "'info' if LOGLEVEL is not specified)",
@@ -186,6 +184,7 @@ def main():
         subparser.add_argument("--socket", help="Path to socket file created by the 'preload' command")
         subparser.add_argument("--force-preloader", action="store_true",
                                help="Try to wait for preloader when it's busy")
+        subparser.add_argument("--simple", action="store_true", help="Show less details while running")
 
     # Add extra arguments to 'run' that we want to come last
     run_parser.add_argument("--unlock", action="store_true", help="Unlock the working directory")
@@ -250,7 +249,7 @@ def main():
     simple_target = False
     log_level = ""
     log_file_level = ""
-    verbose = False
+    simple_mode = False
     pass_through = False
     dry_run = False
 
@@ -336,7 +335,7 @@ def main():
 
         log_level = args.log or "warning"
         log_file_level = args.log_to_file or "warning"
-        verbose = args.verbose
+        simple_mode = args.simple
         config.update({"debug": args.debug,
                        "file": vars(args).get("file", []),
                        "log_level": log_level,
@@ -357,7 +356,7 @@ def main():
     # Disable Snakemake's default log handler and use our own
     logger.log_handler = []
     progress = log_handler.LogHandler(progressbar=not simple_target, log_level=log_level, log_file_level=log_file_level,
-                                      verbose=verbose, pass_through=pass_through, dry_run=dry_run)
+                                      simple=simple_mode, pass_through=pass_through, dry_run=dry_run)
     snakemake_args["log_handler"] = [progress.log_handler]
 
     config["log_server"] = progress.log_server
