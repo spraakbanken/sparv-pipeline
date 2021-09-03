@@ -180,6 +180,7 @@ def main():
                                help="Set log level for logging to file (default: 'warning' if --log-to-file is not "
                                     "specified, 'info' if LOGLEVEL is not specified)",
                                nargs="?", choices=["debug", "info", "warning", "error", "critical"])
+        subparser.add_argument("--stats", action="store_true", help="Show summary of time spent per annotator")
         subparser.add_argument("--debug", action="store_true", help="Show debug messages")
         subparser.add_argument("--socket", help="Path to socket file created by the 'preload' command")
         subparser.add_argument("--force-preloader", action="store_true",
@@ -250,6 +251,7 @@ def main():
     log_level = ""
     log_file_level = ""
     simple_mode = False
+    stats = False
     pass_through = False
     dry_run = False
 
@@ -287,6 +289,7 @@ def main():
         if args.list or args.dry_run:
             simple_target = True
 
+        stats = args.stats
         dry_run = args.dry_run
 
         # Command: run
@@ -356,7 +359,7 @@ def main():
     # Disable Snakemake's default log handler and use our own
     logger.log_handler = []
     progress = log_handler.LogHandler(progressbar=not simple_target, log_level=log_level, log_file_level=log_file_level,
-                                      simple=simple_mode, pass_through=pass_through, dry_run=dry_run)
+                                      simple=simple_mode, stats=stats, pass_through=pass_through, dry_run=dry_run)
     snakemake_args["log_handler"] = [progress.log_handler]
 
     config["log_server"] = progress.log_server

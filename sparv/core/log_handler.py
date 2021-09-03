@@ -61,6 +61,7 @@ missing_annotations_msg = "There can be many reasons for this. Please make sure 
                           "corpus configuration file, like misspelled annotation names (including unintentional " \
                           "whitespace characters) or references to non-existent or implicit source annotations."
 
+
 class LogRecordStreamHandler(socketserver.StreamRequestHandler):
     """Handler for streaming logging requests."""
 
@@ -150,17 +151,14 @@ class ModifiedRichHandler(RichHandler):
 class ProgressWithTable(progress.Progress):
     """Progress bar with additional table."""
 
-    def __init__(self, all_tasks, current_tasks, *args, **kwargs):
+    def __init__(self, all_tasks, current_tasks, max_len, *args, **kwargs):
         self.all_tasks = all_tasks
         self.current_tasks = current_tasks
-        self.task_max_len = 0
+        self.task_max_len = max_len
         super().__init__(*args, **kwargs)
 
     def get_renderables(self):
         """Get a number of renderables for the progress display."""
-        if not self.task_max_len and self.all_tasks:
-            self.task_max_len = max(map(len, self.all_tasks))
-
         # Progress bar
         yield self.make_tasks_table(self.tasks)
 
@@ -186,7 +184,7 @@ class LogHandler:
 
     icon = "\U0001f426"
 
-    def __init__(self, progressbar=True, log_level=None, log_file_level=None, simple=False,
+    def __init__(self, progressbar=True, log_level=None, log_file_level=None, simple=False, stats=False,
                  pass_through=False, dry_run=False):
         """Initialize log handler.
 
@@ -194,7 +192,8 @@ class LogHandler:
             progressbar: Set to False to disable progress bar. Enabled by default.
             log_level: Log level for logging to stdout.
             log_file_level: Log level for logging to file.
-            simple: Set to True to show less info about currently running tasks.
+            simple: Set to True to show less info about currently running jobs.
+            stats: Set to True to show stats after completion.
             pass_through: Let Snakemake's log messages pass through uninterrupted.
             dry_run: Set to True to print summary about jobs.
         """
@@ -215,6 +214,9 @@ class LogHandler:
         self.export_dirs = set()
         self.start_time = time.time()
         self.jobs = {}
+        self.jobs_max_len = 0
+        self.stats = stats
+        self.stats_data = defaultdict(float)
         self.logger = None
 
         # Progress bar related variables
@@ -222,7 +224,7 @@ class LogHandler:
         self.bar: Optional[progress.TaskID] = None
         self.bar_started: bool = False
         self.last_percentage = 0
-        self.current_tasks = OrderedDict()
+        self.current_jobs = OrderedDict()
 
         # Create a simple TCP socket-based logging receiver
         tcpserver = socketserver.ThreadingTCPServer(("localhost", 0), RequestHandlerClass=LogRecordStreamHandler)
@@ -290,7 +292,8 @@ class LogHandler:
         if self.simple:
             self.progress = progress.Progress(*progress_layout, console=console)
         else:
-            self.progress = ProgressWithTable(self.jobs, self.current_tasks, *progress_layout, console=console)
+            self.progress = ProgressWithTable(self.jobs, self.current_jobs, self.jobs_max_len,
+                                              *progress_layout, console=console)
         self.progress.start()
         self.bar = self.progress.add_task(self.icon, start=False, total=0, text="[dim]Preparing...[/dim]")
 
@@ -403,6 +406,8 @@ class LogHandler:
                 _, count, job = j.split("\t")
                 self.jobs[job.replace("::", ":")] = int(count)
 
+            self.jobs_max_len = max(map(len, self.jobs))
+
             if self.use_progressbar and not self.bar_started:
                 # Get number of jobs and start progress bar
                 if total_jobs.isdigit():
@@ -425,22 +430,25 @@ class LogHandler:
 
         elif level == "job_info" and self.use_progressbar:
             if msg["msg"] and self.bar is not None:
-                if self.simple:
-                    # Update progress status message
-                    self.progress.update(self.bar, text=msg["msg"])
-                else:
+                # Update progress status message
+                self.progress.update(self.bar, text=msg["msg"] if self.simple else "")
+
+                if not self.simple:
                     file = msg["wildcards"].get("file", "")
                     if file.startswith(str(paths.work_dir)):
                         file = file[len(str(paths.work_dir)) + 1:]
 
-                    self.current_tasks[msg["jobid"]] = {
+                    self.current_jobs[msg["jobid"]] = {
                         "name": msg["msg"],
                         "starttime": time.time(),
                         "file": file
                     }
 
         elif level == "job_finished" and self.use_progressbar:
-            self.current_tasks.pop(msg["jobid"], None)
+            if self.stats and msg["jobid"] in self.current_jobs:
+                this_job = self.current_jobs[msg["jobid"]]
+                self.stats_data[this_job["name"]] += time.time() - this_job["starttime"]
+            self.current_jobs.pop(msg["jobid"], None)
 
         elif level == "info":
             if self.pass_through or msg["msg"] == "Nothing to be done.":
@@ -563,7 +571,6 @@ class LogHandler:
                     ))
 
             self.finished = True
-            print()
 
             # Execution failed but we handled the error
             if self.handled_error:
@@ -593,6 +600,19 @@ class LogHandler:
                     spacer = "\n"
                     self.info("The exported files can be found in the following location{}:\n • {}".format(
                         "s" if len(self.export_dirs) > 1 else "", "\n • ".join(sorted(self.export_dirs))))
+
+                if self.stats_data:
+                    spacer = ""
+                    table = Table(show_header=False, box=box.SIMPLE)
+                    table.add_column("Task", no_wrap=True, min_width=self.jobs_max_len + 2, ratio=1)
+                    table.add_column("Time taken", no_wrap=True, width=10, justify="right", style="progress.remaining")
+                    table.add_column("Percentage", no_wrap=True, justify="right")
+                    table.add_row("[b]Task[/]", "[default b]Time taken[/]", "[b]Percentage[/b]")
+                    total_time = sum(self.stats_data.values())
+                    for task, elapsed in sorted(self.stats_data.items(), key=lambda x: -x[1]):
+                        table.add_row(task, str(timedelta(seconds=round(elapsed))),
+                                      "{:.1f}%".format(100 * elapsed / total_time))
+                    console.print(table)
 
                 if self.log_levelcount:
                     # Errors or warnings were logged but execution finished anyway. Notify user of potential problems.
