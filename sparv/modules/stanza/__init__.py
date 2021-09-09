@@ -8,12 +8,18 @@ __config__ = [
     Config("stanza.resources_file", default="stanza/[metadata.language]/resources.json",
            description="Stanza resources file"),
     Config("stanza.use_gpu", default=True, description="Use GPU instead of CPU if available"),
-    Config("stanza.batch_size", default=5000, description="Limit Stanza batch size"),
+    Config("stanza.batch_size", default=5000,
+           description="Limit Stanza batch size. Sentences with a token count exceeding this value will be excluded "
+                       "from analysis."),
     Config("stanza.max_sentence_length", default=250,
-           description="Max length of sentences that will get dependence annotations (set to 0 for no limit)"),
+           description="Max length (in number of tokens) of sentences that will get dependence annotations (set to 0 "
+                       "for no limit)"),
     Config("stanza.cpu_fallback", default=False,
            description="Fall back to CPU for sentences exceeding the max_sentence_length, instead of "
                        "excluding them from dependence parsing. Only usable with use_gpu enabled."),
+    Config("stanza.max_token_length", default=0,
+           description="Max number of characters per token. Any sentence containing a token exceeding this limit will "
+                       "be excluded from analysis. Disabled by default."),
     Config("stanza.sentence_chunk", default="<text>",
            description="Text chunk (annotation) to use as input when segmenting sentences (not used for Swedish)"),
     Config("stanza.sentence_annotation", default="",

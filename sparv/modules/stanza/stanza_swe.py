@@ -33,7 +33,8 @@ def annotate_swe(
         use_gpu: bool = Config("stanza.use_gpu"),
         batch_size: int = Config("stanza.batch_size"),
         max_sentence_length: int = Config("stanza.max_sentence_length"),
-        cpu_fallback: bool = Config("stanza.cpu_fallback")):
+        cpu_fallback: bool = Config("stanza.cpu_fallback"),
+        max_token_length: int = Config("stanza.max_token_length")):
     """Do dependency parsing using Stanza."""
     import stanza
 
@@ -48,14 +49,27 @@ def annotate_swe(
     sentences_dep = []
     sentences_pos = []
     skipped = 0
+    skipped_token = 0
+
+    word_list = list(word.read())
 
     for s in sentences_all:
         if len(s) > batch_size:
             skipped += 1
-        elif len(s) <= max_sentence_length or not max_sentence_length:
-            sentences_dep.append(s)
         else:
-            sentences_pos.append(s)
+            if max_token_length:
+                skip = False
+                for i in s:
+                    if len(word_list[i]) > max_token_length:
+                        skipped_token += 1
+                        skip = True
+                        break
+                if skip:
+                    continue
+            if len(s) <= max_sentence_length or not max_sentence_length:
+                sentences_dep.append(s)
+            else:
+                sentences_pos.append(s)
 
     if sentences_pos and not cpu_fallback:
         n = len(sentences_pos)
@@ -66,9 +80,12 @@ def annotate_swe(
         logger.warning(f"Found {skipped} sentence{'s' if skipped > 1 else ''} exceeding the batch size "
                        f"({batch_size}) in number of tokens. {'These' if skipped > 1 else 'This'} "
                        f"sentence{'s' if skipped > 1 else ''} will not be annotated.")
+    if skipped_token:
+        logger.warning(f"Found {skipped_token} sentence{'s' if skipped_token > 1 else ''} with tokens exceeding the "
+                       f"max token length ({max_token_length}). {'These' if skipped_token > 1 else 'This'} "
+                       f"sentence{'s' if skipped_token > 1 else ''} will not be annotated.")
     if orphans:
         sentences_pos.append(orphans)
-    word_list = list(word.read())
     msd = word.create_empty_attribute()
     pos = word.create_empty_attribute()
     feats = word.create_empty_attribute()

@@ -13,7 +13,7 @@ def make_ref(out: Output = Output("<token>:stanza.ref", cls="token:ref",
     number.number_relative(out, sentence, token)
 
 
-def run_stanza(nlp, document, batch_size, max_sentence_length: int = 0):
+def run_stanza(nlp, document, batch_size, max_sentence_length: int = 0, max_token_length: int = 0):
     """Run Stanza and handle possible errors."""
     try:
         doc = nlp(document)
@@ -28,7 +28,10 @@ def run_stanza(nlp, document, batch_size, max_sentence_length: int = 0):
                   f"lower (current value: {batch_size}).\n" \
                   " - Exclude excessively long sentences from dependency parsing by setting the " \
                   "'stanza.max_sentence_length' config variable to something lower (current value: " \
-                  f"{max_sentence_length})."
+                  f"{max_sentence_length or 'disabled'}).\n" \
+                  " - Exclude sentences with unreasonably long tokens by setting the " \
+                  "'stanza.max_token_length' config variable to something lower (current value: " \
+                  f"{max_token_length or 'disabled'})."
             if gpu_error:
                 msg += "\n - Switch to using CPU by setting the 'stanza.use_gpu' config variable to false."
         else:
