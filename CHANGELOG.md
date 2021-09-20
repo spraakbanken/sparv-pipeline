@@ -1,13 +1,10 @@
 # Changelog
 
-## [Unreleased]
-
-### Added
-
-### Changed
+## [4.1.1] - 2021-09-20
 
 ### Fixed
 
+- Workaround for bug in some versions of Python 3.8 and 3.9.
 - Fixed bugs in segmenter module.
 
 ## [4.1.0] - 2021-04-14
