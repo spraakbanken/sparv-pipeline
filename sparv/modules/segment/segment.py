@@ -238,15 +238,12 @@ class PunctuationTokenizer(nltk.RegexpTokenizer):
         """Tokenize s and return list with tokens."""
         result = []
         spans = nltk.RegexpTokenizer.span_tokenize(self, s)
-        first = True
         temp = [0, 0]
 
         for start, _ in spans:
-            if not first:
-                temp[1] = start
-                result.append(tuple(temp))
+            temp[1] = start
+            result.append(tuple(temp))
             temp[0] = start
-            first = False
 
         temp[1] = len(s)
         result.append(tuple(temp))
