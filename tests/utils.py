@@ -3,6 +3,7 @@
 import difflib
 import filecmp
 import pathlib
+import re
 import shutil
 import subprocess
 import xml.etree.ElementTree as etree
@@ -30,8 +31,7 @@ def run_sparv(gold_corpus_dir: pathlib.Path,
 
     args = ["sparv", "-d", str(new_corpus_dir), "run", *targets]
     process = subprocess.run(args, capture_output=True)
-    # Exclude progress updates and progress bar from output
-    stdout = process.stdout.strip().decode()
+    stdout = _remove_progress_info(process.stdout.strip().decode())
     if stdout and process.returncode != 0:
         print_error(f"The following warnings/errors occurred:\n{stdout}")
     elif process.stderr.strip():
@@ -156,3 +156,14 @@ def _xml_filediff(a: pathlib.Path, b: pathlib.Path):
             print(line.strip())
         return True
     return False
+
+
+def _remove_progress_info(output):
+    """Exclude progress updates from output."""
+    lines = output.split("\n")
+    out = []
+    for line in lines:
+        matchobj = re.match(r"(?:\d\d:\d\d:\d\d|\s{8}) (PROGRESS)\s+(.+)$", line)
+        if not matchobj:
+            out.append(line)
+    return "\n".join(out)
