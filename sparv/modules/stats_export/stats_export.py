@@ -17,7 +17,6 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
               annotations: ExportAnnotationsAllSourceFiles =
                   ExportAnnotationsAllSourceFiles("stats_export.annotations"),
               source_annotations: SourceAnnotations = SourceAnnotations("stats_export.source_annotations"),
-              column_names: list = Config("stats_export.column_names"),
               remove_namespaces: bool = Config("export.remove_module_namespaces", True),
               sparv_namespace: str = Config("export.sparv_namespace"),
               source_namespace: str = Config("export.source_namespace"),
@@ -34,9 +33,6 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
             ExportAnnotationsAllSourceFiles("stats_export.annotations").
         source_annotations (str, optional): All source annotations to include in the export. If left empty, none will be
             included. Defaults to SourceAnnotations("stats_export.source_annotations").
-        column_names (list, optional): Optional custom column names that will be printed in the header. First element is
-            the token, followed by all token attributes, followed by all structural attributes.
-            Defaults to Config("stats_export.column_names").
         remove_namespaces: Whether to remove module "namespaces" from element and attribute names.
             Disabled by default.
         sparv_namespace: The namespace to be added to all Sparv annotations.
@@ -58,20 +54,6 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
     token_annotations = [a for a in annotation_list if a.attribute_name in token_attributes]
     struct_annotations = [a for a in annotation_list if ":" in a.name and a.attribute_name not in token_attributes]
 
-    # Create header
-    struct_header_names = [export_names[a.annotation_name] + ":" + export_names[a.name] for a in struct_annotations]
-    auto_column_names = [export_names[a.name] for a in token_annotations] + struct_header_names
-    if column_names:
-        # Check if list of supplied column names has the correct length
-        if len(column_names) != len(auto_column_names):
-            raise SparvErrorMessage(
-                f"The amount of column_names provided ({len(column_names)}) does not match the amount of annotations "
-                f"in the stats export ({len(token_annotations) + len(struct_annotations)}). "
-                f"The following annotations will be included: {', '.join(auto_column_names)}")
-    else:
-        column_names = auto_column_names
-    column_names.append("count")
-
     # Calculate token frequencies
     freq_dict = defaultdict(int)
     for source_file in source_files:
@@ -88,6 +70,11 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
         for n, token_annotations_tuple in enumerate(tokens):
             structs_tuple = tuple([struct[n] for struct in struct_values])
             freq_dict[token_annotations_tuple + structs_tuple] += 1
+
+    # Create header
+    struct_header_names = [export_names[a.annotation_name] + ":" + export_names[a.name] for a in struct_annotations]
+    column_names = [export_names[a.name] for a in token_annotations] + struct_header_names
+    column_names.append("count")
 
     write_csv(out, column_names, freq_dict, delimiter, cutoff)
 

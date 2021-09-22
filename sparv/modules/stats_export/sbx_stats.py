@@ -93,12 +93,11 @@ def sbx_freq_list(
         cutoff (int, optional): The minimum frequency a word must have in order to be included in the result.
             Defaults to Config("stats_export.cutoff").
     """
-    annotations=[(a, None) for a in [word, msd, baseform, sense, lemgram, complemgram]]
-    column_names = ["token", "POS", "lemma", "SALDO sense", "lemgram", "compound"]
+    annotations = [(word, "token"), (msd, "POS"), (baseform, "lemma"), (sense, "SALDO sense"), (lemgram, "lemgram"),
+                   (complemgram, "compound")]
 
-    freq_list(source_files=source_files, word=word, token=token,
-              annotations=annotations, source_annotations=[], column_names=column_names, out=out, sparv_namespace="",
-              source_namespace="", delimiter=delimiter, cutoff=cutoff)
+    freq_list(source_files=source_files, word=word, token=token, annotations=annotations, source_annotations=[],
+              out=out, sparv_namespace="", source_namespace="", delimiter=delimiter, cutoff=cutoff)
 
 
 @exporter("Corpus word frequency list (without Swedish annotations)", order=2)
@@ -112,13 +111,10 @@ def sbx_freq_list_simple(
     delimiter: str = Config("stats_export.delimiter"),
     cutoff: int = Config("stats_export.cutoff")):
     """Create a word frequency list for a corpus without sense, lemgram and complemgram annotations."""
+    annotations = [(word, "token"), (pos, "POS"), (baseform, "lemma")]
 
-    annotations=[(a, None) for a in [word, pos, baseform]]
-    column_names = ["token", "POS", "lemma"]
-
-    freq_list(source_files=source_files, word=word, token=token,
-              annotations=annotations, source_annotations=[], column_names=column_names, out=out, sparv_namespace="",
-              source_namespace="", delimiter=delimiter, cutoff=cutoff)
+    freq_list(source_files=source_files, word=word, token=token, annotations=annotations, source_annotations=[],
+              out=out, sparv_namespace="", source_namespace="", delimiter=delimiter, cutoff=cutoff)
 
 
 @exporter("Corpus word frequency list for Old Swedish (without part-of-speech)", language=["swe-fsv"], order=3)
@@ -132,12 +128,10 @@ def sbx_freq_list_fsv(
     delimiter: str = Config("stats_export.delimiter"),
     cutoff: int = Config("stats_export.cutoff")):
     """Create a word frequency list for a corpus without sense, lemgram and complemgram annotations."""
-    annotations=[(a, None) for a in [word, baseform, lemgram]]
-    column_names = ["token", "POS", "lemgram"]
+    annotations = [(word, "token"), (baseform, "lemma"), (lemgram, "lemgram")]
 
-    freq_list(source_files=source_files, word=word, token=token,
-              annotations=annotations, source_annotations=[], column_names=column_names, out=out, sparv_namespace="",
-              source_namespace="", delimiter=delimiter, cutoff=cutoff)
+    freq_list(source_files=source_files, word=word, token=token, annotations=annotations, source_annotations=[],
+              out=out, sparv_namespace="", source_namespace="", delimiter=delimiter, cutoff=cutoff)
 
 
 @installer("Install SBX word frequency list on remote host")
