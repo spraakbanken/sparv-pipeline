@@ -328,3 +328,33 @@ def source(out: Output = Output("<text>:misc.source"),
            text: Annotation = Annotation("<text>")):
     """Create a document attribute based on the filename of the source file."""
     out.write(name for _ in text.read())
+
+
+@annotator("Get the first annotation from a cwb set")
+def first_from_set(out: Output,
+                   chunk: Annotation,):
+    """"Get the first annotation from a set."""
+    out_annotation = []
+    for val in chunk.read():
+        out_annotation.append(util.misc.set_to_list(val)[0] if util.misc.set_to_list(val) else "")
+    out.write(out_annotation)
+
+
+@annotator("Get the best annotation from a cwb set with scores")
+def best_from_set(out: Output,
+                  chunk: Annotation,
+                  is_sorted: bool = False,
+                  score_sep = ":"):
+    """Get the best annotation from a set with scores.
+
+    If 'is_sorted = True' the input is already sorted. In this case the first value is taken and its score is removed.
+    """
+    out_annotation = []
+    for val in chunk.read():
+        if is_sorted:
+            values = [(v.split(score_sep)[1], v.split(score_sep)[0]) for v in util.misc.set_to_list(val)]
+        else:
+            values = sorted([(v.split(score_sep)[1], v.split(score_sep)[0]) for v in util.misc.set_to_list(val)],
+                             key=lambda x:x[0], reverse=True)
+        out_annotation.append(values[0][1] if values else "")
+    out.write(out_annotation)
