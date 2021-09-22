@@ -32,8 +32,8 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
         token (str, optional): Token span annotations. Defaults to AnnotationAllSourceFiles("<token>").
         annotations (str, optional): All automatic annotations to include in the export. Defaults to
             ExportAnnotationsAllSourceFiles("stats_export.annotations").
-        source_annotations (str, optional): All source annotations to include in the export. Defaults to
-            SourceAnnotations("stats_export.source_annotations").
+        source_annotations (str, optional): All source annotations to include in the export. If left empty, none will be
+            included. Defaults to SourceAnnotations("stats_export.source_annotations").
         column_names (list, optional): Optional custom column names that will be printed in the header. First element is
             the token, followed by all token attributes, followed by all structural attributes.
             Defaults to Config("stats_export.column_names").
@@ -51,7 +51,7 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
 
     # Get annotations list and export names
     annotation_list, token_attributes, export_names = util.export.get_annotation_names(
-        annotations, source_annotations, source_files=source_files, token_name=token.name,
+        annotations, source_annotations or [], source_files=source_files, token_name=token.name,
         remove_namespaces=remove_namespaces, sparv_namespace=sparv_namespace, source_namespace=source_namespace)
 
     # Get all token and struct annotations (except the span annotations)
