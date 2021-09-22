@@ -143,7 +143,7 @@ def sbx_freq_list_fsv(
 @installer("Install SBX word frequency list on remote host")
 def install_sbx_freq_list(
     freq_list: ExportInput = ExportInput("frequency_list_sbx/stats_[metadata.id].csv"),
-    out: OutputCommonData = OutputCommonData("stats_export.install_freq_list_marker"),
+    out: OutputCommonData = OutputCommonData("stats_export.install_sbx_freq_list_marker"),
     host: str = Config("stats_export.remote_host"),
     target_dir: str = Config("stats_export.remote_dir")):
     """Install frequency list on server by rsyncing."""
