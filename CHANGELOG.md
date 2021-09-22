@@ -33,11 +33,16 @@
 ### Fixed
 
 - Fixed rule ambiguity problems (functions with an order higher than 1 were not accessible).
-- Fixed bugs in the segmenter module.
 - Automatically download correct Hunpos model depending on the Hunpos version installed.
 - Stanza can now handle tokens containing whitespaces.
 - Fixed a bug which lead to computing the source file list multiple times.
 
+## [4.1.1] - 2021-09-20
+
+### Fixed
+
+- Workaround for bug in some versions of Python 3.8 and 3.9.
+- Fixed bugs in segmenter module.
 
 ## [4.1.0] - 2021-04-14
 
