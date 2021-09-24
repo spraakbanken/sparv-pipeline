@@ -29,7 +29,7 @@ export:
         - conll_export:conllu
         - cwb:info
         - cwb:vrt
-        - stats_export:freq_list_simple
+        - stats_export:sbx_freq_list_simple_swe
         - xml_export:pretty
         - xml_export:preserved_format
 
