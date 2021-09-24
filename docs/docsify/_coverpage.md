@@ -4,7 +4,7 @@
 
 > Språkbanken's text analysis tool
 
-<p class="version"> version 4.1.1 </p>
+<p class="version"> version 5.0.dev0 </p>
 
 <p class="links">
     <a class="button" target="_blank" href="https://github.com/spraakbanken/sparv-pipeline">Sparv on GitHub</a>
