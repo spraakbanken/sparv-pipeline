@@ -28,6 +28,6 @@ export:
         - csv_export:csv
         - cwb:info
         - cwb:vrt
-        - stats_export:freq_list_fsv
+        - stats_export:sbx_freq_list_fsv
         - xml_export:pretty
         - xml_export:preserved_format

@@ -29,6 +29,7 @@ xml_import:
     # Elements and attributes from the source XML that we want to be available as input for other annotations
     elements:
         - text:date
+        - document:name
 
 #===============================================================================
 # Annotation Class Settings
@@ -78,6 +79,14 @@ export:
         - not <token>:wsd.sense
         - <token>:misc.affixed
         - <token>:custom.convert.upper
+
+stats_export:
+    annotations:
+        - <token:pos>
+        - <token>:custom.convert.upper
+    source_annotations:
+        - document:name
+
 
 #===============================================================================
 # Custom Annotations

@@ -100,7 +100,24 @@ def sbx_freq_list(
               out=out, sparv_namespace="", source_namespace="", delimiter=delimiter, cutoff=cutoff)
 
 
-@exporter("Corpus word frequency list (without Swedish annotations)", order=2)
+@exporter("Corpus word frequency list (without Swedish annotations)", language=["swe"], order=2)
+def sbx_freq_list_simple_swe(
+    source_files: AllSourceFilenames = AllSourceFilenames(),
+    token: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>"),
+    word: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:word>"),
+    pos: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:pos>"),
+    baseform: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>:stats_export.baseform_first"),
+    out: Export = Export("frequency_list_sbx/stats_[metadata.id].csv"),
+    delimiter: str = Config("stats_export.delimiter"),
+    cutoff: int = Config("stats_export.cutoff")):
+    """Create a word frequency list for a corpus without sense, lemgram and complemgram annotations."""
+    annotations = [(word, "token"), (pos, "POS"), (baseform, "lemma")]
+
+    freq_list(source_files=source_files, word=word, token=token, annotations=annotations, source_annotations=[],
+              out=out, sparv_namespace="", source_namespace="", delimiter=delimiter, cutoff=cutoff)
+
+
+@exporter("Corpus word frequency list (without Swedish annotations)", order=3)
 def sbx_freq_list_simple(
     source_files: AllSourceFilenames = AllSourceFilenames(),
     token: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>"),
@@ -117,7 +134,7 @@ def sbx_freq_list_simple(
               out=out, sparv_namespace="", source_namespace="", delimiter=delimiter, cutoff=cutoff)
 
 
-@exporter("Corpus word frequency list for Old Swedish (without part-of-speech)", language=["swe-fsv"], order=3)
+@exporter("Corpus word frequency list for Old Swedish (without part-of-speech)", language=["swe-fsv"], order=4)
 def sbx_freq_list_fsv(
     source_files: AllSourceFilenames = AllSourceFilenames(),
     token: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>"),

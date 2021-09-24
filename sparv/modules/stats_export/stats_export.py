@@ -4,8 +4,8 @@ import csv
 from collections import defaultdict
 
 from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Config, Export,
-                       ExportAnnotationsAllSourceFiles, ExportInput, OutputCommonData, SourceAnnotations,
-                       SparvErrorMessage, exporter, get_logger, installer, util)
+                       ExportAnnotationsAllSourceFiles, ExportInput, OutputCommonData, SourceAnnotations, exporter,
+                       get_logger, installer, util)
 
 logger = get_logger(__name__)
 

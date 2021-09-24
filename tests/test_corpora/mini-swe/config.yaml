@@ -46,7 +46,7 @@ export:
         - cwb:vrt
         - cwb:vrt_scrambled
         - korp:timespan_sql
-        - stats_export:freq_list_simple
+        - stats_export:sbx_freq_list_simple_swe
         - xml_export:pretty
         - xml_export:preserved_format
         - xml_export:scrambled
