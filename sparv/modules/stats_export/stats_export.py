@@ -1,4 +1,4 @@
-"""Build word frequency list (SBX format)."""
+"""Build word frequency list."""
 
 import csv
 from collections import defaultdict

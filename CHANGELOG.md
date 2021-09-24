@@ -8,6 +8,7 @@
 - Added importers for more file formats: docx and odt.
 - Added Support for language varieties.
 - Re-introduced analyses for Old Swedish and Swedish from the 1800's.
+- Added a more flexible stats export which lets you choose which annotations to include in the frequency list.
 - Added Stanza support for English.
 - Added better install and uninstall instructions for plugins.
 - Added explicit `ref` annotations (indexing tokens within sentences) for Stanza, Malt and Stanford.
@@ -29,6 +30,11 @@
        files)
     - install target `korp:install_corpus` has been renamed and split into `cwb:install_corpus` and 
       `cwb:install_corpus_scrambled`
+- Renamed the following stats exports:
+    `stats_export:freq_list` is now called `stats_export:sbx_freq_list`
+    `stats_export:freq_list_simple` is now called `stats_export:sbx_freq_list_simple`
+    `stats_export:install_freq_list` is now called `stats_export:install_sbx_freq_list`
+    `stats_export:freq_list_fsv` is now called `stats_export:sbx_freq_list_fsv`
 
 ### Fixed
 
