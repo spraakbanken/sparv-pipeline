@@ -320,6 +320,34 @@ def dep_parse(out_dephead: Output = Output("<token>:stanza.dephead", cls="token:
     out_deprel.write(deprel)
 
 
+@annotator("Extract POS from MSD", language=["swe", "swe-1800"])
+def msd_backoff_hunpos(
+    stanza_msd: Annotation = Annotation("<token>:stanza.msd"),
+    hunpos_msd: Annotation = Annotation("<token>:hunpos.msd"),
+    out: Output = Output("<token>:stanza.msd_hunpos_backoff", cls="token:msd", description="Part-of-speech tags with "
+                         "morphological descriptions from Stanza or Hunpos."),
+    info: Output = Output("<token>:stanza.msd_hunpos_backoff_info", description="Info about which annotator each msd "
+                          "annotation was produced with.")):
+    """Replace empty values in 'stanza_msd' with values from 'hunpos_msd'."""
+    from sparv.modules.misc import misc
+    misc.backoff_with_info(chunk=stanza_msd, backoff=hunpos_msd, out=out, out_info=info, chunk_name="stanza",
+                           backoff_name="hunpos")
+
+
+@annotator("Extract POS from MSD", language=["swe", "swe-1800"])
+def pos_backoff_hunpos(
+    stanza_pos: Annotation = Annotation("<token>:stanza.pos"),
+    hunpos_pos: Annotation = Annotation("<token>:hunpos.pos"),
+    out: Output = Output("<token>:stanza.pos_hunpos_backoff", cls="token:pos",
+                         description="Part-of-speech tags from Stanza or Hunpos."),
+    info: Output = Output("<token>:stanza.pos_hunpos_backoff_info", description="Info about which annotator each pos "
+                          "annotation was produced with.")):
+    """Replace empty values in 'stanza_pos' with values from 'hunpos_pos'."""
+    from sparv.modules.misc import misc
+    misc.backoff_with_info(chunk=stanza_pos, backoff=hunpos_pos, out=out, out_info=info, chunk_name="stanza",
+                           backoff_name="hunpos")
+
+
 def _build_doc(sentences, word, baseform, msd, feats, ref):
     """Build stanza input for dependency parsing."""
     document = []

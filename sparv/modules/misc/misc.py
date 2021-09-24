@@ -275,6 +275,35 @@ def backoff(chunk: Annotation,
     out.write((val if val else backoff[n] for (n, val) in enumerate(chunk.read())))
 
 
+@annotator("Replace empty values in 'chunk' with values from 'backoff' and output info about which annotator each "
+           "annotation was produced with.")
+def backoff_with_info(
+        chunk: Annotation,
+        backoff: Annotation,
+        out: Output,
+        out_info: Output,
+        chunk_name: str = "",
+        backoff_name: str = ""):
+    """Replace empty values in 'chunk' with values from 'backoff'."""
+    backoffs = list(backoff.read())
+    out_annotation = []
+    out_info_annotation = []
+    if not chunk_name:
+        chunk_name = chunk.name
+    if not backoff_name:
+        backoff_name = backoff.name
+
+    for n, val in enumerate(chunk.read()):
+        if val:
+            out_annotation.append(val)
+            out_info_annotation.append(chunk_name)
+        else:
+            out_annotation.append(backoffs[n])
+            out_info_annotation.append(backoff_name)
+    out.write(out_annotation)
+    out_info.write(out_info_annotation)
+
+
 @annotator("Replace values in 'chunk' with non empty values from 'repl'")
 def override(chunk: Annotation,
              repl: Annotation,
