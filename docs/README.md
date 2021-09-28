@@ -21,12 +21,12 @@ cd doscify
 cd ..
 ```
 
-Serve documentation with python:
+Serve documentation with python (from the `docs` directory):
 ```
 python3 -m http.server --directory docsify 3000
 ```
 
-*or* with docsify:
+*or* with docsify (from the `docs` directory):
 ```
 npm i docsify-cli -g
 docsify serve docsify --port 3000
@@ -42,7 +42,12 @@ Sync HTML documentation to server:
 
 ## Render documentation as PDF
 
-Convert User Manual and Developer's Guide from markdown to PDF (requires markdown and latex):
+Install requirements (markdown and latex):
+```
+sudo apt-get install markdown texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra
+```
+
+Convert User Manual and Developer's Guide from markdown to PDF:
 ```
 cd md2pdf
 ./make_pdf.sh
