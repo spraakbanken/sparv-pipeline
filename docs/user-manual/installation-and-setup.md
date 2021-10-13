@@ -78,7 +78,7 @@ the Sparv Pipeline. In order to use it within the Sparv Pipeline it is enough to
 |    |           |
 |:---|:----------|
 |**Purpose**                       |Swedish named-entity recognition. Recommended for standard Swedish annotations.
-|**Download**                      |[hfst-SweNER](http://www.ling.helsinki.fi/users/janiemi/finclarin/ner/hfst-swener-0.9.3.tgz)
+|**Download**                      |[hfst-SweNER](http://urn.fi/urn%3Anbn%3Afi%3Alb-2021101202)
 |**Version compatible with Sparv** |0.9.3
 |**Dependencies**          		   |[Python 2](https://www.python.org/download/releases/2.0/#download)
 
