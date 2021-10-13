@@ -325,7 +325,8 @@ rule files:
     run:
         from rich.columns import Columns
         print("Available input files:\n")
-        console.print(Columns(sorted(snake_storage.source_files), column_first=True,
+        # Convert to Text to get rid of syntax highlighting
+        console.print(Columns([Text(f) for f in sorted(snake_storage.source_files)], column_first=True,
                               padding=(0, 3)))
 
 
