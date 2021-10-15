@@ -6,8 +6,8 @@ from pathlib import Path
 from sparv import __version__
 
 # Check Python version
-if sys.version_info < (3, 6, 1):
-    raise Exception("Python 3.6.1 or higher is required.")
+if sys.version_info < (3, 6, 2):
+    raise Exception("Python 3.6.2 or higher is required.")
 
 
 class CustomArgumentParser(argparse.ArgumentParser):

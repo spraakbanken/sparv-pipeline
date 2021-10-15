@@ -15,7 +15,7 @@ If you have any questions, problems or suggestions please contact <sb-sparv@sven
 * A Unix-like environment (e.g. Linux, OS X or [Windows Subsystem for
   Linux](https://docs.microsoft.com/en-us/windows/wsl/about)) *Note:* Most of Sparv's features should work in a Windows
   environment as well, but since we don't do any testing on Windows we cannot guarantee anything.
-* [Python 3.6.1](http://python.org/) or newer
+* [Python 3.6.2](http://python.org/) or newer
 
 ## Installation
 

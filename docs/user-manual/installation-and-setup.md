@@ -4,7 +4,7 @@ additional software that you may need to install in order to run all the analyse
 
 ## Prerequisites
 In order to install Sparv you will need a Unix-like environment (e.g. Linux, macOS or [Windows Subsystem for
-Linux](https://docs.microsoft.com/en-us/windows/wsl/about)) with [Python 3.6.1](http://python.org/) or newer.
+Linux](https://docs.microsoft.com/en-us/windows/wsl/about)) with [Python 3.6.2](http://python.org/) or newer.
 
 > [!NOTE]
 > Most of Sparv's features should work in a Windows environment as well, but since we don't do any testing on Windows
