@@ -80,16 +80,27 @@ def gather_annotations(annotations: List[Annotation],
             2. end position (larger indices first)
             3. the calculated element hierarchy
             """
-            def get_sort_key(span, sub_positions=False):
+            def get_sort_key(span, sub_positions=False, empty_span=False):
                 """Return a sort key for span which makes span comparison possible."""
                 hierarchy_index = elem_hierarchy.index(span.name) if span.name in elem_hierarchy else -1
-                if sub_positions:
-                    return (span.start, span.start_sub), (-span.end, -span.end_sub), hierarchy_index
+                if empty_span:
+                    if sub_positions:
+                        return (span.start, span.start_sub), hierarchy_index, (span.end, span.end_sub)
+                    else:
+                        return span.start, hierarchy_index, span.end
                 else:
-                    return span.start, -span.end, hierarchy_index
+                    if sub_positions:
+                        return (span.start, span.start_sub), (-span.end, -span.end_sub), hierarchy_index
+                    else:
+                        return span.start, -span.end, hierarchy_index
 
+            # Sort empty spans according to hierarchy or put them first
+            if (self.start, self.start_sub) == (self.end, self.end_sub) or (
+                other_span.start, other_span.start_sub) == (other_span.end, other_span.end_sub):
+                sort_key1 = get_sort_key(self, empty_span=True)
+                sort_key2 = get_sort_key(other_span, empty_span=True)
             # Both spans have sub positions
-            if self.start_sub and other_span.start_sub:
+            elif self.start_sub and other_span.start_sub:
                 sort_key1 = get_sort_key(self, sub_positions=True)
                 sort_key2 = get_sort_key(other_span, sub_positions=True)
             # At least one of the spans does not have sub positions
@@ -97,9 +108,7 @@ def gather_annotations(annotations: List[Annotation],
                 sort_key1 = get_sort_key(self)
                 sort_key2 = get_sort_key(other_span)
 
-            if sort_key1 < sort_key2:
-                return True
-            return False
+            return sort_key1 < sort_key2
 
     if header_annotations is None:
         header_annotations = []
@@ -128,9 +137,17 @@ def gather_annotations(annotations: List[Annotation],
     # Add position information to sorted_spans
     spans_dict = defaultdict(list)
     for span in sorted_spans:
+        # Treat empty spans differently
         if span.start == span.end:
-            spans_dict[span.start].append(("open", span))
-            spans_dict[span.end].append(("close", span))
+            insert_index = len(spans_dict[span.start])
+            if span.name in elem_hierarchy:
+                for i, (instruction, s) in enumerate(spans_dict[span.start]):
+                    if instruction == "close":
+                        if s.name in elem_hierarchy and elem_hierarchy.index(s.name) < elem_hierarchy.index(span.name):
+                            insert_index = i
+                            break
+            spans_dict[span.start].insert(insert_index, ("open", span))
+            spans_dict[span.end].insert(insert_index + 1, ("close", span))
         else:
             # Append opening spans; prepend closing spans
             spans_dict[span.start].append(("open", span))
@@ -202,9 +219,17 @@ def calculate_element_hierarchy(source_file, spans_list):
     """
     # Find elements with identical spans
     span_duplicates = defaultdict(set)
+    start_positions = defaultdict(set)
+    empty_span_starts = set()
     for span in spans_list:
         span_duplicates[(span.start, span.end)].add(span.name)
+        start_positions[span.start].add(span.name)
+        if span.start == span.end:
+            empty_span_starts.add(span.start)
     span_duplicates = [v for k, v in span_duplicates.items() if len(v) > 1]
+    # Add empty spans and spans with identical start positions
+    for span_start in empty_span_starts:
+        span_duplicates.append(start_positions[span_start])
 
     # Flatten structure
     unclear_spans = set([elem for elem_set in span_duplicates for elem in elem_set])

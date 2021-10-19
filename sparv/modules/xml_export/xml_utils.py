@@ -98,7 +98,7 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token_name: s
                 inside_token = False
 
             # Make sure closing node == top stack node
-            assert span == node_stack[-1], "Overlapping elements found: {}".format(node_stack[-2:])
+            assert span == node_stack[-1], "Overlapping elements found. Expected {} but found {}".format(span, node_stack[-1])
             # Pop stack and move on to next span
             node_stack.pop()
 
