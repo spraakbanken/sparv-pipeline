@@ -220,16 +220,19 @@ def calculate_element_hierarchy(source_file, spans_list):
     # Find elements with identical spans
     span_duplicates = defaultdict(set)
     start_positions = defaultdict(set)
+    end_positions = defaultdict(set)
     empty_span_starts = set()
     for span in spans_list:
         span_duplicates[(span.start, span.end)].add(span.name)
         start_positions[span.start].add(span.name)
+        end_positions[span.end].add(span.name)
         if span.start == span.end:
             empty_span_starts.add(span.start)
     span_duplicates = [v for k, v in span_duplicates.items() if len(v) > 1]
     # Add empty spans and spans with identical start positions
     for span_start in empty_span_starts:
         span_duplicates.append(start_positions[span_start])
+        span_duplicates.append(end_positions[span_start])
 
     # Flatten structure
     unclear_spans = set([elem for elem_set in span_duplicates for elem in elem_set])
