@@ -229,7 +229,7 @@ def cwb_encode(corpus, annotations, source_annotations, docs, words, vrtfiles, o
 
     if not skip_compression:
         log.info("Compressing corpus files...")
-        compress_args = ["-A", corpus.upper()]
+        compress_args = ["-A", "-r", registry, corpus.upper()]
         if skip_validation:
             compress_args.insert(0, "-T")
             log.info("Skipping validation")
