@@ -54,7 +54,9 @@ def annotate_swe(
     word_list = list(word.read())
 
     for s in sentences_all:
-        if len(s) > batch_size:
+        if not s:
+            continue
+        elif len(s) > batch_size:
             skipped += 1
         else:
             if max_token_length:
