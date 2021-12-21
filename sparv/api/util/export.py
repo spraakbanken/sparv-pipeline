@@ -228,7 +228,7 @@ def calculate_element_hierarchy(source_file, spans_list):
         end_positions[span.end].add(span.name)
         if span.start == span.end:
             empty_span_starts.add(span.start)
-    span_duplicates = [v for k, v in span_duplicates.items() if len(v) > 1]
+    span_duplicates = [v for v in span_duplicates.values() if len(v) > 1]
     # Add empty spans and spans with identical start positions
     for span_start in empty_span_starts:
         span_duplicates.append(start_positions[span_start])
@@ -248,7 +248,7 @@ def calculate_element_hierarchy(source_file, spans_list):
         b_parent = len([i for i in (a_annot.get_parents(b_annot)) if i is not None])
         if a_parent > b_parent:
             ordered_pairs.add((a, b))
-        else:
+        elif a_parent < b_parent:
             ordered_pairs.add((b, a))
 
     hierarchy = []
