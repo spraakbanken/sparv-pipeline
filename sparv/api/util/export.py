@@ -558,7 +558,7 @@ def _reorder_spans(span_positions, chunk_name: str, chunk_order):
 
     for _pos, instruction, span in span_positions:
         if instruction == "open":
-            if span.name == chunk_name:
+            if span.name == chunk_name and current_s_index is None:  # Check current_s_index to avoid nested chunks
                 current_s_index = int(chunk_order[span.index])
 
                 for temp_instruction, temp_span in temp_stack:
@@ -589,7 +589,8 @@ def _reorder_spans(span_positions, chunk_name: str, chunk_order):
             if current_s_index is not None:
                 # Encountered child to chunk
                 new_s_order[current_s_index].append((instruction, span))
-                if span.name == chunk_name:
+                # If chunk, check index to make sure it's the right chunk and not a nested one
+                if span.name == chunk_name and int(chunk_order[span.index]) == current_s_index:
                     last_s_index = current_s_index
                     current_s_index = None
             else:
@@ -602,23 +603,32 @@ def _reorder_spans(span_positions, chunk_name: str, chunk_order):
 def _fix_parents(new_s_order, chunk_name):
     """Go through new_span_positions, remove duplicate opened parents and close parents."""
     open_parents = []
-    for s_index, chunk in sorted(new_s_order.items()):
+    new_s_order_indices = sorted(new_s_order.keys())
+    for i, s_index in enumerate(new_s_order_indices):
+        chunk = new_s_order[s_index]
         is_parent = True
+        current_chunk_index = None
         for instruction, span in chunk:
             if instruction == "open":
-                if span.name == chunk_name:
+                if span.name == chunk_name and current_chunk_index is None:
                     is_parent = False
+                    current_chunk_index = span.index
                 elif is_parent:
                     open_parents.append((instruction, span))
-            else:
-                if span.name == chunk_name:
+            else:  # "close"
+                # If chunk, check index to make sure it's the right chunk and not a nested one
+                if span.name == chunk_name and span.index == current_chunk_index:
                     is_parent = True
+                    current_chunk_index = None
                 elif is_parent:
                     if open_parents[-1][1] == span:
                         open_parents.pop()
         # Check next chunk: close parents in current chunk that are not part of next chunk and
         # remove already opened parents from next chunk
-        next_chunk = new_s_order.get(s_index + 1, [])
+        if i < len(new_s_order_indices) - 1:
+            next_chunk = new_s_order[new_s_order_indices[i + 1]]
+        else:
+            next_chunk = []
         for p in reversed(open_parents):
             if p in next_chunk:
                 next_chunk.remove(p)
