@@ -222,7 +222,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             # This is a custom rule which doesn't require any parameters, so it has already been processed
             return False
 
-    # Go though function parameters and handle based on type
+    # Go through function parameters and handle based on type
     for param_name, param in params.items():
         param_default_empty = param.default == inspect.Parameter.empty
         param_value: Any

@@ -32,16 +32,16 @@ def file_id(out: OutputDataAllSourceFiles = OutputDataAllSourceFiles("misc.filei
 
     numfiles = len(source_files) * 2
     used_ids = set()
-    filess_with_ids = set()
+    files_with_ids = set()
 
     if add:
         for file in source_files:
             if out.exists(file):
                 used_ids.add(out.read(file))
-                filess_with_ids.add(file)
+                files_with_ids.add(file)
 
     for file in source_files:
-        if add and file in filess_with_ids:
+        if add and file in files_with_ids:
             continue
         _reset_id(file, numfiles)
         new_id = _make_id(prefix, used_ids)

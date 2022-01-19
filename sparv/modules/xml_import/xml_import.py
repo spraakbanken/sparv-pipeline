@@ -241,7 +241,7 @@ class SparvXMLParser:
                             header_data[header_source["target"][0]][header_source["target"][1]] = header_value
 
         def iter_tree(element: etree.Element, start_pos: int = 0, start_subpos: int = 0):
-            """Walk though whole XML and handle elements and text data."""
+            """Walk through whole XML and handle elements and text data."""
             if (element.tag, "@contents") in self.skipped_elems:
                 # Skip whole element and all its contents
                 if element.tail:
