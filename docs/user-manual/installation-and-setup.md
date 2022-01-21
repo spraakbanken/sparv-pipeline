@@ -80,22 +80,35 @@ the Sparv Pipeline. In order to use it within the Sparv Pipeline it is enough to
 |**Purpose**                       |Swedish named-entity recognition. Recommended for standard Swedish annotations.
 |**Download**                      |[hfst-SweNER](http://urn.fi/urn%3Anbn%3Afi%3Alb-2021101202)
 |**Version compatible with Sparv** |0.9.3
-|**Dependencies**          		   |[Python 2](https://www.python.org/download/releases/2.0/#download)
 
-The current version of hfst-SweNER expects to be run in a Python 2 environment while the Sparv Pipeline is written in
-Python 3. Before installing hfst-SweNER you need make sure that it will be run with the correct version of Python by
-replacing `python` with `python2` in all the Python scripts in the `hfst-swener-0.9.3/scripts` directory. The first line
-in every script will then look like this:
-```python
-#! /usr/bin/env python2
+> [!NOTE]
+> hfst-SweNER requires a Unix-like environment.
+
+The current version of hfst-SweNER is written for Python 2 while Sparv uses Python 3, so before installing it needs to
+be patched. After extracting the archive, go to the `hfst-swener-0.9.3/scripts` directory and create the file
+`swener.patch` with the following contents:
+
 ```
-On Unix systems this can be done by running the following command from within the `hfst-swener-0.9.3/scripts`
-directory:
-```
-sed -i 's:#! \/usr/bin/env python:#! /usr/bin/env python2:g' *.py
+--- convert-namex-tags.py
++++ convert-namex-tags.py
+@@ -1 +1 @@
+-#! /usr/bin/env python
++#! /usr/bin/env python3
+@@ -34 +34 @@
+-        elif isinstance(files, basestring):
++        elif isinstance(files, str):
+@@ -73 +73 @@
+-        return [s[start:start+partlen] for start in xrange(0, len(s), partlen)]
++        return [s[start:start+partlen] for start in range(0, len(s), partlen)]
+@@ -132,3 +131,0 @@
+-    sys.stdin = codecs.getreader('utf-8')(sys.stdin)
+-    sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
+-    sys.stderr = codecs.getwriter('utf-8')(sys.stderr)
 ```
 
-After applying these changes please follow the installation instructions provided by hfst-SweNER.
+Then simply run the command `patch < swener.patch`, which will make the necessary changes.
+
+After applying the patch, please follow the installation instructions provided by hfst-SweNER.
 
 ### Hunpos
 |    |           |
