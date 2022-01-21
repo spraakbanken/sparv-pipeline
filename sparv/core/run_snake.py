@@ -40,6 +40,10 @@ class StreamToLogger:
     def write(self, buf):
         self.logger.log(self.log_level, buf.rstrip())
 
+    @staticmethod
+    def isatty():
+        return False
+
 
 # Import module
 modules_path = ".".join(("sparv", paths.modules_dir))

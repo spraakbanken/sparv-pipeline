@@ -41,20 +41,20 @@ setuptools.setup(
         "appdirs==1.4.4",
         "iso-639==0.4.5",
         "docx2python==1.27.1",
-        "nltk==3.6.2",
-        "python-dateutil==2.8.1",
-        "PyYAML==5.4.1",
-        "questionary==1.9.0",
-        "rich==10.2.0",
+        "nltk==3.6.7",
+        "python-dateutil==2.8.2",
+        "PyYAML==6.0",
+        "questionary==1.10.0",
+        "rich==11.0.0",
         "snakemake==6.3.0",
-        "stanza==1.2",
-        "torch>=1.8.0",  # Used by Stanza; see https://github.com/spraakbanken/sparv-pipeline/issues/82
-        "typing-inspect==0.6.0"
+        "stanza==1.3.0",
+        "torch>=1.9.1",  # Used by Stanza; see https://github.com/spraakbanken/sparv-pipeline/issues/82
+        "typing-inspect==0.7.1"
     ],
     extras_require={
         "dev": [
-            "pandocfilters==1.4.3",
-            "pytest==6.2.4",
+            "pandocfilters==1.5.0",
+            "pytest==6.2.5",
             "pytest-sugar==0.9.4"
         ]
     },
