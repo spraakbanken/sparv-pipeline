@@ -68,7 +68,7 @@ def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations
 
     # Add all_annotations to result if required
     if include_rest and all_annotations:
-        for a in set(all_annotations).difference(omit_annotations):
+        for a in [a for a in all_annotations if not a in omit_annotations]:
             if a not in result:
                 result[a] = None
                 plain_name, _ = Annotation(a).split()
@@ -77,7 +77,7 @@ def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations
 
     # Add annotations names without attributes to result if required
     if add_plain_annotations:
-        for a in possible_plain_annotations.difference(plain_annotations):
+        for a in sorted(possible_plain_annotations.difference(plain_annotations)):
             if a not in result:
                 result[a] = None
 
