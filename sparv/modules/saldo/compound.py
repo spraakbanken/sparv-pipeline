@@ -13,9 +13,11 @@ from sparv.api.util.tagsets import tagmappings
 
 logger = get_logger(__name__)
 
-
+MAX_WORD_LEN = 75
 SPLIT_LIMIT = 200
 COMP_LIMIT = 100
+INVALID_PREFIXES = ("http:", "https:", "www.")
+INVALID_REGEX = re.compile(r"(..?)\1{3}")
 
 # SALDO: Delimiters that hopefully are never found in an annotation or in a POS tag:
 PART_DELIM = "^"
@@ -33,7 +35,8 @@ def preloader(saldo_comp_model, stats_model):
     Config("saldo.comp_model", default="saldo/saldo.compound.pickle", description="Path to SALDO compound model"),
     Config("saldo.comp_nst_model", default="saldo/nst_comp_pos.pickle",
            description="Path to NST part of speech compound model"),
-    Config("saldo.comp_stats_model", default="saldo/stats.pickle", description="Path to statistics model")
+    Config("saldo.comp_stats_model", default="saldo/stats.pickle", description="Path to statistics model"),
+    Config("saldo.comp_use_source", default=True, description="Also use source text as lexicon for compound analysis")
 ], preloader=preloader, preloader_params=["saldo_comp_model", "stats_model"], preloader_target="preloaded_models")
 def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
                                                description="Compound analysis using lemgrams"),
@@ -46,6 +49,7 @@ def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
              saldo_comp_model: Model = Model("[saldo.comp_model]"),
              nst_model: Model = Model("[saldo.comp_nst_model]"),
              stats_model: Model = Model("[saldo.comp_stats_model]"),
+             comp_use_source: bool = Config("saldo.comp_use_source"),
              complemgramfmt: str = util.constants.SCORESEP + "%.3e",
              delimiter: str = util.constants.DELIM,
              compdelim: str = util.constants.COMPSEP,
@@ -81,8 +85,8 @@ def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
 
     word_msd_baseform_annotations = list(word.read_attributes((word, msd, baseform_tmp)))
 
-    # Create alternative lexicon (for words within the file)
-    altlexicon = InFileLexicon(word_msd_baseform_annotations)
+    # Create alternative lexicon (for words within the source file)
+    altlexicon = InFileLexicon(word_msd_baseform_annotations if comp_use_source else [])
 
     ##################
     # Do annotation
@@ -218,8 +222,8 @@ class InFileLexicon:
     keys = words, values =  MSD tags
     """
 
-    def __init__(self, annotations):
-        """Create a lexicon for the words occuring in this file."""
+    def __init__(self, annotations: list):
+        """Create a lexicon for the words occurring in this file."""
         lex = {}
         for word, msd, _ in annotations:
             w = word.lower()
@@ -254,7 +258,7 @@ class InFileLexicon:
 
 def split_word(saldo_lexicon, altlexicon, w, msd):
     """Split word w into every possible combination of substrings."""
-    MAX_ITERATIONS = 500000
+    MAX_ITERATIONS = 250000
     MAX_TIME = 20  # Seconds
     invalid_spans = set()
     valid_spans = set()
@@ -449,7 +453,7 @@ def deep_len(lst):
 
 def compound(saldo_lexicon, altlexicon, w, msd=None):
     """Create a list of compound analyses for word w."""
-    if len(w) > 75 or re.search(r"(.)\1{4,}", w):
+    if len(w) > MAX_WORD_LEN or INVALID_REGEX.search(w) or any(w.startswith(p) for p in INVALID_PREFIXES):
         return []
 
     in_compounds = list(split_word(saldo_lexicon, altlexicon, w, msd))
