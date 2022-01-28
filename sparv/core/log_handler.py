@@ -169,7 +169,7 @@ class ProgressWithTable(progress.Progress):
             table.add_column("File", no_wrap=True)
             table.add_column("Elapsed", no_wrap=True, width=8, justify="right", style="progress.remaining")
             table.add_row("[b]Task[/]", "[b]File[/]", "[default b]Elapsed[/]")
-            for task in self.current_tasks.values():
+            for task in list(self.current_tasks.values()):  # Make a copy to avoid mutations while iterating
                 elapsed = round(time.time() - task["starttime"])
                 table.add_row(
                     task["name"],
