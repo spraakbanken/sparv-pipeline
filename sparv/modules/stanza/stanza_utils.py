@@ -1,6 +1,8 @@
 """Util functions used in stanza."""
 
-from sparv.api import Annotation, Output, SparvErrorMessage, annotator, util
+from sparv.api import Annotation, Output, SparvErrorMessage, annotator, get_logger
+
+logger = get_logger(__name__)
 
 
 @annotator("Annotate tokens with IDs relative to their sentences")
@@ -17,6 +19,10 @@ def run_stanza(nlp, document, batch_size, max_sentence_length: int = 0, max_toke
     """Run Stanza and handle possible errors."""
     try:
         doc = nlp(document)
+    # KBLab fix: catch RecursionError which may occur on untidy input
+    except RecursionError:
+        logger.error("Caught RecursionError! Skipping Stanza analysis for this document.")
+        return None
     except RuntimeError as e:
         gpu_error = "CUDA out of memory" in str(e)
         cpu_error = "DefaultCPUAllocator: can't allocate memory" in str(e)

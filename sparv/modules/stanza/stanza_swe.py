@@ -134,6 +134,18 @@ def annotate_swe(
         document = [[word_list[i] for i in s] for s in sentences]
 
         doc = stanza_utils.run_stanza(nlp, document, batch_size, max_sentence_length)
+
+        # KBLab fix: produce empty input upon RecursionError
+        if doc is None:
+            out_msd.write(msd)
+            out_pos.write(pos)
+            out_feats.write(feats)
+            out_baseform.write(baseforms)
+            out_dephead_ref.write(dephead_ref)
+            out_dephead.write(dephead)
+            out_deprel.write(deprel)
+            continue
+
         stanza_utils.check_sentence_respect(len(list(s for s in sentences if s)), len(doc.sentences))
         word_count_real = sum(len(s) for s in sentences)
         word_count = 0
@@ -201,6 +213,14 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
     })
 
     doc = stanza_utils.run_stanza(nlp, document, batch_size)
+
+    # KBLab fix: produce empty input upon RecursionError
+    if doc is None:
+        out_msd.write(msd)
+        out_pos.write(pos)
+        out_feats.write(feats)
+        return
+
     stanza_utils.check_sentence_respect(len(list(s for s in sentences if s)), len(doc.sentences))
     word_count = 0
     for sent, tagged_sent in zip(sentences, doc.sentences):
@@ -309,6 +329,14 @@ def dep_parse(out_dephead: Output = Output("<token>:stanza.dephead", cls="token:
         })
 
         doc = stanza_utils.run_stanza(nlp, Document(document), batch_size, max_sentence_length)
+
+        # KBLab fix: produce empty input upon RecursionError
+        if doc is None:
+            out_dephead_ref.write(dephead_ref)
+            out_dephead.write(dephead)
+            out_deprel.write(deprel)
+            return
+
         for sent, tagged_sent in zip(sentences, doc.sentences):
             for w_index, w in zip(sent, tagged_sent.words):
                 dephead_str = str(sent[w.head - 1]) if w.head > 0 else "-"
