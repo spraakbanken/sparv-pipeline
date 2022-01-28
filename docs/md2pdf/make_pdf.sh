@@ -36,7 +36,7 @@ function make_document {
 title: Sparv Pipeline $SPARV_VERSION - $3
 author: |
   | Språkbanken Text
-  | Institutionen för svenska språket
+  | Institutionen för svenska, flerspråkighet och språkteknologi
   | Göteborgs universitet
   |
   |
