@@ -6,7 +6,7 @@ from typing import Optional
 
 from dateutil.relativedelta import relativedelta
 
-from sparv.api import Annotation, Config, Output, OutputCommonData, annotator, get_logger
+from sparv.api import Annotation, Config, Output, OutputCommonData, SparvErrorMessage, annotator, get_logger
 
 logger = get_logger(__name__)
 
@@ -191,6 +191,12 @@ def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Outpu
                 return None
 
         return length
+
+    # Check that the input annotation matches the output
+    if (in_from.annotation_name != out_from.annotation_name) or (
+        in_to.annotation_name != out_to.annotation_name):
+        raise SparvErrorMessage("The 'dateformat' attributes must be attached to the same annotation as the input"
+                                f" (in this case the '{in_from.annotation_name}' annotation)")
 
     if not in_to:
         in_to = in_from
