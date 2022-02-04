@@ -252,7 +252,8 @@ def calculate_element_hierarchy(source_file, spans_list):
             ordered_pairs.add((b, a))
 
     hierarchy = []
-    error_msg = "Something went wrong while sorting annotation elements. Could there be circular relations?"
+    error_msg = ("Something went wrong while sorting annotation elements. Could there be circular relations? "
+                 "The following elements could not be sorted: ")
     # Loop until all unclear_spans are processed
     while unclear_spans:
         size = len(unclear_spans)
@@ -266,7 +267,7 @@ def calculate_element_hierarchy(source_file, spans_list):
                     if pair[0] == span:
                         ordered_pairs.remove(pair)
         # Check that unclear_spans is getting smaller, otherwise there might be circularity
-        assert len(unclear_spans) < size, error_msg
+        assert len(unclear_spans) < size, error_msg + " ".join(unclear_spans)
     return hierarchy
 
 
