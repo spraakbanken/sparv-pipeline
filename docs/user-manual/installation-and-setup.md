@@ -226,6 +226,7 @@ Please download, unzip and place contents inside the [Sparv data directory](#set
 |**License**                       |[AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.en.html)
 
 Please install the software (including the additional language data) according to the instructions provided by FreeLing.
+Note that you will need to uncompress the source and language files in the same folder before compiling.
 You will also need to install the [sparv-freeling plugin](https://github.com/spraakbanken/sparv-freeling). Please follow
 the installation instructions for the sparv-freeling module on [GitHub](https://github.com/spraakbanken/sparv-freeling)
 in order to set up the plugin correctly.
