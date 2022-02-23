@@ -153,6 +153,7 @@ def main():
     runrule_parser.add_argument("-l", "--list", action="store_true", help="List available rules")
     runrule_parser.add_argument("-w", "--wildcards", nargs="*", metavar="WILDCARD",
                                 help="Supply values for wildcards using the format 'name=value'")
+    runrule_parser.add_argument("--force", action="store_true", help="Force recreation of target")
     createfile_parser = subparsers.add_parser("create-file", description=("Create specified file(s). "
                                               "The full path must be supplied and wildcards must be replaced."))
     createfile_parser.add_argument("targets", nargs="*", default=["list"], help="File(s) to create")
@@ -312,6 +313,9 @@ def main():
             if args.list or snakemake_args["targets"] == ["list"]:
                 snakemake_args["targets"] = ["list_targets"]
                 simple_target = True
+            elif args.force:
+                # Rename all-files-rule to the related regular rule
+                snakemake_args["forcerun"] = [t.replace(":", "::") for t in args.targets]
         # Command: create-file
         elif args.command == "create-file":
             snakemake_args["targets"] = args.targets

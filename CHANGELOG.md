@@ -16,6 +16,7 @@
 - Added a separate installer for installing scrambled cwb files
 - A warning message is printed when Sparv discovers source files that don't match the file extension in the corpus
   config.
+- Added `--force` flag to `run-rule` command to force recreation of the listed targets.
 
 ### Changed
 
