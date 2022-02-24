@@ -158,6 +158,7 @@ def main():
                                               "The full path must be supplied and wildcards must be replaced."))
     createfile_parser.add_argument("targets", nargs="*", default=["list"], help="File(s) to create")
     createfile_parser.add_argument("-l", "--list", action="store_true", help="List available files that can be created")
+    createfile_parser.add_argument("--force", action="store_true", help="Force recreation of target")
 
     preloader_parser = subparsers.add_parser("preload", description="Preload annotators and models")
     preloader_parser.add_argument("preload_command", nargs="?", default="start", choices=["start", "stop"])
@@ -322,6 +323,8 @@ def main():
             if args.list or snakemake_args["targets"] == ["list"]:
                 snakemake_args["targets"] = ["list_files"]
                 simple_target = True
+            elif args.force:
+                snakemake_args["forcerun"] = args.targets
         # Command: install
         elif args.command == "install":
             if args.list:
