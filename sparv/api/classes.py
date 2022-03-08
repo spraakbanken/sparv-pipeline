@@ -658,12 +658,6 @@ class Source:
 class Export(str):
     """Export directory and filename pattern."""
 
-    def __new__(cls, name: str, *args, **kwargs):
-        return super().__new__(cls, name)
-
-    def __init__(self, name: str, absolute_path: bool = False):
-        self.absolute_path = absolute_path
-
 
 class ExportInput(str):
     """Export directory and filename pattern, used as input."""
@@ -671,9 +665,8 @@ class ExportInput(str):
     def __new__(_cls, val: str, *args, **kwargs):
         return super().__new__(_cls, val)
 
-    def __init__(self, val: str, all_files: bool = False, absolute_path: bool = False):
+    def __init__(self, val: str, all_files: bool = False):
         self.all_files = all_files
-        self.absolute_path = absolute_path
 
 
 class ExportAnnotations(List[Tuple[Annotation, Optional[str]]]):

@@ -173,8 +173,7 @@ An instance of this class represents an export file. This class is used to defin
 
 **Arguments:**
 
-- `name`: The export directory and filename pattern (e.g. `"xml_pretty/[xml_export.filename]"`).
-- `absolute_path`: Set to `True` if the path is absolute. Default: `False`
+- The export directory and filename pattern (e.g. `"xml_pretty/[xml_export.filename]"`).
 
 
 ## ExportAnnotations
@@ -194,7 +193,6 @@ function.
 
 - `val`: The export directory and filename pattern (e.g. `"xml_pretty/[xml_export.filename]"`).
 - `all_files`: Set to `True` to get the export for all source files. Default: `False`
-- `absolute_path`: Set to `True` if the path is absolute. Default: `False`
 
 
 ## Headers

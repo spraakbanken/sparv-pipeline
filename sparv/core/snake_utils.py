@@ -421,10 +421,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             rule.classes.update(registry.find_classes(param.default))
             param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
             rule.missing_config.update(missing_configs)
-            if param.default.absolute_path:
-                export_path = Path(param_value)
-            else:
-                export_path = paths.export_dir / param_value
+            export_path = paths.export_dir / param_value
             output_dirs.add(export_path.parent)
             rule.outputs.append(export_path)
             rule.parameters[param_name] = Export(str(export_path))
@@ -438,10 +435,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             rule.classes.update(registry.find_classes(param.default))
             param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
             rule.missing_config.update(missing_configs)
-            if param.default.absolute_path:
-                rule.parameters[param_name] = ExportInput(param_value)
-            else:
-                rule.parameters[param_name] = ExportInput(paths.export_dir / param_value)
+            rule.parameters[param_name] = ExportInput(paths.export_dir / param_value)
             if param.default.all_files:
                 rule.inputs.extend(expand(escape_wildcards(rule.parameters[param_name]),
                                           file=storage.source_files))

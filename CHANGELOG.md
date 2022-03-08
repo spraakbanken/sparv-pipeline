@@ -37,6 +37,7 @@
     `stats_export:freq_list_simple` is now called `stats_export:sbx_freq_list_simple`
     `stats_export:install_freq_list` is now called `stats_export:install_sbx_freq_list`
     `stats_export:freq_list_fsv` is now called `stats_export:sbx_freq_list_fsv`
+- Removed ability to use absolute path for exports.
 
 ### Fixed
 
