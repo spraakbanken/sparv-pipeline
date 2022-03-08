@@ -7,7 +7,7 @@ import subprocess
 from typing import Optional, Union
 
 import sparv.core.paths as paths
-from sparv.api import get_logger
+from sparv.api import get_logger, SparvErrorMessage
 
 logger = get_logger(__name__)
 
@@ -68,7 +68,7 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
     assert isinstance(arguments, (list, tuple))
     assert isinstance(stdin, (str, list, tuple))
 
-    binary = find_binary(name, search_paths)
+    binary = find_binary(name, search_paths, raise_error=True)
     if raw_command:
         use_shell = True
         command = raw_command % binary
@@ -140,8 +140,10 @@ def find_binary(name: Union[str, list], search_paths=(), executable: bool = True
                 return path_to_bin
 
     if raise_error:
-        raise LookupError("Couldn't find binary: %s\nSearched in: %s\nFor binary names: %s" %
-                          (name[0], ", ".join(search_paths), ", ".join(binary)))
+        err_msg = f"Couldn't find binary: {name[0]}\nSearched in: {', '.join(search_paths)}\n"
+        if len(name) > 1:
+            err_msg += f"For binary names: {', '.join(name)}"
+        raise SparvErrorMessage(err_msg)
     else:
         return None
 
