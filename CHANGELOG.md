@@ -38,6 +38,11 @@
     `stats_export:install_freq_list` is now called `stats_export:install_sbx_freq_list`
     `stats_export:freq_list_fsv` is now called `stats_export:sbx_freq_list_fsv`
 - Removed ability to use absolute path for exports.
+- Renamed the installer `xml_export:install_original` to `xml_export:install`. The configuration variables
+  `xml_export.export_original_host` and `xml_export.export_original_path` have been changed to
+  `xml_export.export_host` and `xml_export.export_path` respectively. The configuration variables for the scrambled
+  installer has been changed from `xml_export.export_host` and `xml_export.export_path` to
+  `xml_export.export_scrambled_host` and `xml_export.export_scrambled_path` respectively.
 
 ### Fixed
 

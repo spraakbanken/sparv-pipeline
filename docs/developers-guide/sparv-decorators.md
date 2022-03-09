@@ -119,15 +119,15 @@ A function decorated with `@installer` is used to copy a corpus export to a remo
 
 **Example:**
 ```python
-@installer("Copy compressed scrambled XML to remote host", config=[
-    Config("xml_export.export_host", "", description="Remote host to copy scrambled XML export to"),
-    Config("xml_export.export_path", "", description="Path on remote host to copy scrambled XML export to")
+@installer("Copy compressed XML to remote host", config=[
+    Config("xml_export.export_host", "", description="Remote host to copy XML export to."),
+    Config("xml_export.export_path", "", description="Path on remote host to copy XML export to.")
 ])
-def install_scrambled(corpus: Corpus = Corpus(),
-                      xmlfile: ExportInput = ExportInput("[metadata.id]_scrambled.xml"),
-                      out: OutputCommonData = OutputCommonData("xml_export.install_export_scrambled_marker"),
-                      export_path: str = Config("xml_export.export_path"),
-                      host: str = Config("xml_export.export_host")):
+def install(corpus: Corpus = Corpus(),
+            xmlfile: ExportInput = ExportInput("[metadata.id].xml"),
+            out: OutputCommonData = OutputCommonData("xml_export.install_export_pretty_marker"),
+            export_path: str = Config("xml_export.export_path"),
+            host: str = Config("xml_export.export_host")):
     ...
 ```
 

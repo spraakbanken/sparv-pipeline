@@ -78,13 +78,13 @@ def compressed_scrambled(out: Export = Export("[metadata.id]_scrambled.xml.bz2")
 
 
 @installer("Copy compressed scrambled XML to remote host", config=[
-    Config("xml_export.export_host", "", description="Remote host to copy scrambled XML export to"),
-    Config("xml_export.export_path", "", description="Path on remote host to copy scrambled XML export to")
+    Config("xml_export.export_scrambled_host", "", description="Remote host to copy scrambled XML export to"),
+    Config("xml_export.export_scrambled_path", "", description="Path on remote host to copy scrambled XML export to")
 ])
 def install_scrambled(corpus: Corpus = Corpus(),
                       bz2file: ExportInput = ExportInput("[metadata.id]_scrambled.xml.bz2"),
                       out: OutputCommonData = OutputCommonData("xml_export.install_export_scrambled_marker"),
-                      export_path: str = Config("xml_export.export_path"),
-                      host: str = Config("xml_export.export_host")):
+                      export_path: str = Config("xml_export.export_scrambled_path"),
+                      host: str = Config("xml_export.export_scrambled_host")):
     """Copy compressed combined scrambled XML to remote host."""
     xml_utils.install_compressed_xml(corpus, bz2file, out, export_path, host)

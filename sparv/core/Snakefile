@@ -411,7 +411,7 @@ if "install_corpus" in selected_targets:
     install_inputs = snake_utils.get_install_outputs(snake_storage, config.get("install_types"))
     if not install_inputs:
         raise SparvErrorMessage("Please specify what you would like to install, either by supplying arguments "
-                                "(e.g. `sparv install xml_export:install_original`) or by adding installations in "
+                                "(e.g. `sparv install xml_export:install`) or by adding installations in "
                                 "The `install` section of your corpus config file.\n"
                                 "You can list available installations with `sparv install -l`.")
     else:
