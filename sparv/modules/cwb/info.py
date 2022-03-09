@@ -10,14 +10,33 @@ logger = get_logger(__name__)
 
 
 @exporter("CWB .info file")
-def info(out: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.info", absolute_path=True),
+def info(out: Export = Export("cwb/data/.info"),
          sentences: AnnotationCommonData = AnnotationCommonData("misc.<sentence>_count"),
          firstdate: AnnotationCommonData = AnnotationCommonData("cwb.datefirst"),
          lastdate: AnnotationCommonData = AnnotationCommonData("cwb.datelast"),
          resolution: AnnotationCommonData = AnnotationCommonData("dateformat.resolution"),
          protected: bool = Config("korp.protected"),
          korp_modes: list = Config("korp.modes")):
-    """Save information to the file specified by 'out'."""
+    """Create CWB .info file."""
+    create_info_file(sentences, firstdate, lastdate, resolution, protected, korp_modes, out)
+
+
+@exporter("CWB .info file for scrambled corpus")
+def info_scrambled(out: Export = Export("cwb_scrambled/data/.info"),
+                   sentences: AnnotationCommonData = AnnotationCommonData("misc.<sentence>_count"),
+                   firstdate: AnnotationCommonData = AnnotationCommonData("cwb.datefirst"),
+                   lastdate: AnnotationCommonData = AnnotationCommonData("cwb.datelast"),
+                   resolution: AnnotationCommonData = AnnotationCommonData("dateformat.resolution"),
+                   protected: bool = Config("korp.protected"),
+                   korp_modes: list = Config("korp.modes")):
+    """Create CWB .info file for scrambled corpus."""
+    create_info_file(sentences, firstdate, lastdate, resolution, protected, korp_modes, out)
+
+
+def create_info_file(sentences: AnnotationCommonData, firstdate: AnnotationCommonData, lastdate: AnnotationCommonData,
+                     resolution: AnnotationCommonData, protected: bool, korp_modes: list,
+                     out: Export):
+    """Create .info file."""
     content = []
     protected_str = str(protected).lower()
 

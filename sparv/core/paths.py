@@ -66,8 +66,3 @@ log_dir = "logs"
 source_dir = "source"
 export_dir = Path("export")
 config_file = "config.yaml"
-
-# CWB variables
-cwb_encoding = os.environ.get("CWB_ENCODING", "utf8")
-cwb_datadir = os.environ.get("CWB_DATADIR")
-corpus_registry = os.environ.get("CORPUS_REGISTRY")

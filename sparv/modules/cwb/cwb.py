@@ -101,10 +101,8 @@ def vrt_scrambled(source_file: SourceFilename = SourceFilename(),
 
 
 @exporter("CWB encode", order=2, config=[
-    Config("cwb.corpus_registry", default=paths.corpus_registry, description="Path to CWB registry directory"),
-    Config("cwb.cwb_datadir", default=paths.cwb_datadir, description="Path to CWB data directory"),
     Config("cwb.bin_path", default="", description="Path to directory containing the CWB executables"),
-    Config("cwb.encoding", default=paths.cwb_encoding, description="Encoding to use"),
+    Config("cwb.encoding", default="utf8", description="Encoding to use"),
     Config("cwb.skip_compression", False, description="Whether to skip compression"),
     Config("cwb.skip_validation", False, description="Whether to skip validation")
 ])
@@ -114,21 +112,19 @@ def encode(corpus: Corpus = Corpus(),
            source_files: AllSourceFilenames = AllSourceFilenames(),
            words: AnnotationAllSourceFiles = AnnotationAllSourceFiles("[export.word]"),
            vrtfiles: ExportInput = ExportInput("vrt/{file}.vrt", all_files=True),
-           _out: Export = Export("[cwb.corpus_registry]/[metadata.id]", absolute_path=True),
-           out_marker: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.original_marker", absolute_path=True),
+           out_registry: Export = Export("cwb/registry/[metadata.id]"),
+           out_marker: Export = Export("cwb/data/.marker"),
            token: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>"),
            bin_path: Config = Config("cwb.bin_path"),
            encoding: str = Config("cwb.encoding"),
-           datadir: str = Config("cwb.cwb_datadir"),
-           registry: str = Config("cwb.corpus_registry"),
            remove_namespaces: bool = Config("export.remove_module_namespaces", False),
            sparv_namespace: str = Config("export.sparv_namespace"),
            source_namespace: str = Config("export.source_namespace"),
            skip_compression: Optional[bool] = Config("cwb.skip_compression"),
            skip_validation: Optional[bool] = Config("cwb.skip_validation")):
-    """Do cwb encoding with vrt files in original order."""
-    cwb_encode(corpus, annotations, source_annotations, source_files, words, vrtfiles, out_marker, token.name,
-               bin_path, encoding, datadir, registry, remove_namespaces, sparv_namespace, source_namespace,
+    """Encode CWB corpus from VRT files."""
+    cwb_encode(corpus, annotations, source_annotations, source_files, words, vrtfiles, out_registry, out_marker,
+               token.name, bin_path, encoding, remove_namespaces, sparv_namespace, source_namespace,
                skip_compression, skip_validation)
 
 
@@ -139,31 +135,26 @@ def encode_scrambled(corpus: Corpus = Corpus(),
                      source_files: AllSourceFilenames = AllSourceFilenames(),
                      words: AnnotationAllSourceFiles = AnnotationAllSourceFiles("[export.word]"),
                      vrtfiles: ExportInput = ExportInput("vrt_scrambled/{file}.vrt", all_files=True),
-                     _out: Export = Export("[cwb.corpus_registry]/[metadata.id]", absolute_path=True),
-                     out_marker: Export = Export("[cwb.cwb_datadir]/[metadata.id]/.scrambled_marker",
-                                                 absolute_path=True),
+                     out_registry: Export = Export("cwb_scrambled/registry/[metadata.id]"),
+                     out_marker: Export = Export("cwb_scrambled/data/.scrambled_marker"),
                      token: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>"),
                      bin_path: Config = Config("cwb.bin_path"),
                      encoding: str = Config("cwb.encoding"),
-                     datadir: str = Config("cwb.cwb_datadir"),
-                     registry: str = Config("cwb.corpus_registry"),
                      remove_namespaces: bool = Config("export.remove_module_namespaces", False),
                      sparv_namespace: str = Config("export.sparv_namespace"),
                      source_namespace: str = Config("export.source_namespace"),
                      skip_compression: Optional[bool] = Config("cwb.skip_compression"),
                      skip_validation: Optional[bool] = Config("cwb.skip_validation")):
-    """Do cwb encoding with vrt files in scrambled order."""
-    cwb_encode(corpus, annotations, source_annotations, source_files, words, vrtfiles, out_marker, token.name,
-               bin_path, encoding, datadir, registry, remove_namespaces, sparv_namespace, source_namespace,
+    """Encode CWB corpus from scrambled VRT files."""
+    cwb_encode(corpus, annotations, source_annotations, source_files, words, vrtfiles, out_registry, out_marker,
+               token.name, bin_path, encoding, remove_namespaces, sparv_namespace, source_namespace,
                skip_compression, skip_validation)
 
 
-def cwb_encode(corpus, annotations, source_annotations, source_files, words, vrtfiles, out_marker, token_name: str,
-               bin_path, encoding, datadir, registry, remove_namespaces, sparv_namespace, source_namespace,
+def cwb_encode(corpus, annotations, source_annotations, source_files, words, vrtfiles, out_registry, out_marker,
+               token_name: str, bin_path, encoding, remove_namespaces, sparv_namespace, source_namespace,
                skip_compression, skip_validation):
     """Encode a number of vrt files, by calling cwb-encode."""
-    assert datadir, "CWB_DATADIR not specified"
-    assert registry, "CORPUS_REGISTRY not specified"
 
     if not corpus.strip():
         raise SparvErrorMessage("metadata.id needs to be set.")
@@ -177,8 +168,9 @@ def cwb_encode(corpus, annotations, source_annotations, source_files, words, vrt
 
     # Get annotation names
     annotation_list, token_attributes, export_names = util.export.get_annotation_names(
-        annotations, source_annotations, source_files=source_files, token_name=token_name, remove_namespaces=remove_namespaces,
-        sparv_namespace=sparv_namespace, source_namespace=source_namespace, keep_struct_names=True)
+        annotations, source_annotations, source_files=source_files, token_name=token_name,
+        remove_namespaces=remove_namespaces, sparv_namespace=sparv_namespace, source_namespace=source_namespace,
+        keep_struct_names=True)
 
     # Get VRT columns
     token_attributes = [(token_name + ":" + i) for i in token_attributes]
@@ -191,18 +183,17 @@ def cwb_encode(corpus, annotations, source_annotations, source_files, words, vrt
                           not a.annotation_name == token_name]
     structs = parse_structural_attributes(struct_annotations)
 
-    corpus_registry = os.path.join(registry, corpus)
-    corpus_datadir = os.path.join(datadir, corpus)
-    os.makedirs(corpus_datadir, exist_ok=True)
+    data_dir = Path(out_marker).resolve().parent
+    registry_dir = Path(out_registry).resolve().parent
+    registry_file = Path(out_registry).resolve()
 
-    # Remove any existing files in datadir except for the .info file
-    for f in Path(corpus_datadir).glob("*"):
-        if not f.name == ".info":
-            f.unlink()
+    # Create export dirs
+    data_dir.mkdir(exist_ok=True)
+    registry_dir.mkdir(exist_ok=True)
 
     encode_args = ["-s", "-p", "-",
-                   "-d", corpus_datadir,
-                   "-R", corpus_registry,
+                   "-d", data_dir,
+                   "-R", registry_file,
                    "-c", encoding,
                    "-x"
                    ]
@@ -225,27 +216,27 @@ def cwb_encode(corpus, annotations, source_annotations, source_files, words, vrt
     # Use xargs to avoid "Argument list too long" problems
     # util.system.call_binary(os.path.join(bin_path, "cwb-encode"), raw_command="cat %s | xargs cat | %%s %s" % (vrtfiles, " ".join(encode_args)), use_shell=True)
 
-    index_args = ["-V", "-r", registry, corpus.upper()]
+    index_args = ["-V", "-r", registry_dir, corpus.upper()]
     util.system.call_binary(os.path.join(bin_path, "cwb-makeall"), index_args)
     logger.info("Encoded and indexed %d columns, %d structs", len(columns), len(structs))
 
     if not skip_compression:
         logger.info("Compressing corpus files...")
-        compress_args = ["-A", corpus.upper()]
+        compress_args = ["-A", "-r", registry_dir, corpus.upper()]
         if skip_validation:
             compress_args.insert(0, "-T")
             logger.info("Skipping validation")
         # Compress token stream
         util.system.call_binary(os.path.join(bin_path, "cwb-huffcode"), compress_args)
         logger.info("Removing uncompressed token stream...")
-        for f in glob(os.path.join(corpus_datadir, "*.corpus")):
+        for f in glob(os.path.join(data_dir, "*.corpus")):
             os.remove(f)
         # Compress index files
         util.system.call_binary(os.path.join(bin_path, "cwb-compress-rdx"), compress_args)
         logger.info("Removing uncompressed index files...")
-        for f in glob(os.path.join(corpus_datadir, "*.corpus.rev")):
+        for f in glob(os.path.join(data_dir, "*.corpus.rev")):
             os.remove(f)
-        for f in glob(os.path.join(corpus_datadir, "*.corpus.rdx")):
+        for f in glob(os.path.join(data_dir, "*.corpus.rdx")):
             os.remove(f)
         logger.info("Compression done.")
 

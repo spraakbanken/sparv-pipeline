@@ -148,19 +148,12 @@ Download and unpack the zip-file from the [MaltParser webpage](http://www.maltpa
 ### Corpus Workbench
 |    |           |
 |:---|:----------|
-|**Purpose**                       |Creating corpus workbench binary files. You will only need it if you want to be able to search corpora with this tool.
-|**Download**                      |[Corpus Workbench on SourceForge](http://cwb.sourceforge.net/beta.php)
+|**Purpose**                       |Creating Corpus Workbench binary files. Only needed if you want to be able to search corpora with this tool.
+|**Download**                      |[Corpus Workbench on SourceForge](https://cwb.sourceforge.io/download.php)
 |**License**                       |[GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.html)
-|**Version compatible with Sparv** |beta 3.4.21 (probably works with newer versions)
+|**Version compatible with Sparv** |beta 3.4.21 (most likely works with newer versions)
 
-Refer to the INSTALL text file for instructions on how to build and install on your system. CWB needs two directories
-for storing the corpora, one for the data, and one for the corpus registry. You will have to create these directories,
-and then set the environment variables `CWB_DATADIR` and `CORPUS_REGISTRY` and point them to the directories
-you created. For example:
-```
-export CWB_DATADIR=~/cwb/data;
-export CORPUS_REGISTRY=~/cwb/registry;
-```
+Refer to the INSTALL text file for instructions on how to build and install on your system.
 
 ### Software for Analysing Other Languages than Swedish
 Sparv can use different third-party tools for analyzing corpora in other languages than Swedish.

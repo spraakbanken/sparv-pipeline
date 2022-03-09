@@ -26,9 +26,9 @@
 - Empty corpus config files are treated as missing config files.
 - Moved cwb corpus installer from `korp` module into `cwb` module.
   This lead to some name changes of variables used in the corpus config:
-    - `korp.remote_cwb_datadir` is now called `cwb.remote_datadir`
-    - `korp.remote_cwb_registry` is now called `cwb.remote_registry`
-    - `korp.remote_host` has been split into `korp.remote_host` (host for SQL files) and `cwb.remote_host` (host for cwb
+    - `korp.remote_cwb_datadir` is now called `cwb.remote_data_dir`
+    - `korp.remote_cwb_registry` is now called `cwb.remote_registry_dir`
+    - `korp.remote_host` has been split into `korp.remote_host` (host for SQL files) and `cwb.remote_host` (host for CWB
        files)
     - install target `korp:install_corpus` has been renamed and split into `cwb:install_corpus` and 
       `cwb:install_corpus_scrambled`
@@ -37,6 +37,7 @@
     `stats_export:freq_list_simple` is now called `stats_export:sbx_freq_list_simple`
     `stats_export:install_freq_list` is now called `stats_export:install_sbx_freq_list`
     `stats_export:freq_list_fsv` is now called `stats_export:sbx_freq_list_fsv`
+- `cwb` module now exports to regular export directory instead of CWB's own directories.
 - Removed ability to use absolute path for exports.
 - Renamed the installer `xml_export:install_original` to `xml_export:install`. The configuration variables
   `xml_export.export_original_host` and `xml_export.export_original_path` have been changed to
