@@ -18,6 +18,7 @@
   config.
 - Added `--force` flag to `run-rule` and `create-file` commands to force recreation of the listed targets.
 - Exit with an error message if a required executable is missing.
+- Show a warning if an installed plugin is incompatible with Sparv.
 
 ### Changed
 

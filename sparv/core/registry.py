@@ -12,6 +12,7 @@ import typing_inspect
 
 from sparv.core import config as sparv_config
 from sparv.core import paths
+from sparv.core.console import console
 from sparv.api.classes import (BaseOutput, Config, ExportAnnotations, ExportAnnotationsAllSourceFiles, SourceStructureParser,
                                ModelOutput, Wildcard)
 
@@ -86,7 +87,7 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
     Returns:
         A list of available module names.
     """
-    from pkg_resources import iter_entry_points
+    from pkg_resources import iter_entry_points, VersionConflict
 
     modules_full_path = paths.sparv_path / paths.modules_dir
     core_modules_full_path = paths.sparv_path / paths.core_modules_dir
@@ -115,7 +116,12 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
 
     # Search for installed plugins
     for entry_point in iter_entry_points("sparv.plugin"):
-        m = entry_point.load()
+        try:
+            m = entry_point.load()
+        except VersionConflict as e:
+            console.print(f"[red]:warning-emoji:  The plugin {entry_point.dist} could not be loaded. "
+                          f"It requires {e.req}, but the current installed version is {e.dist}.\n")
+            continue
         add_module_metadata(m, entry_point.name)
         module_names.append(entry_point.name)
 
