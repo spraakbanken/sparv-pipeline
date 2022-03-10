@@ -6,16 +6,24 @@
 
 - Added a quick start guide in the documentation.
 - Added importers for more file formats: docx and odt.
-- Added Support for language varieties.
+- Added support for language varieties.
 - Re-introduced analyses for Old Swedish and Swedish from the 1800's.
 - Added a more flexible stats export which lets you choose which annotations to include in the frequency list.
+- Added installer for stats export.
 - Added Stanza support for English.
 - Added better install and uninstall instructions for plugins.
 - Added explicit `ref` annotations (indexing tokens within sentences) for Stanza, Malt and Stanford.
 - Added a `--reset` flag to the `sparv setup` command for resetting the data directory setting.
-- Added a separate installer for installing scrambled cwb files
+- Added a separate installer for installing scrambled CWB files.
 - A warning message is printed when Sparv discovers source files that don't match the file extension in the corpus
   config.
+- An error message is shown if unknown exporters are listed under `export.default`.
+- Allow source annotations named "not".
+- Added a source filename annotator.
+- Show an error message if user specifies an invalid installation.
+- Added a `--stats` flag to several commands, showing a summary after completion of time spent per annotator.
+- Added `stanza.max_token_length` option.
+- Added Hunpos-backoff annotation for Stanza msd and pos.
 - Added `--force` flag to `run-rule` and `create-file` commands to force recreation of the listed targets.
 - Exit with an error message if a required executable is missing.
 - Show a warning if an installed plugin is incompatible with Sparv.
@@ -23,9 +31,10 @@
 ### Changed
 
 - Significantly improved the CLI startup time.
+- Replaced the `--verbose` flag with `--simple` and made verbose the default mode.
 - Everything needed by Sparv modules (including `utils`) is now available through the `sparv.api` package.
 - Empty corpus config files are treated as missing config files.
-- Moved cwb corpus installer from `korp` module into `cwb` module.
+- Moved CWB corpus installer from `korp` module into `cwb` module.
   This lead to some name changes of variables used in the corpus config:
     - `korp.remote_cwb_datadir` is now called `cwb.remote_data_dir`
     - `korp.remote_cwb_registry` is now called `cwb.remote_registry_dir`
@@ -38,6 +47,12 @@
     `stats_export:freq_list_simple` is now called `stats_export:sbx_freq_list_simple`
     `stats_export:install_freq_list` is now called `stats_export:install_sbx_freq_list`
     `stats_export:freq_list_fsv` is now called `stats_export:sbx_freq_list_fsv`
+- Now incrementally compresses bz2 files in compressed XML export to avoid memory problems with large files.
+- Corpus source files are now called "source files" instead of "documents", to avoid confusion with other things called
+  "document". Consequently, the `--doc/-d` flag has been renamed to `--file/-f`.
+- Minimum Python version is now 3.6.2.
+- Removed Python 2 dependency for hfst-SweNER.
+- Tweaked compound analysis to make it less slow and added option to disable using source text as lexicon.
 - `cwb` module now exports to regular export directory instead of CWB's own directories.
 - Removed ability to use absolute path for exports.
 - Renamed the installer `xml_export:install_original` to `xml_export:install`. The configuration variables
@@ -52,13 +67,20 @@
 - Automatically download correct Hunpos model depending on the Hunpos version installed.
 - Stanza can now handle tokens containing whitespaces.
 - Fixed a bug which lead to computing the source file list multiple times.
+- Fixed a few date related crashes in the `cwb` module.
+- Fixed installation of compressed, scrambled XML export.
+- Fixed bug in PunctuationTokenizer leading to orphaned tokens.
+- Fixed crash when scrambling nested spans by only scrambling the outermost ones.
+- Fixed crash in xml_import when no elements are imported.
+- Fixed crash on empty sentences in Stanza.
+- Better handling of empty XML elements in XML export.
 
 ## [4.1.1] - 2021-09-20
 
 ### Fixed
 
 - Workaround for bug in some versions of Python 3.8 and 3.9.
-- Fixed bugs in segmenter module.
+- Fixed bugs in `segmenter` module.
 
 ## [4.1.0] - 2021-04-14
 
