@@ -9,6 +9,7 @@ presets:
     paragraph:
         - SWE_1800.all
         - DATETIME.all
+        - <text>:misc.id as _id
         - <token:baseform> as lemma
         - <token:lemgram> as lex
         - <token:dephead_ref> as dephead
@@ -19,6 +20,7 @@ presets:
         - not <paragraph>:geo.geo_context
     paragraph-no-date:
         - SWE_1800.all
+        - <text>:misc.id as _id
         - <token:baseform> as lemma
         - <token:lemgram> as lex
         - <token:dephead_ref> as dephead

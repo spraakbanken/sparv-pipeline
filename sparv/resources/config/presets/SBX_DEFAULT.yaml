@@ -22,6 +22,7 @@ presets:
     paragraph:
         - standard_token
         - DATETIME.all
+        - <text>:misc.id as _id
         - <sentence>:geo.geo_context as _geocontext
         - <paragraph>:geo.geo_context as _geocontext
     no-paragraph:
@@ -29,6 +30,7 @@ presets:
         - not <paragraph>:geo.geo_context
     paragraph-no-date:
         - standard_token
+        - <text>:misc.id as _id
         - <sentence>:geo.geo_context as _geocontext
         - <paragraph>:geo.geo_context as _geocontext
     no-paragraph-no-date:
