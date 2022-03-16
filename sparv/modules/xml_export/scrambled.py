@@ -65,9 +65,14 @@ def scrambled(source_file: SourceFilename = SourceFilename(),
 def combined_scrambled(corpus: Corpus = Corpus(),
                        out: Export = Export("[metadata.id]_scrambled.xml"),
                        source_files: AllSourceFilenames = AllSourceFilenames(),
-                       xml_input: ExportInput = ExportInput("xml_scrambled/[xml_export.filename]", all_files=True)):
+                       xml_input: ExportInput = ExportInput("xml_scrambled/[xml_export.filename]", all_files=True),
+                       version_info: ExportInput = ExportInput("version_info/info_[metadata.id].yaml"),
+                       include_version_info: bool = Config("xml_export.include_version_info")):
     """Combine XML export files into a single XML file."""
-    xml_utils.combine(corpus, out, source_files, xml_input)
+    if include_version_info:
+        xml_utils.combine(corpus, out, source_files, xml_input, version_info)
+    else:
+        xml_utils.combine(corpus, out, source_files, xml_input)
 
 
 @exporter("Compressed combined scrambled XML export")

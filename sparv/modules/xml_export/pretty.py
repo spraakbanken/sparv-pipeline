@@ -82,14 +82,21 @@ def pretty(source_file: SourceFilename = SourceFilename(),
 
 @exporter("Combined XML export (all results in one file)", config=[
     Config("xml_export.filename_combined", default="[metadata.id].xml",
-           description="Filename of resulting combined XML.")
+           description="Filename of resulting combined XML."),
+    Config("xml_export.include_version_info", default=True,
+           description="Whether to include annotation version info in the combined XML.")
 ])
 def combined(corpus: Corpus = Corpus(),
              out: Export = Export("[xml_export.filename_combined]"),
              source_files: AllSourceFilenames = AllSourceFilenames(),
-             xml_input: ExportInput = ExportInput("xml_pretty/[xml_export.filename]", all_files=True)):
+             xml_input: ExportInput = ExportInput("xml_pretty/[xml_export.filename]", all_files=True),
+             version_info: ExportInput = ExportInput("version_info/info_[metadata.id].yaml"),
+             include_version_info: bool = Config("xml_export.include_version_info")):
     """Combine XML export files into a single XML file."""
-    xml_utils.combine(corpus, out, source_files, xml_input)
+    if include_version_info:
+        xml_utils.combine(corpus, out, source_files, xml_input, version_info)
+    else:
+        xml_utils.combine(corpus, out, source_files, xml_input)
 
 
 @exporter("Compressed combined XML export", config=[

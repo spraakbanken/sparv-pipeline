@@ -8,6 +8,8 @@ import xml.etree.ElementTree as etree
 from shutil import copyfileobj
 from typing import Optional
 
+import yaml
+
 from sparv.api import SparvErrorMessage, get_logger, util
 
 logger = get_logger(__name__)
@@ -128,12 +130,18 @@ def add_attrs(node, annotation, annotation_dict, export_names, index, include_em
             node.set(export_name, attrib_values[index])
 
 
-def combine(corpus, out, source_files, xml_input):
+def combine(corpus, out, source_files, xml_input, version_info_file=None):
     """Combine xml_files into one single file."""
     xml_files = [xml_input.replace("{file}", file) for file in source_files]
     xml_files.sort()
     with open(out, "w") as outf:
         print("<?xml version='1.0' encoding='UTF-8'?>", file=outf)
+        if version_info_file:
+            print("<!--", file=outf)
+            with open(version_info_file) as vi:
+                for line in vi.readlines():
+                    print(line.strip(), file=outf)
+            print("-->", file=outf)
         print('<corpus id="%s">' % corpus.replace("&", "&amp;").replace('"', "&quot;"), file=outf)
         for infile in xml_files:
             logger.info("Read: %s", infile)
