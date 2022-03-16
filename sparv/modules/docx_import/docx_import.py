@@ -9,7 +9,7 @@ from sparv.api import Config, SourceFilename, Output, Source, SourceStructure, T
 
 
 
-@importer("docx import", file_extension="docx", outputs=["text"], document_annotation="text", config=[
+@importer("docx import", file_extension="docx", outputs=["text"], text_annotation="text", config=[
     Config("docx_import.prefix", "", description="Optional prefix to add to annotation names."),
     Config("docx_import.keep_control_chars", False, description="Set to True if control characters should not be "
                                                                 "removed from the text."),

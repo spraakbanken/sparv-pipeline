@@ -437,8 +437,8 @@ class Wizard:
         # Ask user if they want to scan source files
         self.scan_source()
 
-        # Choose document annotation
-        self.select_document_annotation()
+        # Choose text annotation
+        self.select_text_annotation()
 
         # Select source annotations to keep
         questions = []
@@ -446,27 +446,27 @@ class Wizard:
             questions.extend(self.get_module_wizard(w))
         self.update_config(self.q(questions))
 
-    def select_document_annotation(self):
-        """Ask user for document annotation."""
-        doc_annotation = self.q(self.set_defaults({
+    def select_text_annotation(self):
+        """Ask user for text annotation."""
+        text_annotation = self.q(self.set_defaults({
             "type": "select",
-            "name": "import.document_annotation",
+            "name": "import.text_annotation",
             "message": "What is the name of the existing annotation in your source files that encapsulates a "
-                       "'document'? This is the text unit for which all document level annotations will apply. "
-                       "Usually, no text should exist outside of this annotation.",
+                       "'text'? This is the text unit for which all text level annotations will apply. "
+                       "Usually, no text content should exist outside of this annotation.",
             "choices": self.source_structure.get_plain_annotations(self.corpus_config) + [{
                 "name": "Enter manually",
                 "value": "__sparv_manual_entry"
             }]
         }))
-        if doc_annotation["import.document_annotation"] == "__sparv_manual_entry":
-            doc_annotation = self.q({
+        if text_annotation["import.text_annotation"] == "__sparv_manual_entry":
+            text_annotation = self.q({
                 "type": "text",
-                "name": "import.document_annotation",
+                "name": "import.text_annotation",
                 "message": "Annotation name, e.g. 'text' or  ̈́document':",
                 "validate": lambda x: bool(re.match(r"^\S+$", x))
             })
-        self.update_config(doc_annotation)
+        self.update_config(text_annotation)
 
     def scan_source(self):
         """Create a SourceStructureParser instance and offer to scan source files if possible."""

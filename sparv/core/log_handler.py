@@ -350,7 +350,7 @@ class LogHandler:
 
             if "text" in _variables:
                 _message += "\n\nNote: The 'text' class can also be set using the configuration variable " \
-                            "'import.document_annotation', but only if it refers to an annotation from the " \
+                            "'import.text_annotation', but only if it refers to an annotation from the " \
                             "source files."
 
             self.messages["error"].append((source, _message))

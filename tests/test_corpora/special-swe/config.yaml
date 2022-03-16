@@ -18,8 +18,8 @@ metadata:
 #===============================================================================
 
 import:
-    # The annotation representing one text document. Any text-level annotations will be attached to this annotation.
-    document_annotation: text
+    # The annotation representing one text. Any text-level annotations will be attached to this annotation.
+    text_annotation: text
 
 xml_import:
     # Elements that should be treated as headers, i.e. their contents will not be part of the corpus text

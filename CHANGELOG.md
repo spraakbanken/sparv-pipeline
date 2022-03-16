@@ -48,8 +48,10 @@
     `stats_export:install_freq_list` is now called `stats_export:install_sbx_freq_list`
     `stats_export:freq_list_fsv` is now called `stats_export:sbx_freq_list_fsv`
 - Now incrementally compresses bz2 files in compressed XML export to avoid memory problems with large files.
-- Corpus source files are now called "source files" instead of "documents", to avoid confusion with other things called
-  "document". Consequently, the `--doc/-d` flag has been renamed to `--file/-f`.
+- Corpus source files are now called "source files" instead of "documents". Consequently, the `--doc/-d` flag has been
+  renamed to `--file/-f`.
+- `import.document_annotation` has been renamed to `import.text_annotation`, and all references to "document" as a text
+  unit have been changed to "text".
 - Minimum Python version is now 3.6.2.
 - Removed Python 2 dependency for hfst-SweNER.
 - Tweaked compound analysis to make it less slow and added option to disable using source text as lexicon.

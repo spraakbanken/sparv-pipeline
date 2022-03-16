@@ -23,8 +23,8 @@ metadata:
 #===============================================================================
 
 import:
-    # The annotation representing one text document. Any text-level annotations will be attached to this annotation.
-    document_annotation: text
+    # The annotation representing one text. Any text-level annotations will be attached to this annotation.
+    text_annotation: text
 
 xml_import:
     elements:

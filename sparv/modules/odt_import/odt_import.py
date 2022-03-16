@@ -9,7 +9,7 @@ from sparv.api import Config, SourceFilename, Output, Source, SourceStructure, T
 logger = get_logger(__name__)
 
 
-@importer("odt import", file_extension="odt", outputs=["text"], document_annotation="text", config=[
+@importer("odt import", file_extension="odt", outputs=["text"], text_annotation="text", config=[
     Config("odt_import.prefix", "", description="Optional prefix to add to annotation names."),
     Config("odt_import.keep_control_chars", False, description="Set to True if control characters should not be "
                                                                 "removed from the text."),

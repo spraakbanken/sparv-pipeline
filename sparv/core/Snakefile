@@ -154,9 +154,9 @@ sparv_config.apply_presets()
 # Add classes from config to registry
 registry.annotation_classes["config_classes"] = sparv_config.config.get("classes", {})
 
-# Set text class from document annotation
+# Set text class from text annotation
 if not config_missing:
-    sparv_config.handle_document_annotation()
+    sparv_config.handle_text_annotation()
 
 # Let exporters and importers inherit config values from 'export' and 'import' sections
 for module in registry.modules:

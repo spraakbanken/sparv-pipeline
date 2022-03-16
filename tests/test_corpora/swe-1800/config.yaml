@@ -14,7 +14,7 @@ metadata:
 # Import Settings
 #===============================================================================
 import:
-    document_annotation: text
+    text_annotation: text
 
 #===============================================================================
 # Export Settings

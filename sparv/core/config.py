@@ -335,19 +335,19 @@ def apply_presets():
     config["classes"] = classes
 
 
-def handle_document_annotation():
-    """Copy document annotation to text class."""
-    doc_elem = get("import.document_annotation")
+def handle_text_annotation():
+    """Copy text annotation to text class."""
+    text_ann = get("import.text_annotation")
 
-    # Make sure that if both classes.text and import.document_annotation are set, that they have the same value
-    if get("classes.text") and doc_elem and get("classes.text") != doc_elem:
+    # Make sure that if both classes.text and import.text_annotation are set, that they have the same value
+    if get("classes.text") and text_ann and get("classes.text") != text_ann:
         raise SparvErrorMessage(
-            "The config keys 'classes.text' and 'import.document_annotation' can't have different values.",
+            "The config keys 'classes.text' and 'import.text_annotation' can't have different values.",
             "sparv", "config")
 
-    # If import.document_annotation is set, copy value to classes.text
-    if doc_elem:
-        set_default("classes.text", doc_elem)
+    # If import.text_annotation is set, copy value to classes.text
+    if text_ann:
+        set_default("classes.text", text_ann)
 
 
 def inherit_config(source: str, target: str) -> None:

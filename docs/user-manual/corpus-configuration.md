@@ -95,14 +95,14 @@ corpus).
   `xml_import:parse` (this is the default setting). If your corpus files are in plain text, you should choose
   `text_import:parse` instead.
 
-- `import.document_annotation` specifies the annotation representing _one text document_, and any automatic text-level
+- `import.text_annotation` specifies the annotation representing _one text_, and any automatic text-level
   annotations will be attached to this annotation. For XML source files this refers to one of the XML
   elements. For plain text source files a default `text` root annotation will be created automatically, and you won't
   have to change this setting.
 
     > [!NOTE]
     > This setting automatically sets the `text` [class](#annotation-classes). If you want to use an automatic
-    > annotation as the document annotation, you should not use this setting, and instead set the `text` class directly.
+    > annotation as the text annotation, you should not use this setting, and instead set the `text` class directly.
 
 - `import.encoding` specifies the encoding of the source files. It defaults to UTF-8.
 

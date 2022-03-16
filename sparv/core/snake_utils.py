@@ -176,11 +176,11 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 for element in annotations_:
                     rule.outputs.append(paths.work_dir / get_annotation_path(element))
 
-            # If import.document_annotation has been specified, add it to outputs if not already there
-            if sparv_config.get("import.document_annotation"):
-                doc_ann_file = paths.work_dir / get_annotation_path(sparv_config.get("import.document_annotation"))
-                if doc_ann_file not in rule.outputs:
-                    rule.outputs.append(doc_ann_file)
+            # If import.text_annotation has been specified, add it to outputs if not already there
+            if sparv_config.get("import.text_annotation"):
+                text_ann_file = paths.work_dir / get_annotation_path(sparv_config.get("import.text_annotation"))
+                if text_ann_file not in rule.outputs:
+                    rule.outputs.append(text_ann_file)
 
     if rule.exporter:
         storage.all_exporters.setdefault(rule.module_name, {}).setdefault(rule.f_name,

@@ -351,11 +351,11 @@ def merge_to_set(out: Output,
     out.write(out_annotation)
 
 
-@annotator("Source filename as attribute on document annotation")
+@annotator("Source filename as attribute on text annotation")
 def source(out: Output = Output("<text>:misc.source"),
            name: SourceFilename = SourceFilename(),
            text: Annotation = Annotation("<text>")):
-    """Create a document attribute based on the filename of the source file."""
+    """Create a text attribute based on the filename of the source file."""
     out.write(name for _ in text.read())
 
 

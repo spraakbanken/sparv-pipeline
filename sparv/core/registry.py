@@ -164,7 +164,7 @@ def _get_module_name(module_string: str) -> str:
 
 
 def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, file_extension: Optional[str] = None,
-               outputs=(), document_annotation=None, structure=None, language: Optional[List[str]] = None,
+               outputs=(), text_annotation=None, structure=None, language: Optional[List[str]] = None,
                config: Optional[List[Config]] = None, order: Optional[int] = None, abstract: bool = False,
                wildcards: Optional[List[Wildcard]] = None, preloader: Optional[Callable] = None,
                preloader_params: Optional[List[str]] = None, preloader_target: Optional[str] = None,
@@ -181,7 +181,7 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
             "type": a_type,
             "file_extension": file_extension,
             "outputs": outputs,
-            "document_annotation": document_annotation,
+            "text_annotation": text_annotation,
             "structure": structure,
             "language": language,
             "config": config,
@@ -212,7 +212,7 @@ def annotator(description: str, name: Optional[str] = None, language: Optional[L
 
 
 def importer(description: str, file_extension: str, name: Optional[str] = None, outputs=None,
-             document_annotation: Optional[str] = None, structure: Optional[Type[SourceStructureParser]] = None,
+             text_annotation: Optional[str] = None, structure: Optional[Type[SourceStructureParser]] = None,
              config: Optional[List[Config]] = None):
     """Return a decorator for importer functions.
 
@@ -224,8 +224,8 @@ def importer(description: str, file_extension: str, name: Optional[str] = None, 
             May also be a Config instance referring to such a list.
             It may generate more outputs than listed, but only the annotations listed here will be available
             to use as input for annotator functions.
-        document_annotation: An annotation from 'outputs' that should be used as the value for the
-            import.document_annotation config variable, unless it or classes.text has been set manually.
+        text_annotation: An annotation from 'outputs' that should be used as the value for the
+            import.text_annotation config variable, unless it or classes.text has been set manually.
         structure: A class used to parse and return the structure of source files.
         config: List of Config instances defining config options for the importer.
 
@@ -233,7 +233,7 @@ def importer(description: str, file_extension: str, name: Optional[str] = None, 
         A decorator
     """
     return _annotator(description=description, a_type=Annotator.importer, name=name, file_extension=file_extension,
-                      outputs=outputs, document_annotation=document_annotation, structure=structure, config=config)
+                      outputs=outputs, text_annotation=text_annotation, structure=structure, config=config)
 
 
 def exporter(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
@@ -295,11 +295,11 @@ def _add_to_registry(annotator):
         for c in annotator["config"]:
             handle_config(c, module_name, rule_name)
 
-    # Handle document annotation for selected importer
+    # Handle text annotation for selected importer
     if annotator["type"] == Annotator.importer and rule_name == sparv_config.get("import.importer"):
-        if annotator["document_annotation"] and not sparv_config.get("classes.text"):
-            sparv_config.set_value("import.document_annotation", annotator["document_annotation"])
-            sparv_config.handle_document_annotation()
+        if annotator["text_annotation"] and not sparv_config.get("classes.text"):
+            sparv_config.set_value("import.text_annotation", annotator["text_annotation"])
+            sparv_config.handle_text_annotation()
 
     for _param, val in inspect.signature(annotator["function"]).parameters.items():
         if isinstance(val.default, BaseOutput):

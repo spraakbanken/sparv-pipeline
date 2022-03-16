@@ -79,13 +79,13 @@ for the `import` and the `export` categories that are inherited by importers and
 
 Inheritable configuration keys for `import`:
 
-| config key | description |
-|:-----------|:------------|
-|`document_annotation` | The annotation representing one text document. Any text-level annotations will be attached to this annotation.
-|`encoding`            | Encoding of source file. Defaults to UTF-8.
-|`keep_control_chars`  | Set to True if control characters should not be removed from the text.
-|`normalize`           | Normalize input using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.
-|`source_dir`          | The path to the directory containing the source files relative to the corpus directory.
+| config key           | description |
+|:---------------------|:------------|
+| `text_annotation`    | The annotation representing one text. Any text-level annotations will be attached to this annotation.
+| `encoding`           | Encoding of source file. Defaults to UTF-8.
+| `keep_control_chars` | Set to True if control characters should not be removed from the text.
+| `normalize`          | Normalize input using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.
+| `source_dir`         | The path to the directory containing the source files relative to the corpus directory.
 
 Inheritable configuration keys for `export`:
 
