@@ -241,10 +241,18 @@ def main():
         wizard.run()
         sys.exit(0)
 
+
     # Check that a corpus config file is available in the working dir
+    config_exists = Path(args.dir or Path.cwd(), paths.config_file).is_file()
     if args.command not in ("build-models", "languages"):
-        if not Path(args.dir or Path.cwd(), paths.config_file).is_file():
+        if not config_exists:
             print(f"No config file ({paths.config_file}) found in working directory.")
+            sys.exit(1)
+    # For the 'build-models' command there needs to be a config file or a language parameter
+    elif args.command == "build-models":
+        if not config_exists and not args.language:
+            print("Models are built for a specific language. Please provide one with the --language param or run this "
+                  f"from a directory that has a config file ({paths.config_file}).")
             sys.exit(1)
 
     snakemake_args = {"workdir": args.dir}
