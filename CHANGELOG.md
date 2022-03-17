@@ -25,6 +25,8 @@
 - Added `stanza.max_token_length` option.
 - Added Hunpos-backoff annotation for Stanza msd and pos.
 - Added `--force` flag to `run-rule` and `create-file` commands to force recreation of the listed targets.
+- Added a new exporter which produces a YAML file with info about the Sparv version and annotation date.
+  This info is also added to the combined XML exports.
 - Exit with an error message if a required executable is missing.
 - Show a warning if an installed plugin is incompatible with Sparv.
 
