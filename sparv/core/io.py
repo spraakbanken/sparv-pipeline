@@ -18,6 +18,7 @@ SPAN_ANNOTATION = "@span"
 TEXT_FILE = "@text"
 STRUCTURE_FILE = "@structure"
 HEADERS_FILE = "@headers"
+NAMESPACE_FILE = "@namespaces"
 
 
 def annotation_exists(source_file: str, annotation: BaseAnnotation):

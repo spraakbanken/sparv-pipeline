@@ -7,7 +7,7 @@ import pickle
 import urllib.request
 import zipfile
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import sparv.core
 from sparv.core import io
@@ -488,6 +488,24 @@ class Headers(BaseAnnotation):
     def exists(self):
         """Return True if headers file exists."""
         return io.data_exists(self.source_file, self)
+
+
+class Namespaces(BaseAnnotation):
+    """Namespace mapping (URI to prefix) for a source file."""
+
+    data = True
+
+    def __init__(self, source_file):
+        super().__init__(io.NAMESPACE_FILE, source_file)
+
+    def read(self):
+        """Read namespace file and parse it into a dict."""
+        lines = io.read_data(self.source_file, self).split("\n")
+        return dict(l.split() for l in lines)
+
+    def write(self, namespaces: Dict[str, str]):
+        """Write namespace file."""
+        io.write_data(self.source_file, self, "\n".join([f"{k} {v}" for k, v in namespaces.items()]))
 
 
 class SourceFilename(str):

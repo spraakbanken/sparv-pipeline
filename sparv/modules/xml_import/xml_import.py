@@ -1,13 +1,14 @@
 """Parse XML source file."""
 
 import copy
+import re
 import unicodedata
 import xml.etree.ElementTree as etree
 from itertools import chain
 from typing import List
 
-from sparv.api import (Config, SourceFilename, Headers, Output, Source, SourceStructure, SourceStructureParser,
-                       SparvErrorMessage, Text, get_logger, importer, util)
+from sparv.api import (Config, Headers, Namespaces, Output, Source, SourceFilename, SourceStructure,
+                       SourceStructureParser, SparvErrorMessage, Text, get_logger, importer, util)
 
 logger = get_logger(__name__)
 
@@ -112,6 +113,7 @@ class SparvXMLParser:
         self.targets = {}  # Index of elements and attributes that will be renamed during import
         self.data = {}  # Metadata collected during parsing
         self.text = []  # Text data of the source file collected during parsing
+        self.namespace_mapping = {}
 
         # Parse elements argument
 
@@ -240,19 +242,34 @@ class SparvXMLParser:
                             header_data.setdefault(header_source["target"][0], {})
                             header_data[header_source["target"][0]][header_source["target"][1]] = header_value
 
+        def iter_ns_declarations():
+            for _, (prefix, uri) in etree.iterparse(source_file, events=["start-ns"]):
+                self.namespace_mapping[uri] = prefix
+                yield prefix, uri
+
         def iter_tree(element: etree.Element, start_pos: int = 0, start_subpos: int = 0):
             """Walk through whole XML and handle elements and text data."""
-            if (element.tag, "@contents") in self.skipped_elems:
+            # Check if this element has a namespace and get its prefix
+            ns_uri, tag = get_namespace(element.tag)
+            tag_name = element.tag
+            if ns_uri:
+                for prefix, uri in iter_ns_declarations():
+                    if uri == ns_uri:
+                        ns_prefix = prefix
+                        break
+                tag_name = f"{{{ns_prefix}}}{tag}"
+
+            if (tag_name, "@contents") in self.skipped_elems:
                 # Skip whole element and all its contents
                 if element.tail:
                     self.text.append(element.tail)
                 return 0, len(element.tail or ""), 0
-            elif element.tag in self.header_elements:
+            elif tag_name in self.header_elements:
                 if element.tail:
                     self.text.append(element.tail)
                 handle_raw_header(element, start_pos, start_subpos)
                 return 0, len(element.tail or ""), 0
-            elif element.tag in self.headers:
+            elif tag_name in self.headers:
                 handle_header_data(element)
             element_length = 0
             if element.text:
@@ -271,7 +288,7 @@ class SparvXMLParser:
                 end_subpos += 1
             else:
                 end_subpos = 0
-            handle_element([start_pos, start_subpos, end_pos, end_subpos, element.tag, element.attrib])
+            handle_element([start_pos, start_subpos, end_pos, end_subpos, tag_name, element.attrib])
             if element.tail:
                 self.text.append(element.tail)
             return element_length, len(element.tail or ""), end_subpos
@@ -341,19 +358,38 @@ class SparvXMLParser:
             # Save list of all header elements to a file
             Headers(self.file).write(header_elements)
 
+        if self.namespace_mapping:
+            # Save namespace mapping (URI to prefix)
+            Namespaces(self.file).write(self.namespace_mapping)
+
+
+def get_namespace(tag):
+    """Search for a namespace in tag and return a tuple (URI, tagname)."""
+    m = re.match(r"\{(.*)\}(.+)", tag)
+    return (m.group(1), m.group(2)) if m else ("", tag)
+
 
 def analyze_xml(source_file):
     """Analyze an XML file and return a list of elements and attributes."""
     elements = set()
 
-    parser = etree.iterparse(source_file, events=("start", "end"))
+    parser = etree.iterparse(source_file, events=("start-ns", "start"))
     event, root = next(parser)
+    namespace_map = {}
 
     for event, element in chain([(event, root)], parser):
-        if event == "start":
-            elements.add(element.tag)
+        if event == "start-ns":
+            prefix, uri = element
+            namespace_map[uri] = prefix
+        elif event == "start":
+            tagname = element.tag
+            uri, tag = get_namespace(tagname)
+            if uri:
+                prefix = namespace_map[uri]
+                tagname = f"{{{prefix}}}{tag}"
+            elements.add(tagname)
             for attr in element.attrib:
-                elements.add(f"{element.tag}:{attr}")
+                elements.add(f"{tagname}:{attr}")
             root.clear()
 
     return elements
