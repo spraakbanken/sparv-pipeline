@@ -2,8 +2,10 @@
 
 import os
 
-from sparv.api import (AllSourceFilenames, Annotation, AnnotationData, Config, Corpus, SourceFilename, Export, ExportAnnotations,
-                       ExportInput, OutputCommonData, SourceAnnotations, exporter, get_logger, installer, util)
+from sparv.api import (AllSourceFilenames, Annotation, AnnotationData, Config, Corpus, Export, ExportAnnotations,
+                       ExportInput, Namespaces, OutputCommonData, SourceAnnotations, SourceFilename, exporter,
+                       get_logger, installer, util)
+
 from . import xml_utils
 
 logger = get_logger(__name__)
@@ -57,22 +59,25 @@ def pretty(source_file: SourceFilename = SourceFilename(),
 
     token_name = token.name
 
-    # Read words and file ID
+    # Read words, file ID and XML namespaces
     word_annotation = list(word.read())
     fileid_annotation = fileid.read()
+    xml_namespaces = Namespaces(source_file).read()
 
     # Get annotation spans, annotations list etc.
     annotation_list, _, export_names = util.export.get_annotation_names(annotations, source_annotations, source_file=source_file,
                                                                         token_name=token_name,
                                                                         remove_namespaces=remove_namespaces,
                                                                         sparv_namespace=sparv_namespace,
-                                                                        source_namespace=source_namespace)
+                                                                        source_namespace=source_namespace,
+                                                                        xml_namespaces = xml_namespaces,
+                                                                        xml_mode=True)
     h_annotations, h_export_names = util.export.get_header_names(header_annotations, source_file=source_file)
     export_names.update(h_export_names)
     span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names, h_annotations,
                                                                      source_file=source_file, split_overlaps=True)
     xmlstr = xml_utils.make_pretty_xml(span_positions, annotation_dict, export_names, token_name, word_annotation,
-                                       fileid_annotation, include_empty_attributes, sparv_namespace)
+                                       fileid_annotation, include_empty_attributes, sparv_namespace, xml_namespaces)
 
     # Write XML to file
     with open(out, mode="w") as outfile:

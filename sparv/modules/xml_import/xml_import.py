@@ -360,7 +360,7 @@ class SparvXMLParser:
 
         if self.namespace_mapping:
             # Save namespace mapping (URI to prefix)
-            Namespaces(self.file).write(self.namespace_mapping)
+            Namespaces(self.file).write({v: k for k, v in self.namespace_mapping.items()})
 
 
 def get_namespace(tag):

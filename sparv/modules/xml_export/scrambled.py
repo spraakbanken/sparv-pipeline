@@ -2,9 +2,9 @@
 
 import os
 
-from sparv.api import (AllSourceFilenames, Annotation, AnnotationData, Config, Corpus, SourceFilename, Export,
-                       ExportAnnotations, ExportInput, OutputCommonData, SourceAnnotations, SparvErrorMessage, exporter,
-                       get_logger, installer, util)
+from sparv.api import (AllSourceFilenames, Annotation, AnnotationData, Config, Corpus, Export, ExportAnnotations,
+                       ExportInput, Namespaces, OutputCommonData, SourceAnnotations, SourceFilename, SparvErrorMessage,
+                       exporter, get_logger, installer, util)
 from . import xml_utils
 
 logger = get_logger(__name__)
@@ -27,30 +27,33 @@ def scrambled(source_file: SourceFilename = SourceFilename(),
               source_namespace: str = Config("export.source_namespace"),
               include_empty_attributes: bool = Config("xml_export.include_empty_attributes")):
     """Export annotations to scrambled XML."""
+    # Read words, file ID and XML namespaces
+    word_annotation = list(word.read())
+    chunk_order = list(chunk_order.read())
+    fileid_annotation = fileid.read()
+    xml_namespaces = Namespaces(source_file).read()
+
     # Get annotation spans, annotations list etc.
     annotation_list, _, export_names = util.export.get_annotation_names(annotations, source_annotations,
                                                                         source_file=source_file,
                                                                         token_name=token.name,
                                                                         remove_namespaces=remove_namespaces,
                                                                         sparv_namespace=sparv_namespace,
-                                                                        source_namespace=source_namespace)
+                                                                        source_namespace=source_namespace,
+                                                                        xml_namespaces=xml_namespaces,
+                                                                        xml_mode=True)
     if chunk not in annotation_list:
         raise SparvErrorMessage(
             "The annotation used for scrambling ({}) needs to be included in the output.".format(chunk))
     span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names,
                                                                      source_file=source_file, split_overlaps=True)
 
-    # Read words and file ID
-    word_annotation = list(word.read())
-    chunk_order = list(chunk_order.read())
-    fileid_annotation = fileid.read()
-
     # Reorder chunks
     new_span_positions = util.export.scramble_spans(span_positions, chunk.name, chunk_order)
 
     # Construct XML string
     xmlstr = xml_utils.make_pretty_xml(new_span_positions, annotation_dict, export_names, token.name, word_annotation,
-                                       fileid_annotation, include_empty_attributes, sparv_namespace)
+                                       fileid_annotation, include_empty_attributes, sparv_namespace, xml_namespaces)
 
     # Create export dir
     os.makedirs(os.path.dirname(out), exist_ok=True)
