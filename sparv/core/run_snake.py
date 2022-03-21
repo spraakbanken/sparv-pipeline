@@ -6,7 +6,7 @@ import sys
 
 from pkg_resources import iter_entry_points
 
-from sparv.core import log_handler, paths
+from sparv.core import io, log_handler, paths
 from sparv.core import registry
 from sparv.core.misc import SparvErrorMessage
 
@@ -44,6 +44,10 @@ class StreamToLogger:
     def isatty():
         return False
 
+
+# Set compression
+if snakemake.params.compression:
+    io.compression = snakemake.params.compression
 
 # Import module
 modules_path = ".".join(("sparv", paths.modules_dir))

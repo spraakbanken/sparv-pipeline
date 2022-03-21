@@ -29,6 +29,8 @@
   This info is also added to the combined XML exports.
 - Exit with an error message if a required executable is missing.
 - Show a warning if an installed plugin is incompatible with Sparv.
+- Introduced compression of annotation files in sparv-workdir. The type of compression can be configured (or disabled)
+  by using the `sparv.compression` variable. `gzip` is used by default.
 
 ### Changed
 

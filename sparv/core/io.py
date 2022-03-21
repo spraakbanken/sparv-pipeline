@@ -1,6 +1,9 @@
 """Corpus-related util functions like reading and writing annotations."""
 
+import bz2
+import gzip
 import heapq
+import lzma
 import os
 import re
 from pathlib import Path
@@ -18,6 +21,16 @@ SPAN_ANNOTATION = "@span"
 TEXT_FILE = "@text"
 STRUCTURE_FILE = "@structure"
 HEADERS_FILE = "@headers"
+
+# Compression used for annotation files (can be changed using sparv.compression in config file)
+compression = "gzip"
+
+_compressed_open = {
+    "none": open,
+    "gzip": gzip.open,
+    "bzip2": bz2.open,
+    "lzma": lzma.open
+}
 
 
 def annotation_exists(source_file: str, annotation: BaseAnnotation):
@@ -235,28 +248,11 @@ def get_annotation_path(source_file: Optional[str], annotation: Union[BaseAnnota
     return path
 
 
-######################################################################
-# Reading and writing annotation and data files using 
-# different kinds of compression.
-
-import gzip, bz2, lzma
-
-# The default compression should ideally come from the config file.
-# Until then we default to no compression at all.
-_default_compression = None
-
-_compressed_open = {
-    "gzip": gzip.open,
-    "bz2":  bz2.open,
-    "lzma": lzma.open,
-}
-
-def open_annotation_file(filename, mode="rt", encoding=None, errors=None, newline=None, compression=None):
+def open_annotation_file(filename, mode="rt", encoding=None, errors=None, newline=None):
+    """Read and write annotation and data files using different kinds of compression."""
     if mode in "rwxa":
         # Text mode is the default for open(), whereas gzip, bz2 and lzma uses binary mode.
         # We adopt text mode as default.
         mode += "t"
-    if not compression:
-        compression = _default_compression
     opener = _compressed_open.get(compression, open)
     return opener(filename, mode=mode, encoding=encoding, errors=errors, newline=newline)
