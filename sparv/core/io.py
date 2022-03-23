@@ -11,7 +11,7 @@ from typing import List, Optional, Tuple, Union
 
 from sparv.api.classes import BaseAnnotation, BaseOutput
 from sparv.core import paths
-from sparv.core.misc import get_logger
+from sparv.core.misc import get_logger, SparvErrorMessage
 
 logger = get_logger(__name__)
 
@@ -144,12 +144,13 @@ def read_annotation(source_file: str, annotation: BaseAnnotation, with_annotatio
                                                                      "annotation is not allowed."
 
         # Get iterators for all annotations
-        all_annotations = {split_annotation(ann)[0]: _read_single_annotation(source_file, ann, with_annotation_name, root,
-                                                                             allow_newlines)
+        all_annotations = {split_annotation(ann)[0]: _read_single_annotation(source_file, ann, with_annotation_name,
+                                                                             root, allow_newlines)
                            for ann in annotations}
 
         # We need to read the annotation spans to be able to interleave the values in the correct order
-        for _, ann in heapq.merge(*[_read_single_annotation(source_file, split_annotation(ann)[0], with_annotation_name=True,
+        for _, ann in heapq.merge(*[_read_single_annotation(source_file, split_annotation(ann)[0],
+                                                            with_annotation_name=True,
                                                             root=root, allow_newlines=allow_newlines)
                                     for ann in annotations]):
             yield next(all_annotations[ann])
@@ -172,15 +173,21 @@ def _read_single_annotation(source_file: str, annotation: str, with_annotation_n
 
     with open_annotation_file(ann_file) as f:
         ctr = 0
-        for line in f:
-            value = line.rstrip("\n\r")
-            if not split_annotation(annotation)[1]:  # If this is a span annotation
-                value = tuple(tuple(map(int, pos.split("."))) for pos in value.split("-"))
-            elif allow_newlines:
-                # Replace literal "\n" with line break (if we allow "\n" in values)
-                value = re.sub(r"((?<!\\)(?:\\\\)*)\\n", r"\1\n", value).replace(r"\\", "\\")
-            yield value if not with_annotation_name else (value, annotation)
-            ctr += 1
+        try:
+            line: str
+            for line in f:
+                value = line.rstrip("\n\r")
+                if not split_annotation(annotation)[1]:  # If this is a span annotation
+                    value = tuple(tuple(map(int, pos.split("."))) for pos in value.split("-"))
+                elif allow_newlines:
+                    # Replace literal "\n" with line break (if we allow "\n" in values)
+                    value = re.sub(r"((?<!\\)(?:\\\\)*)\\n", r"\1\n", value).replace(r"\\", "\\")
+                yield value if not with_annotation_name else (value, annotation)
+                ctr += 1
+        except (gzip.BadGzipFile, OSError, lzma.LZMAError, UnicodeDecodeError) as e:
+            if isinstance(e, OSError) and str(e) != "Invalid data stream":
+                raise e
+            raise_format_error(ann_file)
     logger.debug(f"Read {ctr} items: {source_file + '/' if source_file else ''}{annotation}")
 
 
@@ -203,7 +210,13 @@ def read_data(source_file: Optional[str], name: Union[BaseAnnotation, str]):
     file_path = get_annotation_path(source_file, name, data=True)
 
     with open_annotation_file(file_path) as f:
-        data = f.read()
+        try:
+            data = f.read()
+        except (gzip.BadGzipFile, OSError, lzma.LZMAError, UnicodeDecodeError) as e:
+            if isinstance(e, OSError) and str(e) != "Invalid data stream":
+                raise e
+            raise_format_error(file_path)
+
     logger.debug(f"Read {len(data)} bytes: {source_file + '/' if source_file else ''}"
                  f"{name.name if isinstance(name, BaseAnnotation) else name}")
     return data
@@ -256,3 +269,10 @@ def open_annotation_file(filename, mode="rt", encoding=None, errors=None, newlin
         mode += "t"
     opener = _compressed_open.get(compression, open)
     return opener(filename, mode=mode, encoding=encoding, errors=errors, newline=newline)
+
+
+def raise_format_error(file_path):
+    """Raise a SparvErrorMessage about workdir files having the wrong format."""
+    raise SparvErrorMessage(f"Compression of workdir files is set to '{compression}', but '{file_path}' is in another "
+                            "format. Use the configuration key 'sparv.compression' to set the correct compression or "
+                            "use 'sparv clean' to start over with a clean workdir.")
