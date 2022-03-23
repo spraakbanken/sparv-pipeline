@@ -15,7 +15,7 @@ from sparv.core import paths
 from sparv.core.console import console
 from sparv.core.misc import SparvErrorMessage
 from sparv.api.classes import (BaseOutput, Config, Export, ExportAnnotations, ExportAnnotationsAllSourceFiles,
-                               SourceStructureParser, ModelOutput, Wildcard)
+                               SourceAnnotations, SourceStructureParser, ModelOutput, Wildcard)
 
 modules_path = ".".join(("sparv", paths.modules_dir))
 core_modules_path = ".".join(("sparv", paths.core_modules_dir))
@@ -354,7 +354,7 @@ def _add_to_registry(annotator):
                                         " name as sub directory.")
         elif isinstance(val.default, Config):
             sparv_config.add_config_usage(val.default.name, rule_name)
-        elif isinstance(val.default, (ExportAnnotations, ExportAnnotationsAllSourceFiles)):
+        elif isinstance(val.default, (ExportAnnotations, ExportAnnotationsAllSourceFiles, SourceAnnotations)):
             sparv_config.add_config_usage(val.default.config_name, rule_name)
             annotation_sources.add(val.default.config_name)
         elif isinstance(val.default, Export):
