@@ -10,14 +10,14 @@ logger = get_logger(__name__)
 
 
 @installer("Install timespan SQL on remote host")
-def install_timespan(sqlfile: ExportInput = ExportInput("korp_timespan/timespan.sql"),
+def install_timespan(sqlfile: ExportInput = ExportInput("korp.timespan/timespan.sql"),
                      out: OutputCommonData = OutputCommonData("korp.install_timespan_marker"),
                      db_name: str = Config("korp.mysql_dbname"),
                      host: str = Config("korp.remote_host")):
     """Install timespan SQL on remote host.
 
     Args:
-        sqlfile (str, optional): SQL file to be installed. Defaults to ExportInput("korp_timespan/timespan.sql").
+        sqlfile (str, optional): SQL file to be installed. Defaults to ExportInput("korp.timespan/timespan.sql").
         out (str, optional): Marker file to be written.
         db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname").
         host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host").
@@ -27,14 +27,14 @@ def install_timespan(sqlfile: ExportInput = ExportInput("korp_timespan/timespan.
 
 
 @exporter("Timespan SQL data for use in Korp", abstract=True)
-def timespan_sql(_sql: ExportInput = ExportInput("korp_timespan/timespan.sql")):
+def timespan_sql(_sql: ExportInput = ExportInput("korp.timespan/timespan.sql")):
     """Create timespan SQL data for use in Korp."""
     pass
 
 
 @annotator("Timespan SQL data for use in Korp", order=1)
 def timespan_sql_with_dateinfo(corpus: Corpus = Corpus(),
-                               out: Export = Export("korp_timespan/timespan.sql"),
+                               out: Export = Export("korp.timespan/timespan.sql"),
                                source_files: AllSourceFilenames = AllSourceFilenames(),
                                token: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>"),
                                datefrom: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<text>:dateformat.datefrom"),
@@ -81,7 +81,7 @@ def timespan_sql_with_dateinfo(corpus: Corpus = Corpus(),
 
 @annotator("Timespan SQL data for use in Korp, for when the corpus has no date metadata.", order=2)
 def timespan_sql_no_dateinfo(corpus: Corpus = Corpus(),
-                             out: Export = Export("korp_timespan/timespan.sql"),
+                             out: Export = Export("korp.timespan/timespan.sql"),
                              source_files: AllSourceFilenames = AllSourceFilenames(),
                              token: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>")):
     """Create timespan SQL data for use in Korp."""

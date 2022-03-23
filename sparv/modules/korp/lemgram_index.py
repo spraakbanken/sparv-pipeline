@@ -14,7 +14,7 @@ CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
 
 
 @installer("Install lemgram SQL on remote host", language=["swe"])
-def install_lemgrams(sqlfile: ExportInput = ExportInput("korp_lemgram_index/lemgram_index.sql"),
+def install_lemgrams(sqlfile: ExportInput = ExportInput("korp.lemgram_index/lemgram_index.sql"),
                      marker: OutputCommonData = OutputCommonData("korp.install_lemgram_marker"),
                      db_name: str = Config("korp.mysql_dbname"),
                      host: str = Config("korp.remote_host")):
@@ -22,7 +22,7 @@ def install_lemgrams(sqlfile: ExportInput = ExportInput("korp_lemgram_index/lemg
 
     Args:
         sqlfile (str, optional): SQL file to be installed.
-            Defaults to ExportInput("korp_lemgram_index/lemgram_index.sql").
+            Defaults to ExportInput("korp.lemgram_index/lemgram_index.sql").
         marker (str, optional): Marker file to be written.
             Defaults to OutputCommonData("korp.install_lemgram_marker").
         db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname").
@@ -35,7 +35,7 @@ def install_lemgrams(sqlfile: ExportInput = ExportInput("korp_lemgram_index/lemg
 @exporter("Lemgram index SQL file for use in Korp", language=["swe"])
 def lemgram_sql(corpus: Corpus = Corpus(),
                 source_files: AllSourceFilenames = AllSourceFilenames(),
-                out: Export = Export("korp_lemgram_index/lemgram_index.sql"),
+                out: Export = Export("korp.lemgram_index/lemgram_index.sql"),
                 lemgram: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>:saldo.lemgram")):
     """Create lemgram index SQL file."""
     corpus = corpus.upper()

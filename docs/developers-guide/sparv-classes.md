@@ -173,7 +173,8 @@ An instance of this class represents an export file. This class is used to defin
 
 **Arguments:**
 
-- The export directory and filename pattern (e.g. `"xml_pretty/[xml_export.filename]"`).
+- The export directory and filename pattern (e.g. `"xml_export.pretty/[xml_export.filename]"`). The export directory
+  must contain the module name as a prefix, or be equal to the module name.
 
 
 ## ExportAnnotations
@@ -191,7 +192,7 @@ function.
 
 **Arguments:**
 
-- `val`: The export directory and filename pattern (e.g. `"xml_pretty/[xml_export.filename]"`).
+- `val`: The export directory and filename pattern (e.g. `"xml_export.pretty/[xml_export.filename]"`).
 - `all_files`: Set to `True` to get the export for all source files. Default: `False`
 
 

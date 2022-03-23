@@ -15,7 +15,7 @@ logger = get_logger(__name__)
 ])
 def scrambled(source_file: SourceFilename = SourceFilename(),
               fileid: AnnotationData = AnnotationData("<fileid>"),
-              out: Export = Export("xml_scrambled/[xml_export.filename]"),
+              out: Export = Export("xml_export.scrambled/[xml_export.filename]"),
               chunk: Annotation = Annotation("[xml_export.scramble_on]"),
               chunk_order: Annotation = Annotation("[xml_export.scramble_on]:misc.number_random"),
               token: Annotation = Annotation("<token>"),
@@ -63,9 +63,10 @@ def scrambled(source_file: SourceFilename = SourceFilename(),
 
 @exporter("Combined scrambled XML export")
 def combined_scrambled(corpus: Corpus = Corpus(),
-                       out: Export = Export("[metadata.id]_scrambled.xml"),
+                       out: Export = Export("xml_export.combined_scrambled/[metadata.id]_scrambled.xml"),
                        source_files: AllSourceFilenames = AllSourceFilenames(),
-                       xml_input: ExportInput = ExportInput("xml_scrambled/[xml_export.filename]", all_files=True),
+                       xml_input: ExportInput = ExportInput("xml_export.scrambled/[xml_export.filename]",
+                                                            all_files=True),
                        version_info: ExportInput = ExportInput("version_info/info_[metadata.id].yaml"),
                        include_version_info: bool = Config("xml_export.include_version_info")):
     """Combine XML export files into a single XML file."""
@@ -76,8 +77,9 @@ def combined_scrambled(corpus: Corpus = Corpus(),
 
 
 @exporter("Compressed combined scrambled XML export")
-def compressed_scrambled(out: Export = Export("[metadata.id]_scrambled.xml.bz2"),
-                         xmlfile: ExportInput = ExportInput("[metadata.id]_scrambled.xml")):
+def compressed_scrambled(out: Export = Export("xml_export.combined_scrambled/[metadata.id]_scrambled.xml.bz2"),
+                         xmlfile: ExportInput = ExportInput(
+                             "xml_export.combined_scrambled/[metadata.id]_scrambled.xml")):
     """Compress combined XML export."""
     xml_utils.compress(xmlfile, out)
 
@@ -87,7 +89,8 @@ def compressed_scrambled(out: Export = Export("[metadata.id]_scrambled.xml.bz2")
     Config("xml_export.export_scrambled_path", "", description="Path on remote host to copy scrambled XML export to")
 ])
 def install_scrambled(corpus: Corpus = Corpus(),
-                      bz2file: ExportInput = ExportInput("[metadata.id]_scrambled.xml.bz2"),
+                      bz2file: ExportInput = ExportInput(
+                          "xml_export.combined_scrambled/[metadata.id]_scrambled.xml.bz2"),
                       out: OutputCommonData = OutputCommonData("xml_export.install_export_scrambled_marker"),
                       export_path: str = Config("xml_export.export_scrambled_path"),
                       host: str = Config("xml_export.export_scrambled_host")):

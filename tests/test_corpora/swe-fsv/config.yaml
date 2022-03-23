@@ -26,8 +26,10 @@ export:
     # Exports to create by default when running 'sparv run'
     default:
         - csv_export:csv
-        - cwb:info
         - cwb:vrt
         - stats_export:sbx_freq_list_fsv
         - xml_export:pretty
         - xml_export:preserved_format
+
+sparv:
+    compression: none

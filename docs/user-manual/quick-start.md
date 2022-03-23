@@ -120,7 +120,7 @@ sparv run
 
 After a short while, Sparv will tell you where the resulting files are saved. Let's have a look at one of them:
 
-`export/xml_pretty/document_export.xml`
+`export/xml_export.pretty/document_export.xml`
 ```xml
 <?xml version='1.0' encoding='UTF-8'?>
 <text author="me" title="My first corpus document">

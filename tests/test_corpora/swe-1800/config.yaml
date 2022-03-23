@@ -27,7 +27,6 @@ export:
     default:
         - csv_export:csv
         - conll_export:conllu
-        - cwb:info
         - cwb:vrt
         - stats_export:sbx_freq_list_simple_swe
         - xml_export:pretty
@@ -39,3 +38,6 @@ export:
 segment:
   # Sentences are pre-segmented by linebreaks
   sentence_segmenter: linebreaks
+
+sparv:
+    compression: none

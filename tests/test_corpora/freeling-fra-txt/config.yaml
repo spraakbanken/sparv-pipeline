@@ -42,7 +42,6 @@ export:
     # Exports to create by default when running 'sparv run'
     default:
         - korp:timespan_sql
-        - cwb:info
         - csv_export:csv
         - cwb:vrt
         - cwb:vrt_scrambled
@@ -54,3 +53,6 @@ export:
         - PARAGRAPH.all
         - <text>:misc.id
         - FREELING.all
+
+sparv:
+    compression: none

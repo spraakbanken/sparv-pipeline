@@ -62,7 +62,6 @@ export:
     default:
         - conll_export:conllu
         - csv_export:csv
-        - cwb:info
         - cwb:vrt
         - cwb:vrt_scrambled
         - korp:relations_sql
@@ -100,3 +99,6 @@ custom_annotations:
           suffix: "|"
 
     - annotator: custom.convert:uppercase
+
+sparv:
+    compression: none

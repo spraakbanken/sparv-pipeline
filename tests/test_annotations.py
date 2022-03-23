@@ -14,7 +14,7 @@ def test_mini_swe(tmp_path):
     gold_corpus_dir = pathlib.Path("tests/test_corpora/mini-swe")
     test_corpus_dir = utils.run_sparv(gold_corpus_dir, tmp_path)
     utils.cmp_workdir(gold_corpus_dir, test_corpus_dir)
-    utils.cmp_export(gold_corpus_dir, test_corpus_dir)
+    utils.cmp_export(gold_corpus_dir, test_corpus_dir, ignore=["version_info"])
 
 
 @pytest.mark.swe

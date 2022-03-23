@@ -10,7 +10,7 @@ logger = get_logger(__name__)
 
 
 @exporter("CWB .info file")
-def info(out: Export = Export("cwb/data/.info"),
+def info(out: Export = Export("cwb.encoded/data/.info"),
          sentences: AnnotationCommonData = AnnotationCommonData("misc.<sentence>_count"),
          firstdate: AnnotationCommonData = AnnotationCommonData("cwb.datefirst"),
          lastdate: AnnotationCommonData = AnnotationCommonData("cwb.datelast"),
@@ -22,7 +22,7 @@ def info(out: Export = Export("cwb/data/.info"),
 
 
 @exporter("CWB .info file for scrambled corpus")
-def info_scrambled(out: Export = Export("cwb_scrambled/data/.info"),
+def info_scrambled(out: Export = Export("cwb.encoded_scrambled/data/.info"),
                    sentences: AnnotationCommonData = AnnotationCommonData("misc.<sentence>_count"),
                    firstdate: AnnotationCommonData = AnnotationCommonData("cwb.datefirst"),
                    lastdate: AnnotationCommonData = AnnotationCommonData("cwb.datelast"),

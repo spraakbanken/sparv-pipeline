@@ -23,7 +23,7 @@ logger = get_logger(__name__)
 ])
 def pretty(source_file: SourceFilename = SourceFilename(),
            fileid: AnnotationData = AnnotationData("<fileid>"),
-           out: Export = Export("xml_pretty/[xml_export.filename]"),
+           out: Export = Export("xml_export.pretty/[xml_export.filename]"),
            token: Annotation = Annotation("<token>"),
            word: Annotation = Annotation("[export.word]"),
            annotations: ExportAnnotations = ExportAnnotations("xml_export.annotations"),
@@ -87,9 +87,9 @@ def pretty(source_file: SourceFilename = SourceFilename(),
            description="Whether to include annotation version info in the combined XML.")
 ])
 def combined(corpus: Corpus = Corpus(),
-             out: Export = Export("[xml_export.filename_combined]"),
+             out: Export = Export("xml_export.combined/[xml_export.filename_combined]"),
              source_files: AllSourceFilenames = AllSourceFilenames(),
-             xml_input: ExportInput = ExportInput("xml_pretty/[xml_export.filename]", all_files=True),
+             xml_input: ExportInput = ExportInput("xml_export.pretty/[xml_export.filename]", all_files=True),
              version_info: ExportInput = ExportInput("version_info/info_[metadata.id].yaml"),
              include_version_info: bool = Config("xml_export.include_version_info")):
     """Combine XML export files into a single XML file."""
@@ -103,8 +103,8 @@ def combined(corpus: Corpus = Corpus(),
     Config("xml_export.filename_compressed", default="[metadata.id].xml.bz2",
            description="Filename of resulting compressed combined XML.")
 ])
-def compressed(out: Export = Export("[xml_export.filename_compressed]"),
-               xmlfile: ExportInput = ExportInput("[xml_export.filename_combined]")):
+def compressed(out: Export = Export("xml_export.combined/[xml_export.filename_compressed]"),
+               xmlfile: ExportInput = ExportInput("xml_export.combined/[xml_export.filename_combined]")):
     """Compress combined XML export."""
     xml_utils.compress(xmlfile, out)
 
@@ -114,7 +114,7 @@ def compressed(out: Export = Export("[xml_export.filename_compressed]"),
     Config("xml_export.export_path", "", description="Path on remote host to copy XML export to.")
 ])
 def install(corpus: Corpus = Corpus(),
-            bz2file: ExportInput = ExportInput("[xml_export.filename_compressed]"),
+            bz2file: ExportInput = ExportInput("xml_export.combined/[xml_export.filename_compressed]"),
             out: OutputCommonData = OutputCommonData("xml_export.install_export_pretty_marker"),
             export_path: str = Config("xml_export.export_path"),
             host: str = Config("xml_export.export_host")):

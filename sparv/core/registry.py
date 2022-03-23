@@ -13,8 +13,9 @@ import typing_inspect
 from sparv.core import config as sparv_config
 from sparv.core import paths
 from sparv.core.console import console
-from sparv.api.classes import (BaseOutput, Config, ExportAnnotations, ExportAnnotationsAllSourceFiles, SourceStructureParser,
-                               ModelOutput, Wildcard)
+from sparv.core.misc import SparvErrorMessage
+from sparv.api.classes import (BaseOutput, Config, Export, ExportAnnotations, ExportAnnotationsAllSourceFiles,
+                               SourceStructureParser, ModelOutput, Wildcard)
 
 modules_path = ".".join(("sparv", paths.modules_dir))
 core_modules_path = ".".join(("sparv", paths.core_modules_dir))
@@ -310,12 +311,12 @@ def _add_to_registry(annotator):
             # Make sure annotation names include module names as prefix
             if not attr:
                 if not ann_name.startswith(module_name + "."):
-                    raise ValueError("Output annotation '{}' in module '{}' doesn't include module "
-                                     "name as prefix.".format(ann_name, module_name))
+                    raise SparvErrorMessage(f"Output annotation '{ann_name}' in module '{module_name}' doesn't include "
+                                            "module name as prefix.")
             else:
                 if not attr.startswith(module_name + "."):
-                    raise ValueError("Output annotation '{}' in module '{}' doesn't include module "
-                                     "name as prefix in attribute.".format(ann, module_name))
+                    raise SparvErrorMessage(f"Output annotation '{ann}' in module '{module_name}' doesn't include "
+                                            "module name as prefix in attribute.")
 
             # Add to class registry
             if cls:
@@ -349,13 +350,21 @@ def _add_to_registry(annotator):
         elif isinstance(val.default, ModelOutput):
             modeldir = val.default.name.split("/")[0]
             if not modeldir.startswith(module_name):
-                raise ValueError("Output model '{}' in module '{}' doesn't include module "
-                                 "name as sub directory.".format(val.default, module_name))
+                raise SparvErrorMessage(f"Output model '{val.default}' in module '{module_name}' doesn't include module"
+                                        " name as sub directory.")
         elif isinstance(val.default, Config):
             sparv_config.add_config_usage(val.default.name, rule_name)
         elif isinstance(val.default, (ExportAnnotations, ExportAnnotationsAllSourceFiles)):
             sparv_config.add_config_usage(val.default.config_name, rule_name)
             annotation_sources.add(val.default.config_name)
+        elif isinstance(val.default, Export):
+            if "/" not in val.default:
+                raise SparvErrorMessage(f"Illegal export path for export '{val.default}' in module '{module_name}'. "
+                                        "A subdirectory must be used.")
+            export_dir = val.default.split("/")[0]
+            if not (export_dir.startswith(module_name + ".") or export_dir == module_name):
+                raise SparvErrorMessage(f"Illegal export path for export '{val.default}' in module '{module_name}'. "
+                                        "The export subdirectory must include the module name as prefix.")
 
     if module_name not in modules:
         modules[module_name] = Module(module_name)
@@ -388,8 +397,8 @@ def find_implicit_classes() -> None:
 def handle_config(cfg, module_name, rule_name: Optional[str] = None) -> None:
     """Handle Config instances."""
     if not cfg.name.startswith(module_name + "."):
-        raise ValueError("Config option '{}' in module '{}' doesn't include module "
-                         "name as prefix.".format(cfg.name, module_name))
+        raise SparvErrorMessage(f"Config option '{cfg.name}' in module '{module_name}' doesn't include module "
+                                "name as prefix.")
     # Check that config variable hasn't already been declared
     prev = sparv_config.config_structure
     for k in cfg.name.split("."):
@@ -397,12 +406,13 @@ def handle_config(cfg, module_name, rule_name: Optional[str] = None) -> None:
             break
         prev = prev[k]
     else:
-        raise Exception(f"The config variable '{cfg.name}' in '{rule_name or module_name}' has already been declared.")
+        raise SparvErrorMessage(
+            f"The config variable '{cfg.name}' in '{rule_name or module_name}' has already been declared.")
     if cfg.default is not None:
         sparv_config.set_default(cfg.name, cfg.default)
     sparv_config.add_to_structure(cfg.name, cfg.default, description=cfg.description, annotator=rule_name)
     if not cfg.description:
-        raise Exception(f"Missing description for configuration key '{cfg.name}' in module '{module_name}'.")
+        raise SparvErrorMessage(f"Missing description for configuration key '{cfg.name}' in module '{module_name}'.")
 
 
 def _expand_class(cls):

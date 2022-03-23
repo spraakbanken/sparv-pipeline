@@ -20,7 +20,7 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
               remove_namespaces: bool = Config("export.remove_module_namespaces", True),
               sparv_namespace: str = Config("export.sparv_namespace"),
               source_namespace: str = Config("export.source_namespace"),
-              out: Export = Export("frequency_list/stats_[metadata.id].csv"),
+              out: Export = Export("stats_export.frequency_list/stats_[metadata.id].csv"),
               delimiter: str = Config("stats_export.delimiter"),
               cutoff: int = Config("stats_export.cutoff")):
     """Create a word frequency list for the entire corpus.
@@ -37,7 +37,8 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
             Disabled by default.
         sparv_namespace: The namespace to be added to all Sparv annotations.
         source_namespace: The namespace to be added to all annotations present in the source.
-        out (str, optional): The output word frequency file. Defaults to Export("frequency_list/[metadata.id].csv").
+        out (str, optional): The output word frequency file.
+            Defaults to Export("stats_export.frequency_list/[metadata.id].csv").
         delimiter (str, optional): Column delimiter to use in the csv. Defaults to Config("stats_export.delimiter").
         cutoff (int, optional): The minimum frequency a word must have in order to be included in the result.
             Defaults to Config("stats_export.cutoff").
@@ -84,7 +85,7 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
 
 
 @installer("Install word frequency list on remote host")
-def install_freq_list(freq_list: ExportInput = ExportInput("frequency_list/stats_[metadata.id].csv"),
+def install_freq_list(freq_list: ExportInput = ExportInput("stats_export.frequency_list/stats_[metadata.id].csv"),
                       out: OutputCommonData = OutputCommonData("stats_export.install_freq_list_marker"),
                       host: str = Config("stats_export.remote_host"),
                       target_dir: str = Config("stats_export.remote_dir")):

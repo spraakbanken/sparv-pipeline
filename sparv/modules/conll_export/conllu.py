@@ -30,7 +30,7 @@ logger = get_logger(__name__)
            description="Annotation in MISC field of CoNLL-U output")
 ])
 def conllu(source_file: SourceFilename = SourceFilename(),
-           out: Export = Export("conll/{file}.conllu"),
+           out: Export = Export("conll_export/{file}.conllu"),
            token: Annotation = Annotation("<token>"),
            sentence: Annotation = Annotation("<sentence>"),
            sentence_id: Annotation = Annotation("[conll_export.conll_fields.sentid]"),

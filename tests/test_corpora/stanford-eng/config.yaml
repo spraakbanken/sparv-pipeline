@@ -34,7 +34,6 @@ export:
     # Exports to create by default when running 'sparv run'
     default:
         - korp:timespan_sql
-        - cwb:info
         - csv_export:csv
         - cwb:vrt
         - cwb:vrt_scrambled
@@ -44,3 +43,6 @@ export:
     # Automatic annotations to be included in the export
     annotations:
         - STANFORD.all
+
+sparv:
+    compression: none

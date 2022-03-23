@@ -11,12 +11,12 @@ def install_corpus(
         corpus: Corpus = Corpus(),
         out: OutputCommonData = OutputCommonData("cwb.install_corpus_marker"),
         host: str = Config("cwb.remote_host"),
-        registry_file: ExportInput = ExportInput("cwb/registry/[metadata.id]"),
-        info_file: ExportInput = ExportInput("cwb/data/.info"),
+        registry_file: ExportInput = ExportInput("cwb.encoded/registry/[metadata.id]"),
+        info_file: ExportInput = ExportInput("cwb.encoded/data/.info"),
         target_data_dir: str = Config("cwb.remote_data_dir"),
         target_registry_dir: str = Config("cwb.remote_registry_dir"),
         # The remaining arguments are needed by Snakemake
-        _marker: ExportInput = ExportInput("cwb/data/.marker")):
+        _marker: ExportInput = ExportInput("cwb.encoded/data/.marker")):
     """Install CWB datafiles on server, by rsyncing datadir and registry."""
     sync_cwb(corpus=corpus, out=out, host=host, info_file=info_file, registry_file=registry_file,
              target_data_dir=target_data_dir, target_registry_dir=target_registry_dir)
@@ -27,12 +27,12 @@ def install_corpus_scrambled(
         corpus: Corpus = Corpus(),
         out: OutputCommonData = OutputCommonData("cwb.install_corpus_scrambled_marker"),
         host: str = Config("cwb.remote_host"),
-        registry_file: ExportInput = ExportInput("cwb_scrambled/registry/[metadata.id]"),
-        info_file: ExportInput = ExportInput("cwb_scrambled/data/.info"),
+        registry_file: ExportInput = ExportInput("cwb.encoded_scrambled/registry/[metadata.id]"),
+        info_file: ExportInput = ExportInput("cwb.encoded_scrambled/data/.info"),
         target_data_dir: str = Config("cwb.remote_data_dir"),
         target_registry_dir: str = Config("cwb.remote_registry_dir"),
         # The remaining arguments are needed by Snakemake
-        _scrambled_marker: ExportInput = ExportInput("cwb_scrambled/data/.scrambled_marker")):
+        _scrambled_marker: ExportInput = ExportInput("cwb.encoded_scrambled/data/.scrambled_marker")):
     """Install scrambled CWB datafiles on server, by rsyncing datadir and registry."""
     sync_cwb(corpus=corpus, out=out, host=host, info_file=info_file, registry_file=registry_file,
              target_data_dir=target_data_dir, target_registry_dir=target_registry_dir)

@@ -16,7 +16,7 @@ logger = get_logger(__name__)
     Config("csv_export.annotations", description="Sparv annotations to include.")
 ])
 def csv(source_file: SourceFilename = SourceFilename(),
-        out: Export = Export("csv/{file}.csv"),
+        out: Export = Export("csv_export/{file}.csv"),
         token: Annotation = Annotation("<token>"),
         word: Annotation = Annotation("[export.word]"),
         sentence: Annotation = Annotation("<sentence>"),
