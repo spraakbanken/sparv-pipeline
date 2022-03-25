@@ -185,8 +185,8 @@ class SparvXMLParser:
             if (name_orig, "*") in self.skipped_elems:
                 attrs = {}
             for attr in attrs.copy():
-                print(attr)
-                if (name_orig, attr) in self.skipped_elems:
+                attr_name = get_sparv_name(attr)
+                if (name_orig, attr_name) in self.skipped_elems:
                     attrs.pop(attr)
 
             if name_orig in self.targets:
@@ -194,13 +194,16 @@ class SparvXMLParser:
                 name = self.targets[name_orig]["target"]
                 attrs_tmp = {}
                 for attr in attrs:
-                    attrs_tmp[self.targets[name_orig]["attrs"].get(attr, attr)] = attrs[attr]
+                    attr_name = get_sparv_name(attr)
+                    attrs_tmp[self.targets[name_orig]["attrs"].get(attr_name, attr_name)] = attrs[attr]
                 attrs = attrs_tmp
             else:
                 name = name_orig
 
+            # Save attrs in data
             self.data.setdefault(name, {"attrs": set(), "elements": []})
-            self.data[name]["attrs"].update(set(attrs.keys()))
+            attr_keys = [get_sparv_name(attr) for attr in attrs.keys()]
+            self.data[name]["attrs"].update(set(attr_keys))
 
             # Add attribute data collected from header
             if name in header_data:
@@ -208,6 +211,7 @@ class SparvXMLParser:
                 self.data[name]["attrs"].update(set(header_data[name].keys()))
                 del header_data[name]
 
+            attrs = {get_sparv_name(k): v for k, v in attrs.items()}
             self.data[name]["elements"].append(
                 (start, start_subpos, end, end_subpos, name_orig, attrs)
             )
@@ -239,7 +243,8 @@ class SparvXMLParser:
                 if header_element is not None:
                     for header_source in header_sources:
                         if header_source["source"]:
-                            header_value = header_element.attrib.get(header_source["source"])
+                            source_name = annotation_to_xpath(header_source["source"])
+                            header_value = header_element.attrib.get(source_name)
                         else:
                             header_value = header_element.text.strip()
 
