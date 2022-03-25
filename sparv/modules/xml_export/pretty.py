@@ -72,7 +72,8 @@ def pretty(source_file: SourceFilename = SourceFilename(),
                                                                         source_namespace=source_namespace,
                                                                         xml_namespaces = xml_namespaces,
                                                                         xml_mode=True)
-    h_annotations, h_export_names = util.export.get_header_names(header_annotations, source_file=source_file)
+    h_annotations, h_export_names = util.export.get_header_names(header_annotations, source_file=source_file,
+                                                                 xml_namespaces=xml_namespaces)
     export_names.update(h_export_names)
     span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names, h_annotations,
                                                                      source_file=source_file, split_overlaps=True)

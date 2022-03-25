@@ -10,7 +10,7 @@ from typing import Any, List, Optional, Tuple, Union
 from sparv.api import (Annotation, AnnotationAllSourceFiles, ExportAnnotations, ExportAnnotationsAllSourceFiles,
                        Headers, SourceStructure, get_logger, util)
 from sparv.core import io
-from .constants import SPARV_DEFAULT_NAMESPACE
+from .constants import SPARV_DEFAULT_NAMESPACE, XML_NAMESPACE_SEP
 
 logger = get_logger(__name__)
 
@@ -489,15 +489,16 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
 
 def _get_xml_tagname(tag, xml_namespaces, xml_mode=False):
     """Take care of namespaces by looking up URIs for prefixes (if xml_mode=True) or by converting to dot notation."""
-    m = re.match(r"\{(.*)\}(.+)", tag)
+    sep = re.escape(util.constants.XML_NAMESPACE_SEP)
+    m = re.match(fr"(.*){sep}(.+)", tag)
     if m and m.group(1):
         if xml_mode:
-            # Replace {prefix} with {uri}
+            # Replace prefix+tag with {uri}tag
             uri = xml_namespaces.get(m.group(1), "")
-            return re.sub(r"{(.+)}(.+)", fr"{{{uri}}}\2", tag)
+            return re.sub(fr"(.*){sep}(.+)", fr"{{{uri}}}\2", tag)
         else:
-            # Replace "{prefix}" with "prefix."
-            return re.sub(r"{(.+)}(.+)", fr"\1.\2", tag)
+            # Replace "prefix+tag" with "prefix.tag"
+            return re.sub(fr"(.*){sep}(.+)", fr"\1.\2", tag)
     return tag
 
 

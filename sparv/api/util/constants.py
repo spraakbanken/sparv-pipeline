@@ -11,6 +11,8 @@ OVERLAP_ATTR = "overlap"  # Name for automatically created overlap attributes
 
 # Namespace to be used in case annotation names collide and sparv_namespace is not set in config
 SPARV_DEFAULT_NAMESPACE = "sparv"
+# Char used in annotations to separate a prefix from its tag name in XML namespaces
+XML_NAMESPACE_SEP = "+"
 
 # Encodings:
 UTF8 = "UTF-8"
