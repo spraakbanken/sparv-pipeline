@@ -9,6 +9,8 @@ logger = get_logger(__name__)
 
 
 @exporter("CoNLL-U (SBX version) export", language=["swe"], config=[
+    Config("conll_export.source_annotations", description="List of annotations and attributes from the source data to "
+           "include. Everything will be included by default."),
     Config("conll_export.conll_fields.sentid", default="<sentence>:misc.id", description="Sentence ID"),
     Config("conll_export.conll_fields.id", default="<token:ref>",
            description="Annotation in ID field of CoNLL-U output"),
