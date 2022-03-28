@@ -8,8 +8,9 @@ from itertools import combinations
 from typing import Any, List, Optional, Tuple, Union
 
 from sparv.api import (Annotation, AnnotationAllSourceFiles, ExportAnnotations, ExportAnnotationsAllSourceFiles,
-                       Headers, SourceStructure, get_logger, util)
+                       Headers, SourceStructure, SparvErrorMessage, get_logger, util)
 from sparv.core import io
+
 from .constants import SPARV_DEFAULT_NAMESPACE, XML_NAMESPACE_SEP
 
 logger = get_logger(__name__)
@@ -128,8 +129,13 @@ def gather_annotations(annotations: List[Annotation],
             if attr and not annotation_dict[base_name].get(attr):
                 annotation_dict[base_name][attr] = list(annotation.read())
             elif is_header:
-                annotation_dict[base_name][util.constants.HEADER_CONTENTS] = list(
-                    Annotation(f"{base_name}:{util.constants.HEADER_CONTENTS}", source_file=source_file).read(allow_newlines=True))
+                try:
+                    annotation_dict[base_name][util.constants.HEADER_CONTENTS] = list(
+                        Annotation(f"{base_name}:{util.constants.HEADER_CONTENTS}", source_file=source_file).read(
+                        allow_newlines=True))
+                except FileNotFoundError:
+                    raise SparvErrorMessage(f"Could not find data for XML header '{base_name}'. "
+                                            "Was this element listed in 'xml_import.header_elements'?")
 
     # Calculate hierarchy (if needed) and sort the span objects
     elem_hierarchy = calculate_element_hierarchy(source_file, spans_list)
@@ -489,12 +495,15 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
 
 def _get_xml_tagname(tag, xml_namespaces, xml_mode=False):
     """Take care of namespaces by looking up URIs for prefixes (if xml_mode=True) or by converting to dot notation."""
-    sep = re.escape(util.constants.XML_NAMESPACE_SEP)
+    sep = re.escape(XML_NAMESPACE_SEP)
     m = re.match(fr"(.*){sep}(.+)", tag)
     if m and m.group(1):
         if xml_mode:
             # Replace prefix+tag with {uri}tag
             uri = xml_namespaces.get(m.group(1), "")
+            if not uri:
+                raise SparvErrorMessage(f"You are trying to export the annotation '{tag}' but no URI was found for the "
+                                        f"namespace prefix '{m.group(1)}'!")
             return re.sub(fr"(.*){sep}(.+)", fr"{{{uri}}}\2", tag)
         else:
             # Replace "prefix+tag" with "prefix.tag"

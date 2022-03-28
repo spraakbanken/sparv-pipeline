@@ -501,6 +501,8 @@ class Namespaces(BaseAnnotation):
     def read(self):
         """Read namespace file and parse it into a dict."""
         lines = io.read_data(self.source_file, self).split("\n")
+        if not lines[0]:
+            return {}
         return dict(l.split() for l in lines)
 
     def write(self, namespaces: Dict[str, str]):

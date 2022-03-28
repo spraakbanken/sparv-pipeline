@@ -109,6 +109,7 @@ class SparvXMLParser:
         self.prefix = prefix
         self.header_elements = header_elements
         self.header_data = {}
+        self.unprocessed_header_data_elems = set()
 
         self.targets = {}  # Index of elements and attributes that will be renamed during import
         self.data = {}  # Metadata collected during parsing
@@ -165,6 +166,7 @@ class SparvXMLParser:
                 "source": header_source_attrib,
                 "target": elsplit(header_target)
             })
+            self.unprocessed_header_data_elems.add(header_source_root)
 
         self.skipped_elems = set(elsplit(elem) for elem in skip)
         assert self.skipped_elems.isdisjoint(all_elems), "skip and elements must be disjoint"
@@ -218,9 +220,6 @@ class SparvXMLParser:
 
         def handle_raw_header(element: etree.Element, tag_name: str, start_pos: int, start_subpos: int):
             """Save full header XML as string."""
-            # Extract all namespaces from the header and its children (they need to be available in handle_header_data)
-            for e in element.iter():
-                get_sparv_name(e.tag)
             # Save header as XML
             tmp_element = copy.deepcopy(element)
             tmp_element.tail = ""
@@ -233,6 +232,11 @@ class SparvXMLParser:
 
         def handle_header_data(element: etree.Element, tag_name: str = None):
             """Extract header metadata."""
+            if tag_name in self.unprocessed_header_data_elems:
+                self.unprocessed_header_data_elems.remove(tag_name)
+            # Extract and register all namespaces from the header and its children
+            for e in element.iter():
+                get_sparv_name(e.tag)
             for header_path, header_sources in self.header_data.get(tag_name, {}).items():
                 if not header_path:
                     header_element = element
@@ -251,6 +255,8 @@ class SparvXMLParser:
                         if header_value:
                             header_data.setdefault(header_source["target"][0], {})
                             header_data[header_source["target"][0]][header_source["target"][1]] = header_value
+                else:
+                    logger.warning(f"Header data '{tag_name}/{header_path}' was not found in source data.")
 
         def iter_ns_declarations():
             """Iterate over namespace declarations in the source file."""
@@ -321,7 +327,10 @@ class SparvXMLParser:
             return element_length, len(element.tail or ""), end_subpos
 
         if self.keep_control_chars and not self.normalize:
-            tree = etree.parse(source_file)
+            try:
+                tree = etree.parse(source_file)
+            except Exception as e:
+                raise SparvErrorMessage(f"The XML input file could not be parsed. Error: {str(e)}")
             root = tree.getroot()
         else:
             text = source_file.read_text()
@@ -329,12 +338,23 @@ class SparvXMLParser:
                 text = util.misc.remove_control_characters(text)
             if self.normalize:
                 text = unicodedata.normalize(self.normalize, text)
-            root = etree.fromstring(text)
+            try:
+                root = etree.fromstring(text)
+            except Exception as e:
+                raise SparvErrorMessage(f"The XML input file could not be parsed. Error: {str(e)}")
 
         iter_tree(root)
 
         if header_data:
             logger.warning("Some header data could not be bound to target elements.")
+
+        if self.unprocessed_header_data_elems:
+            logger.warning("{} header data element{} {} not found in source data: '{}'.".format(
+                "Some" if len(self.unprocessed_header_data_elems) > 1 else "One",
+                "s" if len(self.unprocessed_header_data_elems) > 1 else "",
+                "were" if len(self.unprocessed_header_data_elems) > 1 else "was",
+                "', '".join(self.unprocessed_header_data_elems)
+            ))
 
     def save(self):
         """Save text data and annotation files to disk."""
@@ -385,9 +405,8 @@ class SparvXMLParser:
             # Save list of all header elements to a file
             Headers(self.file).write(header_elements)
 
-        if self.namespace_mapping:
-            # Save namespace mapping (URI to prefix)
-            Namespaces(self.file).write(self.namespace_mapping)
+        # Save namespace mapping (URI to prefix)
+        Namespaces(self.file).write(self.namespace_mapping)
 
 
 def get_namespace(xml_name: str):
