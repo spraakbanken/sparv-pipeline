@@ -191,6 +191,8 @@ def main():
 
     # Add extra arguments to 'run' that we want to come last
     run_parser.add_argument("--unlock", action="store_true", help="Unlock the working directory")
+    run_parser.add_argument("--mark-complete", nargs="+", metavar="FILE", help="Mark output files as complete")
+    run_parser.add_argument("--rerun-incomplete", action="store_true", help="Rerun incomplete output files")
 
     # Backward compatibility
     if len(sys.argv) > 1 and sys.argv[1] == "make":
@@ -308,6 +310,12 @@ def main():
                 snakemake_args["unlock"] = args.unlock
                 simple_target = True
                 pass_through = True
+            if args.mark_complete:
+                snakemake_args["cleanup_metadata"] = args.mark_complete
+                simple_target = True
+                pass_through = True
+            elif args.rerun_incomplete:
+                snakemake_args["force_incomplete"] = True
             if args.list:
                 snakemake_args["targets"] = ["list_exports"]
             elif args.output:
