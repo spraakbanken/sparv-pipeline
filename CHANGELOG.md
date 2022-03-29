@@ -12,6 +12,7 @@
 - Added installer for stats export.
 - Added Stanza support for English.
 - Added better install and uninstall instructions for plugins.
+- Added support for XML namespaces.
 - Added explicit `ref` annotations (indexing tokens within sentences) for Stanza, Malt and Stanford.
 - Added a `--reset` flag to the `sparv setup` command for resetting the data directory setting.
 - Added a separate installer for installing scrambled CWB files.

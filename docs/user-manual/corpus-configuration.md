@@ -277,6 +277,22 @@ the `not` prefix in `export.header_annotations`. If you don't specify anything a
 `export.header_annotations` all your headers will be kept.
 
 
+## XML Namespaces
+If the source data is in XML and contains namespaces Sparv will try to keep these intact in the XML output.
+There are, however, two limitations:
+1. Namespace declarations are always placed in the root element in the output, regardless of where they are in the
+   source data.
+2. URIs and prefixes are assumed to be unique. A URI will automatically be associated with the first prefix that is
+   declared for that URI in the source file.
+
+When referring to elements or attributes containing namespaces in the corpus config file a special syntax is used. A
+reference consists of the namespace prefix followed by `+`, followed by the tag or attribute name. E.g. the reference
+for this element `<e:myelement xmlns:e="https://spraakbanken.gu.se/verktyg/sparv">` would be `e+myelement`.
+
+Namespaces may be removed upon import by setting `xml_import.remove_namespaces` to `true` in the corpus config. This may
+however result in collisions in attributes containing namespaces in the source data.
+
+
 ## Annotation Classes
 Annotation classes are used to refer to annotations without having to explicitly point out which
 module produces that annotation. Two examples we have already shown in examples above are `<token>` and `<sentence>`,
