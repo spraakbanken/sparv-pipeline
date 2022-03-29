@@ -56,6 +56,7 @@ class XMLStructure(SourceStructureParser):
     Config("xml_import.header_data", [], description="List of header elements and attributes from which to extract "
                                                      "metadata."),
     Config("xml_import.prefix", "", description="Optional prefix to add to annotation names."),
+    Config("xml_import.remove_namespaces", False, description="Remove XML namespaces upon import."),
     Config("xml_import.encoding", util.constants.UTF8, description="Encoding of source file. Defaults to UTF-8."),
     Config("xml_import.keep_control_chars", False, description="Set to True if control characters should not be "
                                                                "removed from the text."),
@@ -69,6 +70,7 @@ def parse(filename: SourceFilename = SourceFilename(),
           header_elements: list = Config("xml_import.header_elements"),
           header_data: list = Config("xml_import.header_data"),
           prefix: str = Config("xml_import.prefix"),
+          remove_namespaces: bool = Config("xml_import.remove_namespaces"),
           encoding: str = Config("xml_import.encoding"),
           keep_control_chars: bool = Config("xml_import.keep_control_chars"),
           normalize: str = Config("xml_import.normalize")):
@@ -89,7 +91,7 @@ def parse(filename: SourceFilename = SourceFilename(),
             Defaults to 'NFC'.
     """
     parser = SparvXMLParser(elements, skip, header_elements, header_data, source_dir, encoding, prefix,
-                            keep_control_chars, normalize)
+                            remove_namespaces, keep_control_chars, normalize)
     parser.parse(filename)
     parser.save()
 
@@ -98,8 +100,8 @@ class SparvXMLParser:
     """XML parser class for parsing XML."""
 
     def __init__(self, elements: list, skip: list, header_elements: list, header_data: list, source_dir: Source,
-                 encoding: str = util.constants.UTF8, prefix: str = "", keep_control_chars: bool = True,
-                 normalize: str = "NFC"):
+                 encoding: str = util.constants.UTF8, prefix: str = "", remove_namespaces: bool = False,
+                 keep_control_chars: bool = True, normalize: str = "NFC"):
         """Initialize XML parser."""
         self.source_dir = source_dir
         self.encoding = encoding
@@ -107,6 +109,7 @@ class SparvXMLParser:
         self.normalize = normalize
         self.file = None
         self.prefix = prefix
+        self.remove_namespaces = remove_namespaces
         self.header_elements = header_elements
         self.header_data = {}
         self.unprocessed_header_data_elems = set()
@@ -223,6 +226,9 @@ class SparvXMLParser:
             # Save header as XML
             tmp_element = copy.deepcopy(element)
             tmp_element.tail = ""
+            if self.remove_namespaces:
+                for e in tmp_element.iter():
+                    remove_namespaces(e)
             self.data.setdefault(tag_name, {"attrs": {util.constants.HEADER_CONTENTS}, "elements": []})
             self.data[tag_name]["elements"].append(
                 (start_pos, start_subpos, start_pos, start_subpos, tag_name,
@@ -234,9 +240,12 @@ class SparvXMLParser:
             """Extract header metadata."""
             if tag_name in self.unprocessed_header_data_elems:
                 self.unprocessed_header_data_elems.remove(tag_name)
-            # Extract and register all namespaces from the header and its children
             for e in element.iter():
-                get_sparv_name(e.tag)
+                if self.remove_namespaces:
+                    remove_namespaces(e)
+                else:
+                    # Extract and register all namespaces from the header and its children
+                    get_sparv_name(e.tag)
             for header_path, header_sources in self.header_data.get(tag_name, {}).items():
                 if not header_path:
                     header_element = element
@@ -268,6 +277,8 @@ class SparvXMLParser:
         def get_sparv_name(xml_name: str):
             """Get the sparv notation of a tag or attr name with regards to XML namespaces."""
             ns_uri, tag = get_namespace(xml_name)
+            if self.remove_namespaces:
+                return tag
             tag_name = xml_name
             if ns_uri:
                 ns_prefix = self.namespace_mapping_reversed.get(ns_uri, "")
@@ -287,6 +298,17 @@ class SparvXMLParser:
                 uri = "{" + self.namespace_mapping[i.group(1)] + "}"
                 path = re.sub(re.escape(i.group(0)), uri, path, count=1)
             return path
+
+        def remove_namespaces(element: etree.Element):
+            """Remove namespaces from element and its attributes."""
+            uri, _ = get_namespace(element.tag)
+            if uri:
+                element.tag = element.tag[len("{" + uri + "}"):]
+            for k in list(element.attrib.keys()):
+                uri, _ = get_namespace(k)
+                if uri:
+                    element.set(k[len("{" + uri + "}"):], element.attrib[k])
+                    element.attrib.pop(k)
 
         def iter_tree(element: etree.Element, start_pos: int = 0, start_subpos: int = 0):
             """Walk through whole XML and handle elements and text data."""
