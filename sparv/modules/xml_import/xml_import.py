@@ -1,13 +1,14 @@
 """Parse XML source file."""
 
 import copy
+import re
 import unicodedata
 import xml.etree.ElementTree as etree
 from itertools import chain
 from typing import List
 
-from sparv.api import (Config, SourceFilename, Headers, Output, Source, SourceStructure, SourceStructureParser,
-                       SparvErrorMessage, Text, get_logger, importer, util)
+from sparv.api import (Config, Headers, Namespaces, Output, Source, SourceFilename, SourceStructure,
+                       SourceStructureParser, SparvErrorMessage, Text, get_logger, importer, util)
 
 logger = get_logger(__name__)
 
@@ -55,6 +56,7 @@ class XMLStructure(SourceStructureParser):
     Config("xml_import.header_data", [], description="List of header elements and attributes from which to extract "
                                                      "metadata."),
     Config("xml_import.prefix", "", description="Optional prefix to add to annotation names."),
+    Config("xml_import.remove_namespaces", False, description="Remove XML namespaces upon import."),
     Config("xml_import.encoding", util.constants.UTF8, description="Encoding of source file. Defaults to UTF-8."),
     Config("xml_import.keep_control_chars", False, description="Set to True if control characters should not be "
                                                                "removed from the text."),
@@ -68,6 +70,7 @@ def parse(filename: SourceFilename = SourceFilename(),
           header_elements: list = Config("xml_import.header_elements"),
           header_data: list = Config("xml_import.header_data"),
           prefix: str = Config("xml_import.prefix"),
+          remove_namespaces: bool = Config("xml_import.remove_namespaces"),
           encoding: str = Config("xml_import.encoding"),
           keep_control_chars: bool = Config("xml_import.keep_control_chars"),
           normalize: str = Config("xml_import.normalize")):
@@ -88,7 +91,7 @@ def parse(filename: SourceFilename = SourceFilename(),
             Defaults to 'NFC'.
     """
     parser = SparvXMLParser(elements, skip, header_elements, header_data, source_dir, encoding, prefix,
-                            keep_control_chars, normalize)
+                            remove_namespaces, keep_control_chars, normalize)
     parser.parse(filename)
     parser.save()
 
@@ -96,9 +99,9 @@ def parse(filename: SourceFilename = SourceFilename(),
 class SparvXMLParser:
     """XML parser class for parsing XML."""
 
-    def __init__(self, elements: list, skip: list, header_elements: list, headers: list, source_dir: Source,
-                 encoding: str = util.constants.UTF8, prefix: str = "", keep_control_chars: bool = True,
-                 normalize: str = "NFC"):
+    def __init__(self, elements: list, skip: list, header_elements: list, header_data: list, source_dir: Source,
+                 encoding: str = util.constants.UTF8, prefix: str = "", remove_namespaces: bool = False,
+                 keep_control_chars: bool = True, normalize: str = "NFC"):
         """Initialize XML parser."""
         self.source_dir = source_dir
         self.encoding = encoding
@@ -106,12 +109,16 @@ class SparvXMLParser:
         self.normalize = normalize
         self.file = None
         self.prefix = prefix
+        self.remove_namespaces = remove_namespaces
         self.header_elements = header_elements
-        self.headers = {}
+        self.header_data = {}
+        self.unprocessed_header_data_elems = set()
 
         self.targets = {}  # Index of elements and attributes that will be renamed during import
         self.data = {}  # Metadata collected during parsing
         self.text = []  # Text data of the source file collected during parsing
+        self.namespace_mapping = {}  # Mapping of namespace prefix --> uri
+        self.namespace_mapping_reversed = {}  # Mapping of uri --> namespace prefix
 
         # Parse elements argument
 
@@ -150,18 +157,19 @@ class SparvXMLParser:
                 if attr:
                     self.data[element]["attrs"].add(attr)
 
-        for header in headers:
+        for header in header_data:
             header_source, _, header_target = header.partition(" as ")
             if not header_target:
                 raise SparvErrorMessage("The header '{}' needs to be bound to a target element.".format(header))
             header_source, _, header_source_attrib = header_source.partition(":")
             header_source_root, _, header_source_rest = header_source.partition("/")
-            self.headers.setdefault(header_source_root, {})
-            self.headers[header_source_root].setdefault(header_source_rest, [])
-            self.headers[header_source_root][header_source_rest].append({
+            self.header_data.setdefault(header_source_root, {})
+            self.header_data[header_source_root].setdefault(header_source_rest, [])
+            self.header_data[header_source_root][header_source_rest].append({
                 "source": header_source_attrib,
                 "target": elsplit(header_target)
             })
+            self.unprocessed_header_data_elems.add(header_source_root)
 
         self.skipped_elems = set(elsplit(elem) for elem in skip)
         assert self.skipped_elems.isdisjoint(all_elems), "skip and elements must be disjoint"
@@ -182,7 +190,8 @@ class SparvXMLParser:
             if (name_orig, "*") in self.skipped_elems:
                 attrs = {}
             for attr in attrs.copy():
-                if (name_orig, attr) in self.skipped_elems:
+                attr_name = get_sparv_name(attr)
+                if (name_orig, attr_name) in self.skipped_elems:
                     attrs.pop(attr)
 
             if name_orig in self.targets:
@@ -190,13 +199,16 @@ class SparvXMLParser:
                 name = self.targets[name_orig]["target"]
                 attrs_tmp = {}
                 for attr in attrs:
-                    attrs_tmp[self.targets[name_orig]["attrs"].get(attr, attr)] = attrs[attr]
+                    attr_name = get_sparv_name(attr)
+                    attrs_tmp[self.targets[name_orig]["attrs"].get(attr_name, attr_name)] = attrs[attr]
                 attrs = attrs_tmp
             else:
                 name = name_orig
 
+            # Save attrs in data
             self.data.setdefault(name, {"attrs": set(), "elements": []})
-            self.data[name]["attrs"].update(set(attrs.keys()))
+            attr_keys = [get_sparv_name(attr) for attr in attrs.keys()]
+            self.data[name]["attrs"].update(set(attr_keys))
 
             # Add attribute data collected from header
             if name in header_data:
@@ -204,56 +216,116 @@ class SparvXMLParser:
                 self.data[name]["attrs"].update(set(header_data[name].keys()))
                 del header_data[name]
 
+            attrs = {get_sparv_name(k): v for k, v in attrs.items()}
             self.data[name]["elements"].append(
                 (start, start_subpos, end, end_subpos, name_orig, attrs)
             )
 
-        def handle_raw_header(element: etree.Element, start_pos: int, start_subpos: int):
+        def handle_raw_header(element: etree.Element, tag_name: str, start_pos: int, start_subpos: int):
             """Save full header XML as string."""
             # Save header as XML
             tmp_element = copy.deepcopy(element)
             tmp_element.tail = ""
-            self.data.setdefault(element.tag, {"attrs": {util.constants.HEADER_CONTENTS}, "elements": []})
-            self.data[element.tag]["elements"].append(
-                (start_pos, start_subpos, start_pos, start_subpos, element.tag,
+            if self.remove_namespaces:
+                for e in tmp_element.iter():
+                    remove_namespaces(e)
+            self.data.setdefault(tag_name, {"attrs": {util.constants.HEADER_CONTENTS}, "elements": []})
+            self.data[tag_name]["elements"].append(
+                (start_pos, start_subpos, start_pos, start_subpos, tag_name,
                  {util.constants.HEADER_CONTENTS: etree.tostring(tmp_element, method="xml", encoding="UTF-8").decode()})
             )
+            handle_header_data(element, tag_name)
 
-            handle_header_data(element)
-
-        def handle_header_data(element: etree.Element):
+        def handle_header_data(element: etree.Element, tag_name: str = None):
             """Extract header metadata."""
-            for header_path, header_sources in self.headers.get(element.tag, {}).items():
+            if tag_name in self.unprocessed_header_data_elems:
+                self.unprocessed_header_data_elems.remove(tag_name)
+            for e in element.iter():
+                if self.remove_namespaces:
+                    remove_namespaces(e)
+                else:
+                    # Extract and register all namespaces from the header and its children
+                    get_sparv_name(e.tag)
+            for header_path, header_sources in self.header_data.get(tag_name, {}).items():
                 if not header_path:
                     header_element = element
                 else:
-                    header_element = element.find(header_path)
+                    xpath = annotation_to_xpath(header_path)
+                    header_element = element.find(xpath)
 
                 if header_element is not None:
                     for header_source in header_sources:
                         if header_source["source"]:
-                            header_value = header_element.attrib.get(header_source["source"])
+                            source_name = annotation_to_xpath(header_source["source"])
+                            header_value = header_element.attrib.get(source_name)
                         else:
                             header_value = header_element.text.strip()
 
                         if header_value:
                             header_data.setdefault(header_source["target"][0], {})
                             header_data[header_source["target"][0]][header_source["target"][1]] = header_value
+                else:
+                    logger.warning(f"Header data '{tag_name}/{header_path}' was not found in source data.")
+
+        def iter_ns_declarations():
+            """Iterate over namespace declarations in the source file."""
+            for _, (prefix, uri) in etree.iterparse(source_file, events=["start-ns"]):
+                self.namespace_mapping[prefix] = uri
+                self.namespace_mapping_reversed[uri] = prefix
+                yield prefix, uri
+
+        def get_sparv_name(xml_name: str):
+            """Get the sparv notation of a tag or attr name with regards to XML namespaces."""
+            ns_uri, tag = get_namespace(xml_name)
+            if self.remove_namespaces:
+                return tag
+            tag_name = xml_name
+            if ns_uri:
+                ns_prefix = self.namespace_mapping_reversed.get(ns_uri, "")
+                if not ns_prefix:
+                    for prefix, uri in iter_ns_declarations():
+                        if uri == ns_uri:
+                            ns_prefix = prefix
+                            break
+                tag_name = f"{ns_prefix}{util.constants.XML_NAMESPACE_SEP}{tag}"
+            return tag_name
+
+        def annotation_to_xpath(path: str):
+            """Convert a sparv header path into a real xpath."""
+            sep = re.escape(util.constants.XML_NAMESPACE_SEP)
+            m = re.finditer(fr"([^/+:]+){sep}", path) or []
+            for i in m:
+                uri = "{" + self.namespace_mapping[i.group(1)] + "}"
+                path = re.sub(re.escape(i.group(0)), uri, path, count=1)
+            return path
+
+        def remove_namespaces(element: etree.Element):
+            """Remove namespaces from element and its attributes."""
+            uri, _ = get_namespace(element.tag)
+            if uri:
+                element.tag = element.tag[len("{" + uri + "}"):]
+            for k in list(element.attrib.keys()):
+                uri, _ = get_namespace(k)
+                if uri:
+                    element.set(k[len("{" + uri + "}"):], element.attrib[k])
+                    element.attrib.pop(k)
 
         def iter_tree(element: etree.Element, start_pos: int = 0, start_subpos: int = 0):
             """Walk through whole XML and handle elements and text data."""
-            if (element.tag, "@contents") in self.skipped_elems:
+            tag_name = get_sparv_name(element.tag)
+
+            if (tag_name, "@contents") in self.skipped_elems:
                 # Skip whole element and all its contents
                 if element.tail:
                     self.text.append(element.tail)
                 return 0, len(element.tail or ""), 0
-            elif element.tag in self.header_elements:
+            elif tag_name in self.header_elements:
                 if element.tail:
                     self.text.append(element.tail)
-                handle_raw_header(element, start_pos, start_subpos)
+                handle_raw_header(element, tag_name, start_pos, start_subpos)
                 return 0, len(element.tail or ""), 0
-            elif element.tag in self.headers:
-                handle_header_data(element)
+            elif tag_name in self.header_data:
+                handle_header_data(element, tag_name)
             element_length = 0
             if element.text:
                 element_length = len(element.text)
@@ -271,13 +343,16 @@ class SparvXMLParser:
                 end_subpos += 1
             else:
                 end_subpos = 0
-            handle_element([start_pos, start_subpos, end_pos, end_subpos, element.tag, element.attrib])
+            handle_element([start_pos, start_subpos, end_pos, end_subpos, tag_name, element.attrib])
             if element.tail:
                 self.text.append(element.tail)
             return element_length, len(element.tail or ""), end_subpos
 
         if self.keep_control_chars and not self.normalize:
-            tree = etree.parse(source_file)
+            try:
+                tree = etree.parse(source_file)
+            except Exception as e:
+                raise SparvErrorMessage(f"The XML input file could not be parsed. Error: {str(e)}")
             root = tree.getroot()
         else:
             text = source_file.read_text()
@@ -285,12 +360,23 @@ class SparvXMLParser:
                 text = util.misc.remove_control_characters(text)
             if self.normalize:
                 text = unicodedata.normalize(self.normalize, text)
-            root = etree.fromstring(text)
+            try:
+                root = etree.fromstring(text)
+            except Exception as e:
+                raise SparvErrorMessage(f"The XML input file could not be parsed. Error: {str(e)}")
 
         iter_tree(root)
 
         if header_data:
             logger.warning("Some header data could not be bound to target elements.")
+
+        if self.unprocessed_header_data_elems:
+            logger.warning("{} header data element{} {} not found in source data: '{}'.".format(
+                "Some" if len(self.unprocessed_header_data_elems) > 1 else "One",
+                "s" if len(self.unprocessed_header_data_elems) > 1 else "",
+                "were" if len(self.unprocessed_header_data_elems) > 1 else "was",
+                "', '".join(self.unprocessed_header_data_elems)
+            ))
 
     def save(self):
         """Save text data and annotation files to disk."""
@@ -341,19 +427,37 @@ class SparvXMLParser:
             # Save list of all header elements to a file
             Headers(self.file).write(header_elements)
 
+        # Save namespace mapping (URI to prefix)
+        Namespaces(self.file).write(self.namespace_mapping)
+
+
+def get_namespace(xml_name: str):
+    """Search for a namespace in tag and return a tuple (URI, tagname)."""
+    m = re.match(r"\{(.*)\}(.+)", xml_name)
+    return (m.group(1), m.group(2)) if m else ("", xml_name)
+
 
 def analyze_xml(source_file):
     """Analyze an XML file and return a list of elements and attributes."""
     elements = set()
 
-    parser = etree.iterparse(source_file, events=("start", "end"))
+    parser = etree.iterparse(source_file, events=("start-ns", "start"))
     event, root = next(parser)
+    namespace_map = {}
 
     for event, element in chain([(event, root)], parser):
-        if event == "start":
-            elements.add(element.tag)
+        if event == "start-ns":
+            prefix, uri = element
+            namespace_map[uri] = prefix
+        elif event == "start":
+            tagname = element.tag
+            uri, tag = get_namespace(tagname)
+            if uri:
+                prefix = namespace_map[uri]
+                tagname = f"{prefix}{util.constants.XML_NAMESPACE_SEP}{tag}"
+            elements.add(tagname)
             for attr in element.attrib:
-                elements.add(f"{element.tag}:{attr}")
+                elements.add(f"{tagname}:{attr}")
             root.clear()
 
     return elements

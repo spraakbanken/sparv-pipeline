@@ -8,8 +8,6 @@ import xml.etree.ElementTree as etree
 from shutil import copyfileobj
 from typing import Optional
 
-import yaml
-
 from sparv.api import SparvErrorMessage, get_logger, util
 
 logger = get_logger(__name__)
@@ -18,7 +16,8 @@ INDENTATION = "  "
 
 
 def make_pretty_xml(span_positions, annotation_dict, export_names, token_name: str, word_annotation, fileid,
-                    include_empty_attributes: bool, sparv_namespace: Optional[str] = None):
+                    include_empty_attributes: bool, sparv_namespace: Optional[str] = None,
+                    xml_namespaces: Optional[dict] = None):
     """Create a pretty formatted XML string from span_positions.
 
     Used by pretty and sentence_scrambled.
@@ -40,6 +39,8 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token_name: s
     current_token_text = None
     last_node = None
     inside_token = False
+
+    register_namespaces(xml_namespaces)
 
     def handle_subtoken_text(position, last_start_position, last_end_position, node, token_text):
         """Handle text for subtoken elements."""
@@ -120,6 +121,12 @@ def valid_root(first_item, last_item, true_root: bool = False):
             and first_item[2].name == last_item[2].name
             and first_item[2].index == last_item[2].index
             and (not true_root or (first_item[0] == 0)))
+
+
+def register_namespaces(xml_namespaces: dict):
+    """Register all namespace prefixes."""
+    for prefix, uri in xml_namespaces.items():
+        etree.register_namespace(prefix, uri)
 
 
 def add_attrs(node, annotation, annotation_dict, export_names, index, include_empty_attributes: bool):

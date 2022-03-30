@@ -1,15 +1,17 @@
 """Util functions for corpus export."""
 
+import re
 import xml.etree.ElementTree as etree
 from collections import OrderedDict, defaultdict
 from copy import deepcopy
 from itertools import combinations
 from typing import Any, List, Optional, Tuple, Union
 
-from sparv.api import (Annotation, AnnotationAllSourceFiles, ExportAnnotations, ExportAnnotationsAllSourceFiles, Headers,
-                       SourceStructure, get_logger, util)
+from sparv.api import (Annotation, AnnotationAllSourceFiles, ExportAnnotations, ExportAnnotationsAllSourceFiles,
+                       Headers, SourceStructure, SparvErrorMessage, get_logger, util)
 from sparv.core import io
-from .constants import SPARV_DEFAULT_NAMESPACE
+
+from .constants import SPARV_DEFAULT_NAMESPACE, XML_NAMESPACE_SEP
 
 logger = get_logger(__name__)
 
@@ -127,8 +129,13 @@ def gather_annotations(annotations: List[Annotation],
             if attr and not annotation_dict[base_name].get(attr):
                 annotation_dict[base_name][attr] = list(annotation.read())
             elif is_header:
-                annotation_dict[base_name][util.constants.HEADER_CONTENTS] = list(
-                    Annotation(f"{base_name}:{util.constants.HEADER_CONTENTS}", source_file=source_file).read(allow_newlines=True))
+                try:
+                    annotation_dict[base_name][util.constants.HEADER_CONTENTS] = list(
+                        Annotation(f"{base_name}:{util.constants.HEADER_CONTENTS}", source_file=source_file).read(
+                        allow_newlines=True))
+                except FileNotFoundError:
+                    raise SparvErrorMessage(f"Could not find data for XML header '{base_name}'. "
+                                            "Was this element listed in 'xml_import.header_elements'?")
 
     # Calculate hierarchy (if needed) and sort the span objects
     elem_hierarchy = calculate_element_hierarchy(source_file, spans_list)
@@ -314,7 +321,9 @@ def get_annotation_names(annotations: Union[ExportAnnotations, ExportAnnotations
                          token_name: Optional[str] = None,
                          remove_namespaces=False, keep_struct_names=False,
                          sparv_namespace: Optional[str] = None,
-                         source_namespace: Optional[str] = None):
+                         source_namespace: Optional[str] = None,
+                         xml_namespaces: Optional[dict] = None,
+                         xml_mode: Optional[bool] = False):
     """Get a list of annotations, token attributes and a dictionary for renamed annotations.
 
     Args:
@@ -348,14 +357,16 @@ def get_annotation_names(annotations: Union[ExportAnnotations, ExportAnnotations
         token_attributes = []
 
     export_names = _create_export_names(all_annotations, token_name, remove_namespaces, keep_struct_names,
-                                        source_annotations, sparv_namespace, source_namespace)
+                                        source_annotations, sparv_namespace, source_namespace, xml_namespaces,
+                                        xml_mode=xml_mode)
 
     return [i[0] for i in all_annotations], token_attributes, export_names
 
 
 def get_header_names(header_annotation_names: Optional[List[str]],
                      source_file: Optional[str] = None,
-                     source_files: Optional[List[str]] = None):
+                     source_files: Optional[List[str]] = None,
+                     xml_namespaces: Optional[dict] = None):
     """Get a list of header annotations and a dictionary for renamed annotations."""
     # Get source_header_names from headers file if it exists
     source_header_names = []
@@ -373,7 +384,8 @@ def get_header_names(header_annotation_names: Optional[List[str]],
     header_annotations = [(Annotation(a[0], source_file) if source_file else AnnotationAllSourceFiles(a[0]), a[1]) for a in
                           annotation_names]
 
-    export_names = _create_export_names(header_annotations, None, False, keep_struct_names=False)
+    export_names = _create_export_names(header_annotations, None, False, keep_struct_names=False,
+                                        xml_namespaces=xml_namespaces, xml_mode=True)
 
     return [a[0] for a in header_annotations], export_names
 
@@ -393,7 +405,9 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
                          keep_struct_names: bool,
                          source_annotations: list = [],
                          sparv_namespace: Optional[str] = None,
-                         source_namespace: Optional[str] = None):
+                         source_namespace: Optional[str] = None,
+                         xml_namespaces: Optional[dict] = None,
+                         xml_mode: Optional[bool] = False):
     """Create dictionary for renamed annotations."""
     if remove_namespaces:
         def shorten(annotation):
@@ -473,7 +487,28 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
                                           source_namespace)
     export_names = _check_name_collision(export_names, source_annotations)
 
+    # Take care of XML namespaces
+    export_names = {k: _get_xml_tagname(v, xml_namespaces, xml_mode) for k, v in export_names.items()}
+
     return export_names
+
+
+def _get_xml_tagname(tag, xml_namespaces, xml_mode=False):
+    """Take care of namespaces by looking up URIs for prefixes (if xml_mode=True) or by converting to dot notation."""
+    sep = re.escape(XML_NAMESPACE_SEP)
+    m = re.match(fr"(.*){sep}(.+)", tag)
+    if m and m.group(1):
+        if xml_mode:
+            # Replace prefix+tag with {uri}tag
+            uri = xml_namespaces.get(m.group(1), "")
+            if not uri:
+                raise SparvErrorMessage(f"You are trying to export the annotation '{tag}' but no URI was found for the "
+                                        f"namespace prefix '{m.group(1)}'!")
+            return re.sub(fr"(.*){sep}(.+)", fr"{{{uri}}}\2", tag)
+        else:
+            # Replace "prefix+tag" with "prefix.tag"
+            return re.sub(fr"(.*){sep}(.+)", fr"\1.\2", tag)
+    return tag
 
 
 def _add_global_namespaces(export_names: dict,

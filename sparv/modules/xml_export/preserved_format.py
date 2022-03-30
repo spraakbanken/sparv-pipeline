@@ -3,7 +3,7 @@
 import os
 import xml.etree.ElementTree as etree
 
-from sparv.api import (AnnotationData, Config, SourceFilename, Export, ExportAnnotations, SourceAnnotations,
+from sparv.api import (AnnotationData, Config, Export, ExportAnnotations, Namespaces, SourceAnnotations, SourceFilename,
                        SparvErrorMessage, Text, exporter, get_logger, util)
 from . import xml_utils
 
@@ -46,16 +46,20 @@ def preserved_format(source_file: SourceFilename = SourceFilename(),
     # Create export dir
     os.makedirs(os.path.dirname(out), exist_ok=True)
 
-    # Read corpus text and file ID
+    # Read corpus text, file ID and XML namespaces
     corpus_text = text.read()
     fileid = fileid.read()
+    xml_namespaces = Namespaces(source_file).read()
 
     # Get annotation spans, annotations list etc.
     annotation_list, _, export_names = util.export.get_annotation_names(annotations, source_annotations, source_file=source_file,
                                                                         remove_namespaces=remove_namespaces,
                                                                         sparv_namespace=sparv_namespace,
-                                                                        source_namespace=source_namespace)
-    h_annotations, h_export_names = util.export.get_header_names(header_annotations, source_file=source_file)
+                                                                        source_namespace=source_namespace,
+                                                                        xml_namespaces=xml_namespaces,
+                                                                        xml_mode=True)
+    h_annotations, h_export_names = util.export.get_header_names(header_annotations, source_file=source_file,
+                                                                 xml_namespaces=xml_namespaces)
     export_names.update(h_export_names)
     span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names, h_annotations,
                                                                      source_file=source_file, flatten=False, split_overlaps=True)
@@ -66,6 +70,9 @@ def preserved_format(source_file: SourceFilename = SourceFilename(),
         raise SparvErrorMessage("Root tag is missing! If you have manually specified which elements to include, "
                                 "make sure to include an element that encloses all other included elements and "
                                 "text content (including whitespace characters such as newlines).")
+
+    # Register XML namespaces
+    xml_utils.register_namespaces(xml_namespaces)
 
     # Create root node
     root_span = sorted_positions[0][2]

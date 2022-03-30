@@ -21,6 +21,7 @@ SPAN_ANNOTATION = "@span"
 TEXT_FILE = "@text"
 STRUCTURE_FILE = "@structure"
 HEADERS_FILE = "@headers"
+NAMESPACE_FILE = "@namespaces"
 
 # Compression used for annotation files (can be changed using sparv.compression in config file)
 compression = "gzip"
