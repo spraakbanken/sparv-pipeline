@@ -94,7 +94,6 @@ Inheritable configuration keys for `export`:
 |`default`                  | Exports to create by default when running 'sparv run'.
 |`source_annotations`       | List of annotations from the source file to be kept.
 |`annotations`              | List of automatic annotations to include.
-|`header_annotations`       | List of header elements from the source file to include in the export.
 |`word`                     | The token strings to be included in the export.
 |`remove_module_namespaces` | Set to false if module name spaces should be kept in the export.
 |`sparv_namespace`          | A string representing the name space to be added to all annotations created by Sparv.

@@ -256,7 +256,7 @@ xml_import:
         - header/title/main-title as text:title
         - header/title/sub-title as text:subtitle
         - header/date as text:date
-export:
+xml_export:
     header_annotations:
         - not header
         - not another-header
@@ -273,8 +273,8 @@ The output will look like this:
 </text>
 ```
 If you do want to keep the headers in the output (without them being analysed as corpus text), just list them without
-the `not` prefix in `export.header_annotations`. If you don't specify anything at all in
-`export.header_annotations` all your headers will be kept.
+the `not` prefix in `xml_export.header_annotations`. If you don't specify anything at all in
+`xml_export.header_annotations` all your headers will be kept.
 
 
 ## XML Namespaces

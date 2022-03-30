@@ -63,13 +63,15 @@ export:
         - dokument as document
         - not text:subtitle
         - ...
-    # Headers from the source files that we want to include in the output
-    header_annotations:
-        - s+header
     # Automatic annotations to be included in the export
     annotations:
         - <sentence>:misc.id
         - <token>
+
+xml_export:
+    # Headers from the source files that we want to include in the output
+    header_annotations:
+        - s+header
 
 sparv:
     compression: none

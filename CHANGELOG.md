@@ -67,6 +67,8 @@
   `xml_export.export_host` and `xml_export.export_path` respectively. The configuration variables for the scrambled
   installer has been changed from `xml_export.export_host` and `xml_export.export_path` to
   `xml_export.export_scrambled_host` and `xml_export.export_scrambled_path` respectively.
+- Removed `header_annotations` configuration variable from `export` (it is still available as
+  `xml_export.header_annotations`).
 - All export files must now be written to subdirectories, and each subdirectory must use the exporter's module name as
   prefix (or be equal to the module name).
 
