@@ -8,7 +8,7 @@ from itertools import combinations
 from typing import Any, List, Optional, Tuple, Union
 
 from sparv.api import (Annotation, AnnotationAllSourceFiles, ExportAnnotations, ExportAnnotationsAllSourceFiles,
-                       Headers, SourceStructure, SparvErrorMessage, get_logger, util)
+                       Headers, Namespaces, SourceStructure, SparvErrorMessage, get_logger, util)
 from sparv.core import io
 
 from .constants import SPARV_DEFAULT_NAMESPACE, XML_NAMESPACE_SEP
@@ -322,7 +322,6 @@ def get_annotation_names(annotations: Union[ExportAnnotations, ExportAnnotations
                          remove_namespaces=False, keep_struct_names=False,
                          sparv_namespace: Optional[str] = None,
                          source_namespace: Optional[str] = None,
-                         xml_namespaces: Optional[dict] = None,
                          xml_mode: Optional[bool] = False):
     """Get a list of annotations, token attributes and a dictionary for renamed annotations.
 
@@ -356,6 +355,9 @@ def get_annotation_names(annotations: Union[ExportAnnotations, ExportAnnotations
     else:
         token_attributes = []
 
+    # Get XML namespaces
+    xml_namespaces = Namespaces(source_file).read()
+
     export_names = _create_export_names(all_annotations, token_name, remove_namespaces, keep_struct_names,
                                         source_annotations, sparv_namespace, source_namespace, xml_namespaces,
                                         xml_mode=xml_mode)
@@ -365,8 +367,7 @@ def get_annotation_names(annotations: Union[ExportAnnotations, ExportAnnotations
 
 def get_header_names(header_annotation_names: Optional[List[str]],
                      source_file: Optional[str] = None,
-                     source_files: Optional[List[str]] = None,
-                     xml_namespaces: Optional[dict] = None):
+                     source_files: Optional[List[str]] = None):
     """Get a list of header annotations and a dictionary for renamed annotations."""
     # Get source_header_names from headers file if it exists
     source_header_names = []
@@ -383,6 +384,9 @@ def get_header_names(header_annotation_names: Optional[List[str]],
     annotation_names = util.misc.parse_annotation_list(header_annotation_names, source_header_names)
     header_annotations = [(Annotation(a[0], source_file) if source_file else AnnotationAllSourceFiles(a[0]), a[1]) for a in
                           annotation_names]
+
+    # Get XML namespaces
+    xml_namespaces = Namespaces(source_file).read()
 
     export_names = _create_export_names(header_annotations, None, False, keep_struct_names=False,
                                         xml_namespaces=xml_namespaces, xml_mode=True)

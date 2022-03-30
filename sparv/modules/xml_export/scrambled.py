@@ -40,7 +40,6 @@ def scrambled(source_file: SourceFilename = SourceFilename(),
                                                                         remove_namespaces=remove_namespaces,
                                                                         sparv_namespace=sparv_namespace,
                                                                         source_namespace=source_namespace,
-                                                                        xml_namespaces=xml_namespaces,
                                                                         xml_mode=True)
     if chunk not in annotation_list:
         raise SparvErrorMessage(
