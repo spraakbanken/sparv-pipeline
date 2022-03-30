@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import sparv.core
 from sparv.core import io
-from sparv.core.misc import SparvErrorMessage, get_logger
+from sparv.core.misc import get_logger
 from sparv.core.paths import models_dir
 
 logger = get_logger(__name__)
@@ -500,10 +500,11 @@ class Namespaces(BaseAnnotation):
 
     def read(self):
         """Read namespace file and parse it into a dict."""
-        lines = io.read_data(self.source_file, self).split("\n")
-        if not lines[0]:
+        try:
+            lines = io.read_data(self.source_file, self).split("\n")
+            return dict(l.split() for l in lines)
+        except FileNotFoundError:
             return {}
-        return dict(l.split() for l in lines)
 
     def write(self, namespaces: Dict[str, str]):
         """Write namespace file."""

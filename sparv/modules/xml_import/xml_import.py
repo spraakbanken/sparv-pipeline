@@ -428,7 +428,8 @@ class SparvXMLParser:
             Headers(self.file).write(header_elements)
 
         # Save namespace mapping (URI to prefix)
-        Namespaces(self.file).write(self.namespace_mapping)
+        if self.namespace_mapping:
+            Namespaces(self.file).write(self.namespace_mapping)
 
 
 def get_namespace(xml_name: str):
