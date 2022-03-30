@@ -9,6 +9,7 @@ metadata:
         eng: |
             This test corpus includes:
             - XML headers
+            - XML namespaces
             - re-naming of elements and attributes on import
             - special source_annotations syntax
             - sub-token source annotations
@@ -24,22 +25,23 @@ import:
 xml_import:
     # Elements that should be treated as headers, i.e. their contents will not be part of the corpus text
     header_elements:
-        - header
+        - s+header
         - another-header
+        - nested:s+n as sparv+id
     # Header elements and attributes from which we want to extract metadata
     header_data:
-        - header/författare as text:author
-        - header/författare:birth as text:author-birth
-        - header/författare:death as text:author-death
-        - header/title/main-title as text:title
-        - header/title/sub-title as text:subtitle
-        - header/date as text:date
+        - s+header/m+författare as text:m+author
+        - s+header/m+författare:birth as text:author-birth
+        - s+header/m+författare:death as text:author-death
+        - s+header/title/m+main-title as text:title
+        - s+header/title/m+sub-title as text:subtitle
+        - s+header/m+date as text:date
     elements:
         - paragraph:n as id
         - paragraph as p
     skip:
-        - i
-        - u:@contents
+        - sparv+i
+        - sparv+u:@contents
 
 #===============================================================================
 # Export Settings
@@ -56,12 +58,14 @@ export:
         - xml_export:scrambled
     # Annotations from source files to include in the output. If nothing is specified, everything is kept.
     source_annotations:
+        - sparv+b as b
+        - sparv+x as s+x
         - dokument as document
         - not text:subtitle
         - ...
     # Headers from the source files that we want to include in the output
     header_annotations:
-        - header
+        - s+header
     # Automatic annotations to be included in the export
     annotations:
         - <sentence>:misc.id

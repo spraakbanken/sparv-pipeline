@@ -287,7 +287,7 @@ There are, however, two limitations:
 
 When referring to elements or attributes containing namespaces in the corpus config file a special syntax is used. A
 reference consists of the namespace prefix followed by `+`, followed by the tag or attribute name. E.g. the reference
-for this element `<e:myelement xmlns:e="https://spraakbanken.gu.se/verktyg/sparv">` would be `e+myelement`.
+for this element `<sparv:myelement xmlns:sparv="https://spraakbanken.gu.se/verktyg/sparv">` would be `sparv+myelement`.
 
 Namespaces may be removed upon import by setting `xml_import.remove_namespaces` to `true` in the corpus config. This may
 however result in collisions in attributes containing namespaces in the source data.

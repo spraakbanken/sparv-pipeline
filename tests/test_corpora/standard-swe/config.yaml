@@ -15,6 +15,7 @@ metadata:
             - all Swedish standard token and text-level annotations except wsd
             - custom annotations
             - all kinds of exports except the combined and compressed variants
+            - removal of namespaces upon import
 
 
 #===============================================================================
@@ -26,6 +27,8 @@ import:
     text_annotation: text
 
 xml_import:
+    # Remove namespaces upon import
+    remove_namespaces: true
     # Elements and attributes from the source XML that we want to be available as input for other annotations
     elements:
         - text:date
