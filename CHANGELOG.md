@@ -4,15 +4,18 @@
 
 ### Added
 
-- Added a quick start guide in the documentation.
+- Added a [quick start guide](https://spraakbanken.gu.se/sparv/#/user-manual/quick-start) in the documentation.
 - Added importers for more file formats: docx and odt.
-- Added support for language varieties.
-- Re-introduced analyses for Old Swedish and Swedish from the 1800's.
+- Added support for [language
+  varieties](https://spraakbanken.gu.se/sparv/#/developers-guide/writing-sparv-plugins?id=languages-and-varieties).
+- Re-introduced analyses for [Old Swedish and Swedish from the
+  1800's](https://spraakbanken.gu.se/sparv/#/developers-guide/writing-sparv-plugins?id=languages-and-varieties).
 - Added a more flexible stats export which lets you choose which annotations to include in the frequency list.
 - Added installer for stats export.
 - Added Stanza support for English.
 - Added better install and uninstall instructions for plugins.
-- Added support for [XML namespaces](https://spraakbanken.gu.se/sparv/#/user-manual/corpus-configuration?id=xml-namespaces).
+- Added support for [XML
+  namespaces](https://spraakbanken.gu.se/sparv/#/user-manual/corpus-configuration?id=xml-namespaces).
 - Added explicit `ref` annotations (indexing tokens within sentences) for Stanza, Malt and Stanford.
 - Added a `--reset` flag to the `sparv setup` command for resetting the data directory setting.
 - Added a separate installer for installing scrambled CWB files.
@@ -32,6 +35,7 @@
 - Show a warning if an installed plugin is incompatible with Sparv.
 - Introduced compression of annotation files in sparv-workdir. The type of compression can be configured (or disabled)
   by using the `sparv.compression` variable. `gzip` is used by default.
+- Add flags `--rerun-incomplete` and `--mark-complete` to the `sparv run` command for handling incomplete output files.
 
 ### Changed
 
