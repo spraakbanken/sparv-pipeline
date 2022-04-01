@@ -3,6 +3,7 @@
 import importlib.util
 import logging
 import sys
+import traceback
 
 from pkg_resources import iter_entry_points
 
@@ -128,11 +129,16 @@ if not use_preloader:
             logger.export_dirs(snakemake.params.export_dirs)
     except SparvErrorMessage as e:
         # Any exception raised here would be printed directly to the terminal, due to how Snakemake runs the script.
-        # Instead we log the error message and exit with a non-zero status to signal to Snakemake that
+        # Instead, we log the error message and exit with a non-zero status to signal to Snakemake that
         # something went wrong.
         exit_with_error_message(e.message, "sparv.modules." + module_name)
-    except Exception:
-        logger.exception("An error occurred while executing:")
+    except Exception as e:
+        errmsg = f"An error occurred while executing {module_name}:{f_name}:"
+        if logger.level > logging.DEBUG:
+            errmsg += f"\n\n  {type(e).__name__}: {e}\n\n" \
+                      "To display further details when errors occur, run Sparv with the '--log debug' argument."
+        logger.error(errmsg)
+        logger.debug(traceback.format_exc())
         sys.exit(123)
     finally:
         # Restore printing to stdout and stderr

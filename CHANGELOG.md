@@ -76,6 +76,8 @@
 - All export files must now be written to subdirectories, and each subdirectory must use the exporter's module name as
   prefix (or be equal to the module name).
 - Empty attributes are no longer included in the csv export.
+- When Sparv crashes due to unexpected errors, the traceback is now hidden from the user unless the `--log debug`
+  argument is used.
 
 ### Fixed
 

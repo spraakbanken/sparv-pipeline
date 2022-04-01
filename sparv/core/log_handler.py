@@ -600,10 +600,24 @@ class LogHandler:
                                 os.path.join(paths.log_dir, self.log_filename)))
                     else:
                         self.error("Job execution failed. See log messages above for details.")
-            # Defer to Snakemake's default log handler for unhandled errors
+            # Unhandled errors
             elif self.messages["unhandled_error"]:
                 for error in self.messages["unhandled_error"]:
-                    logger.text_handler(error)
+                    errmsg = ["An unexpected error occurred."]
+                    if logging._nameToLevel[self.log_level.upper()] > logging.DEBUG:
+                        errmsg[0] += " To display further details about this error, rerun Sparv with the " \
+                                     "'--log debug' argument.\n"
+                        error_lines = error["msg"].splitlines()
+                        if " in line " in error_lines[0]:
+                            errmsg.append(error_lines[0].split(" in line ")[0] + ":")
+                            for line in error_lines[1:]:
+                                if line.startswith("  File "):
+                                    break
+                                errmsg.append(line)
+                    else:
+                        errmsg.append("")
+                        errmsg.append(error["msg"])
+                    self.error("\n".join(errmsg))
             else:
                 spacer = ""
                 if self.export_dirs:
