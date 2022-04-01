@@ -502,7 +502,7 @@ class Namespaces(BaseAnnotation):
         """Read namespace file and parse it into a dict."""
         try:
             lines = io.read_data(self.source_file, self).split("\n")
-            return dict(l.split() for l in lines)
+            return dict(l.split(" ") for l in lines)
         except FileNotFoundError:
             return {}
 

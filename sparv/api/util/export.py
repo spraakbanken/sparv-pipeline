@@ -501,7 +501,7 @@ def _get_xml_tagname(tag, xml_namespaces, xml_mode=False):
     """Take care of namespaces by looking up URIs for prefixes (if xml_mode=True) or by converting to dot notation."""
     sep = re.escape(XML_NAMESPACE_SEP)
     m = re.match(fr"(.*){sep}(.+)", tag)
-    if m and m.group(1):
+    if m:
         if xml_mode:
             # Replace prefix+tag with {uri}tag
             uri = xml_namespaces.get(m.group(1), "")
@@ -509,8 +509,8 @@ def _get_xml_tagname(tag, xml_namespaces, xml_mode=False):
                 raise SparvErrorMessage(f"You are trying to export the annotation '{tag}' but no URI was found for the "
                                         f"namespace prefix '{m.group(1)}'!")
             return re.sub(fr"(.*){sep}(.+)", fr"{{{uri}}}\2", tag)
-        else:
-            # Replace "prefix+tag" with "prefix.tag"
+        elif m.group(1):
+            # Replace "prefix+tag" with "prefix.tag", skip this for default namespaces
             return re.sub(fr"(.*){sep}(.+)", fr"\1.\2", tag)
     return tag
 
