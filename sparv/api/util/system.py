@@ -26,7 +26,7 @@ def kill_process(process):
 def clear_directory(path):
     """Create a new empty dir.
 
-    Remove it's contents if it already exists.
+    Remove its contents if it already exists.
     """
     shutil.rmtree(path, ignore_errors=True)
     os.makedirs(path, exist_ok=True)
@@ -148,20 +148,25 @@ def find_binary(name: Union[str, list], search_paths=(), executable: bool = True
         return None
 
 
-def rsync(local, host, remote=None):
+def rsync(local, host=None, remote=None):
     """Transfer files and/or directories using rsync.
 
     When syncing directories, extraneous files in destination dirs are deleted.
     """
     if remote is None:
         remote = local
+    remote_dir = os.path.dirname(remote)
+
     if os.path.isdir(local):
-        remote_dir = os.path.dirname(remote)
-        logger.info("Copying directory: %s => %s", local, remote)
-        args = ["--recursive", "--delete", "%s/" % local]
+        logger.info(f"Copying directory: {local} => {host + ':' if host else ''}{remote}")
+        args = ["--recursive", "--delete", f"{local}/"]
     else:
-        remote_dir = os.path.dirname(remote)
-        logger.info("Copying file: %s => %s", local, remote)
+        logger.info(f"Copying file: {local} => {host + ':' if host else ''}{remote}")
         args = [local]
-    subprocess.check_call(["ssh", host, "mkdir -p '%s'" % remote_dir])
-    subprocess.check_call(["rsync"] + args + ["%s:%s" % (host, remote)])
+
+    if host:
+        subprocess.check_call(["ssh", host, f"mkdir -p '{remote_dir}'"])
+        subprocess.check_call(["rsync"] + args + [f"{host}:{remote}"])
+    else:
+        subprocess.check_call(["mkdir", "-p", f"'{remote_dir}'"])
+        subprocess.check_call(["rsync"] + args + [remote])
