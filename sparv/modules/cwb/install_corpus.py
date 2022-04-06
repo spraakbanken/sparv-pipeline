@@ -1,7 +1,6 @@
 """Module for installing cwb binary files on remote host."""
 
 import os
-import re
 from typing import Optional
 
 from sparv.api import Config, Corpus, ExportInput, OutputCommonData, SparvErrorMessage, installer, util
@@ -64,9 +63,9 @@ def sync_cwb(corpus, out, host, info_file, registry_file, target_data_dir, targe
         with open(source_registry_file, "w") as registry_out:
             for line in registry_in:
                 if line.startswith("HOME"):
-                    line = re.sub(r"HOME .*(/.+)", r"HOME " + target_data_dir + r"\1", line)
+                    line = f"HOME {target_data_dir}/{corpus}\n"
                 elif line.startswith("INFO"):
-                    line = re.sub(r"INFO .*(/.+)/\.info", r"INFO " + target_data_dir + r"\1/.info", line)
+                    line = f"INFO {target_data_dir}/{corpus}/.info\n"
 
                 registry_out.write(line)
 
