@@ -19,6 +19,8 @@ presets:
         - <token:msd> as msd
         - <token:pos> as pos
         - <token>:stanza.msd_hunpos_backoff_info as msd_annotator
+        - <token>:misc.tail as _tail
+        - <token>:misc.head as _head
     paragraph:
         - standard_token
         - DATETIME.all

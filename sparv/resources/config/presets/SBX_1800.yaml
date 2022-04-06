@@ -13,6 +13,8 @@ presets:
         - <token:baseform> as lemma
         - <token:lemgram> as lex
         - <token:dephead_ref> as dephead
+        - <token>:misc.tail as _tail
+        - <token>:misc.head as _head
         - <sentence>:geo.geo_context as _geocontext
         - <paragraph>:geo.geo_context as _geocontext
     no-paragraph:
@@ -24,6 +26,8 @@ presets:
         - <token:baseform> as lemma
         - <token:lemgram> as lex
         - <token:dephead_ref> as dephead
+        - <token>:misc.tail as _tail
+        - <token>:misc.head as _head
         - <sentence>:geo.geo_context as _geocontext
         - <paragraph>:geo.geo_context as _geocontext
     no-paragraph-no-date:
