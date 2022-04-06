@@ -2,6 +2,7 @@
 
 import os
 import re
+from typing import Optional
 
 from sparv.api import Config, Corpus, ExportInput, OutputCommonData, SparvErrorMessage, installer, util
 
@@ -10,7 +11,7 @@ from sparv.api import Config, Corpus, ExportInput, OutputCommonData, SparvErrorM
 def install_corpus(
         corpus: Corpus = Corpus(),
         out: OutputCommonData = OutputCommonData("cwb.install_corpus_marker"),
-        host: str = Config("cwb.remote_host"),
+        host: Optional[str] = Config("cwb.remote_host"),
         registry_file: ExportInput = ExportInput("cwb.encoded/registry/[metadata.id]"),
         info_file: ExportInput = ExportInput("cwb.encoded/data/.info"),
         target_data_dir: str = Config("cwb.remote_data_dir"),
@@ -26,7 +27,7 @@ def install_corpus(
 def install_corpus_scrambled(
         corpus: Corpus = Corpus(),
         out: OutputCommonData = OutputCommonData("cwb.install_corpus_scrambled_marker"),
-        host: str = Config("cwb.remote_host"),
+        host: Optional[str] = Config("cwb.remote_host"),
         registry_file: ExportInput = ExportInput("cwb.encoded_scrambled/registry/[metadata.id]"),
         info_file: ExportInput = ExportInput("cwb.encoded_scrambled/data/.info"),
         target_data_dir: str = Config("cwb.remote_data_dir"),
@@ -42,9 +43,6 @@ def sync_cwb(corpus, out, host, info_file, registry_file, target_data_dir, targe
     """Install CWB datafiles on server, by rsyncing CWB datadir and registry."""
     if not corpus:
         raise SparvErrorMessage("Missing corpus name. Corpus not installed.")
-
-    if not host:
-        raise SparvErrorMessage("Configuration variable cwb.remote_host not set! Corpus not installed.")
 
     if not target_data_dir:
         raise SparvErrorMessage("Configuration variable cwb.remote_data_dir not set! Corpus not installed.")
