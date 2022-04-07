@@ -185,8 +185,9 @@ def _read_single_annotation(source_file: str, annotation: str, with_annotation_n
                     value = re.sub(r"((?<!\\)(?:\\\\)*)\\n", r"\1\n", value).replace(r"\\", "\\")
                 yield value if not with_annotation_name else (value, annotation)
                 ctr += 1
-        except (gzip.BadGzipFile, OSError, lzma.LZMAError, UnicodeDecodeError) as e:
-            if isinstance(e, OSError) and str(e) != "Invalid data stream":
+        except (OSError, lzma.LZMAError, UnicodeDecodeError) as e:
+            # TODO: Use gzip.BadGzipFile instead of checking for "Not a gzipped file" once we require Python 3.8
+            if isinstance(e, OSError) and not ("Not a gzipped file" in str(e) or str(e) == "Invalid data stream"):
                 raise e
             raise_format_error(ann_file)
     logger.debug(f"Read {ctr} items: {source_file + '/' if source_file else ''}{annotation}")
@@ -213,8 +214,9 @@ def read_data(source_file: Optional[str], name: Union[BaseAnnotation, str]):
     with open_annotation_file(file_path) as f:
         try:
             data = f.read()
-        except (gzip.BadGzipFile, OSError, lzma.LZMAError, UnicodeDecodeError) as e:
-            if isinstance(e, OSError) and str(e) != "Invalid data stream":
+        except (OSError, lzma.LZMAError, UnicodeDecodeError) as e:
+            # TODO: Use gzip.BadGzipFile instead of checking for "Not a gzipped file" once we require Python 3.8
+            if isinstance(e, OSError) and not ("Not a gzipped file" in str(e) or str(e) == "Invalid data stream"):
                 raise e
             raise_format_error(file_path)
 
