@@ -9,7 +9,7 @@ classes:
     "token:pos": <token>:stanza.pos_hunpos_backoff
 
 presets:
-    standard_token:
+    standard-token:
         - SWE_DEFAULT.all
         - <token>:saldo.baseform2 as lemma
         - <token>:saldo.lemgram as lex
@@ -22,7 +22,7 @@ presets:
         - <token>:misc.tail as _tail
         - <token>:misc.head as _head
     paragraph:
-        - standard_token
+        - standard-token
         - DATETIME.all
         - <text>:misc.id as _id
         - <sentence>:geo.geo_context as _geocontext
@@ -31,7 +31,7 @@ presets:
         - paragraph
         - not <paragraph>:geo.geo_context
     paragraph-no-date:
-        - standard_token
+        - standard-token
         - <text>:misc.id as _id
         - <sentence>:geo.geo_context as _geocontext
         - <paragraph>:geo.geo_context as _geocontext
