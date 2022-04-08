@@ -103,17 +103,25 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
                 add_module_metadata(m, module.name)
 
     if find_custom:
+        custom_annotators = [a.get("annotator", "").split(":")[0] for a in sparv_config.get("custom_annotations", [])]
         # Also search for modules in corpus dir
         custom_modules = pkgutil.iter_modules([str(paths.corpus_dir)])
         for module in custom_modules:
             module_name = f"{custom_name}.{module.name}"
+            # Skip modules in corpus dir if they are not used in the corpus config
+            if module_name not in custom_annotators:
+                continue
             module_names.append(module_name)
             if not no_import:
                 module_path = paths.corpus_dir.resolve() / f"{module.name}.py"
                 spec = importlib.util.spec_from_file_location(module_name, module_path)
                 m = importlib.util.module_from_spec(spec)
+                try:
+                    spec.loader.exec_module(m)
+                except Exception as e:
+                    raise SparvErrorMessage(f"Module '{module_name}' cannot be imported due to an error in file "
+                                            f"'{module_path}': {e}")
                 add_module_metadata(m, module_name)
-                spec.loader.exec_module(m)
 
     # Search for installed plugins
     for entry_point in iter_entry_points("sparv.plugin"):
