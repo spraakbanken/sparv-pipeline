@@ -77,7 +77,8 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
             freq_dict[token_annotations_tuple + structs_tuple] += 1
 
     # Create header
-    struct_header_names = [export_names[a.annotation_name] + ":" + export_names[a.name] for a in struct_annotations]
+    struct_header_names = [export_names.get(a.annotation_name, a.annotation_name) + ":" + export_names[a.name]
+                           for a in struct_annotations]
     column_names = [export_names[a.name] for a in token_annotations] + struct_header_names
     column_names.append("count")
 
