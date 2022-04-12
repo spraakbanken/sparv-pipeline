@@ -61,10 +61,12 @@ class BaseAnnotation(Base):
     data = False
     all_files = False
     common = False
+    is_input = True
 
-    def __init__(self, name: str = "", source_file: Optional[str] = None):
+    def __init__(self, name: str = "", source_file: Optional[str] = None, is_input: bool = True):
         super().__init__(name)
         self.source_file = source_file
+        self.is_input = is_input
 
     def expand_variables(self, rule_name: str = "") -> List[str]:
         """Update name by replacing <class> references with annotation names, and [config] references with config values.
@@ -103,9 +105,10 @@ class BaseAnnotation(Base):
 class Annotation(BaseAnnotation):
     """Regular Annotation tied to one source file."""
 
-    def __init__(self, name: str = "", source_file: Optional[str] = None):
+    def __init__(self, name: str = "", source_file: Optional[str] = None, is_input: bool = True):
         super().__init__(name, source_file=source_file)
         self.size = None
+        self.is_input = is_input
 
     def exists(self) -> bool:
         """Return True if annotation file exists."""

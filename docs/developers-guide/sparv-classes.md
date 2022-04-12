@@ -20,6 +20,7 @@ annotation is needed as input for a function, e.g. `Annotation("<token:word>")`.
 
 - `name`: The name of the annotation.
 - `source_file`: The name of the source file.
+- `is_input`: If set to `False` the annotation won't be added to the rule's input. Default: `True`
 
 **Properties:**
 

@@ -308,13 +308,14 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 continue
             rule.missing_config.update(missing_configs)
             ann_path = get_annotation_path(param_value, data=param_type.data, common=param_type.common)
-            if param_type.all_files:
-                rule.inputs.extend(expand(escape_wildcards(paths.work_dir / ann_path),
-                                          file=storage.source_files))
-            elif rule.exporter or rule.installer or param_type.common:
-                rule.inputs.append(paths.work_dir / ann_path)
-            else:
-                rule.inputs.append(ann_path)
+            if param_value.is_input:
+                if param_type.all_files:
+                    rule.inputs.extend(expand(escape_wildcards(paths.work_dir / ann_path),
+                                              file=storage.source_files))
+                elif rule.exporter or rule.installer or param_type.common:
+                    rule.inputs.append(paths.work_dir / ann_path)
+                else:
+                    rule.inputs.append(ann_path)
 
             rule.parameters[param_name] = param_value
             if "{" in param_value:
