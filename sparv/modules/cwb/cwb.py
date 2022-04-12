@@ -2,13 +2,13 @@
 
 import os
 import re
+from collections import OrderedDict
 from glob import glob
 from pathlib import Path
 from typing import Optional
 
-from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Config, Corpus, SourceFilename, Export, ExportAnnotations,
-                       ExportInput, SourceAnnotations, SparvErrorMessage, exporter, get_logger, util)
-from sparv.core import paths
+from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Config, Corpus, SourceFilename, Export,
+                       ExportAnnotations, ExportInput, SourceAnnotations, SparvErrorMessage, exporter, get_logger, util)
 
 logger = get_logger(__name__)
 
@@ -155,7 +155,6 @@ def cwb_encode(corpus, annotations, source_annotations, source_files, words, vrt
                token_name: str, bin_path, encoding, remove_namespaces, sparv_namespace, source_namespace,
                skip_compression, skip_validation):
     """Encode a number of vrt files, by calling cwb-encode."""
-
     if not corpus.strip():
         raise SparvErrorMessage("metadata.id needs to be set.")
 
@@ -205,16 +204,19 @@ def cwb_encode(corpus, annotations, source_annotations, source_files, words, vrt
         if col != "-":
             encode_args += ["-P", col]
     for struct, attrs in structs:
-        attrs2 = "+".join(attr for attr, _n in attrs if not attr == util.constants.UNDEF)
+        attrs2 = "+".join(attrs)
         if attrs2:
             attrs2 = "+" + attrs2
+        # ":0" is added to the s-attribute name to enable nesting support in cwb-encode
         encode_args += ["-S", "%s:0%s" % (struct, attrs2)]
 
     _, stderr = util.system.call_binary(os.path.join(bin_path, "cwb-encode"), encode_args)
     if stderr:
         logger.warning(stderr.decode().strip())
     # Use xargs to avoid "Argument list too long" problems
-    # util.system.call_binary(os.path.join(bin_path, "cwb-encode"), raw_command="cat %s | xargs cat | %%s %s" % (vrtfiles, " ".join(encode_args)), use_shell=True)
+    # util.system.call_binary(os.path.join(bin_path, "cwb-encode"),
+    #                         raw_command="cat %s | xargs cat | %%s %s" % (vrtfiles, " ".join(encode_args)),
+    #                         use_shell=True)
 
     index_args = ["-V", "-r", registry_dir, corpus.upper()]
     util.system.call_binary(os.path.join(bin_path, "cwb-makeall"), index_args)
@@ -352,36 +354,21 @@ def make_token_line(word, token, token_attributes, annotation_dict, index):
 
 
 def parse_structural_attributes(structural_atts):
-    """Parse a list of annotations (element:attribute) into a list of tuples.
-
-    >>> parse_structural_attributes("s - text:title text:author")
-    [('s', [('__UNDEF__', 0)]), ('text', [('title', 2), ('author', 3)])]
-    """
-    if isinstance(structural_atts, str):
-        structural_atts = structural_atts.split()
-    structs = {}
-    order = []
-    for n, struct in enumerate(structural_atts):
-
-        # From the CWB documentation: "By convention, all attribute names must be lowercase
-        # (more precisely, they may only contain the characters a-z, 0-9, -, and _, and may not start with a digit)"
-        assert not struct or struct == "-" or "." not in struct, "Struct should contain ':' or be equal to '-': %s" % struct
-
-        if ":" in struct:
-            elem, attr = struct.split(":")
-        else:
-            elem = struct
-            attr = util.constants.UNDEF
-        if struct and not struct == "-":
-            if elem not in structs:
-                structs[elem] = []
-                order.append(elem)
-            structs[elem].append((attr, n))
-    return [(elem, structs[elem]) for elem in order]
+    """Parse a list of annotation names (annotation:attribute) into a list of tuples."""
+    structs = OrderedDict()
+    for struct in structural_atts:
+        elem, _, attr = struct.partition(":")
+        if elem not in structs:
+            structs[elem] = []
+        if attr:
+            structs[elem].append(attr)
+    return [(elem, structs[elem]) for elem in structs]
 
 
 def cwb_escape(inname):
     """Replace dots with "-" for CWB compatibility."""
+    # From the CWB documentation: "By convention, all attribute names must be lowercase
+    # (more precisely, they may only contain the characters a-z, 0-9, -, and _, and may not start with a digit)"
     return re.sub(r"\.", "-", inname)
 
 
