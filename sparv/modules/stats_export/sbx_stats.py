@@ -101,6 +101,49 @@ def sbx_freq_list(
               out=out, sparv_namespace="", source_namespace="", delimiter=delimiter, cutoff=cutoff)
 
 
+@exporter("Corpus word frequency list", language=["swe"])
+def sbx_freq_list_date(
+    source_files: AllSourceFilenames = AllSourceFilenames(),
+    word: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:word>"),
+    token: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>"),
+    msd: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:msd>"),
+    baseform: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>:stats_export.baseform_first"),
+    sense: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>:stats_export.sense_best"),
+    lemgram: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>:stats_export.lemgram_first"),
+    complemgram: AnnotationAllSourceFiles = AnnotationAllSourceFiles(
+                                            "<token>:stats_export.complemgram_best_cond"),
+    date: AnnotationAllSourceFiles = AnnotationAllSourceFiles("[dateformat.datetime_from]"),
+    out: Export = Export("stats_export.frequency_list_sbx_date/stats_[metadata.id].csv"),
+    delimiter: str = Config("stats_export.delimiter"),
+    cutoff: int = Config("stats_export.cutoff")):
+    """Create a word frequency list for the entire corpus.
+
+    Args:
+        source_files (list, optional): The source files belonging to this corpus. Defaults to AllSourceFilenames.
+        word (str, optional): Word annotations. Defaults to AnnotationAllSourceFiles("<token:word>").
+        token (str, optional): Token span annotations. Defaults to AnnotationAllSourceFiles("<token>").
+        msd (str, optional): MSD annotations. Defaults to AnnotationAllSourceFiles("<token:msd>").
+        baseform (str, optional): Annotations with first baseform from each set.
+            Defaults to AnnotationAllSourceFiles("<token:baseform>").
+        sense (str, optional): Best sense annotations. Defaults to AnnotationAllSourceFiles("<token:sense>").
+        lemgram (str, optional): Annotations with first lemgram from each set.
+            Defaults to AnnotationAllSourceFiles("<token>:saldo.lemgram").
+        complemgram (str, optional): Conditional best compound lemgram annotations.
+            Defaults to AnnotationAllSourceFiles("<token>:saldo.complemgram").
+        date (str, optional): date annotation
+        out (str, optional): The output word frequency file.
+            Defaults to Export("stats_export.frequency_list_sbx_date/[metadata.id].csv").
+        delimiter (str, optional): Column delimiter to use in the csv. Defaults to Config("stats_export.delimiter").
+        cutoff (int, optional): The minimum frequency a word must have in order to be included in the result.
+            Defaults to Config("stats_export.cutoff").
+    """
+    annotations = [(word, "token"), (msd, "POS"), (baseform, "lemma"), (sense, "SALDO sense"), (lemgram, "lemgram"),
+                   (complemgram, "compound"), (date, "date")]
+
+    freq_list(source_files=source_files, word=word, token=token, annotations=annotations, source_annotations=[],
+              out=out, sparv_namespace="", source_namespace="", delimiter=delimiter, cutoff=cutoff)
+
+
 @exporter("Corpus word frequency list (without Swedish annotations)", language=["swe"], order=2)
 def sbx_freq_list_simple_swe(
     source_files: AllSourceFilenames = AllSourceFilenames(),
@@ -156,6 +199,17 @@ def sbx_freq_list_fsv(
 def install_sbx_freq_list(
     freq_list: ExportInput = ExportInput("stats_export.frequency_list_sbx/stats_[metadata.id].csv"),
     out: OutputCommonData = OutputCommonData("stats_export.install_sbx_freq_list_marker"),
+    host: str = Config("stats_export.remote_host"),
+    target_dir: str = Config("stats_export.remote_dir")):
+    """Install frequency list on server by rsyncing."""
+    util.install.install_file(freq_list, host, target_dir)
+    out.write("")
+
+
+@installer("Install SBX word frequency list with dates on remote host")
+def install_sbx_freq_list_date(
+    freq_list: ExportInput = ExportInput("stats_export.frequency_list_sbx_date/stats_[metadata.id].csv"),
+    out: OutputCommonData = OutputCommonData("stats_export.install_sbx_freq_list_date_marker"),
     host: str = Config("stats_export.remote_host"),
     target_dir: str = Config("stats_export.remote_dir")):
     """Install frequency list on server by rsyncing."""
