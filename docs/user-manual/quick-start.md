@@ -77,8 +77,8 @@ Next, use your favourite plain text editor (i.e. not Word) to create a source fi
 
 For Sparv to know what to do with your corpus, you first need to create a
 [configuration file](user-manual/corpus-configuration.md). This can be accomplished
-either by running the [corpus config wizard](corpus-configuration.md#corpus-config-wizard), or by writing it by hand.
-Using the wizard is usually easier, but for now, let's get our hands dirty and write it by hand!
+either by running the [corpus config wizard](user-manual/corpus-configuration.md#corpus-config-wizard), or by writing it
+by hand. Using the wizard is usually easier, but for now, let's get our hands dirty and write it by hand!
 
 Use your text editor to create a file called `config.yaml` directly under your corpus directory. Remember to save it
 in UTF-8 encoding.
