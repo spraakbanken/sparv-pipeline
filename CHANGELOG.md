@@ -36,6 +36,7 @@
 - Introduced compression of annotation files in sparv-workdir. The type of compression can be configured (or disabled)
   by using the `sparv.compression` variable. `gzip` is used by default.
 - Add flags `--rerun-incomplete` and `--mark-complete` to the `sparv run` command for handling incomplete output files.
+- `xml_export:pretty` now shows a warning if a token annotation isn't included in the list of export annotations.
 
 ### Changed
 
