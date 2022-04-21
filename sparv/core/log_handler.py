@@ -616,7 +616,7 @@ class LogHandler:
                                 errmsg.append(line)
                     else:
                         errmsg.append("")
-                        errmsg.append(error["msg"])
+                        errmsg.append(error.get("msg", "An unknown error occurred."))
                     self.error("\n".join(errmsg))
             else:
                 spacer = ""
