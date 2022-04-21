@@ -44,6 +44,9 @@ def vrt(source_file: SourceFilename = SourceFilename(),
     annotation_list, token_attributes, export_names = util.export.get_annotation_names(
         annotations, source_annotations, source_file=source_file, token_name=token.name,
         remove_namespaces=remove_namespaces, sparv_namespace=sparv_namespace, source_namespace=source_namespace)
+    if token not in annotation_list:
+        logger.warning("The 'cwb:vrt' export requires the <token> annotation for the output to include "
+                       "the source text. Make sure to add <token> to the list of export annotations.")
     span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names,
                                                                      source_file=source_file)
     vrt_data = create_vrt(span_positions, token.name, word_annotation, token_attributes, annotation_dict,
@@ -74,6 +77,9 @@ def vrt_scrambled(source_file: SourceFilename = SourceFilename(),
     annotation_list, token_attributes, export_names = util.export.get_annotation_names(
         annotations, source_annotations, source_file=source_file, token_name=token.name,
         remove_namespaces=remove_namespaces, sparv_namespace=sparv_namespace, source_namespace=source_namespace)
+    if token not in annotation_list:
+        logger.warning("The 'cwb:vrt_scrambled' export requires the <token> annotation for the output to include "
+                       "the source text. Make sure to add <token> to the list of export annotations.")
     if chunk not in annotation_list:
         raise SparvErrorMessage(
             "The annotation used for scrambling ({}) needs to be included in the output.".format(chunk))

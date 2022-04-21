@@ -41,6 +41,9 @@ def scrambled(source_file: SourceFilename = SourceFilename(),
                                                                         sparv_namespace=sparv_namespace,
                                                                         source_namespace=source_namespace,
                                                                         xml_mode=True)
+    if token not in annotation_list:
+        logger.warning("The 'xml_export:scrambled' export requires the <token> annotation for the output to include "
+                       "the source text. Make sure to add <token> to the list of export annotations.")
     if chunk not in annotation_list:
         raise SparvErrorMessage(
             "The annotation used for scrambling ({}) needs to be included in the output.".format(chunk))
