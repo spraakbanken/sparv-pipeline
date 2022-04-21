@@ -93,6 +93,7 @@
 - Fixed crash in xml_import when no elements are imported.
 - Fixed crash on empty sentences in Stanza.
 - Better handling of empty XML elements in XML export.
+- Notify user when SweNER crashes.
 
 ## [4.1.1] - 2021-09-20
 
