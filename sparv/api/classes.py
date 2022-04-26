@@ -240,7 +240,7 @@ class Annotation(BaseAnnotation):
 
     def create_empty_attribute(self):
         """Return a list filled with None of the same size as this annotation."""
-        return [None] * self.get_size
+        return [None] * self.get_size()
 
 
 class AnnotationData(BaseAnnotation):
