@@ -107,12 +107,18 @@ class Annotation(BaseAnnotation):
 
     def __init__(self, name: str = "", source_file: Optional[str] = None, is_input: bool = True):
         super().__init__(name, source_file=source_file)
-        self.size = None
+        self._size = None
         self.is_input = is_input
 
     def exists(self) -> bool:
         """Return True if annotation file exists."""
         return io.annotation_exists(self.source_file, self)
+
+    def get_size(self):
+        """Get number of values."""
+        if self._size is None:
+            self._size = io.get_annotation_size(self.source_file, self)
+        return self._size
 
     def read(self, allow_newlines: bool = False):
         """Yield each line from the annotation."""
@@ -234,9 +240,7 @@ class Annotation(BaseAnnotation):
 
     def create_empty_attribute(self):
         """Return a list filled with None of the same size as this annotation."""
-        if self.size is None:
-            self.size = len(list(self.read_spans()))
-        return [None] * self.size
+        return [None] * self.get_size
 
 
 class AnnotationData(BaseAnnotation):
@@ -266,7 +270,7 @@ class AnnotationAllSourceFiles(BaseAnnotation):
 
     def __init__(self, name: str = ""):
         super().__init__(name)
-        self.size = None
+        self._size = {}
 
     def read(self, source_file: str):
         """Yield each line from the annotation."""
@@ -283,11 +287,15 @@ class AnnotationAllSourceFiles(BaseAnnotation):
         return io.read_annotation_attributes(source_file, annotations, with_annotation_name=with_annotation_name,
                                              allow_newlines=allow_newlines)
 
+    def get_size(self, source_file: str):
+        """Get number of values."""
+        if self._size.get(source_file) is None:
+            self._size[source_file] = io.get_annotation_size(source_file, self)
+        return self._size[source_file]
+
     def create_empty_attribute(self, source_file: str):
         """Return a list filled with None of the same size as this annotation."""
-        if self.size is None:
-            self.size = len(list(self.read_spans(source_file)))
-        return [None] * self.size
+        return [None] * self.get_size(source_file)
 
     def exists(self, source_file: str):
         """Return True if annotation file exists."""

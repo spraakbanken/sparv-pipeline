@@ -114,6 +114,33 @@ def _write_single_annotation(source_file: str, annotation: str, values, append: 
     logger.info(f"Wrote {ctr} items: {source_file + '/' if source_file else ''}{annotation}")
 
 
+def get_annotation_size(source_file: str, annotation: BaseAnnotation):
+    """Return number of lines in an annotation."""
+    def _generator(reader_):
+        while True:
+            b = reader_(2 ** 16)
+            if not b:
+                break
+            yield b
+
+    count = 0
+
+    for ann in annotation.name.split():
+        ann_file = get_annotation_path(source_file, ann, annotation.root)
+
+        try:
+            with open_annotation_file(ann_file, mode="rb") as f:
+                reader = f.raw.read if hasattr(f, "raw") and hasattr(f.raw, "read") else f.read
+                count += sum(buf.count(b"\n") for buf in _generator(reader))
+        except (OSError, lzma.LZMAError, UnicodeDecodeError) as e:
+            # TODO: Use gzip.BadGzipFile instead of checking for "Not a gzipped file" once we require Python 3.8
+            if isinstance(e, OSError) and not ("Not a gzipped file" in str(e) or str(e) == "Invalid data stream"):
+                raise e
+            raise_format_error(ann_file)
+
+    return count
+
+
 def read_annotation_spans(source_file: str, annotation: BaseAnnotation, decimals: bool = False,
                           with_annotation_name: bool = False):
     """Iterate over the spans of an annotation."""

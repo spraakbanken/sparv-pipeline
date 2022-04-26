@@ -47,6 +47,7 @@ annotation is needed as input for a function, e.g. `Annotation("<token:word>")`.
   False, allow_newlines: bool = False)`: Yield tuples of multiple attributes on the same annotation.
 - `read_spans(decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
 - `create_empty_attribute()`: Return a list filled with None of the same size as this annotation.
+- `get_size()`: Get the number of values.
 
 
 ## AnnotationAllSourceFiles
@@ -69,6 +70,7 @@ require the specificed annotation for every source file in the corpus.
 - `read_spans(source_file: str, decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
 - `create_empty_attribute(source_file: str)`: Return a list filled with None of the same size as this annotation.
 - `exists(source_file: str)`: Return True if annotation file exists.
+- `get_size(source_file: str)`: Get the number of values.
 
 
 ## AnnotationCommonData

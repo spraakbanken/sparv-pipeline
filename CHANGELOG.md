@@ -37,6 +37,8 @@
   by using the `sparv.compression` variable. `gzip` is used by default.
 - Add flags `--rerun-incomplete` and `--mark-complete` to the `sparv run` command for handling incomplete output files.
 - `xml_export:pretty` now shows a warning if a token annotation isn't included in the list of export annotations.
+- Added `get_size()` to the `Annotation` and `AnnotationAllSourceFiles` classes, to get the size (number of values)
+  for an annotation.
 
 ### Changed
 
