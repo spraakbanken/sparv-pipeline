@@ -172,7 +172,8 @@ def main():
     for subparser in [run_parser, runrule_parser, createfile_parser, models_parser, install_parser]:
         subparser.add_argument("-n", "--dry-run", action="store_true",
                                help="Print summary of tasks without running them")
-        subparser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel",
+        subparser.add_argument("-j", "--cores", type=int, nargs="?", const=0, metavar="N",
+                               help="Use at most N cores in parallel; if N is omitted, use all available CPU cores",
                                default=1)
         subparser.add_argument("--log", metavar="LOGLEVEL", const="info",
                                help="Set the log level (default: 'warning' if --log is not specified, "
@@ -210,6 +211,7 @@ def main():
     else:
         import snakemake
         from snakemake.logging import logger
+        from snakemake.utils import available_cpu_count
         from sparv.core import log_handler, paths, setup
         args = parser.parse_args()
 
@@ -242,7 +244,6 @@ def main():
         wizard = Wizard()
         wizard.run()
         sys.exit(0)
-
 
     # Check that a corpus config file is available in the working dir
     config_exists = Path(args.dir or Path.cwd(), paths.config_file).is_file()
@@ -292,9 +293,13 @@ def main():
                 snakemake_args["targets"] = ["preload_list"]
 
     elif args.command in ("run", "run-rule", "create-file", "install", "build-models"):
+        try:
+            cores = args.cores or available_cpu_count()
+        except NotImplementedError:
+            cores = 1
         snakemake_args.update({
             "dryrun": args.dry_run,
-            "cores": args.cores,
+            "cores": cores,
             "resources": {"threads": args.cores}
         })
         # Never show progress bar for list commands or dry run
