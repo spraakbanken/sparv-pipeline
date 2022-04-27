@@ -143,6 +143,36 @@ with the flag `--log [LOGLEVEL]`. Most commands support this flag. The user can 
 file by using the `--log-to-file [LOGLEVEL]` flag. The log file will receive the current date and timestamp as filename
 and can be found inside `logs/` in the corpus directory.
 
+### Progress bar
+It is possible to add a progress bar for individual annotators by using the custom `progress()` logging method. To
+initialize the progress bar, call the `logger.progress()` method, either without an argument, or while supplying the
+total for the bar: `logger.progress(total=50)`. A progress bar initialized without a total will have to be provided with
+a total before it can be used. It is also possible to change the total later.
+
+After the total has been set, call `progress()` again to update the progress. If not argument is supplied, the progress
+is advanced by 1. To advance by another amount, use the keyword argument `advance=`. To set the progress to a specific
+number, simply call the method with that number as the argument. See below for examples:
+
+```python
+from sparv.api import get_logger
+logger = get_logger(__name__)
+
+# Initialize progress bar with no known total
+logger.progress()
+
+# Initialize bar with known total
+logger.progress(total=50)
+
+# Advance progress by 1
+logger.progress()
+
+# Advance progress by 2
+logger.progress(advance=2)
+
+# Set progress to 5
+logger.progress(5)
+```
+
 
 ## Error Messages
 When raising critical errors that should be displayed to the user (e.g. to tell the user that he/she did something

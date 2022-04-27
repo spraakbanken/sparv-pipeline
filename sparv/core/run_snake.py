@@ -107,7 +107,9 @@ parameters = snakemake.params.parameters
 
 log_handler.setup_logging(snakemake.config["log_server"],
                           log_level=snakemake.config["log_level"],
-                          log_file_level=snakemake.config["log_file_level"])
+                          log_file_level=snakemake.config["log_file_level"],
+                          file=snakemake.params.source_file,
+                          job=f"{snakemake.params.module_name}:{snakemake.params.f_name}")
 logger = logging.getLogger("sparv")
 logger.info("RUN: %s:%s(%s)", module_name, f_name, ", ".join("%s=%s" % (i[0], repr(i[1])) for i in
                                                              list(parameters.items())))

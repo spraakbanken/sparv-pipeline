@@ -39,6 +39,8 @@
 - `xml_export:pretty` now shows a warning if a token annotation isn't included in the list of export annotations.
 - Added `get_size()` to the `Annotation` and `AnnotationAllSourceFiles` classes, to get the size (number of values)
   for an annotation.
+- Added support for [individual progress bars for
+  annotators](https://spraakbanken.gu.se/sparv/#/developers-guide/writing-sparv-plugins?id=progress-bar).
 
 ### Changed
 

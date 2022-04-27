@@ -31,24 +31,40 @@ LOG_FORMAT_DEBUG = "%(asctime)s - %(name)s (%(process)d) - %(levelname)s - %(mes
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 TIME_FORMAT = "%H:%M:%S"
 
+# Variables set by setup_logging()
+current_file = None
+current_job = None
+
 # Add internal logging level used for non-logging-related communication from child processes to log handler
 INTERNAL = 100
 logging.addLevelName(INTERNAL, "INTERNAL")
+
+
+def _log_progress(self, progress=None, advance=None, total=None):
+    """Log progress of task."""
+    if self.isEnabledFor(INTERNAL):
+        self._log(INTERNAL, "progress", (), extra={"progress": progress, "advance": advance, "total": total,
+                                                   "job": current_job, "file": current_file})
+
+
+# Add progress function to logger
+logging.progress = _log_progress
+logging.Logger.progress = _log_progress
 
 # Add logging level used for progress output (must be lower than INTERNAL)
 PROGRESS = 90
 logging.addLevelName(PROGRESS, "PROGRESS")
 
 
-def export_dirs(self, dirs):
+def _export_dirs(self, dirs):
     """Send list of export dirs to log handler."""
     if self.isEnabledFor(INTERNAL):
         self._log(INTERNAL, "export_dirs", (), extra={"export_dirs": dirs})
 
 
 # Add log function to logger
-logging.export_dirs = export_dirs
-logging.Logger.export_dirs = export_dirs
+logging.export_dirs = _export_dirs
+logging.Logger.export_dirs = _export_dirs
 
 # Messages from the Sparv core
 messages = {
@@ -128,14 +144,35 @@ class ProgressInternalFilter(logging.Filter):
 class InternalLogHandler(logging.Handler):
     """Handler for internal log messages."""
 
-    def __init__(self, export_dirs_list):
+    def __init__(self, export_dirs_list, progress_, jobs, job_ids):
         self.export_dirs_list = export_dirs_list
+        self.progress: progress.Progress = progress_
+        self.jobs = jobs
+        self.job_ids = job_ids
         super().__init__()
 
     def emit(self, record):
         """Handle log record."""
         if record.msg == "export_dirs":
             self.export_dirs_list.update(record.export_dirs)
+        elif record.msg == "progress":
+            job_id = self.job_ids.get((record.job, record.file))
+            if job_id is not None:
+                if not self.jobs[job_id]["task"]:
+                    self.jobs[job_id]["task"] = self.progress.add_task(
+                        "",
+                        start=bool(record.total),
+                        completed=record.progress or record.advance or 0,
+                        total=record.total or 100.0
+                    )
+                else:
+                    if record.total:
+                        self.progress.start_task(self.jobs[job_id]["task"])
+                        self.progress.update(self.jobs[job_id]["task"], total=record.total)
+                    if record.progress:
+                        self.progress.update(self.jobs[job_id]["task"], completed=record.progress)
+                    elif record.advance or not record.total:
+                        self.progress.advance(self.jobs[job_id]["task"], advance=record.advance or 1)
 
 
 class ModifiedRichHandler(RichHandler):
@@ -160,22 +197,33 @@ class ProgressWithTable(progress.Progress):
     def get_renderables(self):
         """Get a number of renderables for the progress display."""
         # Progress bar
-        yield self.make_tasks_table(self.tasks)
+        yield self.make_tasks_table(self.tasks[0:1])
 
         # Task table
         if self.all_tasks:
+            rows = []
+            elapsed_max_len = 7
+            bar_col = progress.BarColumn(bar_width=20)
+            for task in list(self.current_tasks.values()):  # Make a copy to avoid mutations while iterating
+                elapsed = str(timedelta(seconds=round(time.time() - task["starttime"])))
+                if len(elapsed) > elapsed_max_len:
+                    elapsed_max_len = len(elapsed)
+                rows.append((
+                    task["name"],
+                    f"[dim]{task['file']}[/dim]",
+                    bar_col(self._tasks[task["task"]]) if task["task"] else "",
+                    elapsed
+                ))
+
             table = Table(show_header=False, box=box.SIMPLE, expand=True)
             table.add_column("Task", no_wrap=True, min_width=self.task_max_len + 2, ratio=1)
             table.add_column("File", no_wrap=True)
-            table.add_column("Elapsed", no_wrap=True, width=8, justify="right", style="progress.remaining")
-            table.add_row("[b]Task[/]", "[b]File[/]", "[default b]Elapsed[/]")
-            for task in list(self.current_tasks.values()):  # Make a copy to avoid mutations while iterating
-                elapsed = round(time.time() - task["starttime"])
-                table.add_row(
-                    task["name"],
-                    f"[dim]{task['file']}[/dim]",
-                    str(timedelta(seconds=elapsed))
-                )
+            table.add_column("Bar", width=10)
+            table.add_column("Elapsed", no_wrap=True, width=elapsed_max_len, justify="right",
+                             style="progress.remaining")
+            table.add_row("[b]Task[/]", "[b]File[/]", "", "[default b]Elapsed[/]")
+            for row in rows:
+                table.add_row(*row)
             yield table
 
 
@@ -225,6 +273,7 @@ class LogHandler:
         self.bar_started: bool = False
         self.last_percentage = 0
         self.current_jobs = OrderedDict()
+        self.job_ids = {}  # Translation from (Sparv task name, source file) to Snakemake job ID
 
         # Create a simple TCP socket-based logging receiver
         tcpserver = socketserver.ThreadingTCPServer(("localhost", 0), RequestHandlerClass=LogRecordStreamHandler)
@@ -274,7 +323,7 @@ class LogHandler:
         self.logger.addHandler(levelcount_handler)
 
         # Internal log handler
-        internal_handler = InternalLogHandler(self.export_dirs)
+        internal_handler = InternalLogHandler(self.export_dirs, self.progress, self.current_jobs, self.job_ids)
         internal_handler.setLevel(INTERNAL)
         self.logger.addHandler(internal_handler)
 
@@ -439,15 +488,21 @@ class LogHandler:
                         file = file[len(str(paths.work_dir)) + 1:]
 
                     self.current_jobs[msg["jobid"]] = {
+                        "task": None,
                         "name": msg["msg"],
                         "starttime": time.time(),
                         "file": file
                     }
 
-        elif level == "job_finished" and self.use_progressbar:
-            if self.stats and msg["jobid"] in self.current_jobs:
-                this_job = self.current_jobs[msg["jobid"]]
+                    self.job_ids[(msg["msg"], file)] = msg["jobid"]
+
+        elif level == "job_finished" and self.use_progressbar and msg["jobid"] in self.current_jobs:
+            this_job = self.current_jobs[msg["jobid"]]
+            if self.stats:
                 self.stats_data[this_job["name"]] += time.time() - this_job["starttime"]
+            if this_job["task"]:
+                self.progress.remove_task(this_job["task"])
+            self.job_ids.pop((this_job["name"], this_job["file"]), None)
             self.current_jobs.pop(msg["jobid"], None)
 
         elif level == "info":
@@ -675,7 +730,7 @@ class LogHandler:
                     pass
 
 
-def setup_logging(log_server, log_level: str = "warning", log_file_level: str = "warning"):
+def setup_logging(log_server, log_level: str = "warning", log_file_level: str = "warning", file=None, job=None):
     """Set up logging with socket handler."""
     # Use the lowest log level, but never higher than warning
     log_level = min(logging.WARNING, getattr(logging, log_level.upper()), getattr(logging, log_file_level.upper()))
@@ -683,3 +738,6 @@ def setup_logging(log_server, log_level: str = "warning", log_file_level: str = 
     socket_logger.setLevel(log_level)
     socket_handler = logging.handlers.SocketHandler(*log_server)
     socket_logger.addHandler(socket_handler)
+    global current_file, current_job
+    current_file = file
+    current_job = job
