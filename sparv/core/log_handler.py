@@ -607,13 +607,14 @@ class LogHandler:
                     if logging._nameToLevel[self.log_level.upper()] > logging.DEBUG:
                         errmsg[0] += " To display further details about this error, rerun Sparv with the " \
                                      "'--log debug' argument.\n"
-                        error_lines = error["msg"].splitlines()
-                        if " in line " in error_lines[0]:
-                            errmsg.append(error_lines[0].split(" in line ")[0] + ":")
-                            for line in error_lines[1:]:
-                                if line.startswith("  File "):
-                                    break
-                                errmsg.append(line)
+                        if "msg" in error:
+                            error_lines = error["msg"].splitlines()
+                            if " in line " in error_lines[0]:
+                                errmsg.append(error_lines[0].split(" in line ")[0] + ":")
+                                for line in error_lines[1:]:
+                                    if line.startswith("  File "):
+                                        break
+                                    errmsg.append(line)
                     else:
                         errmsg.append("")
                         errmsg.append(error.get("msg", "An unknown error occurred."))
