@@ -3,6 +3,7 @@
 import argparse
 import sys
 from pathlib import Path
+
 from sparv import __version__
 
 # Check Python version
@@ -246,7 +247,12 @@ def main():
         sys.exit(0)
 
     # Check that a corpus config file is available in the working dir
-    config_exists = Path(args.dir or Path.cwd(), paths.config_file).is_file()
+    try:
+        config_exists = Path(args.dir or Path.cwd(), paths.config_file).is_file()
+    except PermissionError as e:
+        print(f"{e.strerror}: {e.filename!r}")
+        sys.exit(1)
+
     if args.command not in ("build-models", "languages"):
         if not config_exists:
             print(f"No config file ({paths.config_file}) found in working directory.")
