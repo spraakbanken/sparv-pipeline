@@ -71,6 +71,7 @@ def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
       (use empty string to omit probablility)
     - preloaded_models: Preloaded models if using preloader
     """
+    logger.progress()
     ##################
     # Load models
     ##################
@@ -84,6 +85,7 @@ def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
         nst_model = pickle.load(f)
 
     word_msd_baseform_annotations = list(word.read_attributes((word, msd, baseform_tmp)))
+    logger.progress(total=len(word_msd_baseform_annotations) + 3)
 
     # Create alternative lexicon (for words within the source file)
     altlexicon = InFileLexicon(word_msd_baseform_annotations if comp_use_source else [])
@@ -130,9 +132,14 @@ def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
         else:
             make_new_baseforms(baseform_annotation, msd, compounds, stats_lexicon, altlexicon, delimiter, affix)
 
+        logger.progress()
+
     out_complemgrams.write(complem_annotation)
+    logger.progress()
     out_compwf.write(compwf_annotation)
+    logger.progress()
     out_baseform.write(baseform_annotation)
+    logger.progress()
 
 
 @modelbuilder("SALDO compound model", language=["swe"])

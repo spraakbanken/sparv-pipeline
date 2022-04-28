@@ -6,8 +6,9 @@ from binascii import hexlify
 from typing import Optional
 
 from sparv.api import (AllSourceFilenames, Annotation, AnnotationData, SourceFilename, Output, Wildcard,
-                       OutputDataAllSourceFiles, annotator)
+                       OutputDataAllSourceFiles, annotator, get_logger)
 
+logger = get_logger(__name__)
 _ID_LENGTH = 10
 
 
@@ -29,6 +30,7 @@ def file_id(out: OutputDataAllSourceFiles = OutputDataAllSourceFiles("misc.filei
             source_files = f.read().strip().splitlines()
 
     source_files.sort()
+    logger.progress(total=len(source_files))
 
     numfiles = len(source_files) * 2
     used_ids = set()
@@ -47,6 +49,7 @@ def file_id(out: OutputDataAllSourceFiles = OutputDataAllSourceFiles("misc.filei
         new_id = _make_id(prefix, used_ids)
         used_ids.add(new_id)
         out.write(new_id, file)
+        logger.progress()
 
 
 @annotator("Unique IDs for {annotation}", wildcards=[Wildcard("annotation", Wildcard.ANNOTATION)])
@@ -56,17 +59,21 @@ def ids(source_file: SourceFilename = SourceFilename(),
         fileid: AnnotationData = AnnotationData("<fileid>"),
         prefix: str = ""):
     """Create unique IDs for every span of an existing annotation."""
+    logger.progress()
     fileid = fileid.read()
     prefix = prefix + fileid
 
     ann = list(annotation.read())
     out_annotation = []
+    logger.progress(total=len(ann) + 1)
     # Use source filename and annotation name as seed for the IDs
     _reset_id("{}/{}".format(source_file, annotation), len(ann))
     for _ in ann:
         new_id = _make_id(prefix, out_annotation)
         out_annotation.append(new_id)
+        logger.progress()
     out.write(out_annotation)
+    logger.progress()
 
 
 def _reset_id(seed, max_ids=None):

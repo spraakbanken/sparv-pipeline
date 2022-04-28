@@ -129,6 +129,8 @@ def do_segmentation(text: Text, out: Output, segmenter, chunk: Optional[Annotati
     else:
         segments = []
 
+    logger.progress(total=len(chunk_spans) + 1)
+
     # Now we can segment each chunk span into tokens
     for start, end in chunk_spans:
         for spanstart, spanend in segmenter.span_tokenize(corpus_text[start:end]):
@@ -137,9 +139,11 @@ def do_segmentation(text: Text, out: Output, segmenter, chunk: Optional[Annotati
             if corpus_text[spanstart:spanend].strip():
                 span = (spanstart, spanend)
                 segments.append(span)
+        logger.progress()
 
     segments.sort()
     out.write(segments)
+    logger.progress()
 
 
 @modelbuilder("Model for PunktSentenceTokenizer", language=["swe"])

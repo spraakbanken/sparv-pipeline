@@ -106,6 +106,7 @@ def main(token, word, sentence, reference, out_sense, out_lemgram, out_baseform,
          models_preloaded):
     """Do SALDO annotations with models."""
     # Allow use of multiple lexicons
+    logger.progress()
     models_list = [(m.path.stem, m) for m in models]
     if not models_preloaded:
         lexicon_list = [(name, SaldoLexicon(lex.path)) for name, lex in models_list]
@@ -148,6 +149,7 @@ def main(token, word, sentence, reference, out_sense, out_lemgram, out_baseform,
         logger.warning(f"Found {len(orphans)} tokens not belonging to any sentence. These will not be annotated.")
 
     out_annotation = word.create_empty_attribute()
+    logger.progress(total=len(sentences) + 1)
 
     for sent in sentences:
         incomplete_multis = []  # [{annotation, words, [ref], is_particle, lastwordWasGap, numberofgaps}]
@@ -178,6 +180,7 @@ def main(token, word, sentence, reference, out_sense, out_lemgram, out_baseform,
                                             ann_tags_words, msd_annotation, sent, skip_pos_check)
 
             # Loop to next token
+        logger.progress()
 
         if not allow_multiword_overlap:
             # Check that we don't have any unwanted overlaps
@@ -193,6 +196,7 @@ def main(token, word, sentence, reference, out_sense, out_lemgram, out_baseform,
 
     for out_annotation_obj, annotation_name in annotations:
         out_annotation_obj.write([v.get(annotation_name, delimiter) if v is not None else None for v in out_annotation])
+    logger.progress()
 
 
 ################################################################################

@@ -73,10 +73,12 @@ def vrt_scrambled(source_file: SourceFilename = SourceFilename(),
                   sparv_namespace: str = Config("export.sparv_namespace"),
                   source_namespace: str = Config("export.source_namespace")):
     """Export annotations to vrt in scrambled order."""
+    logger.progress(total=6)
     # Get annotation spans, annotations list etc.
     annotation_list, token_attributes, export_names = util.export.get_annotation_names(
         annotations, source_annotations, source_file=source_file, token_name=token.name,
         remove_namespaces=remove_namespaces, sparv_namespace=sparv_namespace, source_namespace=source_namespace)
+    logger.progress()
     if token not in annotation_list:
         logger.warning("The 'cwb:vrt_scrambled' export requires the <token> annotation for the output to include "
                        "the source text. Make sure to add <token> to the list of export annotations.")
@@ -85,18 +87,21 @@ def vrt_scrambled(source_file: SourceFilename = SourceFilename(),
             "The annotation used for scrambling ({}) needs to be included in the output.".format(chunk))
     span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names,
                                                                      source_file=source_file, split_overlaps=True)
+    logger.progress()
 
     # Read words and scramble order
     word_annotation = list(word.read())
     chunk_order_data = list(chunk_order.read())
 
+    logger.progress()
+
     # Reorder chunks and open/close tags in correct order
     new_span_positions = util.export.scramble_spans(span_positions, chunk.name, chunk_order_data)
-
+    logger.progress()
     # Make vrt format
     vrt_data = create_vrt(new_span_positions, token.name, word_annotation, token_attributes, annotation_dict,
                           export_names)
-
+    logger.progress()
     # Create export dir
     os.makedirs(os.path.dirname(out), exist_ok=True)
 
@@ -104,6 +109,7 @@ def vrt_scrambled(source_file: SourceFilename = SourceFilename(),
     with open(out, "w") as f:
         f.write(vrt_data)
     logger.info("Exported: %s", out)
+    logger.progress()
 
 
 @exporter("CWB encode", order=2, config=[
