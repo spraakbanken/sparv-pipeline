@@ -181,7 +181,21 @@ An instance of this class represents an export file. This class is used to defin
 
 
 ## ExportAnnotations
-List of annotations to be included in the export. This list is defined in the corpus configuration.
+List of annotations to be included in the export. This list is defined in the corpus configuration. Annotation files
+for the current source file will automatically be added as dependencies when using this class, unless `is_input` is set
+to `False`.
+
+**Arguments:**
+
+- `config_name`: The config variable pointing out what annotations to include.
+- `is_input`: If set to `False` the annotations won't be added to the rule's input. Default: `True`
+
+
+## ExportAnnotationsAllSourceFiles
+List of annotations to be included in the export. This list is defined in the corpus configuration. Annotation files
+for _all_ source files will automatically be added as dependencies when using this class, unless `is_input` is set to
+`False`. With `is_input` set to `False`, there is no difference between using `ExportAnnotationsAllSourceFiles` and
+`ExportAnnotations`.
 
 **Arguments:**
 
@@ -361,11 +375,20 @@ List of source annotations to be included in the export. This list is defined in
 **Arguments:**
 
 - `config_name`: The config variable pointing out what source annotations to include.
-- `is_input`: If set to `False` the annotations won't be added to the rule's input. Default: `True`
+
+
+## SourceAnnotationsAllSourceFiles
+List of source annotations to be included in the export. This list is defined in the corpus configuration. This
+differs from `SourceAnnotations` in that the source annotations structure file (created by using `SourceStructure`)
+of _every_ source file will be added as dependencies.
+
+**Arguments:**
+
+- `config_name`: The config variable pointing out what source annotations to include.
 
 
 ## SourceStructure
-Every annotation available in a source file.
+Every annotation name available in a source file.
 
 **Arguments:**
 
@@ -374,7 +397,7 @@ Every annotation available in a source file.
 **Methods:**
 
 - `read()`: Read structure file.
-- `write(structure)`: Sort the source file's structural elements and write structure file.
+- `write(structure)`: Sort the source file's annotation names and write to structure file.
 
 
 ## SourceStructureParser

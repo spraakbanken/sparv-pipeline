@@ -8,4 +8,5 @@ from .classes import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, 
                       AnnotationDataAllSourceFiles, Binary, BinaryDir, Config, Corpus, Export, ExportAnnotations,
                       ExportAnnotationsAllSourceFiles, ExportInput, Headers, Language, Model, ModelOutput, Namespaces,
                       Output, OutputAllSourceFiles, OutputCommonData, OutputData, OutputDataAllSourceFiles, Source,
-                      SourceAnnotations, SourceFilename, SourceStructure, SourceStructureParser, Text, Wildcard)
+                      SourceAnnotations, SourceAnnotationsAllSourceFiles, SourceFilename, SourceStructure,
+                      SourceStructureParser, Text, Wildcard)

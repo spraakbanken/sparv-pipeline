@@ -8,7 +8,8 @@ from pathlib import Path
 from typing import Optional
 
 from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Config, Corpus, SourceFilename, Export,
-                       ExportAnnotations, ExportInput, SourceAnnotations, SparvErrorMessage, exporter, get_logger, util)
+                       ExportAnnotations, ExportInput, SourceAnnotations, SourceAnnotationsAllSourceFiles,
+                       SparvErrorMessage, exporter, get_logger, util)
 
 logger = get_logger(__name__)
 
@@ -120,7 +121,8 @@ def vrt_scrambled(source_file: SourceFilename = SourceFilename(),
 ])
 def encode(corpus: Corpus = Corpus(),
            annotations: ExportAnnotations = ExportAnnotations("cwb.annotations", is_input=False),
-           source_annotations: SourceAnnotations = SourceAnnotations("cwb.source_annotations"),
+           source_annotations: SourceAnnotationsAllSourceFiles = SourceAnnotationsAllSourceFiles(
+               "cwb.source_annotations"),
            source_files: AllSourceFilenames = AllSourceFilenames(),
            words: AnnotationAllSourceFiles = AnnotationAllSourceFiles("[export.word]"),
            vrtfiles: ExportInput = ExportInput("cwb.vrt/{file}.vrt", all_files=True),
@@ -143,7 +145,8 @@ def encode(corpus: Corpus = Corpus(),
 @exporter("CWB encode, scrambled", order=1)
 def encode_scrambled(corpus: Corpus = Corpus(),
                      annotations: ExportAnnotations = ExportAnnotations("cwb.annotations", is_input=False),
-                     source_annotations: SourceAnnotations = SourceAnnotations("cwb.source_annotations"),
+                     source_annotations: SourceAnnotationsAllSourceFiles = SourceAnnotationsAllSourceFiles(
+                         "cwb.source_annotations"),
                      source_files: AllSourceFilenames = AllSourceFilenames(),
                      words: AnnotationAllSourceFiles = AnnotationAllSourceFiles("[export.word]"),
                      vrtfiles: ExportInput = ExportInput("cwb.vrt_scrambled/{file}.vrt", all_files=True),

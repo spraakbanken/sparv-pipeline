@@ -9,7 +9,7 @@ other arguments are optional and default to `None`.
 
 ## @annotator
 A function decorated with `@annotator` usually takes some input (e.g. models, one or more arbitrary annotations like
-tokens, sentences, parts of speeches etc) and outputs one or more new annotations.
+tokens, sentences, parts of speeches etc.) and outputs one or more new annotations.
 
 **Arguments:**
 
@@ -49,9 +49,15 @@ def annotate(lang: Language = Language(),
 ## @importer
 A function decorated with `@importer` is used for importing corpus files in a certain file format. Its job is to read a
 corpus file, extract the corpus text and existing markup (if applicable), and write annotation files for the corpus text
-and markup. The corpus text output is implicit for importers and thus not listed among the function arguments. Any
-additional outputs may be listed in the `outputs` argument of the decorator. This is necessary in case any output is
-needed as input in another part of the pipeline.
+and markup.
+
+Importers do not use the `Output` class to specify its outputs. Instead, outputs may be listed using the `outputs`
+argument of the decorator. Any output that is to be used as explicit input by another part of the pipeline needs to be
+listed here, but additional unlisted outputs may also be created.
+
+Two outputs are implicit (and thus not listed in `outputs`) but required for every importer: the corpus text, saved by
+using the `Text` class, and a list of the annotations created from existing markup, saved by using the
+`SourceStructure` class.
 
 **Arguments:**
 

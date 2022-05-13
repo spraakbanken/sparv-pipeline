@@ -728,13 +728,17 @@ class ExportAnnotationsAllSourceFiles(List[Tuple[AnnotationAllSourceFiles, Optio
 class SourceAnnotations(List[Tuple[Annotation, Optional[str]]]):
     """List of source annotations to include in export."""
 
-    # If is_input = False the annotations won't be added to the rule's input.
-    is_input = True
-
-    def __init__(self, config_name: str, items=(), is_input: bool = True):
+    def __init__(self, config_name: str, items=()):
         list.__init__(self, items)
         self.config_name = config_name
-        self.is_input = is_input
+
+
+class SourceAnnotationsAllSourceFiles(List[Tuple[AnnotationAllSourceFiles, Optional[str]]]):
+    """List of source annotations to include in export."""
+
+    def __init__(self, config_name: str, items=()):
+        list.__init__(self, items)
+        self.config_name = config_name
 
 
 class Language(str):

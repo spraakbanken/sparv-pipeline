@@ -4,8 +4,8 @@ import csv
 from collections import defaultdict
 
 from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Config, Export,
-                       ExportAnnotationsAllSourceFiles, ExportInput, OutputCommonData, SourceAnnotations, exporter,
-                       get_logger, installer, util)
+                       ExportAnnotationsAllSourceFiles, ExportInput, OutputCommonData, SourceAnnotationsAllSourceFiles,
+                       exporter, get_logger, installer, util)
 
 logger = get_logger(__name__)
 
@@ -16,7 +16,8 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
               token: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>"),
               annotations: ExportAnnotationsAllSourceFiles =
                   ExportAnnotationsAllSourceFiles("stats_export.annotations"),
-              source_annotations: SourceAnnotations = SourceAnnotations("stats_export.source_annotations"),
+              source_annotations: SourceAnnotationsAllSourceFiles = SourceAnnotationsAllSourceFiles(
+                  "stats_export.source_annotations"),
               remove_namespaces: bool = Config("export.remove_module_namespaces", True),
               sparv_namespace: str = Config("export.sparv_namespace"),
               source_namespace: str = Config("export.source_namespace"),

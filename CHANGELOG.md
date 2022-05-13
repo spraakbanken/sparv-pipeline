@@ -41,6 +41,7 @@
   for an annotation.
 - Added support for [individual progress bars for
   annotators](https://spraakbanken.gu.se/sparv/#/developers-guide/writing-sparv-plugins?id=progress-bar).
+- Added `SourceAnnotationsAllSourceFiles` class.
 
 ### Changed
 
@@ -84,6 +85,7 @@
 - When Sparv crashes due to unexpected errors, the traceback is now hidden from the user unless the `--log debug`
   argument is used.
 - If the `-j`/`--cores` option is used without an argument, all available CPU cores are used.
+- Importers are now required to write a source structure file.
 
 ### Fixed
 

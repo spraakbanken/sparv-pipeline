@@ -18,7 +18,7 @@ from sparv.core.console import console
 from sparv.api.classes import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, AnnotationData, Base, BaseAnnotation,
                                BaseOutput, Binary, BinaryDir, Config, Corpus, SourceFilename, Export, ExportAnnotations,
                                ExportAnnotationsAllSourceFiles, ExportInput, Language, Model, ModelOutput, Output, OutputData,
-                               Source, SourceAnnotations, Text)
+                               Source, SourceAnnotations, SourceAnnotationsAllSourceFiles, Text)
 
 
 class SnakeStorage:
@@ -153,8 +153,9 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                                                                           {"description": rule.description,
                                                                            "params": param_dict})
         if rule.target_name == sparv_config.get("import.importer"):
-            # Exports always generate corpus text file
+            # Imports always generate corpus text file and structure file
             rule.outputs.append(paths.work_dir / "{file}" / io.TEXT_FILE)
+            rule.outputs.append(paths.work_dir / "{file}" / io.STRUCTURE_FILE)
             # If importer guarantees other outputs, add them to outputs list
             if rule.import_outputs:
                 if isinstance(rule.import_outputs, Config):
@@ -327,9 +328,9 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             rule.parameters[param_name] = param_value
 
             source = param.default.config_name
-            annotations = sparv_config.get(f"{source}", [])
+            annotations = sparv_config.get(source, [])
             if not annotations:
-                rule.missing_config.add(f"{source}")
+                rule.missing_config.add(source)
             export_annotations = util.misc.parse_annotation_list(annotations, add_plain_annotations=False)
             annotation_type = Annotation if param_type == ExportAnnotations else AnnotationAllSourceFiles
             plain_annotations = set()
@@ -361,8 +362,14 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                         rule.inputs.append(paths.work_dir / get_annotation_path(annotation.name))
                 rule.parameters[param_name].append((annotation, export_name))
         # SourceAnnotations
-        elif param_type == SourceAnnotations:
-            rule.parameters[param_name] = sparv_config.get(f"{param.default.config_name}", None)
+        elif param_type in (SourceAnnotations, SourceAnnotationsAllSourceFiles):
+            rule.parameters[param_name] = sparv_config.get(param.default.config_name, None)
+            if param_type == SourceAnnotationsAllSourceFiles:
+                rule.inputs.extend(
+                    expand(escape_wildcards(paths.work_dir / get_annotation_path(io.STRUCTURE_FILE, data=True)),
+                           file=storage.source_files))
+            else:
+                rule.inputs.append(paths.work_dir / get_annotation_path(io.STRUCTURE_FILE, data=True))
         # Corpus
         elif param.annotation == Corpus:
             rule.parameters[param_name] = Corpus(sparv_config.get("metadata.id"))
