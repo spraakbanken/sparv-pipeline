@@ -99,6 +99,7 @@
 - Fixed crash on empty sentences in Stanza.
 - Better handling of empty XML elements in XML export.
 - Notify user when SweNER crashes.
+- Fixed bug where `geo:contextual` would only work for sentences.
 
 ## [4.1.1] - 2021-09-20
 

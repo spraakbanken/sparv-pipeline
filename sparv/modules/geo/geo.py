@@ -10,22 +10,16 @@ logger = get_logger(__name__)
 
 
 @annotator("Annotate {chunk} with location data, based on locations contained within the text", language=["swe"],
-           config=[
-               Config("geo.context_chunk", default="<sentence>",
-                      description="Text chunk (annotation) to use for disambiguating places")
-           ], wildcards=[Wildcard("chunk", Wildcard.ANNOTATION)])
+           wildcards=[Wildcard("chunk", Wildcard.ANNOTATION)])
 def contextual(out: Output = Output("{chunk}:geo.geo_context", description="Geographical places with coordinates"),
                chunk: Annotation = Annotation("{chunk}"),
-               context: Annotation = Annotation("[geo.context_chunk]"),
                ne_type: Annotation = Annotation("swener.ne:swener.type"),
                ne_subtype: Annotation = Annotation("swener.ne:swener.subtype"),
                ne_name: Annotation = Annotation("swener.ne:swener.name"),
                model: Model = Model("[geo.model]"),
-               method: str = "populous",
                language: list = []):
     """Annotate chunks with location data, based on locations contained within the text.
 
-    context = text chunk to use for disambiguating places (when applicable).
     chunk = text chunk to which the annotation will be added.
     """
     model = load_model(model, language=language)
@@ -34,33 +28,26 @@ def contextual(out: Output = Output("{chunk}:geo.geo_context", description="Geog
     ne_subtype_annotation = list(ne_subtype.read())
     ne_name_annotation = list(ne_name.read())
 
-    children_context_chunk, _orphans = context.get_children(chunk)
     children_chunk_ne, _orphans = chunk.get_children(ne_type)
 
     out_annotation = chunk.create_empty_attribute()
+    chunk_locations = defaultdict(list)
 
-    for chunks in children_context_chunk:
-        all_locations = []  # TODO: Maybe not needed for anything?
-        context_locations = []
-        chunk_locations = defaultdict(list)
+    for chunk_index, chunk_nes in enumerate(children_chunk_ne):
+        for n in chunk_nes:
+            if ne_type_annotation[n] == "LOC" and "PPL" in ne_subtype_annotation[n]:
+                location_text = ne_name_annotation[n].replace("\n", " ").replace("  ", " ")
+                location_data = model.get(location_text.lower())
+                if location_data:
+                    chunk_locations[chunk_index].append((location_text, list(location_data)))
+                else:
+                    pass
+                    # logger.info("No location found for %s" % ne_name_annotation[n].replace("%", "%%"))
 
-        for ch in chunks:
-            for n in children_chunk_ne[ch]:
-                if ne_type_annotation[n] == "LOC" and "PPL" in ne_subtype_annotation[n]:
-                    location_text = ne_name_annotation[n].replace("\n", " ").replace("  ", " ")
-                    location_data = model.get(location_text.lower())
-                    if location_data:
-                        all_locations.append((location_text, list(location_data)))
-                        context_locations.append((location_text, list(location_data)))
-                        chunk_locations[ch].append((location_text, list(location_data)))
-                    else:
-                        pass
-                        # logger.info("No location found for %s" % ne_name_annotation[n].replace("%", "%%"))
+    chunk_locations = most_populous(chunk_locations)
 
-        chunk_locations = most_populous(chunk_locations)
-
-        for c in chunks:
-            out_annotation[c] = _format_location(chunk_locations.get(c, ()))
+    for c in chunk_locations:
+        out_annotation[c] = _format_location(chunk_locations[c])
 
     out.write(out_annotation)
 
@@ -73,7 +60,6 @@ def metadata(out: Output = Output("{chunk}:geo.geo_metadata", description="Geogr
              chunk: Annotation = Annotation("{chunk}"),
              source: Annotation = Annotation("[geo.metadata_source]"),
              model: Model = Model("[geo.model]"),
-             method: str = "populous",
              language: list = []):
     """Get location data based on metadata containing location names."""
     geomodel = load_model(model, language=language)
@@ -107,7 +93,7 @@ def metadata(out: Output = Output("{chunk}:geo.geo_metadata", description="Geogr
 
     out_annotation = chunk.create_empty_attribute()
     for c in chunk_locations:
-        out_annotation[c] = _format_location(chunk_locations.get(c, ()))
+        out_annotation[c] = _format_location(chunk_locations[c])
 
     out.write(out_annotation)
 
