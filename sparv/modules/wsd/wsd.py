@@ -52,6 +52,8 @@ def annotate(wsdjar: Binary = Binary("[wsd.jar]"),
 
     sentences, orphans = sentence.get_children(token)
     sentences.append(orphans)
+    # Remove empty sentences
+    sentences = list(s for s in sentences if s)
 
     # Start WSD process
     process = wsd_start(wsdjar, sense_model.path, context_model.path, encoding)
