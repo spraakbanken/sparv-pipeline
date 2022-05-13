@@ -48,6 +48,8 @@ def relations(out: OutputData = OutputData("korp.relations"),
     sentence_ids = sentence_id.read()
     sentence_tokens, _ = sentence_id.get_children(word)
 
+    logger.progress(total=len(sentence_tokens) + 1)
+
     annotations = list(word.read_attributes((word, pos, lemgram, dephead, deprel, ref, baseform)))
 
     # http://stp.ling.uu.se/~nivre/swedish_treebank/dep.html
@@ -182,6 +184,7 @@ def relations(out: OutputData = OutputData("korp.relations"),
                             (v["lemgram"], v["word"], v["pos"], v["ref"]), mrel, ("", "", "", v["ref"]), ("", None), sentid,
                             v["ref"], v["ref"])
                         triples.extend(_mutate_triple(triple))
+        logger.progress()
 
     triples = sorted(set(triples))
 
@@ -190,6 +193,7 @@ def relations(out: OutputData = OutputData("korp.relations"),
                           head, headpos, rel, dep, deppos, extra, sentid, refhead, refdep, bfhead, bfdep, wfhead, wfdep)
                           in triples])
     out.write(out_data)
+    logger.progress()
 
 
 def _mutate_triple(triple):
@@ -310,6 +314,8 @@ def relations_sql(corpus: Corpus = Corpus(),
     if len(source_files) == 1:
         split = False
 
+    logger.progress(total=len(source_files) + 1)
+
     for file in source_files:
         file_count += 1
         sentences = {}
@@ -372,10 +378,13 @@ def relations_sql(corpus: Corpus = Corpus(),
                 # Only save sentences data, save the rest for the last file
                 _write_sql({}, sentences, {}, {}, {}, {}, out, db_table, split, first=(file_count == 1))
 
+        logger.progress()
+
     # Create the final file, including the string table
     _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_table, split,
                first=(file_count == 1), last=True)
 
+    logger.progress()
     logger.info("Done creating SQL files")
 
 
