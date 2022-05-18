@@ -659,7 +659,7 @@ class LogHandler:
             elif self.messages["unhandled_error"]:
                 for error in self.messages["unhandled_error"]:
                     errmsg = ["An unexpected error occurred."]
-                    if logging._nameToLevel[self.log_level.upper()] > logging.DEBUG:
+                    if self.log_level and logging._nameToLevel[self.log_level.upper()] > logging.DEBUG:
                         errmsg[0] += " To display further details about this error, rerun Sparv with the " \
                                      "'--log debug' argument.\n"
                         if "msg" in error:
