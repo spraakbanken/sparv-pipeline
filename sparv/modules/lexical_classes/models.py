@@ -79,7 +79,7 @@ def read_blingbring(tsv, classmap, verbose=True):
     lexicon = {}
     classmapping = {}
 
-    with open(tsv) as f:
+    with open(tsv, encoding="utf-8") as f:
         for line in csv.reader(f, delimiter="\t"):
             if line[0].startswith("#"):
                 continue

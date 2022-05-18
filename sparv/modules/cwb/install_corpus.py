@@ -59,8 +59,8 @@ def sync_cwb(corpus, out, host, info_file, registry_file, target_data_dir, targe
     source_registry_file = os.path.join(source_registry_dir, corpus + ".tmp")
 
     # Fix absolute paths in registry file
-    with open(registry_file) as registry_in:
-        with open(source_registry_file, "w") as registry_out:
+    with open(registry_file, encoding="utf-8") as registry_in:
+        with open(source_registry_file, "w", encoding="utf-8") as registry_out:
             for line in registry_in:
                 if line.startswith("HOME"):
                     line = f"HOME {target_data_dir}/{corpus}\n"

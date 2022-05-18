@@ -102,7 +102,7 @@ def install_freq_list(freq_list: ExportInput = ExportInput("stats_export.frequen
 
 def write_csv(out, column_names, freq_dict, delimiter, cutoff):
     """Write csv file."""
-    with open(out, "w") as csvfile:
+    with open(out, "w", encoding="utf-8") as csvfile:
         csv_writer = csv.writer(csvfile, delimiter=delimiter)
         csv_writer.writerow(column_names)
         for annotations, freq in sorted(freq_dict.items(), key=lambda x: -x[1]):

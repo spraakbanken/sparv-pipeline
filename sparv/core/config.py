@@ -46,7 +46,7 @@ class Unset:
 def read_yaml(yaml_file):
     """Read YAML file and handle errors."""
     try:
-        with open(yaml_file) as f:
+        with open(yaml_file, encoding="utf-8") as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
     except yaml.parser.ParserError as e:
         raise SparvErrorMessage("Could not parse the configuration file:\n" + str(e))

@@ -355,7 +355,7 @@ class SparvXMLParser:
                 raise SparvErrorMessage(f"The XML input file could not be parsed. Error: {str(e)}")
             root = tree.getroot()
         else:
-            text = source_file.read_text()
+            text = source_file.read_text(encoding="utf-8")
             if not self.keep_control_chars:
                 text = util.misc.remove_control_characters(text)
             if self.normalize:

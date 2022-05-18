@@ -26,7 +26,7 @@ def file_id(out: OutputDataAllSourceFiles = OutputDataAllSourceFiles("misc.filei
     assert source_files or source_files_list, "source_files or source_files_list must be specified"
 
     if source_files_list:
-        with open(source_files_list) as f:
+        with open(source_files_list, encoding="utf-8") as f:
             source_files = f.read().strip().splitlines()
 
     source_files.sort()

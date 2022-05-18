@@ -308,7 +308,7 @@ def relations_sql(corpus: Corpus = Corpus(),
     assert (source_files or source_files_list), "Missing source"
 
     if source_files_list:
-        with open(source_files_list) as insource:
+        with open(source_files_list, encoding="utf-8") as insource:
             source_files = [line.strip() for line in insource]
 
     if len(source_files) == 1:

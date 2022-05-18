@@ -27,7 +27,7 @@ def check_sparv_version() -> Optional[bool]:
     data_dir = paths.get_data_path()
     version_file = (data_dir / VERSION_FILE)
     if version_file.is_file():
-        return version_file.read_text() == __version__
+        return version_file.read_text(encoding="utf-8") == __version__
     return None
 
 
@@ -153,12 +153,12 @@ def run(sparv_datadir: Optional[str] = None):
         }
 
         paths.sparv_config_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(paths.sparv_config_file, "w") as f:
+        with open(paths.sparv_config_file, "w", encoding="utf-8") as f:
             f.write(config.dump_config(config_dict))
 
     copy_resource_files(path)
 
     # Save Sparv version number to a file in data dir
-    (path / VERSION_FILE).write_text(__version__)
+    (path / VERSION_FILE).write_text(__version__, encoding="utf-8")
 
     console.print(f"\nSetup completed. The Sparv data directory is set to '{path}'.")

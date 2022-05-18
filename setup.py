@@ -8,7 +8,7 @@ import setuptools
 def get_version(rel_path):
     """Get version number from package."""
     here = os.path.abspath(os.path.dirname(__file__))
-    with open(os.path.join(here, rel_path)) as f:
+    with open(os.path.join(here, rel_path), encoding="utf-8") as f:
         for line in f:
             if line.startswith("__version__"):
                 delim = '"' if '"' in line else "'"

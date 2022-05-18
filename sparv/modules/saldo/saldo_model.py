@@ -256,7 +256,7 @@ def save_to_cstlemmatizer(cstfile, lexicon, encoding="latin-1", verbose=True):
     """
     if verbose:
         logger.info("Saving CST lexicon")
-    with open(cstfile, "w") as F:
+    with open(cstfile, "w", encoding="utf-8") as F:
         for word in sorted(lexicon):
             for lemma in sorted(lexicon[word]):
                 for postag in sorted(lexicon[word][lemma]):

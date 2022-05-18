@@ -55,7 +55,7 @@ def create_info_file(sentences: AnnotationCommonData, firstdate: AnnotationCommo
         content.append("%s: %s\n" % (key, value))
 
     # Write .info file
-    with open(out, "w") as o:
+    with open(out, "w", encoding="utf-8") as o:
         o.writelines(content)
 
     logger.info("Exported: %s", out)

@@ -103,7 +103,7 @@ def conllu(source_file: SourceFilename = SourceFilename(),
     csv_data.append("")
 
     # Write result to file
-    with open(out, "w") as f:
+    with open(out, "w", encoding="utf-8") as f:
         f.write("\n".join(csv_data))
     logger.info("Exported: %s", out)
 

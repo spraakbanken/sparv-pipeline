@@ -82,7 +82,7 @@ def pretty(source_file: SourceFilename = SourceFilename(),
                                        fileid_annotation, include_empty_attributes, sparv_namespace, xml_namespaces)
 
     # Write XML to file
-    with open(out, mode="w") as outfile:
+    with open(out, mode="w", encoding="utf-8") as outfile:
         outfile.write(xmlstr)
     logger.info("Exported: %s", out)
 

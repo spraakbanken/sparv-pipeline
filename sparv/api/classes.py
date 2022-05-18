@@ -586,7 +586,7 @@ class Model(Base):
         """Write arbitrary string data to models directory."""
         file_path = self.path
         os.makedirs(file_path.parent, exist_ok=True)
-        with open(file_path, "w") as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             f.write(data)
         # Update file modification time even if nothing was written
         os.utime(file_path, None)
@@ -595,7 +595,7 @@ class Model(Base):
     def read(self):
         """Read arbitrary string data from file in models directory."""
         file_path = self.path
-        with open(file_path) as f:
+        with open(file_path, encoding="utf-8") as f:
             data = f.read()
         logger.debug("Read %d bytes: %s", len(data), self.name)
         return data

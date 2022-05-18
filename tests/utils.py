@@ -127,8 +127,8 @@ def _cmp_dirs(a: pathlib.Path,
 
 def _filediff(a: pathlib.Path, b: pathlib.Path):
     """Print a unified diff of files a and b."""
-    a_contents = a.read_text().splitlines()
-    b_contents = b.read_text().splitlines()
+    a_contents = a.read_text(encoding="utf-8").splitlines()
+    b_contents = b.read_text(encoding="utf-8").splitlines()
 
     diff = difflib.unified_diff(a_contents, b_contents, fromfile=str(a), tofile=str(b))
     for line in diff:
@@ -138,12 +138,12 @@ def _filediff(a: pathlib.Path, b: pathlib.Path):
 def _xml_filediff(a: pathlib.Path, b: pathlib.Path):
     """Print a unified diff of canonicalize XML files a and b."""
     try:
-        a_contents = etree.canonicalize(a.read_text()).splitlines()
+        a_contents = etree.canonicalize(a.read_text(encoding="utf-8")).splitlines()
     except etree.ParseError:
         print_error(f"File {a} could not be parsed.")
         return True
     try:
-        b_contents = etree.canonicalize(b.read_text()).splitlines()
+        b_contents = etree.canonicalize(b.read_text(encoding="utf-8")).splitlines()
     except etree.ParseError:
         print_error(f"File {a} could not be parsed.")
         return True

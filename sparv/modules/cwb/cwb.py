@@ -54,7 +54,7 @@ def vrt(source_file: SourceFilename = SourceFilename(),
                           export_names)
 
     # Write result to file
-    with open(out, "w") as f:
+    with open(out, "w", encoding="utf-8") as f:
         f.write(vrt_data)
     logger.info("Exported: %s", out)
 
@@ -107,7 +107,7 @@ def vrt_scrambled(source_file: SourceFilename = SourceFilename(),
     os.makedirs(os.path.dirname(out), exist_ok=True)
 
     # Write result to file
-    with open(out, "w") as f:
+    with open(out, "w", encoding="utf-8") as f:
         f.write(vrt_data)
     logger.info("Exported: %s", out)
     logger.progress()
@@ -278,7 +278,7 @@ def cwb_align(corpus, other, link, aligndir="annotations/align", bin_path="",
     # Align linked chunks
     args = ["-v", "-o", alignfile, "-V", link_attr, corpus, other, link_name]
     result, _ = util.system.call_binary(os.path.join(bin_path, "cwb-align"), args, encoding=encoding)
-    with open(alignfile + ".result", "w") as F:
+    with open(alignfile + ".result", "w", encoding="utf-8") as F:
         print(result, file=F)
     _, lastline = result.rsplit("Alignment complete.", 1)
     logger.info("%s", lastline.strip())
@@ -289,11 +289,11 @@ def cwb_align(corpus, other, link, aligndir="annotations/align", bin_path="",
     # Add alignment parameter to registry
     # cwb-regedit is not installed by default, so we skip it and modify the regfile directly instead:
     regfile = os.path.join(os.environ["CORPUS_REGISTRY"], corpus)
-    with open(regfile) as F:
+    with open(regfile, encoding="utf-8") as F:
         skip_align = ("ALIGNED %s" % other) in F.read()
 
     if not skip_align:
-        with open(regfile, "a") as F:
+        with open(regfile, "a", encoding="utf-8") as F:
             print(file=F)
             print("# Added by cwb.py", file=F)
             print("ALIGNED", other, file=F)

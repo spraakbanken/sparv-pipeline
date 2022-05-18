@@ -141,18 +141,18 @@ def combine(corpus, out, source_files, xml_input, version_info_file=None):
     """Combine xml_files into one single file."""
     xml_files = [xml_input.replace("{file}", file) for file in source_files]
     xml_files.sort()
-    with open(out, "w") as outf:
+    with open(out, "w", encoding="utf-8") as outf:
         print("<?xml version='1.0' encoding='UTF-8'?>", file=outf)
         if version_info_file:
             print("<!--", file=outf)
-            with open(version_info_file) as vi:
+            with open(version_info_file, encoding="utf-8") as vi:
                 for line in vi.readlines():
                     print(line.strip(), file=outf)
             print("-->", file=outf)
         print('<corpus id="%s">' % corpus.replace("&", "&amp;").replace('"', "&quot;"), file=outf)
         for infile in xml_files:
             logger.info("Read: %s", infile)
-            with open(infile) as inf:
+            with open(infile, encoding="utf-8") as inf:
                 for n, line in enumerate(inf):
                     # Skip xml declaration
                     if n == 0 and line.startswith("<?xml"):

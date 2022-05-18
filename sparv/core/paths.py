@@ -12,7 +12,7 @@ def read_sparv_config():
     data = {}
     if sparv_config_file.is_file():
         try:
-            with open(sparv_config_file) as f:
+            with open(sparv_config_file, encoding="utf-8") as f:
                 data = yaml.load(f, Loader=yaml.FullLoader)
         except:
             data = {}

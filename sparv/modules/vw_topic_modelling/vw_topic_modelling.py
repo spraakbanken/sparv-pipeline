@@ -40,7 +40,7 @@ def word_weights(doc: str = Document,
 
     Both model and model.json must exist. See --train and --predict.
     """
-    m_json = json.load(open(model + ".json"))
+    m_json = json.load(open(model + ".json", encoding="utf-8"))
     index_to_label = m_json["index_to_label"]
     min_word_length = int(m_json["min_word_length"] or "0")
     banned_pos = (m_json["banned_pos"] or "").split()
@@ -55,7 +55,7 @@ def word_weights(doc: str = Document,
         args = ["--initial_regressor", model, "--invert_hash", tmp.name]
         for _ in vw_predict(args, data):
             pass
-        for line in open(tmp.name, "r").readlines():
+        for line in open(tmp.name, "r", encoding="utf-8").readlines():
             # allmänna[1]:14342849:0.0139527
             colons = line.split(":")
             if len(colons) == 3:
@@ -94,7 +94,7 @@ def predict(doc: str = Document,
     """Predict a structural attribute."""
     raw = raw == "true"
 
-    m_json = json.load(open(modeljson))
+    m_json = json.load(open(modeljson, encoding="utf-8"))
 
     data = (
         Example(None, text.words, text.span)
@@ -124,7 +124,7 @@ def predict(doc: str = Document,
 
 def _make_label_map(label_map_json):
     if label_map_json:
-        with open(label_map_json, "r") as fp:
+        with open(label_map_json, "r", encoding="utf-8") as fp:
             d = json.load(fp)
         return lambda label: d.get(label, None)
     else:
@@ -167,7 +167,7 @@ def train(doc: str = Document,
      then N copies of: pos.
     """
 
-    with open(file_list, "r") as fp:
+    with open(file_list, "r", encoding="utf-8") as fp:
         files = fp.read().split()
     order_struct_parent_word_pos = interleave(files, 5)
     map_label = _make_label_map(label_map_json)
@@ -244,7 +244,7 @@ def train(doc: str = Document,
                for i, p in
                list(multiclass_performance(target, predicted).items())},
         confusion_matrix=confusion_matrix(target, predicted, order))
-    with open(jsonfile, "w") as f:
+    with open(jsonfile, "w", encoding="utf-8") as f:
         json.dump(info, f, sort_keys=True, indent=2)
     logger.info(f"Wrote {jsonfile}")
 
@@ -337,7 +337,7 @@ def vw_predict(args, data, raw=False):
             tags = []
             for _, tag in _vw_run(args + more_args, data, True):
                 tags.append(tag)
-            lines = open(tmp.name, "r").read().rstrip().split("\n")
+            lines = open(tmp.name, "r", encoding="utf-8").read().rstrip().split("\n")
             for line, tag in zip(lines, tags):
                 def pred(label, raw_pred):
                     return (int(label), float(raw_pred))
