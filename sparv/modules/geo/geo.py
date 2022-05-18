@@ -29,25 +29,22 @@ def contextual(out: Output = Output("{chunk}:geo.geo_context", description="Geog
     ne_name_annotation = list(ne_name.read())
 
     children_chunk_ne, _orphans = chunk.get_children(ne_type)
-
     out_annotation = chunk.create_empty_attribute()
-    chunk_locations = defaultdict(list)
 
     for chunk_index, chunk_nes in enumerate(children_chunk_ne):
+        chunk_locations = []
         for n in chunk_nes:
             if ne_type_annotation[n] == "LOC" and "PPL" in ne_subtype_annotation[n]:
                 location_text = ne_name_annotation[n].replace("\n", " ").replace("  ", " ")
                 location_data = model.get(location_text.lower())
                 if location_data:
-                    chunk_locations[chunk_index].append((location_text, list(location_data)))
+                    chunk_locations.append((location_text, list(location_data)))
                 else:
                     pass
                     # logger.info("No location found for %s" % ne_name_annotation[n].replace("%", "%%"))
 
-    chunk_locations = most_populous(chunk_locations)
-
-    for c in chunk_locations:
-        out_annotation[c] = _format_location(chunk_locations[c])
+        chunk_locations = most_populous(chunk_locations)
+        out_annotation[chunk_index] = _format_location(chunk_locations)
 
     out.write(out_annotation)
 
@@ -67,15 +64,15 @@ def metadata(out: Output = Output("{chunk}:geo.geo_metadata", description="Geogr
     same_target_source = chunk.split()[0] == source.split()[0]
     chunk_annotation = list(chunk.read())
     source_annotation = list(source.read())
+    out_annotation = chunk.create_empty_attribute()
 
     # If location source and target chunk are not the same, we need
     # to find the parent/child relations between them.
     if not same_target_source:
         target_source_parents = list(source.get_parents(chunk))
 
-    chunk_locations = {}
-
     for i, _ in enumerate(chunk_annotation):
+        chunk_locations = []
         if same_target_source:
             location_source = source_annotation[i]
         else:
@@ -85,15 +82,10 @@ def metadata(out: Output = Output("{chunk}:geo.geo_metadata", description="Geogr
         if location_source:
             location_data = geomodel.get(location_source.strip().lower())
             if location_data:
-                chunk_locations[i] = [(location_source, list(location_data))]
-        else:
-            chunk_locations[i] = []
+                chunk_locations = [(location_source, list(location_data))]
 
-    chunk_locations = most_populous(chunk_locations)
-
-    out_annotation = chunk.create_empty_attribute()
-    for c in chunk_locations:
-        out_annotation[c] = _format_location(chunk_locations[c])
+        chunk_locations = most_populous(chunk_locations)
+        out_annotation[i] = _format_location(chunk_locations)
 
     out.write(out_annotation)
 
@@ -187,15 +179,12 @@ def load_model(model: Model, language=()):
 
 def most_populous(locations):
     """Disambiguate locations by only keeping the most populous ones."""
-    new_locations = {}
+    result = set()
 
-    for chunk in locations:
-        new_locations[chunk] = set()
-
-        for loc in locations[chunk]:
-            biggest = (loc[0], sorted(loc[1], key=lambda x: -int(x[-1]))[0])
-            new_locations[chunk].add(biggest)
-    return new_locations
+    for loc in locations:
+        biggest = (loc[0], sorted(loc[1], key=lambda x: -int(x[-1]))[0])
+        result.add(biggest)
+    return result
 
 
 def _format_location(location_data):

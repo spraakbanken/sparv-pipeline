@@ -36,9 +36,11 @@ xml_import:
         - s+header/title/m+main-title as text:title
         - s+header/title/m+sub-title as text:subtitle
         - s+header/m+date as text:date
+        - s+header/location as text:location
     elements:
         - paragraph:n as id
         - paragraph as p
+        - text:location
     skip:
         - sparv+i
         - sparv+u:@contents
@@ -67,6 +69,10 @@ export:
     annotations:
         - <sentence>:misc.id
         - <token>
+        - <text>:geo.geo_metadata
+
+geo:
+    metadata_source: text:location
 
 xml_export:
     # Headers from the source files that we want to include in the output
