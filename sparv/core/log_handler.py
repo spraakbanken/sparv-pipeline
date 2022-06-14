@@ -166,13 +166,16 @@ class InternalLogHandler(logging.Handler):
                         total=record.total or 100.0
                     )
                 else:
-                    if record.total:
-                        self.progress.start_task(self.jobs[job_id]["task"])
-                        self.progress.update(self.jobs[job_id]["task"], total=record.total)
-                    if record.progress:
-                        self.progress.update(self.jobs[job_id]["task"], completed=record.progress)
-                    elif record.advance or not record.total:
-                        self.progress.advance(self.jobs[job_id]["task"], advance=record.advance or 1)
+                    try:
+                        if record.total:
+                            self.progress.start_task(self.jobs[job_id]["task"])
+                            self.progress.update(self.jobs[job_id]["task"], total=record.total)
+                        if record.progress:
+                            self.progress.update(self.jobs[job_id]["task"], completed=record.progress)
+                        elif record.advance or not record.total:
+                            self.progress.advance(self.jobs[job_id]["task"], advance=record.advance or 1)
+                    except KeyError:
+                        pass
 
 
 class ModifiedRichHandler(RichHandler):
