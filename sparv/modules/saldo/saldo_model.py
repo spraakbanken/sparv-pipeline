@@ -249,25 +249,6 @@ class HashableDict(dict):
 ################################################################################
 
 
-def save_to_cstlemmatizer(cstfile, lexicon, encoding="latin-1", verbose=True):
-    """Save a JSON lexicon as an external file that can be used for training the CST lemmatizer.
-
-    The default encoding of the resulting file is ISO-8859-1 (Latin-1).
-    """
-    if verbose:
-        logger.info("Saving CST lexicon")
-    with open(cstfile, "w", encoding="utf-8") as F:
-        for word in sorted(lexicon):
-            for lemma in sorted(lexicon[word]):
-                for postag in sorted(lexicon[word][lemma]):
-                    # the order between word, lemma, postag depends on
-                    # the argument -c to cstlemma, this order is -cBFT:
-                    line = "%s\t%s\t%s" % (word, lemma, postag)
-                    print(line.encode(encoding), file=F)
-    if verbose:
-        logger.info("OK, saved")
-
-
 def extract_tags(lexicon):
     """Extract the set of all tags that are used in a lexicon.
 
