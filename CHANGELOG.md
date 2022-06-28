@@ -36,7 +36,7 @@
 - Introduced compression of annotation files in sparv-workdir. The type of compression can be configured (or disabled)
   by using the `sparv.compression` variable. `gzip` is used by default.
 - Add flags `--rerun-incomplete` and `--mark-complete` to the `sparv run` command for handling incomplete output files.
-- `xml_export:pretty` now shows a warning if a token annotation isn't included in the list of export annotations.
+- Several exporters now show a warning if a token annotation isn't included in the list of export annotations.
 - Added `get_size()` to the `Annotation` and `AnnotationAllSourceFiles` classes, to get the size (number of values)
   for an annotation.
 - Added support for [individual progress bars for
@@ -86,6 +86,7 @@
   argument is used.
 - If the `-j`/`--cores` option is used without an argument, all available CPU cores are used.
 - Importers are now required to write a source structure file.
+- CWB installation now also works locally.
 
 ### Fixed
 
@@ -100,8 +101,11 @@
 - Fixed crash in xml_import when no elements are imported.
 - Fixed crash on empty sentences in Stanza.
 - Better handling of empty XML elements in XML export.
+- Faulty custom modules now result in a warning instead of a crash.
 - Notify user when SweNER crashes.
+- Fixed crash when config file can't be read due to file permissions.
 - Fixed bug where `geo:contextual` would only work for sentences.
+- Fixed crash on systems with encodings other than UTF-8.
 
 ## [4.1.1] - 2021-09-20
 
