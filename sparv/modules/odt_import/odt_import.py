@@ -31,10 +31,10 @@ def parse(source_file: SourceFilename = SourceFilename(),
         normalize: Normalize input text using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.
             'NFC' is used by default.
     """
-    source_file = source_dir.get_path(source_file, ".odt")
+    source_file_path = str(source_dir.get_path(source_file, ".odt"))
 
     # Parse odt and extract all text content
-    text = OdtParser(source_file).text
+    text = OdtParser(source_file_path).text
 
     if not keep_control_chars:
         text = util.misc.remove_control_characters(text)

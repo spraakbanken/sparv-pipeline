@@ -31,8 +31,8 @@ def parse(source_file: SourceFilename = SourceFilename(),
         normalize: Normalize input text using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.
             'NFC' is used by default.
     """
-    source_file = source_dir.get_path(source_file, ".docx")
-    d = docx2python(source_file)
+    source_file_path = source_dir.get_path(source_file, ".docx")
+    d = docx2python(source_file_path)
 
     # Extract all text from the body, ignoring headers and footers
     text = "\n\n".join(iter_at_depth(d.body, 4))
