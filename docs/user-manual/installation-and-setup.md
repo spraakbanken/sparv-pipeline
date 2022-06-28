@@ -220,8 +220,8 @@ Please download, unzip and place contents inside the [Sparv data directory](#set
 
 Please install the software (including the additional language data) according to the instructions provided by FreeLing.
 Note that you will need to uncompress the source and language files in the same folder before compiling.
-You will also need to install the [sparv-freeling plugin](https://github.com/spraakbanken/sparv-freeling). Please follow
-the installation instructions for the sparv-freeling module on [GitHub](https://github.com/spraakbanken/sparv-freeling)
+You will also need to install the [sparv-sbx-freeling plugin](https://github.com/spraakbanken/sparv-sbx-freeling). Please follow
+the installation instructions for the sparv-sbx-freeling module on [GitHub](https://github.com/spraakbanken/sparv-sbx-freeling)
 in order to set up the plugin correctly.
 
 <!-- #### fast_align
@@ -246,9 +246,9 @@ pipx inject sparv-pipeline [pointer-to-sparv-plugin]
 The `pointer-to-sparv-plugin` can be a package available on the [Python Package Index (PyPI)](https://pypi.org/), a
 remote public repository, or a local directory on your machine.
 
-For now there are two plugins available for Sparv: [sparv-freeling](https://github.com/spraakbanken/sparv-freeling) and
+For now there are two plugins available for Sparv: [sparv-sbx-freeling](https://github.com/spraakbanken/sparv-sbx-freeling) and
 [sparv-sbx-metadata](https://github.com/spraakbanken/sparv-sbx-metadata) The only available plugin for Sparv available
-so far is [the sparv-freeling plugin](https://github.com/spraakbanken/sparv-freeling). Please refer to their GitHub page
+so far is [the sparv-sbx-freeling plugin](https://github.com/spraakbanken/sparv-sbx-freeling). Please refer to their GitHub page
 for more information.
 
 Plugins can be uninstalled by running:

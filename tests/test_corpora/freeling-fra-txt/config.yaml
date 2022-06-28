@@ -15,7 +15,7 @@ metadata:
         eng: |
             This test corpus includes:
             - standard Sparv paragraph segmentation
-            - the FreeLing annotations from the FREELING preset
+            - the FreeLing annotations from the SBX_FREELING preset
             - input files in txt format
             - some exports
 
@@ -31,7 +31,7 @@ import:
 # Module Settings
 #===============================================================================
 
-freeling:
+sbx_freeling:
     sentence_chunk: <paragraph>
 
 #===============================================================================
@@ -52,7 +52,7 @@ export:
     annotations:
         - PARAGRAPH.all
         - <text>:misc.id
-        - FREELING.all
+        - SBX_FREELING.all
 
 sparv:
     compression: none

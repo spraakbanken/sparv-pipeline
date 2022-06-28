@@ -14,7 +14,7 @@ metadata:
     description:
         eng: |
             This test corpus includes:
-            - the FreeLing_FULL annotations from the FREELING preset
+            - the SBX_FreeLing_FULL annotations from the SBX_FREELING preset
             - annotations with slevel (meaning that FreeLing won't do sentence segmentation)
             - some exports
 
@@ -42,7 +42,7 @@ classes:
 # Module Settings
 #===============================================================================
 
-freeling:
+sbx_freeling:
     sentence_annotation: s
 
 # Description of the date/time input format
@@ -69,7 +69,7 @@ export:
     annotations:
         - <text>:readability.lix
         - DATETIME.all
-        - FREELING_FULL.all
+        - SBX_FREELING_FULL.all
 
 sparv:
     compression: none

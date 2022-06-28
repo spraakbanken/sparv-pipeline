@@ -13,10 +13,10 @@ languages:
 
 
 classes:
-    sentence: freeling.sentence
-    token: freeling.token
-    "token:pos": freeling.token:freeling.pos
-    "token:baseform": freeling.token:freeling.baseform
+    sentence: sbx_freeling.sentence
+    token: sbx_freeling.token
+    "token:pos": sbx_freeling.token:sbx_freeling.pos
+    "token:baseform": sbx_freeling.token:sbx_freeling.baseform
 
 
 presets:
@@ -25,9 +25,9 @@ presets:
         - sentence
 
     token:
-        - freeling.token:freeling.upos
-        - freeling.token:freeling.pos
-        - freeling.token:freeling.baseform
+        - sbx_freeling.token:sbx_freeling.upos
+        - sbx_freeling.token:sbx_freeling.pos
+        - sbx_freeling.token:sbx_freeling.baseform
 
     sentence:
-        - <sentence>:misc.id
+        - sbx_freeling.sentence:misc.id

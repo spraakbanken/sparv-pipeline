@@ -1,0 +1,32 @@
+#===============================================================================
+# FreeLing Annotation Presets with named entities
+#===============================================================================
+
+languages:
+    - cat
+    - deu
+    - eng
+    - spa
+    - por
+
+
+classes:
+    sentence: sbx_freeling.sentence
+    token: sbx_freeling.token
+    "token:pos": sbx_freeling.token:sbx_freeling.pos
+    "token:baseform": sbx_freeling.token:sbx_freeling.baseform
+
+
+presets:
+    all:
+        - token
+        - sentence
+
+    token:
+        - sbx_freeling.token:sbx_freeling.upos
+        - sbx_freeling.token:sbx_freeling.pos
+        - sbx_freeling.token:sbx_freeling.baseform
+        - sbx_freeling.token:sbx_freeling.ne_type
+
+    sentence:
+        - sbx_freeling.sentence:misc.id
