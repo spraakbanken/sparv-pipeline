@@ -153,6 +153,7 @@ def rsync(local, host=None, remote=None):
 
     When syncing directories, extraneous files in destination dirs are deleted.
     """
+    assert host or remote, "Either 'host' or 'remote' must be set."
     if remote is None:
         remote = local
     remote_dir = os.path.dirname(remote)

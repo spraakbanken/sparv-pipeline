@@ -10,7 +10,7 @@ from sparv.api.util import system
 logger = get_logger(__name__)
 
 
-def install_file(local_file, host, remote_file):
+def install_file(local_file, host=None, remote_file=None):
     """Rsync a file to a target host."""
     system.rsync(local_file, host, remote_file)
 
