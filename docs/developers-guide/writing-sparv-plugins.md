@@ -4,6 +4,11 @@ shipped with the main Sparv package none of these modules are hard-coded into th
 easily be extended with plugins. A plugin is a Sparv module that is not part of the main Sparv package. Writing a plugin
 is the recommended way of adding a new module to Sparv.
 
+> [!NOTE] When writing a plugin please always prefix your Python package with a namespace followed by an underscore to
+> mark which organisation or developer the plugin belongs to. This is necessary to avoid clashes in package names and
+> obligatory plugin namespaces will be enforced in the future. In the example below we used the prefix "sbx_" (for
+> Språkbanken Text).
+
 When writing your first plugin we recommend that you take a look at the [Sparv plugin
 template](https://github.com/spraakbanken/sparv-plugin-template). The template contains an example of a small annotation
 module that converts tokens to uppercase. We will use this template in the examples below.
@@ -12,8 +17,8 @@ module that converts tokens to uppercase. We will use this template in the examp
 ## Plugin Structure
 This is what a typical structure of a plugin may look like:
 ```
-sparv-uppercase/
-├── uppercase
+sparv-sbx-uppercase/
+├── sbx_uppercase
 │   ├── uppercase.py
 │   └── __init__.py
 ├── LICENSE
@@ -21,7 +26,7 @@ sparv-uppercase/
 └── setup.py
 ```
 
-In the above example the `uppercase` directory is a Sparv module containing the [module code](#module-code) in
+In the above example the `sbx_uppercase` directory is a Sparv module containing the [module code](#module-code) in
 `uppercase.py` and the mandatory [init file](#init-file) `__init__.py`. The [setup file](#setup-file) `setup.py` in the
 root directory is needed in order to install the plugin.
 
@@ -36,19 +41,21 @@ a setup file (taken from the [Sparv plugin template](https://github.com/spraakba
 import setuptools
 
 setuptools.setup(
-    name="sparv-uppercase",
+    name="sparv-sbx-uppercase",
     version="0.1",
-    description="Uppercase converter (example plugin for Sparv)",
+    description="Uppercase converter (example plug-in for Sparv)",
     license="MIT",
-    packages=["uppercase"],
+    packages=["sbx_uppercase"],
     python_requires=">=3.6",
-    install_requires=["sparv-pipeline>=4"],
-    entry_points={"sparv.plugin": ["uppercase = uppercase"]}
+    install_requires=["sparv-pipeline>=4,<5"],
+    entry_points={"sparv.plugin": ["sbx_uppercase = sbx_uppercase"]}
 )
 ```
 
 Make sure to include the name of your module (i.e. the directory containing the Sparv code) in `packages`. You also need
 to make sure that there is a `sparv.plugin` entry point in `entry_points` that points to your module.
+
+We strongly encourage you to also include the fields `author` and `author_email`.
 
 For more information about Python setup scripts check the [distutils
 documentation](https://docs.python.org/3/distutils/setupscript.html).
@@ -90,7 +97,7 @@ from sparv.api import Annotation, Output, annotator
 
 @annotator("Convert every word to uppercase.")
 def uppercase(word: Annotation = Annotation("<token:word>"),
-              out: Output = Output("<token>:uppercase.upper")):
+              out: Output = Output("<token>:sbx_uppercase.upper")):
     """Convert to uppercase."""
     out.write([val.upper() for val in word.read()])
 ```
@@ -109,7 +116,7 @@ hints to the Sparv classes `Annotation` and `Output` which indicate what depende
 config variables) must be satisfied before the function can do its job, and what it will produce. In this example Sparv
 will make sure that a word annotation exists before it will attempt to call the `uppercase` function, because it knows
 that `word` is an input since it is of type `Annotation`. It also knows that the function produces the output annotation
-`<token>:uppercase.upper`, so if any other module would request this annotation as input, it will run `uppercase`
+`<token>:sbx_uppercase.upper`, so if any other module would request this annotation as input, it will run `uppercase`
 prior to calling that module.
 
 A function decorated with a Sparv decorator should never be actively called by you or by another decorated function.
@@ -184,12 +191,12 @@ from sparv.api import SparvErrorMessage
 
 @annotator("Convert every word to uppercase")
 def uppercase(word: Annotation = Annotation("<token:word>"),
-              out: Output = Output("<token>:uppercase.upper"),
-              important_config_variable: str = Config("uppercase.some_setting")):
+              out: Output = Output("<token>:sbx_uppercase.upper"),
+              important_config_variable: str = Config("sbx_uppercase.some_setting")):
     """Convert to uppercase."""
     # Make sure important_config_variable is set by the user
     if not important_config_variable:
-        raise SparvErrorMessage("Please make sure to set the config variable 'uppercase.some_setting'!")
+        raise SparvErrorMessage("Please make sure to set the config variable 'sbx_uppercase.some_setting'!")
     ...
 ```
 
@@ -228,9 +235,9 @@ you should be able to inject your plugin into the Sparv Pipeline code using pipx
 pipx inject sparv-pipeline [pointer-to-sparv-plugin]
 ```
 
-So if you are trying to install the `sparv-uppercase` plugin and it exists on PyPI you can install it like this:
+So if you are trying to install the `sparv-sbx-uppercase` plugin and it exists on PyPI you can install it like this:
 ```
-pipx inject sparv-pipeline sparv-uppercase
+pipx inject sparv-pipeline sparv-sbx-uppercase
 ```
 
 For installing it from a public repository from GitHub the install command looks something like this:
@@ -240,7 +247,7 @@ pipx inject sparv-pipeline https://github.com/spraakbanken/sparv-plugin-template
 
 For installation from a local directory run this (from the directory containing your plugin):
 ```
-pipx inject sparv-pipeline ./sparv-uppercase
+pipx inject sparv-pipeline ./sparv-sbx-uppercase
 ```
 
 After the injection the plugin functionality should be available, and the plugged-in module should be treated just like
@@ -250,7 +257,7 @@ You can uninstall the plugin by running:
 ```
 pipx runpip sparv-pipeline uninstall [name-of-sparv-plugin]
 ```
-In this example `[name-of-sparv-plugin]` is `sparv-uppercase`.
+In this example `[name-of-sparv-plugin]` is `sparv-sbx-uppercase`.
 
 
 ## Advanced Features
