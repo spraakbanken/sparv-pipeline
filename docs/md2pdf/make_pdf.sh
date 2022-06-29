@@ -5,6 +5,7 @@
 # Requires markdown and latex
 
 USER_MANUAL_FILES="
+../user-manual/quick-start.md
 ../user-manual/installation-and-setup.md
 ../user-manual/running-sparv.md
 ../user-manual/requirements-for-source-files.md

@@ -21,6 +21,9 @@ def fix_document(key, value, _format, _meta):
             if first_string == "[!NOTE]":
                 value[0]["c"][0] = Strong([Str("Note:")])
                 return BlockQuote(value)
+            elif first_string == "[!INFO]":
+                value[0]["c"][0] = Strong([Str("Info:")])
+                return BlockQuote(value)
             elif first_string == "[!TIP]":
                 value[0]["c"][0] = Strong([Str("Tip:")])
                 return BlockQuote(value)

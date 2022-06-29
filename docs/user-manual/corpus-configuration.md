@@ -76,7 +76,7 @@ The `metadata` section of your corpus config contains metadata about your corpus
 - `metadata.language` defines the language of the source files in the corpus. This should be an ISO 639-3 code. If not
   specified it defaults to `swe`. Run `sparv languages` to list the supported languages along with their language codes.
 
-- `metadata.variety` is an optional field containing the language variety of source files (if applicable). Run
+- `metadata.variety` is an optional field containing the language variety of the source files (if applicable). Run
   `sparv languages` to list the supported varieties for each language.
 
 - `metadata.description` is an optional description for the corpus. It may consist of multiple lines. This option is
@@ -196,7 +196,7 @@ instead of the more compact:
 <token pos="IN" baseform="|hej|">Hej</token>
 ```
 
-`export.scramble_on` is a setting used by all the export formats that support scrambling. It controls what annotation
+`export.scramble_on` is a setting used by all the export formats that support scrambling. It controls which annotation
 your corpus will be scrambled on. Typical settings are `export.scramble_on: <sentence>` or `export.scramble_on:
 <paragraph>`. For example, setting this to `<paragraph>` would lead to all paragraphs being randomly shuffled in the
 export, while the sentences and tokens within the paragraphs keep their original order.

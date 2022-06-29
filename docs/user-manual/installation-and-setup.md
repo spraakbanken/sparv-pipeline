@@ -204,9 +204,9 @@ After downloading the software you need to have the `tree-tagger` binary in your
 |:---|:----------|
 |**Purpose**                       |Various analyses for English
 |**Download**                      |[Stanford CoreNLP webpage](https://stanfordnlp.github.io/CoreNLP/history.html)
-|**Version compatible with Sparv** |4.0.0 (may work with newer versions)
 |**License**                       |[GPL-2.0](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
-|**Dependencies**          		   |[Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+|**Version compatible with Sparv** |4.0.0 (may work with newer versions)
+|**Dependencies**          		  |[Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
 
 Please download, unzip and place contents inside the [Sparv data directory](#setting-up-sparv) under `bin/stanford_parser`.
 
@@ -215,8 +215,8 @@ Please download, unzip and place contents inside the [Sparv data directory](#set
 |:---|:----------|
 |**Purpose**                       |Tokenisation, POS-tagging, lemmatisation and named entity recognition for [some languages](#software-for-analysing-other-languages-than-swedish)
 |**Download**                      |[FreeLing on GitHub](https://github.com/TALP-UPC/FreeLing/releases/tag/4.2)
-|**Version compatible with Sparv** |4.2
 |**License**                       |[AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.en.html)
+|**Version compatible with Sparv** |4.2
 
 Please install the software (including the additional language data) according to the instructions provided by FreeLing.
 Note that you will need to uncompress the source and language files in the same folder before compiling.
@@ -246,10 +246,10 @@ pipx inject sparv-pipeline [pointer-to-sparv-plugin]
 The `pointer-to-sparv-plugin` can be a package available on the [Python Package Index (PyPI)](https://pypi.org/), a
 remote public repository, or a local directory on your machine.
 
-For now there are two plugins available for Sparv: [sparv-sbx-freeling](https://github.com/spraakbanken/sparv-sbx-freeling) and
-[sparv-sbx-metadata](https://github.com/spraakbanken/sparv-sbx-metadata) The only available plugin for Sparv available
-so far is [the sparv-sbx-freeling plugin](https://github.com/spraakbanken/sparv-sbx-freeling). Please refer to their GitHub page
-for more information.
+For now there are two plugins available for Sparv:
+[sparv-sbx-freeling](https://github.com/spraakbanken/sparv-sbx-freeling) and
+[sparv-sbx-metadata](https://github.com/spraakbanken/sparv-sbx-metadata). Please refer to their GitHub page for more
+information.
 
 Plugins can be uninstalled by running:
 ```

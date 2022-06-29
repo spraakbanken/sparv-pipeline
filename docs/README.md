@@ -44,7 +44,7 @@ Sync HTML documentation to server:
 
 Install requirements (markdown and latex):
 ```
-sudo apt-get install markdown texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra
+sudo apt-get install markdown pandoc texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra
 ```
 
 Convert User Manual and Developer's Guide from markdown to PDF:
