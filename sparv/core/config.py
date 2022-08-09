@@ -130,11 +130,11 @@ def dump_config(data, resolve_alias=False, sort_keys=False):
             return super(IndentDumper, self).increase_indent(flow)
 
     # Add custom string representer for prettier multiline strings
-    def str_presenter(dumper, data):
-        if len(data.splitlines()) > 1:  # check for multiline string
-            return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
-        return dumper.represent_scalar('tag:yaml.org,2002:str', data)
-    yaml.add_representer(str, str_presenter)
+    def str_representer(dumper, data):
+        if len(data.splitlines()) > 1:  # Check for multiline string
+            return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+        return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+    yaml.add_representer(str, str_representer)
 
     if resolve_alias:
         # Resolve aliases and replace them with their anchors' contents
