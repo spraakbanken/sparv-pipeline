@@ -1,6 +1,6 @@
 """Example for a custom annotator."""
 
-from sparv import Annotation, Output, annotator
+from sparv.api import Annotation, Output, annotator
 
 
 @annotator("Convert every word to uppercase")

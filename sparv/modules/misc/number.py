@@ -5,11 +5,12 @@ import re
 from binascii import hexlify
 from collections import defaultdict
 
-from sparv import AllDocuments, Annotation, AnnotationAllDocs, Output, OutputCommonData, Wildcard, annotator, util
+from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Output, OutputCommonData, Wildcard, annotator,
+                       get_logger)
 
 START_DEFAULT = 1
 
-logger = util.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 @annotator("Number {annotation} by position", wildcards=[Wildcard("annotation", Wildcard.ANNOTATION)])
@@ -127,17 +128,26 @@ def number_relative(out: Output = Output("{annotation}:misc.number_rel_{parent}"
     out.write(result)
 
 
+@annotator("Annotate tokens with IDs relative to their sentences")
+def make_ref(out: Output = Output("<token>:misc.ref", cls="token:ref",
+                                  description="Token IDs relative to their sentences"),
+             sentence: Annotation = Annotation("<sentence>"),
+             token: Annotation = Annotation("<token>")):
+    """Annotate tokens with IDs relative to their sentences."""
+    number_relative(out, sentence, token)
+
+
 @annotator("Chunk count file with number of {annotation} chunks in corpus", order=1, wildcards=[
            Wildcard("annotation", Wildcard.ANNOTATION)])
 def count_chunks(out: OutputCommonData = OutputCommonData("misc.{annotation}_count"),
-                 chunk: AnnotationAllDocs = AnnotationAllDocs("{annotation}"),
-                 docs: AllDocuments = AllDocuments()):
+                 chunk: AnnotationAllSourceFiles = AnnotationAllSourceFiles("{annotation}"),
+                 files: AllSourceFilenames = AllSourceFilenames()):
     """Count the number of occurrences of 'chunk' in the corpus."""
     # Read 'chunk' annotations and count the number of chunks
     chunk_count = 0
-    for doc in docs:
+    for file in files:
         try:
-            chunk_count += len(list(chunk.read_spans(doc)))
+            chunk_count += chunk.get_size(file)
         except FileNotFoundError:
             pass
 
@@ -151,7 +161,7 @@ def count_chunks(out: OutputCommonData = OutputCommonData("misc.{annotation}_cou
 @annotator("Create chunk count file for non-existent {annotation} chunks", order=2, wildcards=[
            Wildcard("annotation", Wildcard.ANNOTATION)])
 def count_zero_chunks(out: OutputCommonData = OutputCommonData("misc.{annotation}_count"),
-                      docs: AllDocuments = AllDocuments()):
+                      _files: AllSourceFilenames = AllSourceFilenames()):
     """Create chunk count file for non-existent 'annotation' chunks."""
     logger.info(f"No {out.name[5:-6]} chunks found in corpus")
     out.write("0")

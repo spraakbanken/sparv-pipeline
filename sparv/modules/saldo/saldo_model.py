@@ -1,15 +1,15 @@
 """SALDO Model builders."""
 
-import logging
 import pathlib
 import pickle
 import re
 import xml.etree.ElementTree as etree
 
-import sparv.util as util
-from sparv import Model, ModelOutput, modelbuilder
+from sparv.api import Model, ModelOutput, get_logger, modelbuilder, util
+from sparv.api.util.tagsets import tagmappings
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
+
 
 # SALDO: Delimiters that hopefully are never found in an annotation or in a POS tag:
 PART_DELIM = "^"
@@ -28,7 +28,8 @@ def download_saldo(out: ModelOutput = ModelOutput("saldo/saldom.xml")):
 def build_saldo(out: ModelOutput = ModelOutput("saldo/saldo.pickle"),
                 saldom: Model = Model("saldo/saldom.xml")):
     """Save SALDO morphology as a pickle file."""
-    lmf_to_pickle(saldom.path, out.path)
+    tagmap = tagmappings.mappings["saldo_to_suc"]
+    lmf_to_pickle(saldom.path, out.path, tagmap)
 
 
 class SaldoLexicon:
@@ -40,7 +41,7 @@ class SaldoLexicon:
     def __init__(self, saldofile: pathlib.Path, verbose=True):
         """Read lexicon."""
         if verbose:
-            log.info("Reading Saldo lexicon: %s", saldofile)
+            logger.info("Reading Saldo lexicon: %s", saldofile)
         if saldofile.suffix == ".pickle":
             with open(saldofile, "rb") as F:
                 self.lexicon = pickle.load(F)
@@ -48,11 +49,11 @@ class SaldoLexicon:
             lexicon = self.lexicon = {}
             with open(saldofile, "rb") as F:
                 for line in F:
-                    row = line.decode(util.UTF8).split()
+                    row = line.decode(util.constants.UTF8).split()
                     word = row.pop(0)
                     lexicon[word] = row
         if verbose:
-            log.info("OK, read %d words", len(self.lexicon))
+            logger.info("OK, read %d words", len(self.lexicon))
 
     def lookup(self, word):
         """Lookup a word in the lexicon.
@@ -73,7 +74,7 @@ class SaldoLexicon:
           - lexicon = {wordform: {{annotation-type: annotation}: (set(possible tags), set(tuples with following words), gap-allowed-boolean, is-particle-verb-boolean)}}
         """
         if verbose:
-            log.info("Saving LMF lexicon in Pickle format")
+            logger.info("Saving LMF lexicon in Pickle format")
 
         picklex = {}
         for word in lexicon:
@@ -92,7 +93,7 @@ class SaldoLexicon:
         with open(saldofile, "wb") as F:
             pickle.dump(picklex, F, protocol=protocol)
         if verbose:
-            log.info("OK, saved")
+            logger.info("OK, saved")
 
     @staticmethod
     def save_to_textfile(saldofile, lexicon, verbose=True):
@@ -103,14 +104,14 @@ class SaldoLexicon:
         NOT UP TO DATE
         """
         if verbose:
-            log.info("Saving LMF lexicon in text format")
+            logger.info("Saving LMF lexicon in text format")
         with open(saldofile, "w") as F:
             for word in sorted(lexicon):
                 annotations = [PART_DELIM.join([annotation] + sorted(postags))
                                for annotation, postags in list(lexicon[word].items())]
-                print(" ".join([word] + annotations).encode(util.UTF8), file=F)
+                print(" ".join([word] + annotations).encode(util.constants.UTF8), file=F)
         if verbose:
-            log.info("OK, saved")
+            logger.info("OK, saved")
 
 
 def split_triple(annotation_tag_words):
@@ -133,23 +134,21 @@ def split_triple(annotation_tag_words):
 ################################################################################
 
 
-def lmf_to_pickle(xml, filename, annotation_elements=("gf", "lem", "saldo")):
+def lmf_to_pickle(xml, filename, tagmap, annotation_elements=("gf", "lem", "saldo")):
     """Read an XML dictionary and save as a pickle file."""
-    xml_lexicon = read_lmf(xml, annotation_elements)
+    xml_lexicon = read_lmf(xml, tagmap, annotation_elements)
     SaldoLexicon.save_to_picklefile(filename, xml_lexicon)
 
 
-def read_lmf(xml, annotation_elements=("gf", "lem", "saldo"), tagset="SUC", verbose=True):
+def read_lmf(xml, tagmap, annotation_elements=("gf", "lem", "saldo"), verbose=True):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml).
 
     Return a lexicon dictionary, {wordform: {{annotation-type: annotation}: ( set(possible tags), set(tuples with following words) )}}
      - annotation_element is the XML element for the annotation value (currently: 'gf' for baseform, 'lem' for lemgram or 'saldo' for SALDO id)
      - tagset is the tagset for the possible tags (currently: 'SUC', 'Parole', 'Saldo')
     """
-    # assert annotation_element in ("gf", "lem", "saldo"), "Invalid annotation element"
-    tagmap = util.tagsets.mappings["saldo_to_" + tagset.lower()]
     if verbose:
-        log.info("Reading XML lexicon")
+        logger.info("Reading XML lexicon")
     lexicon = {}
 
     context = etree.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
@@ -225,10 +224,10 @@ def read_lmf(xml, annotation_elements=("gf", "lem", "saldo"), tagset="SUC", verb
                  "formar",
                  "in",
                  "datorrelaterade"]
-    util.test_lexicon(lexicon, testwords)
+    util.misc.test_lexicon(lexicon, testwords)
 
     if verbose:
-        log.info("OK, read")
+        logger.info("OK, read")
     return lexicon
 
 
@@ -248,25 +247,6 @@ class HashableDict(dict):
 ################################################################################
 # Additional utilities
 ################################################################################
-
-
-def save_to_cstlemmatizer(cstfile, lexicon, encoding="latin-1", verbose=True):
-    """Save a JSON lexicon as an external file that can be used for training the CST lemmatizer.
-
-    The default encoding of the resulting file is ISO-8859-1 (Latin-1).
-    """
-    if verbose:
-        log.info("Saving CST lexicon")
-    with open(cstfile, "w") as F:
-        for word in sorted(lexicon):
-            for lemma in sorted(lexicon[word]):
-                for postag in sorted(lexicon[word][lemma]):
-                    # the order between word, lemma, postag depends on
-                    # the argument -c to cstlemma, this order is -cBFT:
-                    line = "%s\t%s\t%s" % (word, lemma, postag)
-                    print(line.encode(encoding), file=F)
-    if verbose:
-        log.info("OK, saved")
 
 
 def extract_tags(lexicon):

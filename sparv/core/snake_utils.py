@@ -11,14 +11,14 @@ from typing import Any, List, Optional, Set, Tuple
 import snakemake
 from snakemake.io import expand
 
-from sparv import util
+from sparv.api import util, SparvErrorMessage
 from sparv.core import config as sparv_config
 from sparv.core import io, log_handler, paths, registry
 from sparv.core.console import console
-from sparv.util.classes import (AllDocuments, Annotation, AnnotationAllDocs, AnnotationData, Base, BaseAnnotation,
-                                BaseOutput, Binary, BinaryDir, Config, Corpus, Document, Export, ExportAnnotations,
-                                ExportAnnotationsAllDocs, ExportInput, Language, Model, ModelOutput, Output, OutputData,
-                                Source, SourceAnnotations, Text)
+from sparv.api.classes import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, AnnotationData, Base, BaseAnnotation,
+                               BaseOutput, Binary, BinaryDir, Config, Corpus, SourceFilename, Export, ExportAnnotations,
+                               ExportAnnotationsAllSourceFiles, ExportInput, Language, Model, ModelOutput, Output, OutputData,
+                               Source, SourceAnnotations, SourceAnnotationsAllSourceFiles, Text)
 
 
 class SnakeStorage:
@@ -44,10 +44,40 @@ class SnakeStorage:
 
         self.model_outputs = []  # Outputs from modelbuilders, used in build_models
         self.install_outputs = defaultdict(list)  # Outputs from all installers, used in rule install_corpus
-        self.source_files = []  # List which will contain all source files
         self.all_rules: List[RuleStorage] = []  # List containing all rules created
         self.ordered_rules = []  # List of rules containing rule order
         self.preloader_info = {}
+
+        self._source_files = None  # Auxiliary variable for the source_files property
+
+    @property
+    def source_files(self) -> List[str]:
+        """Get list of all available source files."""
+        if self._source_files is None:
+            if not sparv_config.get("import.importer"):
+                raise SparvErrorMessage("The config variable 'import.importer' must not be empty.", "sparv")
+            try:
+                importer_module, _, importer_function = sparv_config.get("import.importer").partition(":")
+                file_extension = "." + registry.modules[importer_module].functions[importer_function]["file_extension"]
+            except KeyError:
+                raise SparvErrorMessage(
+                    "Could not find the importer '{}'. Make sure the 'import.importer' config value refers to an "
+                    "existing importer.".format(sparv_config.get("import.importer")), "sparv")
+            # Collect files in source dir
+            sf = [f for f in snakemake.utils.listfiles(Path(get_source_path(), "{file}"))]
+            self._source_files = [f[1][0][:-len(file_extension)] for f in sf if f[1][0].endswith(file_extension)]
+            # Collect files that don't match the file extension provided by the corpus config
+            wrong_ext = [f[1][0] for f in sf if not f[1][0].endswith(file_extension) and not Path(f[0]).is_dir()]
+            if wrong_ext:
+                console.print("[yellow]\nThere {} file{} in your source directory that do{} not match the file "
+                              "extension '{}' in the corpus config: {}{} will not be processed.\n[/yellow]".format(
+                                "is one" if len(wrong_ext) == 1 else "are",
+                                "" if len(wrong_ext) == 1 else "s",
+                                "es" if len(wrong_ext) == 1 else "",
+                                file_extension,
+                                f"'{wrong_ext[0]}'" if len(wrong_ext) == 1 else "\n  • " + "\n  • ".join(wrong_ext),
+                                ". This file" if len(wrong_ext) == 1 else "\nThese files"), highlight=False)
+        return self._source_files
 
 
 class RuleStorage:
@@ -64,8 +94,8 @@ class RuleStorage:
         self.inputs = []
         self.outputs = []
         self.parameters = {}
-        self.docs = []  # List of parameters referring to Document
-        self.doc_annotations = []  # List of parameters containing the {doc} wildcard
+        self.file_parameters = []  # List of parameters referring to SourceFilename
+        self.file_annotations = []  # List of parameters containing the {file} wildcard
         self.wildcard_annotations = []  # List of parameters containing other wildcards
         self.configs = set()  # Set of config variables used
         self.classes = set()  # Set of classes used
@@ -109,7 +139,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
     # Skip any annotator that is not available for the selected corpus language
     if rule.annotator_info["language"] and sparv_config.get("metadata.language") and \
-            sparv_config.get("metadata.language") not in rule.annotator_info["language"]:
+            not registry.check_language(sparv_config.get("metadata.language"), rule.annotator_info["language"],
+                                        sparv_config.get("metadata.variety")):
         return False
 
     # Get this function's parameters
@@ -117,13 +148,14 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
     param_dict = make_param_dict(params)
 
     if rule.importer:
-        rule.inputs.append(Path(get_source_path(), "{doc}." + rule.file_extension))
+        rule.inputs.append(Path(get_source_path(), "{file}." + rule.file_extension))
         storage.all_importers.setdefault(rule.module_name, {}).setdefault(rule.f_name,
                                                                           {"description": rule.description,
                                                                            "params": param_dict})
         if rule.target_name == sparv_config.get("import.importer"):
-            # Exports always generate corpus text file
-            rule.outputs.append(paths.work_dir / "{doc}" / io.TEXT_FILE)
+            # Imports always generate corpus text file and structure file
+            rule.outputs.append(paths.work_dir / "{file}" / io.TEXT_FILE)
+            rule.outputs.append(paths.work_dir / "{file}" / io.STRUCTURE_FILE)
             # If importer guarantees other outputs, add them to outputs list
             if rule.import_outputs:
                 if isinstance(rule.import_outputs, Config):
@@ -131,7 +163,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 annotations_ = set()
                 renames = {}
                 # Annotation list needs to be sorted to handle plain annotations before attributes
-                for ann, target in sorted(util.parse_annotation_list(rule.import_outputs)):
+                for ann, target in sorted(util.misc.parse_annotation_list(rule.import_outputs)):
                     # Handle annotations renamed during import
                     if target:
                         source_ann, source_attr = BaseAnnotation(ann).split()
@@ -145,11 +177,11 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 for element in annotations_:
                     rule.outputs.append(paths.work_dir / get_annotation_path(element))
 
-            # If import.document_annotation has been specified, add it to outputs if not already there
-            if sparv_config.get("import.document_annotation"):
-                doc_ann_file = paths.work_dir / get_annotation_path(sparv_config.get("import.document_annotation"))
-                if doc_ann_file not in rule.outputs:
-                    rule.outputs.append(doc_ann_file)
+            # If import.text_annotation has been specified, add it to outputs if not already there
+            if sparv_config.get("import.text_annotation"):
+                text_ann_file = paths.work_dir / get_annotation_path(sparv_config.get("import.text_annotation"))
+                if text_ann_file not in rule.outputs:
+                    rule.outputs.append(text_ann_file)
 
     if rule.exporter:
         storage.all_exporters.setdefault(rule.module_name, {}).setdefault(rule.f_name,
@@ -172,7 +204,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             # This should be either a utility annotator or a custom annotator supplied by the user
             if not (rule.module_name == registry.custom_name or
                     storage.all_custom_annotators.get(rule.module_name, {}).get(rule.f_name)):
-                raise util.SparvErrorMessage(
+                raise SparvErrorMessage(
                     "The custom annotation for annotator '{}' is using 'params' which is not allowed with this type of "
                     "annotator. Use 'config' instead.".format(custom_rule_obj["annotator"]))
             name_custom_rule(rule, storage)
@@ -183,15 +215,15 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             try:
                 custom_suffix = custom_rule_obj["suffix"]
             except KeyError:
-                raise util.SparvErrorMessage("The custom annotation for annotator '{}' is missing the required key "
-                                             "'suffix'.".format(custom_rule_obj["annotator"]))
+                raise SparvErrorMessage("The custom annotation for annotator '{}' is missing the required key "
+                                        "'suffix'.".format(custom_rule_obj["annotator"]))
             sparv_config.config = sparv_config._merge_dicts(copy.deepcopy(custom_rule_obj["config"]),
                                                             sparv_config.config)
         else:
             # This is a custom rule which doesn't require any parameters, so it has already been processed
             return False
 
-    # Go though function parameters and handle based on type
+    # Go through function parameters and handle based on type
     for param_name, param in params.items():
         param_default_empty = param.default == inspect.Parameter.empty
         param_value: Any
@@ -204,7 +236,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             elif not param_default_empty:
                 param_value = copy.deepcopy(param.default)
             else:
-                raise util.SparvErrorMessage(
+                raise SparvErrorMessage(
                     f"Parameter '{param_name}' in custom rule '{rule.full_name}' has no value!", "sparv", "config")
         else:
             if param_default_empty:
@@ -235,9 +267,9 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             missing_configs = param_value.expand_variables(rule.full_name)
             rule.missing_config.update(missing_configs)
             ann_path = get_annotation_path(param_value, data=param_type.data, common=param_type.common)
-            if param_type.all_docs:
+            if param_type.all_files:
                 rule.outputs.extend(map(Path, expand(escape_wildcards(paths.work_dir / ann_path),
-                                                     doc=get_source_files(storage.source_files))))
+                                                     file=storage.source_files)))
             elif param_type.common:
                 rule.outputs.append(paths.work_dir / ann_path)
                 if rule.installer:
@@ -277,29 +309,30 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 continue
             rule.missing_config.update(missing_configs)
             ann_path = get_annotation_path(param_value, data=param_type.data, common=param_type.common)
-            if param_type.all_docs:
-                rule.inputs.extend(expand(escape_wildcards(paths.work_dir / ann_path),
-                                          doc=get_source_files(storage.source_files)))
-            elif rule.exporter or rule.installer or param_type.common:
-                rule.inputs.append(paths.work_dir / ann_path)
-            else:
-                rule.inputs.append(ann_path)
+            if param_value.is_input:
+                if param_type.all_files:
+                    rule.inputs.extend(expand(escape_wildcards(paths.work_dir / ann_path),
+                                              file=storage.source_files))
+                elif rule.exporter or rule.installer or param_type.common:
+                    rule.inputs.append(paths.work_dir / ann_path)
+                else:
+                    rule.inputs.append(ann_path)
 
             rule.parameters[param_name] = param_value
             if "{" in param_value:
                 rule.wildcard_annotations.append(param_name)
         # ExportAnnotations
-        elif param_type in (ExportAnnotations, ExportAnnotationsAllDocs):
+        elif param_type in (ExportAnnotations, ExportAnnotationsAllSourceFiles):
             if not isinstance(param_value, param_type):
                 param_value = param_type(param_value)
             rule.parameters[param_name] = param_value
 
             source = param.default.config_name
-            annotations = sparv_config.get(f"{source}", [])
+            annotations = sparv_config.get(source, [])
             if not annotations:
-                rule.missing_config.add(f"{source}")
-            export_annotations = util.parse_annotation_list(annotations, add_plain_annotations=False)
-            annotation_type = Annotation if param_type == ExportAnnotations else AnnotationAllDocs
+                rule.missing_config.add(source)
+            export_annotations = util.misc.parse_annotation_list(annotations, add_plain_annotations=False)
+            annotation_type = Annotation if param_type == ExportAnnotations else AnnotationAllSourceFiles
             plain_annotations = set()
             possible_plain_annotations = []
             for i, (export_annotation_name, export_name) in enumerate(export_annotations):
@@ -321,31 +354,37 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
             for annotation, export_name in export_annotations:
                 if param.default.is_input:
-                    if param_type == ExportAnnotationsAllDocs:
+                    if param_type == ExportAnnotationsAllSourceFiles:
                         rule.inputs.extend(
                             expand(escape_wildcards(paths.work_dir / get_annotation_path(annotation.name)),
-                                   doc=get_source_files(storage.source_files)))
+                                   file=storage.source_files))
                     else:
                         rule.inputs.append(paths.work_dir / get_annotation_path(annotation.name))
                 rule.parameters[param_name].append((annotation, export_name))
         # SourceAnnotations
-        elif param_type == SourceAnnotations:
-            rule.parameters[param_name] = sparv_config.get(f"{param.default.config_name}", None)
+        elif param_type in (SourceAnnotations, SourceAnnotationsAllSourceFiles):
+            rule.parameters[param_name] = sparv_config.get(param.default.config_name, None)
+            if param_type == SourceAnnotationsAllSourceFiles:
+                rule.inputs.extend(
+                    expand(escape_wildcards(paths.work_dir / get_annotation_path(io.STRUCTURE_FILE, data=True)),
+                           file=storage.source_files))
+            else:
+                rule.inputs.append(paths.work_dir / get_annotation_path(io.STRUCTURE_FILE, data=True))
         # Corpus
         elif param.annotation == Corpus:
             rule.parameters[param_name] = Corpus(sparv_config.get("metadata.id"))
         # Language
         elif param.annotation == Language:
             rule.parameters[param_name] = Language(sparv_config.get("metadata.language"))
-        # Document
-        elif param.annotation == Document:
-            rule.docs.append(param_name)
-        # AllDocuments (all source documents)
-        elif param_type == AllDocuments:
-            rule.parameters[param_name] = AllDocuments(get_source_files(storage.source_files))
+        # SourceFilename
+        elif param.annotation == SourceFilename:
+            rule.file_parameters.append(param_name)
+        # AllSourceFilenames (all source filenames)
+        elif param_type == AllSourceFilenames:
+            rule.parameters[param_name] = AllSourceFilenames(storage.source_files)
         # Text
         elif param_type == Text:
-            text_path = Path("{doc}") / io.TEXT_FILE
+            text_path = Path("{file}") / io.TEXT_FILE
             if rule.exporter or rule.installer:
                 rule.inputs.append(paths.work_dir / text_path)
             else:
@@ -375,7 +414,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             rule.classes.update(registry.find_classes(param.default))
             param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
             rule.missing_config.update(missing_configs)
-            binary = util.find_binary(param_value, executable=False, allow_dir=param.annotation == BinaryDir)
+            binary = util.system.find_binary(param_value, executable=False, allow_dir=param.annotation == BinaryDir)
             if not binary:
                 rule.missing_binaries.add(param_value)
             binary = Path(binary if binary else param_value)
@@ -390,15 +429,12 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             rule.classes.update(registry.find_classes(param.default))
             param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
             rule.missing_config.update(missing_configs)
-            if param.default.absolute_path:
-                export_path = Path(param_value)
-            else:
-                export_path = paths.export_dir / param_value
+            export_path = paths.export_dir / param_value
             output_dirs.add(export_path.parent)
             rule.outputs.append(export_path)
             rule.parameters[param_name] = Export(str(export_path))
-            if "{doc}" in rule.parameters[param_name]:
-                rule.doc_annotations.append(param_name)
+            if "{file}" in rule.parameters[param_name]:
+                rule.file_annotations.append(param_name)
             if "{" in param_value:
                 rule.wildcard_annotations.append(param_name)
         # ExportInput
@@ -407,13 +443,10 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             rule.classes.update(registry.find_classes(param.default))
             param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)
             rule.missing_config.update(missing_configs)
-            if param.default.absolute_path:
-                rule.parameters[param_name] = ExportInput(param_value)
-            else:
-                rule.parameters[param_name] = ExportInput(paths.export_dir / param_value)
-            if param.default.all_docs:
+            rule.parameters[param_name] = ExportInput(paths.export_dir / param_value)
+            if param.default.all_files:
                 rule.inputs.extend(expand(escape_wildcards(rule.parameters[param_name]),
-                                          doc=get_source_files(storage.source_files)))
+                                          file=storage.source_files))
             else:
                 rule.inputs.append(Path(rule.parameters[param_name]))
             if "{" in rule.parameters[param_name]:
@@ -536,39 +569,39 @@ def check_ruleorder(storage: SnakeStorage) -> Set[Tuple[RuleStorage, RuleStorage
     return ordered_rules
 
 
-def doc_value(rule_params):
-    """Get doc name for use as parameter to rule."""
-    def _doc_value(wildcards):
-        return get_doc_value(wildcards, rule_params.annotator)
-    return _doc_value
+def file_value(rule_params):
+    """Get source filename for use as parameter to rule."""
+    def _file_value(wildcards):
+        return get_file_value(wildcards, rule_params.annotator)
+    return _file_value
 
 
 def get_parameters(rule_params):
-    """Extend function parameters with doc names and replace wildcards."""
+    """Extend function parameters with source filenames and replace wildcards."""
     def get_params(wildcards):
-        doc = get_doc_value(wildcards, rule_params.annotator)
-        # We need to make a copy of the parameters, since the rule might be used for multiple documents
+        file = get_file_value(wildcards, rule_params.annotator)
+        # We need to make a copy of the parameters, since the rule might be used for multiple source files
         _parameters = copy.deepcopy(rule_params.parameters)
-        _parameters.update({name: Document(doc) for name in rule_params.docs})
+        _parameters.update({name: SourceFilename(file) for name in rule_params.file_parameters})
 
-        # Add document name to annotation and output parameters
+        # Add source filename to annotation and output parameters
         for param in _parameters:
             if isinstance(_parameters[param], (Annotation, AnnotationData, Output, OutputData, Text)):
-                _parameters[param].doc = doc
+                _parameters[param].source_file = file
             if isinstance(_parameters[param], ExportAnnotations):
                 for a in _parameters[param]:
-                    a[0].doc = doc
+                    a[0].source_file = file
 
-        # Replace {doc} wildcard in parameters
-        for name in rule_params.doc_annotations:
+        # Replace {file} wildcard in parameters
+        for name in rule_params.file_annotations:
             if isinstance(_parameters[name], Base):
-                _parameters[name].name = _parameters[name].name.replace("{doc}", doc)
+                _parameters[name].name = _parameters[name].name.replace("{file}", file)
             else:
-                _parameters[name] = _parameters[name].replace("{doc}", doc)
+                _parameters[name] = _parameters[name].replace("{file}", file)
 
-        # Replace wildcards (other than {doc}) in parameters
+        # Replace wildcards (other than {file}) in parameters
         for name in rule_params.wildcard_annotations:
-            wcs = re.finditer(r"(?!{doc}){([^}]+)}", str(_parameters[name]))
+            wcs = re.finditer(r"(?!{file}){([^}]+)}", str(_parameters[name]))
             for wc in wcs:
                 if isinstance(_parameters[name], Base):
                     _parameters[name].name = _parameters[name].name.replace(wc.group(), wildcards.get(wc.group(1)))
@@ -602,7 +635,7 @@ def get_source_path() -> str:
 
 
 def get_annotation_path(annotation, data=False, common=False):
-    """Construct a path to an annotation file given a doc and annotation."""
+    """Construct a path to an annotation file given an annotation name."""
     if not isinstance(annotation, BaseAnnotation):
         annotation = BaseAnnotation(annotation)
     elem, attr = annotation.split()
@@ -614,30 +647,13 @@ def get_annotation_path(annotation, data=False, common=False):
         path = path / attr
 
     if not common:
-        path = "{doc}" / path
+        path = "{file}" / path
     return path
 
 
-def get_source_files(source_files) -> List[str]:
-    """Get list of all available source files."""
-    if not source_files:
-        if not sparv_config.get("import.importer"):
-            raise util.SparvErrorMessage("The config variable 'import.importer' must not be empty.", "sparv")
-        try:
-            importer_module, _, importer_function = sparv_config.get("import.importer").partition(":")
-            file_extension = registry.modules[importer_module].functions[importer_function]["file_extension"]
-        except KeyError:
-            raise util.SparvErrorMessage(
-                "Could not find the importer '{}'. Make sure the 'import.importer' config value refers to an "
-                "existing importer.".format(sparv_config.get("import.importer")), "sparv")
-        source_files = [f[1][0] for f in snakemake.utils.listfiles(
-            Path(get_source_path(), "{file}." + file_extension))]
-    return source_files
-
-
-def get_doc_values(config, snake_storage):
-    """Get a list of files represented by the doc wildcard."""
-    return config.get("doc") or get_source_files(snake_storage.source_files)
+def get_file_values(config, snake_storage):
+    """Get a list of files represented by the {file} wildcard."""
+    return config.get("file") or snake_storage.source_files
 
 
 def get_wildcard_values(config):
@@ -646,19 +662,19 @@ def get_wildcard_values(config):
 
 
 def escape_wildcards(s):
-    """Escape all wildcards other than {doc}."""
-    return re.sub(r"(?!{doc})({[^}]+})", r"{\1}", str(s))
+    """Escape all wildcards other than {file}."""
+    return re.sub(r"(?!{file})({[^}]+})", r"{\1}", str(s))
 
 
-def get_doc_value(wildcards, annotator):
-    """Extract the {doc} part from full annotation path."""
-    doc = None
-    if hasattr(wildcards, "doc"):
+def get_file_value(wildcards, annotator):
+    """Extract the {file} part from full annotation path."""
+    file = None
+    if hasattr(wildcards, "file"):
         if annotator:
-            doc = wildcards.doc[len(str(paths.work_dir)) + 1:]
+            file = wildcards.file[len(str(paths.work_dir)) + 1:]
         else:
-            doc = wildcards.doc
-    return doc
+            file = wildcards.file
+    return file
 
 
 def load_config(snakemake_config):
@@ -681,25 +697,42 @@ def load_config(snakemake_config):
 
 def get_install_outputs(snake_storage: SnakeStorage, install_types: Optional[List] = None):
     """Collect files to be created for all installations given as argument or listed in config.install."""
-    install_inputs = []
+    unknown = []
+    install_outputs = []
     for installation in install_types or sparv_config.get("install", []):
-        install_inputs.extend(snake_storage.install_outputs[installation])
+        if installation not in snake_storage.install_outputs:
+            unknown.append(installation)
+        else:
+            install_outputs.extend(snake_storage.install_outputs[installation])
 
-    return install_inputs
+    if unknown:
+        raise SparvErrorMessage("Unknown installation{} selected:\n • {}".format(
+            "s" if len(unknown) > 1 else "",
+            "\n • ".join(unknown)
+        ))
+
+    return install_outputs
 
 
-def get_export_targets(snake_storage, rules, doc, wildcards):
+def get_export_targets(snake_storage, rules, file, wildcards):
     """Get export targets from sparv_config."""
     all_outputs = []
+    config_exports = set(sparv_config.get("export.default", []))
 
     for rule in snake_storage.all_rules:
-        if rule.type == "exporter" and rule.target_name in sparv_config.get("export.default", []):
+        if rule.type == "exporter" and rule.target_name in config_exports:
+            config_exports.remove(rule.target_name)
+            # Get all output files for all source files
+            rule_outputs = expand(rule.outputs if not rule.abstract else rule.inputs, file=file, **wildcards)
             # Get Snakemake rule object
             sm_rule = getattr(rules, rule.rule_name).rule
-            # Get all output files for all documents
-            rule_outputs = expand(rule.outputs if not rule.abstract else rule.inputs, doc=doc, **wildcards)
-            # Convert paths to IOFile objects so Snakemake knows which rule they come from (in case of ambiguity)
-            all_outputs.extend([snakemake.io.IOFile(f, rule=sm_rule) for f in rule_outputs])
+            all_outputs.append((sm_rule if not rule.abstract else None, rule_outputs))
+
+    if config_exports:
+        raise SparvErrorMessage(
+            "Unknown output format{} specified in export.default:\n • {}".format(
+                "s" if len(config_exports) > 1 else "",
+                "\n • ".join(config_exports)))
 
     return all_outputs
 

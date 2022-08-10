@@ -9,12 +9,13 @@ from typing import Callable, Dict, List, Optional, Tuple, Type, TypeVar
 
 import iso639
 import typing_inspect
-from pkg_resources import iter_entry_points
 
 from sparv.core import config as sparv_config
 from sparv.core import paths
-from sparv.util.classes import (BaseOutput, Config, ExportAnnotations, ExportAnnotationsAllDocs, SourceStructureParser,
-                                ModelOutput, Wildcard)
+from sparv.core.console import console
+from sparv.core.misc import SparvErrorMessage
+from sparv.api.classes import (BaseOutput, Config, Export, ExportAnnotations, ExportAnnotationsAllSourceFiles,
+                               SourceAnnotations, SourceStructureParser, ModelOutput, Wildcard)
 
 modules_path = ".".join(("sparv", paths.modules_dir))
 core_modules_path = ".".join(("sparv", paths.core_modules_dir))
@@ -87,6 +88,8 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
     Returns:
         A list of available module names.
     """
+    from pkg_resources import iter_entry_points, VersionConflict
+
     modules_full_path = paths.sparv_path / paths.modules_dir
     core_modules_full_path = paths.sparv_path / paths.core_modules_dir
 
@@ -100,21 +103,34 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
                 add_module_metadata(m, module.name)
 
     if find_custom:
+        custom_annotators = [a.get("annotator", "").split(":")[0] for a in sparv_config.get("custom_annotations", [])]
         # Also search for modules in corpus dir
         custom_modules = pkgutil.iter_modules([str(paths.corpus_dir)])
         for module in custom_modules:
             module_name = f"{custom_name}.{module.name}"
+            # Skip modules in corpus dir if they are not used in the corpus config
+            if module_name not in custom_annotators:
+                continue
             module_names.append(module_name)
             if not no_import:
                 module_path = paths.corpus_dir.resolve() / f"{module.name}.py"
                 spec = importlib.util.spec_from_file_location(module_name, module_path)
                 m = importlib.util.module_from_spec(spec)
+                try:
+                    spec.loader.exec_module(m)
+                except Exception as e:
+                    raise SparvErrorMessage(f"Module '{module_name}' cannot be imported due to an error in file "
+                                            f"'{module_path}': {e}")
                 add_module_metadata(m, module_name)
-                spec.loader.exec_module(m)
 
     # Search for installed plugins
     for entry_point in iter_entry_points("sparv.plugin"):
-        m = entry_point.load()
+        try:
+            m = entry_point.load()
+        except VersionConflict as e:
+            console.print(f"[red]:warning-emoji:  The plugin {entry_point.dist} could not be loaded. "
+                          f"It requires {e.req}, but the current installed version is {e.dist}.\n")
+            continue
         add_module_metadata(m, entry_point.name)
         module_names.append(entry_point.name)
 
@@ -157,7 +173,7 @@ def _get_module_name(module_string: str) -> str:
 
 
 def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, file_extension: Optional[str] = None,
-               outputs=(), document_annotation=None, structure=None, language: Optional[List[str]] = None,
+               outputs=(), text_annotation=None, structure=None, language: Optional[List[str]] = None,
                config: Optional[List[Config]] = None, order: Optional[int] = None, abstract: bool = False,
                wildcards: Optional[List[Wildcard]] = None, preloader: Optional[Callable] = None,
                preloader_params: Optional[List[str]] = None, preloader_target: Optional[str] = None,
@@ -174,7 +190,7 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
             "type": a_type,
             "file_extension": file_extension,
             "outputs": outputs,
-            "document_annotation": document_annotation,
+            "text_annotation": text_annotation,
             "structure": structure,
             "language": language,
             "config": config,
@@ -205,7 +221,7 @@ def annotator(description: str, name: Optional[str] = None, language: Optional[L
 
 
 def importer(description: str, file_extension: str, name: Optional[str] = None, outputs=None,
-             document_annotation: Optional[str] = None, structure: Optional[Type[SourceStructureParser]] = None,
+             text_annotation: Optional[str] = None, structure: Optional[Type[SourceStructureParser]] = None,
              config: Optional[List[Config]] = None):
     """Return a decorator for importer functions.
 
@@ -217,16 +233,16 @@ def importer(description: str, file_extension: str, name: Optional[str] = None, 
             May also be a Config instance referring to such a list.
             It may generate more outputs than listed, but only the annotations listed here will be available
             to use as input for annotator functions.
-        document_annotation: An annotation from 'outputs' that should be used as the value for the
-            import.document_annotation config variable, unless it or classes.text has been set manually.
-        structure: A class used to parse and return the structure of source documents.
+        text_annotation: An annotation from 'outputs' that should be used as the value for the
+            import.text_annotation config variable, unless it or classes.text has been set manually.
+        structure: A class used to parse and return the structure of source files.
         config: List of Config instances defining config options for the importer.
 
     Returns:
         A decorator
     """
     return _annotator(description=description, a_type=Annotator.importer, name=name, file_extension=file_extension,
-                      outputs=outputs, document_annotation=document_annotation, structure=structure, config=config)
+                      outputs=outputs, text_annotation=text_annotation, structure=structure, config=config)
 
 
 def exporter(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
@@ -271,9 +287,16 @@ def _add_to_registry(annotator):
         # Add to set of supported languages...
         for lang in annotator["language"]:
             if lang not in languages:
-                languages[lang] = iso639.languages.get(part3=lang).name if lang in iso639.languages.part3 else lang
+                langcode, _, suffix = lang.partition("-")
+                if suffix:
+                    suffix = f" ({suffix})"
+                if langcode in iso639.languages.part3:
+                    languages[lang] = iso639.languages.get(part3=langcode).name + suffix
+                else:
+                    languages[lang] = lang
         # ... but skip annotators for other languages than the one specified in the config
-        if sparv_config.get("metadata.language") and sparv_config.get("metadata.language") not in annotator["language"]:
+        if sparv_config.get("metadata.language") and not check_language(
+                sparv_config.get("metadata.language"), annotator["language"], sparv_config.get("metadata.variety")):
             return
 
     # Add config variables to config
@@ -281,13 +304,13 @@ def _add_to_registry(annotator):
         for c in annotator["config"]:
             handle_config(c, module_name, rule_name)
 
-    # Handle document annotation for selected importer
+    # Handle text annotation for selected importer
     if annotator["type"] == Annotator.importer and rule_name == sparv_config.get("import.importer"):
-        if annotator["document_annotation"] and not sparv_config.get("classes.text"):
-            sparv_config.set_value("import.document_annotation", annotator["document_annotation"])
-            sparv_config.handle_document_annotation()
+        if annotator["text_annotation"] and not sparv_config.get("classes.text"):
+            sparv_config.set_value("import.text_annotation", annotator["text_annotation"])
+            sparv_config.handle_text_annotation()
 
-    for param, val in inspect.signature(annotator["function"]).parameters.items():
+    for _param, val in inspect.signature(annotator["function"]).parameters.items():
         if isinstance(val.default, BaseOutput):
             ann = val.default
             cls = val.default.cls
@@ -296,12 +319,12 @@ def _add_to_registry(annotator):
             # Make sure annotation names include module names as prefix
             if not attr:
                 if not ann_name.startswith(module_name + "."):
-                    raise ValueError("Output annotation '{}' in module '{}' doesn't include module "
-                                     "name as prefix.".format(ann_name, module_name))
+                    raise SparvErrorMessage(f"Output annotation '{ann_name}' in module '{module_name}' doesn't include "
+                                            "module name as prefix.")
             else:
                 if not attr.startswith(module_name + "."):
-                    raise ValueError("Output annotation '{}' in module '{}' doesn't include module "
-                                     "name as prefix in attribute.".format(ann, module_name))
+                    raise SparvErrorMessage(f"Output annotation '{ann}' in module '{module_name}' doesn't include "
+                                            "module name as prefix in attribute.")
 
             # Add to class registry
             if cls:
@@ -326,20 +349,30 @@ def _add_to_registry(annotator):
 
                     # Only add classes for relevant languages
                     if not annotator["language"] or (
-                            annotator["language"] and sparv_config.get("metadata.language") in annotator["language"]):
+                        annotator["language"] and sparv_config.get("metadata.language")
+                            and check_language(sparv_config.get("metadata.language"), annotator["language"],
+                                               sparv_config.get("metadata.variety"))):
                         if cls_target not in annotation_classes["module_classes"][cls]:
                             annotation_classes["module_classes"][cls].append(cls_target)
 
         elif isinstance(val.default, ModelOutput):
             modeldir = val.default.name.split("/")[0]
             if not modeldir.startswith(module_name):
-                raise ValueError("Output model '{}' in module '{}' doesn't include module "
-                                 "name as sub directory.".format(val.default, module_name))
+                raise SparvErrorMessage(f"Output model '{val.default}' in module '{module_name}' doesn't include module"
+                                        " name as sub directory.")
         elif isinstance(val.default, Config):
             sparv_config.add_config_usage(val.default.name, rule_name)
-        elif isinstance(val.default, (ExportAnnotations, ExportAnnotationsAllDocs)):
+        elif isinstance(val.default, (ExportAnnotations, ExportAnnotationsAllSourceFiles, SourceAnnotations)):
             sparv_config.add_config_usage(val.default.config_name, rule_name)
             annotation_sources.add(val.default.config_name)
+        elif isinstance(val.default, Export):
+            if "/" not in val.default:
+                raise SparvErrorMessage(f"Illegal export path for export '{val.default}' in module '{module_name}'. "
+                                        "A subdirectory must be used.")
+            export_dir = val.default.split("/")[0]
+            if not (export_dir.startswith(module_name + ".") or export_dir == module_name):
+                raise SparvErrorMessage(f"Illegal export path for export '{val.default}' in module '{module_name}'. "
+                                        "The export subdirectory must include the module name as prefix.")
 
     if module_name not in modules:
         modules[module_name] = Module(module_name)
@@ -354,7 +387,6 @@ def _add_to_registry(annotator):
 
 def find_implicit_classes() -> None:
     """Figure out implicitly defined classes from annotation usage."""
-
     annotation_to_class = defaultdict(set)
     for class_source in ("module_classes", "config_classes"):
         for cls, anns in annotation_classes[class_source].items():
@@ -373,8 +405,8 @@ def find_implicit_classes() -> None:
 def handle_config(cfg, module_name, rule_name: Optional[str] = None) -> None:
     """Handle Config instances."""
     if not cfg.name.startswith(module_name + "."):
-        raise ValueError("Config option '{}' in module '{}' doesn't include module "
-                         "name as prefix.".format(cfg.name, module_name))
+        raise SparvErrorMessage(f"Config option '{cfg.name}' in module '{module_name}' doesn't include module "
+                                "name as prefix.")
     # Check that config variable hasn't already been declared
     prev = sparv_config.config_structure
     for k in cfg.name.split("."):
@@ -382,12 +414,13 @@ def handle_config(cfg, module_name, rule_name: Optional[str] = None) -> None:
             break
         prev = prev[k]
     else:
-        raise Exception(f"The config variable '{cfg.name}' in '{rule_name or module_name}' has already been declared.")
+        raise SparvErrorMessage(
+            f"The config variable '{cfg.name}' in '{rule_name or module_name}' has already been declared.")
     if cfg.default is not None:
         sparv_config.set_default(cfg.name, cfg.default)
     sparv_config.add_to_structure(cfg.name, cfg.default, description=cfg.description, annotator=rule_name)
     if not cfg.description:
-        raise Exception(f"Missing description for configuration key '{cfg.name}' in module '{module_name}'.")
+        raise SparvErrorMessage(f"Missing description for configuration key '{cfg.name}' in module '{module_name}'.")
 
 
 def _expand_class(cls):
@@ -515,3 +548,13 @@ def get_type_hint_type(type_hint):
         type_ = type_hint
 
     return type_, is_list, optional
+
+
+def check_language(corpus_lang: str, langs: List[str], corpus_lang_suffix: Optional[str] = None) -> bool:
+    """Check if corpus language is among a list of languages.
+
+    Any suffix on corpus_lang will be ignored.
+    """
+    if corpus_lang_suffix:
+        corpus_lang = corpus_lang + "-" + corpus_lang_suffix
+    return corpus_lang in langs or corpus_lang.split("-")[0] in langs

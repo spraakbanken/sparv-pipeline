@@ -1,10 +1,9 @@
-from sparv import Config, SourceStructureParser, wizard
+from sparv.api import Config, SourceStructureParser, wizard
 
 __config__ = [
     Config("export.default", description="List of exporters to use by default"),
     Config("export.annotations", description="List of automatic annotations to include in export"),
     Config("export.source_annotations", description="List of annotations and attributes from the source to include"),
-    Config("export.header_annotations", description="List of headers from the source data to include"),
     Config("export.word", description="Annotation to use as token text in export"),
     Config("export.remove_module_namespaces",
            description="Remove module name prefixes from annotation names in export"),

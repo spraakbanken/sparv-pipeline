@@ -1,16 +1,14 @@
 """Handle models for lexical classes."""
 
-import logging
 import os
 import subprocess
 import sys
 import xml.etree.ElementTree as etree
 from collections import defaultdict
 
-import sparv.util as util
-from sparv import Model, ModelOutput, modelbuilder
+from sparv.api import Model, ModelOutput, get_logger, modelbuilder, util
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Path to the cwb binaries
 CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
@@ -77,11 +75,11 @@ def read_blingbring(tsv, classmap, verbose=True):
     import csv
 
     if verbose:
-        log.info("Reading tsv lexicon")
+        logger.info("Reading tsv lexicon")
     lexicon = {}
     classmapping = {}
 
-    with open(tsv) as f:
+    with open(tsv, encoding="utf-8") as f:
         for line in csv.reader(f, delimiter="\t"):
             if line[0].startswith("#"):
                 continue
@@ -115,17 +113,17 @@ def read_blingbring(tsv, classmap, verbose=True):
                  "behjälplig..1",
                  "köra_ner..1"
                  ]
-    util.test_lexicon(lexicon, testwords)
+    util.misc.test_lexicon(lexicon, testwords)
 
     if verbose:
-        log.info("OK, read")
+        logger.info("OK, read")
     return lexicon
 
 
 def read_rogetmap(xml, verbose=True):
     """Parse Roget map (Roget hierarchy) into a dictionary with Roget head words as keys."""
     if verbose:
-        log.info("Reading XML lexicon")
+        logger.info("Reading XML lexicon")
     lexicon = {}
     context = etree.iterparse(xml, events=("start", "end"))
     context = iter(context)
@@ -145,10 +143,10 @@ def read_rogetmap(xml, verbose=True):
                  "Health",
                  "Amusement",
                  "Marriage"]
-    util.test_lexicon(lexicon, testwords)
+    util.misc.test_lexicon(lexicon, testwords)
 
     if verbose:
-        log.info("OK, read.")
+        logger.info("OK, read.")
     return lexicon
 
 
@@ -158,7 +156,7 @@ def read_swefn(xml, verbose=True):
     Return a lexicon dictionary, {saldoID: {swefnID}}.
     """
     if verbose:
-        log.info("Reading XML lexicon")
+        logger.info("Reading XML lexicon")
     lexicon = {}
 
     context = etree.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
@@ -183,16 +181,16 @@ def read_swefn(xml, verbose=True):
                  "granne..1",
                  "sisådär..1",
                  "mjölkcentral..1"]
-    util.test_lexicon(lexicon, testwords)
+    util.misc.test_lexicon(lexicon, testwords)
 
     if verbose:
-        log.info("OK, read.")
+        logger.info("OK, read.")
     return lexicon
 
 
-def create_freq_pickle(corpus, annotation, model, class_set=None, score_separator=util.SCORESEP):
+def create_freq_pickle(corpus, annotation, model, class_set=None, score_separator=util.constants.SCORESEP):
     """Build pickle with relative frequency for a given annotation in one or more reference corpora."""
-    lexicon = util.PickledLexicon(model)
+    lexicon = util.misc.PickledLexicon(model)
     # Create a set of all possible classes
     if class_set:
         all_classes = set(cc for c in lexicon.lexicon.values() for cc in c[class_set])
@@ -216,7 +214,7 @@ def create_freq_pickle(corpus, annotation, model, class_set=None, score_separato
 
         if error:
             error = error.decode()
-            log.error(error)
+            logger.error(error)
             sys.exit(1)
 
         for line in reply.splitlines():
@@ -225,14 +223,14 @@ def create_freq_pickle(corpus, annotation, model, class_set=None, score_separato
                 corpus_size += int(size.strip())
 
         # Get frequency of annotation
-        log.info("Getting frequencies from %s", c)
+        logger.info("Getting frequencies from %s", c)
         process = subprocess.Popen([CWB_SCAN_EXECUTABLE, "-q", "-r", CORPUS_REGISTRY, c] + [annotation],
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         reply, error = process.communicate()
         reply = reply.decode()
         if error:
             if "Error: can't open attribute" in error.decode():
-                log.error("Annotation '%s' not found", annotation)
+                logger.error("Annotation '%s' not found", annotation)
                 sys.exit(1)
 
         for line in reply.splitlines():

@@ -6,12 +6,12 @@ how to process it. The [corpus config wizard](#corpus-config-wizard) can help yo
 examples of config files you can download the [example
 corpora](https://github.com/spraakbanken/sparv-pipeline/releases/latest/download/example_corpora.zip).
 
-A minimal config file contains a corpus ID and a list of (automatic) annotations you want to be included in the output.
+A minimal config file contains a list of (automatic) annotations you want to be included in the output.
 Here is an example of a small config file:
 ```yaml
 metadata:
-    # Corpus ID (Machine name, only lower case ASCII letters (a-z) and "-" allowed. No whitespace characters.)
-    id: mini-swe
+    # Language of the source files
+    language: swe
 export:
     # Automatic annotations to be included in the export
     annotations:
@@ -53,11 +53,10 @@ options usually have default values which are defined by the module itself.
 When running Sparv your corpus config will be read and combined with Sparv's default config file (`config_default.yaml`
 in the [Sparv data directory](user-manual/installation-and-setup.md#setting-up-sparv)) and the default values defined by
 different Sparv modules. You can view the resulting configuration by running `sparv config`. Using the `config` command
-you can also inspect specific config variables, e.g. `sparv config metadata` or `sparv config metadata.id`. All
+you can also inspect specific config variables, e.g. `sparv config metadata` or `sparv config metadata.language`. All
 default values can be overridden in your own corpus config.
 
 There are a few config options that must be set (either through the default config or the corpus config):
-  - `metadata.id`
   - `metadata.language` (default: `swe`)
   - `import.importer` (default: `xml_import:parse`)
   - `export.annotations`
@@ -65,28 +64,47 @@ There are a few config options that must be set (either through the default conf
   - `classes.sentence` (default: `segment.sentence`)
 
 
+## Metadata Options
+The `metadata` section of your corpus config contains metadata about your corpus that may be used by any Sparv module.
+
+- `metadata.id` defines the machine name of the corpus. It is required by some exporter modules. This string may contain
+  ascii letters, digits and dashes.
+
+- `metadata.name` is an optional human readable name of the corpus. This option is split into two fields, `eng` and
+  `swe` for defining a name in English and in Swedish.
+
+- `metadata.language` defines the language of the source files in the corpus. This should be an ISO 639-3 code. If not
+  specified it defaults to `swe`. Run `sparv languages` to list the supported languages along with their language codes.
+
+- `metadata.variety` is an optional field containing the language variety of the source files (if applicable). Run
+  `sparv languages` to list the supported varieties for each language.
+
+- `metadata.description` is an optional description for the corpus. It may consist of multiple lines. This option is
+  split into two fields, `eng` and `swe` for defining a name in English and in Swedish.
+
+
 ## Import Options
-The `import` section of your corpus config is used to give Sparv some information about your input documents (i.e. your
+The `import` section of your corpus config is used to give Sparv some information about your input files (i.e. your
 corpus).
 
-- `import.source_dir` defines the location of your input documents and it defaults to `source`. Sparv will check the
-  source directory recursively for valid input documents to process.
+- `import.source_dir` defines the location of your input files and it defaults to `source`. Sparv will check the
+  source directory recursively for valid input files to process.
 
-- `import.importer` is used to tell Sparv which importer to use when processing your source documents. The setting you
-  want to choose depends on the format of your input documents. If your corpus is in XML you should choose
-  `xml_import:parse` (this is the default setting). If your corpus documents are in plain text, you should choose
+- `import.importer` is used to tell Sparv which importer to use when processing your source files. The setting you
+  want to choose depends on the format of your input files. If your corpus is in XML you should choose
+  `xml_import:parse` (this is the default setting). If your corpus files are in plain text, you should choose
   `text_import:parse` instead.
 
-- `import.document_annotation` specifies the annotation representing _one text document_, and any automatic text-level
+- `import.text_annotation` specifies the annotation representing _one text_, and any automatic text-level
   annotations will be attached to this annotation. For XML source files this refers to one of the XML
   elements. For plain text source files a default `text` root annotation will be created automatically, and you won't
   have to change this setting.
 
     > [!NOTE]
     > This setting automatically sets the `text` [class](#annotation-classes). If you want to use an automatic
-    > annotation as the document annotation, you should not use this setting, and instead set the `text` class directly.
+    > annotation as the text annotation, you should not use this setting, and instead set the `text` class directly.
 
-- `import.encoding` specifies the encoding of the source documents. It defaults to UTF-8.
+- `import.encoding` specifies the encoding of the source files. It defaults to UTF-8.
 
 - `import.normalize` lets you normalize unicode symbols in the input using any of the following forms: 'NFC', 'NFKC',
   'NFD', and 'NFKD'. It defaults to `NFC`.
@@ -106,11 +124,11 @@ would like to keep in your output data (this only applies if your input data is 
 everything will be kept in the output. If you do not want any source annotations to be included in your output you
 can set this option to `[]`. This will cause errors in the XML exports though because the root element must be
 listed as a source annotation. If you do list anything here, make sure that you include the root element (i.e. the
-element that encloses all other included elements and text content) for each of your input documents. If you don't,
+element that encloses all other included elements and text content) for each of your input files. If you don't,
 the resulting output XML will be invalid and Sparv won't be able to produce XML files. If you only want to produce
 other output formats than XML, you don't need to worry about this.
 
-It is possible to rename elements and attributes present in your input data. Let's say your documents contain elements
+It is possible to rename elements and attributes present in your input data. Let's say your files contain elements
  like this `<article name="Scandinavian Furniture" date="2020-09-28">` and you would like them to look like this in the
  output `<text title="Scandinavian Furniture" date="2020-09-28">` (so you want to rename the element "article" and the
  attribute "name" to "text" and "title" respectively). For this you can use the following syntax:
@@ -178,7 +196,7 @@ instead of the more compact:
 <token pos="IN" baseform="|hej|">Hej</token>
 ```
 
-`export.scramble_on` is a setting used by all the export formats that support scrambling. It controls what annotation
+`export.scramble_on` is a setting used by all the export formats that support scrambling. It controls which annotation
 your corpus will be scrambled on. Typical settings are `export.scramble_on: <sentence>` or `export.scramble_on:
 <paragraph>`. For example, setting this to `<paragraph>` would lead to all paragraphs being randomly shuffled in the
 export, while the sentences and tokens within the paragraphs keep their original order.
@@ -238,7 +256,7 @@ xml_import:
         - header/title/main-title as text:title
         - header/title/sub-title as text:subtitle
         - header/date as text:date
-export:
+xml_export:
     header_annotations:
         - not header
         - not another-header
@@ -255,8 +273,24 @@ The output will look like this:
 </text>
 ```
 If you do want to keep the headers in the output (without them being analysed as corpus text), just list them without
-the `not` prefix in `export.header_annotations`. If you don't specify anything at all in
-`export.header_annotations` all your headers will be kept.
+the `not` prefix in `xml_export.header_annotations`. If you don't specify anything at all in
+`xml_export.header_annotations` all your headers will be kept.
+
+
+## XML Namespaces
+If the source data is in XML and contains namespaces Sparv will try to keep these intact in the XML output.
+There are, however, two limitations:
+1. Namespace declarations are always placed in the root element in the output, regardless of where they are in the
+   source data.
+2. URIs and prefixes are assumed to be unique. A URI will automatically be associated with the first prefix that is
+   declared for that URI in the source file.
+
+When referring to elements or attributes containing namespaces in the corpus config file a special syntax is used. A
+reference consists of the namespace prefix followed by `+`, followed by the tag or attribute name. E.g. the reference
+for this element `<sparv:myelement xmlns:sparv="https://spraakbanken.gu.se/verktyg/sparv">` would be `sparv+myelement`.
+
+Namespaces may be removed upon import by setting `xml_import.remove_namespaces` to `true` in the corpus config. This may
+however result in collisions in attributes containing namespaces in the source data.
 
 
 ## Annotation Classes
@@ -299,6 +333,22 @@ export:
         - <token>:malt.deprel
         - <token>:malt.dephead_ref
 ```
+
+Re-defining annotation classes may also be necessary when your corpus data contains annotations (such as sentences or
+tokens) that should be used as input to annotators. For example, if you have done manual sentence segmentation and
+enclosed each sentence in an `<s>` element, you can skip Sparv's automatic sentence segmentation by setting the sentence
+class to this element:
+```yaml
+classes:
+    sentence: s
+
+xml_import:
+    elements:
+        - s
+```
+> [!ATTENTION] Please note that you need to tell Sparv that `s` is an annotation imported from your corpus data. This is
+> done by listing `s` under `xml_import.elements` as is done in the above example.
+
 
 ## Annotation Presets
 Annotation presets are collections of annotations which can be used instead of listing the contained annotations. For
@@ -485,7 +535,7 @@ mycorpus/
 Sparv will automatically detect scripts placed here as long as your functions are registered in your
 config (see Step 2). Your annotator function must use one of the Sparv decorators (usually `@annotator`). Here is a code example for a simple annotator that converts all tokens to upper case:
 ```python
-from sparv import Annotation, Output, annotator
+from sparv.api import Annotation, Output, annotator
 
 @annotator("Convert every word to uppercase.")
 def uppercase(word: Annotation = Annotation("<token:word>"),
@@ -497,7 +547,7 @@ def uppercase(word: Annotation = Annotation("<token:word>"),
 **Step 2**: Now register your custom annotator in your corpus config in the `custom_annotations` section so Sparv can
 find it. The name of your annotator is composed of:
 - the prefix `custom.`
-- followed by the file name of the Python file without extension (`convert` in our example)
+- followed by the filename of the Python file without extension (`convert` in our example)
 - followed by a colon
 - and finally the annotator name (`uppercase`)
 

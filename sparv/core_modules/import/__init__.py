@@ -1,16 +1,16 @@
 import os
 
-from sparv import Config, wizard
+from sparv.api import Config, wizard
 from sparv.core import paths, registry
 
 __config__ = [
-    Config("import.document_annotation", description="Annotation representing a document"),
+    Config("import.text_annotation", description="Annotation representing a text"),
     Config("import.source_dir", paths.source_dir, description="Directory containing corpus source files"),
     Config("import.importer", description="Name of importer to use"),
     Config("import.keep_control_chars", False, description="Set to True to keep control characters"),
     Config("import.normalize", "NFC", description="Normalize input using any of the following forms: "
                                                   "'NFC', 'NFKC', 'NFD', and 'NFKD'"),
-    Config("import.encoding", "UTF-8", description="Encoding of source documents"),
+    Config("import.encoding", "UTF-8", description="Encoding of source files"),
 ]
 
 

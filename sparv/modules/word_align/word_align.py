@@ -1,7 +1,6 @@
 """NB: Not adapted to Sparv v4 yet!"""
 
-# -*- coding: utf-8 -*-
-import sparv.util as util
+from sparv.api import util
 
 
 def align_texts(word1, word2, linktok1, linktok2, link1, link2, linkref2, out_wordlink, out_sentences, outindex1, outindex2, delimiter="|", affix="|"):

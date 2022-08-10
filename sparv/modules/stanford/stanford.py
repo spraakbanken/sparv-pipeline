@@ -9,11 +9,10 @@ License for Stanford CoreNLP: GPL2 https://www.gnu.org/licenses/old-licenses/gpl
 import tempfile
 from pathlib import Path
 
-import sparv.util as util
-from sparv import Annotation, BinaryDir, Config, Language, Output, Text, annotator
+from sparv.api import Annotation, BinaryDir, Config, Language, Output, Text, annotator, get_logger, util
+from sparv.api.util.tagsets import pos_to_upos
 
-import logging
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @annotator("Parse and annotate with Stanford Parser", language=["eng"], config=[
@@ -24,8 +23,6 @@ def annotate(corpus_text: Text = Text(),
              text: Annotation = Annotation("<text>"),
              out_sentence: Output = Output("stanford.sentence", cls="sentence", description="Sentence segments"),
              out_token: Output = Output("stanford.token", cls="token", description="Token segments"),
-             out_word: Output = Output("<token>:stanford.word", cls="token:word", description="Token strings"),
-             out_ref: Output = Output("<token>:stanford.ref", description="Token ID relative to sentence"),
              out_baseform: Output = Output("<token>:stanford.baseform", description="Baseforms from Stanford Parser"),
              out_upos: Output = Output("<token>:stanford.upos", cls="token:upos", description="Part-of-speeches in UD"),
              out_pos: Output = Output("<token>:stanford.pos", cls="token:pos",
@@ -51,20 +48,20 @@ def annotate(corpus_text: Text = Text(),
     sentence_segments = []
     all_tokens = []
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmpdir = Path(tmpdir)
-        log.debug("Creating temporary directoty: %s", tmpdir)
+    with tempfile.TemporaryDirectory() as tmpdirstr:
+        tmpdir = Path(tmpdirstr)
+        logger.debug("Creating temporary directoty: %s", tmpdir)
 
         # Write all texts to temporary files
         filelist = tmpdir / "filelist.txt"
-        with open(filelist, "w") as LIST:
+        with open(filelist, "w", encoding="utf-8") as LIST:
             for nr, (start, end) in enumerate(text_spans):
                 filename = tmpdir / f"text-{nr}.txt"
                 print(filename, file=LIST)
-                with open(filename, "w") as F:
+                with open(filename, "w", encoding="utf-8") as F:
                     print(text_data[start:end], file=F)
-                log.debug("Writing text %d (%d-%d): %r...%r --> %s", nr, start, end,
-                          text_data[start:start + 20], text_data[end - 20:end], filename.name)
+                logger.debug("Writing text %d (%d-%d): %r...%r --> %s", nr, start, end,
+                             text_data[start:start + 20], text_data[end - 20:end], filename.name)
 
         # Call the Stanford parser with all the text files
         args += ["-filelist", filelist]
@@ -74,32 +71,40 @@ def annotate(corpus_text: Text = Text(),
         # Read and parse each of the output files
         for nr, (start, end) in enumerate(text_spans):
             filename = tmpdir / f"text-{nr}.txt.conll"
-            with open(filename) as F:
+            with open(filename, encoding="utf-8") as F:
                 output = F.read()
-            log.debug("Reading text %d (%d-%d): %s --> %r...%r", nr, start, end,
-                      filename.name, output[:20], output[-20:])
+            logger.debug("Reading text %d (%d-%d): %s --> %r...%r", nr, start, end,
+                         filename.name, output[:20], output[-20:])
             processed_sentences = _parse_output(output, lang, start)
 
             for sentence in processed_sentences:
-                log.debug("Parsed: %s", " ".join(f"{tok.baseform}/{tok.pos}" for tok in sentence))
+                logger.debug("Parsed: %s", " ".join(f"{tok.baseform}/{tok.pos}" for tok in sentence))
                 for token in sentence:
                     all_tokens.append(token)
                     if token.word != text_data[token.start:token.end]:
-                        log.warning("Stanford word (%r) differs from surface word (%r), using the Stanford word",
-                                    token.word, text_data[token.start:token.end])
+                        logger.warning("Stanford word (%r) differs from surface word (%r), using the Stanford word",
+                                       token.word, text_data[token.start:token.end])
                 sentence_segments.append((sentence[0].start, sentence[-1].end))
 
     # Write annotations
     out_sentence.write(sentence_segments)
     out_token.write([(t.start, t.end) for t in all_tokens])
-    out_ref.write([t.ref for t in all_tokens])
-    out_word.write([t.word for t in all_tokens])
     out_baseform.write([t.baseform for t in all_tokens])
     out_upos.write([t.upos for t in all_tokens])
     out_pos.write([t.pos for t in all_tokens])
     out_ne.write([t.ne for t in all_tokens])
     out_dephead_ref.write([t.dephead_ref for t in all_tokens])
     out_deprel.write([t.deprel for t in all_tokens])
+
+
+@annotator("Annotate tokens with IDs relative to their sentences", language=["eng"])
+def make_ref(out: Output = Output("<token>:stanford.ref", cls="token:ref",
+                                  description="Token IDs relative to their sentences"),
+             sentence: Annotation = Annotation("<sentence>"),
+             token: Annotation = Annotation("<token>")):
+    """Annotate tokens with IDs relative to their sentences."""
+    from sparv.modules.misc import number
+    number.number_relative(out, sentence, token)
 
 
 def _parse_output(stdout, lang, add_to_index):
@@ -117,7 +122,7 @@ def _parse_output(stdout, lang, add_to_index):
             # -output.columns from the parser (see the args to the parser, in annotate() above):
             # idx, current, lemma, pos, ner,          headidx,     deprel, BEGIN_POS, END_POS
             ref,   word,    lemma, pos, named_entity, dephead_ref, deprel, start,     end     = line.split("\t")
-            upos = util.tagsets.pos_to_upos(pos, lang, "Penn")
+            upos = pos_to_upos(pos, lang, "Penn")
             if named_entity == "O":  # O = empty name tag
                 named_entity = ""
             if dephead_ref == "0":  # 0 = empty dephead

@@ -2,10 +2,10 @@
 
 import os
 
-import sparv.util as util
-from sparv import Annotation, Config, Document, Export, ExportAnnotations, SourceAnnotations, exporter
+from sparv.api import (Annotation, Config, SourceFilename, Export, ExportAnnotations, SourceAnnotations, exporter, get_logger,
+                       util)
 
-logger = util.get_logger(__name__)
+logger = get_logger(__name__)
 
 
 @exporter("CSV export", config=[
@@ -15,8 +15,8 @@ logger = util.get_logger(__name__)
                        "included by default."),
     Config("csv_export.annotations", description="Sparv annotations to include.")
 ])
-def csv(doc: Document = Document(),
-        out: Export = Export("csv/{doc}.csv"),
+def csv(source_file: SourceFilename = SourceFilename(),
+        out: Export = Export("csv_export/{file}.csv"),
         token: Annotation = Annotation("<token>"),
         word: Annotation = Annotation("[export.word]"),
         sentence: Annotation = Annotation("<sentence>"),
@@ -36,12 +36,14 @@ def csv(doc: Document = Document(),
     word_annotation = list(word.read())
 
     # Get annotation spans, annotations list etc.
-    annotation_list, token_attributes, export_names = util.get_annotation_names(annotations, source_annotations,
-                                                                                doc=doc, token_name=token_name,
-                                                                                remove_namespaces=remove_namespaces,
-                                                                                sparv_namespace=sparv_namespace,
-                                                                                source_namespace=source_namespace)
-    span_positions, annotation_dict = util.gather_annotations(annotation_list, export_names, doc=doc)
+    annotation_list, token_attributes, export_names = util.export.get_annotation_names(
+        annotations, source_annotations, source_file=source_file, token_name=token_name,
+        remove_namespaces=remove_namespaces, sparv_namespace=sparv_namespace, source_namespace=source_namespace)
+    if token not in annotation_list:
+        logger.warning("The 'csv_export:csv' export requires the <token> annotation for the output to include "
+                       "the source text. Make sure to add <token> to the list of export annotations.")
+    span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names,
+                                                                     source_file=source_file)
 
     # Make csv header
     csv_data = [_make_header(token_name, token_attributes, export_names, delimiter)]
@@ -67,7 +69,7 @@ def csv(doc: Document = Document(),
             csv_data.append("")
 
     # Write result to file
-    with open(out, "w") as f:
+    with open(out, "w", encoding="utf-8") as f:
         f.write("\n".join(csv_data))
     logger.info("Exported: %s", out)
 
@@ -85,7 +87,7 @@ def _make_token_line(word, token, token_attributes, annotation_dict, index, deli
     line = [word.replace(delimiter, " ")]
     for attr in token_attributes:
         if attr not in annotation_dict[token]:
-            attr_str = util.UNDEF
+            attr_str = util.constants.UNDEF
         else:
             attr_str = annotation_dict[token][attr][index]
         line.append(attr_str)
@@ -98,5 +100,6 @@ def _make_attrs(annotation, annotation_dict, export_names, index):
     for name, annot in annotation_dict[annotation].items():
         export_name = export_names.get(":".join([annotation, name]), name)
         annotation_name = export_names.get(annotation, annotation)
-        attrs.append("%s.%s = %s" % (annotation_name, export_name, annot[index]))
+        if annot[index]:
+            attrs.append("%s.%s = %s" % (annotation_name, export_name, annot[index]))
     return attrs

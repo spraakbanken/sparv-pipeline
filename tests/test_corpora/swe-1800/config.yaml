@@ -1,0 +1,43 @@
+#===============================================================================
+# Meta Data
+#===============================================================================
+metadata:
+    id: swe-1800
+    language: swe
+    variety: "1800"
+    description:
+        eng: |
+            This test corpus is for testing the standard annotations for Swedish
+            from the 1800's.
+
+#===============================================================================
+# Import Settings
+#===============================================================================
+import:
+    text_annotation: text
+
+#===============================================================================
+# Export Settings
+#===============================================================================
+export:
+    # Use the classes and annotations from the SWE_1800 preset
+    annotations:
+        - SWE_1800.all
+    # Exports to create by default when running 'sparv run'
+    default:
+        - csv_export:csv
+        - conll_export:conllu
+        - cwb:vrt
+        - stats_export:sbx_freq_list_simple_swe
+        - xml_export:pretty
+        - xml_export:preserved_format
+
+#===============================================================================
+# Module Settings
+#===============================================================================
+segment:
+  # Sentences are pre-segmented by linebreaks
+  sentence_segmenter: linebreaks
+
+sparv:
+    compression: none

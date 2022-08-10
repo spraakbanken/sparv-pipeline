@@ -4,7 +4,7 @@ import pathlib
 
 import pytest
 
-from sparv.util.system import find_binary
+from sparv.api.util.system import find_binary
 from . import utils
 
 
@@ -14,7 +14,7 @@ def test_mini_swe(tmp_path):
     gold_corpus_dir = pathlib.Path("tests/test_corpora/mini-swe")
     test_corpus_dir = utils.run_sparv(gold_corpus_dir, tmp_path)
     utils.cmp_workdir(gold_corpus_dir, test_corpus_dir)
-    utils.cmp_export(gold_corpus_dir, test_corpus_dir)
+    utils.cmp_export(gold_corpus_dir, test_corpus_dir, ignore=["version_info"])
 
 
 @pytest.mark.swe
@@ -40,6 +40,27 @@ def test_txt_swe(tmp_path):
 def test_standard_swe(tmp_path):
     """Run corpus standard-swe and compare the annotations and exports to gold standard."""
     gold_corpus_dir = pathlib.Path("tests/test_corpora/standard-swe")
+    test_corpus_dir = utils.run_sparv(gold_corpus_dir, tmp_path)
+    utils.cmp_workdir(gold_corpus_dir, test_corpus_dir)
+    utils.cmp_export(gold_corpus_dir, test_corpus_dir)
+
+
+@pytest.mark.swe
+@pytest.mark.swehist
+@pytest.mark.slow
+def test_swe_1800(tmp_path):
+    """Run corpus swe-1800 and compare the annotations and exports to gold standard."""
+    gold_corpus_dir = pathlib.Path("tests/test_corpora/swe-1800")
+    test_corpus_dir = utils.run_sparv(gold_corpus_dir, tmp_path)
+    utils.cmp_workdir(gold_corpus_dir, test_corpus_dir)
+    utils.cmp_export(gold_corpus_dir, test_corpus_dir)
+
+
+@pytest.mark.swe
+@pytest.mark.swehist
+def test_swe_fsv(tmp_path):
+    """Run corpus swe-fsv and compare the annotations and exports to gold standard."""
+    gold_corpus_dir = pathlib.Path("tests/test_corpora/swe-fsv")
     test_corpus_dir = utils.run_sparv(gold_corpus_dir, tmp_path)
     utils.cmp_workdir(gold_corpus_dir, test_corpus_dir)
     utils.cmp_export(gold_corpus_dir, test_corpus_dir)

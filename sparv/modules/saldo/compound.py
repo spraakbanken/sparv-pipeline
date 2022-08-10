@@ -1,7 +1,6 @@
 """Compound analysis."""
 
 import itertools
-import logging
 import pathlib
 import pickle
 import re
@@ -9,13 +8,16 @@ import time
 import xml.etree.ElementTree as etree
 from functools import reduce
 
-import sparv.util as util
-from sparv import Annotation, Config, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv.api import Annotation, Config, Model, ModelOutput, Output, annotator, get_logger, modelbuilder, util
+from sparv.api.util.tagsets import tagmappings
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
+MAX_WORD_LEN = 75
 SPLIT_LIMIT = 200
 COMP_LIMIT = 100
+INVALID_PREFIXES = ("http:", "https:", "www.")
+INVALID_REGEX = re.compile(r"(..?)\1{3}")
 
 # SALDO: Delimiters that hopefully are never found in an annotation or in a POS tag:
 PART_DELIM = "^"
@@ -33,7 +35,8 @@ def preloader(saldo_comp_model, stats_model):
     Config("saldo.comp_model", default="saldo/saldo.compound.pickle", description="Path to SALDO compound model"),
     Config("saldo.comp_nst_model", default="saldo/nst_comp_pos.pickle",
            description="Path to NST part of speech compound model"),
-    Config("saldo.comp_stats_model", default="saldo/stats.pickle", description="Path to statistics model")
+    Config("saldo.comp_stats_model", default="saldo/stats.pickle", description="Path to statistics model"),
+    Config("saldo.comp_use_source", default=True, description="Also use source text as lexicon for compound analysis")
 ], preloader=preloader, preloader_params=["saldo_comp_model", "stats_model"], preloader_target="preloaded_models")
 def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
                                                description="Compound analysis using lemgrams"),
@@ -46,10 +49,11 @@ def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
              saldo_comp_model: Model = Model("[saldo.comp_model]"),
              nst_model: Model = Model("[saldo.comp_nst_model]"),
              stats_model: Model = Model("[saldo.comp_stats_model]"),
-             complemgramfmt: str = util.SCORESEP + "%.3e",
-             delimiter: str = util.DELIM,
-             compdelim: str = util.COMPSEP,
-             affix: str = util.AFFIX,
+             comp_use_source: bool = Config("saldo.comp_use_source"),
+             complemgramfmt: str = util.constants.SCORESEP + "%.3e",
+             delimiter: str = util.constants.DELIM,
+             compdelim: str = util.constants.COMPSEP,
+             affix: str = util.constants.AFFIX,
              cutoff: bool = True,
              preloaded_models=None):
     """Divide compound words into prefix(es) and suffix.
@@ -67,6 +71,7 @@ def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
       (use empty string to omit probablility)
     - preloaded_models: Preloaded models if using preloader
     """
+    logger.progress()
     ##################
     # Load models
     ##################
@@ -80,9 +85,10 @@ def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
         nst_model = pickle.load(f)
 
     word_msd_baseform_annotations = list(word.read_attributes((word, msd, baseform_tmp)))
+    logger.progress(total=len(word_msd_baseform_annotations) + 3)
 
-    # Create alternative lexicon (for words within the file)
-    altlexicon = InFileLexicon(word_msd_baseform_annotations)
+    # Create alternative lexicon (for words within the source file)
+    altlexicon = InFileLexicon(word_msd_baseform_annotations if comp_use_source else [])
 
     ##################
     # Do annotation
@@ -126,9 +132,14 @@ def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
         else:
             make_new_baseforms(baseform_annotation, msd, compounds, stats_lexicon, altlexicon, delimiter, affix)
 
+        logger.progress()
+
     out_complemgrams.write(complem_annotation)
+    logger.progress()
     out_compwf.write(compwf_annotation)
+    logger.progress()
     out_baseform.write(baseform_annotation)
+    logger.progress()
 
 
 @modelbuilder("SALDO compound model", language=["swe"])
@@ -148,11 +159,11 @@ class SaldoCompLexicon:
     def __init__(self, saldofile: pathlib.Path, verbose=True):
         """Load lexicon."""
         if verbose:
-            log.info("Reading Saldo lexicon: %s", saldofile)
+            logger.info("Reading Saldo lexicon: %s", saldofile)
         with open(saldofile, "rb") as F:
             self.lexicon = pickle.load(F)
         if verbose:
-            log.info("OK, read %d words", len(self.lexicon))
+            logger.info("OK, read %d words", len(self.lexicon))
 
     def lookup(self, word):
         """Lookup a word in the lexicon."""
@@ -197,11 +208,11 @@ class StatsLexicon:
     def __init__(self, stats_model: pathlib.Path, verbose=True):
         """Load lexicon."""
         if verbose:
-            log.info("Reading statistics model: %s", stats_model)
+            logger.info("Reading statistics model: %s", stats_model)
         with open(stats_model, "rb") as s:
             self.lexicon = pickle.load(s)
         if verbose:
-            log.info("Done")
+            logger.info("Done")
 
     def lookup_prob(self, word):
         """Look up the probability of the word."""
@@ -213,13 +224,13 @@ class StatsLexicon:
 
 
 class InFileLexicon:
-    """A dictionary of all words occuring in the input file.
+    """A dictionary of all words occurring in the input file.
 
     keys = words, values =  MSD tags
     """
 
-    def __init__(self, annotations):
-        """Create a lexicon for the words occuring in this file."""
+    def __init__(self, annotations: list):
+        """Create a lexicon for the words occurring in this file."""
         lex = {}
         for word, msd, _ in annotations:
             w = word.lower()
@@ -254,7 +265,7 @@ class InFileLexicon:
 
 def split_word(saldo_lexicon, altlexicon, w, msd):
     """Split word w into every possible combination of substrings."""
-    MAX_ITERATIONS = 500000
+    MAX_ITERATIONS = 250000
     MAX_TIME = 20  # Seconds
     invalid_spans = set()
     valid_spans = set()
@@ -275,11 +286,11 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
             iterations += 1
             if iterations > MAX_ITERATIONS:
                 giveup = True
-                log.info("Too many iterations for word '%s'", w)
+                logger.info("Too many iterations for word '%s'", w)
                 break
             if time.time() - start_time > MAX_TIME:
                 giveup = True
-                log.info("Compound analysis took to long for word '%s'", w)
+                logger.info("Compound analysis took to long for word '%s'", w)
                 break
 
             if first:
@@ -377,7 +388,7 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
                 counter += 1
                 if counter > SPLIT_LIMIT:
                     giveup = True
-                    log.info("Too many possible compounds for word '%s'" % w)
+                    logger.info("Too many possible compounds for word '%s'" % w)
                     break
                 yield comp
 
@@ -449,7 +460,7 @@ def deep_len(lst):
 
 def compound(saldo_lexicon, altlexicon, w, msd=None):
     """Create a list of compound analyses for word w."""
-    if len(w) > 75 or re.search(r"(.)\1{4,}", w):
+    if len(w) > MAX_WORD_LEN or INVALID_REGEX.search(w) or any(w.startswith(p) for p in INVALID_PREFIXES):
         return []
 
     in_compounds = list(split_word(saldo_lexicon, altlexicon, w, msd))
@@ -529,8 +540,8 @@ def make_complem_and_compwf(out_complem, out_compwf, complemgramfmt, compounds, 
             compwf_list.append(wf)
 
     # Add to annotations
-    out_complem.append(util.cwbset(complem_list, delimiter, affix) if compounds and complem_list else affix)
-    out_compwf.append(util.cwbset(compwf_list, delimiter, affix) if compounds else affix)
+    out_complem.append(util.misc.cwbset(complem_list, delimiter, affix) if compounds and complem_list else affix)
+    out_compwf.append(util.misc.cwbset(compwf_list, delimiter, affix) if compounds else affix)
 
 
 def make_new_baseforms(out_baseform, msd_tag, compounds, stats_lexicon, altlexicon, delimiter, affix):
@@ -560,13 +571,13 @@ def make_new_baseforms(out_baseform, msd_tag, compounds, stats_lexicon, altlexic
                 baseform_list.append(baseform)
 
     # Add to annotation
-    out_baseform.append(util.cwbset(baseform_list, delimiter, affix) if (compounds and baseform_list) else affix)
+    out_baseform.append(util.misc.cwbset(baseform_list, delimiter, affix) if (compounds and baseform_list) else affix)
 
 
 def read_lmf(xml: pathlib.Path, tagset: str = "SUC"):
     """Read the XML version of SALDO's morphological lexicon (saldom.xml)."""
-    tagmap = util.tagsets.mappings["saldo_to_" + tagset.lower() + "_compound"]
-    log.info("Reading XML lexicon")
+    tagmap = tagmappings.mappings["saldo_to_" + tagset.lower() + "_compound"]
+    logger.info("Reading XML lexicon")
     lexicon = {}
 
     context = etree.iterparse(xml, events=("start", "end"))  # "start" needed to save reference to root element
@@ -602,7 +613,7 @@ def read_lmf(xml: pathlib.Path, tagset: str = "SUC"):
             if elem.tag in ["LexicalEntry", "frame", "resFrame"]:
                 root.clear()
 
-    log.info("OK, read")
+    logger.info("OK, read")
     return lexicon
 
 
@@ -613,7 +624,7 @@ def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
       - lexicon = {wordform: {lemgram: {"msd": set(), "pos": str}}}
     """
     if verbose:
-        log.info("Saving Saldo lexicon in Pickle format")
+        logger.info("Saving Saldo lexicon in Pickle format")
 
     picklex = {}
     for word in lexicon:
@@ -629,4 +640,4 @@ def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
     with open(saldofile, "wb") as F:
         pickle.dump(picklex, F, protocol=protocol)
     if verbose:
-        log.info("OK, saved")
+        logger.info("OK, saved")

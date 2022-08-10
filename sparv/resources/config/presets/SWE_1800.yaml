@@ -1,0 +1,51 @@
+#===============================================================================
+# Annotations for older Swedish from the 1800's (swe-1800)
+#===============================================================================
+languages:
+    - swe-1800
+
+
+classes:
+    sentence: segment.sentence
+    token: segment.token
+    "token:word": <token>:misc.word
+    "token:pos": <token>:hunpos.pos
+    "token:msd": <token>:hunpos.msd_hist
+    "token:baseform": <token>:hist.baseform
+    "token:lemgram": <token>:hist.combined_lemgrams
+    "token:sense": <token>:hist.sense
+    "token:deprel": <token>:stanza.deprel
+    "token:dephead": <token>:stanza.dephead
+    "token:dephead_ref": <token>:stanza.dephead_ref
+    "token:ref": <token>:stanza.ref
+
+presets:
+    all:
+        - SWE_DEFAULT.swener
+        - SWE_DEFAULT.sentence
+        - SWE_DEFAULT.text-lexical-class
+        - SWE_DEFAULT.readability
+        - all-token-annotations
+
+    #====================================
+    # Token Annotations
+    #====================================
+
+    all-token-annotations:
+        - hist-token-annotations
+        - stanza-depparse
+        - SWE_DEFAULT.sentiment
+        - SWE_DEFAULT.token-lexical-class
+
+    hist-token-annotations:
+        - <token>:hunpos.pos
+        - <token>:hunpos.msd_hist as msd
+        - <token>:hist.baseform
+        - <token>:hist.combined_lemgrams as lemgram
+        - <token>:hist.sense
+        # - <token>:hist.homograph_set
+    
+    stanza-depparse:
+        - <token>:stanza.deprel
+        - <token>:stanza.dephead_ref
+        - <token>:stanza.ref

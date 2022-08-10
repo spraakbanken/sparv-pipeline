@@ -3,6 +3,7 @@
 import difflib
 import filecmp
 import pathlib
+import re
 import shutil
 import subprocess
 import xml.etree.ElementTree as etree
@@ -30,8 +31,7 @@ def run_sparv(gold_corpus_dir: pathlib.Path,
 
     args = ["sparv", "-d", str(new_corpus_dir), "run", *targets]
     process = subprocess.run(args, capture_output=True)
-    # Exclude progress updates and progress bar from output
-    stdout = process.stdout.strip().decode()
+    stdout = _remove_progress_info(process.stdout.strip().decode())
     if stdout and process.returncode != 0:
         print_error(f"The following warnings/errors occurred:\n{stdout}")
     elif process.stderr.strip():
@@ -127,8 +127,8 @@ def _cmp_dirs(a: pathlib.Path,
 
 def _filediff(a: pathlib.Path, b: pathlib.Path):
     """Print a unified diff of files a and b."""
-    a_contents = a.read_text().splitlines()
-    b_contents = b.read_text().splitlines()
+    a_contents = a.read_text(encoding="utf-8").splitlines()
+    b_contents = b.read_text(encoding="utf-8").splitlines()
 
     diff = difflib.unified_diff(a_contents, b_contents, fromfile=str(a), tofile=str(b))
     for line in diff:
@@ -138,12 +138,12 @@ def _filediff(a: pathlib.Path, b: pathlib.Path):
 def _xml_filediff(a: pathlib.Path, b: pathlib.Path):
     """Print a unified diff of canonicalize XML files a and b."""
     try:
-        a_contents = etree.canonicalize(a.read_text()).splitlines()
+        a_contents = etree.canonicalize(a.read_text(encoding="utf-8")).splitlines()
     except etree.ParseError:
         print_error(f"File {a} could not be parsed.")
         return True
     try:
-        b_contents = etree.canonicalize(b.read_text()).splitlines()
+        b_contents = etree.canonicalize(b.read_text(encoding="utf-8")).splitlines()
     except etree.ParseError:
         print_error(f"File {a} could not be parsed.")
         return True
@@ -156,3 +156,14 @@ def _xml_filediff(a: pathlib.Path, b: pathlib.Path):
             print(line.strip())
         return True
     return False
+
+
+def _remove_progress_info(output):
+    """Exclude progress updates from output."""
+    lines = output.split("\n")
+    out = []
+    for line in lines:
+        matchobj = re.match(r"(?:\d\d:\d\d:\d\d|\s{8}) (PROGRESS)\s+(.+)$", line)
+        if not matchobj:
+            out.append(line)
+    return "\n".join(out)

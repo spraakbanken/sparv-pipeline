@@ -79,22 +79,21 @@ for the `import` and the `export` categories that are inherited by importers and
 
 Inheritable configuration keys for `import`:
 
-| config key | description |
-|:-----------|:------------|
-|`document_annotation` | The annotation representing one text document. Any text-level annotations will be attached to this annotation.
-|`encoding`            | Encoding of source document. Defaults to UTF-8.
-|`keep_control_chars`  | Set to True if control characters should not be removed from the text.
-|`normalize`           | Normalize input using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.
-|`source_dir`          | The path to the directory containing the source documents relative to the corpus directory.
+| config key     | description                                    |
+|:---------------|:-----------------------------------------------|
+|`text_annotation`    | The annotation representing one text. Any text-level annotations will be attached to this annotation.
+|`encoding`           | Encoding of source file. Defaults to UTF-8.
+|`keep_control_chars` | Set to True if control characters should not be removed from the text.
+|`normalize`          | Normalize input using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.
+|`source_dir`         | The path to the directory containing the source files relative to the corpus directory.
 
 Inheritable configuration keys for `export`:
 
-| config key | description  |
-|:-----------|:-------------|
+| config key | description            |
+|:-----------|:-----------------------|
 |`default`                  | Exports to create by default when running 'sparv run'.
-|`source_annotations`       | List of annotations from the original document to be kept.
+|`source_annotations`       | List of annotations from the source file to be kept.
 |`annotations`              | List of automatic annotations to include.
-|`header_annotations`       | List of header elements from the original document to include in the export.
 |`word`                     | The token strings to be included in the export.
 |`remove_module_namespaces` | Set to false if module name spaces should be kept in the export.
 |`sparv_namespace`          | A string representing the name space to be added to all annotations created by Sparv.

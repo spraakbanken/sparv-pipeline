@@ -3,7 +3,7 @@
 #===============================================================================
 
 metadata:
-    # Language of the input documents, specified as ISO 639-3 code
+    # Language of the input files, specified as ISO 639-3 code
     language: swe
 
 #===============================================================================
@@ -22,6 +22,7 @@ classes:
     sentence: segment.sentence
     token: segment.token
     "token:word": <token>:misc.word
+    "token:ref": <token>:misc.ref
 
 #===============================================================================
 # Export Settings
@@ -45,11 +46,11 @@ export:
 
 # Common settings for XML exporters
 # xml_export:
-    # Export hosts and paths (targets for install_export and install_export_original)
+    # Export hosts and paths (targets for install and install_scrambled)
     # export_host: ""
     # export_path: ""
-    # export_original_host: ""
-    # export_original_path: ""
+    # export_scrambled_host: ""
+    # export_scrambled_path: ""
 
 #===============================================================================
 # Module-specific Settings
@@ -64,17 +65,3 @@ segment:
     sentence_chunk: <paragraph>, <text>
     # Chunk to use for automatic tokenisation
     token_chunk: <sentence>
-
-# korp:
-    # Password protected corpus
-    # protected: false
-
-    # Remote host name for installation of both corpus data and database
-    # remote_host:
-
-    # Paths on remote server (targets for install_corpus)
-    # remote_cwb_datadir:
-    # remote_cwb_registry:
-
-    # Database name for relations, lemgram index and timespan
-    # mysql_dbname:

@@ -9,7 +9,7 @@ other arguments are optional and default to `None`.
 
 ## @annotator
 A function decorated with `@annotator` usually takes some input (e.g. models, one or more arbitrary annotations like
-tokens, sentences, parts of speeches etc) and outputs one or more new annotations.
+tokens, sentences, parts of speeches etc.) and outputs one or more new annotations.
 
 **Arguments:**
 
@@ -49,9 +49,15 @@ def annotate(lang: Language = Language(),
 ## @importer
 A function decorated with `@importer` is used for importing corpus files in a certain file format. Its job is to read a
 corpus file, extract the corpus text and existing markup (if applicable), and write annotation files for the corpus text
-and markup. The corpus text output is implicit for importers and thus not listed among the function arguments. Any
-additional outputs may be listed in the `outputs` argument of the decorator. This is necessary in case any output is
-needed as input in another part of the pipeline.
+and markup.
+
+Importers do not use the `Output` class to specify its outputs. Instead, outputs may be listed using the `outputs`
+argument of the decorator. Any output that is to be used as explicit input by another part of the pipeline needs to be
+listed here, but additional unlisted outputs may also be created.
+
+Two outputs are implicit (and thus not listed in `outputs`) but required for every importer: the corpus text, saved by
+using the `Text` class, and a list of the annotations created from existing markup, saved by using the
+`SourceStructure` class.
 
 **Arguments:**
 
@@ -66,10 +72,10 @@ needed as input in another part of the pipeline.
 **Example:**
 ```python
 @importer("TXT import", file_extension="txt", outputs=["text"])
-def parse(doc: Document = Document(),
+def parse(source_file: SourceFilename = SourceFilename(),
           source_dir: Source = Source(),
           prefix: str = "",
-          encoding: str = util.UTF8,
+          encoding: str = util.constants.UTF8,
           normalize: str = "NFC") -> None:
     ...
 ```
@@ -97,11 +103,11 @@ files into one output file.
     Config("stats_export.cutoff", default=1, description="The minimum frequency a word must have in order to be included in the result")
 ])
 def freq_list_simple(corpus: Corpus = Corpus(),
-                     docs: AllDocuments = AllDocuments(),
-                     word: AnnotationAllDocs = AnnotationAllDocs("<token:word>"),
-                     pos: AnnotationAllDocs = AnnotationAllDocs("<token:pos>"),
-                     baseform: AnnotationAllDocs = AnnotationAllDocs("<token:baseform>"),
-                     out: Export = Export("frequency_list/stats_[metadata.id].csv"),
+                     source_files: AllSourceFilenames = AllSourceFilenames(),
+                     word: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:word>"),
+                     pos: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:pos>"),
+                     baseform: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:baseform>"),
+                     out: Export = Export("stats_export.frequency_list/stats_[metadata.id].csv"),
                      delimiter: str = Config("stats_export.delimiter"),
                      cutoff: int = Config("stats_export.cutoff")):
     ...
@@ -119,15 +125,15 @@ A function decorated with `@installer` is used to copy a corpus export to a remo
 
 **Example:**
 ```python
-@installer("Copy compressed scrambled XML to remote host", config=[
-    Config("xml_export.export_host", "", description="Remote host to copy scrambled XML export to"),
-    Config("xml_export.export_path", "", description="Path on remote host to copy scrambled XML export to")
+@installer("Copy compressed XML to remote host", config=[
+    Config("xml_export.export_host", "", description="Remote host to copy XML export to."),
+    Config("xml_export.export_path", "", description="Path on remote host to copy XML export to.")
 ])
-def install_scrambled(corpus: Corpus = Corpus(),
-                      xmlfile: ExportInput = ExportInput("[metadata.id]_scrambled.xml"),
-                      out: OutputCommonData = OutputCommonData("xml_export.install_export_scrambled_marker"),
-                      export_path: str = Config("xml_export.export_path"),
-                      host: str = Config("xml_export.export_host")):
+def install(corpus: Corpus = Corpus(),
+            xmlfile: ExportInput = ExportInput("xml_export.combined/[metadata.id].xml.bz2"),
+            out: OutputCommonData = OutputCommonData("xml_export.install_export_pretty_marker"),
+            export_path: str = Config("xml_export.export_path"),
+            host: str = Config("xml_export.export_host")):
     ...
 ```
 

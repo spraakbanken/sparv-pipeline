@@ -2,16 +2,16 @@
 
 import re
 
-import sparv.util as util
-from sparv import Model, ModelOutput, modelbuilder
+from sparv.api import Model, ModelOutput, modelbuilder
+from sparv.api.util.tagsets import tagmappings
 
 # Constants
-SALDO_TO_SUC = util.tagsets.mappings["saldo_to_suc"]
+SALDO_TO_SUC = tagmappings.mappings["saldo_to_suc"]
 SALDO_TO_SUC["pm"] = {"PM.NOM"}
 SALDO_TO_SUC["nl invar"] = {"NL.NOM"}
 
 
-@modelbuilder("Hunpos morphtable for Swedish historical resources", language=["swe"])
+@modelbuilder("Hunpos morphtable for Swedish historical resources", language=["swe-1800"])
 def hist_morphtable(out: ModelOutput = ModelOutput("hunpos/hist/dalinm-swedberg_saldo_suc-tags.morphtable"),
                     swedberg: Model = Model("hunpos/hist/swedberg-gender.hunpos"),
                     dalin: Model = Model("hunpos/hist/dalinm.hunpos"),
@@ -95,26 +95,26 @@ def _force_parse(msd):
         SALDO_TO_SUC[msd] = new_suc
         return new_suc
 
-    paramstr = " ".join(util.tagsets.mappings["saldo_params_to_suc"].get(prm, prm.upper()) for prm in params)
-    for (pre, post) in util.tagsets.tagmappings._suc_tag_replacements:
+    paramstr = " ".join(tagmappings.mappings["saldo_params_to_suc"].get(prm, prm.upper()) for prm in params)
+    for (pre, post) in tagmappings._suc_tag_replacements:
         m = re.match(pre, paramstr)
         if m:
             break
     if m is None:
         return set()
     sucfilter = m.expand(post).replace(" ", r"\.").replace("+", r"\+")
-    new_suc = set(suctag for suctag in util.tagsets.tags["suc_tags"] if re.match(sucfilter, suctag))
+    new_suc = set(suctag for suctag in tagmappings.tags["suc_tags"] if re.match(sucfilter, suctag))
     SALDO_TO_SUC[msd] = new_suc
     return new_suc
 
 
-@modelbuilder("Swedberg wordlist", language=["swe"])
+@modelbuilder("Swedberg wordlist", language=["swe-1800"])
 def download_swedberg_wordlist(out: ModelOutput = ModelOutput("hunpos/hist/swedberg-gender.hunpos")):
     """Download Swedberg wordlist."""
     out.download("https://github.com/spraakbanken/sparv-models/raw/master/hunpos/hist/swedberg-gender.hunpos")
 
 
-@modelbuilder("Dalin wordlist", language=["swe"])
+@modelbuilder("Dalin wordlist", language=["swe-1800"])
 def download_dalin_wordlist(out: ModelOutput = ModelOutput("hunpos/hist/dalinm.hunpos")):
     """Download Dalin wordlist."""
     out.download("https://github.com/spraakbanken/sparv-models/raw/master/hunpos/hist/dalinm.hunpos")

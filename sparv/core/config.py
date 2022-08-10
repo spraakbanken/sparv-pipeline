@@ -1,7 +1,6 @@
 """Functions for parsing the Sparv configuration files."""
 
 import copy
-import logging
 from collections import defaultdict
 from functools import reduce
 from pathlib import Path
@@ -10,10 +9,10 @@ from typing import Any, Optional
 import yaml
 import yaml.scanner
 
-from sparv import util
 from sparv.core import paths, registry
+from sparv.core.misc import SparvErrorMessage, get_logger
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 DEFAULT_CONFIG = paths.default_config_file
 PRESETS_DIR = paths.presets_dir
@@ -21,7 +20,7 @@ PARENT = "parent"
 MAX_THREADS = "threads"
 
 config = {}  # Full configuration
-presets = {}  # Annotation presets
+presets = {}  # Annotation presets, needs to be global (accessed by Snakefile)
 _config_user = {}  # Local corpus config
 _config_default = {}  # Default config
 
@@ -32,7 +31,7 @@ config_structure = {
     "install": {"_source": "core"},
     PARENT: {"_source": "core"},
     MAX_THREADS: {"_source": "core"},
-    "preload":  {"_source": "core"}
+    "preload": {"_source": "core"}
 }
 
 config_usage = defaultdict(set)  # For each config key, a list of annotators using that key
@@ -40,20 +39,21 @@ config_usage = defaultdict(set)  # For each config key, a list of annotators usi
 
 class Unset:
     """Class used to represent a config value that isn't set."""
+
     pass
 
 
 def read_yaml(yaml_file):
     """Read YAML file and handle errors."""
     try:
-        with open(yaml_file) as f:
+        with open(yaml_file, encoding="utf-8") as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
     except yaml.parser.ParserError as e:
-        raise util.SparvErrorMessage("Could not parse the configuration file:\n" + str(e))
+        raise SparvErrorMessage("Could not parse the configuration file:\n" + str(e))
     except yaml.scanner.ScannerError as e:
-        raise util.SparvErrorMessage("An error occurred while reading the configuration file:\n" + str(e))
+        raise SparvErrorMessage("An error occurred while reading the configuration file:\n" + str(e))
     except FileNotFoundError:
-        raise util.SparvErrorMessage(f"Could not find the config file '{yaml_file}'")
+        raise SparvErrorMessage(f"Could not find the config file '{yaml_file}'")
 
     return data or {}
 
@@ -71,7 +71,7 @@ def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) 
     if DEFAULT_CONFIG.is_file():
         _config_default = read_yaml(DEFAULT_CONFIG)
     else:
-        log.warning("Default config file is missing: {}".format(DEFAULT_CONFIG))
+        logger.warning("Default config file is missing: {}".format(DEFAULT_CONFIG))
         _config_default = {}
 
     if config_file:
@@ -79,7 +79,7 @@ def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) 
         global _config_user
         _config_user = read_yaml(config_file) or {}
 
-        def handle_parents(cfg, current_dir="."):
+        def handle_parents(cfg, current_dir=Path(".")) -> dict:
             """Combine parent configs recursively."""
             combined_parents = {}
             if cfg.get(PARENT):
@@ -87,7 +87,7 @@ def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) 
                 if isinstance(parents, str):
                     parents = [parents]
                 for parent in parents:
-                    parent_path = Path(current_dir, parent)
+                    parent_path = current_dir / parent
                     config_parent = read_yaml(parent_path)
                     config_parent = handle_parents(config_parent, parent_path.parent)
                     combined_parents = _merge_dicts(config_parent, combined_parents)
@@ -110,8 +110,8 @@ def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) 
         if key == PARENT:
             continue
         if not isinstance(config[key], (dict, list)):
-            raise util.SparvErrorMessage(f"The config section '{key}' could not be parsed.", module="sparv",
-                                         function="config")
+            raise SparvErrorMessage(f"The config section '{key}' could not be parsed.", module="sparv",
+                                    function="config")
 
 
 def dump_config(data, resolve_alias=False, sort_keys=False):
@@ -130,11 +130,11 @@ def dump_config(data, resolve_alias=False, sort_keys=False):
             return super(IndentDumper, self).increase_indent(flow)
 
     # Add custom string representer for prettier multiline strings
-    def str_presenter(dumper, data):
-        if len(data.splitlines()) > 1:  # check for multiline string
-            return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
-        return dumper.represent_scalar('tag:yaml.org,2002:str', data)
-    yaml.add_representer(str, str_presenter)
+    def str_representer(dumper, data):
+        if len(data.splitlines()) > 1:  # Check for multiline string
+            return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+        return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+    yaml.add_representer(str, str_representer)
 
     if resolve_alias:
         # Resolve aliases and replace them with their anchors' contents
@@ -196,15 +196,15 @@ def update_config(new_config):
     config = _merge_dicts(copy.deepcopy(new_config), config)
 
 
-def _merge_dicts(user, default):
-    """Merge corpus config with default config, letting user values override default values."""
-    if isinstance(user, dict) and isinstance(default, dict):
+def _merge_dicts(d: dict, default: dict):
+    """Merge dict 'd' with dict 'default', letting values from 'd' override default values."""
+    if isinstance(d, dict) and isinstance(default, dict):
         for k, v in default.items():
-            if k not in user:
-                user[k] = v
+            if k not in d:
+                d[k] = v
             else:
-                user[k] = _merge_dicts(user[k], v)
-    return user
+                d[k] = _merge_dicts(d[k], v)
+    return d
 
 
 def add_to_structure(name, default=None, description=None, annotator: Optional[str] = None):
@@ -237,7 +237,7 @@ def validate_module_config():
             _get(config_key, config_structure)
         except KeyError:
             annotators = config_usage[config_key]
-            raise util.SparvErrorMessage(
+            raise SparvErrorMessage(
                 "The annotator{} {} {} trying to access the config key '{}' which isn't declared anywhere.".format(
                     "s" if len(annotators) > 1 else "", ", ".join(annotators),
                     "are" if len(annotators) > 1 else "is", config_key), "sparv", "config")
@@ -251,21 +251,24 @@ def validate_config(config_dict=None, structure=None, parent=""):
         path = (parent + "." + key) if parent else key
         if key not in structure:
             if not parent:
-                raise util.SparvErrorMessage(f"Unknown key in config file: '{path}'. No module with that name found.",
-                                             module="sparv", function="config")
+                raise SparvErrorMessage(f"Unknown key in config file: '{path}'. No module with that name found.",
+                                        module="sparv", function="config")
             else:
                 module_name = parent.split(".", 1)[0]
-                raise util.SparvErrorMessage(f"Unknown key in config file: '{path}'. The module '{module_name}' "
-                                             f"doesn't have an option with that name.",
-                                             module="sparv", function="config")
+                raise SparvErrorMessage(f"Unknown key in config file: '{path}'. The module '{module_name}' "
+                                        f"doesn't have an option with that name.",
+                                        module="sparv", function="config")
         elif not structure[key].get("_source"):
             validate_config(config_dict[key], structure[key], path)
 
 
-def load_presets(lang):
-    """Read presets files, set global presets variable and return dictionary with preset classes."""
+def load_presets(lang, lang_variety):
+    """Read presets files and return dictionaries with all available presets annotations and preset classes."""
     global presets
     class_dict = {}
+    full_lang = lang
+    if lang_variety:
+        full_lang = lang + "-" + lang_variety
 
     for f in PRESETS_DIR.rglob("*.yaml"):
         presets_yaml = read_yaml(f)
@@ -273,7 +276,7 @@ def load_presets(lang):
         # Skip preset if it is not valid for lang
         if lang:
             languages = presets_yaml.get("languages", [])
-            if languages and lang not in languages:
+            if languages and lang not in languages and full_lang not in languages:
                 continue
 
         # Make sure preset names are upper case
@@ -294,35 +297,35 @@ def load_presets(lang):
     return class_dict
 
 
-def resolve_presets(annotations):
+def resolve_presets(annotations, class_dict, preset_classes):
     """Resolve annotation presets into actual annotations."""
-    result = []
+    global presets
+    result_annotations = []
     for annotation in annotations:
         if annotation in presets:
-            result.extend(resolve_presets(presets[annotation]))
+            if annotation in class_dict:
+                preset_classes = _merge_dicts(preset_classes, class_dict[annotation])
+            result_annotations.extend(resolve_presets(presets[annotation], class_dict, preset_classes)[0])
         else:
-            result.append(annotation)
-    return result
+            result_annotations.append(annotation)
+    return result_annotations, preset_classes
 
 
 def apply_presets():
     """Resolve annotations from presets and set preset classes."""
     # Load annotation presets and classes
-    class_dict = load_presets(get("metadata.language"))
-
-    preset_classes = {}  # Classes set by presets
+    class_dict = load_presets(get("metadata.language"), get("metadata.variety"))
+    preset_classes = {}
 
     # Go through annotation lists in config to find references to presets
     for a in registry.annotation_sources:
         annotations = get(a)
         if not annotations:
             continue
-        # Update classes set by presets
-        for annotation in annotations:
-            preset_classes.update(class_dict.get(annotation, {}))
 
         # Resolve presets and update annotation list in config
-        set_value(a, resolve_presets(annotations))
+        annotations, preset_classes = resolve_presets(annotations, class_dict, preset_classes)
+        set_value(a, annotations)
 
     # Update classes
     default_classes = _config_default.get("classes", {})
@@ -332,19 +335,19 @@ def apply_presets():
     config["classes"] = classes
 
 
-def handle_document_annotation():
-    """Copy document annotation to text class."""
-    doc_elem = get("import.document_annotation")
+def handle_text_annotation():
+    """Copy text annotation to text class."""
+    text_ann = get("import.text_annotation")
 
-    # Make sure that if both classes.text and import.document_annotation are set, that they have the same value
-    if get("classes.text") and doc_elem and get("classes.text") != doc_elem:
-        raise util.SparvErrorMessage(
-            "The config keys 'classes.text' and 'import.document_annotation' can't have different values.",
+    # Make sure that if both classes.text and import.text_annotation are set, that they have the same value
+    if get("classes.text") and text_ann and get("classes.text") != text_ann:
+        raise SparvErrorMessage(
+            "The config keys 'classes.text' and 'import.text_annotation' can't have different values.",
             "sparv", "config")
 
-    # If import.document_annotation is set, copy value to classes.text
-    if doc_elem:
-        set_default("classes.text", doc_elem)
+    # If import.text_annotation is set, copy value to classes.text
+    if text_ann:
+        set_default("classes.text", text_ann)
 
 
 def inherit_config(source: str, target: str) -> None:

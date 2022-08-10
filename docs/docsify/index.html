@@ -78,7 +78,27 @@
           noData: "No Results!",
           // depth: 6, // Headline depth, 1 - 6
           hideOtherSidebarContent: true, // whether or not to hide other sidebar content on search
-        }
+        },
+        plugins: [
+          function(hook) {
+            /* Hide empty table headers */
+            hook.afterEach(function(html) {
+              let wrapper = document.createElement("div");
+              wrapper.innerHTML = html;
+              for (let thead of wrapper.getElementsByTagName("thead")) {
+                let empty = true;
+                for (let th of thead.getElementsByTagName("th")) {
+                  if (th.childNodes.length > 0) {
+                    empty = false;
+                    break;
+                  }
+                }
+                if (empty) thead.style.display = "none";
+              }
+              return wrapper.innerHTML;
+            });
+          }
+        ]
       };
     </script>
 

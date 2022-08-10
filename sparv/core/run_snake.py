@@ -3,12 +3,13 @@
 import importlib.util
 import logging
 import sys
+import traceback
 
 from pkg_resources import iter_entry_points
 
-from sparv.core import log_handler, paths
+from sparv.core import io, log_handler, paths
 from sparv.core import registry
-from sparv.util import SparvErrorMessage
+from sparv.core.misc import SparvErrorMessage
 
 custom_name = "custom"
 plugin_name = "plugin"
@@ -24,8 +25,8 @@ except NameError:
 def exit_with_error_message(message, logger_name):
     """Log error message and exit with non-zero status."""
     error_logger = logging.getLogger(logger_name)
-    if snakemake.params.doc:
-        message += f"\n\n(document: {snakemake.params.doc})"
+    if snakemake.params.source_file:
+        message += f"\n\n(file: {snakemake.params.source_file})"
     error_logger.error(message)
     sys.exit(123)
 
@@ -40,6 +41,14 @@ class StreamToLogger:
     def write(self, buf):
         self.logger.log(self.log_level, buf.rstrip())
 
+    @staticmethod
+    def isatty():
+        return False
+
+
+# Set compression
+if snakemake.params.compression:
+    io.compression = snakemake.params.compression
 
 # Import module
 modules_path = ".".join(("sparv", paths.modules_dir))
@@ -63,7 +72,7 @@ if use_preloader:
             preload.send_data(sock, preload.PING)
             response = preload.receive_data(sock)  # Timeouts if busy
             sock.settimeout(None)
-    except (BlockingIOError, socket.timeout) as e:
+    except (BlockingIOError, socket.timeout):
         use_preloader = False
         preloader_busy = True
         if sock is not None:
@@ -98,7 +107,9 @@ parameters = snakemake.params.parameters
 
 log_handler.setup_logging(snakemake.config["log_server"],
                           log_level=snakemake.config["log_level"],
-                          log_file_level=snakemake.config["log_file_level"])
+                          log_file_level=snakemake.config["log_file_level"],
+                          file=snakemake.params.source_file,
+                          job=f"{snakemake.params.module_name}:{snakemake.params.f_name}")
 logger = logging.getLogger("sparv")
 logger.info("RUN: %s:%s(%s)", module_name, f_name, ", ".join("%s=%s" % (i[0], repr(i[1])) for i in
                                                              list(parameters.items())))
@@ -120,11 +131,16 @@ if not use_preloader:
             logger.export_dirs(snakemake.params.export_dirs)
     except SparvErrorMessage as e:
         # Any exception raised here would be printed directly to the terminal, due to how Snakemake runs the script.
-        # Instead we log the error message and exit with a non-zero status to signal to Snakemake that
+        # Instead, we log the error message and exit with a non-zero status to signal to Snakemake that
         # something went wrong.
         exit_with_error_message(e.message, "sparv.modules." + module_name)
     except Exception as e:
-        logger.exception("An error occurred while executing:")
+        errmsg = f"An error occurred while executing {module_name}:{f_name}:"
+        if logger.level > logging.DEBUG:
+            errmsg += f"\n\n  {type(e).__name__}: {e}\n\n" \
+                      "To display further details when errors occur, run Sparv with the '--log debug' argument."
+        logger.error(errmsg)
+        logger.debug(traceback.format_exc())
         sys.exit(123)
     finally:
         # Restore printing to stdout and stderr

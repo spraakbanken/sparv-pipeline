@@ -12,7 +12,7 @@ def read_sparv_config():
     data = {}
     if sparv_config_file.is_file():
         try:
-            with open(sparv_config_file) as f:
+            with open(sparv_config_file, encoding="utf-8") as f:
                 data = yaml.load(f, Loader=yaml.FullLoader)
         except:
             data = {}
@@ -66,8 +66,3 @@ log_dir = "logs"
 source_dir = "source"
 export_dir = Path("export")
 config_file = "config.yaml"
-
-# CWB variables
-cwb_encoding = os.environ.get("CWB_ENCODING", "utf8")
-cwb_datadir = os.environ.get("CWB_DATADIR")
-corpus_registry = os.environ.get("CORPUS_REGISTRY")

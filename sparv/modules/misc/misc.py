@@ -3,7 +3,8 @@
 import re
 from typing import List, Optional
 
-from sparv import Annotation, Config, Output, Text, Wildcard, annotator, util
+from sparv.api import Annotation, Config, SourceFilename, Output, SparvErrorMessage, Text, Wildcard, annotator, util
+from sparv.api.util.tagsets import tagmappings, pos_to_upos, suc_to_feats
 
 
 @annotator("Text value of a span (usually a token)", config=[
@@ -22,7 +23,7 @@ def text_spans(text: Text = Text(),
     for span in chunk:
         token = corpus_text[span[0]:span[1]]
         if not keep_formatting_chars:
-            new_token = util.remove_formatting_characters(token)
+            new_token = util.misc.remove_formatting_characters(token)
             # If this token consists entirely of formatting characters, don't remove them. Empty tokens are bad!
             if new_token:
                 token = new_token
@@ -84,7 +85,7 @@ def translate_tag(out: Output,
     Example mappings: parole_to_suc, suc_to_simple, ...
     """
     if isinstance(mapping, str):
-        mapping = util.tagsets.mappings[mapping]
+        mapping = tagmappings.mappings[mapping]
     out.write((mapping.get(t, t) for t in tag.read()))
 
 
@@ -96,7 +97,7 @@ def upostag(out: Output = Output("<token>:misc.upos", cls="token:upos", descript
     out_annotation = []
 
     for tag in pos_tags:
-        out_annotation.append(util.tagsets.pos_to_upos(tag, "swe", "SUC"))
+        out_annotation.append(pos_to_upos(tag, "swe", "SUC"))
 
     out.write(out_annotation)
 
@@ -112,8 +113,8 @@ def ufeatstag(out: Output = Output("<token>:misc.ufeats", cls="token:ufeats",
     out_annotation = []
 
     for pos_tag, msd_tag in zip(pos_tags, msd_tags):
-        feats = util.tagsets.suc_to_feats(pos_tag, msd_tag)
-        out_annotation.append(util.cwbset(feats))
+        feats = suc_to_feats(pos_tag, msd_tag)
+        out_annotation.append(util.misc.cwbset(feats))
 
     out.write(out_annotation)
 
@@ -141,7 +142,7 @@ def chain(out, annotations, default=None):
     if isinstance(annotations, str):
         annotations = annotations.split()
     annotations = [a.read() for a in annotations]
-    out.write(util.chain(annotations, default))
+    out.write(util.misc.chain(annotations, default))
 
 
 @annotator("Create new annotation, with spans as values")
@@ -154,8 +155,8 @@ def span_as_value(chunk: Annotation,
 @annotator("Select a specific index from the values of an annotation")
 def select(out: Output,
            annotation: Annotation,
-           index: Optional[int] = 0,
-           separator: Optional[str] = " "):
+           index: int = 0,
+           separator: str = " "):
     """Select a specific index from the values of an annotation.
 
     The given annotation values are separated by 'separator',
@@ -177,8 +178,8 @@ def constant(chunk: Annotation,
 @annotator("Add prefix and/or suffix to an annotation")
 def affix(chunk: Annotation,
           out: Output,
-          prefix: Optional[str] = "",
-          suffix: Optional[str] = ""):
+          prefix: str = "",
+          suffix: str = ""):
     """Add prefix and/or suffix to annotation."""
     out.write([(prefix + val + suffix) for val in chunk.read()])
 
@@ -186,7 +187,7 @@ def affix(chunk: Annotation,
 @annotator("Replace every character in an annotation with an anonymous character")
 def anonymise(chunk: Annotation,
               out: Output,
-              anonym_char: Optional[str] = "*"):
+              anonym_char: str = "*"):
     """Replace every character in an annotation with an anonymous character (* per default)."""
     out.write([(anonym_char * len(val)) for val in chunk.read()])
 
@@ -195,7 +196,7 @@ def anonymise(chunk: Annotation,
 def replace(chunk: Annotation,
             out: Output,
             find: str = "",
-            sub: Optional[str] = ""):
+            sub: str = ""):
     """Find and replace whole annotation. Find string must match whole annotation."""
     out.write((sub if val == find else val for val in chunk.read()))
 
@@ -213,7 +214,7 @@ def replace_list(chunk: Annotation,
     find = find.split()
     sub = sub.split()
     if len(find) != len(sub):
-        raise util.SparvErrorMessage("Find and sub must have the same number of words.")
+        raise SparvErrorMessage("Find and sub must have the same number of words.")
     translate = dict((f, s) for (f, s) in zip(find, sub))
     out.write((translate.get(val, val) for val in chunk.read()))
 
@@ -274,6 +275,35 @@ def backoff(chunk: Annotation,
     out.write((val if val else backoff[n] for (n, val) in enumerate(chunk.read())))
 
 
+@annotator("Replace empty values in 'chunk' with values from 'backoff' and output info about which annotator each "
+           "annotation was produced with.")
+def backoff_with_info(
+        chunk: Annotation,
+        backoff: Annotation,
+        out: Output,
+        out_info: Output,
+        chunk_name: str = "",
+        backoff_name: str = ""):
+    """Replace empty values in 'chunk' with values from 'backoff'."""
+    backoffs = list(backoff.read())
+    out_annotation = []
+    out_info_annotation = []
+    if not chunk_name:
+        chunk_name = chunk.name
+    if not backoff_name:
+        backoff_name = backoff.name
+
+    for n, val in enumerate(chunk.read()):
+        if val:
+            out_annotation.append(val)
+            out_info_annotation.append(chunk_name)
+        else:
+            out_annotation.append(backoffs[n])
+            out_info_annotation.append(backoff_name)
+    out.write(out_annotation)
+    out_info.write(out_info_annotation)
+
+
 @annotator("Replace values in 'chunk' with non empty values from 'repl'")
 def override(chunk: Annotation,
              repl: Annotation,
@@ -297,3 +327,63 @@ def roundfloat(chunk: Annotation,
     decimals = int(decimals)
     strformat = "%." + str(decimals) + "f"
     out.write((strformat % round(float(val), decimals) for val in chunk.read()))
+
+
+@annotator("Merge two annotations (which may be sets) into one set")
+def merge_to_set(out: Output,
+                 left: Annotation,
+                 right: Annotation,
+                 unique: bool = True,
+                 sort: bool = True):
+    """Merge two sets of annotations (which may be sets) into one set.
+
+    Setting unique to True will remove duplicate values.
+    Setting sort to True will sort the values within the new set.
+    """
+    le = left.read()
+    ri = right.read()
+    out_annotation = []
+    for left_annot, right_annot in zip(le, ri):
+        annots = util.misc.set_to_list(left_annot) + util.misc.set_to_list(right_annot)
+        if unique:
+            annots = list(dict.fromkeys(annots))
+        out_annotation.append(util.misc.cwbset(annots, sort=sort))
+    out.write(out_annotation)
+
+
+@annotator("Source filename as attribute on text annotation")
+def source(out: Output = Output("<text>:misc.source"),
+           name: SourceFilename = SourceFilename(),
+           text: Annotation = Annotation("<text>")):
+    """Create a text attribute based on the filename of the source file."""
+    out.write(name for _ in text.read())
+
+
+@annotator("Get the first annotation from a cwb set")
+def first_from_set(out: Output,
+                   chunk: Annotation,):
+    """"Get the first annotation from a set."""
+    out_annotation = []
+    for val in chunk.read():
+        out_annotation.append(util.misc.set_to_list(val)[0] if util.misc.set_to_list(val) else "")
+    out.write(out_annotation)
+
+
+@annotator("Get the best annotation from a cwb set with scores")
+def best_from_set(out: Output,
+                  chunk: Annotation,
+                  is_sorted: bool = False,
+                  score_sep = ":"):
+    """Get the best annotation from a set with scores.
+
+    If 'is_sorted = True' the input is already sorted. In this case the first value is taken and its score is removed.
+    """
+    out_annotation = []
+    for val in chunk.read():
+        if is_sorted:
+            values = [(v.split(score_sep)[1], v.split(score_sep)[0]) for v in util.misc.set_to_list(val)]
+        else:
+            values = sorted([(v.split(score_sep)[1], v.split(score_sep)[0]) for v in util.misc.set_to_list(val)],
+                             key=lambda x:x[0], reverse=True)
+        out_annotation.append(values[0][1] if values else "")
+    out.write(out_annotation)

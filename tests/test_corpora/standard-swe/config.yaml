@@ -15,6 +15,7 @@ metadata:
             - all Swedish standard token and text-level annotations except wsd
             - custom annotations
             - all kinds of exports except the combined and compressed variants
+            - removal of namespaces upon import
 
 
 #===============================================================================
@@ -22,13 +23,16 @@ metadata:
 #===============================================================================
 
 import:
-    # The annotation representing one text document. Any text-level annotations will be attached to this annotation.
-    document_annotation: text
+    # The annotation representing one text. Any text-level annotations will be attached to this annotation.
+    text_annotation: text
 
 xml_import:
+    # Remove namespaces upon import
+    remove_namespaces: true
     # Elements and attributes from the source XML that we want to be available as input for other annotations
     elements:
         - text:date
+        - document:name
 
 #===============================================================================
 # Annotation Class Settings
@@ -61,7 +65,6 @@ export:
     default:
         - conll_export:conllu
         - csv_export:csv
-        - cwb:info
         - cwb:vrt
         - cwb:vrt_scrambled
         - korp:relations_sql
@@ -76,8 +79,16 @@ export:
         - PARAGRAPH_SWE.all
         - SWE_DEFAULT.all
         - not <token>:wsd.sense
-        - <token>:misc.word.affixed
+        - <token>:misc.affixed
         - <token>:custom.convert.upper
+
+stats_export:
+    annotations:
+        - <token:pos>
+        - <token>:custom.convert.upper
+    source_annotations:
+        - document:name
+
 
 #===============================================================================
 # Custom Annotations
@@ -85,9 +96,12 @@ export:
 custom_annotations:
     - annotator: misc:affix
       params:
-          out: <token>:misc.word.affixed
+          out: <token>:misc.affixed
           chunk: <token:word>
           prefix: "|"
           suffix: "|"
 
     - annotator: custom.convert:uppercase
+
+sparv:
+    compression: none

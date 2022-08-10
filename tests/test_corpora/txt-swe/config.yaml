@@ -10,3 +10,6 @@ xml_export:
         - <sentence>
         - <token:word>
         - <token>:stanza.pos
+
+sparv:
+    compression: none

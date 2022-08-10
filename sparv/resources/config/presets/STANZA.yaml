@@ -1,0 +1,42 @@
+#===============================================================================
+# Stanza Annotation Presets (not for Swedish)
+#===============================================================================
+
+languages:
+    - eng
+
+
+classes:
+    sentence: stanza.sentence
+    named_entity: stanza.ne
+    token: stanza.token
+    "token:pos": <token>:stanza.pos
+    "token:baseform": <token>:stanza.baseform
+    "token:ufeats": <token>:stanza.ufeats
+    "token:deprel": <token>:stanza.deprel
+    "token:dephead": <token>:stanza.dehead
+    "token:dephead_ref": <token>:stanza.dehead_ref
+    "token:ref": <token>:stanza.ref
+
+
+presets:
+    all:
+        - sentence
+        - named-entity
+        - token
+
+    token:
+        - <token>:stanza.pos
+        - <token>:stanza.upos
+        - <token>:stanza.baseform
+        - <token>:stanza.ufeats
+        - <token>:stanza.dephead_ref
+        - <token>:stanza.deprel
+        - <token>:stanza.ref
+
+    sentence:
+        - <sentence>:misc.id
+    
+    named-entity:
+        - stanza.ne
+        - stanza.ne:stanza.ne_type

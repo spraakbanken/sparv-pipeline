@@ -8,7 +8,6 @@ from typing import Optional
 
 import appdirs
 import pkg_resources
-import yaml
 from rich.padding import Padding
 from rich.prompt import Confirm
 
@@ -28,7 +27,7 @@ def check_sparv_version() -> Optional[bool]:
     data_dir = paths.get_data_path()
     version_file = (data_dir / VERSION_FILE)
     if version_file.is_file():
-        return version_file.read_text() == __version__
+        return version_file.read_text(encoding="utf-8") == __version__
     return None
 
 
@@ -50,6 +49,26 @@ def copy_resource_files(data_dir: pathlib.Path):
                     shutil.copy(f, data_dir / rel_f)
             else:
                 shutil.copy(f, data_dir / rel_f)
+
+
+def reset():
+    """Remove the data dir config file."""
+    if paths.sparv_config_file.is_file():
+        data_dir = paths.read_sparv_config().get("sparv_data")
+        try:
+            # Delete config file
+            paths.sparv_config_file.unlink()
+            # Delete config dir if empty
+            if not any(paths.sparv_config_file.parent.iterdir()):
+                paths.sparv_config_file.parent.rmdir()
+        except:
+            console.print("An error occurred while trying to reset the configuration.")
+            sys.exit(1)
+        console.print("Sparv's data directory information has been reset.")
+        if data_dir and pathlib.Path(data_dir).is_dir():
+            console.print(f"The data directory itself has not been removed, and is still available at:\n{data_dir}")
+    else:
+        console.print("Nothing to reset.")
 
 
 def run(sparv_datadir: Optional[str] = None):
@@ -134,12 +153,12 @@ def run(sparv_datadir: Optional[str] = None):
         }
 
         paths.sparv_config_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(paths.sparv_config_file, "w") as f:
+        with open(paths.sparv_config_file, "w", encoding="utf-8") as f:
             f.write(config.dump_config(config_dict))
 
     copy_resource_files(path)
 
     # Save Sparv version number to a file in data dir
-    (path / VERSION_FILE).write_text(__version__)
+    (path / VERSION_FILE).write_text(__version__, encoding="utf-8")
 
     console.print(f"\nSetup completed. The Sparv data directory is set to '{path}'.")

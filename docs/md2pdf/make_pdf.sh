@@ -5,6 +5,7 @@
 # Requires markdown and latex
 
 USER_MANUAL_FILES="
+../user-manual/quick-start.md
 ../user-manual/installation-and-setup.md
 ../user-manual/running-sparv.md
 ../user-manual/requirements-for-source-files.md
@@ -36,7 +37,7 @@ function make_document {
 title: Sparv Pipeline $SPARV_VERSION - $3
 author: |
   | Språkbanken Text
-  | Institutionen för svenska språket
+  | Institutionen för svenska, flerspråkighet och språkteknologi
   | Göteborgs universitet
   |
   |

@@ -1,21 +1,20 @@
 """Create files needed for the lemgram search in Korp."""
 
-import logging
 from collections import defaultdict
 
-import sparv.util as util
-from sparv import (AllDocuments, AnnotationAllDocs, Config, Corpus, Export, ExportInput, OutputCommonData, exporter,
-                   installer)
-from sparv.util.mysql_wrapper import MySQL
+from sparv.api import (AllSourceFilenames, AnnotationAllSourceFiles, Config, Corpus, Export, ExportInput, OutputCommonData, exporter,
+                       get_logger, installer, util)
+from sparv.api.util.mysql_wrapper import MySQL
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
+
 
 # Path to the cwb-scan-corpus binary
 CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
 
 
 @installer("Install lemgram SQL on remote host", language=["swe"])
-def install_lemgrams(sqlfile: ExportInput = ExportInput("korp_lemgram_index/lemgram_index.sql"),
+def install_lemgrams(sqlfile: ExportInput = ExportInput("korp.lemgram_index/lemgram_index.sql"),
                      marker: OutputCommonData = OutputCommonData("korp.install_lemgram_marker"),
                      db_name: str = Config("korp.mysql_dbname"),
                      host: str = Config("korp.remote_host")):
@@ -23,28 +22,27 @@ def install_lemgrams(sqlfile: ExportInput = ExportInput("korp_lemgram_index/lemg
 
     Args:
         sqlfile (str, optional): SQL file to be installed.
-            Defaults to ExportInput("korp_lemgram_index/lemgram_index.sql").
+            Defaults to ExportInput("korp.lemgram_index/lemgram_index.sql").
         marker (str, optional): Marker file to be written.
             Defaults to OutputCommonData("korp.install_lemgram_marker").
         db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname").
         host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host").
     """
-    util.install_mysql(host, db_name, sqlfile)
+    util.install.install_mysql(host, db_name, sqlfile)
     marker.write("")
 
 
 @exporter("Lemgram index SQL file for use in Korp", language=["swe"])
 def lemgram_sql(corpus: Corpus = Corpus(),
-                docs: AllDocuments = AllDocuments(),
-                out: Export = Export("korp_lemgram_index/lemgram_index.sql"),
-                lemgram: AnnotationAllDocs = AnnotationAllDocs("<token>:saldo.lemgram")):
+                source_files: AllSourceFilenames = AllSourceFilenames(),
+                out: Export = Export("korp.lemgram_index/lemgram_index.sql"),
+                lemgram: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>:saldo.lemgram")):
     """Create lemgram index SQL file."""
-
     corpus = corpus.upper()
     result = defaultdict(int)
 
-    for doc in docs:
-        for lg in lemgram.read(doc):
+    for file in source_files:
+        for lg in lemgram.read(file):
             for value in lg.split("|"):
                 if value and ":" not in value:
                     result[value] += 1
@@ -60,9 +58,9 @@ def lemgram_sql(corpus: Corpus = Corpus(),
             "lemgram": lemgram,
             "corpus": corpus,
             "freq": freq
-       })
+        })
 
-    log.info("Creating SQL")
+    logger.info("Creating SQL")
     mysql.add_row(MYSQL_TABLE, rows)
 
 

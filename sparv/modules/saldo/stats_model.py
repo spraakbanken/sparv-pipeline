@@ -1,15 +1,14 @@
 """Train a probability model on a Korp statistics file."""
 
-import logging
 import os
 import pickle
 import urllib.request
 
 from nltk import FreqDist, LidstoneProbDist
 
-from sparv import Model, ModelOutput, modelbuilder
+from sparv.api import Model, ModelOutput, get_logger, modelbuilder
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 MIN_FREQ = 4
 
@@ -26,10 +25,10 @@ def build_korp_stats(out: ModelOutput = ModelOutput("saldo/stats.pickle"),
     """Download Korp's word frequency file and convert it to a model."""
     txt_file = Model("saldo/stats_all.txt")
     try:
-        log.info("Downloading Korp stats file...")
+        logger.info("Downloading Korp stats file...")
         download_stats_file("https://svn.spraakdata.gu.se/sb-arkiv/pub/frekvens/stats_all.txt", txt_file.path)
 
-        log.info("Building frequency model...")
+        logger.info("Building frequency model...")
         make_model(txt_file.path, out.path)
     finally:
         # Clean up

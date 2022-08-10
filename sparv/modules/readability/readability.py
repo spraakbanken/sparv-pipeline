@@ -3,7 +3,9 @@
 from math import log
 from typing import List
 
-from sparv import Annotation, Output, annotator
+from sparv.api import Annotation, Output, annotator, get_logger
+
+logger = get_logger(__name__)
 
 
 @annotator("Annotate text chunks with LIX values")
@@ -17,6 +19,7 @@ def lix(text: Annotation = Annotation("<text>"),
     """Create LIX annotation for text."""
     # Read annotation files and get parent_children relations
     text_children, _orphans = text.get_children(sentence)
+    logger.progress(total=len(text_children) + 1)
     word_pos = list(word.read_attributes((word, pos)))
     sentence_children, _orphans = sentence.get_children(word)
     sentence_children = list(sentence_children)
@@ -29,8 +32,10 @@ def lix(text: Annotation = Annotation("<text>"),
             s = sentence_children[sentence_index]
             in_sentences.append(list(actual_words([word_pos[token_index] for token_index in s], skip_pos)))
         lix_annotation.append(fmt % lix_calc(in_sentences))
+        logger.progress()
 
     out.write(lix_annotation)
+    logger.progress()
 
 
 def lix_calc(sentences):
@@ -65,6 +70,7 @@ def ovix(text: Annotation = Annotation("<text>"),
          fmt: str = "%.2f"):
     """Create OVIX annotation for text."""
     text_children, _orphans = text.get_children(word)
+    logger.progress(total=len(text_children) + 1)
     word_pos = list(word.read_attributes((word, pos)))
 
     # Calculate OVIX for every text element
@@ -72,8 +78,10 @@ def ovix(text: Annotation = Annotation("<text>"),
     for text in text_children:
         in_words = list(actual_words([word_pos[token_index] for token_index in text], skip_pos))
         ovix_annotation.append(fmt % ovix_calc(in_words))
+        logger.progress()
 
     out.write(ovix_annotation)
+    logger.progress()
 
 
 def ovix_calc(words):
@@ -116,6 +124,7 @@ def nominal_ratio(text: Annotation = Annotation("<text>"),
                   fmt: str = "%.2f"):
     """Create nominal ratio annotation for text."""
     text_children, _orphans = text.get_children(pos)
+    logger.progress(total=len(text_children) + 1)
     pos_annotation = list(pos.read())
 
     # Calculate OVIX for every text element
@@ -123,7 +132,9 @@ def nominal_ratio(text: Annotation = Annotation("<text>"),
     for text in text_children:
         in_pos = [pos_annotation[token_index] for token_index in text]
         nk_annotation.append(fmt % nominal_ratio_calc(in_pos, noun_pos, verb_pos))
+        logger.progress()
     out.write(nk_annotation)
+    logger.progress()
 
 
 def nominal_ratio_calc(pos: List[str], noun_pos: List[str], verb_pos: List[str]):

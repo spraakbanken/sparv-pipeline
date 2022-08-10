@@ -1,12 +1,12 @@
 """Module for converting Mamba-Dep dependencies to phrase structure trees."""
 
-import logging
 import pprint
 from collections import defaultdict
 
-from sparv import Annotation, Output, annotator
+from sparv.api import Annotation, Output, annotator, get_logger
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
+
 
 
 @annotator("Convert Mamba-Dep dependencies into phrase structure", language=["swe"])
@@ -20,7 +20,7 @@ def annotate(out_phrase: Output = Output("phrase_structure.phrase", description=
              sentence: Annotation = Annotation("<sentence>"),
              pos: Annotation = Annotation("<token:pos>"),
              msd: Annotation = Annotation("<token:msd>"),
-             ref: Annotation = Annotation("<token>:misc.number_rel_<sentence>"),
+             ref: Annotation = Annotation("<token:ref>"),
              dephead_ref: Annotation = Annotation("<token:dephead_ref>"),
              deprel: Annotation = Annotation("<token:deprel>")):
     """Annotate sentence with phrase structures."""
@@ -47,31 +47,31 @@ def annotate(out_phrase: Output = Output("phrase_structure.phrase", description=
 
             # Make nodes
             children = flatten_tree(tree[1], [])
-            log.debug("\n\nSENTENCE:")
+            logger.debug("\n\nSENTENCE:")
             position = 0
             open_elem_stack = []
             for child in children:
                 if not child[0].startswith("WORD:"):
                     start_pos = get_token_span(s[position])[0]
                     open_elem_stack.append(child + (start_pos,))
-                    log.debug(f"<phrase name={child[0]} func={child[1]}> {s[position]}")
+                    logger.debug(f"<phrase name={child[0]} func={child[1]}> {s[position]}")
                 else:
                     # Close nodes
                     while open_elem_stack[-1][2] == child[2]:
                         start_pos = open_elem_stack[-1][3]
                         end_pos = get_token_span(s[position - 1])[1]
                         nodes.append(((start_pos, end_pos), open_elem_stack[-1][0], open_elem_stack[-1][1]))
-                        log.debug(f"</phrase name={open_elem_stack[-1][0]} func={open_elem_stack[-1][1]}> {start_pos}-{end_pos}")
+                        logger.debug(f"</phrase name={open_elem_stack[-1][0]} func={open_elem_stack[-1][1]}> {start_pos}-{end_pos}")
                         open_elem_stack.pop()
                     position += 1
-                    log.debug(f"   {child[0][5:]}")
+                    logger.debug(f"   {child[0][5:]}")
 
             # Close remaining open nodes
             end_pos = get_token_span(s[-1])[1]
             for elem in reversed(open_elem_stack):
                 start_pos = elem[3]
                 nodes.append(((start_pos, end_pos), elem[0], elem[1]))
-                log.debug(f"</phrase name={elem[0]} func={elem[1]}> {start_pos}-{end_pos}")
+                logger.debug(f"</phrase name={elem[0]} func={elem[1]}> {start_pos}-{end_pos}")
 
     # Sort nodes
     sorted_nodes = sorted(nodes)

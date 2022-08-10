@@ -24,31 +24,47 @@ from snakemake import logger
 
 from sparv.core import io, paths
 from sparv.core.console import console
-from sparv.util.misc import SparvErrorMessage
+from sparv.core.misc import SparvErrorMessage
 
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 LOG_FORMAT_DEBUG = "%(asctime)s - %(name)s (%(process)d) - %(levelname)s - %(message)s"
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 TIME_FORMAT = "%H:%M:%S"
 
+# Variables set by setup_logging()
+current_file = None
+current_job = None
+
 # Add internal logging level used for non-logging-related communication from child processes to log handler
 INTERNAL = 100
 logging.addLevelName(INTERNAL, "INTERNAL")
+
+
+def _log_progress(self, progress=None, advance=None, total=None):
+    """Log progress of task."""
+    if self.isEnabledFor(INTERNAL):
+        self._log(INTERNAL, "progress", (), extra={"progress": progress, "advance": advance, "total": total,
+                                                   "job": current_job, "file": current_file})
+
+
+# Add progress function to logger
+logging.progress = _log_progress
+logging.Logger.progress = _log_progress
 
 # Add logging level used for progress output (must be lower than INTERNAL)
 PROGRESS = 90
 logging.addLevelName(PROGRESS, "PROGRESS")
 
 
-def export_dirs(self, dirs):
+def _export_dirs(self, dirs):
     """Send list of export dirs to log handler."""
     if self.isEnabledFor(INTERNAL):
         self._log(INTERNAL, "export_dirs", (), extra={"export_dirs": dirs})
 
 
 # Add log function to logger
-logging.export_dirs = export_dirs
-logging.Logger.export_dirs = export_dirs
+logging.export_dirs = _export_dirs
+logging.Logger.export_dirs = _export_dirs
 
 # Messages from the Sparv core
 messages = {
@@ -60,6 +76,7 @@ messages = {
 missing_annotations_msg = "There can be many reasons for this. Please make sure that there are no problems with the " \
                           "corpus configuration file, like misspelled annotation names (including unintentional " \
                           "whitespace characters) or references to non-existent or implicit source annotations."
+
 
 class LogRecordStreamHandler(socketserver.StreamRequestHandler):
     """Handler for streaming logging requests."""
@@ -127,14 +144,38 @@ class ProgressInternalFilter(logging.Filter):
 class InternalLogHandler(logging.Handler):
     """Handler for internal log messages."""
 
-    def __init__(self, export_dirs_list):
+    def __init__(self, export_dirs_list, progress_, jobs, job_ids):
         self.export_dirs_list = export_dirs_list
+        self.progress: progress.Progress = progress_
+        self.jobs = jobs
+        self.job_ids = job_ids
         super().__init__()
 
     def emit(self, record):
         """Handle log record."""
         if record.msg == "export_dirs":
             self.export_dirs_list.update(record.export_dirs)
+        elif record.msg == "progress":
+            job_id = self.job_ids.get((record.job, record.file))
+            if job_id is not None:
+                if not self.jobs[job_id]["task"]:
+                    self.jobs[job_id]["task"] = self.progress.add_task(
+                        "",
+                        start=bool(record.total),
+                        completed=record.progress or record.advance or 0,
+                        total=record.total or 100.0
+                    )
+                else:
+                    try:
+                        if record.total:
+                            self.progress.start_task(self.jobs[job_id]["task"])
+                            self.progress.update(self.jobs[job_id]["task"], total=record.total)
+                        if record.progress:
+                            self.progress.update(self.jobs[job_id]["task"], completed=record.progress)
+                        elif record.advance or not record.total:
+                            self.progress.advance(self.jobs[job_id]["task"], advance=record.advance or 1)
+                    except KeyError:
+                        pass
 
 
 class ModifiedRichHandler(RichHandler):
@@ -150,34 +191,42 @@ class ModifiedRichHandler(RichHandler):
 class ProgressWithTable(progress.Progress):
     """Progress bar with additional table."""
 
-    def __init__(self, all_tasks, current_tasks, *args, **kwargs):
+    def __init__(self, all_tasks, current_tasks, max_len, *args, **kwargs):
         self.all_tasks = all_tasks
         self.current_tasks = current_tasks
-        self.task_max_len = 0
+        self.task_max_len = max_len
         super().__init__(*args, **kwargs)
 
     def get_renderables(self):
         """Get a number of renderables for the progress display."""
-        if not self.task_max_len and self.all_tasks:
-            self.task_max_len = max(map(len, self.all_tasks))
-
         # Progress bar
-        yield self.make_tasks_table(self.tasks)
+        yield self.make_tasks_table(self.tasks[0:1])
 
         # Task table
         if self.all_tasks:
+            rows = []
+            elapsed_max_len = 7
+            bar_col = progress.BarColumn(bar_width=20)
+            for task in list(self.current_tasks.values()):  # Make a copy to avoid mutations while iterating
+                elapsed = str(timedelta(seconds=round(time.time() - task["starttime"])))
+                if len(elapsed) > elapsed_max_len:
+                    elapsed_max_len = len(elapsed)
+                rows.append((
+                    task["name"],
+                    f"[dim]{task['file']}[/dim]",
+                    bar_col(self._tasks[task["task"]]) if task["task"] else "",
+                    elapsed
+                ))
+
             table = Table(show_header=False, box=box.SIMPLE, expand=True)
             table.add_column("Task", no_wrap=True, min_width=self.task_max_len + 2, ratio=1)
-            table.add_column("Document", no_wrap=True)
-            table.add_column("Elapsed", no_wrap=True, width=8, justify="right", style="progress.remaining")
-            table.add_row("[b]Task[/]", "[b]Document[/]", "[default b]Elapsed[/]")
-            for task in self.current_tasks.values():
-                elapsed = round(time.time() - task["starttime"])
-                table.add_row(
-                    task["name"],
-                    f"[dim]{task['doc']}[/dim]",
-                    str(timedelta(seconds=elapsed))
-                )
+            table.add_column("File", no_wrap=True)
+            table.add_column("Bar", width=10)
+            table.add_column("Elapsed", no_wrap=True, width=elapsed_max_len, justify="right",
+                             style="progress.remaining")
+            table.add_row("[b]Task[/]", "[b]File[/]", "", "[default b]Elapsed[/]")
+            for row in rows:
+                table.add_row(*row)
             yield table
 
 
@@ -186,7 +235,7 @@ class LogHandler:
 
     icon = "\U0001f426"
 
-    def __init__(self, progressbar=True, log_level=None, log_file_level=None, verbose=False,
+    def __init__(self, progressbar=True, log_level=None, log_file_level=None, simple=False, stats=False,
                  pass_through=False, dry_run=False):
         """Initialize log handler.
 
@@ -194,12 +243,13 @@ class LogHandler:
             progressbar: Set to False to disable progress bar. Enabled by default.
             log_level: Log level for logging to stdout.
             log_file_level: Log level for logging to file.
-            verbose: Set to True to show more info about currently running tasks.
+            simple: Set to True to show less info about currently running jobs.
+            stats: Set to True to show stats after completion.
             pass_through: Let Snakemake's log messages pass through uninterrupted.
             dry_run: Set to True to print summary about jobs.
         """
         self.use_progressbar = progressbar and console.is_terminal
-        self.verbose = verbose and console.is_terminal
+        self.simple = simple or not console.is_terminal
         self.pass_through = pass_through
         self.dry_run = dry_run
         self.log_level = log_level
@@ -215,6 +265,9 @@ class LogHandler:
         self.export_dirs = set()
         self.start_time = time.time()
         self.jobs = {}
+        self.jobs_max_len = 0
+        self.stats = stats
+        self.stats_data = defaultdict(float)
         self.logger = None
 
         # Progress bar related variables
@@ -222,7 +275,8 @@ class LogHandler:
         self.bar: Optional[progress.TaskID] = None
         self.bar_started: bool = False
         self.last_percentage = 0
-        self.current_tasks = OrderedDict()
+        self.current_jobs = OrderedDict()
+        self.job_ids = {}  # Translation from (Sparv task name, source file) to Snakemake job ID
 
         # Create a simple TCP socket-based logging receiver
         tcpserver = socketserver.ThreadingTCPServer(("localhost", 0), RequestHandlerClass=LogRecordStreamHandler)
@@ -272,7 +326,7 @@ class LogHandler:
         self.logger.addHandler(levelcount_handler)
 
         # Internal log handler
-        internal_handler = InternalLogHandler(self.export_dirs)
+        internal_handler = InternalLogHandler(self.export_dirs, self.progress, self.current_jobs, self.job_ids)
         internal_handler.setLevel(INTERNAL)
         self.logger.addHandler(internal_handler)
 
@@ -281,16 +335,17 @@ class LogHandler:
         print()
         progress_layout = [
             progress.SpinnerColumn("dots2"),
-            progress.BarColumn(bar_width=None if self.verbose else 40),
+            progress.BarColumn(bar_width=None if not self.simple else 40),
             progress.TextColumn("[progress.description]{task.description}"),
             progress.TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
             progress.TextColumn("[progress.remaining]{task.completed} of {task.total} tasks"),
             progress.TextColumn("{task.fields[text]}")
         ]
-        if self.verbose:
-            self.progress = ProgressWithTable(self.jobs, self.current_tasks, *progress_layout, console=console)
-        else:
+        if self.simple:
             self.progress = progress.Progress(*progress_layout, console=console)
+        else:
+            self.progress = ProgressWithTable(self.jobs, self.current_jobs, self.jobs_max_len,
+                                              *progress_layout, console=console)
         self.progress.start()
         self.bar = self.progress.add_task(self.icon, start=False, total=0, text="[dim]Preparing...[/dim]")
 
@@ -347,7 +402,7 @@ class LogHandler:
 
             if "text" in _variables:
                 _message += "\n\nNote: The 'text' class can also be set using the configuration variable " \
-                            "'import.document_annotation', but only if it refers to an annotation from the " \
+                            "'import.text_annotation', but only if it refers to an annotation from the " \
                             "source files."
 
             self.messages["error"].append((source, _message))
@@ -375,7 +430,7 @@ class LogHandler:
                     " • {}\n".format(
                         "s" if len(missing_annotations) > 1 else "",
                         "are" if len(missing_annotations) > 1 else "is",
-                        "\n • ".join(":".join(ann) if len(ann) == 2 else ann for ann in missing_annotations)
+                        "\n • ".join(":".join(ann) if len(ann) == 2 else ann[0] for ann in missing_annotations)
                     )
                 ]
             if missing_other:
@@ -403,6 +458,8 @@ class LogHandler:
                 _, count, job = j.split("\t")
                 self.jobs[job.replace("::", ":")] = int(count)
 
+            self.jobs_max_len = max(map(len, self.jobs))
+
             if self.use_progressbar and not self.bar_started:
                 # Get number of jobs and start progress bar
                 if total_jobs.isdigit():
@@ -426,21 +483,30 @@ class LogHandler:
         elif level == "job_info" and self.use_progressbar:
             if msg["msg"] and self.bar is not None:
                 # Update progress status message
-                self.progress.update(self.bar, text=msg["msg"] if not self.verbose else "")
+                self.progress.update(self.bar, text=msg["msg"] if self.simple else "")
 
-                if self.verbose:
-                    doc = msg["wildcards"].get("doc", "")
-                    if doc.startswith(str(paths.work_dir)):
-                        doc = doc[len(str(paths.work_dir)) + 1:]
+                if not self.simple:
+                    file = msg["wildcards"].get("file", "")
+                    if file.startswith(str(paths.work_dir)):
+                        file = file[len(str(paths.work_dir)) + 1:]
 
-                    self.current_tasks[msg["jobid"]] = {
+                    self.current_jobs[msg["jobid"]] = {
+                        "task": None,
                         "name": msg["msg"],
                         "starttime": time.time(),
-                        "doc": doc
+                        "file": file
                     }
 
-        elif level == "job_finished" and self.use_progressbar:
-            self.current_tasks.pop(msg["jobid"], None)
+                    self.job_ids[(msg["msg"], file)] = msg["jobid"]
+
+        elif level == "job_finished" and self.use_progressbar and msg["jobid"] in self.current_jobs:
+            this_job = self.current_jobs[msg["jobid"]]
+            if self.stats:
+                self.stats_data[this_job["name"]] += time.time() - this_job["starttime"]
+            if this_job["task"]:
+                self.progress.remove_task(this_job["task"])
+            self.job_ids.pop((this_job["name"], this_job["file"]), None)
+            self.current_jobs.pop(msg["jobid"], None)
 
         elif level == "info":
             if self.pass_through or msg["msg"] == "Nothing to be done.":
@@ -504,6 +570,16 @@ class LogHandler:
                           "directory, run 'sparv run --unlock' to remove the lock."
                 self.messages["error"].append((None, message))
                 handled = True
+            elif "IncompleteFilesException:" in msg["msg"]:
+                msg_contents = re.search(r"Incomplete files:\n(.+)", msg["msg"], flags=re.DOTALL)
+                incomplete_files = "\n • ".join(msg_contents.group(1).strip().splitlines())
+                message = "The files below seem to be incomplete. If you are sure that certain files are not " \
+                          "incomplete, mark them as complete with 'sparv run --mark-complete <filenames>'.\n" \
+                          "To re-generate the files instead, rerun your command with the --rerun-incomplete flag.\n" \
+                          "Incomplete files:\n" \
+                          f" • {incomplete_files}"
+                self.messages["error"].append((None, message))
+                handled = True
 
             # Unhandled errors
             if not handled:
@@ -555,7 +631,7 @@ class LogHandler:
 
                 # Stop bar
                 self.progress.stop()
-                if self.verbose and self.bar_started:
+                if not self.simple and self.bar_started:
                     # Clear table header from screen
                     console.control(Control(
                         ControlType.CARRIAGE_RETURN,
@@ -563,7 +639,6 @@ class LogHandler:
                     ))
 
             self.finished = True
-            print()
 
             # Execution failed but we handled the error
             if self.handled_error:
@@ -583,16 +658,44 @@ class LogHandler:
                                 os.path.join(paths.log_dir, self.log_filename)))
                     else:
                         self.error("Job execution failed. See log messages above for details.")
-            # Defer to Snakemake's default log handler for unhandled errors
+            # Unhandled errors
             elif self.messages["unhandled_error"]:
                 for error in self.messages["unhandled_error"]:
-                    logger.text_handler(error)
+                    errmsg = ["An unexpected error occurred."]
+                    if self.log_level and logging._nameToLevel[self.log_level.upper()] > logging.DEBUG:
+                        errmsg[0] += " To display further details about this error, rerun Sparv with the " \
+                                     "'--log debug' argument.\n"
+                        if "msg" in error:
+                            error_lines = error["msg"].splitlines()
+                            if " in line " in error_lines[0]:
+                                errmsg.append(error_lines[0].split(" in line ")[0] + ":")
+                                for line in error_lines[1:]:
+                                    if line.startswith("  File "):
+                                        break
+                                    errmsg.append(line)
+                    else:
+                        errmsg.append("")
+                        errmsg.append(error.get("msg", "An unknown error occurred."))
+                    self.error("\n".join(errmsg))
             else:
                 spacer = ""
                 if self.export_dirs:
                     spacer = "\n"
                     self.info("The exported files can be found in the following location{}:\n • {}".format(
                         "s" if len(self.export_dirs) > 1 else "", "\n • ".join(sorted(self.export_dirs))))
+
+                if self.stats_data:
+                    spacer = ""
+                    table = Table(show_header=False, box=box.SIMPLE)
+                    table.add_column("Task", no_wrap=True, min_width=self.jobs_max_len + 2, ratio=1)
+                    table.add_column("Time taken", no_wrap=True, width=10, justify="right", style="progress.remaining")
+                    table.add_column("Percentage", no_wrap=True, justify="right")
+                    table.add_row("[b]Task[/]", "[default b]Time taken[/]", "[b]Percentage[/b]")
+                    total_time = sum(self.stats_data.values())
+                    for task, elapsed in sorted(self.stats_data.items(), key=lambda x: -x[1]):
+                        table.add_row(task, str(timedelta(seconds=round(elapsed))),
+                                      "{:.1f}%".format(100 * elapsed / total_time))
+                    console.print(table)
 
                 if self.log_levelcount:
                     # Errors or warnings were logged but execution finished anyway. Notify user of potential problems.
@@ -630,7 +733,7 @@ class LogHandler:
                     pass
 
 
-def setup_logging(log_server, log_level: str = "warning", log_file_level: str = "warning"):
+def setup_logging(log_server, log_level: str = "warning", log_file_level: str = "warning", file=None, job=None):
     """Set up logging with socket handler."""
     # Use the lowest log level, but never higher than warning
     log_level = min(logging.WARNING, getattr(logging, log_level.upper()), getattr(logging, log_file_level.upper()))
@@ -638,3 +741,6 @@ def setup_logging(log_server, log_level: str = "warning", log_file_level: str = 
     socket_logger.setLevel(log_level)
     socket_handler = logging.handlers.SocketHandler(*log_server)
     socket_logger.addHandler(socket_handler)
+    global current_file, current_job
+    current_file = file
+    current_job = job

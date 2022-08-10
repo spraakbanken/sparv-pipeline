@@ -4,7 +4,7 @@ additional software that you may need to install in order to run all the analyse
 
 ## Prerequisites
 In order to install Sparv you will need a Unix-like environment (e.g. Linux, macOS or [Windows Subsystem for
-Linux](https://docs.microsoft.com/en-us/windows/wsl/about)) with [Python 3.6.1](http://python.org/) or newer.
+Linux](https://docs.microsoft.com/en-us/windows/wsl/about)) with [Python 3.6.2](http://python.org/) or newer.
 
 > [!NOTE]
 > Most of Sparv's features should work in a Windows environment as well, but since we don't do any testing on Windows
@@ -17,13 +17,13 @@ We recommend using pipx, which will install Sparv in an isolated environment whi
 from anywhere.
 
 Begin by [installing pipx](https://pipxproject.github.io/pipx/installation/) if you haven't already:
-```bash
+```
 python3 -m pip install --user pipx
 python3 -m pipx ensurepath
 ```
 
 Once pipx is installed, run the following command to install the Sparv Pipeline:
-```bash
+```
 pipx install sparv-pipeline
 ```
 
@@ -78,24 +78,37 @@ the Sparv Pipeline. In order to use it within the Sparv Pipeline it is enough to
 |    |           |
 |:---|:----------|
 |**Purpose**                       |Swedish named-entity recognition. Recommended for standard Swedish annotations.
-|**Download**                      |[hfst-SweNER](http://www.ling.helsinki.fi/users/janiemi/finclarin/ner/hfst-swener-0.9.3.tgz)
+|**Download**                      |[hfst-SweNER](http://urn.fi/urn%3Anbn%3Afi%3Alb-2021101202)
 |**Version compatible with Sparv** |0.9.3
-|**Dependencies**          		   |[Python 2](https://www.python.org/download/releases/2.0/#download)
 
-The current version of hfst-SweNER expects to be run in a Python 2 environment while the Sparv Pipeline is written in
-Python 3. Before installing hfst-SweNER you need make sure that it will be run with the correct version of Python by
-replacing `python` with `python2` in all the Python scripts in the `hfst-swener-0.9.3/scripts` directory. The first line
-in every script will then look like this:
-```python
-#! /usr/bin/env python2
+> [!NOTE]
+> hfst-SweNER requires a Unix-like environment.
+
+The current version of hfst-SweNER is written for Python 2 while Sparv uses Python 3, so before installing it needs to
+be patched. After extracting the archive, go to the `hfst-swener-0.9.3/scripts` directory and create the file
+`swener.patch` with the following contents:
+
 ```
-On Unix systems this can be done by running the following command from within the `hfst-swener-0.9.3/scripts`
-directory:
-```bash
-sed -i 's:#! \/usr/bin/env python:#! /usr/bin/env python2:g' *.py
+--- convert-namex-tags.py
++++ convert-namex-tags.py
+@@ -1 +1 @@
+-#! /usr/bin/env python
++#! /usr/bin/env python3
+@@ -34 +34 @@
+-        elif isinstance(files, basestring):
++        elif isinstance(files, str):
+@@ -73 +73 @@
+-        return [s[start:start+partlen] for start in xrange(0, len(s), partlen)]
++        return [s[start:start+partlen] for start in range(0, len(s), partlen)]
+@@ -132,3 +131,0 @@
+-    sys.stdin = codecs.getreader('utf-8')(sys.stdin)
+-    sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
+-    sys.stderr = codecs.getwriter('utf-8')(sys.stderr)
 ```
 
-After applying these changes please follow the installation instructions provided by hfst-SweNER.
+Then simply run the command `patch < swener.patch`, which will make the necessary changes.
+
+After applying the patch, please follow the installation instructions provided by hfst-SweNER.
 
 ### Hunpos
 |    |           |
@@ -109,11 +122,9 @@ Installation is done by unpacking and then adding the executables to your path (
 Alternatively you can place the binaries inside your [Sparv data directory](#setting-up-sparv) under `bin`.
 
 If you are running a 64-bit OS, you might also have to install 32-bit compatibility libraries if Hunpos won't run:
-```bash
-sudo apt install ia32-libs
 ```
-On Arch Linux, activate the `multilib` repository and install `lib32-gcc-libs`. If that doesn't work, you might have to
-compile Hunpos from source.
+sudo apt install lib32z1
+```
 
 On newer macOS you probably have to compile Hunpos from source. [This GitHub repo](https://github.com/mivoq/hunpos) has
 instructions that should work.
@@ -137,19 +148,12 @@ Download and unpack the zip-file from the [MaltParser webpage](http://www.maltpa
 ### Corpus Workbench
 |    |           |
 |:---|:----------|
-|**Purpose**                       |Creating corpus workbench binary files. You will only need it if you want to be able to search corpora with this tool.
-|**Download**                      |[Corpus Workbench on SourceForge](http://cwb.sourceforge.net/beta.php)
+|**Purpose**                       |Creating Corpus Workbench binary files. Only needed if you want to be able to search corpora with this tool.
+|**Download**                      |[Corpus Workbench on SourceForge](https://cwb.sourceforge.io/download.php)
 |**License**                       |[GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.html)
-|**Version compatible with Sparv** |beta 3.4.21 (probably works with newer versions)
+|**Version compatible with Sparv** |beta 3.4.21 (most likely works with newer versions)
 
-Refer to the INSTALL text file for instructions on how to build and install on your system. CWB needs two directories
-for storing the corpora, one for the data, and one for the corpus registry. You will have to create these directories,
-and then set the environment variables `CWB_DATADIR` and `CORPUS_REGISTRY` and point them to the directories
-you created. For example:
-```bash
-export CWB_DATADIR=~/cwb/data;
-export CORPUS_REGISTRY=~/cwb/registry;
-```
+Refer to the INSTALL text file for instructions on how to build and install on your system.
 
 ### Software for Analysing Other Languages than Swedish
 Sparv can use different third-party tools for analyzing corpora in other languages than Swedish.
@@ -200,9 +204,9 @@ After downloading the software you need to have the `tree-tagger` binary in your
 |:---|:----------|
 |**Purpose**                       |Various analyses for English
 |**Download**                      |[Stanford CoreNLP webpage](https://stanfordnlp.github.io/CoreNLP/history.html)
-|**Version compatible with Sparv** |4.0.0 (may work with newer versions)
 |**License**                       |[GPL-2.0](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
-|**Dependencies**          		   |[Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+|**Version compatible with Sparv** |4.0.0 (may work with newer versions)
+|**Dependencies**          		  |[Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
 
 Please download, unzip and place contents inside the [Sparv data directory](#setting-up-sparv) under `bin/stanford_parser`.
 
@@ -211,12 +215,13 @@ Please download, unzip and place contents inside the [Sparv data directory](#set
 |:---|:----------|
 |**Purpose**                       |Tokenisation, POS-tagging, lemmatisation and named entity recognition for [some languages](#software-for-analysing-other-languages-than-swedish)
 |**Download**                      |[FreeLing on GitHub](https://github.com/TALP-UPC/FreeLing/releases/tag/4.2)
-|**Version compatible with Sparv** |4.2
 |**License**                       |[AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.en.html)
+|**Version compatible with Sparv** |4.2
 
 Please install the software (including the additional language data) according to the instructions provided by FreeLing.
-You will also need to install the [sparv-freeling plugin](https://github.com/spraakbanken/sparv-freeling). Please follow
-the installation instructions for the sparv-freeling module on [GitHub](https://github.com/spraakbanken/sparv-freeling)
+Note that you will need to uncompress the source and language files in the same folder before compiling.
+You will also need to install the [sparv-sbx-freeling plugin](https://github.com/spraakbanken/sparv-sbx-freeling). Please follow
+the installation instructions for the sparv-sbx-freeling module on [GitHub](https://github.com/spraakbanken/sparv-sbx-freeling)
 in order to set up the plugin correctly.
 
 <!-- #### fast_align
@@ -231,18 +236,39 @@ Please follow the installation instructions given in the fast_align repository a
 `bin/word_alignment`. -->
 
 ## Plugins
-The only available plugin for Sparv available so far is [the sparv-freeling
-plugin](https://github.com/spraakbanken/sparv-freeling). Please refer to its GitHub page for installation instructions.
+
+If you have the Sparv Pipeline installed on your machine, you can install plugins by injecting them into the Sparv
+Pipeline code using pipx:
+```
+pipx inject sparv-pipeline [pointer-to-sparv-plugin]
+```
+
+The `pointer-to-sparv-plugin` can be a package available on the [Python Package Index (PyPI)](https://pypi.org/), a
+remote public repository, or a local directory on your machine.
+
+For now there are two plugins available for Sparv:
+[sparv-sbx-freeling](https://github.com/spraakbanken/sparv-sbx-freeling) and
+[sparv-sbx-metadata](https://github.com/spraakbanken/sparv-sbx-metadata). Please refer to their GitHub page for more
+information.
+
+Plugins can be uninstalled by running:
+```
+pipx runpip sparv-pipeline uninstall [name-of-sparv-plugin]
+```
 
 ## Uninstalling Sparv
 
-To uninstall Sparv completely, manually delete the [Sparv data directory](#setting-up-sparv), and then run one of the
-following commands, depending on whether you installed Sparv using pipx or pip.
+To uninstall Sparv completely, follow these steps:
 
-```bash
-pipx uninstall sparv-pipeline
-```
+1. Run `sparv setup --reset` to unset [Sparv's data directory](#setting-up-sparv). The directory itself will not be
+   removed, but its location (if available) will be printed.
+2. Manually delete the data directory.
+3. Run one of the following commands, depending on whether you installed Sparv using pipx or pip:
 
-```bash
-pip uninstall sparv-pipeline
-```
+    ```
+    pipx uninstall sparv-pipeline
+    ```
+
+    ```
+    pip uninstall sparv-pipeline
+    ```

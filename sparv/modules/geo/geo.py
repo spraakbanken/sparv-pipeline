@@ -1,32 +1,25 @@
 """Annotate geographical features."""
 
-import logging
 import pickle
 from collections import defaultdict
 
-import sparv.util as util
-from sparv import Annotation, Config, Model, ModelOutput, Output, Wildcard, annotator, modelbuilder
+from sparv.api import (Annotation, Config, Model, ModelOutput, Output, Wildcard, annotator, get_logger, modelbuilder,
+                       util)
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @annotator("Annotate {chunk} with location data, based on locations contained within the text", language=["swe"],
-           config=[
-               Config("geo.context_chunk", default="<sentence>",
-                      description="Text chunk (annotation) to use for disambiguating places")
-           ], wildcards=[Wildcard("chunk", Wildcard.ANNOTATION)])
+           wildcards=[Wildcard("chunk", Wildcard.ANNOTATION)])
 def contextual(out: Output = Output("{chunk}:geo.geo_context", description="Geographical places with coordinates"),
                chunk: Annotation = Annotation("{chunk}"),
-               context: Annotation = Annotation("[geo.context_chunk]"),
                ne_type: Annotation = Annotation("swener.ne:swener.type"),
                ne_subtype: Annotation = Annotation("swener.ne:swener.subtype"),
                ne_name: Annotation = Annotation("swener.ne:swener.name"),
                model: Model = Model("[geo.model]"),
-               method: str = "populous",
                language: list = []):
     """Annotate chunks with location data, based on locations contained within the text.
 
-    context = text chunk to use for disambiguating places (when applicable).
     chunk = text chunk to which the annotation will be added.
     """
     model = load_model(model, language=language)
@@ -35,33 +28,23 @@ def contextual(out: Output = Output("{chunk}:geo.geo_context", description="Geog
     ne_subtype_annotation = list(ne_subtype.read())
     ne_name_annotation = list(ne_name.read())
 
-    children_context_chunk, _orphans = context.get_children(chunk)
     children_chunk_ne, _orphans = chunk.get_children(ne_type)
-
     out_annotation = chunk.create_empty_attribute()
 
-    for chunks in children_context_chunk:
-        all_locations = []  # TODO: Maybe not needed for anything?
-        context_locations = []
-        chunk_locations = defaultdict(list)
-
-        for ch in chunks:
-            for n in children_chunk_ne[ch]:
-                if ne_type_annotation[n] == "LOC" and "PPL" in ne_subtype_annotation[n]:
-                    location_text = ne_name_annotation[n].replace("\n", " ").replace("  ", " ")
-                    location_data = model.get(location_text.lower())
-                    if location_data:
-                        all_locations.append((location_text, list(location_data)))
-                        context_locations.append((location_text, list(location_data)))
-                        chunk_locations[ch].append((location_text, list(location_data)))
-                    else:
-                        pass
-                        # log.info("No location found for %s" % ne_name_annotation[n].replace("%", "%%"))
+    for chunk_index, chunk_nes in enumerate(children_chunk_ne):
+        chunk_locations = []
+        for n in chunk_nes:
+            if ne_type_annotation[n] == "LOC" and "PPL" in ne_subtype_annotation[n]:
+                location_text = ne_name_annotation[n].replace("\n", " ").replace("  ", " ")
+                location_data = model.get(location_text.lower())
+                if location_data:
+                    chunk_locations.append((location_text, list(location_data)))
+                else:
+                    pass
+                    # logger.info("No location found for %s" % ne_name_annotation[n].replace("%", "%%"))
 
         chunk_locations = most_populous(chunk_locations)
-
-        for c in chunks:
-            out_annotation[c] = _format_location(chunk_locations.get(c, ()))
+        out_annotation[chunk_index] = _format_location(chunk_locations)
 
     out.write(out_annotation)
 
@@ -74,7 +57,6 @@ def metadata(out: Output = Output("{chunk}:geo.geo_metadata", description="Geogr
              chunk: Annotation = Annotation("{chunk}"),
              source: Annotation = Annotation("[geo.metadata_source]"),
              model: Model = Model("[geo.model]"),
-             method: str = "populous",
              language: list = []):
     """Get location data based on metadata containing location names."""
     geomodel = load_model(model, language=language)
@@ -82,15 +64,15 @@ def metadata(out: Output = Output("{chunk}:geo.geo_metadata", description="Geogr
     same_target_source = chunk.split()[0] == source.split()[0]
     chunk_annotation = list(chunk.read())
     source_annotation = list(source.read())
+    out_annotation = chunk.create_empty_attribute()
 
     # If location source and target chunk are not the same, we need
     # to find the parent/child relations between them.
     if not same_target_source:
         target_source_parents = list(source.get_parents(chunk))
 
-    chunk_locations = {}
-
     for i, _ in enumerate(chunk_annotation):
+        chunk_locations = []
         if same_target_source:
             location_source = source_annotation[i]
         else:
@@ -100,15 +82,10 @@ def metadata(out: Output = Output("{chunk}:geo.geo_metadata", description="Geogr
         if location_source:
             location_data = geomodel.get(location_source.strip().lower())
             if location_data:
-                chunk_locations[i] = [(location_source, list(location_data))]
-        else:
-            chunk_locations[i] = []
+                chunk_locations = [(location_source, list(location_data))]
 
-    chunk_locations = most_populous(chunk_locations)
-
-    out_annotation = chunk.create_empty_attribute()
-    for c in chunk_locations:
-        out_annotation[c] = _format_location(chunk_locations.get(c, ()))
+        chunk_locations = most_populous(chunk_locations)
+        out_annotation[i] = _format_location(chunk_locations)
 
     out.write(out_annotation)
 
@@ -141,7 +118,7 @@ def pickle_model(geonames, alternative_names, out):
 
     Add alternative names for each city.
     """
-    log.info("Reading geonames: %s", geonames.name)
+    logger.info("Reading geonames: %s", geonames.name)
     result = {}
 
     model_file = geonames.read()
@@ -160,7 +137,7 @@ def pickle_model(geonames, alternative_names, out):
             }
 
     # Parse file with alternative names of locations, paired with language codes
-    log.info("Reading alternative names: %s", alternative_names.name)
+    logger.info("Reading alternative names: %s", alternative_names.name)
 
     model_file = alternative_names.read()
     for line in model_file.split("\n"):
@@ -171,7 +148,7 @@ def pickle_model(geonames, alternative_names, out):
                 result[geonameid]["alternative_names"].setdefault(isolanguage, [])
                 result[geonameid]["alternative_names"][isolanguage].append(altname)
 
-    log.info("Saving geomodel in Pickle format")
+    logger.info("Saving geomodel in Pickle format")
     out.write_pickle(result)
 
 
@@ -182,7 +159,7 @@ def pickle_model(geonames, alternative_names, out):
 
 def load_model(model: Model, language=()):
     """Load geo model and return as dict."""
-    log.info("Reading geomodel: %s", model)
+    logger.info("Reading geomodel: %s", model)
     with open(model.path, "rb") as infile:
         m = pickle.load(infile)
 
@@ -195,24 +172,21 @@ def load_model(model: Model, language=()):
                     result[altname.lower()].add(
                         (l["name"], l["latitude"], l["longitude"], l["country"], l["population"]))
 
-    log.info("Read %d geographical names", len(result))
+    logger.info("Read %d geographical names", len(result))
 
     return result
 
 
 def most_populous(locations):
     """Disambiguate locations by only keeping the most populous ones."""
-    new_locations = {}
+    result = set()
 
-    for chunk in locations:
-        new_locations[chunk] = set()
-
-        for loc in locations[chunk]:
-            biggest = (loc[0], sorted(loc[1], key=lambda x: -int(x[-1]))[0])
-            new_locations[chunk].add(biggest)
-    return new_locations
+    for loc in locations:
+        biggest = (loc[0], sorted(loc[1], key=lambda x: -int(x[-1]))[0])
+        result.add(biggest)
+    return result
 
 
 def _format_location(location_data):
     """Format location as city;country;latitude;longitude."""
-    return util.cwbset(";".join((y[0], y[3], y[1], y[2])) for x, y in location_data)
+    return util.misc.cwbset(";".join((y[0], y[3], y[1], y[2])) for x, y in location_data)

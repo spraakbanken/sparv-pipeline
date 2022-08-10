@@ -4,16 +4,11 @@ import argparse
 import sys
 from pathlib import Path
 
-import snakemake
-from snakemake.logging import logger
-
 from sparv import __version__
-from sparv.core import log_handler, paths, setup
-from sparv.core.paths import sparv_path
 
 # Check Python version
-if sys.version_info < (3, 6, 1):
-    raise Exception("Python 3.6.1 or higher is required.")
+if sys.version_info < (3, 6, 2):
+    raise Exception("Python 3.6.2 or higher is required.")
 
 
 class CustomArgumentParser(argparse.ArgumentParser):
@@ -73,7 +68,7 @@ def main():
         "",
         "Inspecting corpus details:",
         "   config           Display the corpus config",
-        "   files            List available corpus documents (input for Sparv)",
+        "   files            List available corpus source files (input for Sparv)",
         "",
         "Show annotation info:",
         "   modules          List available modules and annotations",
@@ -117,7 +112,7 @@ def main():
     # Inspect
     config_parser = subparsers.add_parser("config", description="Display the corpus configuration.")
     config_parser.add_argument("options", nargs="*", default=[], help="Specific options(s) in config to display")
-    subparsers.add_parser("files", description="List available corpus documents that can be annotated by Sparv.")
+    subparsers.add_parser("files", description="List available corpus source files that can be annotated by Sparv.")
 
     # Annotation info
     modules_parser = subparsers.add_parser("modules", description="List available modules and annotations.")
@@ -136,6 +131,7 @@ def main():
     setup_parser = subparsers.add_parser("setup", description="Set up the Sparv data directory. Run without arguments "
                                                               "for interactive setup.")
     setup_parser.add_argument("-d", "--dir", help="Directory to use as Sparv data directory")
+    setup_parser.add_argument("--reset", action="store_true", help="Reset data directory setting.")
 
     models_parser = subparsers.add_parser("build-models",
                                           description=("Download and build the Sparv models. This is optional, as "
@@ -158,10 +154,12 @@ def main():
     runrule_parser.add_argument("-l", "--list", action="store_true", help="List available rules")
     runrule_parser.add_argument("-w", "--wildcards", nargs="*", metavar="WILDCARD",
                                 help="Supply values for wildcards using the format 'name=value'")
+    runrule_parser.add_argument("--force", action="store_true", help="Force recreation of target")
     createfile_parser = subparsers.add_parser("create-file", description=("Create specified file(s). "
                                               "The full path must be supplied and wildcards must be replaced."))
     createfile_parser.add_argument("targets", nargs="*", default=["list"], help="File(s) to create")
     createfile_parser.add_argument("-l", "--list", action="store_true", help="List available files that can be created")
+    createfile_parser.add_argument("--force", action="store_true", help="Force recreation of target")
 
     preloader_parser = subparsers.add_parser("preload", description="Preload annotators and models")
     preloader_parser.add_argument("preload_command", nargs="?", default="start", choices=["start", "stop"])
@@ -171,14 +169,13 @@ def main():
 
     # Add common arguments
     for subparser in [run_parser, runrule_parser]:
-        subparser.add_argument("-d", "--doc", nargs="+", default=[], help="Only annotate specified input document(s)")
+        subparser.add_argument("-f", "--file", nargs="+", default=[], help="Only annotate specified input file(s)")
     for subparser in [run_parser, runrule_parser, createfile_parser, models_parser, install_parser]:
         subparser.add_argument("-n", "--dry-run", action="store_true",
                                help="Print summary of tasks without running them")
-        subparser.add_argument("-j", "--cores", type=int, metavar="N", help="Use at most N cores in parallel",
+        subparser.add_argument("-j", "--cores", type=int, nargs="?", const=0, metavar="N",
+                               help="Use at most N cores in parallel; if N is omitted, use all available CPU cores",
                                default=1)
-        subparser.add_argument("-v", "--verbose", action="store_true",
-                               help="Show more info about currently running tasks")
         subparser.add_argument("--log", metavar="LOGLEVEL", const="info",
                                help="Set the log level (default: 'warning' if --log is not specified, "
                                     "'info' if LOGLEVEL is not specified)",
@@ -187,13 +184,17 @@ def main():
                                help="Set log level for logging to file (default: 'warning' if --log-to-file is not "
                                     "specified, 'info' if LOGLEVEL is not specified)",
                                nargs="?", choices=["debug", "info", "warning", "error", "critical"])
+        subparser.add_argument("--stats", action="store_true", help="Show summary of time spent per annotator")
         subparser.add_argument("--debug", action="store_true", help="Show debug messages")
         subparser.add_argument("--socket", help="Path to socket file created by the 'preload' command")
         subparser.add_argument("--force-preloader", action="store_true",
                                help="Try to wait for preloader when it's busy")
+        subparser.add_argument("--simple", action="store_true", help="Show less details while running")
 
     # Add extra arguments to 'run' that we want to come last
     run_parser.add_argument("--unlock", action="store_true", help="Unlock the working directory")
+    run_parser.add_argument("--mark-complete", nargs="+", metavar="FILE", help="Mark output files as complete")
+    run_parser.add_argument("--rerun-incomplete", action="store_true", help="Rerun incomplete output files")
 
     # Backward compatibility
     if len(sys.argv) > 1 and sys.argv[1] == "make":
@@ -209,6 +210,10 @@ def main():
         run.main(unknown_args, log_level=args.log)
         sys.exit()
     else:
+        import snakemake
+        from snakemake.logging import logger
+        from snakemake.utils import available_cpu_count
+        from sparv.core import log_handler, paths, setup
         args = parser.parse_args()
 
     if args.command not in ("setup",):
@@ -230,7 +235,10 @@ def main():
             sys.exit(1)
 
     if args.command == "setup":
-        setup.run(args.dir)
+        if args.reset:
+            setup.reset()
+        else:
+            setup.run(args.dir)
         sys.exit(0)
     elif args.command == "wizard":
         from sparv.core.wizard import Wizard
@@ -239,9 +247,21 @@ def main():
         sys.exit(0)
 
     # Check that a corpus config file is available in the working dir
+    try:
+        config_exists = Path(args.dir or Path.cwd(), paths.config_file).is_file()
+    except PermissionError as e:
+        print(f"{e.strerror}: {e.filename!r}")
+        sys.exit(1)
+
     if args.command not in ("build-models", "languages"):
-        if not Path(args.dir or Path.cwd(), paths.config_file).is_file():
+        if not config_exists:
             print(f"No config file ({paths.config_file}) found in working directory.")
+            sys.exit(1)
+    # For the 'build-models' command there needs to be a config file or a language parameter
+    elif args.command == "build-models":
+        if not config_exists and not args.language:
+            print("Models are built for a specific language. Please provide one with the --language param or run this "
+                  f"from a directory that has a config file ({paths.config_file}).")
             sys.exit(1)
 
     snakemake_args = {"workdir": args.dir}
@@ -249,7 +269,8 @@ def main():
     simple_target = False
     log_level = ""
     log_file_level = ""
-    verbose = False
+    simple_mode = False
+    stats = False
     pass_through = False
     dry_run = False
 
@@ -278,15 +299,20 @@ def main():
                 snakemake_args["targets"] = ["preload_list"]
 
     elif args.command in ("run", "run-rule", "create-file", "install", "build-models"):
+        try:
+            cores = args.cores or available_cpu_count()
+        except NotImplementedError:
+            cores = 1
         snakemake_args.update({
             "dryrun": args.dry_run,
-            "cores": args.cores,
+            "cores": cores,
             "resources": {"threads": args.cores}
         })
         # Never show progress bar for list commands or dry run
         if args.list or args.dry_run:
             simple_target = True
 
+        stats = args.stats
         dry_run = args.dry_run
 
         # Command: run
@@ -295,6 +321,12 @@ def main():
                 snakemake_args["unlock"] = args.unlock
                 simple_target = True
                 pass_through = True
+            if args.mark_complete:
+                snakemake_args["cleanup_metadata"] = args.mark_complete
+                simple_target = True
+                pass_through = True
+            elif args.rerun_incomplete:
+                snakemake_args["force_incomplete"] = True
             if args.list:
                 snakemake_args["targets"] = ["list_exports"]
             elif args.output:
@@ -309,12 +341,17 @@ def main():
             if args.list or snakemake_args["targets"] == ["list"]:
                 snakemake_args["targets"] = ["list_targets"]
                 simple_target = True
+            elif args.force:
+                # Rename all-files-rule to the related regular rule
+                snakemake_args["forcerun"] = [t.replace(":", "::") for t in args.targets]
         # Command: create-file
         elif args.command == "create-file":
             snakemake_args["targets"] = args.targets
             if args.list or snakemake_args["targets"] == ["list"]:
                 snakemake_args["targets"] = ["list_files"]
                 simple_target = True
+            elif args.force:
+                snakemake_args["forcerun"] = args.targets
         # Command: install
         elif args.command == "install":
             if args.list:
@@ -335,9 +372,9 @@ def main():
 
         log_level = args.log or "warning"
         log_file_level = args.log_to_file or "warning"
-        verbose = args.verbose
+        simple_mode = args.simple
         config.update({"debug": args.debug,
-                       "doc": vars(args).get("doc", []),
+                       "file": vars(args).get("file", []),
                        "log_level": log_level,
                        "log_file_level": log_file_level,
                        "socket": args.socket,
@@ -356,13 +393,13 @@ def main():
     # Disable Snakemake's default log handler and use our own
     logger.log_handler = []
     progress = log_handler.LogHandler(progressbar=not simple_target, log_level=log_level, log_file_level=log_file_level,
-                                      verbose=verbose, pass_through=pass_through, dry_run=dry_run)
+                                      simple=simple_mode, stats=stats, pass_through=pass_through, dry_run=dry_run)
     snakemake_args["log_handler"] = [progress.log_handler]
 
     config["log_server"] = progress.log_server
 
     # Run Snakemake
-    success = snakemake.snakemake(sparv_path / "core" / "Snakefile", config=config, **snakemake_args)
+    success = snakemake.snakemake(paths.sparv_path / "core" / "Snakefile", config=config, **snakemake_args)
 
     progress.stop()
     progress.cleanup()

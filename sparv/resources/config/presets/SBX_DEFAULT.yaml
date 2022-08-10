@@ -1,0 +1,40 @@
+#===============================================================================
+# Språkbanken's Standard Swedish Annotation Presets
+#===============================================================================
+languages:
+    - swe
+
+classes:
+    "token:msd": <token>:stanza.msd_hunpos_backoff
+    "token:pos": <token>:stanza.pos_hunpos_backoff
+
+presets:
+    standard-token:
+        - SWE_DEFAULT.all
+        - <token>:saldo.baseform2 as lemma
+        - <token>:saldo.lemgram as lex
+        - <token:dephead_ref> as dephead
+        - not <token>:stanza.msd
+        - not <token>:stanza.pos
+        - <token:msd> as msd
+        - <token:pos> as pos
+        - <token>:stanza.msd_hunpos_backoff_info as msd_annotator
+        - <token>:misc.tail as _tail
+        - <token>:misc.head as _head
+    paragraph:
+        - standard-token
+        - DATETIME.all
+        - <text>:misc.id as _id
+        - <sentence>:geo.geo_context as _geocontext
+        - <paragraph>:geo.geo_context as _geocontext
+    no-paragraph:
+        - paragraph
+        - not <paragraph>:geo.geo_context
+    paragraph-no-date:
+        - standard-token
+        - <text>:misc.id as _id
+        - <sentence>:geo.geo_context as _geocontext
+        - <paragraph>:geo.geo_context as _geocontext
+    no-paragraph-no-date:
+        - paragraph-no-date
+        - not <paragraph>:geo.geo_context

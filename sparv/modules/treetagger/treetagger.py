@@ -6,12 +6,12 @@ Please make sure you have the tree-tagger binary file in your path.
 You do not need to download any parameter files as Sparv will download these for you when necessary.
 """
 
-import logging
 
-import sparv.util as util
-from sparv import Annotation, Binary, Config, Language, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv.api import (Annotation, Binary, Config, Language, Model, ModelOutput, Output, annotator, get_logger,
+                       modelbuilder, util)
+from sparv.api.util.tagsets import pos_to_upos
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 SENT_SEP = "\n<eos>\n"
 TOK_SEP = "\n"
@@ -53,7 +53,7 @@ def annotate(lang: Language = Language(),
              out_baseform: Output = Output("<token>:treetagger.baseform", description="Baseforms from TreeTagger"),
              word: Annotation = Annotation("<token:word>"),
              sentence: Annotation = Annotation("<sentence>"),
-             encoding: str = util.UTF8):
+             encoding: str = util.constants.UTF8):
     """POS/MSD tag and lemmatize using TreeTagger."""
     sentences, _orphans = sentence.get_children(word)
     word_annotation = list(word.read())
@@ -62,7 +62,7 @@ def annotate(lang: Language = Language(),
     args = ["-token", "-lemma", "-no-unknown", "-eos-tag", "<eos>", model.path]
 
     stdout, stderr = util.system.call_binary(tt_binary, args, stdin, encoding=encoding)
-    log.debug("Message from TreeTagger:\n%s", stderr)
+    logger.debug("Message from TreeTagger:\n%s", stderr)
 
     # Write pos and upos annotations.
     out_upos_annotation = word.create_empty_attribute()
@@ -73,10 +73,10 @@ def annotate(lang: Language = Language(),
             if len(cols) >= TAG_COLUMN + 1:
                 tag = cols[TAG_COLUMN]
             else:
-                log.warning(f"TreeTagger failed to produce a POS tag for token '{cols[0]}'!")
+                logger.warning(f"TreeTagger failed to produce a POS tag for token '{cols[0]}'!")
                 tag = ""
             out_pos_annotation[token_id] = tag
-            out_upos_annotation[token_id] = util.tagsets.pos_to_upos(tag, lang, TAG_SETS.get(lang))
+            out_upos_annotation[token_id] = pos_to_upos(tag, lang, TAG_SETS.get(lang))
     out_pos.write(out_pos_annotation)
     out_upos.write(out_upos_annotation)
 
@@ -88,8 +88,8 @@ def annotate(lang: Language = Language(),
             if len(cols) >= LEM_COLUMN + 1:
                 lem = cols[LEM_COLUMN]
             else:
-                log.warning(f"TreeTagger failed to produce a baseform for token '{cols[0]}'! "
-                            "Using the wordform as baseform.")
+                logger.warning(f"TreeTagger failed to produce a baseform for token '{cols[0]}'! "
+                               "Using the wordform as baseform.")
                 lem = cols[0]
             out_lemma_annotation[token_id] = lem
     out_baseform.write(out_lemma_annotation)

@@ -1,15 +1,13 @@
 """Segmentation mostly based on NLTK."""
 
 import inspect
-import logging
 import pickle
 import re
 from typing import Optional
 
 import nltk
 
-import sparv.util as util
-from sparv import Annotation, Config, Model, ModelOutput, Output, Text, annotator, modelbuilder
+from sparv.api import Annotation, Config, Model, ModelOutput, Output, Text, annotator, get_logger, modelbuilder, util
 from sparv.modules.saldo.saldo_model import split_triple
 
 try:
@@ -17,7 +15,7 @@ try:
 except ImportError:
     pass
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @annotator("Automatic tokenization", config=[
@@ -127,9 +125,11 @@ def do_segmentation(text: Text, out: Output, segmenter, chunk: Optional[Annotati
                 chunk_start = segment_end
                 chunk_spans[n] = (chunk_start, chunk_end)
         chunk_spans.sort()
-        log.info("Reorganized into %d chunks" % len(chunk_spans))
+        logger.info("Reorganized into %d chunks" % len(chunk_spans))
     else:
         segments = []
+
+    logger.progress(total=len(chunk_spans) + 1)
 
     # Now we can segment each chunk span into tokens
     for start, end in chunk_spans:
@@ -139,9 +139,11 @@ def do_segmentation(text: Text, out: Output, segmenter, chunk: Optional[Annotati
             if corpus_text[spanstart:spanend].strip():
                 span = (spanstart, spanend)
                 segments.append(span)
+        logger.progress()
 
     segments.sort()
     out.write(segments)
+    logger.progress()
 
 
 @modelbuilder("Model for PunktSentenceTokenizer", language=["swe"])
@@ -197,23 +199,23 @@ def build_tokenlist(saldo_model: Model = Model("saldo/saldo.pickle"),
 
 ######################################################################
 
-def train_punkt_segmenter(textfiles, modelfile, encoding=util.UTF8, protocol=-1):
+def train_punkt_segmenter(textfiles, modelfile, encoding=util.constants.UTF8, protocol=-1):
     """Train a Punkt sentence tokenizer."""
     if isinstance(textfiles, str):
         textfiles = textfiles.split()
 
-    log.info("Reading files")
+    logger.info("Reading files")
     text = u""
     for filename in textfiles:
         with open(filename, encoding=encoding) as stream:
             text += stream.read()
-    log.info("Training model")
+    logger.info("Training model")
     trainer = nltk.tokenize.PunktTrainer(text, verbose=True)
-    log.info("Saving pickled model")
+    logger.info("Saving pickled model")
     params = trainer.get_params()
     with open(modelfile, "wb") as stream:
         pickle.dump(params, stream, protocol=protocol)
-    log.info("OK")
+    logger.info("OK")
 
 
 ######################################################################
@@ -240,15 +242,12 @@ class PunctuationTokenizer(nltk.RegexpTokenizer):
         """Tokenize s and return list with tokens."""
         result = []
         spans = nltk.RegexpTokenizer.span_tokenize(self, s)
-        first = True
         temp = [0, 0]
 
         for start, _ in spans:
-            if not first:
-                temp[1] = start
-                result.append(tuple(temp))
+            temp[1] = start
+            result.append(tuple(temp))
             temp[0] = start
-            first = False
 
         temp[1] = len(s)
         result.append(tuple(temp))
@@ -311,7 +310,7 @@ class BetterWordTokenizer:
                         try:
                             key, val = line.strip().split(None, 1)
                         except ValueError as e:
-                            log.error("Error parsing configuration file: %s", line)
+                            logger.error("Error parsing configuration file: %s", line)
                             raise e
                         key = key[:-1]
 

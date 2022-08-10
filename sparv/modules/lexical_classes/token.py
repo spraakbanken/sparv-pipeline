@@ -1,12 +1,11 @@
 """Annotate words with lexical classes from Blingbring or SweFN."""
 
-import logging
 from typing import List
 
-import sparv.util as util
-from sparv import Annotation, Config, Model, Output, annotator
+from sparv.api import Annotation, Config, Model, Output, annotator, get_logger, util
+from sparv.api.util.constants import AFFIX, DELIM, SCORESEP
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @annotator("Annotate tokens with Blingbring classes", language=["swe"], config=[
@@ -22,19 +21,19 @@ def blingbring_words(out: Output = Output("<token>:lexical_classes.blingbring",
                      class_set: str = "bring",
                      disambiguate: bool = True,
                      connect_ids: bool = False,
-                     delimiter: str = util.DELIM,
-                     affix: str = util.AFFIX,
-                     scoresep: str = util.SCORESEP,
+                     delimiter: str = DELIM,
+                     affix: str = AFFIX,
+                     scoresep: str = SCORESEP,
                      lexicon=None):
     """Blingbring specific wrapper for annotate_words. See annotate_words for more info."""
     # pos_limit="NN VB JJ AB" | None
 
     if class_set not in ["bring", "roget_head", "roget_subsection", "roget_section", "roget_class"]:
-        log.warning("Class '%s' not available. Fallback to 'bring'.")
+        logger.warning("Class '%s' not available. Fallback to 'bring'.")
         class_set = "bring"
 
     # Blingbring annotation function
-    def annotate_bring(saldo_ids, lexicon, connect_IDs=False, scoresep=util.SCORESEP):
+    def annotate_bring(saldo_ids, lexicon, connect_IDs=False, scoresep=SCORESEP):
         rogetid = set()
         if saldo_ids:
             for sid in saldo_ids:
@@ -61,14 +60,14 @@ def swefn_words(out: Output = Output("<token>:lexical_classes.swefn",
                 pos_limit: List[str] = ["NN", "VB", "JJ", "AB"],
                 disambiguate: bool = True,
                 connect_ids: bool = False,
-                delimiter: str = util.DELIM,
-                affix: str = util.AFFIX,
-                scoresep: str = util.SCORESEP,
+                delimiter: str = DELIM,
+                affix: str = AFFIX,
+                scoresep: str = SCORESEP,
                 lexicon=None):
     """Swefn specific wrapper for annotate_words. See annotate_words for more info."""
 
     # SweFN annotation function
-    def annotate_swefn(saldo_ids, lexicon, connect_IDs=False, scoresep=util.SCORESEP):
+    def annotate_swefn(saldo_ids, lexicon, connect_IDs=False, scoresep=SCORESEP):
         swefnid = set()
         if saldo_ids:
             for sid in saldo_ids:
@@ -83,8 +82,8 @@ def swefn_words(out: Output = Output("<token>:lexical_classes.swefn",
 
 
 def annotate_words(out: Output, model: Model, saldoids: Annotation, pos: Annotation, annotate, pos_limit: List[str],
-                   class_set=None, disambiguate=True, connect_ids=False, delimiter=util.DELIM, affix=util.AFFIX,
-                   scoresep=util.SCORESEP, lexicon=None):
+                   class_set=None, disambiguate=True, connect_ids=False, delimiter=DELIM, affix=AFFIX,
+                   scoresep=SCORESEP, lexicon=None):
     """
     Annotate words with blingbring classes (rogetID).
 
@@ -106,7 +105,7 @@ def annotate_words(out: Output, model: Model, saldoids: Annotation, pos: Annotat
       but is used in the catapult. This argument must be last.
     """
     if not lexicon:
-        lexicon = util.PickledLexicon(model.path)
+        lexicon = util.misc.PickledLexicon(model.path)
     # Otherwise use pre-loaded lexicon (from catapult)
 
     sense = saldoids.read()
@@ -124,10 +123,10 @@ def annotate_words(out: Output, model: Model, saldoids: Annotation, pos: Annotat
             out_annotation[token_index] = affix
             continue
 
-        if wsd and util.SCORESEP in token_sense:
-            ranked_saldo = token_sense.strip(util.AFFIX).split(util.DELIM) \
-                if token_sense != util.AFFIX else None
-            saldo_tuples = [(i.split(util.SCORESEP)[0], i.split(util.SCORESEP)[1]) for i in ranked_saldo]
+        if wsd and SCORESEP in token_sense:
+            ranked_saldo = token_sense.strip(AFFIX).split(DELIM) \
+                if token_sense != AFFIX else None
+            saldo_tuples = [(i.split(SCORESEP)[0], i.split(SCORESEP)[1]) for i in ranked_saldo]
 
             if not disambiguate:
                 saldo_ids = [i[0] for i in saldo_tuples]
@@ -144,11 +143,11 @@ def annotate_words(out: Output, model: Model, saldoids: Annotation, pos: Annotat
                 saldo_ids = [i[0] for i in saldo_ids]
 
         else:  # No WSD
-            saldo_ids = token_sense.strip(util.AFFIX).split(util.DELIM) \
-                if token_sense != util.AFFIX else None
+            saldo_ids = token_sense.strip(AFFIX).split(DELIM) \
+                if token_sense != AFFIX else None
 
         result = annotate(saldo_ids, lexicon, connect_ids, scoresep)
-        out_annotation[token_index] = util.cwbset(result, delimiter, affix) if result else affix
+        out_annotation[token_index] = util.misc.cwbset(result, delimiter, affix) if result else affix
     out.write(out_annotation)
 
 

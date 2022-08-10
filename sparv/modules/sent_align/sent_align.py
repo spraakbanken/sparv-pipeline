@@ -1,8 +1,7 @@
 """NB: Not adapted to Sparv v4 yet!"""
 
-# -*- coding: utf-8 -*-
 import math
-import sparv.util as util
+from sparv.api import util
 
 
 def align_texts(sentence1, sentence2, link1, link2, sent_parents1, sent_parents2, out_sentlink1, out_sentlink2):

@@ -8,7 +8,7 @@ metadata:
     # Corpus name (human readable)
     name:
         eng: Stanford Parser test corpus
-    # Language of the input documents, specified as ISO 639-3 code
+    # Language of the source files, specified as ISO 639-3 code
     language: eng
 
     description:
@@ -22,8 +22,8 @@ metadata:
 #===============================================================================
 
 import:
-    # The annotation representing one text document. Any text-level annotations will be attached to this annotation.
-    document_annotation: text
+    # The annotation representing one text. Any text-level annotations will be attached to this annotation.
+    text_annotation: text
 
 
 #===============================================================================
@@ -34,13 +34,15 @@ export:
     # Exports to create by default when running 'sparv run'
     default:
         - korp:timespan_sql
-        - cwb:info
         - csv_export:csv
         - cwb:vrt
         - cwb:vrt_scrambled
-        - stats_export:freq_list_simple
+        - stats_export:sbx_freq_list_simple
         - xml_export:pretty
         - xml_export:preserved_format
     # Automatic annotations to be included in the export
     annotations:
         - STANFORD.all
+
+sparv:
+    compression: none

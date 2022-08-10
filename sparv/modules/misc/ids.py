@@ -5,67 +5,75 @@ import random
 from binascii import hexlify
 from typing import Optional
 
-from sparv import AllDocuments, Annotation, AnnotationData, Document, Output, Wildcard, OutputDataAllDocs, annotator
+from sparv.api import (AllSourceFilenames, Annotation, AnnotationData, SourceFilename, Output, Wildcard,
+                       OutputDataAllSourceFiles, annotator, get_logger)
 
+logger = get_logger(__name__)
 _ID_LENGTH = 10
 
 
-@annotator("Give every document a unique ID")
-def doc_id(out: OutputDataAllDocs = OutputDataAllDocs("misc.docid", cls="docid"),
-           docs: Optional[AllDocuments] = AllDocuments(),
-           doclist: Optional[str] = None,
-           prefix: str = "",
-           add: bool = False):
-    """Create unique IDs for every document in a list, using the document names as seed.
+@annotator("Give every source file a unique ID")
+def file_id(out: OutputDataAllSourceFiles = OutputDataAllSourceFiles("misc.fileid", cls="fileid"),
+            source_files: Optional[AllSourceFilenames] = AllSourceFilenames(),
+            source_files_list: Optional[str] = None,
+            prefix: str = "",
+            add: bool = False):
+    """Create unique IDs for every source file in a list, using the source filenames as seed.
 
     The resulting IDs are written to the annotation specified by 'out'.
     If 'add' is True, existing IDs will not be overwritten.
     """
-    assert docs or doclist, "docs or doclist must be specified"
+    assert source_files or source_files_list, "source_files or source_files_list must be specified"
 
-    if doclist:
-        with open(doclist) as f:
-            docs = f.read().strip().splitlines()
+    if source_files_list:
+        with open(source_files_list, encoding="utf-8") as f:
+            source_files = f.read().strip().splitlines()
 
-    docs.sort()
+    source_files.sort()
+    logger.progress(total=len(source_files))
 
-    numdocs = len(docs) * 2
+    numfiles = len(source_files) * 2
     used_ids = set()
-    docs_with_ids = set()
+    files_with_ids = set()
 
     if add:
-        for doc in docs:
-            if out.exists(doc):
-                used_ids.add(out.read(doc))
-                docs_with_ids.add(doc)
+        for file in source_files:
+            if out.exists(file):
+                used_ids.add(out.read(file))
+                files_with_ids.add(file)
 
-    for doc in docs:
-        if add and doc in docs_with_ids:
+    for file in source_files:
+        if add and file in files_with_ids:
             continue
-        _reset_id(doc, numdocs)
+        _reset_id(file, numfiles)
         new_id = _make_id(prefix, used_ids)
         used_ids.add(new_id)
-        out.write(new_id, doc)
+        out.write(new_id, file)
+        logger.progress()
 
 
 @annotator("Unique IDs for {annotation}", wildcards=[Wildcard("annotation", Wildcard.ANNOTATION)])
-def ids(doc: Document = Document(),
+def ids(source_file: SourceFilename = SourceFilename(),
         annotation: Annotation = Annotation("{annotation}"),
         out: Output = Output("{annotation}:misc.id", description="Unique ID for {annotation}"),
-        docid: AnnotationData = AnnotationData("<docid>"),
+        fileid: AnnotationData = AnnotationData("<fileid>"),
         prefix: str = ""):
     """Create unique IDs for every span of an existing annotation."""
-    docid = docid.read()
-    prefix = prefix + docid
+    logger.progress()
+    fileid = fileid.read()
+    prefix = prefix + fileid
 
     ann = list(annotation.read())
     out_annotation = []
-    # Use doc name and annotation name as seed for the IDs
-    _reset_id("{}/{}".format(doc, annotation), len(ann))
+    logger.progress(total=len(ann) + 1)
+    # Use source filename and annotation name as seed for the IDs
+    _reset_id("{}/{}".format(source_file, annotation), len(ann))
     for _ in ann:
         new_id = _make_id(prefix, out_annotation)
         out_annotation.append(new_id)
+        logger.progress()
     out.write(out_annotation)
+    logger.progress()
 
 
 def _reset_id(seed, max_ids=None):

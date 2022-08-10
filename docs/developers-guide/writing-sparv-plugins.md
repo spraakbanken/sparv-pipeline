@@ -4,6 +4,11 @@ shipped with the main Sparv package none of these modules are hard-coded into th
 easily be extended with plugins. A plugin is a Sparv module that is not part of the main Sparv package. Writing a plugin
 is the recommended way of adding a new module to Sparv.
 
+> [!NOTE] When writing a plugin please always prefix your Python package with a namespace followed by an underscore to
+> mark which organisation or developer the plugin belongs to. This is necessary to avoid clashes in package names and
+> obligatory plugin namespaces will be enforced in the future. In the example below we used the prefix "sbx_" (for
+> Språkbanken Text).
+
 When writing your first plugin we recommend that you take a look at the [Sparv plugin
 template](https://github.com/spraakbanken/sparv-plugin-template). The template contains an example of a small annotation
 module that converts tokens to uppercase. We will use this template in the examples below.
@@ -12,8 +17,8 @@ module that converts tokens to uppercase. We will use this template in the examp
 ## Plugin Structure
 This is what a typical structure of a plugin may look like:
 ```
-sparv-uppercase/
-├── uppercase
+sparv-sbx-uppercase/
+├── sbx_uppercase
 │   ├── uppercase.py
 │   └── __init__.py
 ├── LICENSE
@@ -21,20 +26,12 @@ sparv-uppercase/
 └── setup.py
 ```
 
-In the above example the `uppercase` directory is a Sparv module containing the [module code](#module-code) in
+In the above example the `sbx_uppercase` directory is a Sparv module containing the [module code](#module-code) in
 `uppercase.py` and the mandatory [init file](#init-file) `__init__.py`. The [setup file](#setup-file) `setup.py` in the
-root directory is needed in order to install the plugin. A plugin does not have to be stored in any particular place. As
-long as the Sparv Pipeline is installed on your machine, you should be able to inject your plugin into the Sparv
-Pipeline code using pipx (from the directory containing your plugin):
-```bash
-pipx inject sparv-pipeline ./sparv-uppercase
-```
+root directory is needed in order to install the plugin.
 
-After the injection the plugin functionality should be available, and the plugged-in module should be treated just like
-any other module within the Sparv Pipeline.
-
-The readme and license files are not strictly recommended are not strictly necessary for the plugin to work but we
-strongly recommend that you include these if you want to publish your plugin.
+The readme and license files are not strictly necessary for the plugin to work but we strongly recommend that you
+include these if you want to publish your plugin.
 
 
 ## Setup File
@@ -44,19 +41,21 @@ a setup file (taken from the [Sparv plugin template](https://github.com/spraakba
 import setuptools
 
 setuptools.setup(
-    name="uppercase",
+    name="sparv-sbx-uppercase",
     version="0.1",
     description="Uppercase converter (example plug-in for Sparv)",
     license="MIT",
-    packages=["uppercase"],
+    packages=["sbx_uppercase"],
     python_requires=">=3.6",
-    install_requires=["sparv-pipeline>=4"],
-    entry_points={"sparv.plugin": ["uppercase = uppercase"]}
+    install_requires=["sparv-pipeline>=4,<5"],
+    entry_points={"sparv.plugin": ["sbx_uppercase = sbx_uppercase"]}
 )
 ```
 
 Make sure to include the name of your module (i.e. the directory containing the Sparv code) in `packages`. You also need
 to make sure that there is a `sparv.plugin` entry point in `entry_points` that points to your module.
+
+We strongly encourage you to also include the fields `author` and `author_email`.
 
 For more information about Python setup scripts check the [distutils
 documentation](https://docs.python.org/3/distutils/setupscript.html).
@@ -75,7 +74,7 @@ Example of an `__init__.py` file:
 ```python
 """Example for a Sparv annotator that converts tokens to uppercase."""
 
-# from sparv import Config
+# from sparv.api import Config
 
 from . import uppercase
 
@@ -94,19 +93,19 @@ describing dependencies to other entities (e.g. annotations or models) handled o
 code for or uppercase example (taken from the [Sparv plugin
 template](https://github.com/spraakbanken/sparv-plugin-template):
 ```python
-from sparv import Annotation, Output, annotator
+from sparv.api import Annotation, Output, annotator
 
 @annotator("Convert every word to uppercase.")
 def uppercase(word: Annotation = Annotation("<token:word>"),
-              out: Output = Output("<token>:uppercase.upper")):
+              out: Output = Output("<token>:sbx_uppercase.upper")):
     """Convert to uppercase."""
     out.write([val.upper() for val in word.read()])
 ```
 
 In this script we import two classes from Sparv (`Annotation` and `Output`) and the `annotator` decorator. Please note
-that nothing should be imported from the Sparv code unless it is directly available from the sparv package (i.e. `from
-sparv import ...`), or the `sparv.util` sub-package. Any other sub-packages (like `sparv.core`) are for internal use
-only, and are subject to change without notice.
+that nothing should be imported from the Sparv code unless it is directly available from the sparv.api package (i.e.
+`from sparv.api import ...`). Any other sub-packages (like `sparv.core`) are for internal use only, and are subject
+to change without notice.
 
 Our `uppercase` function is decorated with `@annotator` which tells Sparv that this function can be used to produce one
 or more annotations. The first argument in the decorator is its description which is used for displaying help texts in
@@ -117,7 +116,7 @@ hints to the Sparv classes `Annotation` and `Output` which indicate what depende
 config variables) must be satisfied before the function can do its job, and what it will produce. In this example Sparv
 will make sure that a word annotation exists before it will attempt to call the `uppercase` function, because it knows
 that `word` is an input since it is of type `Annotation`. It also knows that the function produces the output annotation
-`<token>:uppercase.upper`, so if any other module would request this annotation as input, it will run `uppercase`
+`<token>:sbx_uppercase.upper`, so if any other module would request this annotation as input, it will run `uppercase`
 prior to calling that module.
 
 A function decorated with a Sparv decorator should never be actively called by you or by another decorated function.
@@ -139,8 +138,8 @@ Logging from Sparv modules is done with [Python's logging library](https://docs.
 Please use the provided `get_logger` wrapper when declaring your logger which takes care of importing the logging
 library and sets the correct module name in the log output:
 ```python
-import sparv.util as util
-logger = util.get_logger(__name__)
+from sparv.api import get_logger
+logger = get_logger(__name__)
 logger.error("An error was encountered!")
 ```
 
@@ -151,6 +150,36 @@ with the flag `--log [LOGLEVEL]`. Most commands support this flag. The user can 
 file by using the `--log-to-file [LOGLEVEL]` flag. The log file will receive the current date and timestamp as filename
 and can be found inside `logs/` in the corpus directory.
 
+### Progress bar
+It is possible to add a progress bar for individual annotators by using the custom `progress()` logging method. To
+initialize the progress bar, call the `logger.progress()` method, either without an argument, or while supplying the
+total for the bar: `logger.progress(total=50)`. A progress bar initialized without a total will have to be provided with
+a total before it can be used. It is also possible to change the total later.
+
+After the total has been set, call `progress()` again to update the progress. If not argument is supplied, the progress
+is advanced by 1. To advance by another amount, use the keyword argument `advance=`. To set the progress to a specific
+number, simply call the method with that number as the argument. See below for examples:
+
+```python
+from sparv.api import get_logger
+logger = get_logger(__name__)
+
+# Initialize progress bar with no known total
+logger.progress()
+
+# Initialize bar with known total
+logger.progress(total=50)
+
+# Advance progress by 1
+logger.progress()
+
+# Advance progress by 2
+logger.progress(advance=2)
+
+# Set progress to 5
+logger.progress(5)
+```
+
 
 ## Error Messages
 When raising critical errors that should be displayed to the user (e.g. to tell the user that he/she did something
@@ -158,16 +187,77 @@ wrong) you should use the [SparvErrorMessage class](developers-guide/utilities#S
 exception (and thus stop the current Sparv process) and notify the user of errors in a friendly way without displaying
 the usual Python traceback.
 ```python
+from sparv.api import SparvErrorMessage
+
 @annotator("Convert every word to uppercase")
 def uppercase(word: Annotation = Annotation("<token:word>"),
-              out: Output = Output("<token>:uppercase.upper"),
-              important_config_variable: str = Config("uppercase.some_setting")):
+              out: Output = Output("<token>:sbx_uppercase.upper"),
+              important_config_variable: str = Config("sbx_uppercase.some_setting")):
     """Convert to uppercase."""
     # Make sure important_config_variable is set by the user
     if not important_config_variable:
-        raise util.SparvErrorMessage("Please make sure to set the config variable 'uppercase.some_setting'!")
+        raise SparvErrorMessage("Please make sure to set the config variable 'sbx_uppercase.some_setting'!")
     ...
 ```
+
+## Languages and varieties
+It is possible to restrict the use of an annotator, exporter, installer or modelbuilder to one or more specific
+language(s). This is done by passing a list of ISO 639-3 language codes to the optional `language` parameter in the
+decorator:
+```python
+@annotator("Convert every word to uppercase", language=["swe", "eng"])
+def ...
+```
+
+Sparv functions are only available for use if one of their languages match the language in the [corpus config
+file](user-manual/corpus-configuration.md). If no language codes are provided in the decorator, the function is
+available for any corpus.
+
+Sparv also supports language varieties which is useful when you want to write Sparv functions for a specific variety of
+a language. For instance, Sparv has some built-in annotators that are restricted to corpora with historical Swedish from
+the 1800's. They are marked with the language code `swe-1800`, where `swe` is the ISO 639-3 code for Swedish and `1800`
+is an arbitrary string for this specific language variety. Sparv functions marked with `swe-1800` are available for
+corpora that are configured as follows:
+```yaml
+metadata:
+    language: "swe"
+    variety: "1800"
+```
+Note that all functions marked with `swe` will also be available for these corpora.
+
+
+## Installing and Uninstalling Plugins
+
+A Sparv plugin can be installed from the [Python Package Index (PyPI)](https://pypi.org/), a remote public repository,
+or from a local directory stored anywhere on your machine. As long as the Sparv Pipeline is installed on your machine,
+you should be able to inject your plugin into the Sparv Pipeline code using pipx:
+```
+pipx inject sparv-pipeline [pointer-to-sparv-plugin]
+```
+
+So if you are trying to install the `sparv-sbx-uppercase` plugin and it exists on PyPI you can install it like this:
+```
+pipx inject sparv-pipeline sparv-sbx-uppercase
+```
+
+For installing it from a public repository from GitHub the install command looks something like this:
+```
+pipx inject sparv-pipeline https://github.com/spraakbanken/sparv-plugin-template/archive/main.zip
+```
+
+For installation from a local directory run this (from the directory containing your plugin):
+```
+pipx inject sparv-pipeline ./sparv-sbx-uppercase
+```
+
+After the injection the plugin functionality should be available, and the plugged-in module should be treated just like
+any other module within the Sparv Pipeline.
+
+You can uninstall the plugin by running:
+```
+pipx runpip sparv-pipeline uninstall [name-of-sparv-plugin]
+```
+In this example `[name-of-sparv-plugin]` is `sparv-sbx-uppercase`.
 
 
 ## Advanced Features
@@ -191,7 +281,7 @@ def annotate(
     ...
 
 
-@annotator("Create foo annotation for when bar is not available", order=2)
+@annotator("Create foo annotation when bar is not available", order=2)
 def annotate_backoff(
     out: Output = Output("mymodule.foo")):
     ...
@@ -210,7 +300,7 @@ A preload function is simply a function that takes a subset of the arguments fro
 is passed on to the annotator. Here is an example:
 
 ```python
-from sparv import Annotation, Model, Output, annotator
+from sparv.api import Annotation, Model, Output, annotator
 
 
 def preloader(model):

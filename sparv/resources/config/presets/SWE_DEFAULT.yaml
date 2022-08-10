@@ -12,11 +12,14 @@ classes:
     "token:word": <token>:misc.word
     "token:pos": <token>:stanza.pos
     "token:msd": <token>:stanza.msd
+    "token:ufeats": <token>:stanza.ufeats
     "token:baseform": <token>:saldo.baseform2
     "token:sense": <token>:wsd.sense
+    "token:lemgram": <token>:saldo.lemgram
     "token:deprel": <token>:stanza.deprel
     "token:dephead": <token>:stanza.dephead
     "token:dephead_ref": <token>:stanza.dephead_ref
+    "token:ref": <token>:stanza.ref
 
 presets:
     all:
@@ -46,9 +49,10 @@ presets:
     stanza:
         - <token>:stanza.msd
         - <token>:stanza.pos
+        - <token>:stanza.ufeats
         - <token>:stanza.deprel
         - <token>:stanza.dephead_ref
-        - <token>:misc.number_rel_<sentence> as ref
+        - <token>:stanza.ref
 
     sentiment:
         - <token>:sensaldo.sentiment_score

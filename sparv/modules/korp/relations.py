@@ -1,17 +1,16 @@
 """Create files needed for the word picture in Korp."""
 
-import logging
 import math
 import re
 from collections import defaultdict
 from typing import Optional
 
-import sparv.util as util
-from sparv import (AllDocuments, Annotation, AnnotationDataAllDocs, Config, Corpus, Export, ExportInput,
-                   OutputCommonData, OutputData, annotator, exporter, installer)
-from sparv.util.mysql_wrapper import MySQL
+from sparv.api import (AllSourceFilenames, Annotation, AnnotationDataAllSourceFiles, Config, Corpus, Export, ExportInput,
+                       OutputCommonData, OutputData, annotator, exporter, get_logger, installer, util)
+from sparv.api.util.mysql_wrapper import MySQL
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
+
 
 MAX_STRING_LENGTH = 100
 MAX_STRINGEXTRA_LENGTH = 32
@@ -19,19 +18,19 @@ MAX_POS_LENGTH = 5
 
 
 @installer("Install Korp's Word Picture SQL on remote host", language=["swe"])
-def install_relations(sqlfile: ExportInput = ExportInput("korp_wordpicture/relations.sql"),
+def install_relations(sqlfile: ExportInput = ExportInput("korp.wordpicture/relations.sql"),
                       out: OutputCommonData = OutputCommonData("korp.install_relations_marker"),
                       db_name: str = Config("korp.mysql_dbname"),
                       host: str = Config("korp.remote_host")):
     """Install Korp's Word Picture SQL on remote host.
 
     Args:
-        sqlfile (str, optional): SQL file to be installed. Defaults to ExportInput("korp_wordpicture/relations.sql").
+        sqlfile (str, optional): SQL file to be installed. Defaults to ExportInput("korp.wordpicture/relations.sql").
         out (str, optional): Marker file to be written.
         db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname").
         host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host").
     """
-    util.install_mysql(host, db_name, sqlfile)
+    util.install.install_mysql(host, db_name, sqlfile)
     out.write("")
 
 
@@ -43,11 +42,13 @@ def relations(out: OutputData = OutputData("korp.relations"),
               dephead: Annotation = Annotation("<token:dephead>"),
               deprel: Annotation = Annotation("<token:deprel>"),
               sentence_id: Annotation = Annotation("<sentence>:misc.id"),
-              ref: Annotation = Annotation("<token>:misc.number_rel_<sentence>"),
+              ref: Annotation = Annotation("<token:ref>"),
               baseform: Annotation = Annotation("<token>:saldo.baseform")):
     """Find certain dependencies between words, to be used by the Word Picture feature in Korp."""
     sentence_ids = sentence_id.read()
     sentence_tokens, _ = sentence_id.get_children(word)
+
+    logger.progress(total=len(sentence_tokens) + 1)
 
     annotations = list(word.read_attributes((word, pos, lemgram, dephead, deprel, ref, baseform)))
 
@@ -183,6 +184,7 @@ def relations(out: OutputData = OutputData("korp.relations"),
                             (v["lemgram"], v["word"], v["pos"], v["ref"]), mrel, ("", "", "", v["ref"]), ("", None), sentid,
                             v["ref"], v["ref"])
                         triples.extend(_mutate_triple(triple))
+        logger.progress()
 
     triples = sorted(set(triples))
 
@@ -191,6 +193,7 @@ def relations(out: OutputData = OutputData("korp.relations"),
                           head, headpos, rel, dep, deppos, extra, sentid, refhead, refdep, bfhead, bfdep, wfhead, wfdep)
                           in triples])
     out.write(out_data)
+    logger.progress()
 
 
 def _mutate_triple(triple):
@@ -265,20 +268,22 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
 
 @exporter("Word Picture SQL for use in Korp", language=["swe"])
 def relations_sql(corpus: Corpus = Corpus(),
-                  out: Export = Export("korp_wordpicture/relations.sql"),
-                  relations: AnnotationDataAllDocs = AnnotationDataAllDocs("korp.relations"),
-                  docs: Optional[AllDocuments] = AllDocuments(),
-                  doclist: str = "",
+                  out: Export = Export("korp.wordpicture/relations.sql"),
+                  relations: AnnotationDataAllSourceFiles = AnnotationDataAllSourceFiles("korp.relations"),
+                  source_files: Optional[AllSourceFilenames] = AllSourceFilenames(),
+                  source_files_list: str = "",
                   split: bool = False):
     """Calculate statistics of the dependencies and saves to SQL files.
 
-    - corpus is the corpus name.
-    - out is the name for the SQL file which will contain the resulting SQL statements.
-    - relations is the name of the relations annotation.
-    - docs is a list of documents.
-    - doclist can be used instead of docs, and should be a file containing the name of docs, one per row.
-    - split set to true leads to SQL commands being split into several parts, requiring less memory during creation,
-     but installing the data will take much longer.
+    Args:
+        corpus: the corpus name
+        out: the name for the SQL file which will contain the resulting SQL statements
+        relations: the name of the relations annotation
+        source_files: a list of source filenames
+        source_files_list: can be used instead of source_files, and should be a file containing the name of source
+            files, one per row
+        split: when set to true leads to SQL commands being split into several parts, requiring less memory during
+            creation, but installing the data will take much longer
     """
     db_table = MYSQL_TABLE + "_" + corpus.upper()
 
@@ -298,27 +303,29 @@ def relations_sql(corpus: Corpus = Corpus(),
     strings = {}  # ID -> string table
     freq_index = {}
     sentence_count = defaultdict(int)
-    doc_count = 0
+    file_count = 0
 
-    assert (docs or doclist), "Missing source"
+    assert (source_files or source_files_list), "Missing source"
 
-    if doclist:
-        with open(doclist) as insource:
-            docs = [line.strip() for line in insource]
+    if source_files_list:
+        with open(source_files_list, encoding="utf-8") as insource:
+            source_files = [line.strip() for line in insource]
 
-    if len(docs) == 1:
+    if len(source_files) == 1:
         split = False
 
-    for doc in docs:
-        doc_count += 1
+    logger.progress(total=len(source_files) + 1)
+
+    for file in source_files:
+        file_count += 1
         sentences = {}
-        if doc_count == 1 or split:
+        if file_count == 1 or split:
             freq = {}                           # Frequency of (head, rel, dep)
             rel_count = defaultdict(int)        # Frequency of (rel)
             head_rel_count = defaultdict(int)   # Frequency of (head, rel)
             dep_rel_count = defaultdict(int)    # Frequency of (rel, dep)
 
-        relations_data = relations.read(doc)
+        relations_data = relations.read(file)
 
         for triple in relations_data.splitlines():
             head, headpos, rel, dep, deppos, extra, sid, refh, refd, bfhead, bfdep, wfhead, wfdep = triple.split(u"\t")
@@ -362,20 +369,23 @@ def relations_sql(corpus: Corpus = Corpus(),
                 dep_rel_count[(dep, rel)] += 1
 
         # If not the last file
-        if not doc_count == len(docs):
+        if not file_count == len(source_files):
             if split:
                 # Don't print string table until the last file
                 _write_sql({}, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_table, split,
-                           first=(doc_count == 1))
+                           first=(file_count == 1))
             else:
                 # Only save sentences data, save the rest for the last file
-                _write_sql({}, sentences, {}, {}, {}, {}, out, db_table, split, first=(doc_count == 1))
+                _write_sql({}, sentences, {}, {}, {}, {}, out, db_table, split, first=(file_count == 1))
+
+        logger.progress()
 
     # Create the final file, including the string table
     _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_table, split,
-               first=(doc_count == 1), last=True)
+               first=(file_count == 1), last=True)
 
-    log.info("Done creating SQL files")
+    logger.progress()
+    logger.info("Done creating SQL files")
 
 
 def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, sql_file, db_table,
@@ -501,7 +511,7 @@ def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_coun
 
         mysql.enable_checks()
 
-    log.info("%s written", sql_file)
+    logger.info("%s written", sql_file)
 
 
 ################################################################################

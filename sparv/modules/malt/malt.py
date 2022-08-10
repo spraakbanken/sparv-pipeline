@@ -1,12 +1,10 @@
 """Dependency parsing using MaltParser."""
 
-import logging
 import re
 
-import sparv.util as util
-from sparv import Annotation, Binary, Config, Model, ModelOutput, Output, annotator, modelbuilder
+from sparv.api import Annotation, Binary, Config, Model, ModelOutput, Output, annotator, get_logger, modelbuilder, util
 
-log = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Running Malt processes are only kept if the input is small: otherwise
@@ -37,7 +35,7 @@ def cleanup(maltjar, model, encoding, process_dict):
     """Cleanup function used by preloader to restart Malt."""
     if process_dict["restart"]:
         util.system.kill_process(process_dict["process"])
-        log.info("Restarting MaltParser process")
+        logger.info("Restarting MaltParser process")
         process_dict = preloader(maltjar, model, encoding)
     return process_dict
 
@@ -45,10 +43,9 @@ def cleanup(maltjar, model, encoding, process_dict):
 @annotator("Dependency parsing using MaltParser", language=["swe"], config=[
     Config("malt.jar", default="maltparser-1.7.2/maltparser-1.7.2.jar",
            description="Path name of the executable .jar file"),
-    Config("malt.model", default="malt/swemalt-1.7.2.mco", description="Path to Malt model")
-    ],
-           preloader=preloader, preloader_params=["maltjar", "model", "encoding"], preloader_target="process_dict",
-           preloader_cleanup=cleanup, preloader_shared=False)
+    Config("malt.model", default="malt/swemalt-1.7.2.mco", description="Path to Malt model")],
+    preloader=preloader, preloader_params=["maltjar", "model", "encoding"], preloader_target="process_dict",
+    preloader_cleanup=cleanup, preloader_shared=False)
 def annotate(maltjar: Binary = Binary("[malt.jar]"),
              model: Model = Model("[malt.model]"),
              out_dephead: Output = Output("<token>:malt.dephead", cls="token:dephead",
@@ -60,10 +57,10 @@ def annotate(maltjar: Binary = Binary("[malt.jar]"),
              word: Annotation = Annotation("<token:word>"),
              pos: Annotation = Annotation("<token:pos>"),
              msd: Annotation = Annotation("<token:msd>"),
-             ref: Annotation = Annotation("<token>:misc.number_rel_<sentence>"),
+             ref: Annotation = Annotation("<token>:malt.ref"),
              sentence: Annotation = Annotation("<sentence>"),
              token: Annotation = Annotation("<token>"),
-             encoding: str = util.UTF8,
+             encoding: str = util.constants.UTF8,
              process_dict=None):
     """
     Run the malt parser, in an already started process defined in process_dict, or start a new process (default).
@@ -82,8 +79,8 @@ def annotate(maltjar: Binary = Binary("[malt.jar]"),
 
     sentences, orphans = sentence.get_children(token)
     if orphans:
-        log.warning(f"Found {len(orphans)} tokens not belonging to any sentence. These will not be annotated with "
-                    f"dependency relations.")
+        logger.warning(f"Found {len(orphans)} tokens not belonging to any sentence. These will not be annotated with "
+                       f"dependency relations.")
 
     word_annotation = list(word.read())
     pos_annotation = list(pos.read())
@@ -104,7 +101,7 @@ def annotate(maltjar: Binary = Binary("[malt.jar]"),
         stdin = stdin.encode(encoding)
 
     keep_process = len(stdin) < RESTART_THRESHOLD_LENGTH and process_dict is not None
-    log.info("Stdin length: %s, keep process: %s", len(stdin), keep_process)
+    logger.info("Stdin length: %s, keep process: %s", len(stdin), keep_process)
 
     if process_dict is not None:
         process_dict["restart"] = not keep_process
@@ -112,7 +109,7 @@ def annotate(maltjar: Binary = Binary("[malt.jar]"),
     if keep_process:
         # Chatting with malt: send a SENT_SEP and read correct number of lines
         stdin_fd, stdout_fd = process.stdin, process.stdout
-        stdin_fd.write(stdin + SENT_SEP.encode(util.UTF8))
+        stdin_fd.write(stdin + SENT_SEP.encode(util.constants.UTF8))
         stdin_fd.flush()
 
         malt_sentences = []
@@ -150,13 +147,23 @@ def annotate(maltjar: Binary = Binary("[malt.jar]"),
     out_deprel.write(out_deprel_annotation)
 
 
+@annotator("Annotate tokens with IDs relative to their sentences", language=["swe"])
+def make_ref(out: Output = Output("<token>:malt.ref", cls="token:ref",
+                                  description="Token IDs relative to their sentences"),
+             sentence: Annotation = Annotation("<sentence>"),
+             token: Annotation = Annotation("<token>")):
+    """Annotate tokens with IDs relative to their sentences."""
+    from sparv.modules.misc import number
+    number.number_relative(out, sentence, token)
+
+
 def maltstart(maltjar, model, encoding, send_empty_sentence=False):
     """Start a malt process and return it."""
     java_opts = ["-Xmx1024m"]
     malt_args = ["-ic", encoding, "-oc", encoding, "-m", "parse"]
     if str(model).startswith("http://") or str(model).startswith("https://"):
         malt_args += ["-u", str(model)]
-        log.info("Using Malt model from URL: %s", model)
+        logger.info("Using Malt model from URL: %s", model)
     else:
         model_dir = model.path.parent
         model_file = model.path.name
@@ -165,7 +172,7 @@ def maltstart(maltjar, model, encoding, send_empty_sentence=False):
         if model_dir:
             malt_args += ["-w", model_dir]
         malt_args += ["-c", model_file]
-        log.info("Using local Malt model: %s (in directory %s)", model_file, model_dir or ".")
+        logger.info("Using local Malt model: %s (in directory %s)", model_file, model_dir or ".")
 
     process = util.system.call_java(maltjar, malt_args, options=java_opts, encoding=encoding, return_command=True)
 
@@ -173,8 +180,8 @@ def maltstart(maltjar, model, encoding, send_empty_sentence=False):
         # Send a simple sentence to malt, this greatly enhances performance
         # for subsequent requests.
         stdin_fd, stdout_fd = process.stdin, process.stdout
-        log.info("Sending empty sentence to malt")
-        stdin_fd.write("1\t.\t_\tMAD\tMAD\tMAD\n\n\n".encode(util.UTF8))
+        logger.info("Sending empty sentence to malt")
+        stdin_fd.write("1\t.\t_\tMAD\tMAD\tMAD\n\n\n".encode(util.constants.UTF8))
         stdin_fd.flush()
         stdout_fd.readline()
         stdout_fd.readline()

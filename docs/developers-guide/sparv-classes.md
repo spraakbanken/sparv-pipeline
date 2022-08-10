@@ -7,19 +7,20 @@ write annotation files without the need to know anything about Sparv's internal 
 the available Sparv classes, their arguments, properties, and public methods.
 
 
-## AllDocuments
-An instance of this class holds a list with the names of all source documents. It is typically used by exporter
-functions that combine annotations from all source documents.
+## AllSourceFilenames
+An instance of this class holds a list with the names of all source files. It is typically used by exporter
+functions that combine annotations from all source files.
 
 
 ## Annotation
-An instance of this class represents a regular annotation tied to one document. This class is used when an annotation is
-needed as input for a function, e.g. `Annotation("<token:word>")`.
+An instance of this class represents a regular annotation tied to one source file. This class is used when an
+annotation is needed as input for a function, e.g. `Annotation("<token:word>")`.
 
 **Arguments:**
 
 - `name`: The name of the annotation.
-- `doc`: The name of the document.
+- `source_file`: The name of the source file.
+- `is_input`: If set to `False` the annotation won't be added to the rule's input. Default: `True`
 
 **Properties:**
 
@@ -35,7 +36,7 @@ needed as input for a function, e.g. `Annotation("<token:word>")`.
 - `get_children(child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False)`: Return two lists.
     The first one is a list with n (= total number of parents) elements where every element is a list of indices in the
     child annotation. The second one is a list of orphans, i.e. containing indices in the child annotation that have no
-    parent. Both parents and children are sorted according to their position in the source document, unless
+    parent. Both parents and children are sorted according to their position in the source file, unless
     preserve_parent_annotation_order is set to True, in which case the parents keep the order from the parent
     annotation.
 - `get_parents(parent: BaseAnnotation, orphan_alert: bool = False)`: Return a list with n (= total number of children)
@@ -46,11 +47,12 @@ needed as input for a function, e.g. `Annotation("<token:word>")`.
   False, allow_newlines: bool = False)`: Yield tuples of multiple attributes on the same annotation.
 - `read_spans(decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
 - `create_empty_attribute()`: Return a list filled with None of the same size as this annotation.
+- `get_size()`: Get the number of values.
 
 
-## AnnotationAllDocs
-Regular annotation but the document must be specified for all actions. Use as input to an annotator function to require
-the specificed annotation for every document in the corpus.
+## AnnotationAllSourceFiles
+Regular annotation but the source filename must be specified for all actions. Use as input to an annotator function to
+require the specificed annotation for every source file in the corpus.
 
 **Arguments:**
 
@@ -64,16 +66,17 @@ the specificed annotation for every document in the corpus.
 **Methods:**
 
 - `split()`: Split name into annotation name and attribute.
-- `read(doc: str)`: Yield each line from the annotation.
-- `read_spans(doc: str, decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
-- `create_empty_attribute(doc: str)`: Return a list filled with None of the same size as this annotation.
-- `exists(doc: str)`: Return True if annotation file exists.
+- `read(source_file: str)`: Yield each line from the annotation.
+- `read_spans(source_file: str, decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
+- `create_empty_attribute(source_file: str)`: Return a list filled with None of the same size as this annotation.
+- `exists(source_file: str)`: Return True if annotation file exists.
+- `get_size(source_file: str)`: Get the number of values.
 
 
 ## AnnotationCommonData
 Like [`AnnotationData`](#annotationdata), an instance of this class represents an annotation with arbitrary data, but
 `AnnotationCommonData` is used for data that applies to the whole corpus (i.e. data that is not specific to one source
-document).
+file).
 
 **Arguments:**
 
@@ -96,7 +99,7 @@ This class represents an annotation holding arbitrary data, i.e. data that is no
 **Arguments:**
 
 - `name`: The name of the annotation.
-- `doc`: The name of the document.
+- `source_file`: The name of the source file.
 
 **Properties:**
 
@@ -108,13 +111,13 @@ This class represents an annotation holding arbitrary data, i.e. data that is no
 
 - `split()`: Split name into annotation name and attribute.
 - `exists()`: Return True if annotation file exists.
-- `read(doc: Optional[str] = None)`: Read arbitrary string data from annotation file.
+- `read(source_file: Optional[str] = None)`: Read arbitrary string data from annotation file.
 
 
-## AnnotationDataAllDocs
-Like [`AnnotationData`](#annotationdata), this class is used for annotations holding arbitrary data but the document
-must be specified for all actions. Use as input to an annotator to require the specificed annotation for every document
-in the corpus.
+## AnnotationDataAllSourceFiles
+Like [`AnnotationData`](#annotationdata), this class is used for annotations holding arbitrary data but the source file
+must be specified for all actions. Use as input to an annotator to require the specificed annotation for every source
+file in the corpus.
 
 **Arguments:**
 
@@ -129,7 +132,7 @@ in the corpus.
 
 - `split()`: Split name into annotation name and attribute.
 - `exists()`: Return True if annotation file exists.
-- `read(doc: Optional[str] = None)`: Read arbitrary string data from annotation file.
+- `read(source_file: Optional[str] = None)`: Read arbitrary string data from annotation file.
 
 
 ## Binary
@@ -138,7 +141,7 @@ Sparv data directory. This class is often used to define a prerequisite for an a
 
 **Arguments:**
 
-- default argument: Path to binary executable.
+- Path to binary executable.
 
 
 ## BinaryDir
@@ -147,7 +150,7 @@ the `bin` path inside the Sparv data directory.
 
 **Arguments:**
 
-- default argument: Path to directory containing executable binaries.
+- Path to directory containing executable binaries.
 
 
 ## Config
@@ -164,8 +167,8 @@ An instance of this class holds a configuration key name and its default value.
 An instance of this class holds the name (ID) of the corpus.
 
 
-## Document
-An instance of this class holds the name of a source document.
+## SourceFilename
+An instance of this class holds the name of a source file.
 
 
 ## Export
@@ -173,12 +176,26 @@ An instance of this class represents an export file. This class is used to defin
 
 **Arguments:**
 
-- `name`: The export directory and filename pattern (e.g. `"xml_pretty/[xml_export.filename]"`).
-- `absolute_path`: Set to `True` if the path is absolute. Default: `False`
+- The export directory and filename pattern (e.g. `"xml_export.pretty/[xml_export.filename]"`). The export directory
+  must contain the module name as a prefix, or be equal to the module name.
 
 
 ## ExportAnnotations
-List of annotations to be included in the export. This list is defined in the corpus configuration.
+List of annotations to be included in the export. This list is defined in the corpus configuration. Annotation files
+for the current source file will automatically be added as dependencies when using this class, unless `is_input` is set
+to `False`.
+
+**Arguments:**
+
+- `config_name`: The config variable pointing out what annotations to include.
+- `is_input`: If set to `False` the annotations won't be added to the rule's input. Default: `True`
+
+
+## ExportAnnotationsAllSourceFiles
+List of annotations to be included in the export. This list is defined in the corpus configuration. Annotation files
+for _all_ source files will automatically be added as dependencies when using this class, unless `is_input` is set to
+`False`. With `is_input` set to `False`, there is no difference between using `ExportAnnotationsAllSourceFiles` and
+`ExportAnnotations`.
 
 **Arguments:**
 
@@ -192,23 +209,22 @@ function.
 
 **Arguments:**
 
-- `val`: The export directory and filename pattern (e.g. `"xml_pretty/[xml_export.filename]"`).
-- `all_docs`: Set to `True` to get the export for all source documents. Default: `False`
-- `absolute_path`: Set to `True` if the path is absolute. Default: `False`
+- `val`: The export directory and filename pattern (e.g. `"xml_export.pretty/[xml_export.filename]"`).
+- `all_files`: Set to `True` to get the export for all source files. Default: `False`
 
 
 ## Headers
-List of header annotation names for a given document.
+List of header annotation names for a given source file.
 
 **Arguments:**
 
-- default argument: The name of the document.
+- The name of the source file.
 
 **Methods:**
 
 - `read()`: Read the headers file and return a list of header annotation names.
 - `write(header_annotations: List[str])`: Write headers file.
-- `exists()`: Return True if headers file exists for this document.
+- `exists()`: Return True if headers file exists for this source file.
 
 
 ## Language
@@ -267,19 +283,19 @@ Regular annotation or attribute used as output (e.g. of an annotator function).
 - `name`: The name of the annotation.
 - `cls`: The annotation class of the output.
 - `description`: An optional description.
-- `doc`: The name of the document.
+- `source_file`: The name of the source file.
 
 **Methods:**
 
 - `split()`: Split name into annotation name and attribute.
-- `write(values, append: bool = False, allow_newlines: bool = False, doc: Optional[str] = None)`: Write an annotation to
-  file. Existing annotation will be overwritten. 'values' should be a list of values.
+- `write(values, append: bool = False, allow_newlines: bool = False, source_file: Optional[str] = None)`: Write an
+  annotation to file. Existing annotation will be overwritten. 'values' should be a list of values.
 - `exists()`: Return True if annotation file exists.
 
 
-## OutputAllDocs
-Similar to [`Output`](#output) this class represents a regular annotation or attribute used as output, but the document
-must be specified for all actions.
+## OutputAllSourceFiles
+Similar to [`Output`](#output) this class represents a regular annotation or attribute used as output, but the source
+file must be specified for all actions.
 
 **Arguments**:
 - `name`: The name of the annotation.
@@ -289,9 +305,9 @@ must be specified for all actions.
 **Methods:**
 
 - `split()`: Split name into annotation name and attribute.
-- `write(values, doc: str, append: bool = False, allow_newlines: bool = False)`: Write an annotation to file. Existing
-  annotation will be overwritten. 'values' should be a list of values.
-- `exists(doc: str)`: Return True if annotation file exists.
+- `write(values, source_file: str, append: bool = False, allow_newlines: bool = False)`: Write an annotation to file.
+   Existing annotation will be overwritten. 'values' should be a list of values.
+- `exists(source_file: str)`: Return True if annotation file exists.
 
 
 ## OutputCommonData
@@ -316,7 +332,7 @@ is used as output.
 - `name`: The name of the annotation.
 - `cls`: The annotation class of the output.
 - `description`: An optional description.
-- `doc`: The name of the document.
+- `source_file`: The name of the source file.
 
 **Methods:**
 
@@ -325,9 +341,9 @@ is used as output.
 - `exists()`: Return True if annotation file exists.
 
 
-## OutputDataAllDocs
+## OutputDataAllSourceFiles
 Like [`OutputData`](#outputdata), this class is used for annotations holding arbitrary data and that is used as output,
-but the document must be specified for all actions.
+but the source file must be specified for all actions.
 
 **Arguments**:
 - `name`: The name of the annotation.
@@ -337,8 +353,8 @@ but the document must be specified for all actions.
 **Methods:**
 
 - `split()`: Split name into annotation name and attribute.
-- `write(value, doc: str, append: bool = False)`: Write arbitrary corpus level string data to annotation file.
-- `exists(doc: str)`: Return True if annotation file exists.
+- `write(value, source_file: str, append: bool = False)`: Write arbitrary corpus level string data to annotation file.
+- `exists(source_file: str)`: Return True if annotation file exists.
 
 
 ## Source
@@ -346,11 +362,11 @@ An instance of this class holds a path to the directory containing input files.
 
 **Arguments:**
 
-- default argument: Path to directory containing input files.
+- Path to directory containing input files.
 
 **Methods:**
 
-- `get_path(doc: Document, extension: str)`: Get path to a specific source file.
+- `get_path(source_file: SourceFilename, extension: str)`: Get path to a specific source file.
 
 
 ## SourceAnnotations
@@ -359,20 +375,29 @@ List of source annotations to be included in the export. This list is defined in
 **Arguments:**
 
 - `config_name`: The config variable pointing out what source annotations to include.
-- `is_input`: If set to `False` the annotations won't be added to the rule's input. Default: `True`
 
 
-## SourceStructure
-Every annotation available in a source document.
+## SourceAnnotationsAllSourceFiles
+List of source annotations to be included in the export. This list is defined in the corpus configuration. This
+differs from `SourceAnnotations` in that the source annotations structure file (created by using `SourceStructure`)
+of _every_ source file will be added as dependencies.
 
 **Arguments:**
 
-- default argument: The name of the document.
+- `config_name`: The config variable pointing out what source annotations to include.
+
+
+## SourceStructure
+Every annotation name available in a source file.
+
+**Arguments:**
+
+- The name of the source file.
 
 **Methods:**
 
 - `read()`: Read structure file.
-- `write(structure)`: Sort the document's structural elements and write structure file.
+- `write(structure)`: Sort the source file's annotation names and write to structure file.
 
 
 ## SourceStructureParser
@@ -393,7 +418,7 @@ An instance of this class represents the corpus text.
 
 **Arguments:**
 
-- `doc`: The name of the document.
+- `source_file`: The name of the source file.
 
 **Methods:**
 
@@ -402,7 +427,8 @@ An instance of this class represents the corpus text.
 
 
 ## Wildcard
-An instance of this class holds wildcard information. It is typically used in the `wildcards` list passed as an argument to the [`@annotator` decorator](developers-guide/sparv-decorators.md#annotator), e.g.:
+An instance of this class holds wildcard information. It is typically used in the `wildcards` list passed as an argument
+to the [`@annotator` decorator](developers-guide/sparv-decorators.md#annotator), e.g.:
 ```python
 @annotator("Number {annotation} by relative position within {parent}", wildcards=[
     Wildcard("annotation", Wildcard.ANNOTATION),

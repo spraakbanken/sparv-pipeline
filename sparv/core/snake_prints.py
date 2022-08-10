@@ -209,9 +209,20 @@ def print_languages():
     """Print all supported languages."""
     print()
     table = Table(title="Supported languages", box=box.SIMPLE, show_header=False, title_justify="left")
-    for language, name in sorted(registry.languages.items(), key=lambda x: x[1]):
+    full_langs = dict((k, v) for k, v in registry.languages.items() if "-" not in k)
+    for language, name in sorted(full_langs.items(), key=lambda x: x[1]):
         table.add_row(name, language)
     console.print(table)
+
+    sub_langs = dict((k, v) for k, v in registry.languages.items() if "-" in k)
+    if sub_langs:
+        print()
+        table = Table(title="Supported language varieties", box=box.SIMPLE, show_header=False, title_justify="left")
+        table.add_row("[b]Name[/b]", "[b]Language[/b]", "[b]Variety[/b]")
+        for language, name in sorted(sub_langs.items(), key=lambda x: x[1]):
+            lang, _, sublang = language.partition("-")
+            table.add_row(name, lang, sublang)
+        console.print(table)
 
 
 def get_custom_module_description(name):
