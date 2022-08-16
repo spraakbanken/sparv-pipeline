@@ -239,23 +239,32 @@ def config(id: str = Config("metadata.id"),
         is_token = annotation.annotation_name == token.name
         definition: Union[str, dict] = annotation_definitions.get(annotation.name, export_name)
 
-        if isinstance(definition, str):
+        if isinstance(definition, str):  # Referring to a preset
             # Check that preset exists
-            if isinstance(definition, str) and definition not in presets:
+            if definition not in presets:
                 logger.warning(
                     f"{annotation.name!r} is missing a definition, and {definition!r} is not available as a "
                     "preset. Annotation will not be included.")
                 continue
-            elif not is_token:
-                # Check if non-token annotation should be used as a token-annotation in Korp
-                is_token = presets[definition] == "positional"
-        elif "preset" in definition:
+            if not is_token and presets[definition] == "positional":
+                # Non-token annotation used as a token-annotation in Korp
+                is_token = True
+        elif "preset" in definition:  # Extending a preset
             if definition["preset"] not in presets:
                 logger.warning(f"{annotation.name!r} refers to a non-existent preset. Annotation will not be included.")
                 continue
-            elif not is_token:
+            if not is_token:
                 # Check if non-token annotation should be used as a token-annotation in Korp
-                is_token = presets[definition["preset"]] == "positional"
+                if definition.get("use_as_positional") or presets[definition["preset"]] == "positional":
+                    is_token = True
+                    definition["is_struct_attr"] = True
+                    definition.pop("use_as_positional", None)
+        elif not is_token:
+            # Check if non-token annotation should be used as a token-annotation in Korp
+            if definition.get("use_as_positional"):
+                is_token = True
+                definition["is_struct_attr"] = True
+                definition.pop("use_as_positional", None)
 
         if is_token:
             token_annotations.append({export_name: definition})
