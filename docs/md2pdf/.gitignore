@@ -1,5 +1,4 @@
 *.pdf
-user-manual.md
+*.md
 user-manual.tex
-developers-guide.md
 developers-guide.tex
