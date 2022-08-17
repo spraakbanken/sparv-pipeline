@@ -24,11 +24,11 @@ HIDDEN_ANNOTATIONS = (
     "segment.token:stanza.msd_hunpos_backoff_info"
 )
 
-# Annotations needed by reading mode
+# Annotations needed by reading mode (using export names)
 READING_MODE_ANNOTATIONS = (
-    "segment.sentence:misc.id",
-    "segment.token:misc.head",
-    "segment.token:misc.tail"
+    "sentence:id",
+    "_head",
+    "_tail"
 )
 
 LABELS = {
@@ -240,13 +240,13 @@ def config(id: str = Config("metadata.id"),
         # Skip certain annotations unless explicitly listed in annotation_definitions
         if (annotation.name in HIDDEN_ANNOTATIONS or annotation.attribute_name is None or export_name.split(":", 1)[
                 -1].startswith("_")) and annotation.name not in annotation_definitions and not (
-            reading_mode and annotation.name in READING_MODE_ANNOTATIONS
+            reading_mode and export_name in READING_MODE_ANNOTATIONS
         ):
             logger.debug(f"Skipping annotation {annotation.name!r}")
             continue
-        export_name = cwb_escape(export_name.replace(":", "_"))
+        export_name_cwb = cwb_escape(export_name.replace(":", "_"))
         is_token = annotation.annotation_name == token.name
-        definition: Union[str, dict] = annotation_definitions.get(annotation.name, export_name)
+        definition: Union[str, dict] = annotation_definitions.get(annotation.name, export_name_cwb)
 
         if isinstance(definition, str):  # Referring to a preset
             # Check that preset exists
@@ -276,9 +276,9 @@ def config(id: str = Config("metadata.id"),
                 definition.pop("use_as_positional", None)
 
         if is_token:
-            token_annotations.append({export_name: definition})
+            token_annotations.append({export_name_cwb: definition})
         else:
-            struct_annotations.append({export_name: definition})
+            struct_annotations.append({export_name_cwb: definition})
 
     config_dict["struct_attributes"] = struct_annotations
     config_dict["pos_attributes"] = token_annotations
