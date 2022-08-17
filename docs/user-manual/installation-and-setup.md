@@ -165,29 +165,29 @@ Sparv can use different third-party tools for analyzing corpora in other languag
 The following is a list of the languages currently supported by Sparv, their language codes (ISO 639-3)
 and which tools Sparv can use to analyse them:
 
-Language       |ISO 639-3 Code |Analysis Tool
-:--------------|:--------------|:-------------
-Asturian       |ast            |FreeLing
-Bulgarian      |bul            |TreeTagger
-Catalan        |cat            |FreeLing
-Dutch          |nld            |TreeTagger
-Estonian       |est            |TreeTagger
-English        |eng            |FreeLing, Stanford Parser, TreeTagger
-French         |fra            |FreeLing, TreeTagger
-Finnish        |fin            |TreeTagger
-Galician       |glg            |FreeLing
-German         |deu            |FreeLing, TreeTagger
-Italian        |ita            |FreeLing, TreeTagger
-Latin          |lat            |TreeTagger
-Norwegian      |nob            |FreeLing
-Polish         |pol            |TreeTagger
-Portuguese     |por            |FreeLing
-Romanian       |ron            |TreeTagger
-Russian        |rus            |FreeLing, TreeTagger
-Slovak         |slk            |TreeTagger
-Slovenian      |slv            |FreeLing
-Spanish        |spa            |FreeLing, TreeTagger
-Swedish        |swe            |Sparv
+Language         |ISO 639-3 Code |Analysis Tool
+:----------------|:--------------|:-------------
+Asturian         |ast            |FreeLing
+Bulgarian        |bul            |TreeTagger
+Catalan          |cat            |FreeLing
+Dutch            |nld            |TreeTagger
+Estonian         |est            |TreeTagger
+English          |eng            |FreeLing, Stanford Parser, TreeTagger
+French           |fra            |FreeLing, TreeTagger
+Finnish          |fin            |TreeTagger
+Galician         |glg            |FreeLing
+German           |deu            |FreeLing, TreeTagger
+Italian          |ita            |FreeLing, TreeTagger
+Latin            |lat            |TreeTagger
+Norwegian Bokmål |nob            |FreeLing
+Polish           |pol            |TreeTagger
+Portuguese       |por            |FreeLing
+Romanian         |ron            |TreeTagger
+Russian          |rus            |FreeLing, TreeTagger
+Slovak           |slk            |TreeTagger
+Slovenian        |slv            |FreeLing
+Spanish          |spa            |FreeLing, TreeTagger
+Swedish          |swe            |Sparv
 
 <!-- Swedish 1800's |sv-1800       |Sparv) -->
 <!-- Swedish development mode |sv-dev        |Sparv) -->
