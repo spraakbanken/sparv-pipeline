@@ -24,6 +24,13 @@ HIDDEN_ANNOTATIONS = (
     "segment.token:stanza.msd_hunpos_backoff_info"
 )
 
+# Annotations needed by reading mode
+READING_MODE_ANNOTATIONS = (
+    "segment.sentence:misc.id",
+    "segment.token:misc.head",
+    "segment.token:misc.tail"
+)
+
 LABELS = {
     "sentence": {
         "swe": ("mening", "meningar"),
@@ -232,7 +239,9 @@ def config(id: str = Config("metadata.id"),
         export_name = export_names.get(annotation.name, annotation.name)
         # Skip certain annotations unless explicitly listed in annotation_definitions
         if (annotation.name in HIDDEN_ANNOTATIONS or annotation.attribute_name is None or export_name.split(":", 1)[
-                -1].startswith("_")) and annotation.name not in annotation_definitions:
+                -1].startswith("_")) and annotation.name not in annotation_definitions and not (
+            reading_mode and annotation.name in READING_MODE_ANNOTATIONS
+        ):
             logger.debug(f"Skipping annotation {annotation.name!r}")
             continue
         export_name = cwb_escape(export_name.replace(":", "_"))
