@@ -45,6 +45,10 @@ class StreamToLogger:
     def isatty():
         return False
 
+    @staticmethod
+    def flush():
+        pass
+
 
 # Set compression
 if snakemake.params.compression:
