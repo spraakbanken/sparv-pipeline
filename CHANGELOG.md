@@ -1,6 +1,18 @@
 # Changelog
 
-## [5.0.0]
+## [5.0.1.dev0]
+
+### Added
+
+- Added exporter for Korp frontend config files.
+
+### Changed
+
+### Fixed
+
+- Fixed 'maximum recursion depth exceeded' problem by upgrading Stanza.
+
+## [5.0.0] - 2022-08-10
 
 ### Added
 
