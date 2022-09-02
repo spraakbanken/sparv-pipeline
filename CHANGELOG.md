@@ -11,6 +11,7 @@
 ### Fixed
 
 - Fixed 'maximum recursion depth exceeded' problem by upgrading Stanza.
+- The preloader now respects the compression setting.
 
 ## [5.0.0] - 2022-08-10
 
