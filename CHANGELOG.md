@@ -12,6 +12,7 @@
 
 - Fixed 'maximum recursion depth exceeded' problem by upgrading Stanza.
 - The preloader now respects the compression setting.
+- Fixed progress bars not working when running preloaded annotators.
 
 ## [5.0.0] - 2022-08-10
 

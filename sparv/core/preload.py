@@ -165,7 +165,9 @@ def handle(client_sock, annotators: Dict[str, Preloader]):
     # Set up logging over socket
     log_handler.setup_logging(data[2]["log_server"],
                               log_level=data[2]["log_level"],
-                              log_file_level=data[2]["log_file_level"])
+                              log_file_level=data[2]["log_file_level"],
+                              file=data[3],
+                              job=data[0])
 
     # Call annotator function
     try:
