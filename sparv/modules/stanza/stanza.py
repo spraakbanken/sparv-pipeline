@@ -41,6 +41,8 @@ def annotate(corpus_text: Text = Text(),
              max_sentence_length: int = Config("stanza.max_sentence_length"),
              cpu_fallback: bool = Config("stanza.cpu_fallback")):
     """Do dependency parsing using Stanza."""
+    from stanza.pipeline.core import DownloadMethod
+
     # cpu_fallback only makes sense if use_gpu is True
     cpu_fallback = cpu_fallback and use_gpu
 
@@ -57,7 +59,8 @@ def annotate(corpus_text: Text = Text(),
         "pos_batch_size": batch_size,
         "lemma_batch_size": batch_size,
         "use_gpu": use_gpu,
-        "verbose": False
+        "verbose": False,
+        "download_method": DownloadMethod.NONE
     }
     stanza_args = {
         "use_gpu": use_gpu,
