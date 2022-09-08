@@ -176,6 +176,8 @@ def main():
         subparser.add_argument("-j", "--cores", type=int, nargs="?", const=0, metavar="N",
                                help="Use at most N cores in parallel; if N is omitted, use all available CPU cores",
                                default=1)
+        subparser.add_argument("-k", "--keep-going", action="store_true",
+                               help="Keep going with independent tasks if a task fails")
         subparser.add_argument("--log", metavar="LOGLEVEL", const="info",
                                help="Set the log level (default: 'warning' if --log is not specified, "
                                     "'info' if LOGLEVEL is not specified)",
@@ -273,6 +275,7 @@ def main():
     stats = False
     pass_through = False
     dry_run = False
+    keep_going = False
 
     if args.command in ("modules", "config", "files", "clean", "presets", "classes", "languages", "preload"):
         snakemake_args["targets"] = [args.command]
@@ -306,6 +309,7 @@ def main():
         snakemake_args.update({
             "dryrun": args.dry_run,
             "cores": cores,
+            "keepgoing": args.keep_going,
             "resources": {"threads": args.cores}
         })
         # Never show progress bar for list commands or dry run
@@ -314,6 +318,7 @@ def main():
 
         stats = args.stats
         dry_run = args.dry_run
+        keep_going = args.keep_going
 
         # Command: run
         if args.command == "run":
@@ -393,7 +398,8 @@ def main():
     # Disable Snakemake's default log handler and use our own
     logger.log_handler = []
     progress = log_handler.LogHandler(progressbar=not simple_target, log_level=log_level, log_file_level=log_file_level,
-                                      simple=simple_mode, stats=stats, pass_through=pass_through, dry_run=dry_run)
+                                      simple=simple_mode, stats=stats, pass_through=pass_through, dry_run=dry_run,
+                                      keep_going=keep_going)
     snakemake_args["log_handler"] = [progress.log_handler]
 
     config["log_server"] = progress.log_server
