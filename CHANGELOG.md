@@ -5,6 +5,7 @@
 ### Added
 
 - Added exporter for Korp frontend config files.
+- Added the `--keep-going` flag, which makes Sparv continue with other independent tasks when a task fails.
 
 ### Changed
 
