@@ -8,8 +8,8 @@ from pathlib import Path
 from typing import Optional
 
 from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Config, Corpus, SourceFilename, Export,
-                       ExportAnnotations, ExportInput, SourceAnnotations, SourceAnnotationsAllSourceFiles,
-                       SparvErrorMessage, exporter, get_logger, util)
+                       ExportAnnotations, ExportAnnotationNames, ExportInput, SourceAnnotations,
+                       SourceAnnotationsAllSourceFiles, SparvErrorMessage, exporter, get_logger, util)
 
 logger = get_logger(__name__)
 
@@ -120,7 +120,7 @@ def vrt_scrambled(source_file: SourceFilename = SourceFilename(),
     Config("cwb.skip_validation", False, description="Whether to skip validation")
 ])
 def encode(corpus: Corpus = Corpus(),
-           annotations: ExportAnnotations = ExportAnnotations("cwb.annotations", is_input=False),
+           annotations: ExportAnnotationNames = ExportAnnotationNames("cwb.annotations"),
            source_annotations: SourceAnnotationsAllSourceFiles = SourceAnnotationsAllSourceFiles(
                "cwb.source_annotations"),
            source_files: AllSourceFilenames = AllSourceFilenames(),
@@ -144,7 +144,7 @@ def encode(corpus: Corpus = Corpus(),
 
 @exporter("CWB encode, scrambled", order=1)
 def encode_scrambled(corpus: Corpus = Corpus(),
-                     annotations: ExportAnnotations = ExportAnnotations("cwb.annotations", is_input=False),
+                     annotations: ExportAnnotationNames = ExportAnnotationNames("cwb.annotations"),
                      source_annotations: SourceAnnotationsAllSourceFiles = SourceAnnotationsAllSourceFiles(
                          "cwb.source_annotations"),
                      source_files: AllSourceFilenames = AllSourceFilenames(),

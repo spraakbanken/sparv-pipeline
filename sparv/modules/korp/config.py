@@ -6,7 +6,7 @@ from typing import Optional, Union
 
 import yaml
 
-from sparv.api import (AllSourceFilenames, Annotation, Config, Export, ExportAnnotations, ExportInput,
+from sparv.api import (AllSourceFilenames, AnnotationName, Config, Export, ExportAnnotationNames, ExportInput,
                        OutputCommonData, SourceAnnotationsAllSourceFiles, exporter, get_logger, installer, util)
 from sparv.core.io import split_annotation
 from sparv.modules.cwb.cwb import cwb_escape
@@ -64,10 +64,10 @@ def config(id: str = Config("metadata.id"),
            language: str = Config("metadata.language"),
            modes: list = Config("korp.modes"),
            protected: bool = Config("korp.protected"),
-           annotations: ExportAnnotations = ExportAnnotations("korp.annotations", is_input=False),
+           annotations: ExportAnnotationNames = ExportAnnotationNames("korp.annotations"),
            source_annotations: SourceAnnotationsAllSourceFiles = SourceAnnotationsAllSourceFiles(
                "korp.source_annotations"),
-           cwb_annotations: ExportAnnotations = ExportAnnotations("cwb.annotations", is_input=False),
+           cwb_annotations: ExportAnnotationNames = ExportAnnotationNames("cwb.annotations"),
            cwb_source_annotations: SourceAnnotationsAllSourceFiles = SourceAnnotationsAllSourceFiles(
                "cwb.source_annotations"),
            annotation_definitions: Optional[dict] = Config("korp.annotation_definitions"),
@@ -75,15 +75,15 @@ def config(id: str = Config("metadata.id"),
            morphology: Optional[list] = Config("korp.morphology"),
            reading_mode: Optional[dict] = Config("korp.reading_mode"),
            filters: Optional[list] = Config("korp.filters"),
-           sentence: Optional[Annotation] = Annotation("<sentence>", is_input=False),
-           paragraph: Optional[Annotation] = Annotation("<paragraph>", is_input=False),
+           sentence: Optional[AnnotationName] = AnnotationName("<sentence>"),
+           paragraph: Optional[AnnotationName] = AnnotationName("<paragraph>"),
            installations: Optional[list] = Config("install"),
            exports: Optional[list] = Config("export.default"),
-           scramble_on: Optional[Annotation] = Annotation("[cwb.scramble_on]", is_input=False),
+           scramble_on: Optional[AnnotationName] = AnnotationName("[cwb.scramble_on]"),
            context: Optional[list] = Config("korp.context"),
            within: Optional[list] = Config("korp.within"),
            source_files: AllSourceFilenames = AllSourceFilenames(),
-           token: Annotation = Annotation("<token>", is_input=False),
+           token: AnnotationName = AnnotationName("<token>"),
            remove_namespaces: bool = Config("export.remove_module_namespaces", False),
            sparv_namespace: str = Config("export.sparv_namespace"),
            source_namespace: str = Config("export.source_namespace"),
