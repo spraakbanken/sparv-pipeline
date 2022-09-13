@@ -20,7 +20,6 @@ annotation is needed as input for a function, e.g. `Annotation("<token:word>")`.
 
 - `name`: The name of the annotation.
 - `source_file`: The name of the source file.
-- `is_input`: If set to `False` the annotation won't be added to the rule's input. Default: `True`
 
 **Properties:**
 
@@ -91,6 +90,17 @@ file).
 
 - `split()`: Split name into annotation name and attribute.
 - `read()`: Read arbitrary corpus level string data from annotation file.
+
+
+## AnnotationName
+Use this class when only the name of an annotation is of interest, not the actual data. The annotation will not be added
+as a prerequisite for the annotator, meaning that the use of `AnnotationName` will not automatically trigger the
+creation of the referenced annotation.
+
+**Arguments:**
+
+- `name`: The name of the annotation.
+- `source_file`: The name of the source file.
 
 
 ## AnnotationData
@@ -182,25 +192,29 @@ An instance of this class represents an export file. This class is used to defin
 
 ## ExportAnnotations
 List of annotations to be included in the export. This list is defined in the corpus configuration. Annotation files
-for the current source file will automatically be added as dependencies when using this class, unless `is_input` is set
-to `False`.
+for the current source file will automatically be added as dependencies when using this class.
 
 **Arguments:**
 
 - `config_name`: The config variable pointing out what annotations to include.
-- `is_input`: If set to `False` the annotations won't be added to the rule's input. Default: `True`
 
 
 ## ExportAnnotationsAllSourceFiles
 List of annotations to be included in the export. This list is defined in the corpus configuration. Annotation files
-for _all_ source files will automatically be added as dependencies when using this class, unless `is_input` is set to
-`False`. With `is_input` set to `False`, there is no difference between using `ExportAnnotationsAllSourceFiles` and
-`ExportAnnotations`.
+for _all_ source files will automatically be added as dependencies when using this class.
 
 **Arguments:**
 
 - `config_name`: The config variable pointing out what annotations to include.
-- `is_input`: If set to `False` the annotations won't be added to the rule's input. Default: `True`
+
+
+## ExportAnnotationNames
+List of annotations to be included in the export. This list is defined in the corpus configuration. Unlike
+`ExportAnnotations`, the annotations will not be added as dependencies when using this class.
+
+**Arguments:**
+
+- `config_name`: The config variable pointing out what annotations to include.
 
 
 ## ExportInput

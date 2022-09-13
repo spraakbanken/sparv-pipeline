@@ -22,7 +22,7 @@ class Base(ABC):
 
     @abstractmethod
     def __init__(self, name: str = ""):
-        assert isinstance(name, str)
+        assert isinstance(name, str), "'name' must be a string"
         self.name = name
         self.original_name = name
         self.root = pathlib.Path.cwd()  # Save current working dir as root
@@ -241,6 +241,16 @@ class Annotation(BaseAnnotation):
     def create_empty_attribute(self):
         """Return a list filled with None of the same size as this annotation."""
         return [None] * self.get_size()
+
+
+class AnnotationName(BaseAnnotation):
+    """Class representing an Annotation name.
+
+    To be used when only the name is of interest and not the actual annotation file.
+    """
+
+    def __init__(self, name: str = "", source_file: Optional[str] = None):
+        super().__init__(name, source_file=source_file, is_input=False)
 
 
 class AnnotationData(BaseAnnotation):
@@ -713,16 +723,25 @@ class ExportAnnotations(List[Tuple[Annotation, Optional[str]]]):
         self.is_input = is_input
 
 
+class ExportAnnotationNames(ExportAnnotations):
+    """List of annotations to include in export.
+
+    To be used when only the annotation names are of interest and not the actual annotation files.
+    """
+
+    def __init__(self, config_name: str, items=()):
+        super().__init__(config_name, items=items, is_input=False)
+
+
 class ExportAnnotationsAllSourceFiles(List[Tuple[AnnotationAllSourceFiles, Optional[str]]]):
     """List of annotations to include in export."""
 
-    # If is_input = False the annotations won't be added to the rule's input.
+    # Always true for ExportAnnotationsAllSourceFiles
     is_input = True
 
-    def __init__(self, config_name: str, items=(), is_input: bool = True):
+    def __init__(self, config_name: str, items=()):
         list.__init__(self, items)
         self.config_name = config_name
-        self.is_input = is_input
 
 
 class SourceAnnotations(List[Tuple[Annotation, Optional[str]]]):

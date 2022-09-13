@@ -6,8 +6,11 @@
 
 - Added exporter for Korp frontend config files.
 - Added the `--keep-going` flag, which makes Sparv continue with other independent tasks when a task fails.
+- Added `AnnotationName` and `ExportAnnotationNames` classes, to be used instead of the `is_input` parameter.
 
 ### Changed
+
+- Removed the `is_input` parameter from the `ExportAnnotationsAllSourceFiles` class as it didn't make sense.
 
 ### Fixed
 
