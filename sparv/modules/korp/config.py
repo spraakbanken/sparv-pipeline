@@ -2,7 +2,7 @@
 import itertools
 import subprocess
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, List
 
 import yaml
 
@@ -19,7 +19,7 @@ HIDDEN_ANNOTATIONS = (
     "text:dateformat.dateto",
     "text:dateformat.timefrom",
     "text:dateformat.timeto",
-    "segment.sentence:misc.id",
+    "<sentence>:misc.id",
     "segment.token:sensaldo.sentiment_score",
     "segment.token:stanza.msd_hunpos_backoff_info"
 )
@@ -51,12 +51,16 @@ LABELS = {
     Config("korp.annotation_definitions", description="Frontend definitions of annotations in 'annotations' and "
                                                       "'source_annotations'. Classes and config keys are currently "
                                                       "not supported."),
-    Config("korp.context", description="Contexts to use in Korp. Leave blank to detect automatically."),
-    Config("korp.within", description="Search boundaries to use in Korp. Leave blank to detect automatically."),
+    Config("korp.context", description="Contexts to use in Korp, from smaller to bigger. "
+                                       "Leave blank to detect automatically."),
+    Config("korp.within", description="Search boundaries to use in Korp, from smaller to bigger. "
+                                      "Leave blank to detect automatically."),
     Config("korp.custom_annotations", description="Custom Korp-annotations."),
     Config("korp.morphology", description="Morphologies"),
     Config("korp.reading_mode", description="Reading mode configuration"),
-    Config("korp.filters", description="List of annotations to use for filtering in Korp")
+    Config("korp.filters", description="List of annotations to use for filtering in Korp"),
+    Config("korp.hidden_annotations", description="List of annotations not to include in corpus config",
+           default=HIDDEN_ANNOTATIONS)
 ])
 def config(id: str = Config("metadata.id"),
            name: dict = Config("metadata.name"),
@@ -74,6 +78,7 @@ def config(id: str = Config("metadata.id"),
            custom_annotations: Optional[list] = Config("korp.custom_annotations"),
            morphology: Optional[list] = Config("korp.morphology"),
            reading_mode: Optional[dict] = Config("korp.reading_mode"),
+           hidden_annotations: List[AnnotationName] = Config("korp.hidden_annotations"),
            filters: Optional[list] = Config("korp.filters"),
            sentence: Optional[AnnotationName] = AnnotationName("<sentence>"),
            paragraph: Optional[AnnotationName] = AnnotationName("<paragraph>"),
@@ -107,6 +112,7 @@ def config(id: str = Config("metadata.id"),
         custom_annotations: Korp frontend 'custom annotations' definitions.
         morphology: List of morphologies used by the corpus.
         reading_mode: Reading mode configuration.
+        hidden_annotations: List of annotations to exclude.
         filters: List of annotations to use for filtering in Korp.
         sentence: The sentence annotation.
         paragraph: The paragraph annotation.
@@ -238,7 +244,7 @@ def config(id: str = Config("metadata.id"),
     for annotation in annotation_list:
         export_name = export_names.get(annotation.name, annotation.name)
         # Skip certain annotations unless explicitly listed in annotation_definitions
-        if (annotation.name in HIDDEN_ANNOTATIONS or annotation.attribute_name is None or export_name.split(":", 1)[
+        if (annotation.name in hidden_annotations or annotation.attribute_name is None or export_name.split(":", 1)[
                 -1].startswith("_")) and annotation.name not in annotation_definitions and not (
             reading_mode and export_name in READING_MODE_ANNOTATIONS
         ):
