@@ -7,6 +7,8 @@
 - Added exporter for Korp frontend config files.
 - Added the `--keep-going` flag, which makes Sparv continue with other independent tasks when a task fails.
 - Added `AnnotationName` and `ExportAnnotationNames` classes, to be used instead of the `is_input` parameter.
+- Lists of annotations can now be used as input and output for annotators by using the `List` type hint.
+- Added support for optional annotator outputs.
 
 ### Changed
 
