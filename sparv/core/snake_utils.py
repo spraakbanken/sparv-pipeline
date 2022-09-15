@@ -257,6 +257,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         if issubclass(param_type, BaseOutput):
             if not isinstance(param_value, (list, tuple)):
                 param_value = [param_value]
+            skip = False
             outputs_list = []
             for output in param_value:
                 if not isinstance(output, BaseOutput):
@@ -269,6 +270,10 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 rule.configs.update(registry.find_config_variables(output.name))
                 rule.classes.update(registry.find_classes(output.name))
                 missing_configs = output.expand_variables(rule.full_name)
+                if (not output or missing_configs) and param_optional:
+                    rule.parameters[param_name] = None
+                    skip = True
+                    break
                 rule.missing_config.update(missing_configs)
                 ann_path = get_annotation_path(output, data=param_type.data, common=param_type.common)
                 if param_type.all_files:
@@ -290,6 +295,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                                                                                         "params": param_dict})
                     storage.all_annotators[rule.module_name][rule.f_name]["annotations"].append((output,
                                                                                                  output.description))
+            if skip:
+                continue
             rule.parameters[param_name] = outputs_list if param_list else outputs_list[0]
         # ModelOutput
         elif param_type == ModelOutput:
