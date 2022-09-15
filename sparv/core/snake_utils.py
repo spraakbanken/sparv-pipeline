@@ -255,37 +255,42 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
         # Output
         if issubclass(param_type, BaseOutput):
-            if not isinstance(param_value, BaseOutput):
-                if not param_value:
-                    return False
-                param_value = param_type(param_value)
-            if custom_suffix:
-                # Add suffix to output annotation name
-                param_value.name += custom_suffix
-            rule.configs.update(registry.find_config_variables(param_value.name))
-            rule.classes.update(registry.find_classes(param_value.name))
-            missing_configs = param_value.expand_variables(rule.full_name)
-            rule.missing_config.update(missing_configs)
-            ann_path = get_annotation_path(param_value, data=param_type.data, common=param_type.common)
-            if param_type.all_files:
-                rule.outputs.extend(map(Path, expand(escape_wildcards(paths.work_dir / ann_path),
-                                                     file=storage.source_files)))
-            elif param_type.common:
-                rule.outputs.append(paths.work_dir / ann_path)
-                if rule.installer:
-                    storage.install_outputs[rule.target_name].append(paths.work_dir / ann_path)
-            else:
-                rule.outputs.append(get_annotation_path(param_value, data=param_type.data))
-            rule.parameters[param_name] = param_value
-            if "{" in param_value:
-                rule.wildcard_annotations.append(param_name)
-            if rule.annotator:
-                storage.all_annotators.setdefault(rule.module_name, {}).setdefault(rule.f_name,
-                                                                                   {"description": rule.description,
-                                                                                    "annotations": [],
-                                                                                    "params": param_dict})
-                storage.all_annotators[rule.module_name][rule.f_name]["annotations"].append((param_value,
-                                                                                             param_value.description))
+            if not isinstance(param_value, (list, tuple)):
+                param_value = [param_value]
+            outputs_list = []
+            for output in param_value:
+                if not isinstance(output, BaseOutput):
+                    if not output:
+                        return False
+                    output = param_type(output)
+                if custom_suffix:
+                    # Add suffix to output annotation name
+                    output.name += custom_suffix
+                rule.configs.update(registry.find_config_variables(output.name))
+                rule.classes.update(registry.find_classes(output.name))
+                missing_configs = output.expand_variables(rule.full_name)
+                rule.missing_config.update(missing_configs)
+                ann_path = get_annotation_path(output, data=param_type.data, common=param_type.common)
+                if param_type.all_files:
+                    rule.outputs.extend(map(Path, expand(escape_wildcards(paths.work_dir / ann_path),
+                                                         file=storage.source_files)))
+                elif param_type.common:
+                    rule.outputs.append(paths.work_dir / ann_path)
+                    if rule.installer:
+                        storage.install_outputs[rule.target_name].append(paths.work_dir / ann_path)
+                else:
+                    rule.outputs.append(get_annotation_path(output, data=param_type.data))
+                if "{" in output:
+                    rule.wildcard_annotations.append(param_name)
+                outputs_list.append(output)
+                if rule.annotator:
+                    storage.all_annotators.setdefault(rule.module_name, {}).setdefault(rule.f_name,
+                                                                                       {"description": rule.description,
+                                                                                        "annotations": [],
+                                                                                        "params": param_dict})
+                    storage.all_annotators[rule.module_name][rule.f_name]["annotations"].append((output,
+                                                                                                 output.description))
+            rule.parameters[param_name] = outputs_list if param_list else outputs_list[0]
         # ModelOutput
         elif param_type == ModelOutput:
             rule.configs.update(registry.find_config_variables(param_value.name))
@@ -297,30 +302,38 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             storage.model_outputs.append(model_path)
         # Annotation
         elif issubclass(param_type, BaseAnnotation):
-            if not isinstance(param_value, BaseAnnotation):
-                if not param_value:
-                    return False
-                param_value = param_type(param_value)
-            rule.configs.update(registry.find_config_variables(param_value.name))
-            rule.classes.update(registry.find_classes(param_value.name))
-            missing_configs = param_value.expand_variables(rule.full_name)
-            if (not param_value or missing_configs) and param_optional:
-                rule.parameters[param_name] = None
+            if not isinstance(param_value, (list, tuple)):
+                param_value = [param_value]
+            skip = False
+            annotations_list = []
+            for annotation in param_value:
+                if not isinstance(annotation, BaseAnnotation):
+                    if not annotation:
+                        return False
+                    annotation = param_type(annotation)
+                rule.configs.update(registry.find_config_variables(annotation.name))
+                rule.classes.update(registry.find_classes(annotation.name))
+                missing_configs = annotation.expand_variables(rule.full_name)
+                if (not annotation or missing_configs) and param_optional:
+                    rule.parameters[param_name] = None
+                    skip = True
+                    break
+                rule.missing_config.update(missing_configs)
+                ann_path = get_annotation_path(annotation, data=param_type.data, common=param_type.common)
+                if annotation.is_input:
+                    if param_type.all_files:
+                        rule.inputs.extend(expand(escape_wildcards(paths.work_dir / ann_path),
+                                                  file=storage.source_files))
+                    elif rule.exporter or rule.installer or param_type.common:
+                        rule.inputs.append(paths.work_dir / ann_path)
+                    else:
+                        rule.inputs.append(ann_path)
+                if "{" in annotation:
+                    rule.wildcard_annotations.append(param_name)
+                annotations_list.append(annotation)
+            if skip:
                 continue
-            rule.missing_config.update(missing_configs)
-            ann_path = get_annotation_path(param_value, data=param_type.data, common=param_type.common)
-            if param_value.is_input:
-                if param_type.all_files:
-                    rule.inputs.extend(expand(escape_wildcards(paths.work_dir / ann_path),
-                                              file=storage.source_files))
-                elif rule.exporter or rule.installer or param_type.common:
-                    rule.inputs.append(paths.work_dir / ann_path)
-                else:
-                    rule.inputs.append(ann_path)
-
-            rule.parameters[param_name] = param_value
-            if "{" in param_value:
-                rule.wildcard_annotations.append(param_name)
+            rule.parameters[param_name] = annotations_list if param_list else annotations_list[0]
         # ExportAnnotations
         elif param_type in (ExportAnnotations, ExportAnnotationsAllSourceFiles):
             if not isinstance(param_value, param_type):
