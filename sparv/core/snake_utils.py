@@ -253,6 +253,19 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
         param_type, param_list, param_optional = registry.get_type_hint_type(param.annotation)
 
+        # Config
+        if isinstance(param_value, Config):
+            rule.configs.add(param_value.name)
+            config_value = sparv_config.get(param_value, sparv_config.Unset)
+            if config_value is sparv_config.Unset:
+                if param_value.default is not None:
+                    config_value = param_value.default
+                elif param_optional:
+                    config_value = None
+                else:
+                    rule.missing_config.add(param_value)
+            param_value = config_value
+
         # Output
         if issubclass(param_type, BaseOutput):
             if not isinstance(param_value, (list, tuple)):
@@ -471,18 +484,6 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 rule.inputs.append(Path(rule.parameters[param_name]))
             if "{" in rule.parameters[param_name]:
                 rule.wildcard_annotations.append(param_name)
-        # Config
-        elif isinstance(param_value, Config):
-            rule.configs.add(param_value.name)
-            config_value = sparv_config.get(param_value, sparv_config.Unset)
-            if config_value is sparv_config.Unset:
-                if param_value.default is not None:
-                    config_value = param_value.default
-                elif param_optional:
-                    config_value = None
-                else:
-                    rule.missing_config.add(param_value)
-            rule.parameters[param_name] = config_value
         # Everything else
         else:
             rule.parameters[param_name] = param_value
