@@ -606,12 +606,16 @@ def get_parameters(rule_params):
         _parameters.update({name: SourceFilename(file) for name in rule_params.file_parameters})
 
         # Add source filename to annotation and output parameters
-        for param in _parameters:
-            if isinstance(_parameters[param], (Annotation, AnnotationData, Output, OutputData, Text)):
-                _parameters[param].source_file = file
-            if isinstance(_parameters[param], ExportAnnotations):
-                for a in _parameters[param]:
-                    a[0].source_file = file
+        for param in _parameters.values():
+            if isinstance(param, ExportAnnotations):
+                for p in param:
+                    p[0].source_file = file
+            else:
+                if not isinstance(param, (list, tuple)):
+                    param = [param]
+                for p in param:
+                    if isinstance(p, (Annotation, AnnotationData, Output, OutputData, Text)):
+                        p.source_file = file
 
         # Replace {file} wildcard in parameters
         for name in rule_params.file_annotations:
