@@ -15,13 +15,13 @@ logger = get_logger(__name__)
 
 # Annotations that should not be shown in Korp
 HIDDEN_ANNOTATIONS = (
-    "text:dateformat.datefrom",
-    "text:dateformat.dateto",
-    "text:dateformat.timefrom",
-    "text:dateformat.timeto",
+    "<text>:dateformat.datefrom",
+    "<text>:dateformat.dateto",
+    "<text>:dateformat.timefrom",
+    "<text>:dateformat.timeto",
     "<sentence>:misc.id",
-    "segment.token:sensaldo.sentiment_score",
-    "segment.token:stanza.msd_hunpos_backoff_info"
+    "<token>:sensaldo.sentiment_score",
+    "<token>:stanza.msd_hunpos_backoff_info"
 )
 
 # Annotations needed by reading mode (using export names)
