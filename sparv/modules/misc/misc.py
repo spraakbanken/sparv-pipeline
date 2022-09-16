@@ -255,10 +255,9 @@ def concat(out: Output,
                for (n, val_a) in enumerate(left.read())))
 
 
-# TODO: not working yet because we cannot handle lists of annotations as input
-# @annotator("Concatenate two or more annotations, with an optional separator")
+@annotator("Concatenate two or more annotations, with an optional separator")
 def concat2(out: Output,
-            annotations: List[Annotation] = [Annotation],
+            annotations: List[Annotation],
             separator: str = ""):
     """Concatenate two or more annotations, with an optional separator."""
     annotations = [list(a.read()) for a in annotations]
