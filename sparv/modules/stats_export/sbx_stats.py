@@ -112,7 +112,7 @@ def sbx_freq_list_date(
     lemgram: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>:stats_export.lemgram_first"),
     complemgram: AnnotationAllSourceFiles = AnnotationAllSourceFiles(
                                             "<token>:stats_export.complemgram_best_cond"),
-    date: AnnotationAllSourceFiles = AnnotationAllSourceFiles("[dateformat.datetime_from]"),
+    date: AnnotationAllSourceFiles = AnnotationAllSourceFiles("[dateformat.out_annotation]:dateformat.date_pretty"),
     out: Export = Export("stats_export.frequency_list_sbx_date/stats_[metadata.id].csv"),
     delimiter: str = Config("stats_export.delimiter"),
     cutoff: int = Config("stats_export.cutoff")):
