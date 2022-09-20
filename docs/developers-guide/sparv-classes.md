@@ -92,6 +92,8 @@ file).
 
 - `split()`: Split name into annotation name and attribute.
 - `read()`: Read arbitrary corpus level string data from annotation file.
+- `exists()`: Return True if annotation file exists.
+- `remove()`: Remove annotation file.
 
 
 ## AnnotationName
@@ -343,6 +345,8 @@ Similar to [`OutputData`](#outputdata) but for a data annotation that is valid f
 
 - `split()`: Split name into annotation name and attribute.
 - `write(value, append: bool = False)`: Write arbitrary corpus level string data to annotation file.
+- `exists()`: Return True if annotation file exists.
+- `remove()`: Remove annotation file.
 
 
 ## OutputData

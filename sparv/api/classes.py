@@ -102,21 +102,37 @@ class BaseAnnotation(Base):
         return hash(repr(self) + repr(self.source_file))
 
 
-class Annotation(BaseAnnotation):
-    """Regular Annotation tied to one source file."""
+class CommonMixin(BaseAnnotation):
+    """Common methods used by many classes."""
 
-    def __init__(self, name: str = "", source_file: Optional[str] = None, is_input: bool = True):
-        super().__init__(name, source_file=source_file)
-        self._size = None
-        self.is_input = is_input
-
-    def exists(self) -> bool:
+    def exists(self):
         """Return True if annotation file exists."""
         return io.annotation_exists(self)
 
     def remove(self):
         """Remove annotation file."""
         io.remove_annotation(self)
+
+
+class CommonAllSourceFilesMixin(BaseAnnotation):
+    """Common methods used by many classes."""
+
+    def exists(self, source_file: str):
+        """Return True if annotation file exists."""
+        return io.annotation_exists(self, source_file)
+
+    def remove(self, source_file: str):
+        """Remove annotation file."""
+        io.remove_annotation(self, source_file)
+
+
+class Annotation(CommonMixin, BaseAnnotation):
+    """Regular Annotation tied to one source file."""
+
+    def __init__(self, name: str = "", source_file: Optional[str] = None, is_input: bool = True):
+        super().__init__(name, source_file=source_file)
+        self._size = None
+        self.is_input = is_input
 
     def get_size(self):
         """Get number of values."""
@@ -257,7 +273,7 @@ class AnnotationName(BaseAnnotation):
         super().__init__(name, source_file=source_file, is_input=False)
 
 
-class AnnotationData(BaseAnnotation):
+class AnnotationData(CommonMixin, BaseAnnotation):
     """Annotation of the data type, not tied to spans in the corpus text."""
 
     data = True
@@ -269,16 +285,8 @@ class AnnotationData(BaseAnnotation):
         """Read arbitrary string data from annotation file."""
         return io.read_data(self.source_file or source_file, self)
 
-    def exists(self):
-        """Return True if annotation file exists."""
-        return io.annotation_exists(self)
 
-    def remove(self):
-        """Remove annotation file."""
-        io.remove_annotation(self)
-
-
-class AnnotationAllSourceFiles(BaseAnnotation):
+class AnnotationAllSourceFiles(CommonAllSourceFilesMixin, BaseAnnotation):
     """Regular annotation but source file must be specified for all actions.
 
     Use as input to an annotator to require the specificed annotation for every source file in the corpus.
@@ -315,16 +323,8 @@ class AnnotationAllSourceFiles(BaseAnnotation):
         """Return a list filled with None of the same size as this annotation."""
         return [None] * self.get_size(source_file)
 
-    def exists(self, source_file: str):
-        """Return True if annotation file exists."""
-        return io.annotation_exists(self, source_file)
 
-    def remove(self, source_file: str):
-        """Remove annotation file."""
-        io.remove_annotation(self, source_file)
-
-
-class AnnotationDataAllSourceFiles(BaseAnnotation):
+class AnnotationDataAllSourceFiles(CommonAllSourceFilesMixin, BaseAnnotation):
     """Data annotation but source file must be specified for all actions."""
 
     all_files = True
@@ -337,16 +337,8 @@ class AnnotationDataAllSourceFiles(BaseAnnotation):
         """Read arbitrary string data from annotation file."""
         return io.read_data(source_file, self)
 
-    def exists(self, source_file: str):
-        """Return True if annotation file exists."""
-        return io.annotation_exists(self, source_file)
 
-    def remove(self, source_file: str):
-        """Remove annotation file."""
-        io.remove_annotation(self, source_file)
-
-
-class AnnotationCommonData(BaseAnnotation):
+class AnnotationCommonData(CommonMixin, BaseAnnotation):
     """Data annotation for the whole corpus."""
 
     common = True
@@ -374,7 +366,7 @@ class BaseOutput(BaseAnnotation):
         self.description = description
 
 
-class Output(BaseOutput):
+class Output(CommonMixin, BaseOutput):
     """Regular annotation or attribute used as output."""
 
     def __init__(self, name: str = "", cls: Optional[str] = None, description: Optional[str] = None,
@@ -388,16 +380,8 @@ class Output(BaseOutput):
         """
         io.write_annotation(self.source_file or source_file, self, values, append, allow_newlines)
 
-    def exists(self):
-        """Return True if annotation file exists."""
-        return io.annotation_exists(self)
 
-    def remove(self):
-        """Remove annotation file."""
-        io.remove_annotation(self)
-
-
-class OutputAllSourceFiles(BaseOutput):
+class OutputAllSourceFiles(CommonAllSourceFilesMixin, BaseOutput):
     """Regular annotation or attribute used as output, but source file must be specified for all actions."""
 
     all_files = True
@@ -412,16 +396,8 @@ class OutputAllSourceFiles(BaseOutput):
         """
         io.write_annotation(source_file, self, values, append, allow_newlines)
 
-    def exists(self, source_file: str):
-        """Return True if annotation file exists."""
-        return io.annotation_exists(self, source_file)
 
-    def remove(self, source_file: str):
-        """Remove annotation file."""
-        io.remove_annotation(self, source_file)
-
-
-class OutputData(BaseOutput):
+class OutputData(CommonMixin, BaseOutput):
     """Data annotation used as output."""
 
     data = True
@@ -434,16 +410,8 @@ class OutputData(BaseOutput):
         """Write arbitrary string data to annotation file."""
         io.write_data(self.source_file, self, value, append)
 
-    def exists(self):
-        """Return True if annotation file exists."""
-        return io.annotation_exists(self)
 
-    def remove(self):
-        """Remove annotation file."""
-        io.remove_annotation(self)
-
-
-class OutputDataAllSourceFiles(BaseOutput):
+class OutputDataAllSourceFiles(CommonAllSourceFilesMixin, BaseOutput):
     """Data annotation used as output, but source file must be specified for all actions."""
 
     all_files = True
@@ -460,16 +428,8 @@ class OutputDataAllSourceFiles(BaseOutput):
         """Write arbitrary string data to annotation file."""
         io.write_data(source_file, self, value, append)
 
-    def exists(self, source_file: str):
-        """Return True if annotation file exists."""
-        return io.annotation_exists(self, source_file)
 
-    def remove(self, source_file: str):
-        """Remove annotation file."""
-        io.remove_annotation(self, source_file)
-
-
-class OutputCommonData(BaseOutput):
+class OutputCommonData(CommonMixin, BaseOutput):
     """Data annotation for the whole corpus."""
 
     common = True
@@ -522,7 +482,7 @@ class SourceStructure(BaseAnnotation):
         io.write_data(self.source_file, self, "\n".join(structure))
 
 
-class Headers(BaseAnnotation):
+class Headers(CommonMixin, BaseAnnotation):
     """List of header annotation names."""
 
     data = True
@@ -537,14 +497,6 @@ class Headers(BaseAnnotation):
     def write(self, header_annotations: List[str]):
         """Write headers file."""
         io.write_data(self.source_file, self, "\n".join(header_annotations))
-
-    def exists(self):
-        """Return True if headers file exists."""
-        return io.annotation_exists(self)
-
-    def remove(self):
-        """Remove annotation file."""
-        io.remove_annotation(self)
 
 
 class Namespaces(BaseAnnotation):
