@@ -15,7 +15,7 @@ from sparv.core import paths
 from sparv.core.console import console
 from sparv.core.misc import SparvErrorMessage
 from sparv.api.classes import (BaseOutput, Config, Export, ExportAnnotations, ExportAnnotationsAllSourceFiles,
-                               SourceAnnotations, SourceStructureParser, ModelOutput, Wildcard)
+                               SourceAnnotations, SourceStructureParser, ModelOutput, OutputCommonData, Wildcard)
 
 modules_path = ".".join(("sparv", paths.modules_dir))
 core_modules_path = ".".join(("sparv", paths.core_modules_dir))
@@ -321,8 +321,12 @@ def _add_to_registry(annotator):
             sparv_config.set_value("import.text_annotation", annotator["text_annotation"])
             sparv_config.handle_text_annotation()
 
+    has_marker = False  # Needed by installers and uninstallers
+
     for _param, val in inspect.signature(annotator["function"]).parameters.items():
         if isinstance(val.default, BaseOutput):
+            if not has_marker and val.annotation == OutputCommonData:
+                has_marker = True
             ann = val.default
             cls = val.default.cls
             ann_name, attr = ann.split()
@@ -384,6 +388,10 @@ def _add_to_registry(annotator):
             if not (export_dir.startswith(module_name + ".") or export_dir == module_name):
                 raise SparvErrorMessage(f"Illegal export path for export '{val.default}' in module '{module_name}'. "
                                         "The export subdirectory must include the module name as prefix.")
+
+    if annotator["type"] in (Annotator.installer, Annotator.uninstaller) and not has_marker:
+        raise SparvErrorMessage(f"'{rule_name}' creates no OutputCommonData marker, which is required by all "
+                                "installers and uninstallers.")
 
     if module_name not in modules:
         modules[module_name] = Module(module_name)

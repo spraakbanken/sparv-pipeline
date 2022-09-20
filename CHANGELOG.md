@@ -14,6 +14,7 @@
 ### Changed
 
 - Removed the `is_input` parameter from the `ExportAnnotationsAllSourceFiles` class as it didn't make sense.
+- Installers and uninstallers are now required to create markers.
 
 ### Fixed
 

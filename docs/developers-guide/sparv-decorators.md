@@ -117,6 +117,9 @@ def freq_list_simple(corpus: Corpus = Corpus(),
 A function decorated with `@installer` is used to deploy the corpus or related files to a remote location. For example,
 the XML output could be copied to a web server, or SQL data could be inserted into a database.
 
+Every installer needs to create a marker of the type `OutputCommonData` at the end of a successful installation. Simply
+call the `write()` method on the marker to create the required empty file.
+
 **Arguments:**
 
 - `description`: Description of the installer. Used for displaying help texts in the CLI.
@@ -142,6 +145,9 @@ def install(corpus: Corpus = Corpus(),
 ## @uninstaller
 A function decorated with `@uninstaller` is used to undo what an installer has done, e.g. remove corpus files from a
 remote location or delete corpus data from a database.
+
+Every uninstaller needs to create a marker of the type `OutputCommonData` at the end of a successful uninstallation.
+Simply call the `write()` method on the marker to create the required empty file.
 
 **Arguments:**
 
