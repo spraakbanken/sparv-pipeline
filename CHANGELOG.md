@@ -9,6 +9,7 @@
 - Added `AnnotationName` and `ExportAnnotationNames` classes, to be used instead of the `is_input` parameter.
 - Lists of annotations can now be used as input and output for annotators by using the `List` type hint.
 - Added support for optional annotator outputs.
+- Added support for uninstallers using the `@uninstaller` decorator.
 
 ### Changed
 

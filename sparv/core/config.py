@@ -31,7 +31,8 @@ config_structure = {
     "install": {"_source": "core"},
     PARENT: {"_source": "core"},
     MAX_THREADS: {"_source": "core"},
-    "preload": {"_source": "core"}
+    "preload": {"_source": "core"},
+    "uninstall": {"_source": "core"}
 }
 
 config_usage = defaultdict(set)  # For each config key, a list of annotators using that key

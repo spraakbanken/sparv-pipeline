@@ -2,7 +2,7 @@
 
 import sparv.core.io  # Needed to avoid a circular import problem when importing the classes below
 from sparv.core.misc import SparvErrorMessage, get_logger
-from sparv.core.registry import annotator, exporter, importer, installer, modelbuilder, wizard
+from sparv.core.registry import annotator, exporter, importer, installer, modelbuilder, uninstaller, wizard
 
 from .classes import (
     AllSourceFilenames,

@@ -64,6 +64,7 @@ def main():
         "Annotating a corpus:",
         "   run              Annotate a corpus and generate export files",
         "   install          Install a corpus",
+        "   uninstall        Uninstall a corpus",
         "   clean            Remove output directories",
         "",
         "Inspecting corpus details:",
@@ -103,6 +104,10 @@ def main():
     install_parser.add_argument("type", nargs="*", default=[], help="The type of installation to perform")
     install_parser.add_argument("-l", "--list", action="store_true", help="List installations to be made")
 
+    uninstall_parser = subparsers.add_parser("uninstall", description="Uninstall a corpus.")
+    uninstall_parser.add_argument("type", nargs="*", default=[], help="The type of uninstallation to perform")
+    uninstall_parser.add_argument("-l", "--list", action="store_true", help="List uninstallations to be made")
+
     clean_parser = subparsers.add_parser("clean", description="Remove output directories (by default only the "
                                                               "sparv-workdir directory).")
     clean_parser.add_argument("--export", action="store_true", help="Remove export directory")
@@ -120,6 +125,7 @@ def main():
     modules_parser.add_argument("--importers", action="store_true", help="List info for importers")
     modules_parser.add_argument("--exporters", action="store_true", help="List info for exporters")
     modules_parser.add_argument("--installers", action="store_true", help="List info for installers")
+    modules_parser.add_argument("--uninstallers", action="store_true", help="List info for uninstallers")
     modules_parser.add_argument("--all", action="store_true", help="List info for all module types")
     modules_parser.add_argument("names", nargs="*", default=[], help="Specific module(s) to display")
 
@@ -170,7 +176,7 @@ def main():
     # Add common arguments
     for subparser in [run_parser, runrule_parser]:
         subparser.add_argument("-f", "--file", nargs="+", default=[], help="Only annotate specified input file(s)")
-    for subparser in [run_parser, runrule_parser, createfile_parser, models_parser, install_parser]:
+    for subparser in [run_parser, runrule_parser, createfile_parser, models_parser, install_parser, uninstall_parser]:
         subparser.add_argument("-n", "--dry-run", action="store_true",
                                help="Print summary of tasks without running them")
         subparser.add_argument("-j", "--cores", type=int, nargs="?", const=0, metavar="N",
@@ -290,7 +296,7 @@ def main():
             config["types"] = []
             if args.names:
                 config["names"] = args.names
-            for t in ["annotators", "importers", "exporters", "installers", "all"]:
+            for t in ["annotators", "importers", "exporters", "installers", "uninstallers", "all"]:
                 if getattr(args, t):
                     config["types"].append(t)
         elif args.command == "preload":
@@ -301,7 +307,7 @@ def main():
             if args.list:
                 snakemake_args["targets"] = ["preload_list"]
 
-    elif args.command in ("run", "run-rule", "create-file", "install", "build-models"):
+    elif args.command in ("run", "run-rule", "create-file", "install", "uninstall", "build-models"):
         try:
             cores = args.cores or available_cpu_count()
         except NotImplementedError:
@@ -364,6 +370,13 @@ def main():
             else:
                 config["install_types"] = args.type
                 snakemake_args["targets"] = ["install_corpus"]
+        # Command: uninstall
+        elif args.command == "uninstall":
+            if args.list:
+                snakemake_args["targets"] = ["list_uninstalls"]
+            else:
+                config["uninstall_types"] = args.type
+                snakemake_args["targets"] = ["uninstall_corpus"]
         # Command: build-models
         elif args.command == "build-models":
             config["language"] = args.language

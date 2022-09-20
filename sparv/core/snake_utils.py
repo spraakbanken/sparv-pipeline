@@ -31,6 +31,7 @@ class SnakeStorage:
         self.all_importers = {}
         self.all_exporters = {}
         self.all_installers = {}
+        self.all_uninstallers = {}
         self.all_custom_annotators = {}
         self.all_preloaders = {}
 
@@ -39,11 +40,13 @@ class SnakeStorage:
         self.export_targets = []
         self.import_targets = []
         self.install_targets = []
+        self.uninstall_targets = []
         self.model_targets = []
         self.custom_targets = []
 
         self.model_outputs = []  # Outputs from modelbuilders, used in build_models
         self.install_outputs = defaultdict(list)  # Outputs from all installers, used in rule install_corpus
+        self.uninstall_outputs = defaultdict(list)  # Outputs from all uninstallers, used in rule uninstall_corpus
         self.all_rules: List[RuleStorage] = []  # List containing all rules created
         self.ordered_rules = []  # List of rules containing rule order
         self.preloader_info = {}
@@ -110,6 +113,7 @@ class RuleStorage:
         self.importer = annotator_info["type"] is registry.Annotator.importer
         self.exporter = annotator_info["type"] is registry.Annotator.exporter
         self.installer = annotator_info["type"] is registry.Annotator.installer
+        self.uninstaller = annotator_info["type"] is registry.Annotator.uninstaller
         self.modelbuilder = annotator_info["type"] is registry.Annotator.modelbuilder
         self.description = annotator_info["description"]
         self.file_extension = annotator_info["file_extension"]
@@ -191,6 +195,10 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         storage.all_installers.setdefault(rule.module_name, {}).setdefault(rule.f_name,
                                                                            {"description": rule.description,
                                                                             "params": param_dict})
+    elif rule.uninstaller:
+        storage.all_uninstallers.setdefault(rule.module_name, {}).setdefault(rule.f_name,
+                                                                             {"description": rule.description,
+                                                                              "params": param_dict})
 
     if rule.has_preloader:
         storage.all_preloaders.setdefault(rule.module_name, {})[rule.f_name] = rule.annotator_info["preloader_params"]
@@ -296,6 +304,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                     rule.outputs.append(paths.work_dir / ann_path)
                     if rule.installer:
                         storage.install_outputs[rule.target_name].append(paths.work_dir / ann_path)
+                    elif rule.uninstaller:
+                        storage.uninstall_outputs[rule.target_name].append(paths.work_dir / ann_path)
                 else:
                     rule.outputs.append(get_annotation_path(output, data=param_type.data))
                 if "{" in output:
@@ -344,7 +354,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                     if param_type.all_files:
                         rule.inputs.extend(expand(escape_wildcards(paths.work_dir / ann_path),
                                                   file=storage.source_files))
-                    elif rule.exporter or rule.installer or param_type.common:
+                    elif rule.exporter or rule.installer or rule.uninstaller or param_type.common:
                         rule.inputs.append(paths.work_dir / ann_path)
                     else:
                         rule.inputs.append(ann_path)
@@ -418,7 +428,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         # Text
         elif param_type == Text:
             text_path = Path("{file}") / io.TEXT_FILE
-            if rule.exporter or rule.installer:
+            if rule.exporter or rule.installer or rule.uninstaller:
                 rule.inputs.append(paths.work_dir / text_path)
             else:
                 rule.inputs.append(text_path)
@@ -644,7 +654,9 @@ def update_storage(storage, rule):
     elif rule.importer:
         storage.import_targets.append((rule.target_name, rule.description))
     elif rule.installer:
-        storage.install_targets.append((rule.target_name, rule.description))
+        storage.install_targets.append((rule.target_name, rule.description, rule.annotator_info["uninstaller"]))
+    elif rule.uninstaller:
+        storage.uninstall_targets.append((rule.target_name, rule.description))
     elif rule.modelbuilder:
         storage.model_targets.append((rule.target_name, rule.description, rule.annotator_info["language"]))
     else:
@@ -720,18 +732,32 @@ def load_config(snakemake_config):
     return config_missing
 
 
-def get_install_outputs(snake_storage: SnakeStorage, install_types: Optional[List] = None):
-    """Collect files to be created for all installations given as argument or listed in config.install."""
+def get_install_outputs(snake_storage: SnakeStorage, install_types: Optional[List] = None, uninstall: bool = False):
+    """Collect files to be created for all (un)installations given as argument or listed in config.(un)install."""
     unknown = []
     install_outputs = []
-    for installation in install_types or sparv_config.get("install", []):
-        if installation not in snake_storage.install_outputs:
+
+    if uninstall:
+        prefix = "un"
+        outputs = snake_storage.uninstall_outputs
+        config_list = sparv_config.get("uninstall")
+        if config_list is None:
+            config_install = sparv_config.get("install", [])
+            config_list = [u for t, _, u in snake_storage.install_targets if t in config_install and u]
+    else:
+        prefix = ""
+        outputs = snake_storage.install_outputs
+        config_list = sparv_config.get("install", [])
+
+    for installation in install_types or config_list:
+        if installation not in outputs:
             unknown.append(installation)
         else:
-            install_outputs.extend(snake_storage.install_outputs[installation])
+            install_outputs.extend(outputs[installation])
 
     if unknown:
-        raise SparvErrorMessage("Unknown installation{} selected:\n • {}".format(
+        raise SparvErrorMessage("Unknown {}installation{} selected:\n • {}".format(
+            prefix,
             "s" if len(unknown) > 1 else "",
             "\n • ".join(unknown)
         ))

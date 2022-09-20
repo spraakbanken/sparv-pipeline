@@ -29,7 +29,8 @@ class Annotator(Enum):
     importer = 2
     exporter = 3
     installer = 4
-    modelbuilder = 5
+    uninstaller = 5
+    modelbuilder = 6
 
 
 class Module:
@@ -177,7 +178,8 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
                config: Optional[List[Config]] = None, order: Optional[int] = None, abstract: bool = False,
                wildcards: Optional[List[Wildcard]] = None, preloader: Optional[Callable] = None,
                preloader_params: Optional[List[str]] = None, preloader_target: Optional[str] = None,
-               preloader_cleanup: Optional[Callable] = None, preloader_shared: bool = True):
+               preloader_cleanup: Optional[Callable] = None, preloader_shared: bool = True,
+               uninstaller: Optional[str] = None):
     """Return a decorator for annotator functions, adding them to annotator registry."""
     def decorator(f):
         """Add wrapped function to registry."""
@@ -201,7 +203,8 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
             "preloader_params": preloader_params,
             "preloader_target": preloader_target,
             "preloader_cleanup": preloader_cleanup,
-            "preloader_shared": preloader_shared
+            "preloader_shared": preloader_shared,
+            "uninstaller": uninstaller
         })
         return f
 
@@ -265,9 +268,17 @@ def exporter(description: str, name: Optional[str] = None, config: Optional[List
 
 
 def installer(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
-              language: Optional[List[str]] = None):
+              language: Optional[List[str]] = None, uninstaller: Optional[str] = None):
     """Return a decorator for installer functions."""
-    return _annotator(description=description, a_type=Annotator.installer, name=name, config=config, language=language)
+    return _annotator(description=description, a_type=Annotator.installer, name=name, config=config, language=language,
+                      uninstaller=uninstaller)
+
+
+def uninstaller(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
+                language: Optional[List[str]] = None):
+    """Return a decorator for uninstaller functions."""
+    return _annotator(description=description, a_type=Annotator.uninstaller, name=name, config=config,
+                      language=language)
 
 
 def modelbuilder(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
