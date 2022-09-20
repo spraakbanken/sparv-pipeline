@@ -34,16 +34,12 @@ _compressed_open = {
 }
 
 
-def annotation_exists(source_file: str, annotation: BaseAnnotation):
+def annotation_exists(annotation: BaseAnnotation, source_file: Optional[str] = None):
     """Check if an annotation file exists."""
-    annotation_path = get_annotation_path(source_file, annotation)
+    annotation_path = get_annotation_path(source_file or annotation.source_file, annotation, data=annotation.data)
     return os.path.exists(annotation_path)
 
 
-def data_exists(source_file: str, name: BaseAnnotation):
-    """Check if an annotation data file exists."""
-    annotation_path = get_annotation_path(source_file, name, data=True)
-    return os.path.isfile(annotation_path)
 
 
 def write_annotation(source_file: str, annotation: BaseOutput, values, append: bool = False,

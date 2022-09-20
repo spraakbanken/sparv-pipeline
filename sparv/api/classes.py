@@ -112,7 +112,7 @@ class Annotation(BaseAnnotation):
 
     def exists(self) -> bool:
         """Return True if annotation file exists."""
-        return io.annotation_exists(self.source_file, self)
+        return io.annotation_exists(self)
 
     def get_size(self):
         """Get number of values."""
@@ -267,7 +267,7 @@ class AnnotationData(BaseAnnotation):
 
     def exists(self):
         """Return True if annotation file exists."""
-        return io.data_exists(self.source_file, self)
+        return io.annotation_exists(self)
 
 
 class AnnotationAllSourceFiles(BaseAnnotation):
@@ -309,7 +309,7 @@ class AnnotationAllSourceFiles(BaseAnnotation):
 
     def exists(self, source_file: str):
         """Return True if annotation file exists."""
-        return io.annotation_exists(source_file, self)
+        return io.annotation_exists(self, source_file)
 
 
 class AnnotationDataAllSourceFiles(BaseAnnotation):
@@ -327,7 +327,7 @@ class AnnotationDataAllSourceFiles(BaseAnnotation):
 
     def exists(self, source_file: str):
         """Return True if annotation file exists."""
-        return io.data_exists(source_file, self)
+        return io.annotation_exists(self, source_file)
 
 
 class AnnotationCommonData(BaseAnnotation):
@@ -374,7 +374,7 @@ class Output(BaseOutput):
 
     def exists(self):
         """Return True if annotation file exists."""
-        return io.annotation_exists(self.source_file, self)
+        return io.annotation_exists(self)
 
 
 class OutputAllSourceFiles(BaseOutput):
@@ -394,7 +394,7 @@ class OutputAllSourceFiles(BaseOutput):
 
     def exists(self, source_file: str):
         """Return True if annotation file exists."""
-        return io.annotation_exists(source_file, self)
+        return io.annotation_exists(self, source_file)
 
 
 class OutputData(BaseOutput):
@@ -412,7 +412,7 @@ class OutputData(BaseOutput):
 
     def exists(self):
         """Return True if annotation file exists."""
-        return io.data_exists(self.source_file, self)
+        return io.annotation_exists(self)
 
 
 class OutputDataAllSourceFiles(BaseOutput):
@@ -434,7 +434,7 @@ class OutputDataAllSourceFiles(BaseOutput):
 
     def exists(self, source_file: str):
         """Return True if annotation file exists."""
-        return io.data_exists(source_file, self)
+        return io.annotation_exists(self, source_file)
 
 
 class OutputCommonData(BaseOutput):
@@ -508,7 +508,7 @@ class Headers(BaseAnnotation):
 
     def exists(self):
         """Return True if headers file exists."""
-        return io.data_exists(self.source_file, self)
+        return io.annotation_exists(self)
 
 
 class Namespaces(BaseAnnotation):
