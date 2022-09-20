@@ -40,6 +40,10 @@ def annotation_exists(annotation: BaseAnnotation, source_file: Optional[str] = N
     return os.path.exists(annotation_path)
 
 
+def remove_annotation(annotation: BaseAnnotation, source_file: Optional[str] = None):
+    """Remove an annotation file."""
+    annotation_path = get_annotation_path(source_file or annotation.source_file, annotation, data=annotation.data)
+    annotation_path.unlink(missing_ok=True)
 
 
 def write_annotation(source_file: str, annotation: BaseOutput, values, append: bool = False,

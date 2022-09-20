@@ -114,6 +114,10 @@ class Annotation(BaseAnnotation):
         """Return True if annotation file exists."""
         return io.annotation_exists(self)
 
+    def remove(self):
+        """Remove annotation file."""
+        io.remove_annotation(self)
+
     def get_size(self):
         """Get number of values."""
         if self._size is None:
@@ -269,6 +273,10 @@ class AnnotationData(BaseAnnotation):
         """Return True if annotation file exists."""
         return io.annotation_exists(self)
 
+    def remove(self):
+        """Remove annotation file."""
+        io.remove_annotation(self)
+
 
 class AnnotationAllSourceFiles(BaseAnnotation):
     """Regular annotation but source file must be specified for all actions.
@@ -311,6 +319,10 @@ class AnnotationAllSourceFiles(BaseAnnotation):
         """Return True if annotation file exists."""
         return io.annotation_exists(self, source_file)
 
+    def remove(self, source_file: str):
+        """Remove annotation file."""
+        io.remove_annotation(self, source_file)
+
 
 class AnnotationDataAllSourceFiles(BaseAnnotation):
     """Data annotation but source file must be specified for all actions."""
@@ -328,6 +340,10 @@ class AnnotationDataAllSourceFiles(BaseAnnotation):
     def exists(self, source_file: str):
         """Return True if annotation file exists."""
         return io.annotation_exists(self, source_file)
+
+    def remove(self, source_file: str):
+        """Remove annotation file."""
+        io.remove_annotation(self, source_file)
 
 
 class AnnotationCommonData(BaseAnnotation):
@@ -376,6 +392,10 @@ class Output(BaseOutput):
         """Return True if annotation file exists."""
         return io.annotation_exists(self)
 
+    def remove(self):
+        """Remove annotation file."""
+        io.remove_annotation(self)
+
 
 class OutputAllSourceFiles(BaseOutput):
     """Regular annotation or attribute used as output, but source file must be specified for all actions."""
@@ -396,6 +416,10 @@ class OutputAllSourceFiles(BaseOutput):
         """Return True if annotation file exists."""
         return io.annotation_exists(self, source_file)
 
+    def remove(self, source_file: str):
+        """Remove annotation file."""
+        io.remove_annotation(self, source_file)
+
 
 class OutputData(BaseOutput):
     """Data annotation used as output."""
@@ -413,6 +437,10 @@ class OutputData(BaseOutput):
     def exists(self):
         """Return True if annotation file exists."""
         return io.annotation_exists(self)
+
+    def remove(self):
+        """Remove annotation file."""
+        io.remove_annotation(self)
 
 
 class OutputDataAllSourceFiles(BaseOutput):
@@ -435,6 +463,10 @@ class OutputDataAllSourceFiles(BaseOutput):
     def exists(self, source_file: str):
         """Return True if annotation file exists."""
         return io.annotation_exists(self, source_file)
+
+    def remove(self, source_file: str):
+        """Remove annotation file."""
+        io.remove_annotation(self, source_file)
 
 
 class OutputCommonData(BaseOutput):
@@ -509,6 +541,10 @@ class Headers(BaseAnnotation):
     def exists(self):
         """Return True if headers file exists."""
         return io.annotation_exists(self)
+
+    def remove(self):
+        """Remove annotation file."""
+        io.remove_annotation(self)
 
 
 class Namespaces(BaseAnnotation):

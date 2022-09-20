@@ -31,6 +31,7 @@ annotation is needed as input for a function, e.g. `Annotation("<token:word>")`.
 
 - `split()`: Split name into annotation name and attribute.
 - `exists()`: Return True if annotation file exists.
+- `remove()`: Remove annotation file.
 - `read(allow_newlines: bool = False)`: Yield each line from the annotation.
 - `get_children(child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False)`: Return two lists.
     The first one is a list with n (= total number of parents) elements where every element is a list of indices in the
@@ -69,6 +70,7 @@ require the specificed annotation for every source file in the corpus.
 - `read_spans(source_file: str, decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
 - `create_empty_attribute(source_file: str)`: Return a list filled with None of the same size as this annotation.
 - `exists(source_file: str)`: Return True if annotation file exists.
+- `remove(source_file: str)`: Remove annotation file.
 - `get_size(source_file: str)`: Get the number of values.
 
 
@@ -121,6 +123,7 @@ This class represents an annotation holding arbitrary data, i.e. data that is no
 
 - `split()`: Split name into annotation name and attribute.
 - `exists()`: Return True if annotation file exists.
+- `remove()`: Remove annotation file.
 - `read(source_file: Optional[str] = None)`: Read arbitrary string data from annotation file.
 
 
@@ -141,8 +144,9 @@ file in the corpus.
 **Methods:**
 
 - `split()`: Split name into annotation name and attribute.
-- `exists()`: Return True if annotation file exists.
-- `read(source_file: Optional[str] = None)`: Read arbitrary string data from annotation file.
+- `exists(source_file: str)`: Return True if annotation file exists.
+- `remove(source_file: str)`: Remove annotation file.
+- `read(source_file: str)`: Read arbitrary string data from annotation file.
 
 
 ## Binary
@@ -239,6 +243,7 @@ List of header annotation names for a given source file.
 - `read()`: Read the headers file and return a list of header annotation names.
 - `write(header_annotations: List[str])`: Write headers file.
 - `exists()`: Return True if headers file exists for this source file.
+- `remove()`: Remove headers file.
 
 
 ## Language
@@ -305,6 +310,7 @@ Regular annotation or attribute used as output (e.g. of an annotator function).
 - `write(values, append: bool = False, allow_newlines: bool = False, source_file: Optional[str] = None)`: Write an
   annotation to file. Existing annotation will be overwritten. 'values' should be a list of values.
 - `exists()`: Return True if annotation file exists.
+- `remove()`: Remove annotation file.
 
 
 ## OutputAllSourceFiles
@@ -322,6 +328,7 @@ file must be specified for all actions.
 - `write(values, source_file: str, append: bool = False, allow_newlines: bool = False)`: Write an annotation to file.
    Existing annotation will be overwritten. 'values' should be a list of values.
 - `exists(source_file: str)`: Return True if annotation file exists.
+- `remove(source_file: str)`: Remove annotation file.
 
 
 ## OutputCommonData
@@ -353,6 +360,7 @@ is used as output.
 - `split()`: Split name into annotation name and attribute.
 - `write(value, append: bool = False)`: Write arbitrary corpus level string data to annotation file.
 - `exists()`: Return True if annotation file exists.
+- `remove()`: Remove annotation file.
 
 
 ## OutputDataAllSourceFiles
@@ -369,6 +377,7 @@ but the source file must be specified for all actions.
 - `split()`: Split name into annotation name and attribute.
 - `write(value, source_file: str, append: bool = False)`: Write arbitrary corpus level string data to annotation file.
 - `exists(source_file: str)`: Return True if annotation file exists.
+- `remove(source_file: str)`: Remove annotation file.
 
 
 ## Source
