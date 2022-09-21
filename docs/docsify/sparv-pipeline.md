@@ -9,6 +9,8 @@ or suggestions please contact <sb-sparv@svenska.gu.se>.
 
 This documentation is also available as PDF. You can download the [user manual](https://github.com/spraakbanken/sparv-pipeline/releases/latest/download/user-manual.pdf) and the [developer's guide](https://github.com/spraakbanken/sparv-pipeline/releases/latest/download/developers-guide.pdf) from the [latest Sparv release on GitHub](https://github.com/spraakbanken/sparv-pipeline/releases/latest).
 
+For more information about the types of analyses that are currently available in Sparv check [this page](https://spraakbanken.gu.se/en/tools/sparv/annotations).
+
 Cite Sparv: *[Martin Hammarstedt, Anne Schumacher, Lars Borin, Markus Forsberg (2022): Sparv 5 User Manual](https://gup.ub.gu.se/publication/318405?lang=en
 )* &nbsp; [![BibTeX](_media/bibtex.png)](https://spraakbanken.gu.se/en/research/publications/bibtex/318405)
 
