@@ -404,7 +404,7 @@ if "install_corpus" in selected_targets:
 
 # Rule for making uninstallations
 if "uninstall_corpus" in selected_targets:
-    uninstall_inputs = snake_utils.get_install_outputs(snake_storage, config.get("install_types"), uninstall=True)
+    uninstall_inputs = snake_utils.get_install_outputs(snake_storage, config.get("uninstall_types"), uninstall=True)
     if not uninstall_inputs:
         raise SparvErrorMessage("Please specify what you would like to uninstall, either by supplying arguments "
                                 "(e.g. 'sparv uninstall xml_export:uninstall') or by adding uninstallers to "
