@@ -2,7 +2,8 @@
 
 import os
 import subprocess
-from glob import glob
+from pathlib import Path
+from typing import Optional, Union
 
 from sparv.api import get_logger
 from sparv.api.util import system
@@ -10,19 +11,11 @@ from sparv.api.util import system
 logger = get_logger(__name__)
 
 
-def install_file(local_file, host=None, remote_file=None):
-    """Rsync a file to a target host."""
-    system.rsync(local_file, host, remote_file)
-
-
-def install_directory(host, directory):
-    """Rsync every file from local directory to target host.
-
-    Target path is extracted from filenames by replacing "#" with "/".
-    """
-    for local in glob(os.path.join(directory, '*')):
-        remote = os.path.basename(local).replace("#", "/")
-        system.rsync(local, host, remote)
+def install_path(source_path: Union[str, Path],
+                 host: Optional[str] = None,
+                 target_path: Optional[Union[str, Path]] = None) -> None:
+    """Transfer a file or directory to a target destination, optionally on a different host."""
+    system.rsync(source_path, host, target_path)
 
 
 def install_mysql(host, db_name, sqlfile):

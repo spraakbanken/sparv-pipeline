@@ -92,24 +92,14 @@ Reorder chunks according to `chunk_order` and open/close tags in the correct ord
 `sparv.api.util.install` provides util functions used for installing corpora onto remote locations.
 
 
-### install_directory()
-Rsync every file from a local directory to a target host. The target path is extracted from filenames by replacing "#"
-with "/".
+### install_path()
+Transfer a file or directory to a target destination, optionally on a different host.
 
 **Arguments:**
 
-- `host`: The remote host to install to.
-- `directory`: The directory to sync.
-
-
-### install_file()
-Rsync a file to a target host.
-
-**Arguments:**
-
-- `local_file`: Path to the local file to sync.
-- `host`: The remote host to install to.
-- `remote_file`: The name of the resulting file on the remote host.
+- `source_path`: Path to the local file or directory to sync.
+- `host` (optional): The remote host to install to.
+- `target_path`: The name of the target file or directory.
 
 
 ### install_mysql()
