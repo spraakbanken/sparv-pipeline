@@ -2,8 +2,10 @@
 
 import errno
 import os
+import shlex
 import shutil
 import subprocess
+from pathlib import Path
 from typing import Optional, Union
 
 import sparv.core.paths as paths
@@ -171,3 +173,16 @@ def rsync(local, host=None, remote=None):
     else:
         subprocess.check_call(["mkdir", "-p", f"'{remote_dir}'"])
         subprocess.check_call(["rsync"] + args + [remote])
+
+
+def remove_path(path, host=None):
+    """Remove a file or directory, either locally or remotely."""
+    assert path, "'path' must not be empty."
+    if host:
+        subprocess.check_call(["ssh", host, f"rm -rf {shlex.quote(path)}"])
+    else:
+        p = Path(path)
+        if p.is_file():
+            p.unlink()
+        elif p.is_dir():
+            shutil.rmtree(p)

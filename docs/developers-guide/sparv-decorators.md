@@ -149,6 +149,8 @@ remote location or delete corpus data from a database.
 Every uninstaller needs to create a marker of the type `OutputCommonData` at the end of a successful uninstallation.
 Simply call the `write()` method on the marker to create the required empty file.
 
+It is recommended that an uninstaller removes the related installer's marker, to enable re-installation.
+
 **Arguments:**
 
 - `description`: Description of the uninstaller. Used for displaying help texts in the CLI.
