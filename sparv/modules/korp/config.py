@@ -335,7 +335,7 @@ def install_config(
     """Install Korp corpus configuration file."""
     corpus_dir = Path(config_dir) / "corpora"
     logger.info(f"Installing Korp corpus configuration file to {remote_host}:{corpus_dir}")
-    util.install.install_file(config_file, remote_host, corpus_dir)
+    util.install.install_path(config_file, remote_host, corpus_dir)
     marker.write("")
 
 
