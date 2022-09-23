@@ -4,6 +4,7 @@
     - [Running Sparv](user-manual/running-sparv.md)
     - [Requirements for Source Files](user-manual/requirements-for-source-files.md)
     - [Corpus Configuration](user-manual/corpus-configuration.md)
+    - [Available analyses](user-manual/available-analyses.md)
 - Developer's Guide
     - [General Concepts](developers-guide/general-concepts.md)
     - [Writing Sparv Plugins](developers-guide/writing-sparv-plugins.md)
