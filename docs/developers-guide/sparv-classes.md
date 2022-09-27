@@ -253,6 +253,21 @@ In instance of this class holds information about the luanguage of the corpus. T
 corpus configuration and is specified as ISO 639-3 code.
 
 
+## Marker
+Similar to `AnnotationCommonData`, but usually without any actual data. Markers are simply used to tell if something has
+been run. Created by using `OutputMarker`.
+
+**Arguments:**
+
+- `name`: The name of the marker.
+
+**Methods:**
+
+- `read()`: Read arbitrary corpus level string data from marker file.
+- `exists()`: Return True if marker file exists.
+- `remove()`: Remove marker file.
+
+
 ## Model
 An instance of this class holds a path to a model file relative to the Sparv model directory. This class is typically
 used as input to annotator functions.
@@ -382,6 +397,22 @@ but the source file must be specified for all actions.
 - `write(value, source_file: str, append: bool = False)`: Write arbitrary corpus level string data to annotation file.
 - `exists(source_file: str)`: Return True if annotation file exists.
 - `remove(source_file: str)`: Remove annotation file.
+
+
+## OutputMarker
+Similar to `OutputCommonData`, but usually without any actual data. Markers are simply used to tell that something has
+been run, usually used by functions that don't have any natural output, like installers and uninstallers.
+
+**Arguments**:
+- `name`: The name of the marker.
+- `cls`: The annotation class of the output.
+- `description`: An optional description.
+
+**Methods:**
+
+- `write(value = "")`: Write arbitrary corpus level string data to marker file. Usually called without arguments.
+- `exists()`: Return True if marker file exists.
+- `remove()`: Remove marker file.
 
 
 ## Source

@@ -3,7 +3,7 @@
 import os
 
 from sparv.api import (AllSourceFilenames, Annotation, AnnotationData, Config, Corpus, Export, ExportAnnotations,
-                       ExportInput, Namespaces, OutputCommonData, SourceAnnotations, SourceFilename, SparvErrorMessage,
+                       ExportInput, Namespaces, OutputMarker, SourceAnnotations, SourceFilename, SparvErrorMessage,
                        exporter, get_logger, installer, util)
 from . import xml_utils
 
@@ -96,7 +96,7 @@ def compressed_scrambled(out: Export = Export("xml_export.combined_scrambled/[me
 def install_scrambled(corpus: Corpus = Corpus(),
                       bz2file: ExportInput = ExportInput(
                           "xml_export.combined_scrambled/[metadata.id]_scrambled.xml.bz2"),
-                      out: OutputCommonData = OutputCommonData("xml_export.install_export_scrambled_marker"),
+                      out: OutputMarker = OutputMarker("xml_export.install_export_scrambled_marker"),
                       export_path: str = Config("xml_export.export_scrambled_path"),
                       host: str = Config("xml_export.export_scrambled_host")):
     """Copy compressed combined scrambled XML to remote host."""

@@ -4,7 +4,7 @@ import csv
 from collections import defaultdict
 
 from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Config, Export,
-                       ExportAnnotationsAllSourceFiles, ExportInput, OutputCommonData, SourceAnnotationsAllSourceFiles,
+                       ExportAnnotationsAllSourceFiles, ExportInput, OutputMarker, SourceAnnotationsAllSourceFiles,
                        exporter, get_logger, installer, util)
 
 logger = get_logger(__name__)
@@ -88,12 +88,12 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
 
 @installer("Install word frequency list on remote host")
 def install_freq_list(freq_list: ExportInput = ExportInput("stats_export.frequency_list/stats_[metadata.id].csv"),
-                      out: OutputCommonData = OutputCommonData("stats_export.install_freq_list_marker"),
+                      out: OutputMarker = OutputMarker("stats_export.install_freq_list_marker"),
                       host: str = Config("stats_export.remote_host"),
                       target_dir: str = Config("stats_export.remote_dir")):
     """Install frequency list on server by rsyncing."""
     util.install.install_path(freq_list, host, target_dir)
-    out.write("")
+    out.write()
 
 
 ################################################################################

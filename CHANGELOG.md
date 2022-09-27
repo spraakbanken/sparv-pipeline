@@ -10,6 +10,7 @@
 - Lists of annotations can now be used as input and output for annotators by using the `List` type hint.
 - Added support for optional annotator outputs.
 - Added support for uninstallers using the `@uninstaller` decorator.
+- Added `Marker` and `OutputMarker` classes, to be used mainly by installers and uninstallers.
 
 ### Changed
 

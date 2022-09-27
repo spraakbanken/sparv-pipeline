@@ -6,7 +6,7 @@ from collections import defaultdict
 from typing import Optional
 
 from sparv.api import (AllSourceFilenames, Annotation, AnnotationDataAllSourceFiles, Config, Corpus, Export, ExportInput,
-                       OutputCommonData, OutputData, annotator, exporter, get_logger, installer, util)
+                       OutputMarker, OutputData, annotator, exporter, get_logger, installer, util)
 from sparv.api.util.mysql_wrapper import MySQL
 
 logger = get_logger(__name__)
@@ -19,7 +19,7 @@ MAX_POS_LENGTH = 5
 
 @installer("Install Korp's Word Picture SQL on remote host", language=["swe"])
 def install_relations(sqlfile: ExportInput = ExportInput("korp.wordpicture/relations.sql"),
-                      out: OutputCommonData = OutputCommonData("korp.install_relations_marker"),
+                      out: OutputMarker = OutputMarker("korp.install_relations_marker"),
                       db_name: str = Config("korp.mysql_dbname"),
                       host: str = Config("korp.remote_host")):
     """Install Korp's Word Picture SQL on remote host.
@@ -31,7 +31,7 @@ def install_relations(sqlfile: ExportInput = ExportInput("korp.wordpicture/relat
         host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host").
     """
     util.install.install_mysql(host, db_name, sqlfile)
-    out.write("")
+    out.write()
 
 
 @annotator("Find dependencies for Korp's Word Picture", language=["swe"])

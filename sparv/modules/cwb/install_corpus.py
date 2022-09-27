@@ -3,13 +3,13 @@
 import os
 from typing import Optional
 
-from sparv.api import Config, Corpus, ExportInput, OutputCommonData, SparvErrorMessage, installer, util
+from sparv.api import Config, Corpus, ExportInput, OutputMarker, SparvErrorMessage, installer, util
 
 
 @installer("Install CWB datafiles on remote host")
 def install_corpus(
         corpus: Corpus = Corpus(),
-        out: OutputCommonData = OutputCommonData("cwb.install_corpus_marker"),
+        out: OutputMarker = OutputMarker("cwb.install_corpus_marker"),
         host: Optional[str] = Config("cwb.remote_host"),
         registry_file: ExportInput = ExportInput("cwb.encoded/registry/[metadata.id]"),
         info_file: ExportInput = ExportInput("cwb.encoded/data/.info"),
@@ -25,7 +25,7 @@ def install_corpus(
 @installer("Install CWB datafiles for a scrambled corpus on remote host")
 def install_corpus_scrambled(
         corpus: Corpus = Corpus(),
-        out: OutputCommonData = OutputCommonData("cwb.install_corpus_scrambled_marker"),
+        out: OutputMarker = OutputMarker("cwb.install_corpus_scrambled_marker"),
         host: Optional[str] = Config("cwb.remote_host"),
         registry_file: ExportInput = ExportInput("cwb.encoded_scrambled/registry/[metadata.id]"),
         info_file: ExportInput = ExportInput("cwb.encoded_scrambled/data/.info"),
@@ -73,4 +73,4 @@ def sync_cwb(corpus, out, host, info_file, registry_file, target_data_dir, targe
     os.remove(source_registry_file)
 
     # Write marker file
-    out.write("")
+    out.write()

@@ -7,7 +7,7 @@ from typing import Optional, Union, List
 import yaml
 
 from sparv.api import (AllSourceFilenames, AnnotationName, Config, Export, ExportAnnotationNames, ExportInput,
-                       OutputCommonData, SourceAnnotationsAllSourceFiles, exporter, get_logger, installer, util)
+                       OutputMarker, SourceAnnotationsAllSourceFiles, exporter, get_logger, installer, util)
 from sparv.core.io import split_annotation
 from sparv.modules.cwb.cwb import cwb_escape
 
@@ -330,13 +330,13 @@ def install_config(
     remote_host: Optional[str] = Config("korp.remote_host"),
     config_dir: str = Config("korp.config_dir"),
     config_file: ExportInput = ExportInput("korp.config/[metadata.id].yaml"),
-    marker: OutputCommonData = OutputCommonData("korp.install_config_marker")
+    marker: OutputMarker = OutputMarker("korp.install_config_marker")
 ):
     """Install Korp corpus configuration file."""
     corpus_dir = Path(config_dir) / "corpora"
     logger.info(f"Installing Korp corpus configuration file to {remote_host}:{corpus_dir}")
     util.install.install_path(config_file, remote_host, corpus_dir)
-    marker.write("")
+    marker.write()
 
 
 def dict_to_yaml(data):

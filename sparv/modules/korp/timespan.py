@@ -3,7 +3,7 @@
 from collections import defaultdict
 
 from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Config, Corpus, Export, ExportInput,
-                       OutputCommonData, annotator, exporter, get_logger, installer, util)
+                       OutputMarker, annotator, exporter, get_logger, installer, util)
 from sparv.api.util.mysql_wrapper import MySQL
 
 logger = get_logger(__name__)
@@ -11,7 +11,7 @@ logger = get_logger(__name__)
 
 @installer("Install timespan SQL on remote host")
 def install_timespan(sqlfile: ExportInput = ExportInput("korp.timespan/timespan.sql"),
-                     out: OutputCommonData = OutputCommonData("korp.install_timespan_marker"),
+                     out: OutputMarker = OutputMarker("korp.install_timespan_marker"),
                      db_name: str = Config("korp.mysql_dbname"),
                      host: str = Config("korp.remote_host")):
     """Install timespan SQL on remote host.
@@ -23,7 +23,7 @@ def install_timespan(sqlfile: ExportInput = ExportInput("korp.timespan/timespan.
         host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host").
     """
     util.install.install_mysql(host, db_name, sqlfile)
-    out.write("")
+    out.write()
 
 
 @exporter("Timespan SQL data for use in Korp", abstract=True)

@@ -352,6 +352,12 @@ class AnnotationCommonData(CommonMixin, BaseAnnotation):
         return io.read_data(None, self)
 
 
+class Marker(AnnotationCommonData):
+    """A marker indicating that something has run."""
+
+    pass
+
+
 class BaseOutput(BaseAnnotation):
     """Base class for all Output classes."""
 
@@ -441,6 +447,13 @@ class OutputCommonData(CommonMixin, BaseOutput):
     def write(self, value, append: bool = False):
         """Write arbitrary corpus level string data to annotation file."""
         io.write_data(None, self, value, append)
+
+
+class OutputMarker(OutputCommonData):
+    """A class for creating a marker, indicating that something has run."""
+
+    def write(self, value="", append: bool = False):
+        super().write(value)
 
 
 class Text:

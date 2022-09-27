@@ -1,7 +1,7 @@
 """SBX specific annotation and export functions related to the stats export."""
 
 from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Config, Export, ExportInput, Output,
-                       OutputCommonData, annotator, exporter, get_logger, installer, util)
+                       OutputMarker, annotator, exporter, get_logger, installer, util)
 
 from .stats_export import freq_list
 
@@ -198,20 +198,20 @@ def sbx_freq_list_fsv(
 @installer("Install SBX word frequency list on remote host")
 def install_sbx_freq_list(
     freq_list: ExportInput = ExportInput("stats_export.frequency_list_sbx/stats_[metadata.id].csv"),
-    out: OutputCommonData = OutputCommonData("stats_export.install_sbx_freq_list_marker"),
+    out: OutputMarker = OutputMarker("stats_export.install_sbx_freq_list_marker"),
     host: str = Config("stats_export.remote_host"),
     target_dir: str = Config("stats_export.remote_dir")):
     """Install frequency list on server by rsyncing."""
     util.install.install_path(freq_list, host, target_dir)
-    out.write("")
+    out.write()
 
 
 @installer("Install SBX word frequency list with dates on remote host")
 def install_sbx_freq_list_date(
     freq_list: ExportInput = ExportInput("stats_export.frequency_list_sbx_date/stats_[metadata.id].csv"),
-    out: OutputCommonData = OutputCommonData("stats_export.install_sbx_freq_list_date_marker"),
+    out: OutputMarker = OutputMarker("stats_export.install_sbx_freq_list_date_marker"),
     host: str = Config("stats_export.remote_host"),
     target_dir: str = Config("stats_export.remote_dir")):
     """Install frequency list on server by rsyncing."""
     util.install.install_path(freq_list, host, target_dir)
-    out.write("")
+    out.write()
