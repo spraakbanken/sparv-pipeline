@@ -13,6 +13,8 @@ from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles,
 
 logger = get_logger(__name__)
 
+CWB_MAX_LINE_LEN = 65534
+
 
 @exporter("VRT export", config=[
     Config("cwb.source_annotations",
@@ -364,8 +366,19 @@ def make_token_line(word, token, token_attributes, annotation_dict, index):
             attr_str = annotation_dict[token][attr][index]
         line.append(
             attr_str.replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
-    line = "\t".join(line)
-    return util.misc.remove_control_characters(line)
+    line = util.misc.remove_control_characters("\t".join(line))
+
+    # Send warning if line exceeds the max line length in CWB
+    if len(line) > CWB_MAX_LINE_LEN:
+        if "misc.head" in token_attributes or "misc.tail" in token_attributes:
+            logger.warning(f"Found a line that exceeds the max line length in CWB ({CWB_MAX_LINE_LEN}). "
+                "If this leads to a crash in CWB encode you could try setting the 'misc.head_tail_max_length' config "
+                "variable to a lower value. In that case you will need to re-run the misc.head and misc.tail analyses.")
+        else:
+            logger.warning(f"Found a line that exceeds the max line length in CWB ({CWB_MAX_LINE_LEN}). "
+                           "This may lead to a crash in CWB encode.")
+
+    return line
 
 
 def parse_structural_attributes(structural_atts):
