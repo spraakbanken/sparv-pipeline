@@ -158,15 +158,15 @@ class InternalLogHandler(logging.Handler):
         elif record.msg == "progress":
             job_id = self.job_ids.get((record.job, record.file))
             if job_id is not None:
-                if not self.jobs[job_id]["task"]:
-                    self.jobs[job_id]["task"] = self.progress.add_task(
-                        "",
-                        start=bool(record.total),
-                        completed=record.progress or record.advance or 0,
-                        total=record.total or 100.0
-                    )
-                else:
-                    try:
+                try:
+                    if not self.jobs[job_id]["task"]:
+                        self.jobs[job_id]["task"] = self.progress.add_task(
+                            "",
+                            start=bool(record.total),
+                            completed=record.progress or record.advance or 0,
+                            total=record.total or 100.0
+                        )
+                    else:
                         if record.total:
                             self.progress.start_task(self.jobs[job_id]["task"])
                             self.progress.update(self.jobs[job_id]["task"], total=record.total)
@@ -174,8 +174,8 @@ class InternalLogHandler(logging.Handler):
                             self.progress.update(self.jobs[job_id]["task"], completed=record.progress)
                         elif record.advance or not record.total:
                             self.progress.advance(self.jobs[job_id]["task"], advance=record.advance or 1)
-                    except KeyError:
-                        pass
+                except KeyError:
+                    pass
 
 
 class ModifiedRichHandler(RichHandler):
@@ -236,7 +236,7 @@ class LogHandler:
     icon = "\U0001f426"
 
     def __init__(self, progressbar=True, log_level=None, log_file_level=None, simple=False, stats=False,
-                 pass_through=False, dry_run=False):
+                 pass_through=False, dry_run=False, keep_going=False):
         """Initialize log handler.
 
         Args:
@@ -247,11 +247,13 @@ class LogHandler:
             stats: Set to True to show stats after completion.
             pass_through: Let Snakemake's log messages pass through uninterrupted.
             dry_run: Set to True to print summary about jobs.
+            keep_going: Set to True if the keepgoing flag is enabled for Snakemake.
         """
         self.use_progressbar = progressbar and console.is_terminal
         self.simple = simple or not console.is_terminal
         self.pass_through = pass_through
         self.dry_run = dry_run
+        self.keep_going = keep_going
         self.log_level = log_level
         self.log_file_level = log_file_level
         self.log_filename = None
@@ -499,7 +501,8 @@ class LogHandler:
 
                     self.job_ids[(msg["msg"], file)] = msg["jobid"]
 
-        elif level == "job_finished" and self.use_progressbar and msg["jobid"] in self.current_jobs:
+        elif (level == "job_finished" or level == "job_error" and self.keep_going) and self.use_progressbar and msg[
+                "jobid"] in self.current_jobs:
             this_job = self.current_jobs[msg["jobid"]]
             if self.stats:
                 self.stats_data[this_job["name"]] += time.time() - this_job["starttime"]
@@ -507,6 +510,8 @@ class LogHandler:
                 self.progress.remove_task(this_job["task"])
             self.job_ids.pop((this_job["name"], this_job["file"]), None)
             self.current_jobs.pop(msg["jobid"], None)
+            if level == "job_error":
+                self.messages["unhandled_error"].append(msg)
 
         elif level == "info":
             if self.pass_through or msg["msg"] == "Nothing to be done.":

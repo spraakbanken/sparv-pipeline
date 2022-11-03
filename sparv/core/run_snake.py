@@ -45,6 +45,10 @@ class StreamToLogger:
     def isatty():
         return False
 
+    @staticmethod
+    def flush():
+        pass
+
 
 # Set compression
 if snakemake.params.compression:
@@ -109,7 +113,7 @@ log_handler.setup_logging(snakemake.config["log_server"],
                           log_level=snakemake.config["log_level"],
                           log_file_level=snakemake.config["log_file_level"],
                           file=snakemake.params.source_file,
-                          job=f"{snakemake.params.module_name}:{snakemake.params.f_name}")
+                          job=f"{module_name}:{f_name}")
 logger = logging.getLogger("sparv")
 logger.info("RUN: %s:%s(%s)", module_name, f_name, ", ".join("%s=%s" % (i[0], repr(i[1])) for i in
                                                              list(parameters.items())))
@@ -148,7 +152,7 @@ if not use_preloader:
         sys.stderr = old_stderr
 else:
     try:
-        preload.send_data(sock, (f"{module_name}:{f_name}", parameters, snakemake.config))
+        preload.send_data(sock, (f"{module_name}:{f_name}", parameters, snakemake.config, snakemake.params.source_file))
         response = preload.receive_data(sock)
         if isinstance(response, SparvErrorMessage):
             exit_with_error_message(response.message, "sparv.modules." + module_name)

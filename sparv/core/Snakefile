@@ -260,7 +260,11 @@ rule list_targets:
             table.add_row("  " + target, desc)
         table.add_row()
         table.add_row("[b]Installers[/b]")
-        for target, desc in sorted(snake_storage.install_targets):
+        for target, desc, _ in sorted(snake_storage.install_targets):
+            table.add_row("  " + target, desc)
+        table.add_row()
+        table.add_row("[b]Uninstallers[/b]")
+        for target, desc in sorted(snake_storage.uninstall_targets):
             table.add_row("  " + target, desc)
         table.add_row()
         table.add_row("[b]Importers[/b]")
@@ -357,39 +361,16 @@ rule clean:
             snake_utils.print_sparv_info("Nothing to remove")
 
 
-# Rule to list all available installations
+# Rule to list all available installers
 rule list_installs:
     run:
-        selected_install_outputs = set(snake_utils.get_install_outputs(snake_storage))
-        selected_installations = [(t, d) for t, d in sorted(snake_storage.install_targets)
-                                  if set(snake_storage.install_outputs[t]).intersection(selected_install_outputs)]
-        other_installations = [(t, d) for t, d in sorted(snake_storage.install_targets)
-                               if not set(snake_storage.install_outputs[t]).intersection(selected_install_outputs)]
+        snake_prints.print_installers(snake_storage)
 
-        if selected_installations:
-            print()
-            table = Table(title="Selected installations", box=box.SIMPLE, show_header=False, title_justify="left")
-            table.add_column(no_wrap=True)
-            table.add_column()
-            for target, desc in selected_installations:
-                table.add_row(target, desc)
-            console.print(table)
 
-        if other_installations:
-            print()
-            if selected_installations:
-                title = "Other available installations"
-            else:
-                title = "Available installations"
-            table = Table(title=title, box=box.SIMPLE, show_header=False, title_justify="left")
-            table.add_column(no_wrap=True)
-            table.add_column()
-            for target, desc in other_installations:
-                table.add_row(target, desc)
-            console.print(table)
-
-        console.print("[i]Note:[/i] Use the 'install' section in your corpus configuration to select what "
-                      "installations should be performed when running 'sparv install' without arguments.")
+# Rule to list all available uninstallers
+rule list_uninstalls:
+    run:
+        snake_prints.print_installers(snake_storage, uninstall=True)
 
 
 # Rule for making exports defined in corpus config
@@ -412,14 +393,29 @@ if "install_corpus" in selected_targets:
     install_inputs = snake_utils.get_install_outputs(snake_storage, config.get("install_types"))
     if not install_inputs:
         raise SparvErrorMessage("Please specify what you would like to install, either by supplying arguments "
-                                "(e.g. `sparv install xml_export:install`) or by adding installations in "
-                                "The `install` section of your corpus config file.\n"
-                                "You can list available installations with `sparv install -l`.")
+                                "(e.g. 'sparv install xml_export:install') or by adding installers to "
+                                "the 'install' section of your corpus config file.\n"
+                                "You can list available installers with 'sparv install -l'.")
     else:
         rule install_corpus:
             input:
                 install_inputs
 
+
+# Rule for making uninstallations
+if "uninstall_corpus" in selected_targets:
+    uninstall_inputs = snake_utils.get_install_outputs(snake_storage, config.get("uninstall_types"), uninstall=True)
+    if not uninstall_inputs:
+        raise SparvErrorMessage("Please specify what you would like to uninstall, either by supplying arguments "
+                                "(e.g. 'sparv uninstall xml_export:uninstall') or by adding uninstallers to "
+                                "the 'uninstall' section of your corpus config file. If the 'uninstall' setting is not "
+                                "set, any uninstallers connected to the installers in the 'install' section will be "
+                                "used instead.\n"
+                                "You can list available uninstallers with 'sparv uninstall -l'.")
+    else:
+        rule uninstall_corpus:
+            input:
+                uninstall_inputs
 
 # Rule to list all models that can be built/downloaded
 rule list_models:

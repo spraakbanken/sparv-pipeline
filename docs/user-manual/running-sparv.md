@@ -99,7 +99,7 @@ sparv run-rule stanza:annotate
 
 Example creating the part-of-speech annotation for the input file `document1`:
 ```
-sparv create-file annotations/dokument1/segment.token/stanza.pos
+sparv create-file sparv-workdir/dokument1/segment.token/stanza.pos
 ```
 
 **`sparv run-module`:** Run an annotator module independently (mostly for debugging). You must supply the module and the

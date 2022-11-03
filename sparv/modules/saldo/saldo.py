@@ -28,10 +28,12 @@ def preloader(models):
     Config("saldo.precision", "",
            description="Format string for appending precision to each value (e.g. ':%.3f')"),
     Config("saldo.precision_filter", default="max",
-           description="Precision filter with values 'max' (only use the annotations that are most probable), "
-                       "'first' (only use the most probable annotation(s)), 'none' (use all annotations)"),
+           description="Precision filter with possible values 'max' (only use the most probable annotations), "
+                       "'first' (only use the single most probable annotation), 'none' (use all annotations)"),
     Config("saldo.min_precision", default=0.66,
-           description="Only use annotations with a probability score higher than this"),
+           description="Only use annotations with a probability score greater than or equal to this. "
+                       "0.25: part-of-speech does not match, 0.5: part-of-speech is missing, 0.66: part-of-speech "
+                       "matches, 0.75: morphosyntactic descriptor matches"),
     Config("saldo.skip_multiword", default=False, description="Whether to disable annotation of multiword expressions"),
     Config("saldo.max_mwe_gaps", default=1, description="Max amount of gaps allowed within a multiword expression"),
     Config("saldo.allow_multiword_overlap", default=False,

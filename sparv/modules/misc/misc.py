@@ -34,11 +34,14 @@ def text_spans(text: Text = Text(),
         return out_annotation
 
 
-@annotator("Head and tail whitespace characters for tokens")
+@annotator("Head and tail whitespace characters for tokens", config=[
+    Config("misc.head_tail_max_length", default=None,
+           description="If set to an int misc.head and misc.tail will be truncated to that many characters.")])
 def text_headtail(text: Text = Text(),
                   chunk: Annotation = Annotation("<token>"),
                   out_head: Output = Output("<token>:misc.head"),
-                  out_tail: Output = Output("<token>:misc.tail")):
+                  out_tail: Output = Output("<token>:misc.tail"),
+                  truncate_after: Optional[int] = Config("misc.head_tail_max_length")):
     """Extract "head" and "tail" whitespace characters for tokens."""
     def escape(t):
         """Escape whitespace characters."""
@@ -53,7 +56,10 @@ def text_headtail(text: Text = Text(),
 
     for i, span in enumerate(chunk):
         if head_text:
-            out_head_annotation[i] = escape(head_text)
+            if truncate_after:
+                out_head_annotation[i] = escape(head_text)[:truncate_after]
+            else:
+                out_head_annotation[i] = escape(head_text)
             head_text = None
 
         if i < len(chunk) - 1:
@@ -70,7 +76,10 @@ def text_headtail(text: Text = Text(),
                 tail_text = tail_text[:n_pos + 1]
 
             if tail_text:
-                out_tail_annotation[i] = escape(tail_text)
+                if truncate_after:
+                    out_tail_annotation[i] = escape(tail_text)[:truncate_after]
+                else:
+                    out_tail_annotation[i] = escape(tail_text)
 
     out_head.write(out_head_annotation)
     out_tail.write(out_tail_annotation)
@@ -255,10 +264,9 @@ def concat(out: Output,
                for (n, val_a) in enumerate(left.read())))
 
 
-# TODO: not working yet because we cannot handle lists of annotations as input
-# @annotator("Concatenate two or more annotations, with an optional separator")
+@annotator("Concatenate two or more annotations, with an optional separator")
 def concat2(out: Output,
-            annotations: List[Annotation] = [Annotation],
+            annotations: List[Annotation],
             separator: str = ""):
     """Concatenate two or more annotations, with an optional separator."""
     annotations = [list(a.read()) for a in annotations]

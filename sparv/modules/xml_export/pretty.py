@@ -3,7 +3,7 @@
 import os
 
 from sparv.api import (AllSourceFilenames, Annotation, AnnotationData, Config, Corpus, Export, ExportAnnotations,
-                       ExportInput, Namespaces, OutputCommonData, SourceAnnotations, SourceFilename, exporter,
+                       ExportInput, Namespaces, OutputMarker, SourceAnnotations, SourceFilename, exporter,
                        get_logger, installer, util)
 
 from . import xml_utils
@@ -122,7 +122,7 @@ def compressed(out: Export = Export("xml_export.combined/[xml_export.filename_co
 ])
 def install(corpus: Corpus = Corpus(),
             bz2file: ExportInput = ExportInput("xml_export.combined/[xml_export.filename_compressed]"),
-            out: OutputCommonData = OutputCommonData("xml_export.install_export_pretty_marker"),
+            out: OutputMarker = OutputMarker("xml_export.install_export_pretty_marker"),
             export_path: str = Config("xml_export.export_path"),
             host: str = Config("xml_export.export_host")):
     """Copy compressed combined XML to remote host."""

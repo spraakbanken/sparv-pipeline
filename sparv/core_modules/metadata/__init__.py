@@ -9,7 +9,8 @@ __config__ = [
     Config("metadata.name", description="Human readable name of corpus"),
     Config("metadata.language", description="Language of source files (ISO 639-3)"),
     Config("metadata.variety", description="Language variety of source files (if applicable)"),
-    Config("metadata.description", description="Description of corpus")
+    Config("metadata.description", description="Description of corpus"),
+    Config("metadata.short_description", description="Short description of corpus (one line)")
 ]
 
 

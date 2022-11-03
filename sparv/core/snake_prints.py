@@ -24,7 +24,8 @@ def print_module_summary(snake_storage):
         "annotators": snake_storage.all_annotators,
         "importers": snake_storage.all_importers,
         "exporters": snake_storage.all_exporters,
-        "installers": snake_storage.all_installers
+        "installers": snake_storage.all_installers,
+        "uninstallers": snake_storage.all_uninstallers
     }
 
     print()
@@ -54,7 +55,8 @@ def print_module_info(module_types, module_names, snake_storage, reverse_config_
         "annotators": snake_storage.all_annotators,
         "importers": snake_storage.all_importers,
         "exporters": snake_storage.all_exporters,
-        "installers": snake_storage.all_installers
+        "installers": snake_storage.all_installers,
+        "uninstallers": snake_storage.all_uninstallers
     }
 
     if not module_types or "all" in module_types:
@@ -228,3 +230,50 @@ def print_languages():
 def get_custom_module_description(name):
     """Return string with description for custom modules."""
     return "Custom module from corpus directory ({}.py).".format(name.split(".")[1])
+
+
+def print_installers(snake_storage, uninstall: bool = False):
+    """Print list of installers or uninstallers."""
+    if uninstall:
+        targets = snake_storage.uninstall_targets
+        prefix = "un"
+        config_list = config.get("uninstall")
+        if config_list is None:
+            config_install = config.get("install", [])
+            config_list = [u for t, _, u in snake_storage.install_targets if t in config_install and u]
+    else:
+        targets = snake_storage.install_targets
+        prefix = ""
+        config_list = config.get("install", [])
+
+    selected_installations = [(t, d) for t, d, *_ in targets if t in config_list]
+    other_installations = [(t, d) for t, d, *_ in targets if t not in config_list]
+
+    if selected_installations:
+        print()
+        table = Table(title=f"Selected {prefix}installations", box=box.SIMPLE, show_header=False, title_justify="left")
+        table.add_column(no_wrap=True)
+        table.add_column()
+        for target, desc in sorted(selected_installations):
+            table.add_row(target, desc)
+        console.print(table)
+
+    if other_installations:
+        print()
+        if selected_installations:
+            title = f"Other available {prefix}installations"
+        else:
+            title = f"Available {prefix}installations"
+        table = Table(title=title, box=box.SIMPLE, show_header=False, title_justify="left")
+        table.add_column(no_wrap=True)
+        table.add_column()
+        for target, desc in sorted(other_installations):
+            table.add_row(target, desc)
+        console.print(table)
+
+    extra = "If the 'uninstall' setting is not set, any uninstallers connected to the installers in the 'install' " \
+            "section will be used instead." if uninstall else ""
+
+    console.print(f"[i]Note:[/i] Use the '{prefix}install' section in your corpus configuration to select what "
+                  f"{prefix}installations should be performed when running 'sparv {prefix}install' without arguments. "
+                  f"{extra}")

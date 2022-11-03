@@ -11,7 +11,7 @@ from typing import Dict, Iterator
 
 from rich.logging import RichHandler
 
-from sparv.core import config, log_handler
+from sparv.core import config, io, log_handler
 from sparv.core.console import console
 from sparv.core.snake_utils import SnakeStorage
 from sparv.core.misc import SparvErrorMessage
@@ -28,6 +28,11 @@ log.setLevel(logging.INFO)
 handler = RichHandler(show_path=False, rich_tracebacks=True, console=console)
 handler.setFormatter(logging.Formatter("%(message)s", datefmt=log_handler.DATE_FORMAT))
 log.addHandler(handler)
+
+# Set compression
+compression = config.get("sparv.compression")
+if compression:
+    io.compression = compression
 
 
 class Preloader:
@@ -160,7 +165,9 @@ def handle(client_sock, annotators: Dict[str, Preloader]):
     # Set up logging over socket
     log_handler.setup_logging(data[2]["log_server"],
                               log_level=data[2]["log_level"],
-                              log_file_level=data[2]["log_file_level"])
+                              log_file_level=data[2]["log_file_level"],
+                              file=data[3],
+                              job=data[0])
 
     # Call annotator function
     try:

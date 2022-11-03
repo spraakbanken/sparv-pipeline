@@ -2,8 +2,8 @@
 
 from collections import defaultdict
 
-from sparv.api import (AllSourceFilenames, AnnotationAllSourceFiles, Config, Corpus, Export, ExportInput, OutputCommonData, exporter,
-                       get_logger, installer, util)
+from sparv.api import (AllSourceFilenames, AnnotationAllSourceFiles, Config, Corpus, Export, ExportInput, OutputMarker,
+                       exporter, get_logger, installer, util)
 from sparv.api.util.mysql_wrapper import MySQL
 
 logger = get_logger(__name__)
@@ -15,7 +15,7 @@ CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
 
 @installer("Install lemgram SQL on remote host", language=["swe"])
 def install_lemgrams(sqlfile: ExportInput = ExportInput("korp.lemgram_index/lemgram_index.sql"),
-                     marker: OutputCommonData = OutputCommonData("korp.install_lemgram_marker"),
+                     marker: OutputMarker = OutputMarker("korp.install_lemgram_marker"),
                      db_name: str = Config("korp.mysql_dbname"),
                      host: str = Config("korp.remote_host")):
     """Install lemgram SQL on remote host.
@@ -24,12 +24,12 @@ def install_lemgrams(sqlfile: ExportInput = ExportInput("korp.lemgram_index/lemg
         sqlfile (str, optional): SQL file to be installed.
             Defaults to ExportInput("korp.lemgram_index/lemgram_index.sql").
         marker (str, optional): Marker file to be written.
-            Defaults to OutputCommonData("korp.install_lemgram_marker").
+            Defaults to OutputMarker("korp.install_lemgram_marker").
         db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname").
         host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host").
     """
     util.install.install_mysql(host, db_name, sqlfile)
-    marker.write("")
+    marker.write()
 
 
 @exporter("Lemgram index SQL file for use in Korp", language=["swe"])

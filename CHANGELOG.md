@@ -1,6 +1,40 @@
 # Changelog
 
-## [5.0.0]
+## [5.1.0] - 2022-11-03
+
+### Added
+
+- Added exporter for Korp frontend config files.
+- Added the `--keep-going` flag, which makes Sparv continue with other independent tasks when a task fails.
+- Added an [overview of some of the built-in
+  annotations](https://spraakbanken.gu.se/sparv/#/user-manual/available-analyses) in the documentation.
+- Added `AnnotationName` and `ExportAnnotationNames` classes, to be used instead of the `is_input` parameter.
+- Lists of annotations can now be used as input and output for annotators by using the `List` type hint.
+- Added support for optional annotator outputs.
+- Added support for uninstallers using the `@uninstaller` decorator.
+- Added `Marker` and `OutputMarker` classes, to be used mainly by installers and uninstallers.
+- Added a new annotator `misc:concat2` which concatenates two or more annotations with an optional separator.
+- Added a `remove` method to the `Annotation` classes for removing annotation files.
+- Added a metadata field: `short_description`.
+- Added a setting for truncating the annotations `misc_head` and `misc_tail` to avoid crashes by cwb-encode.
+
+### Changed
+
+- Removed the `is_input` parameter from the `ExportAnnotationsAllSourceFiles` class as it didn't make sense.
+- Installers and uninstallers are now required to create markers.
+- Removed Korp modes info from CWB info file as it is included in the Korp config.
+- Disable highlighting of numbers in the log output because it was confusing.
+- Slightly improved the `sbx_freq_list_date` exporter.
+- The util functions `install_directory` and `ìnstall_file` have been replaced by the more general `install_path`.
+
+### Fixed
+
+- Fixed 'maximum recursion depth exceeded' problem by upgrading Stanza.
+- The preloader now respects the compression setting.
+- Fixed progress bars not working when running preloaded annotators.
+- Fixed a rare logging crash.
+
+## [5.0.0] - 2022-08-10
 
 ### Added
 

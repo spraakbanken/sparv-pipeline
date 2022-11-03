@@ -64,6 +64,17 @@ def dateformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
     _formatter(in_from, in_to, out_from, out_to, informat, outformat, splitter, regex)
 
 
+@annotator("Convert existing dates to format YYYY-MM-DD")
+def dateformat_pretty(in_date: Annotation = Annotation("[dateformat.datetime_from]"),
+                      out: Output = Output("[dateformat.out_annotation]:dateformat.date_pretty",
+                                           description="Date without timestamp 'YYYY-MM-DD'"),
+                      informat: str = Config("dateformat.datetime_informat"),
+                      splitter: Optional[str] = Config("dateformat.splitter", None),
+                      regex: Optional[str] = Config("dateformat.regex", None)):
+    """Convert existing dates to format YYYY-MM-DD."""
+    _formatter(in_date, Annotation(), out, Annotation(), informat, "%Y-%m-%d", splitter, regex)
+
+
 @annotator("Convert existing times to specified output format", config=[
     Config("dateformat.time_outformat", "%H%M%S",
            description="Desired format of the formatted times. Several formats can be specified separated "

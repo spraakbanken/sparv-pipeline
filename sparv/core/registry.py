@@ -15,7 +15,7 @@ from sparv.core import paths
 from sparv.core.console import console
 from sparv.core.misc import SparvErrorMessage
 from sparv.api.classes import (BaseOutput, Config, Export, ExportAnnotations, ExportAnnotationsAllSourceFiles,
-                               SourceAnnotations, SourceStructureParser, ModelOutput, Wildcard)
+                               SourceAnnotations, SourceStructureParser, ModelOutput, OutputMarker, Wildcard)
 
 modules_path = ".".join(("sparv", paths.modules_dir))
 core_modules_path = ".".join(("sparv", paths.core_modules_dir))
@@ -29,7 +29,8 @@ class Annotator(Enum):
     importer = 2
     exporter = 3
     installer = 4
-    modelbuilder = 5
+    uninstaller = 5
+    modelbuilder = 6
 
 
 class Module:
@@ -177,7 +178,8 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
                config: Optional[List[Config]] = None, order: Optional[int] = None, abstract: bool = False,
                wildcards: Optional[List[Wildcard]] = None, preloader: Optional[Callable] = None,
                preloader_params: Optional[List[str]] = None, preloader_target: Optional[str] = None,
-               preloader_cleanup: Optional[Callable] = None, preloader_shared: bool = True):
+               preloader_cleanup: Optional[Callable] = None, preloader_shared: bool = True,
+               uninstaller: Optional[str] = None):
     """Return a decorator for annotator functions, adding them to annotator registry."""
     def decorator(f):
         """Add wrapped function to registry."""
@@ -201,7 +203,8 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
             "preloader_params": preloader_params,
             "preloader_target": preloader_target,
             "preloader_cleanup": preloader_cleanup,
-            "preloader_shared": preloader_shared
+            "preloader_shared": preloader_shared,
+            "uninstaller": uninstaller
         })
         return f
 
@@ -265,9 +268,17 @@ def exporter(description: str, name: Optional[str] = None, config: Optional[List
 
 
 def installer(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
-              language: Optional[List[str]] = None):
+              language: Optional[List[str]] = None, uninstaller: Optional[str] = None):
     """Return a decorator for installer functions."""
-    return _annotator(description=description, a_type=Annotator.installer, name=name, config=config, language=language)
+    return _annotator(description=description, a_type=Annotator.installer, name=name, config=config, language=language,
+                      uninstaller=uninstaller)
+
+
+def uninstaller(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
+                language: Optional[List[str]] = None):
+    """Return a decorator for uninstaller functions."""
+    return _annotator(description=description, a_type=Annotator.uninstaller, name=name, config=config,
+                      language=language)
 
 
 def modelbuilder(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
@@ -310,8 +321,12 @@ def _add_to_registry(annotator):
             sparv_config.set_value("import.text_annotation", annotator["text_annotation"])
             sparv_config.handle_text_annotation()
 
+    has_marker = False  # Needed by installers and uninstallers
+
     for _param, val in inspect.signature(annotator["function"]).parameters.items():
         if isinstance(val.default, BaseOutput):
+            if not has_marker and val.annotation == OutputMarker:
+                has_marker = True
             ann = val.default
             cls = val.default.cls
             ann_name, attr = ann.split()
@@ -373,6 +388,10 @@ def _add_to_registry(annotator):
             if not (export_dir.startswith(module_name + ".") or export_dir == module_name):
                 raise SparvErrorMessage(f"Illegal export path for export '{val.default}' in module '{module_name}'. "
                                         "The export subdirectory must include the module name as prefix.")
+
+    if annotator["type"] in (Annotator.installer, Annotator.uninstaller) and not has_marker:
+        raise SparvErrorMessage(f"'{rule_name}' creates no OutputMarker, which is required by all installers and "
+                                "uninstallers.")
 
     if module_name not in modules:
         modules[module_name] = Module(module_name)

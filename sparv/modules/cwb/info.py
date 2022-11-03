@@ -15,10 +15,9 @@ def info(out: Export = Export("cwb.encoded/data/.info"),
          firstdate: AnnotationCommonData = AnnotationCommonData("cwb.datefirst"),
          lastdate: AnnotationCommonData = AnnotationCommonData("cwb.datelast"),
          resolution: AnnotationCommonData = AnnotationCommonData("dateformat.resolution"),
-         protected: bool = Config("korp.protected"),
-         korp_modes: list = Config("korp.modes")):
+         protected: bool = Config("korp.protected")):
     """Create CWB .info file."""
-    create_info_file(sentences, firstdate, lastdate, resolution, protected, korp_modes, out)
+    create_info_file(sentences, firstdate, lastdate, resolution, protected, out)
 
 
 @exporter("CWB .info file for scrambled corpus")
@@ -27,15 +26,13 @@ def info_scrambled(out: Export = Export("cwb.encoded_scrambled/data/.info"),
                    firstdate: AnnotationCommonData = AnnotationCommonData("cwb.datefirst"),
                    lastdate: AnnotationCommonData = AnnotationCommonData("cwb.datelast"),
                    resolution: AnnotationCommonData = AnnotationCommonData("dateformat.resolution"),
-                   protected: bool = Config("korp.protected"),
-                   korp_modes: list = Config("korp.modes")):
+                   protected: bool = Config("korp.protected")):
     """Create CWB .info file for scrambled corpus."""
-    create_info_file(sentences, firstdate, lastdate, resolution, protected, korp_modes, out)
+    create_info_file(sentences, firstdate, lastdate, resolution, protected, out)
 
 
 def create_info_file(sentences: AnnotationCommonData, firstdate: AnnotationCommonData, lastdate: AnnotationCommonData,
-                     resolution: AnnotationCommonData, protected: bool, korp_modes: list,
-                     out: Export):
+                     resolution: AnnotationCommonData, protected: bool, out: Export):
     """Create .info file."""
     content = []
     protected_str = str(protected).lower()
@@ -45,8 +42,7 @@ def create_info_file(sentences: AnnotationCommonData, firstdate: AnnotationCommo
                            ("LastDate", lastdate),
                            ("DateResolution", resolution),
                            ("Updated", time.strftime("%Y-%m-%d")),
-                           ("Protected", protected_str),
-                           ("KorpModes", ",".join(korp_modes))]:
+                           ("Protected", protected_str)]:
         if isinstance(value_obj, AnnotationCommonData):
             value = value_obj.read()
         else:

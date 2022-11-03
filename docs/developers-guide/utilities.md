@@ -88,28 +88,28 @@ Reorder chunks according to `chunk_order` and open/close tags in the correct ord
 - `chunk_order`: Annotation containing the new order of the chunk.
 
 
-## Install Utils
-`sparv.api.util.install` provides util functions used for installing corpora onto remote locations.
+## Install/Uninstall Utils
+`sparv.api.util.install` provides util functions used for installing and uninstalling corpora, either locally or
+remotely.
 
 
-### install_directory()
-Rsync every file from a local directory to a target host. The target path is extracted from filenames by replacing "#"
-with "/".
-
-**Arguments:**
-
-- `host`: The remote host to install to.
-- `directory`: The directory to sync.
-
-
-### install_file()
-Rsync a file to a target host.
+### install_path()
+Transfer a file or directory to a target destination, optionally on a different host.
 
 **Arguments:**
 
-- `local_file`: Path to the local file to sync.
-- `host`: The remote host to install to.
-- `remote_file`: The name of the resulting file on the remote host.
+- `source_path`: Path to the local file or directory to sync.
+- `host` (optional): The remote host to install to.
+- `target_path`: The name of the target file or directory.
+
+
+### uninstall_path()
+Remove a file or directory, optionally on a different host.
+
+**Arguments:**
+
+- `path`: Path to the file or directory to remove.
+- `host` (optional): The remote host on which the file or directory is located.
 
 
 ### install_mysql()
@@ -176,7 +176,7 @@ Call Java with a jar file, command line arguments and stdin. Returns a pair `(st
 
 
 ### clear_directory()
-Create a new empty directory. Remove it's contents if it already exists.
+Create a new empty directory. Remove its contents if it already exists.
 
 **Arguments:**
 

@@ -114,7 +114,13 @@ def freq_list_simple(corpus: Corpus = Corpus(),
 ```
 
 ## @installer
-A function decorated with `@installer` is used to copy a corpus export to a remote server.
+A function decorated with `@installer` is used to deploy the corpus or related files to a remote location. For example,
+the XML output could be copied to a web server, or SQL data could be inserted into a database.
+
+Every installer needs to create a marker of the type `OutputMarker` at the end of a successful installation. Simply
+call the `write()` method on the marker to create the required empty file.
+
+It is recommended that an installer removes any related uninstaller's marker, to enable uninstallation.
 
 **Arguments:**
 
@@ -122,6 +128,7 @@ A function decorated with `@installer` is used to copy a corpus export to a remo
 - `name`: Optional name to use instead of the function name.
 - `config`: List of Config instances defining config options for the installer.
 - `language`: List of supported languages. If no list is supplied all languages are supported.
+- `uninstaller`: Name of related uninstaller.
 
 **Example:**
 ```python
@@ -131,9 +138,39 @@ A function decorated with `@installer` is used to copy a corpus export to a remo
 ])
 def install(corpus: Corpus = Corpus(),
             xmlfile: ExportInput = ExportInput("xml_export.combined/[metadata.id].xml.bz2"),
-            out: OutputCommonData = OutputCommonData("xml_export.install_export_pretty_marker"),
+            out: OutputMarker = OutputMarker("xml_export.install_export_pretty_marker"),
             export_path: str = Config("xml_export.export_path"),
             host: str = Config("xml_export.export_host")):
+    ...
+```
+
+## @uninstaller
+A function decorated with `@uninstaller` is used to undo what an installer has done, e.g. remove corpus files from a
+remote location or delete corpus data from a database.
+
+Every uninstaller needs to create a marker of the type `OutputMarker` at the end of a successful uninstallation.
+Simply call the `write()` method on the marker to create the required empty file.
+
+It is recommended that an uninstaller removes any related installer's marker, to enable re-installation.
+
+**Arguments:**
+
+- `description`: Description of the uninstaller. Used for displaying help texts in the CLI.
+- `name`: Optional name to use instead of the function name.
+- `config`: List of Config instances defining config options for the uninstaller.
+- `language`: List of supported languages. If no list is supplied all languages are supported.
+
+**Example:**
+```python
+@uninstaller("Remove compressed XML from remote host", config=[
+    Config("xml_export.export_host", "", description="Remote host to remove XML export from."),
+    Config("xml_export.export_path", "", description="Path on remote host to remove XML export from.")
+])
+def uninstall(corpus: Corpus = Corpus(),
+              xmlfile: ExportInput = ExportInput("xml_export.combined/[metadata.id].xml.bz2"),
+              out: OutputMarker = OutputMarker("xml_export.uninstall_export_pretty_marker"),
+              export_path: str = Config("xml_export.export_path"),
+              host: str = Config("xml_export.export_host")):
     ...
 ```
 

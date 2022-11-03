@@ -20,7 +20,6 @@ annotation is needed as input for a function, e.g. `Annotation("<token:word>")`.
 
 - `name`: The name of the annotation.
 - `source_file`: The name of the source file.
-- `is_input`: If set to `False` the annotation won't be added to the rule's input. Default: `True`
 
 **Properties:**
 
@@ -32,6 +31,7 @@ annotation is needed as input for a function, e.g. `Annotation("<token:word>")`.
 
 - `split()`: Split name into annotation name and attribute.
 - `exists()`: Return True if annotation file exists.
+- `remove()`: Remove annotation file.
 - `read(allow_newlines: bool = False)`: Yield each line from the annotation.
 - `get_children(child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False)`: Return two lists.
     The first one is a list with n (= total number of parents) elements where every element is a list of indices in the
@@ -70,6 +70,7 @@ require the specificed annotation for every source file in the corpus.
 - `read_spans(source_file: str, decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
 - `create_empty_attribute(source_file: str)`: Return a list filled with None of the same size as this annotation.
 - `exists(source_file: str)`: Return True if annotation file exists.
+- `remove(source_file: str)`: Remove annotation file.
 - `get_size(source_file: str)`: Get the number of values.
 
 
@@ -91,6 +92,19 @@ file).
 
 - `split()`: Split name into annotation name and attribute.
 - `read()`: Read arbitrary corpus level string data from annotation file.
+- `exists()`: Return True if annotation file exists.
+- `remove()`: Remove annotation file.
+
+
+## AnnotationName
+Use this class when only the name of an annotation is of interest, not the actual data. The annotation will not be added
+as a prerequisite for the annotator, meaning that the use of `AnnotationName` will not automatically trigger the
+creation of the referenced annotation.
+
+**Arguments:**
+
+- `name`: The name of the annotation.
+- `source_file`: The name of the source file.
 
 
 ## AnnotationData
@@ -111,6 +125,7 @@ This class represents an annotation holding arbitrary data, i.e. data that is no
 
 - `split()`: Split name into annotation name and attribute.
 - `exists()`: Return True if annotation file exists.
+- `remove()`: Remove annotation file.
 - `read(source_file: Optional[str] = None)`: Read arbitrary string data from annotation file.
 
 
@@ -131,8 +146,9 @@ file in the corpus.
 **Methods:**
 
 - `split()`: Split name into annotation name and attribute.
-- `exists()`: Return True if annotation file exists.
-- `read(source_file: Optional[str] = None)`: Read arbitrary string data from annotation file.
+- `exists(source_file: str)`: Return True if annotation file exists.
+- `remove(source_file: str)`: Remove annotation file.
+- `read(source_file: str)`: Read arbitrary string data from annotation file.
 
 
 ## Binary
@@ -182,25 +198,29 @@ An instance of this class represents an export file. This class is used to defin
 
 ## ExportAnnotations
 List of annotations to be included in the export. This list is defined in the corpus configuration. Annotation files
-for the current source file will automatically be added as dependencies when using this class, unless `is_input` is set
-to `False`.
+for the current source file will automatically be added as dependencies when using this class.
 
 **Arguments:**
 
 - `config_name`: The config variable pointing out what annotations to include.
-- `is_input`: If set to `False` the annotations won't be added to the rule's input. Default: `True`
 
 
 ## ExportAnnotationsAllSourceFiles
 List of annotations to be included in the export. This list is defined in the corpus configuration. Annotation files
-for _all_ source files will automatically be added as dependencies when using this class, unless `is_input` is set to
-`False`. With `is_input` set to `False`, there is no difference between using `ExportAnnotationsAllSourceFiles` and
-`ExportAnnotations`.
+for _all_ source files will automatically be added as dependencies when using this class.
 
 **Arguments:**
 
 - `config_name`: The config variable pointing out what annotations to include.
-- `is_input`: If set to `False` the annotations won't be added to the rule's input. Default: `True`
+
+
+## ExportAnnotationNames
+List of annotations to be included in the export. This list is defined in the corpus configuration. Unlike
+`ExportAnnotations`, the annotations will not be added as dependencies when using this class.
+
+**Arguments:**
+
+- `config_name`: The config variable pointing out what annotations to include.
 
 
 ## ExportInput
@@ -225,11 +245,27 @@ List of header annotation names for a given source file.
 - `read()`: Read the headers file and return a list of header annotation names.
 - `write(header_annotations: List[str])`: Write headers file.
 - `exists()`: Return True if headers file exists for this source file.
+- `remove()`: Remove headers file.
 
 
 ## Language
 In instance of this class holds information about the luanguage of the corpus. This information is retrieved from the
 corpus configuration and is specified as ISO 639-3 code.
+
+
+## Marker
+Similar to `AnnotationCommonData`, but usually without any actual data. Markers are simply used to tell if something has
+been run. Created by using `OutputMarker`.
+
+**Arguments:**
+
+- `name`: The name of the marker.
+
+**Methods:**
+
+- `read()`: Read arbitrary corpus level string data from marker file.
+- `exists()`: Return True if marker file exists.
+- `remove()`: Remove marker file.
 
 
 ## Model
@@ -291,6 +327,7 @@ Regular annotation or attribute used as output (e.g. of an annotator function).
 - `write(values, append: bool = False, allow_newlines: bool = False, source_file: Optional[str] = None)`: Write an
   annotation to file. Existing annotation will be overwritten. 'values' should be a list of values.
 - `exists()`: Return True if annotation file exists.
+- `remove()`: Remove annotation file.
 
 
 ## OutputAllSourceFiles
@@ -308,6 +345,7 @@ file must be specified for all actions.
 - `write(values, source_file: str, append: bool = False, allow_newlines: bool = False)`: Write an annotation to file.
    Existing annotation will be overwritten. 'values' should be a list of values.
 - `exists(source_file: str)`: Return True if annotation file exists.
+- `remove(source_file: str)`: Remove annotation file.
 
 
 ## OutputCommonData
@@ -322,6 +360,8 @@ Similar to [`OutputData`](#outputdata) but for a data annotation that is valid f
 
 - `split()`: Split name into annotation name and attribute.
 - `write(value, append: bool = False)`: Write arbitrary corpus level string data to annotation file.
+- `exists()`: Return True if annotation file exists.
+- `remove()`: Remove annotation file.
 
 
 ## OutputData
@@ -339,6 +379,7 @@ is used as output.
 - `split()`: Split name into annotation name and attribute.
 - `write(value, append: bool = False)`: Write arbitrary corpus level string data to annotation file.
 - `exists()`: Return True if annotation file exists.
+- `remove()`: Remove annotation file.
 
 
 ## OutputDataAllSourceFiles
@@ -355,6 +396,23 @@ but the source file must be specified for all actions.
 - `split()`: Split name into annotation name and attribute.
 - `write(value, source_file: str, append: bool = False)`: Write arbitrary corpus level string data to annotation file.
 - `exists(source_file: str)`: Return True if annotation file exists.
+- `remove(source_file: str)`: Remove annotation file.
+
+
+## OutputMarker
+Similar to `OutputCommonData`, but usually without any actual data. Markers are simply used to tell that something has
+been run, usually used by functions that don't have any natural output, like installers and uninstallers.
+
+**Arguments**:
+- `name`: The name of the marker.
+- `cls`: The annotation class of the output.
+- `description`: An optional description.
+
+**Methods:**
+
+- `write(value = "")`: Write arbitrary corpus level string data to marker file. Usually called without arguments.
+- `exists()`: Return True if marker file exists.
+- `remove()`: Remove marker file.
 
 
 ## Source

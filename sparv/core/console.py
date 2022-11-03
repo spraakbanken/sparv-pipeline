@@ -7,7 +7,8 @@ _theme = Theme(
     {
         "repr.ipv6": "none",
         "repr.eui48": "none",
-        "repr.eui64": "none"
+        "repr.eui64": "none",
+        "repr.number": "none"
     }
 )
 

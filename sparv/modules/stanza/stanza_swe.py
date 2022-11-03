@@ -37,6 +37,7 @@ def annotate_swe(
         max_token_length: int = Config("stanza.max_token_length")):
     """Do dependency parsing using Stanza."""
     import stanza
+    from stanza.pipeline.core import DownloadMethod
 
     # cpu_fallback only makes sense if use_gpu is True
     cpu_fallback = cpu_fallback and use_gpu
@@ -109,7 +110,8 @@ def annotate_swe(
         "depparse_batch_size": batch_size,
         "pos_batch_size": batch_size,
         "lemma_batch_size": batch_size,
-        "verbose": False
+        "verbose": False,
+        "download_method": DownloadMethod.NONE
     }
 
     for sentences, dep, fallback in ((sentences_dep, True, False), (sentences_pos, False, cpu_fallback)):
