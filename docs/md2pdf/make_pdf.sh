@@ -10,6 +10,7 @@ USER_MANUAL_FILES="
 ../user-manual/running-sparv.md
 ../user-manual/requirements-for-source-files.md
 ../user-manual/corpus-configuration.md
+../user-manual/available-analyses.md
 "
 
 DEVELOPERS_GUIDE_FILES="
