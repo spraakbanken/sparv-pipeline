@@ -65,9 +65,13 @@ def lemgram_sql(corpus: Corpus = Corpus(),
 
 
 MYSQL_TABLE = "lemgram_index"
-MYSQL_INDEX = {"columns": [("lemgram", "varchar(64)", "", "NOT NULL"),
-                           ("freq", int, 0, "NOT NULL"),
-                           ("corpus", "varchar(64)", "", "NOT NULL")],
-               "indexes": ["lemgram corpus freq"],  # Can't make this primary due to collation
-               "default charset": "utf8mb4",
-               }
+MYSQL_INDEX = {
+    "columns": [
+        ("lemgram", "varchar(64)", "", "NOT NULL"),
+        ("freq", int, 0, "NOT NULL"),
+        ("corpus", "varchar(64)", "", "NOT NULL"),
+    ],
+    "indexes": ["lemgram corpus freq"],  # Can't make this primary due to collation
+    "default charset": "utf8mb4",
+    "collate": "utf8mb4_bin",
+}
