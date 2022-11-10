@@ -142,6 +142,21 @@ def struct_to_token(attr: Annotation = Annotation("{struct}:{attr}"),
     out.write(out_values)
 
 
+@annotator("Inherit {attr} from {parent}:{attr} to {child}", wildcards=[
+    Wildcard("parent", Wildcard.ANNOTATION),
+    Wildcard("child", Wildcard.ANNOTATION),
+    Wildcard("attr", Wildcard.ATTRIBUTE)
+])
+def inherit(parent: Annotation = Annotation("{parent}:{attr}"),
+            child: Annotation = Annotation("{child}"),
+            out: Output = Output("{child}:misc.inherit_{parent}_{attr}")):
+    """Inherit attribute from a structural parent annotation to a child."""
+    child_parents = child.get_parents(parent)
+    attr_values = list(parent.read())
+    out_values = [attr_values[p] if p is not None else "" for p in child_parents]
+    out.write(out_values)
+
+
 # TODO: Do we still need this? struct_to_token probably mostly replaces it
 def chain(out, annotations, default=None):
     """Create a functional composition of a list of annotations.
