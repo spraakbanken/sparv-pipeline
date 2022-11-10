@@ -168,7 +168,30 @@ def sbx_freq_list_simple(
               out=out, sparv_namespace="", source_namespace="", delimiter=delimiter, cutoff=cutoff)
 
 
-@exporter("Corpus word frequency list for Old Swedish (without part-of-speech)", language=["swe-fsv"], order=4)
+@exporter("Corpus word frequency list for Swedish from the 1800's", language=["swe-1800"], order=4)
+def sbx_freq_list_1800(
+    source_files: AllSourceFilenames = AllSourceFilenames(),
+    word: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:word>"),
+    token: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>"),
+    msd: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:msd>"),
+    baseform: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>:stats_export.baseform_first"),
+    sense: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>:hist.sense"),
+    lemgram: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>:stats_export.lemgram_first"),
+    complemgram: AnnotationAllSourceFiles = AnnotationAllSourceFiles(
+                                            "<token>:stats_export.complemgram_best_cond"),
+    out: Export = Export("stats_export.frequency_list_sbx/stats_[metadata.id].csv"),
+    delimiter: str = Config("stats_export.delimiter"),
+    cutoff: int = Config("stats_export.cutoff")):
+    """Create a word frequency list for the entire corpus."""
+
+    annotations = [(word, "token"), (msd, "POS"), (baseform, "lemma"), (sense, "SALDO sense"), (lemgram, "lemgram"),
+                   (complemgram, "compound")]
+
+    freq_list(source_files=source_files, word=word, token=token, annotations=annotations, source_annotations=[],
+              out=out, sparv_namespace="", source_namespace="", delimiter=delimiter, cutoff=cutoff)
+
+
+@exporter("Corpus word frequency list for Old Swedish (without part-of-speech)", language=["swe-fsv"], order=5)
 def sbx_freq_list_fsv(
     source_files: AllSourceFilenames = AllSourceFilenames(),
     token: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>"),
