@@ -240,11 +240,12 @@ def config(id: str = Config("metadata.id"),
     presets = get_presets(remote_host, config_dir)
     token_annotations = []
     struct_annotations = []
+    hidden_annotation_names = [a.name for a in hidden_annotations]
 
     for annotation in annotation_list:
         export_name = export_names.get(annotation.name, annotation.name)
         # Skip certain annotations unless explicitly listed in annotation_definitions
-        if (annotation.name in hidden_annotations or annotation.attribute_name is None or export_name.split(":", 1)[
+        if (annotation.name in hidden_annotation_names or annotation.attribute_name is None or export_name.split(":", 1)[
                 -1].startswith("_")) and annotation.name not in annotation_definitions and not (
             reading_mode and export_name in READING_MODE_ANNOTATIONS
         ):
