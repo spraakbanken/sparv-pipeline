@@ -17,10 +17,10 @@ def install_timespan(sqlfile: ExportInput = ExportInput("korp.timespan/timespan.
     """Install timespan SQL on remote host.
 
     Args:
-        sqlfile (str, optional): SQL file to be installed. Defaults to ExportInput("korp.timespan/timespan.sql").
-        out (str, optional): Marker file to be written.
-        db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname").
-        host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host").
+        sqlfile: SQL file to be installed.
+        out: Marker file to be written.
+        db_name: Name of the data base.
+        host: Remote host to install to.
     """
     util.install.install_mysql(host, db_name, sqlfile)
     out.write()

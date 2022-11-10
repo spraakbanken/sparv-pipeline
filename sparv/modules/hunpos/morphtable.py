@@ -33,18 +33,13 @@ def saldo_morphtable(out: ModelOutput = ModelOutput("hunpos/saldo_suc-tags.morph
     is saved.
 
     Args:
-        out (str, optional): Resulting morphtable file to be written.
-            Defaults to ModelOutput("hunpos/saldo_suc-tags.morphtable").
-        saldo_model (str, optional): Path to a pickled SALDO model.
-            Defaults to Model("saldo/saldo.pickle").
-        suc (str, optional): Tab-separated file with wordforms from SUC, containing: frequency, wordform, tag.
-            Defaults to Model("hunpos/suc3_morphtable.words").
-        morphtable_base (str, optional): Existing morphtable file, whose contents will be included in the new one.
-            Defaults to Model("hunpos/suc.morphtable").
-        morphtable_patterns (str, optional): Optional file with regular expressions.
-            Defaults to Model("hunpos/suc.patterns").
-        add_capitalized (bool, optional): Whether or not capitalized word forms should be added. Defaults to True.
-        add_lowercase (bool, optional): Whether or not lower case word forms should be added. Defaults to False.
+        out: Resulting morphtable file to be written.
+        saldo_model: Path to a pickled SALDO model.
+        suc: Tab-separated file with wordforms from SUC, containing: frequency, wordform, tag.
+        morphtable_base: Existing morphtable file, whose contents will be included in the new one.
+        morphtable_patterns: Optional file with regular expressions.
+        add_capitalized: Whether or not capitalized word forms should be added.
+        add_lowercase: Whether or not lower case word forms should be added.
     """
     lex = saldo.SaldoLexicon(saldo_model.path)
     tags = defaultdict(set)

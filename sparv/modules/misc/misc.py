@@ -384,7 +384,7 @@ def source(out: Output = Output("<text>:misc.source"),
 
 @annotator("Get the first annotation from a cwb set")
 def first_from_set(out: Output,
-                   chunk: Annotation,):
+                   chunk: Annotation):
     """"Get the first annotation from a set."""
     out_annotation = []
     for val in chunk.read():

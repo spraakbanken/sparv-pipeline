@@ -65,36 +65,29 @@ def annotate(token: Annotation = Annotation("<token>"),
     """Use the Saldo lexicon model to annotate msd-tagged words.
 
     Args:
-        token (Annotation): Input annotation with token spans. Defaults to Annotation("<token>").
-        word (Annotation): Input annotation with token strings. Defaults to Annotation("<token:word>").
-        sentence (Annotation): Input annotation with sentence spans. Defaults to Annotation("<sentence>").
-        reference (Annotation): Input annotation with token indices for each sentence.
-            Defaults to Annotation("<token:ref>").
-        out_sense (Output): Output annotation with senses from SALDO. Defaults to Output("<token>:saldo.sense").
-        out_lemgram (Output): Output annotation with lemgrams from SALDO. Defaults to Output("<token>:saldo.lemgram").
-        out_baseform (Output): Output annotation with baseforms from SALDO.
-            Defaults to Output("<token>:saldo.baseform").
-        models (List[Model]): A list of pickled lexicons, typically the SALDO model (saldo.pickle)
-            and optional lexicons for older Swedish. Defaults to [Model("[saldo.model]")].
-        msd (Annotation, optional): Input annotation with POS and morphological descriptions.
-            Defaults to Annotation("<token:msd>").
-        delimiter (str): Character to put between ambiguous results. Defaults to Config("saldo.delimiter").
-        affix (str): Character to put before and after sets of results. Defaults to Config("saldo.affix").
-        precision (str): Format string for appending precision to each value (e.g. ':%.3f'). use empty string for no
-            precision. Defaults to Config("saldo.precision").
-        precision_filter (str): Precision filter with values 'max' (only use the annotations that are most probable),
+        token: Input annotation with token spans.
+        word: Input annotation with token strings.
+        sentence: Input annotation with sentence spans.
+        reference: Input annotation with token indices for each sentence.
+        out_sense: Output annotation with senses from SALDO.
+        out_lemgram: Output annotation with lemgrams from SALDO.
+        out_baseform: Output annotation with baseforms from SALDO.
+        models: A list of pickled lexicons, typically the SALDO model (saldo.pickle)
+            and optional lexicons for older Swedish.
+        msd: Input annotation with POS and morphological descriptions.
+        delimiter: Character to put between ambiguous results.
+        affix: Character to put before and after sets of results.
+        precision: Format string for appending precision to each value (e.g. ':%.3f'). use empty string for no
+            precision.
+        precision_filter: Precision filter with values 'max' (only use the annotations that are most probable),
             'first' (only use the most probable annotation(s)), 'none' (use all annotations)".
-            Defaults to Config("saldo.precision_filter").
-        min_precision (float): Only use annotations with a probability score higher than this.
-            Defaults to Config("saldo.min_precision").
-        skip_multiword (bool): Whether to disable annotation of multiword expressions.
-            Defaults to Config("saldo.skip_multiword").
-        max_gaps (int): Max amount of gaps allowed within a multiword expression. Defaults to Config("saldo.max_gaps").
-        allow_multiword_overlap (bool): Whether all multiword expressions may overlap with each other. If set to False,
-            some cleanup is done. Defaults to Config("saldo.allow_multiword_overlap").
-        word_separator (str): Character used to split the values of 'word' into several word variations.
-            Defaults to Config("saldo.word_separator").
-        models_preloaded (dict, optional): Preloaded models. Defaults to None.
+        min_precision: Only use annotations with a probability score higher than this.
+        skip_multiword: Whether to disable annotation of multiword expressions.
+        max_gaps (int): Max amount of gaps allowed within a multiword expression.
+        allow_multiword_overlap: Whether all multiword expressions may overlap with each other. If set to False,
+            some cleanup is done.
+        word_separator: Character used to split the values of 'word' into several word variations.
+        models_preloaded: Preloaded models.
     """
     main(token=token, word=word, sentence=sentence, reference=reference, out_sense=out_sense, out_lemgram=out_lemgram,
          out_baseform=out_baseform, models=models, msd=msd, delimiter=delimiter, affix=affix, precision=precision,

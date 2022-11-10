@@ -25,10 +25,10 @@ def install_relations(sqlfile: ExportInput = ExportInput("korp.wordpicture/relat
     """Install Korp's Word Picture SQL on remote host.
 
     Args:
-        sqlfile (str, optional): SQL file to be installed. Defaults to ExportInput("korp.wordpicture/relations.sql").
-        out (str, optional): Marker file to be written.
-        db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname").
-        host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host").
+        sqlfile: SQL file to be installed.
+        out: Marker file to be written.
+        db_name: Name of the data base.
+        host: Remote host to install to.
     """
     util.install.install_mysql(host, db_name, sqlfile)
     out.write()

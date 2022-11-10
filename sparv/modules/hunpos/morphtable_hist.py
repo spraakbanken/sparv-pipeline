@@ -19,14 +19,10 @@ def hist_morphtable(out: ModelOutput = ModelOutput("hunpos/hist/dalinm-swedberg_
     """Read files and make a morphtable together with the information from SALDO (saldosuc_morphtable).
 
     Args:
-        out (str, optional): Resulting morphtable file to be written.
-            Defaults to ModelOutput("hunpos/hist/dalinm-swedberg_saldo_suc-tags.morphtable").
-        swedberg (str, optional): Wordlist from Swedberg and corresponding SALDO MSD-tags.
-            Defaults to Model("hunpos/hist/swedberg-gender.hunpos").
-        dalin (str, optional): Wordlist from Dalin and corresponding SALDO MSD-tags.
-            Defaults to Model("hunpos/hist/dalinm.hunpos").
-        saldosuc_morphtable (str, optional): SALDO Hunpos morphtable.
-            Defaults to Model("hunpos/saldo_suc-tags.morphtable").
+        out: Resulting morphtable file to be written.
+        swedberg: Wordlist from Swedberg and corresponding SALDO MSD-tags.
+        dalin: Wordlist from Dalin and corresponding SALDO MSD-tags.
+        saldosuc_morphtable: SALDO Hunpos morphtable.
     """
     words = {}
     _read_saldosuc(words, saldosuc_morphtable.path)

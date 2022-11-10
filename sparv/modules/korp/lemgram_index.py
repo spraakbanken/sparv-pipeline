@@ -21,12 +21,10 @@ def install_lemgrams(sqlfile: ExportInput = ExportInput("korp.lemgram_index/lemg
     """Install lemgram SQL on remote host.
 
     Args:
-        sqlfile (str, optional): SQL file to be installed.
-            Defaults to ExportInput("korp.lemgram_index/lemgram_index.sql").
-        marker (str, optional): Marker file to be written.
-            Defaults to OutputMarker("korp.install_lemgram_marker").
-        db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname").
-        host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host").
+        sqlfile: SQL file to be installed.
+        marker: Marker file to be written.
+        db_name: Name of the data base.
+        host: Remote host to install to.
     """
     util.install.install_mysql(host, db_name, sqlfile)
     marker.write()

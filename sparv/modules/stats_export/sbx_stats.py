@@ -77,22 +77,17 @@ def sbx_freq_list(
     """Create a word frequency list for the entire corpus.
 
     Args:
-        source_files (list, optional): The source files belonging to this corpus. Defaults to AllSourceFilenames.
-        word (str, optional): Word annotations. Defaults to AnnotationAllSourceFiles("<token:word>").
-        token (str, optional): Token span annotations. Defaults to AnnotationAllSourceFiles("<token>").
-        msd (str, optional): MSD annotations. Defaults to AnnotationAllSourceFiles("<token:msd>").
-        baseform (str, optional): Annotations with first baseform from each set.
-            Defaults to AnnotationAllSourceFiles("<token:baseform>").
-        sense (str, optional): Best sense annotations. Defaults to AnnotationAllSourceFiles("<token:sense>").
-        lemgram (str, optional): Annotations with first lemgram from each set.
-            Defaults to AnnotationAllSourceFiles("<token>:saldo.lemgram").
-        complemgram (str, optional): Conditional best compound lemgram annotations.
-            Defaults to AnnotationAllSourceFiles("<token>:saldo.complemgram").
-        out (str, optional): The output word frequency file.
-            Defaults to Export("stats_export.frequency_list_sbx/[metadata.id].csv").
-        delimiter (str, optional): Column delimiter to use in the csv. Defaults to Config("stats_export.delimiter").
-        cutoff (int, optional): The minimum frequency a word must have in order to be included in the result.
-            Defaults to Config("stats_export.cutoff").
+        source_files: The source files belonging to this corpus.
+        word: Word annotations.
+        token: Token span annotations.
+        msd: MSD annotations.
+        baseform: Annotations with first baseform from each set.
+        sense: Best sense annotations.
+        lemgram: Annotations with first lemgram from each set.
+        complemgram: Conditional best compound lemgram annotations.
+        out: The output word frequency file.
+        delimiter: Column delimiter to use in the csv.
+        cutoff: The minimum frequency a word must have in order to be included in the result.
     """
     annotations = [(word, "token"), (msd, "POS"), (baseform, "lemma"), (sense, "SALDO sense"), (lemgram, "lemgram"),
                    (complemgram, "compound")]
@@ -119,23 +114,18 @@ def sbx_freq_list_date(
     """Create a word frequency list for the entire corpus.
 
     Args:
-        source_files (list, optional): The source files belonging to this corpus. Defaults to AllSourceFilenames.
-        word (str, optional): Word annotations. Defaults to AnnotationAllSourceFiles("<token:word>").
-        token (str, optional): Token span annotations. Defaults to AnnotationAllSourceFiles("<token>").
-        msd (str, optional): MSD annotations. Defaults to AnnotationAllSourceFiles("<token:msd>").
-        baseform (str, optional): Annotations with first baseform from each set.
-            Defaults to AnnotationAllSourceFiles("<token:baseform>").
-        sense (str, optional): Best sense annotations. Defaults to AnnotationAllSourceFiles("<token:sense>").
-        lemgram (str, optional): Annotations with first lemgram from each set.
-            Defaults to AnnotationAllSourceFiles("<token>:saldo.lemgram").
-        complemgram (str, optional): Conditional best compound lemgram annotations.
-            Defaults to AnnotationAllSourceFiles("<token>:saldo.complemgram").
-        date (str, optional): date annotation
-        out (str, optional): The output word frequency file.
-            Defaults to Export("stats_export.frequency_list_sbx_date/[metadata.id].csv").
-        delimiter (str, optional): Column delimiter to use in the csv. Defaults to Config("stats_export.delimiter").
-        cutoff (int, optional): The minimum frequency a word must have in order to be included in the result.
-            Defaults to Config("stats_export.cutoff").
+        source_files: The source files belonging to this corpus.
+        word: Word annotations.
+        token: Token span annotations.
+        msd: MSD annotations.
+        baseform: Annotations with first baseform from each set.
+        sense: Best sense annotations.
+        lemgram: Annotations with first lemgram from each set.
+        complemgram: Conditional best compound lemgram annotations.
+        date: date annotation
+        out: The output word frequency file.
+        delimiter: Column delimiter to use in the csv.
+        cutoff: The minimum frequency a word must have in order to be included in the result.
     """
     annotations = [(word, "token"), (msd, "POS"), (baseform, "lemma"), (sense, "SALDO sense"), (lemgram, "lemgram"),
                    (complemgram, "compound"), (date, "date")]

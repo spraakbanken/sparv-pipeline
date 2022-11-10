@@ -27,22 +27,17 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
     """Create a word frequency list for the entire corpus.
 
     Args:
-        source_files (list, optional): The source files belonging to this corpus. Defaults to AllSourceFilenames.
-        word (str, optional): Word annotations. Defaults to AnnotationAllSourceFiles("<token:word>").
-        token (str, optional): Token span annotations. Defaults to AnnotationAllSourceFiles("<token>").
-        annotations (str, optional): All automatic annotations to include in the export. Defaults to
-            ExportAnnotationsAllSourceFiles("stats_export.annotations").
-        source_annotations (str, optional): All source annotations to include in the export. If left empty, none will be
-            included. Defaults to SourceAnnotations("stats_export.source_annotations").
+        source_files: The source files belonging to this corpus.
+        word: Word annotations.
+        token: Token span annotations.
+        annotations: All automatic annotations to include in the export.
+        source_annotations: All source annotations to include in the export. If left empty, none will be included.
         remove_namespaces: Whether to remove module "namespaces" from element and attribute names.
-            Disabled by default.
         sparv_namespace: The namespace to be added to all Sparv annotations.
         source_namespace: The namespace to be added to all annotations present in the source.
-        out (str, optional): The output word frequency file.
-            Defaults to Export("stats_export.frequency_list/[metadata.id].csv").
-        delimiter (str, optional): Column delimiter to use in the csv. Defaults to Config("stats_export.delimiter").
-        cutoff (int, optional): The minimum frequency a word must have in order to be included in the result.
-            Defaults to Config("stats_export.cutoff").
+        out: The output word frequency file.
+        delimiter: Column delimiter to use in the csv.
+        cutoff: The minimum frequency a word must have in order to be included in the result.
     """
     # Add "word" to annotations
     annotations = [(word, None)] + annotations

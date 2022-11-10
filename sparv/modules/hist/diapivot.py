@@ -18,10 +18,9 @@ def diapivot_annotate(out: Output = Output("<token>:hist.diapivot", cls="token:l
     """Annotate each lemgram with its corresponding saldo_id according to model.
 
     Args:
-        out (str, optional): Resulting annotation file.
-            Defaults to Output("<token>:hist.diapivot", description="SALDO IDs corresponding to lemgrams").
-        lemgram (str, optional): Existing lemgram annotation. Defaults to Annotation("<token>:saldo.lemgram").
-        model (str, optional): Crosslink model. Defaults to Model("hist/diapivot.pickle").
+        out: Resulting annotation file.
+        lemgram: Existing lemgram annotation. Defaults to Annotation("<token>:saldo.lemgram").
+        model: Crosslink model.
     """
     lexicon = PivotLexicon(model.path)
     lemgram_annotation = list(lemgram.read())
