@@ -188,10 +188,29 @@ def relations(out: OutputData = OutputData("korp.relations"),
 
     triples = sorted(set(triples))
 
-    out_data = "\n".join(["\t".join((head, headpos, rel, dep, deppos, extra, sentid, refhead, refdep, str(bfhead),
-                                     str(bfdep), str(wfhead), str(wfdep))) for (
-                          head, headpos, rel, dep, deppos, extra, sentid, refhead, refdep, bfhead, bfdep, wfhead, wfdep)
-                          in triples])
+    out_data = "\n".join(
+        [
+            "\t".join(
+                (
+                    head.replace("\t", " "),
+                    headpos,
+                    rel,
+                    dep.replace("\t", " "),
+                    deppos,
+                    extra.replace("\t", " "),
+                    sentid,
+                    refhead,
+                    refdep,
+                    str(bfhead),
+                    str(bfdep),
+                    str(wfhead),
+                    str(wfdep)
+                )
+            )
+            for (head, headpos, rel, dep, deppos, extra, sentid, refhead, refdep, bfhead, bfdep, wfhead, wfdep) in
+            triples
+        ]
+    )
     out.write(out_data)
     logger.progress()
 
