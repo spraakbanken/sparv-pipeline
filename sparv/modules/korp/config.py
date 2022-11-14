@@ -64,7 +64,8 @@ LABELS = {
 ])
 def config(id: str = Config("metadata.id"),
            name: dict = Config("metadata.name"),
-           description: dict = Config("metadata.description"),
+           description: Optional[dict] = Config("metadata.description"),
+           short_description: Optional[dict] = Config("metadata.short_description"),
            language: str = Config("metadata.language"),
            modes: list = Config("korp.modes"),
            protected: bool = Config("korp.protected"),
@@ -101,6 +102,7 @@ def config(id: str = Config("metadata.id"),
         id: Corpus ID.
         name: Corpus name.
         description: Corpus description.
+        short_description: Short corpus description.
         language: Corpus language.
         modes: List of modes and folders where the corpus will be available in Korp.
         protected: Whether the corpus is password protected.
@@ -133,11 +135,11 @@ def config(id: str = Config("metadata.id"),
     config_dict = {
         "id": id,
         "title": name,
-        "description": description,
         "lang": language,
         "mode": modes
     }
     optional = {
+        "description": build_description(description, short_description),
         "limited_access": protected,
         "custom_attributes": custom_annotations,
         "morphology": morphology,
@@ -324,6 +326,21 @@ def get_presets(remote_host, config_dir):
     else:
         logger.error(f"Could not fetch list of Korp annotation presets: {s.stderr}")
     return presets
+
+
+def build_description(description, short_description):
+    """Combine description and short_description if they exist."""
+    lang_dict = {}
+    langs = set(list(description.keys()) + list(short_description.keys()))
+    for lang in langs:
+        if short_description.get(lang) and description.get(lang):
+            descr = f"<b>{short_description.get(lang)}</b><br><br>{description.get(lang)}"
+        elif description.get(lang):
+            descr = description.get(lang)
+        elif short_description.get(lang):
+            descr = short_description.get(lang)
+        lang_dict[lang] = descr
+    return lang_dict
 
 
 @installer("Install Korp corpus configuration file.")
