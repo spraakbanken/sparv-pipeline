@@ -27,7 +27,7 @@ def install_relations(sqlfile: ExportInput = ExportInput("korp.wordpicture/relat
     Args:
         sqlfile: SQL file to be installed.
         out: Marker file to be written.
-        db_name: Name of the data base.
+        db_name: Name of the database.
         host: Remote host to install to.
     """
     util.install.install_mysql(host, db_name, sqlfile)
