@@ -207,7 +207,7 @@ class Sentence:
         out = ""
         for n in self.tokens:
             if n.word:
-                out = out + n.word + u" "
+                out = out + n.word + " "
         return out.strip()
 
     def is_cyclic(self):

@@ -177,7 +177,8 @@ def read_lmf(xml, tagmap, annotation_elements=("gf", "lem", "saldo"), verbose=Tr
                     x_insert = "1"
 
                 # Only vbm and certain paradigms allow gaps
-                gap_allowed = (pos == "vbm" or p in (u"abm_x1_var_än", u"knm_x_ju_ju", u"pnm_x1_inte_ett_dugg", u"pnm_x1_vad_än", u"ppm_x1_för_skull"))
+                gap_allowed = (pos == "vbm" or p in (
+                    "abm_x1_var_än", "knm_x_ju_ju", "pnm_x1_inte_ett_dugg", "pnm_x1_vad_än", "ppm_x1_för_skull"))
 
                 table = elem.find("table")
                 multiwords = []

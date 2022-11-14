@@ -328,7 +328,7 @@ def relations_sql(corpus: Corpus = Corpus(),
         relations_data = relations.read(file)
 
         for triple in relations_data.splitlines():
-            head, headpos, rel, dep, deppos, extra, sid, refh, refd, bfhead, bfdep, wfhead, wfdep = triple.split(u"\t")
+            head, headpos, rel, dep, deppos, extra, sid, refh, refd, bfhead, bfdep, wfhead, wfdep = triple.split("\t")
             bfhead, bfdep, wfhead, wfdep = int(bfhead), int(bfdep), int(wfhead), int(wfdep)
 
             if not (head, headpos) in strings:

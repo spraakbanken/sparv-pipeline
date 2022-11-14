@@ -205,7 +205,7 @@ def train_punkt_segmenter(textfiles, modelfile, encoding=util.constants.UTF8, pr
         textfiles = textfiles.split()
 
     logger.info("Reading files")
-    text = u""
+    text = ""
     for filename in textfiles:
         with open(filename, encoding=encoding) as stream:
             text += stream.read()

@@ -401,12 +401,12 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
 def exception(w):
     """Filter out unwanted suffixes."""
     return w.lower() in [
-        "il", u"ör", "en", "ens", "ar", "ars",
-        "or", "ors", "ur", "urs", u"lös", "tik", "bar",
+        "il", "ör", "en", "ens", "ar", "ars",
+        "or", "ors", "ur", "urs", "lös", "tik", "bar",
         "lik", "het", "hets", "lig", "ligt", "te", "tet", "tets",
         "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l",
         "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x",
-        "y", "z", u"ä"]
+        "y", "z", "ä"]
 
 
 def three_consonant_rule(compound):
