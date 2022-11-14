@@ -1,5 +1,15 @@
 # Changelog
 
+## [5.2.0.dev0]
+
+### Added
+
+- Add `korp.wordpicture_no_sentences` setting to disable generation of Word Picture sentences table.
+
+### Changed
+
+### Fixed
+
 ## [5.1.0] - 2022-11-03
 
 ### Added

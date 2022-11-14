@@ -285,10 +285,14 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
     return x_rel_y * math.log((rel * x_rel_y) / (x_rel * rel_y * 1.0), 2)
 
 
-@exporter("Word Picture SQL for use in Korp", language=["swe"])
+@exporter("Word Picture SQL for use in Korp", language=["swe"], config=[
+    Config("korp.wordpicture_no_sentences", default=False,
+           description="Set to 'true' to skip generating sentences table.")
+])
 def relations_sql(corpus: Corpus = Corpus(),
                   out: Export = Export("korp.wordpicture/relations.sql"),
                   relations: AnnotationDataAllSourceFiles = AnnotationDataAllSourceFiles("korp.relations"),
+                  no_sentences: bool = Config("korp.wordpicture_no_sentences"),
                   source_files: Optional[AllSourceFilenames] = AllSourceFilenames(),
                   source_files_list: str = "",
                   split: bool = False):
@@ -298,6 +302,7 @@ def relations_sql(corpus: Corpus = Corpus(),
         corpus: the corpus name
         out: the name for the SQL file which will contain the resulting SQL statements
         relations: the name of the relations annotation
+        no_sentences: set to True to skip generating sentences table
         source_files: a list of source filenames
         source_files_list: can be used instead of source_files, and should be a file containing the name of source
             files, one per row
@@ -370,7 +375,7 @@ def relations_sql(corpus: Corpus = Corpus(),
             freq.setdefault(head, {}).setdefault(rel, {}).setdefault(dep, [this_index, 0, [0, 0, 0, 0]])
             freq[head][rel][dep][1] += 1  # Frequency
 
-            if sentence_count[this_index] < MAX_SENTENCES:
+            if not no_sentences and sentence_count[this_index] < MAX_SENTENCES:
                 sentences.setdefault(this_index, set())
                 sentences[this_index].add((sid, refh, refd))  # Sentence ID and "ref" for both head and dep
                 sentence_count[this_index] += 1
@@ -392,25 +397,29 @@ def relations_sql(corpus: Corpus = Corpus(),
             if split:
                 # Don't print string table until the last file
                 _write_sql({}, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_table, split,
-                           first=(file_count == 1))
+                           first=(file_count == 1), no_sentences=no_sentences)
             else:
                 # Only save sentences data, save the rest for the last file
-                _write_sql({}, sentences, {}, {}, {}, {}, out, db_table, split, first=(file_count == 1))
+                _write_sql({}, sentences, {}, {}, {}, {}, out, db_table, split, first=(file_count == 1),
+                           no_sentences=no_sentences)
 
         logger.progress()
 
     # Create the final file, including the string table
     _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_table, split,
-               first=(file_count == 1), last=True)
+               first=(file_count == 1), last=True, no_sentences=no_sentences)
 
     logger.progress()
     logger.info("Done creating SQL files")
 
 
 def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, sql_file, db_table,
-               split=False, first=False, last=False):
+               split=False, first=False, last=False, no_sentences=False):
 
     temp_db_table = "temp_" + db_table
+    tables = ["", "_strings", "_rel", "_head_rel", "_dep_rel"]
+    if not no_sentences:
+        tables.append("_sentences")
     update_freq = "ON DUPLICATE KEY UPDATE freq = freq + VALUES(freq)" if split else ""
 
     mysql = MySQL(output=sql_file, append=True)
@@ -426,9 +435,10 @@ def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_coun
         mysql.create_table(temp_db_table + "_rel", drop=True, **MYSQL_REL)
         mysql.create_table(temp_db_table + "_head_rel", drop=True, **MYSQL_HEAD_REL)
         mysql.create_table(temp_db_table + "_dep_rel", drop=True, **MYSQL_DEP_REL)
-        mysql.create_table(temp_db_table + "_sentences", drop=True, **MYSQL_SENTENCES)
-        mysql.disable_keys(temp_db_table, temp_db_table + "_strings", temp_db_table + "_rel",
-                           temp_db_table + "_head_rel", temp_db_table + "_dep_rel", temp_db_table + "_sentences")
+        if not no_sentences:
+            mysql.create_table(temp_db_table + "_sentences", drop=True, **MYSQL_SENTENCES)
+
+        mysql.disable_keys(*[f"{temp_db_table}{t}" for t in tables])
         mysql.disable_checks()
         mysql.set_names()
 
@@ -502,32 +512,23 @@ def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_coun
 
     mysql.add_row(temp_db_table + "_dep_rel", rows, update_freq)
 
-    for index, sentenceset in sorted(sentences.items()):
-        for sentence in sorted(sentenceset):
-            srow = {
-                "id": index,
-                "sentence": sentence[0],
-                "start": int(sentence[1]),
-                "end": int(sentence[2])
-            }
-            sentence_rows.append(srow)
+    if not no_sentences:
+        for index, sentenceset in sorted(sentences.items()):
+            for sentence in sorted(sentenceset):
+                srow = {
+                    "id": index,
+                    "sentence": sentence[0],
+                    "start": int(sentence[1]),
+                    "end": int(sentence[2])
+                }
+                sentence_rows.append(srow)
 
-    mysql.add_row(temp_db_table + "_sentences", sentence_rows)
+        mysql.add_row(temp_db_table + "_sentences", sentence_rows)
 
     if last:
-        mysql.enable_keys(temp_db_table, temp_db_table + "_strings", temp_db_table + "_rel",
-                          temp_db_table + "_head_rel", temp_db_table + "_dep_rel", temp_db_table + "_sentences")
-        mysql.drop_table(db_table, db_table + "_strings", db_table + "_rel", db_table + "_head_rel",
-                         db_table + "_dep_rel", db_table + "_sentences")
-        mysql.rename_table({
-            temp_db_table: db_table,
-            temp_db_table + "_strings": db_table + "_strings",
-            temp_db_table + "_rel": db_table + "_rel",
-            temp_db_table + "_head_rel": db_table + "_head_rel",
-            temp_db_table + "_dep_rel": db_table + "_dep_rel",
-            temp_db_table + "_sentences": db_table + "_sentences"
-        })
-
+        mysql.enable_keys(*[f"{temp_db_table}{t}" for t in tables])
+        mysql.drop_table(*[f"{db_table}{t}" for t in tables])
+        mysql.rename_table({f"{temp_db_table}{t}": f"{db_table}{t}" for t in tables})
         mysql.enable_checks()
 
     logger.info("%s written", sql_file)
