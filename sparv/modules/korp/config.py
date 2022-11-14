@@ -333,13 +333,15 @@ def build_description(description, short_description):
     lang_dict = {}
     langs = set(list(description.keys()) + list(short_description.keys()))
     for lang in langs:
+        descr = None
         if short_description.get(lang) and description.get(lang):
             descr = f"<b>{short_description.get(lang)}</b><br><br>{description.get(lang)}"
         elif description.get(lang):
             descr = description.get(lang)
         elif short_description.get(lang):
             descr = short_description.get(lang)
-        lang_dict[lang] = descr
+        if descr:
+            lang_dict[lang] = descr
     return lang_dict
 
 
