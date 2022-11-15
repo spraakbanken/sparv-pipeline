@@ -142,7 +142,13 @@ def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
     logger.progress()
 
 
-@modelbuilder("SALDO compound model", language=["swe"])
+@modelbuilder("SALDO compound model", language=["swe"], order=1)
+def download_saldo_comp(out: ModelOutput = ModelOutput("saldo/saldo.compound.pickle")):
+    """Download SALDO compound model from sparv-models repo."""
+    out.download("https://github.com/spraakbanken/sparv-models/raw/master/saldo/saldo.compound.pickle")
+
+
+@modelbuilder("SALDO compound model", language=["swe"], order=2)
 def build_saldo_comp(out: ModelOutput = ModelOutput("saldo/saldo.compound.pickle"),
                      saldom: Model = Model("saldo/saldom.xml")):
     """Extract compound info from saldom.xml and save as a pickle file."""
