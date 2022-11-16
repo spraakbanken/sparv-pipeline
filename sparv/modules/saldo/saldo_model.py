@@ -25,7 +25,7 @@ def download_saldo_xml(out: ModelOutput = ModelOutput("saldo/saldom.xml")):
 
 
 @modelbuilder("SALDO morphology model", language=["swe"], order=1)
-def download_saldo_pickle(out: ModelOutput = ModelOutput("saldo/nst_comp_pos.pickle")):
+def download_saldo_pickle(out: ModelOutput = ModelOutput("saldo/saldo.pickle")):
     """Download SALDO morphology model from sparv-models repo."""
     out.download("https://github.com/spraakbanken/sparv-models/raw/master/saldo/saldo.pickle")
 
