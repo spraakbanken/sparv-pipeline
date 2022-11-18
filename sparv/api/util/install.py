@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 def install_path(source_path: Union[str, Path],
                  host: Optional[str] = None,
                  target_path: Optional[Union[str, Path]] = None) -> None:
-    """Transfer a file or directory to a target destination, optionally on a different host."""
+    """Transfer a file or the contents of a directory to a target destination, optionally on a different host."""
     system.rsync(source_path, host, target_path)
 
 

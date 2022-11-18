@@ -94,11 +94,12 @@ remotely.
 
 
 ### install_path()
-Transfer a file or directory to a target destination, optionally on a different host.
+Transfer a file or the contents of a directory to a target destination, optionally on a different host.
 
 **Arguments:**
 
-- `source_path`: Path to the local file or directory to sync.
+- `source_path`: Path to the local file or directory to sync. If a directory is used, its contents are synced, not the
+   directory itself.
 - `host` (optional): The remote host to install to.
 - `target_path`: The name of the target file or directory.
 
