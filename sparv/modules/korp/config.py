@@ -342,6 +342,8 @@ def get_presets(remote_host, config_dir):
 def build_description(description, short_description):
     """Combine description and short_description if they exist."""
     lang_dict = {}
+    description = description or {}
+    short_description = short_description or {}
     langs = set(list(description.keys()) + list(short_description.keys()))
     for lang in langs:
         descr = None
