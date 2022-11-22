@@ -258,7 +258,7 @@ def config(id: str = Config("metadata.id"),
 
 
 def build_annotations(annotation_definitions, annotation_list, export_names, hidden_annotations, presets, reading_mode,
-                      token, text_annotation=None):
+                      token, text_annotation=None, cwb_annotations: bool = True):
     token_annotations = []
     struct_annotations = []
     text_annotations = []
@@ -306,11 +306,11 @@ def build_annotations(annotation_definitions, annotation_list, export_names, hid
                 definition.pop("use_as_positional", None)
 
         if is_token:
-            token_annotations.append({export_name_cwb: definition})
+            token_annotations.append({export_name_cwb if cwb_annotations else export_name: definition})
         elif is_text:
-            text_annotations.append({export_name_cwb: definition})
+            text_annotations.append({export_name_cwb if cwb_annotations else export_name: definition})
         else:
-            struct_annotations.append({export_name_cwb: definition})
+            struct_annotations.append({export_name_cwb if cwb_annotations else export_name: definition})
     return token_annotations, struct_annotations, text_annotations
 
 
