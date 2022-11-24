@@ -241,10 +241,14 @@ Please follow the installation instructions given in the fast_align repository a
 
 ## Plugins
 
-If you have the Sparv Pipeline installed on your machine, you can install plugins by injecting them into the Sparv
-Pipeline code using pipx:
+Plugins for Sparv can be installed by one of the following commands, depending on whether you installed Sparv using pipx
+or pip:
 ```
 pipx inject sparv-pipeline [pointer-to-sparv-plugin]
+```
+
+```
+pip install [pointer-to-sparv-plugin]
 ```
 
 The `pointer-to-sparv-plugin` can be a package available on the [Python Package Index (PyPI)](https://pypi.org/), a
@@ -252,12 +256,16 @@ remote public repository, or a local directory on your machine.
 
 For now there are two plugins available for Sparv:
 [sparv-sbx-freeling](https://github.com/spraakbanken/sparv-sbx-freeling) and
-[sparv-sbx-metadata](https://github.com/spraakbanken/sparv-sbx-metadata). Please refer to their GitHub page for more
+[sparv-sbx-metadata](https://github.com/spraakbanken/sparv-sbx-metadata). Please refer to their GitHub pages for more
 information.
 
-Plugins can be uninstalled by running:
+Plugins can be uninstalled using one of the following commands:
 ```
 pipx runpip sparv-pipeline uninstall [name-of-sparv-plugin]
+```
+
+```
+pip uninstall [name-of-sparv-plugin]
 ```
 
 ## Uninstalling Sparv
