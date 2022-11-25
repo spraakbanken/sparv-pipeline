@@ -126,25 +126,56 @@ class CommonAllSourceFilesMixin(BaseAnnotation):
         io.remove_annotation(self, source_file)
 
 
-class Annotation(CommonMixin, BaseAnnotation):
-    """Regular Annotation tied to one source file."""
+class CommonAnnotationMixin(BaseAnnotation):
+    """Methods common to Annotation and AnnotationAllSourceFiles."""
 
-    def __init__(self, name: str = "", source_file: Optional[str] = None, is_input: bool = True):
-        super().__init__(name, source_file=source_file)
-        self._size = None
-        self.is_input = is_input
+    def __init__(self, name: str = "", source_file: Optional[str] = None):
+        super().__init__(name, source_file)
+        self._size = {}
 
-    def get_size(self):
-        """Get number of values."""
-        if self._size is None:
-            self._size = io.get_annotation_size(self.source_file, self)
-        return self._size
-
-    def read(self, allow_newlines: bool = False):
+    def _read(self, source_file: str, allow_newlines: bool = False):
         """Yield each line from the annotation."""
-        return io.read_annotation(self.source_file, self, allow_newlines=allow_newlines)
+        return io.read_annotation(source_file, self, allow_newlines=allow_newlines)
 
-    def get_children(self, child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False):
+    def _read_spans(self, source_file: str, decimals=False, with_annotation_name=False):
+        """Yield the spans of the annotation."""
+        return io.read_annotation_spans(source_file, self, decimals=decimals, with_annotation_name=with_annotation_name)
+
+    @staticmethod
+    def _read_attributes(source_file: str, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]],
+                         with_annotation_name: bool = False, allow_newlines: bool = False):
+        """Yield tuples of multiple attributes on the same annotation."""
+        return io.read_annotation_attributes(source_file, annotations, with_annotation_name=with_annotation_name,
+                                             allow_newlines=allow_newlines)
+
+    def _get_size(self, source_file: str):
+        """Get number of values."""
+        if self._size.get(source_file) is None:
+            self._size[source_file] = io.get_annotation_size(source_file, self)
+        return self._size[source_file]
+
+    def _create_empty_attribute(self, source_file: str):
+        """Return a list filled with None of the same size as this annotation."""
+        return [None] * self._get_size(source_file)
+
+    def _read_parents_and_children(self, source_file: str, parent: BaseAnnotation, child: BaseAnnotation):
+        """Read parent and child annotations.
+
+        Reorder them according to span position, but keep original index information.
+        """
+        parent_spans = sorted(enumerate(io.read_annotation_spans(source_file, parent, decimals=True)), key=lambda x: x[1])
+        child_spans = sorted(enumerate(io.read_annotation_spans(source_file, child, decimals=True)), key=lambda x: x[1])
+
+        # Only use sub-positions if both parent and child have them
+        if parent_spans and child_spans:
+            if len(parent_spans[0][1][0]) == 1 or len(child_spans[0][1][0]) == 1:
+                parent_spans = [(p[0], (p[1][0][0], p[1][1][0])) for p in parent_spans]
+                child_spans = [(c[0], (c[1][0][0], c[1][1][0])) for c in child_spans]
+
+        return iter(parent_spans), iter(child_spans)
+
+    def _get_children(self, source_file: str, child: BaseAnnotation, orphan_alert=False,
+                      preserve_parent_annotation_order=False):
         """Return two lists.
 
         The first one is a list with n (= total number of parents) elements where every element is a list
@@ -154,7 +185,7 @@ class Annotation(CommonMixin, BaseAnnotation):
         preserve_parent_annotation_order is set to True, in which case the parents keep the order from the parent
         annotation.
         """
-        parent_spans, child_spans = self.read_parents_and_children(self, child)
+        parent_spans, child_spans = self._read_parents_and_children(source_file, self, child)
         parent_children = []
         orphans = []
         previous_parent_i = None
@@ -196,12 +227,12 @@ class Annotation(CommonMixin, BaseAnnotation):
 
         return parent_children, orphans
 
-    def get_parents(self, parent: BaseAnnotation, orphan_alert: bool = False):
+    def _get_parents(self, source_file: str, parent: BaseAnnotation, orphan_alert: bool = False):
         """Return a list with n (= total number of children) elements where every element is an index in the parent annotation.
 
         Return None when no parent is found.
         """
-        parent_spans, child_spans = self.read_parents_and_children(parent, self)
+        parent_spans, child_spans = self._read_parents_and_children(source_file, parent, self)
         child_parents = []
         previous_parent_i = None
         try:
@@ -231,36 +262,60 @@ class Annotation(CommonMixin, BaseAnnotation):
 
         return child_parents
 
+
+class Annotation(CommonAnnotationMixin, CommonMixin, BaseAnnotation):
+    """Regular Annotation tied to one source file."""
+
+    def __init__(self, name: str = "", source_file: Optional[str] = None, is_input: bool = True):
+        super().__init__(name, source_file=source_file)
+        self.is_input = is_input
+
+    def read(self, allow_newlines: bool = False):
+        """Yield each line from the annotation."""
+        return self._read(self.source_file, allow_newlines=allow_newlines)
+
+    def read_spans(self, decimals=False, with_annotation_name=False):
+        """Yield the spans of the annotation."""
+        return self._read_spans(self.source_file, decimals=decimals, with_annotation_name=with_annotation_name)
+
+    def read_attributes(self, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]],
+                        with_annotation_name: bool = False, allow_newlines: bool = False):
+        """Yield tuples of multiple attributes on the same annotation."""
+        return self._read_attributes(self.source_file, annotations, with_annotation_name, allow_newlines)
+
+    def get_children(self, child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False):
+        """Return two lists.
+
+        The first one is a list with n (= total number of parents) elements where every element is a list
+        of indices in the child annotation.
+        The second one is a list of orphans, i.e. containing indices in the child annotation that have no parent.
+        Both parents and children are sorted according to their position in the source file, unless
+        preserve_parent_annotation_order is set to True, in which case the parents keep the order from the parent
+        annotation.
+        """
+        return self._get_children(self.source_file, child, orphan_alert, preserve_parent_annotation_order)
+
+    def get_parents(self, parent: BaseAnnotation, orphan_alert: bool = False):
+        """Return a list with n (= total number of children) elements where every element is an index in the parent annotation.
+
+        Return None when no parent is found.
+        """
+        return self._get_parents(self.source_file, parent, orphan_alert)
+
     def read_parents_and_children(self, parent: BaseAnnotation, child: BaseAnnotation):
         """Read parent and child annotations.
 
         Reorder them according to span position, but keep original index information.
         """
-        parent_spans = sorted(enumerate(io.read_annotation_spans(self.source_file, parent, decimals=True)), key=lambda x: x[1])
-        child_spans = sorted(enumerate(io.read_annotation_spans(self.source_file, child, decimals=True)), key=lambda x: x[1])
-
-        # Only use sub-positions if both parent and child have them
-        if parent_spans and child_spans:
-            if len(parent_spans[0][1][0]) == 1 or len(child_spans[0][1][0]) == 1:
-                parent_spans = [(p[0], (p[1][0][0], p[1][1][0])) for p in parent_spans]
-                child_spans = [(c[0], (c[1][0][0], c[1][1][0])) for c in child_spans]
-
-        return iter(parent_spans), iter(child_spans)
-
-    def read_attributes(self, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]],
-                        with_annotation_name: bool = False, allow_newlines: bool = False):
-        """Yield tuples of multiple attributes on the same annotation."""
-        return io.read_annotation_attributes(self.source_file, annotations, with_annotation_name=with_annotation_name,
-                                             allow_newlines=allow_newlines)
-
-    def read_spans(self, decimals=False, with_annotation_name=False):
-        """Yield the spans of the annotation."""
-        return io.read_annotation_spans(self.source_file, self, decimals=decimals,
-                                        with_annotation_name=with_annotation_name)
+        return self._read_parents_and_children(self.source_file, parent, child)
 
     def create_empty_attribute(self):
         """Return a list filled with None of the same size as this annotation."""
-        return [None] * self.get_size()
+        return self._create_empty_attribute(self.source_file)
+
+    def get_size(self):
+        """Get number of values."""
+        return self._get_size(self.source_file)
 
 
 class AnnotationName(BaseAnnotation):
@@ -286,7 +341,7 @@ class AnnotationData(CommonMixin, BaseAnnotation):
         return io.read_data(self.source_file or source_file, self)
 
 
-class AnnotationAllSourceFiles(CommonAllSourceFilesMixin, BaseAnnotation):
+class AnnotationAllSourceFiles(CommonAnnotationMixin, CommonAllSourceFilesMixin, BaseAnnotation):
     """Regular annotation but source file must be specified for all actions.
 
     Use as input to an annotator to require the specificed annotation for every source file in the corpus.
@@ -300,28 +355,44 @@ class AnnotationAllSourceFiles(CommonAllSourceFilesMixin, BaseAnnotation):
 
     def read(self, source_file: str):
         """Yield each line from the annotation."""
-        return io.read_annotation(source_file, self)
+        return self._read(source_file)
 
     def read_spans(self, source_file: str, decimals=False, with_annotation_name=False):
         """Yield the spans of the annotation."""
-        return io.read_annotation_spans(source_file, self, decimals=decimals, with_annotation_name=with_annotation_name)
+        return self._read_spans(source_file, decimals=decimals, with_annotation_name=with_annotation_name)
 
-    @staticmethod
-    def read_attributes(source_file: str, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]],
+    def read_attributes(self, source_file: str, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]],
                         with_annotation_name: bool = False, allow_newlines: bool = False):
         """Yield tuples of multiple attributes on the same annotation."""
-        return io.read_annotation_attributes(source_file, annotations, with_annotation_name=with_annotation_name,
-                                             allow_newlines=allow_newlines)
+        return self._read_attributes(source_file, annotations, with_annotation_name=with_annotation_name,
+                                     allow_newlines=allow_newlines)
 
-    def get_size(self, source_file: str):
-        """Get number of values."""
-        if self._size.get(source_file) is None:
-            self._size[source_file] = io.get_annotation_size(source_file, self)
-        return self._size[source_file]
+    def get_children(self, source_file: str, child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False):
+        """Return two lists.
+
+        The first one is a list with n (= total number of parents) elements where every element is a list
+        of indices in the child annotation.
+        The second one is a list of orphans, i.e. containing indices in the child annotation that have no parent.
+        Both parents and children are sorted according to their position in the source file, unless
+        preserve_parent_annotation_order is set to True, in which case the parents keep the order from the parent
+        annotation.
+        """
+        return self._get_children(source_file, child, orphan_alert, preserve_parent_annotation_order)
+
+    def get_parents(self, source_file: str, parent: BaseAnnotation, orphan_alert: bool = False):
+        """Return a list with n (= total number of children) elements where every element is an index in the parent annotation.
+
+        Return None when no parent is found.
+        """
+        return self._get_parents(source_file, parent, orphan_alert)
 
     def create_empty_attribute(self, source_file: str):
         """Return a list filled with None of the same size as this annotation."""
-        return [None] * self.get_size(source_file)
+        return self._create_empty_attribute(source_file)
+
+    def get_size(self, source_file: str):
+        """Get number of values."""
+        return self._get_size(source_file)
 
 
 class AnnotationDataAllSourceFiles(CommonAllSourceFilesMixin, BaseAnnotation):

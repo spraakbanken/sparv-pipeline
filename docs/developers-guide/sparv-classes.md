@@ -33,6 +33,9 @@ annotation is needed as input for a function, e.g. `Annotation("<token:word>")`.
 - `exists()`: Return True if annotation file exists.
 - `remove()`: Remove annotation file.
 - `read(allow_newlines: bool = False)`: Yield each line from the annotation.
+- `read_spans(decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
+- `read_attributes(annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]], with_annotation_name: bool =
+  False, allow_newlines: bool = False)`: Yield tuples of multiple attributes on the same annotation.
 - `get_children(child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False)`: Return two lists.
     The first one is a list with n (= total number of parents) elements where every element is a list of indices in the
     child annotation. The second one is a list of orphans, i.e. containing indices in the child annotation that have no
@@ -43,9 +46,6 @@ annotation is needed as input for a function, e.g. `Annotation("<token:word>")`.
   elements where every element is an index in the parent annotation. Return None when no parent is found.
 - `read_parents_and_children(parent, child)`: Read parent and child annotations. Reorder them according to span
   position, but keep original index information.
-- `read_attributes(annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]], with_annotation_name: bool =
-  False, allow_newlines: bool = False)`: Yield tuples of multiple attributes on the same annotation.
-- `read_spans(decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
 - `create_empty_attribute()`: Return a list filled with None of the same size as this annotation.
 - `get_size()`: Get the number of values.
 
@@ -60,17 +60,30 @@ require the specificed annotation for every source file in the corpus.
 
 **Properties:**
 
+- `has_attribute`: Return True if the annotation has an attribute.
 - `annotation_name`: Get annotation name (excluding name of any attribute).
-- `attribute_name`: Get attribute name (excluding name of annotation)
+- `attribute_name`: Get attribute name (excluding name of annotation).
 
 **Methods:**
 
 - `split()`: Split name into annotation name and attribute.
-- `read(source_file: str)`: Yield each line from the annotation.
-- `read_spans(source_file: str, decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
-- `create_empty_attribute(source_file: str)`: Return a list filled with None of the same size as this annotation.
 - `exists(source_file: str)`: Return True if annotation file exists.
 - `remove(source_file: str)`: Remove annotation file.
+- `read(source_file: str, allow_newlines: bool = False)`: Yield each line from the annotation.
+- `read_spans(source_file: str, decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
+- `read_attributes(source_file: str, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]], with_annotation_name: bool =
+  False, allow_newlines: bool = False)`: Yield tuples of multiple attributes on the same annotation.
+- `get_children(source_file: str, child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False)`: Return two lists.
+    The first one is a list with n (= total number of parents) elements where every element is a list of indices in the
+    child annotation. The second one is a list of orphans, i.e. containing indices in the child annotation that have no
+    parent. Both parents and children are sorted according to their position in the source file, unless
+    preserve_parent_annotation_order is set to True, in which case the parents keep the order from the parent
+    annotation.
+- `get_parents(source_file: str, parent: BaseAnnotation, orphan_alert: bool = False)`: Return a list with n (= total number of children)
+  elements where every element is an index in the parent annotation. Return None when no parent is found.
+- `read_parents_and_children(source_file: str, parent, child)`: Read parent and child annotations. Reorder them according to span
+  position, but keep original index information.
+- `create_empty_attribute(source_file: str)`: Return a list filled with None of the same size as this annotation.
 - `get_size(source_file: str)`: Get the number of values.
 
 
