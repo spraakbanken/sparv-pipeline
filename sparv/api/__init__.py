@@ -24,6 +24,7 @@ from .classes import (
     Headers,
     Language,
     Marker,
+    MarkerOptional,
     Model,
     ModelOutput,
     Namespaces,

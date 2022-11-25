@@ -120,7 +120,8 @@ the XML output could be copied to a web server, or SQL data could be inserted in
 Every installer needs to create a marker of the type `OutputMarker` at the end of a successful installation. Simply
 call the `write()` method on the marker to create the required empty file.
 
-It is recommended that an installer removes any related uninstaller's marker, to enable uninstallation.
+It is recommended that an installer removes any related uninstaller's marker, to enable uninstallation. Use the
+`MarkerOptional` class to refer to the uninstaller's marker without triggering an unnecessary installation.
 
 **Arguments:**
 
@@ -151,7 +152,8 @@ remote location or delete corpus data from a database.
 Every uninstaller needs to create a marker of the type `OutputMarker` at the end of a successful uninstallation.
 Simply call the `write()` method on the marker to create the required empty file.
 
-It is recommended that an uninstaller removes any related installer's marker, to enable re-installation.
+It is recommended that an uninstaller removes any related installer's marker, to enable re-installation. Use the
+`MarkerOptional` class to refer to the installer's marker without triggering an unnecessary installation.
 
 **Arguments:**
 

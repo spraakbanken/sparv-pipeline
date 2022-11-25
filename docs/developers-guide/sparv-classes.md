@@ -281,6 +281,11 @@ been run. Created by using `OutputMarker`.
 - `remove()`: Remove marker file.
 
 
+## MarkerOptional
+Same as `Marker`, but if the marker file doesn't exist, it won't be created. This is mainly used to remove markers
+from connected (un)installers without triggering the connected (un)installation.
+
+
 ## Model
 An instance of this class holds a path to a model file relative to the Sparv model directory. This class is typically
 used as input to annotator functions.

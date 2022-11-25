@@ -63,10 +63,11 @@ class BaseAnnotation(Base):
     common = False
     is_input = True
 
-    def __init__(self, name: str = "", source_file: Optional[str] = None, is_input: bool = True):
+    def __init__(self, name: str = "", source_file: Optional[str] = None, is_input: Optional[bool] = None):
         super().__init__(name)
         self.source_file = source_file
-        self.is_input = is_input
+        if is_input is not None:
+            self.is_input = is_input
 
     def expand_variables(self, rule_name: str = "") -> List[str]:
         """Update name by replacing <class> references with annotation names, and [config] references with config values.
@@ -266,10 +267,6 @@ class CommonAnnotationMixin(BaseAnnotation):
 class Annotation(CommonAnnotationMixin, CommonMixin, BaseAnnotation):
     """Regular Annotation tied to one source file."""
 
-    def __init__(self, name: str = "", source_file: Optional[str] = None, is_input: bool = True):
-        super().__init__(name, source_file=source_file)
-        self.is_input = is_input
-
     def read(self, allow_newlines: bool = False):
         """Yield each line from the annotation."""
         return self._read(self.source_file, allow_newlines=allow_newlines)
@@ -324,8 +321,7 @@ class AnnotationName(BaseAnnotation):
     To be used when only the name is of interest and not the actual annotation file.
     """
 
-    def __init__(self, name: str = "", source_file: Optional[str] = None):
-        super().__init__(name, source_file=source_file, is_input=False)
+    is_input = False
 
 
 class AnnotationData(CommonMixin, BaseAnnotation):
@@ -427,6 +423,12 @@ class Marker(AnnotationCommonData):
     """A marker indicating that something has run."""
 
     pass
+
+
+class MarkerOptional(Marker):
+    """Same as regular Marker, except if it doesn't exist, it won't be created."""
+
+    is_input = False
 
 
 class BaseOutput(BaseAnnotation):
@@ -789,10 +791,11 @@ class ExportAnnotations(List[Tuple[Annotation, Optional[str]]]):
     # If is_input = False the annotations won't be added to the rule's input.
     is_input = True
 
-    def __init__(self, config_name: str, items=(), is_input: bool = True):
+    def __init__(self, config_name: str, items=(), is_input: Optional[bool] = None):
         list.__init__(self, items)
         self.config_name = config_name
-        self.is_input = is_input
+        if is_input is not None:
+            self.is_input = is_input
 
 
 class ExportAnnotationNames(ExportAnnotations):
@@ -801,8 +804,10 @@ class ExportAnnotationNames(ExportAnnotations):
     To be used when only the annotation names are of interest and not the actual annotation files.
     """
 
+    is_input = False
+
     def __init__(self, config_name: str, items=()):
-        super().__init__(config_name, items=items, is_input=False)
+        super().__init__(config_name, items=items)
 
 
 class ExportAnnotationsAllSourceFiles(List[Tuple[AnnotationAllSourceFiles, Optional[str]]]):
