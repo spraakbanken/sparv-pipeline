@@ -6,8 +6,22 @@ from typing import Optional, Union, List
 
 import yaml
 
-from sparv.api import (AllSourceFilenames, AnnotationName, Config, Export, ExportAnnotationNames, ExportInput,
-                       OutputMarker, SourceAnnotationsAllSourceFiles, exporter, get_logger, installer, util)
+from sparv.api import (
+    AllSourceFilenames,
+    AnnotationName,
+    Config,
+    Export,
+    ExportAnnotationNames,
+    ExportInput,
+    MarkerOptional,
+    OutputMarker,
+    SourceAnnotationsAllSourceFiles,
+    exporter,
+    get_logger,
+    installer,
+    uninstaller,
+    util
+)
 from sparv.core.io import split_annotation
 from sparv.modules.cwb.cwb import cwb_escape
 
@@ -358,17 +372,36 @@ def build_description(description, short_description):
     return lang_dict
 
 
-@installer("Install Korp corpus configuration file.")
+@installer("Install Korp corpus configuration file.", uninstaller="korp:uninstall_config")
 def install_config(
     remote_host: Optional[str] = Config("korp.remote_host"),
     config_dir: str = Config("korp.config_dir"),
     config_file: ExportInput = ExportInput("korp.config/[metadata.id].yaml"),
-    marker: OutputMarker = OutputMarker("korp.install_config_marker")
+    marker: OutputMarker = OutputMarker("korp.install_config_marker"),
+    uninstall_marker: MarkerOptional = MarkerOptional("korp.uninstall_config_marker")
 ):
     """Install Korp corpus configuration file."""
     corpus_dir = Path(config_dir) / "corpora"
     logger.info(f"Installing Korp corpus configuration file to {remote_host}:{corpus_dir}")
     util.install.install_path(config_file, remote_host, corpus_dir)
+    uninstall_marker.remove()
+    marker.write()
+
+
+@uninstaller("Uninstall Korp corpus configuration file.")
+def uninstall_config(
+    remote_host: Optional[str] = Config("korp.remote_host"),
+    config_dir: str = Config("korp.config_dir"),
+    corpus_id: str = Config("metadata.id"),
+    marker: OutputMarker = OutputMarker("korp.uninstall_config_marker"),
+    install_marker: MarkerOptional = MarkerOptional("korp.install_config_marker")
+):
+    """Uninstall Korp corpus configuration file."""
+    corpus_file = Path(config_dir) / "corpora" / f"{corpus_id}.yaml"
+    logger.info(f"Uninstalling Korp corpus configuration file from {remote_host + ':' if remote_host else ''}"
+                f"{corpus_file}")
+    util.install.uninstall_path(corpus_file, host=remote_host)
+    install_marker.remove()
     marker.write()
 
 
