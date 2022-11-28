@@ -114,13 +114,13 @@ Remove a file or directory, optionally on a different host.
 
 
 ### install_mysql()
-Insert tables and data from local SQL-file to remote MySQL database.
+Insert tables and data from one or more SQL-files to local or remote MySQL database.
 
 **Arguments:**
 
-- `host`: The remote host to install to.
-- `db_name`: Name of the remote database.
-- `sqlfile`: Path to a local SQL file, or multiple paths separated by whitespaces.
+- `host`: The remote host to install to. Set to None to install locally.
+- `db_name`: Name of the database.
+- `sqlfile`: Path to a SQL file, or list of paths.
 
 
 ### install_mysql_dump()

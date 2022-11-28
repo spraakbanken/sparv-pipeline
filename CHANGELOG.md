@@ -8,6 +8,8 @@
 
 ### Changed
 
+- The util function `install_mysql` can now install locally as well as to a remote server.
+
 ### Fixed
 
 ## [5.1.0] - 2022-11-03
