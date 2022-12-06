@@ -40,6 +40,7 @@ HIDDEN_ANNOTATIONS = (
 
 # Annotations needed by reading mode (using export names)
 READING_MODE_ANNOTATIONS = (
+    "text:_id",
     "sentence:id",
     "_head",
     "_tail"
