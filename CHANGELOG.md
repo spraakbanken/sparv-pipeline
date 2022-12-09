@@ -10,6 +10,7 @@
 ### Changed
 
 - The util function `install_mysql` can now install locally as well as to a remote server.
+- `xml_export:install` and `xml_export:install_scrambled` can now install locally.
 
 ### Fixed
 

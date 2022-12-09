@@ -1,6 +1,7 @@
 """Export annotated corpus data to scrambled xml."""
 
 import os
+from typing import Optional
 
 from sparv.api import (
     AllSourceFilenames,
@@ -107,18 +108,19 @@ def compressed_scrambled(out: Export = Export("xml_export.combined_scrambled/[me
     xml_utils.compress(xmlfile, out)
 
 
-@installer("Copy compressed scrambled XML to remote host", config=[
+@installer("Copy compressed scrambled XML to a target path, optionally on a remote host", config=[
     Config("xml_export.export_scrambled_host", "", description="Remote host to copy scrambled XML export to"),
-    Config("xml_export.export_scrambled_path", "", description="Path on remote host to copy scrambled XML export to")
+    Config("xml_export.export_scrambled_path", "", description="Target path to copy scrambled XML export to")
 ], uninstaller="xml_export:uninstall_scrambled")
-def install_scrambled(corpus: Corpus = Corpus(),
-                      bz2file: ExportInput = ExportInput(
-                          "xml_export.combined_scrambled/[metadata.id]_scrambled.xml.bz2"),
-                      marker: OutputMarker = OutputMarker("xml_export.install_export_scrambled_marker"),
-                      uninstall_marker: MarkerOptional = MarkerOptional("xml_export.uninstall_export_scrambled_marker"),
-                      export_path: str = Config("xml_export.export_scrambled_path"),
-                      host: str = Config("xml_export.export_scrambled_host")):
-    """Copy compressed combined scrambled XML to remote host."""
+def install_scrambled(
+    corpus: Corpus = Corpus(),
+    bz2file: ExportInput = ExportInput("xml_export.combined_scrambled/[metadata.id]_scrambled.xml.bz2"),
+    marker: OutputMarker = OutputMarker("xml_export.install_export_scrambled_marker"),
+    uninstall_marker: MarkerOptional = MarkerOptional("xml_export.uninstall_export_scrambled_marker"),
+    export_path: str = Config("xml_export.export_scrambled_path"),
+    host: Optional[str] = Config("xml_export.export_scrambled_host")
+):
+    """Copy compressed combined scrambled XML to a target path, optionally on a remote host."""
     xml_utils.install_compressed_xml(corpus, bz2file, marker, export_path, host)
     uninstall_marker.remove()
 
@@ -129,7 +131,7 @@ def uninstall_scrambled(
     marker: OutputMarker = OutputMarker("xml_export.uninstall_export_scrambled_marker"),
     install_marker: MarkerOptional = MarkerOptional("xml_export.install_export_scrambled_marker"),
     export_path: str = Config("xml_export.export_scrambled_path"),
-    host: str = Config("xml_export.export_scrambled_host")
+    host: Optional[str] = Config("xml_export.export_scrambled_host")
 ):
     """Remove compressed XML from remote location."""
     xml_utils.uninstall_compressed_xml(corpus, marker, export_path, host)
