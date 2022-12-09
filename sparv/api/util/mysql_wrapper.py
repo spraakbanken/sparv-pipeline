@@ -48,7 +48,10 @@ class MySQL:
                 out, err = system.call_binary(self.binaries, self.arguments, sql % args, encoding=self.encoding)
             else:
                 out, err = system.call_binary(
-                    "ssh", [self.host, " ".join([self.binaries[0], *self.arguments, "-e", shlex.quote(sql % args)])]
+                    "ssh",
+                    [self.host, " ".join([self.binaries[0], *self.arguments])],
+                    stdin=sql % args,
+                    encoding=self.encoding
                 )
             if out:
                 logger.info("MySQL: %s", out)
