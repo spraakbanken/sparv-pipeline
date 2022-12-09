@@ -5,6 +5,7 @@
 ### Added
 
 - Add `korp.wordpicture_no_sentences` setting to disable generation of Word Picture sentences table.
+- `util.mysql_wrapper` can now execute SQL queries remotely over SSH.
 
 ### Changed
 

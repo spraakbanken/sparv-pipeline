@@ -1,6 +1,7 @@
 """Util function for creating mysql files."""
 
 import os
+import shlex
 
 from sparv.api import get_logger
 from . import system
@@ -12,9 +13,11 @@ MAX_ALLOWED_PACKET = 900000
 
 
 class MySQL:
-    binaries = ("mysql", "mysql5")
+    binaries = ("mysql", "mariadb")
 
-    def __init__(self, database=None, username=None, password=None, encoding="UTF-8", output="", append=False):
+    def __init__(
+        self, database=None, host=None, username=None, password=None, encoding="UTF-8", output=None, append=False
+    ):
         assert database or output, "Either 'database' or 'output' must be used."
         if database:
             self.arguments = [database]
@@ -22,6 +25,7 @@ class MySQL:
                 self.arguments += ["-u", username]
             if password:
                 self.arguments += ["-p", password]
+        self.host = host
         self.encoding = encoding
         self.output = output
         self.first_output = True
@@ -40,7 +44,12 @@ class MySQL:
                 outfile.write(sql + "\n")
         else:
             # Execute SQL statement
-            out, err = system.call_binary(self.binaries, self.arguments, sql % args, encoding=self.encoding)
+            if self.host is None:
+                out, err = system.call_binary(self.binaries, self.arguments, sql % args, encoding=self.encoding)
+            else:
+                out, err = system.call_binary(
+                    "ssh", [self.host, " ".join([self.binaries[0], *self.arguments, "-e", shlex.quote(sql % args)])]
+                )
             if out:
                 logger.info("MySQL: %s", out)
             if err:
