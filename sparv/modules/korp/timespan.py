@@ -1,29 +1,74 @@
 """Create timespan SQL data for use in Korp."""
 
 from collections import defaultdict
+from typing import Optional
 
-from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Config, Corpus, Export, ExportInput,
-                       OutputMarker, annotator, exporter, get_logger, installer, util)
+from sparv.api import (
+    AllSourceFilenames,
+    Annotation,
+    AnnotationAllSourceFiles,
+    Config,
+    Corpus,
+    Export,
+    ExportInput,
+    MarkerOptional,
+    OutputMarker,
+    annotator,
+    exporter,
+    get_logger,
+    installer,
+    uninstaller,
+    util
+)
 from sparv.api.util.mysql_wrapper import MySQL
 
 logger = get_logger(__name__)
 
 
-@installer("Install timespan SQL on remote host")
-def install_timespan(sqlfile: ExportInput = ExportInput("korp.timespan/timespan.sql"),
-                     out: OutputMarker = OutputMarker("korp.install_timespan_marker"),
-                     db_name: str = Config("korp.mysql_dbname"),
-                     host: str = Config("korp.remote_host")):
+@installer("Install timespan SQL on remote host", uninstaller="korp:uninstall_timespan")
+def install_timespan(
+    sqlfile: ExportInput = ExportInput("korp.timespan/timespan.sql"),
+    marker: OutputMarker = OutputMarker("korp.install_timespan_marker"),
+    uninstall_marker: MarkerOptional = MarkerOptional("korp.uninstall_timespan_marker"),
+    db_name: str = Config("korp.mysql_dbname"),
+    host: Optional[str] = Config("korp.remote_host"),
+):
     """Install timespan SQL on remote host.
 
     Args:
         sqlfile: SQL file to be installed.
-        out: Marker file to be written.
+        marker: Marker file to be written.
+        uninstall_marker: Uninstall marker to remove.
         db_name: Name of the database.
         host: Remote host to install to.
     """
     util.install.install_mysql(host, db_name, sqlfile)
-    out.write()
+    uninstall_marker.remove()
+    marker.write()
+
+
+@uninstaller("Uninstall timespan data from database", language=["swe"])
+def uninstall_timespan(
+    corpus: Corpus = Corpus(),
+    marker: OutputMarker = OutputMarker("korp.uninstall_timespan_marker"),
+    install_marker: MarkerOptional = MarkerOptional("korp.install_timespan_marker"),
+    db_name: str = Config("korp.mysql_dbname"),
+    host: Optional[str] = Config("korp.remote_host")
+):
+    """Remove timespan data from database.
+
+    Args:
+        corpus: Corpus ID.
+        marker: Uninstall marker to write.
+        install_marker: Install marker to remove.
+        db_name: Name of the database.
+        host: Remote host.
+    """
+    sql = MySQL(database=db_name, host=host)
+    sql.delete_rows(MYSQL_TABLE, {"corpus": corpus.upper()})
+    sql.delete_rows(MYSQL_TABLE_DATE, {"corpus": corpus.upper()})
+    install_marker.remove()
+    marker.write()
 
 
 @exporter("Timespan SQL data for use in Korp", abstract=True)
