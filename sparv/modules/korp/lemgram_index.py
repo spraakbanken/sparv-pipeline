@@ -1,9 +1,23 @@
 """Create files needed for the lemgram search in Korp."""
 
 from collections import defaultdict
+from typing import Optional
 
-from sparv.api import (AllSourceFilenames, AnnotationAllSourceFiles, Config, Corpus, Export, ExportInput, OutputMarker,
-                       exporter, get_logger, installer, util)
+from sparv.api import (
+    AllSourceFilenames,
+    AnnotationAllSourceFiles,
+    Config,
+    Corpus,
+    Export,
+    ExportInput,
+    MarkerOptional,
+    OutputMarker,
+    exporter,
+    get_logger,
+    installer,
+    uninstaller,
+    util
+)
 from sparv.api.util.mysql_wrapper import MySQL
 
 logger = get_logger(__name__)
@@ -13,20 +27,46 @@ logger = get_logger(__name__)
 CWB_SCAN_EXECUTABLE = "cwb-scan-corpus"
 
 
-@installer("Install lemgram SQL on remote host", language=["swe"])
+@installer("Install lemgram SQL on remote host", language=["swe"], uninstaller="korp:uninstall_lemgrams")
 def install_lemgrams(sqlfile: ExportInput = ExportInput("korp.lemgram_index/lemgram_index.sql"),
                      marker: OutputMarker = OutputMarker("korp.install_lemgram_marker"),
+                     uninstall_marker: MarkerOptional = MarkerOptional("korp.uninstall_lemgram_marker"),
                      db_name: str = Config("korp.mysql_dbname"),
-                     host: str = Config("korp.remote_host")):
+                     host: Optional[str] = Config("korp.remote_host")):
     """Install lemgram SQL on remote host.
 
     Args:
         sqlfile: SQL file to be installed.
         marker: Marker file to be written.
-        db_name: Name of the data base.
+        uninstall_marker: Uninstall marker to remove.
+        db_name: Name of the database.
         host: Remote host to install to.
     """
+    uninstall_marker.remove()
     util.install.install_mysql(host, db_name, sqlfile)
+    marker.write()
+
+
+@uninstaller("Uninstall lemgrams from database", language=["swe"])
+def uninstall_lemgrams(
+    corpus: Corpus = Corpus(),
+    marker: OutputMarker = OutputMarker("korp.uninstall_lemgram_marker"),
+    install_marker: MarkerOptional = MarkerOptional("korp.install_lemgram_marker"),
+    db_name: str = Config("korp.mysql_dbname"),
+    host: Optional[str] = Config("korp.remote_host")
+):
+    """Remove lemgram index data from database.
+
+    Args:
+        corpus: Corpus ID.
+        marker: Uninstall marker to write.
+        install_marker: Install marker to remove.
+        db_name: Name of the database.
+        host: Remote host.
+    """
+    sql = MySQL(database=db_name, host=host)
+    sql.delete_rows(MYSQL_TABLE, {"corpus": corpus.upper()})
+    install_marker.remove()
     marker.write()
 
 
@@ -69,7 +109,8 @@ MYSQL_INDEX = {
         ("freq", int, 0, "NOT NULL"),
         ("corpus", "varchar(64)", "", "NOT NULL"),
     ],
-    "indexes": ["lemgram corpus freq"],  # Can't make this primary due to collation
+    "primary": "lemgram corpus freq",
+    "indexes": ["corpus"],  # Used by uninstaller
     "default charset": "utf8mb4",
-    "collate": "utf8mb4_bin",
+    "collate": "utf8mb4_bin"
 }
