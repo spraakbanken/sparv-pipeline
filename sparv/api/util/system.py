@@ -175,11 +175,11 @@ def rsync(local, host=None, remote=None):
         subprocess.check_call(["rsync"] + args + [remote])
 
 
-def remove_path(path, host=None):
+def remove_path(path: Union[str, Path], host: Optional[str] = None):
     """Remove a file or directory, either locally or remotely."""
     assert path, "'path' must not be empty."
     if host:
-        subprocess.check_call(["ssh", host, f"rm -rf {shlex.quote(path)}"])
+        subprocess.check_call(["ssh", host, f"rm -rf {shlex.quote(str(path))}"])
     else:
         p = Path(path)
         if p.is_file():
