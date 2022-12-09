@@ -5,8 +5,24 @@ import re
 from collections import defaultdict
 from typing import Optional
 
-from sparv.api import (AllSourceFilenames, Annotation, AnnotationDataAllSourceFiles, Config, Corpus, Export, ExportInput,
-                       OutputMarker, OutputData, annotator, exporter, get_logger, installer, util)
+from sparv.api import (
+    AllSourceFilenames,
+    Annotation,
+    AnnotationDataAllSourceFiles,
+    Config,
+    Corpus,
+    Export,
+    ExportInput,
+    MarkerOptional,
+    OutputMarker,
+    OutputData,
+    annotator,
+    exporter,
+    get_logger,
+    installer,
+    uninstaller,
+    util
+)
 from sparv.api.util.mysql_wrapper import MySQL
 
 logger = get_logger(__name__)
@@ -17,21 +33,56 @@ MAX_STRINGEXTRA_LENGTH = 32
 MAX_POS_LENGTH = 5
 
 
-@installer("Install Korp's Word Picture SQL on remote host", language=["swe"])
-def install_relations(sqlfile: ExportInput = ExportInput("korp.wordpicture/relations.sql"),
-                      out: OutputMarker = OutputMarker("korp.install_relations_marker"),
-                      db_name: str = Config("korp.mysql_dbname"),
-                      host: str = Config("korp.remote_host")):
+@installer("Install Korp's Word Picture SQL on remote host", language=["swe"], uninstaller="korp:uninstall_relations")
+def install_relations(
+    sqlfile: ExportInput = ExportInput("korp.wordpicture/relations.sql"),
+    marker: OutputMarker = OutputMarker("korp.install_relations_marker"),
+    uninstall_marker: MarkerOptional = MarkerOptional("korp.uninstall_relations_marker"),
+    db_name: str = Config("korp.mysql_dbname"),
+    host: Optional[str] = Config("korp.remote_host")
+):
     """Install Korp's Word Picture SQL on remote host.
 
     Args:
         sqlfile: SQL file to be installed.
-        out: Marker file to be written.
+        marker: Marker file to be written.
+        uninstall_marker: Uninstall marker to remove.
         db_name: Name of the database.
         host: Remote host to install to.
     """
     util.install.install_mysql(host, db_name, sqlfile)
-    out.write()
+    uninstall_marker.remove()
+    marker.write()
+
+
+@uninstaller("Uninstall lemgrams from database", language=["swe"])
+def uninstall_relations(
+    corpus: Corpus = Corpus(),
+    marker: OutputMarker = OutputMarker("korp.uninstall_relations_marker"),
+    install_marker: MarkerOptional = MarkerOptional("korp.install_relations_marker"),
+    db_name: str = Config("korp.mysql_dbname"),
+    host: Optional[str] = Config("korp.remote_host")
+):
+    """Remove lemgram index data from database.
+
+    Args:
+        corpus: Corpus ID.
+        marker: Uninstall marker to write.
+        install_marker: Install marker to remove.
+        db_name: Name of the database.
+        host: Remote host.
+    """
+    db_table = MYSQL_TABLE + "_" + corpus.upper()
+    tables = ["", "_strings", "_rel", "_head_rel", "_dep_rel", "_sentences"]
+
+    sql = MySQL(database=db_name, host=host)
+    sql.drop_table(
+        *[db_table + t for t in tables],
+        *["temp_" + db_table + t for t in tables]
+    )
+
+    install_marker.remove()
+    marker.write()
 
 
 @annotator("Find dependencies for Korp's Word Picture", language=["swe"])
