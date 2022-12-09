@@ -4,15 +4,30 @@
 
 ### Added
 
-- Add `korp.wordpicture_no_sentences` setting to disable generation of Word Picture sentences table.
+- Added new `misc:inherit` annotator for inheriting attributes.
+- Added `korp.wordpicture_no_sentences` setting to disable generation of Word Picture sentences table.
 - `util.mysql_wrapper` can now execute SQL queries remotely over SSH.
+- Added several uninstallers:
+  - `cwb:uninstall_corpus`
+  - `korp:uninstall_config`
+  - `korp:uninstall_lemgrams`
+  - `korp:uninstall_timespan`
+  - `korp:uninstall_relations`
+  - `xml_export:uninstall`
+  - `xml_export:uninstall`
+- Added `MarkerOptional` class.
+- Added stats export for Swedish from the 1800s.
 
 ### Changed
 
+- `AnnotationAllSourceFiles` now have the same methods as `Annotation`.
 - The util function `install_mysql` can now install locally as well as to a remote server.
+- Pre-built SALDO models are now downloaded instead of being built on demand.
 - `xml_export:install` and `xml_export:install_scrambled` can now install locally.
 
 ### Fixed
+
+- Several bugs fixed in `korp:config`.
 
 ## [5.1.0] - 2022-11-03
 
