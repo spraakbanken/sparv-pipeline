@@ -19,7 +19,7 @@ def install_path(source_path: Union[str, Path],
     system.rsync(source_path, host, target_path)
 
 
-def uninstall_path(path: Union[str, Path] = None, host: Optional[str] = None) -> None:
+def uninstall_path(path: Union[str, Path], host: Optional[str] = None) -> None:
     """Remove a file or directory, optionally on a remote host."""
     system.remove_path(path, host)
 
