@@ -2,10 +2,26 @@
 
 import os
 
-from sparv.api import (AllSourceFilenames, Annotation, AnnotationData, Config, Corpus, Export, ExportAnnotations,
-                       ExportInput, Namespaces, OutputMarker, SourceAnnotations, SourceFilename, exporter,
-                       get_logger, installer, util)
-
+from sparv.api import (
+    AllSourceFilenames,
+    Annotation,
+    AnnotationData,
+    Config,
+    Corpus,
+    Export,
+    ExportAnnotations,
+    ExportInput,
+    MarkerOptional,
+    Namespaces,
+    OutputMarker,
+    SourceAnnotations,
+    SourceFilename,
+    exporter,
+    get_logger,
+    installer,
+    uninstaller,
+    util
+)
 from . import xml_utils
 
 logger = get_logger(__name__)
@@ -119,11 +135,26 @@ def compressed(out: Export = Export("xml_export.combined/[xml_export.filename_co
 @installer("Copy compressed XML to remote host", config=[
     Config("xml_export.export_host", "", description="Remote host to copy XML export to."),
     Config("xml_export.export_path", "", description="Path on remote host to copy XML export to.")
-])
+], uninstaller="xml_export:uninstall")
 def install(corpus: Corpus = Corpus(),
             bz2file: ExportInput = ExportInput("xml_export.combined/[xml_export.filename_compressed]"),
-            out: OutputMarker = OutputMarker("xml_export.install_export_pretty_marker"),
+            marker: OutputMarker = OutputMarker("xml_export.install_export_pretty_marker"),
+            uninstall_marker: MarkerOptional = MarkerOptional("xml_export.uninstall_export_pretty_marker"),
             export_path: str = Config("xml_export.export_path"),
             host: str = Config("xml_export.export_host")):
     """Copy compressed combined XML to remote host."""
-    xml_utils.install_compressed_xml(corpus, bz2file, out, export_path, host)
+    xml_utils.install_compressed_xml(corpus, bz2file, marker, export_path, host)
+    uninstall_marker.remove()
+
+
+@uninstaller("Remove compressed XML from remote location")
+def uninstall(
+    corpus: Corpus = Corpus(),
+    marker: OutputMarker = OutputMarker("xml_export.uninstall_export_pretty_marker"),
+    install_marker: MarkerOptional = MarkerOptional("xml_export.install_export_pretty_marker"),
+    export_path: str = Config("xml_export.export_path"),
+    host: str = Config("xml_export.export_host")
+):
+    """Remove compressed XML from remote location."""
+    xml_utils.uninstall_compressed_xml(corpus, marker, export_path, host)
+    install_marker.remove()

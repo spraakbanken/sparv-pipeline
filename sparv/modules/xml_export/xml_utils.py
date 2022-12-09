@@ -175,11 +175,18 @@ def compress(xmlfile, out):
             copyfileobj(infile, outfile)
 
 
-def install_compressed_xml(corpus, bz2file, out, export_path, host):
+def install_compressed_xml(corpus, bz2file, marker, export_path, host):
     """Install xml file on remote server."""
     if not host:
         raise Exception("No host provided! Export not installed.")
     filename = corpus + ".xml.bz2"
     remote_file_path = os.path.join(export_path, filename)
     util.install.install_path(bz2file, host, remote_file_path)
-    out.write()
+    marker.write()
+
+
+def uninstall_compressed_xml(corpus, marker, export_path, host):
+    """Uninstall XML file."""
+    remote_file_path = os.path.join(export_path, corpus + ".xml.bz2")
+    util.install.uninstall_path(remote_file_path, host)
+    marker.write()
