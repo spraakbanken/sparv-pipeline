@@ -33,11 +33,11 @@ MAX_STRINGEXTRA_LENGTH = 32
 MAX_POS_LENGTH = 5
 
 
-@installer("Install Korp's Word Picture SQL on remote host", language=["swe"], uninstaller="korp:uninstall_relations")
-def install_relations(
-    sqlfile: ExportInput = ExportInput("korp.wordpicture/relations.sql"),
-    marker: OutputMarker = OutputMarker("korp.install_relations_marker"),
-    uninstall_marker: MarkerOptional = MarkerOptional("korp.uninstall_relations_marker"),
+@installer("Install Korp's Word Picture SQL on remote host", language=["swe"], uninstaller="korp:uninstall_wordpicture")
+def install_wordpicture(
+    sqlfile: ExportInput = ExportInput("korp.wordpicture/wordpicture.sql"),
+    marker: OutputMarker = OutputMarker("korp.install_wordpicture_marker"),
+    uninstall_marker: MarkerOptional = MarkerOptional("korp.uninstall_wordpicture_marker"),
     db_name: str = Config("korp.mysql_dbname"),
     host: Optional[str] = Config("korp.remote_host")
 ):
@@ -56,11 +56,12 @@ def install_relations(
 
 
 @uninstaller("Uninstall lemgrams from database", language=["swe"])
-def uninstall_relations(
+def uninstall_wordpicture(
     corpus: Corpus = Corpus(),
-    marker: OutputMarker = OutputMarker("korp.uninstall_relations_marker"),
-    install_marker: MarkerOptional = MarkerOptional("korp.install_relations_marker"),
+    marker: OutputMarker = OutputMarker("korp.uninstall_wordpicture_marker"),
+    install_marker: MarkerOptional = MarkerOptional("korp.install_wordpicture_marker"),
     db_name: str = Config("korp.mysql_dbname"),
+    table_name: str = Config("korp.wordpicture_table"),
     host: Optional[str] = Config("korp.remote_host")
 ):
     """Remove lemgram index data from database.
@@ -70,9 +71,10 @@ def uninstall_relations(
         marker: Uninstall marker to write.
         install_marker: Install marker to remove.
         db_name: Name of the database.
+        table_name: Name of database table.
         host: Remote host.
     """
-    db_table = MYSQL_TABLE + "_" + corpus.upper()
+    db_table = table_name + "_" + corpus.upper()
     tables = ["", "_strings", "_rel", "_head_rel", "_dep_rel", "_sentences"]
 
     sql = MySQL(database=db_name, host=host)
@@ -86,15 +88,17 @@ def uninstall_relations(
 
 
 @annotator("Find dependencies for Korp's Word Picture", language=["swe"])
-def relations(out: OutputData = OutputData("korp.relations"),
-              word: Annotation = Annotation("<token:word>"),
-              pos: Annotation = Annotation("<token:pos>"),
-              lemgram: Annotation = Annotation("<token>:saldo.lemgram"),
-              dephead: Annotation = Annotation("<token:dephead>"),
-              deprel: Annotation = Annotation("<token:deprel>"),
-              sentence_id: Annotation = Annotation("<sentence>:misc.id"),
-              ref: Annotation = Annotation("<token:ref>"),
-              baseform: Annotation = Annotation("<token>:saldo.baseform")):
+def wordpicture(
+    out: OutputData = OutputData("korp.wordpicture"),
+    word: Annotation = Annotation("<token:word>"),
+    pos: Annotation = Annotation("<token:pos>"),
+    lemgram: Annotation = Annotation("<token>:saldo.lemgram"),
+    dephead: Annotation = Annotation("<token:dephead>"),
+    deprel: Annotation = Annotation("<token:deprel>"),
+    sentence_id: Annotation = Annotation("<sentence>:misc.id"),
+    ref: Annotation = Annotation("<token:ref>"),
+    baseform: Annotation = Annotation("<token>:saldo.baseform")
+):
     """Find certain dependencies between words, to be used by the Word Picture feature in Korp."""
     sentence_ids = sentence_id.read()
     sentence_tokens, _ = sentence_id.get_children(word)
@@ -340,27 +344,31 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
     Config("korp.wordpicture_no_sentences", default=False,
            description="Set to 'true' to skip generating sentences table.")
 ])
-def relations_sql(corpus: Corpus = Corpus(),
-                  out: Export = Export("korp.wordpicture/relations.sql"),
-                  relations: AnnotationDataAllSourceFiles = AnnotationDataAllSourceFiles("korp.relations"),
-                  no_sentences: bool = Config("korp.wordpicture_no_sentences"),
-                  source_files: Optional[AllSourceFilenames] = AllSourceFilenames(),
-                  source_files_list: str = "",
-                  split: bool = False):
+def wordpicture_sql(
+    corpus: Corpus = Corpus(),
+    out: Export = Export("korp.wordpicture/wordpicture.sql"),
+    wordpicture: AnnotationDataAllSourceFiles = AnnotationDataAllSourceFiles("korp.wordpicture"),
+    no_sentences: bool = Config("korp.wordpicture_no_sentences"),
+    source_files: Optional[AllSourceFilenames] = AllSourceFilenames(),
+    source_files_list: str = "",
+    table_name: str = Config("korp.wordpicture_table"),
+    split: bool = False
+):
     """Calculate statistics of the dependencies and saves to SQL files.
 
     Args:
         corpus: the corpus name
         out: the name for the SQL file which will contain the resulting SQL statements
-        relations: the name of the relations annotation
+        wordpicture: the name of the wordpicture annotation
         no_sentences: set to True to skip generating sentences table
         source_files: a list of source filenames
         source_files_list: can be used instead of source_files, and should be a file containing the name of source
             files, one per row
+        table_name: Name of database table
         split: when set to true leads to SQL commands being split into several parts, requiring less memory during
             creation, but installing the data will take much longer
     """
-    db_table = MYSQL_TABLE + "_" + corpus.upper()
+    db_table = table_name + "_" + corpus.upper()
 
     # Relations that will be grouped together
     rel_grouping = {
@@ -400,9 +408,9 @@ def relations_sql(corpus: Corpus = Corpus(),
             head_rel_count = defaultdict(int)   # Frequency of (head, rel)
             dep_rel_count = defaultdict(int)    # Frequency of (rel, dep)
 
-        relations_data = relations.read(file)
+        wordpicture_data = wordpicture.read(file)
 
-        for triple in relations_data.splitlines():
+        for triple in wordpicture_data.splitlines():
             head, headpos, rel, dep, deppos, extra, sid, refh, refd, bfhead, bfdep, wfhead, wfdep = triple.split("\t")
             bfhead, bfdep, wfhead, wfdep = int(bfhead), int(bfdep), int(wfhead), int(wfdep)
 
@@ -590,8 +598,6 @@ def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_coun
 # Names of every possible relation in the resulting database
 RELNAMES = ["SS", "OBJ", "ADV", "AA", "AT", "ET", "PA"]
 rel_enum = "ENUM(%s)" % ", ".join("'%s'" % r for r in RELNAMES)
-
-MYSQL_TABLE = "relations"
 
 MYSQL_RELATIONS = {"columns": [("id", int, 0, "NOT NULL"),
                                ("head", int, 0, "NOT NULL"),

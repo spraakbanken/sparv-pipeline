@@ -12,11 +12,12 @@
   - `korp:uninstall_config`
   - `korp:uninstall_lemgrams`
   - `korp:uninstall_timespan`
-  - `korp:uninstall_relations`
+  - `korp:uninstall_wordpicture`
   - `xml_export:uninstall`
   - `xml_export:uninstall`
 - Added `MarkerOptional` class.
 - Added stats export for Swedish from the 1800s.
+- `korp:wordpicture` table name is now configurable using `korp.wordpicture_table`.
 
 ### Changed
 
@@ -24,6 +25,8 @@
 - The util function `install_mysql` can now install locally as well as to a remote server.
 - Pre-built SALDO models are now downloaded instead of being built on demand.
 - `xml_export:install` and `xml_export:install_scrambled` can now install locally.
+- `korp:relations`, `korp:relations_sql` and `korp:install_relations` has been renamed to `korp:wordpicture`,
+  `korp:wordpicture_sql` and `korp:install_wordpicture` respectively.
 
 ### Fixed
 
