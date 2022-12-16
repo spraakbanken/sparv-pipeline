@@ -67,7 +67,7 @@ export:
         - csv_export:csv
         - cwb:vrt
         - cwb:vrt_scrambled
-        - korp:relations_sql
+        - korp:wordpicture_sql
         - korp:timespan_sql
         - stats_export:freq_list
         - xml_export:pretty
