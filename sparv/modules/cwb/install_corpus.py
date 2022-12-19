@@ -20,7 +20,7 @@ from sparv.api import (
 logger = get_logger(__name__)
 
 
-@installer("Install CWB datafiles", uninstaller="korp:uninstall_corpus")
+@installer("Install CWB datafiles", uninstaller="cwb:uninstall_corpus")
 def install_corpus(
         corpus: Corpus = Corpus(),
         marker: OutputMarker = OutputMarker("cwb.install_corpus_marker"),
@@ -38,7 +38,7 @@ def install_corpus(
     uninstall_marker.remove()
 
 
-@installer("Install CWB datafiles for a scrambled corpus", uninstaller="korp:uninstall_corpus")
+@installer("Install CWB datafiles for a scrambled corpus", uninstaller="cwb:uninstall_corpus")
 def install_corpus_scrambled(
         corpus: Corpus = Corpus(),
         marker: OutputMarker = OutputMarker("cwb.install_corpus_scrambled_marker"),
