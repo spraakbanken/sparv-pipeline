@@ -10,6 +10,7 @@ from sparv.api import (
     AllSourceFilenames,
     AnnotationName,
     Config,
+    Corpus,
     Export,
     ExportAnnotationNames,
     ExportInput,
@@ -77,7 +78,7 @@ LABELS = {
     Config("korp.hidden_annotations", description="List of annotations not to include in corpus config",
            default=HIDDEN_ANNOTATIONS)
 ])
-def config(id: str = Config("metadata.id"),
+def config(id: Corpus = Corpus(),
            name: dict = Config("metadata.name"),
            description: Optional[dict] = Config("metadata.description"),
            short_description: Optional[dict] = Config("metadata.short_description"),
@@ -393,7 +394,7 @@ def install_config(
 def uninstall_config(
     remote_host: Optional[str] = Config("korp.remote_host"),
     config_dir: str = Config("korp.config_dir"),
-    corpus_id: str = Config("metadata.id"),
+    corpus_id: Corpus = Corpus(),
     marker: OutputMarker = OutputMarker("korp.uninstall_config_marker"),
     install_marker: MarkerOptional = MarkerOptional("korp.install_config_marker")
 ):
