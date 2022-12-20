@@ -27,6 +27,7 @@
 - `xml_export:install` and `xml_export:install_scrambled` can now install locally.
 - `korp:relations`, `korp:relations_sql` and `korp:install_relations` has been renamed to `korp:wordpicture`,
   `korp:wordpicture_sql` and `korp:install_wordpicture` respectively.
+- Target path is no longer optional for the utility functions `install_path` and `rsync`.
 
 ### Fixed
 

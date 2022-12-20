@@ -99,9 +99,9 @@ Transfer a file or the contents of a directory to a target destination, optional
 **Arguments:**
 
 - `source_path`: Path to the local file or directory to sync. If a directory is used, its contents are synced, not the
-   directory itself.
-- `host` (optional): The remote host to install to.
-- `target_path`: The name of the target file or directory.
+   directory itself, and any extraneous files in destination directories are deleted.
+- `host`: The remote host to install to. Set to `None` to install locally.
+- `target_path`: Path to target file or directory.
 
 
 ### uninstall_path()
@@ -211,9 +211,8 @@ deleted.
 **Arguments:**
 
 - `local`: Path to a local file or directory.
-- `host`: The remote host to rsync to.
-- `remote`: Path on the remote host to rsync to. Defaults to `None`. If not provided, the path will be the same as on
-  the local machine.
+- `host`: The remote host to rsync to. Set to `None` to sync locally.
+- `remote`: Path to target file or directory.
 
 
 ## Tagsets

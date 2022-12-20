@@ -150,14 +150,12 @@ def find_binary(name: Union[str, list], search_paths=(), executable: bool = True
         return None
 
 
-def rsync(local, host=None, remote=None):
+def rsync(local: Union[str, Path], host: Optional[str], remote: Union[str, Path]):
     """Transfer files and/or directories using rsync.
 
     When syncing directories, extraneous files in destination dirs are deleted.
     """
-    assert host or remote, "Either 'host' or 'remote' must be set."
-    if remote is None:
-        remote = local
+    assert local and remote, "Both 'local' and 'remote' must be set."
     remote_dir = os.path.dirname(remote)
 
     if os.path.isdir(local):
