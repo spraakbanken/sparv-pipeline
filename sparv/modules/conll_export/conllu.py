@@ -26,10 +26,8 @@ logger = get_logger(__name__)
            description="Annotation in HEAD field of CoNLL-U output"),
     Config("conll_export.conll_fields.deprel", default="<token:deprel>",
            description="Annotation in DEPREL field of CoNLL-U output"),
-    Config("conll_export.conll_fields.deps", default=None,
-           description="Annotation in DEPS field of CoNLL-U output"),
-    Config("conll_export.conll_fields.misc", default=None,
-           description="Annotation in MISC field of CoNLL-U output")
+    Config("conll_export.conll_fields.deps", description="Annotation in DEPS field of CoNLL-U output"),
+    Config("conll_export.conll_fields.misc", description="Annotation in MISC field of CoNLL-U output")
 ])
 def conllu(source_file: SourceFilename = SourceFilename(),
            out: Export = Export("conll_export/{file}.conllu"),

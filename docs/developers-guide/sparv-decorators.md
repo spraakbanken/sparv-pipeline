@@ -134,14 +134,14 @@ It is recommended that an installer removes any related uninstaller's marker, to
 **Example:**
 ```python
 @installer("Copy compressed XML to remote host", config=[
-    Config("xml_export.export_host", "", description="Remote host to copy XML export to."),
-    Config("xml_export.export_path", "", description="Path on remote host to copy XML export to.")
+    Config("xml_export.export_host", description="Remote host to copy XML export to."),
+    Config("xml_export.export_path", description="Path on remote host to copy XML export to.")
 ])
 def install(corpus: Corpus = Corpus(),
             xmlfile: ExportInput = ExportInput("xml_export.combined/[metadata.id].xml.bz2"),
             out: OutputMarker = OutputMarker("xml_export.install_export_pretty_marker"),
             export_path: str = Config("xml_export.export_path"),
-            host: str = Config("xml_export.export_host")):
+            host: Optional[str] = Config("xml_export.export_host")):
     ...
 ```
 
@@ -165,14 +165,14 @@ It is recommended that an uninstaller removes any related installer's marker, to
 **Example:**
 ```python
 @uninstaller("Remove compressed XML from remote host", config=[
-    Config("xml_export.export_host", "", description="Remote host to remove XML export from."),
-    Config("xml_export.export_path", "", description="Path on remote host to remove XML export from.")
+    Config("xml_export.export_host", description="Remote host to remove XML export from."),
+    Config("xml_export.export_path", description="Path on remote host to remove XML export from.")
 ])
 def uninstall(corpus: Corpus = Corpus(),
               xmlfile: ExportInput = ExportInput("xml_export.combined/[metadata.id].xml.bz2"),
               out: OutputMarker = OutputMarker("xml_export.uninstall_export_pretty_marker"),
               export_path: str = Config("xml_export.export_path"),
-              host: str = Config("xml_export.export_host")):
+              host: Optional[str] = Config("xml_export.export_host")):
     ...
 ```
 

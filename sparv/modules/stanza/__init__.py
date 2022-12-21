@@ -22,10 +22,9 @@ __config__ = [
                        "be excluded from analysis. Disabled by default."),
     Config("stanza.sentence_chunk", default="<text>",
            description="Text chunk (annotation) to use as input when segmenting sentences (not used for Swedish)"),
-    Config("stanza.sentence_annotation", default="",
+    Config("stanza.sentence_annotation",
            description="Optional existing sentence segmentation annotation (not used for Swedish)"),
-    Config("stanza.token_annotation", default="",
-           description="Optional existing token annotation (not used for Swedish)"),
+    Config("stanza.token_annotation", description="Optional existing token annotation (not used for Swedish)"),
 
     # Config for Swedish
     Config("stanza.swe_lem_model", default="stanza/swe/lem/sv_suc_lemmatizer.pt",

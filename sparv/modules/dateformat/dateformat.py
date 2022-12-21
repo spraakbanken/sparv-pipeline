@@ -35,8 +35,8 @@ def dateformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
                                                  description="To-dates"),
                informat: str = Config("dateformat.datetime_informat"),
                outformat: str = Config("dateformat.date_outformat"),
-               splitter: Optional[str] = Config("dateformat.splitter", None),
-               regex: Optional[str] = Config("dateformat.regex", None)):
+               splitter: Optional[str] = Config("dateformat.splitter"),
+               regex: Optional[str] = Config("dateformat.regex")):
     """Convert existing dates/times to specified date output format.
 
     http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior
@@ -63,8 +63,8 @@ def dateformat_pretty(in_date: Annotation = Annotation("[dateformat.datetime_fro
                       out: Output = Output("[dateformat.out_annotation]:dateformat.date_pretty",
                                            description="Date without timestamp 'YYYY-MM-DD'"),
                       informat: str = Config("dateformat.datetime_informat"),
-                      splitter: Optional[str] = Config("dateformat.splitter", None),
-                      regex: Optional[str] = Config("dateformat.regex", None)):
+                      splitter: Optional[str] = Config("dateformat.splitter"),
+                      regex: Optional[str] = Config("dateformat.regex")):
     """Convert existing dates to format YYYY-MM-DD."""
     _formatter(in_date, Annotation(), out, Annotation(), informat, "%Y-%m-%d", splitter, regex)
 
@@ -82,8 +82,8 @@ def timeformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
                                                  description="To-times"),
                informat: str = Config("dateformat.datetime_informat"),
                outformat: str = Config("dateformat.time_outformat"),
-               splitter: Optional[str] = Config("dateformat.splitter", None),
-               regex: Optional[str] = Config("dateformat.regex", None)):
+               splitter: Optional[str] = Config("dateformat.splitter"),
+               regex: Optional[str] = Config("dateformat.regex")):
     """Convert existing dates/times to specified time output format.
 
     http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior

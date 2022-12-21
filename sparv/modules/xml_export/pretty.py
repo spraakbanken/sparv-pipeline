@@ -134,8 +134,8 @@ def compressed(out: Export = Export("xml_export.combined/[xml_export.filename_co
 
 
 @installer("Copy compressed XML to a target path, optionally on a remote host", config=[
-    Config("xml_export.export_host", "", description="Remote host to copy XML export to"),
-    Config("xml_export.export_path", "", description="Target path to copy XML export to")
+    Config("xml_export.export_host", description="Remote host to copy XML export to"),
+    Config("xml_export.export_path", description="Target path to copy XML export to")
 ], uninstaller="xml_export:uninstall")
 def install(
     corpus: Corpus = Corpus(),

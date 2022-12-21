@@ -109,8 +109,8 @@ def compressed_scrambled(out: Export = Export("xml_export.combined_scrambled/[me
 
 
 @installer("Copy compressed scrambled XML to a target path, optionally on a remote host", config=[
-    Config("xml_export.export_scrambled_host", "", description="Remote host to copy scrambled XML export to"),
-    Config("xml_export.export_scrambled_path", "", description="Target path to copy scrambled XML export to")
+    Config("xml_export.export_scrambled_host", description="Remote host to copy scrambled XML export to"),
+    Config("xml_export.export_scrambled_path", description="Target path to copy scrambled XML export to")
 ], uninstaller="xml_export:uninstall_scrambled")
 def install_scrambled(
     corpus: Corpus = Corpus(),

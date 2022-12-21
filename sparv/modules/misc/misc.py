@@ -35,7 +35,7 @@ def text_spans(text: Text = Text(),
 
 
 @annotator("Head and tail whitespace characters for tokens", config=[
-    Config("misc.head_tail_max_length", default=None,
+    Config("misc.head_tail_max_length",
            description="If set to an int misc.head and misc.tail will be truncated to that many characters.")])
 def text_headtail(text: Text = Text(),
                   chunk: Annotation = Annotation("<token>"),

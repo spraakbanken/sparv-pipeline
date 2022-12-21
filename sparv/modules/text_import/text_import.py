@@ -1,12 +1,13 @@
 """Import module for plain text source files."""
 
 import unicodedata
+from typing import Optional
 
 from sparv.api import Config, SourceFilename, Output, Source, SourceStructure, Text, importer, util
 
 
 @importer("TXT import", file_extension="txt", outputs=["text"], text_annotation="text", config=[
-    Config("text_import.prefix", "", description="Optional prefix to add to annotation names."),
+    Config("text_import.prefix", description="Optional prefix to add to annotation names."),
     Config("text_import.encoding", util.constants.UTF8, description="Encoding of source file. Defaults to UTF-8."),
     Config("text_import.keep_control_chars", False, description="Set to True if control characters should not be "
                                                                 "removed from the text."),
@@ -15,7 +16,7 @@ from sparv.api import Config, SourceFilename, Output, Source, SourceStructure, T
 ])
 def parse(source_file: SourceFilename = SourceFilename(),
           source_dir: Source = Source(),
-          prefix: str = Config("text_import.prefix"),
+          prefix: Optional[str] = Config("text_import.prefix"),
           encoding: str = Config("text_import.encoding"),
           keep_control_chars: bool = Config("text_import.keep_control_chars"),
           normalize: str = Config("text_import.normalize")) -> None:

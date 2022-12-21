@@ -5,7 +5,7 @@ import re
 import unicodedata
 import xml.etree.ElementTree as etree
 from itertools import chain
-from typing import List
+from typing import List, Optional
 
 from sparv.api import (Config, Headers, Namespaces, Output, Source, SourceFilename, SourceStructure,
                        SourceStructureParser, SparvErrorMessage, Text, get_logger, importer, util)
@@ -55,7 +55,7 @@ class XMLStructure(SourceStructureParser):
                                                          "included in corpus text."),
     Config("xml_import.header_data", [], description="List of header elements and attributes from which to extract "
                                                      "metadata."),
-    Config("xml_import.prefix", "", description="Optional prefix to add to annotation names."),
+    Config("xml_import.prefix", description="Optional prefix to add to annotation names."),
     Config("xml_import.remove_namespaces", False, description="Remove XML namespaces upon import."),
     Config("xml_import.encoding", util.constants.UTF8, description="Encoding of source file. Defaults to UTF-8."),
     Config("xml_import.keep_control_chars", False, description="Set to True if control characters should not be "
@@ -69,7 +69,7 @@ def parse(filename: SourceFilename = SourceFilename(),
           skip: list = Config("xml_import.skip"),
           header_elements: list = Config("xml_import.header_elements"),
           header_data: list = Config("xml_import.header_data"),
-          prefix: str = Config("xml_import.prefix"),
+          prefix: Optional[str] = Config("xml_import.prefix"),
           remove_namespaces: bool = Config("xml_import.remove_namespaces"),
           encoding: str = Config("xml_import.encoding"),
           keep_control_chars: bool = Config("xml_import.keep_control_chars"),
@@ -100,7 +100,7 @@ class SparvXMLParser:
     """XML parser class for parsing XML."""
 
     def __init__(self, elements: list, skip: list, header_elements: list, header_data: list, source_dir: Source,
-                 encoding: str = util.constants.UTF8, prefix: str = "", remove_namespaces: bool = False,
+                 encoding: str = util.constants.UTF8, prefix: Optional[str] = None, remove_namespaces: bool = False,
                  keep_control_chars: bool = True, normalize: str = "NFC"):
         """Initialize XML parser."""
         self.source_dir = source_dir

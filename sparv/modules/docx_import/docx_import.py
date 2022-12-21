@@ -1,6 +1,7 @@
 """Import module for docx source files."""
 
 import unicodedata
+from typing import Optional
 
 from docx2python import docx2python
 from docx2python.iterators import iter_at_depth
@@ -8,9 +9,8 @@ from docx2python.iterators import iter_at_depth
 from sparv.api import Config, SourceFilename, Output, Source, SourceStructure, Text, importer, util
 
 
-
 @importer("docx import", file_extension="docx", outputs=["text"], text_annotation="text", config=[
-    Config("docx_import.prefix", "", description="Optional prefix to add to annotation names."),
+    Config("docx_import.prefix", description="Optional prefix to add to annotation names."),
     Config("docx_import.keep_control_chars", False, description="Set to True if control characters should not be "
                                                                 "removed from the text."),
     Config("docx_import.normalize", "NFC", description="Normalize input using any of the following forms: "
@@ -18,7 +18,7 @@ from sparv.api import Config, SourceFilename, Output, Source, SourceStructure, T
 ])
 def parse(source_file: SourceFilename = SourceFilename(),
           source_dir: Source = Source(),
-          prefix: str = Config("docx_import.prefix"),
+          prefix: Optional[str] = Config("docx_import.prefix"),
           keep_control_chars: bool = Config("docx_import.keep_control_chars"),
           normalize: str = Config("docx_import.normalize")) -> None:
     """Parse docx file as input to the Sparv Pipeline.

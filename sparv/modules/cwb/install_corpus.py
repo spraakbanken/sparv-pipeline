@@ -87,12 +87,6 @@ def sync_cwb(corpus, marker, host, info_file, registry_file, target_data_dir, ta
     if not corpus:
         raise SparvErrorMessage("Missing corpus name. Corpus not installed.")
 
-    if not target_data_dir:
-        raise SparvErrorMessage("Configuration variable cwb.remote_data_dir not set! Corpus not installed.")
-
-    if not target_registry_dir:
-        raise SparvErrorMessage("Configuration variable cwb.remote_registry_dir not set! Corpus not installed.")
-
     source_data_dir = os.path.dirname(info_file)
     source_registry_dir = os.path.dirname(registry_file)
 
