@@ -1,11 +1,28 @@
 """Build word frequency list."""
 
 import csv
+import os.path
 from collections import defaultdict
+from typing import Optional
 
-from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Config, Export,
-                       ExportAnnotationsAllSourceFiles, ExportInput, OutputMarker, SourceAnnotationsAllSourceFiles,
-                       exporter, get_logger, installer, util)
+from sparv.api import (
+    AllSourceFilenames,
+    Annotation,
+    AnnotationAllSourceFiles,
+    Config,
+    Corpus,
+    Export,
+    ExportAnnotationsAllSourceFiles,
+    ExportInput,
+    MarkerOptional,
+    OutputMarker,
+    SourceAnnotationsAllSourceFiles,
+    exporter,
+    get_logger,
+    installer,
+    uninstaller,
+    util
+)
 
 logger = get_logger(__name__)
 
@@ -81,14 +98,34 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
     write_csv(out, column_names, freq_dict, delimiter, cutoff)
 
 
-@installer("Install word frequency list on remote host")
-def install_freq_list(freq_list: ExportInput = ExportInput("stats_export.frequency_list/stats_[metadata.id].csv"),
-                      out: OutputMarker = OutputMarker("stats_export.install_freq_list_marker"),
-                      host: str = Config("stats_export.remote_host"),
-                      target_dir: str = Config("stats_export.remote_dir")):
+@installer("Install word frequency list on remote host", uninstaller="stats_export:uninstall_freq_list")
+def install_freq_list(
+    freq_list: ExportInput = ExportInput("stats_export.frequency_list/stats_[metadata.id].csv"),
+    marker: OutputMarker = OutputMarker("stats_export.install_freq_list_marker"),
+    uninstall_marker: MarkerOptional = MarkerOptional("stats_export.uninstall_freq_list_marker"),
+    host: Optional[str] = Config("stats_export.remote_host"),
+    target_dir: str = Config("stats_export.remote_dir")
+):
     """Install frequency list on server by rsyncing."""
     util.install.install_path(freq_list, host, target_dir)
-    out.write()
+    uninstall_marker.remove()
+    marker.write()
+
+
+@uninstaller("Uninstall word frequency list")
+def uninstall_freq_list(
+    corpus_id: Corpus = Corpus(),
+    marker: OutputMarker = OutputMarker("stats_export.uninstall_freq_list_marker"),
+    install_marker: MarkerOptional = MarkerOptional("stats_export.install_freq_list_marker"),
+    host: Optional[str] = Config("stats_export.remote_host"),
+    remote_dir: str = Config("stats_export.remote_dir")
+):
+    """Uninstall word frequency list."""
+    remote_file = os.path.join(remote_dir, f"stats_{corpus_id}.csv")
+    logger.info(f"Removing word frequency file {host + ':' if host else ''}{remote_file}")
+    util.install.uninstall_path(remote_file, host)
+    install_marker.remove()
+    marker.write()
 
 
 ################################################################################

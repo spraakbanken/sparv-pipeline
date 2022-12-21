@@ -1,8 +1,25 @@
 """SBX specific annotation and export functions related to the stats export."""
+import os
+from typing import Optional
 
-from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Config, Export, ExportInput, Output,
-                       OutputMarker, annotator, exporter, get_logger, installer, util)
-
+from sparv.api import (
+    AllSourceFilenames,
+    Annotation,
+    AnnotationAllSourceFiles,
+    Config,
+    Corpus,
+    Export,
+    ExportInput,
+    MarkerOptional,
+    Output,
+    OutputMarker,
+    annotator,
+    exporter,
+    get_logger,
+    installer,
+    uninstaller,
+    util
+)
 from .stats_export import freq_list
 
 logger = get_logger(__name__)
@@ -208,23 +225,62 @@ def sbx_freq_list_fsv(
               out=out, sparv_namespace="", source_namespace="", delimiter=delimiter, cutoff=cutoff)
 
 
-@installer("Install SBX word frequency list on remote host")
+@installer("Install SBX word frequency list on remote host", uninstaller="stats_export:uninstall_sbx_freq_list")
 def install_sbx_freq_list(
     freq_list: ExportInput = ExportInput("stats_export.frequency_list_sbx/stats_[metadata.id].csv"),
-    out: OutputMarker = OutputMarker("stats_export.install_sbx_freq_list_marker"),
-    host: str = Config("stats_export.remote_host"),
-    target_dir: str = Config("stats_export.remote_dir")):
+    marker: OutputMarker = OutputMarker("stats_export.install_sbx_freq_list_marker"),
+    uninstall_marker: MarkerOptional = MarkerOptional("stats_export.uninstall_sbx_freq_list_marker"),
+    host: Optional[str] = Config("stats_export.remote_host"),
+    target_dir: str = Config("stats_export.remote_dir")
+):
     """Install frequency list on server by rsyncing."""
     util.install.install_path(freq_list, host, target_dir)
-    out.write()
+    uninstall_marker.remove()
+    marker.write()
 
 
-@installer("Install SBX word frequency list with dates on remote host")
+@installer("Install SBX word frequency list with dates on remote host",
+           uninstaller="stats_export:uninstall_sbx_freq_list_date")
 def install_sbx_freq_list_date(
     freq_list: ExportInput = ExportInput("stats_export.frequency_list_sbx_date/stats_[metadata.id].csv"),
-    out: OutputMarker = OutputMarker("stats_export.install_sbx_freq_list_date_marker"),
-    host: str = Config("stats_export.remote_host"),
-    target_dir: str = Config("stats_export.remote_dir")):
+    marker: OutputMarker = OutputMarker("stats_export.install_sbx_freq_list_date_marker"),
+    uninstall_marker: MarkerOptional = MarkerOptional("stats_export.uninstall_sbx_freq_list_date_marker"),
+    host: Optional[str] = Config("stats_export.remote_host"),
+    target_dir: str = Config("stats_export.remote_dir")
+):
     """Install frequency list on server by rsyncing."""
     util.install.install_path(freq_list, host, target_dir)
-    out.write()
+    uninstall_marker.remove()
+    marker.write()
+
+
+@uninstaller("Uninstall SBX word frequency list")
+def uninstall_sbx_freq_list(
+    corpus_id: Corpus = Corpus(),
+    marker: OutputMarker = OutputMarker("stats_export.uninstall_sbx_freq_list_marker"),
+    install_marker: MarkerOptional = MarkerOptional("stats_export.install_sbx_freq_list_marker"),
+    host: Optional[str] = Config("stats_export.remote_host"),
+    remote_dir: str = Config("stats_export.remote_dir")
+):
+    """Uninstall SBX word frequency list."""
+    remote_file = os.path.join(remote_dir, f"stats_{corpus_id}.csv")
+    logger.info(f"Removing SBX word frequency file {host + ':' if host else ''}{remote_file}")
+    util.install.uninstall_path(remote_file, host)
+    install_marker.remove()
+    marker.write()
+
+
+@uninstaller("Uninstall SBX word frequency list with dates")
+def uninstall_sbx_freq_list_date(
+    corpus_id: Corpus = Corpus(),
+    marker: OutputMarker = OutputMarker("stats_export.uninstall_sbx_freq_list_date_marker"),
+    install_marker: MarkerOptional = MarkerOptional("stats_export.install_sbx_freq_list_date_marker"),
+    host: Optional[str] = Config("stats_export.remote_host"),
+    remote_dir: str = Config("stats_export.remote_dir")
+):
+    """Uninstall SBX word frequency list with dates."""
+    remote_file = os.path.join(remote_dir, f"stats_{corpus_id}.csv")
+    logger.info(f"Removing SBX word frequency with dates file {host + ':' if host else ''}{remote_file}")
+    util.install.uninstall_path(remote_file, host)
+    install_marker.remove()
+    marker.write()

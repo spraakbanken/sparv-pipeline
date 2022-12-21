@@ -13,6 +13,9 @@
   - `korp:uninstall_lemgrams`
   - `korp:uninstall_timespan`
   - `korp:uninstall_wordpicture`
+  - `stats_export:uninstall_freq_list`
+  - `stats_export:uninstall_sbx_freq_list`
+  - `stats_export:uninstall_sbx_freq_list_date`
   - `xml_export:uninstall`
   - `xml_export:uninstall`
 - Added `MarkerOptional` class.
