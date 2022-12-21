@@ -35,6 +35,7 @@
 ### Fixed
 
 - Several bugs fixed in `korp:config`.
+- Fixed bug where Sparv would hang if an error occurred in a preloaded annotator.
 
 ## [5.1.0] - 2022-11-03
 

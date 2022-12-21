@@ -179,10 +179,10 @@ def handle(client_sock, annotators: Dict[str, Preloader]):
         console.print_exception()
         send_data(client_sock, e)
         return
-
-    # Clear log handlers
-    logger = logging.getLogger("sparv")
-    logger.handlers.clear()
+    finally:
+        # Clear log handlers
+        logger = logging.getLogger("sparv")
+        logger.handlers.clear()
 
     log.info("Done")
 
