@@ -36,6 +36,7 @@
 
 - Several bugs fixed in `korp:config`.
 - Fixed bug where Sparv would hang if an error occurred in a preloaded annotator.
+- Fixed occasional crash in `cwb:encode` when old CWB export hadn't been removed first.
 
 ## [5.1.0] - 2022-11-03
 

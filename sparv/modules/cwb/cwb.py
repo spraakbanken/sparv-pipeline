@@ -207,6 +207,11 @@ def cwb_encode(corpus, annotations, source_annotations, source_files, words, vrt
     data_dir.mkdir(exist_ok=True)
     registry_dir.mkdir(exist_ok=True)
 
+    # Remove any existing files in data dir except for the .info file
+    for f in data_dir.glob("*"):
+        if not f.name == ".info":
+            f.unlink()
+
     encode_args = ["-s", "-p", "-",
                    "-d", data_dir,
                    "-R", registry_file,
