@@ -149,7 +149,7 @@ def config(id: Corpus = Corpus(),
         out: YAML file to create.
     """
     config_dict = {
-        "id": id,
+        "id": str(id),
         "lang": language,
         "mode": modes
     }
