@@ -300,7 +300,7 @@ def main():
                 if getattr(args, t):
                     config["types"].append(t)
         elif args.command == "preload":
-            config["socket"] = args.socket
+            config["socket"] = str(Path(args.socket).resolve())
             config["preloader"] = True
             config["processes"] = args.processes
             config["preload_command"] = args.preload_command
@@ -391,18 +391,24 @@ def main():
         log_level = args.log or "warning"
         log_file_level = args.log_to_file or "warning"
         simple_mode = args.simple
+        socket = args.socket
+
+        if socket:
+            # Convert to absolute path, to work together with --dir
+            socket_path = Path(socket).resolve()
+            if not socket_path.is_socket():
+                print(f"Socket file '{socket}' doesn't exist or isn't a socket.")
+                sys.exit(1)
+            socket = str(socket_path)
+
         config.update({"debug": args.debug,
                        "file": vars(args).get("file", []),
                        "log_level": log_level,
                        "log_file_level": log_file_level,
-                       "socket": args.socket,
+                       "socket": socket,
                        "force_preloader": args.force_preloader,
                        "targets": snakemake_args["targets"],
                        "threads": args.cores})
-        # If using socket, make sure that socket file exists
-        if args.socket and not Path(args.socket).is_socket():
-            print(f"Socket file '{args.socket}' doesn't exist or isn't a socket.")
-            sys.exit(1)
 
     if simple_target:
         # Force Snakemake to use threads to prevent unnecessary processes for simple targets
