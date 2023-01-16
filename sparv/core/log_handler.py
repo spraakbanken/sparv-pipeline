@@ -211,12 +211,15 @@ class ProgressWithTable(progress.Progress):
                 elapsed = str(timedelta(seconds=round(time.time() - task["starttime"])))
                 if len(elapsed) > elapsed_max_len:
                     elapsed_max_len = len(elapsed)
-                rows.append((
-                    task["name"],
-                    f"[dim]{task['file']}[/dim]",
-                    bar_col(self._tasks[task["task"]]) if task["task"] else "",
-                    elapsed
-                ))
+                try:
+                    rows.append((
+                        task["name"],
+                        f"[dim]{task['file']}[/dim]",
+                        bar_col(self._tasks[task["task"]]) if task["task"] else "",
+                        elapsed
+                    ))
+                except KeyError:  # May happen if self._tasks has changed
+                    pass
 
             table = Table(show_header=False, box=box.SIMPLE, expand=True)
             table.add_column("Task", no_wrap=True, min_width=self.task_max_len + 2, ratio=1)
