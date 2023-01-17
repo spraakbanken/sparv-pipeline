@@ -1,4 +1,5 @@
 """Snakefile used by Snakemake."""
+import os
 from pathlib import Path
 
 from rich import box
@@ -198,6 +199,11 @@ if not config_missing and selected_targets and not snake_storage.source_files:
     named_targets.update(("export_corpus", "install_corpus"))
     if set(selected_targets).issubset(named_targets):
         raise SparvErrorMessage("No source files available!")
+
+# Sort GPUs visible to modules by available memory
+gpus = util.system.gpus()
+if gpus:
+    os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(map(str, gpus))
 
 # ==============================================================================
 # Static Snakemake Rules
