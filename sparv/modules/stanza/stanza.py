@@ -41,10 +41,20 @@ def annotate(corpus_text: Text = Text(),
              max_sentence_length: int = Config("stanza.max_sentence_length"),
              cpu_fallback: bool = Config("stanza.cpu_fallback")):
     """Do dependency parsing using Stanza."""
+    import torch
     from stanza.pipeline.core import DownloadMethod
 
     # cpu_fallback only makes sense if use_gpu is True
     cpu_fallback = cpu_fallback and use_gpu
+
+    # Select the GPU with most free memory available
+    try:
+        if use_gpu:
+            gpus = util.system.gpus()
+            if gpus:
+                torch.cuda.set_device(gpus[0])
+    except:
+        pass
 
     # Read corpus_text and text_spans
     text_data = corpus_text.read()
