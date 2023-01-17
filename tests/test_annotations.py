@@ -9,6 +9,7 @@ from . import utils
 
 
 @pytest.mark.swe
+# @pytest.mark.noexternal  TODO: this test fails in CI, enable when fixed
 def test_mini_swe(tmp_path):
     """Run corpus mini-swe and compare the annotations and exports to gold standard."""
     gold_corpus_dir = pathlib.Path("tests/test_corpora/mini-swe")
@@ -18,6 +19,7 @@ def test_mini_swe(tmp_path):
 
 
 @pytest.mark.swe
+@pytest.mark.noexternal
 def test_special_swe(tmp_path):
     """Run corpus special-swe and compare the annotations and exports to gold standard."""
     gold_corpus_dir = pathlib.Path("tests/test_corpora/special-swe")
@@ -27,6 +29,7 @@ def test_special_swe(tmp_path):
 
 
 @pytest.mark.swe
+@pytest.mark.noexternal
 def test_txt_swe(tmp_path):
     """Run corpus txt-swe and compare the annotations and exports to gold standard."""
     gold_corpus_dir = pathlib.Path("tests/test_corpora/txt-swe")
@@ -58,6 +61,7 @@ def test_swe_1800(tmp_path):
 
 @pytest.mark.swe
 @pytest.mark.swehist
+@pytest.mark.noexternal
 def test_swe_fsv(tmp_path):
     """Run corpus swe-fsv and compare the annotations and exports to gold standard."""
     gold_corpus_dir = pathlib.Path("tests/test_corpora/swe-fsv")

@@ -1,0 +1,63 @@
+name: CI
+
+on: [push, pull_request]
+
+
+
+jobs:
+  checks:
+    name: ${{ matrix.task.name }} py-${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      max-parallel: 4
+      fail-fast: false
+      matrix:
+        # TODO: enable if decided to test 3.7
+        # python-version: ["3.7", "3.8", "3.9", "3.10"]
+        python-version: ["3.8", "3.9", "3.10"]
+        os: [ubuntu-latest]
+        task:
+          - name: Run tests
+            run: make noexternal-tests
+
+    steps:
+      - name: Checkout code
+        uses: nschloe/action-cached-lfs-checkout@v1
+        # Use these to explicitly include/exclude files:
+        # with:
+        #   include: "*"
+        #   exclude: ""
+
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # ----------------------------------------------
+      #       load cached venv if cache exists
+      # ----------------------------------------------
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v3.2.3
+        with:
+          path: venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/pyproject.toml') }}-${{ hashFiles('**/setup.py') }}-${{ hashFiles('.github/workflows/ci.yml') }}
+
+      #----------------------------------------------
+      # install dependencies if cache does not exist
+      #----------------------------------------------
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: |
+          make setup-venv
+          make dev
+
+      - name: Setup Sparv
+        run: |
+          venv/bin/sparv setup -d $PWD
+          tree .
+
+      - name: ${{ matrix.task.name }}
+        run: ${{ matrix.task.run }}
