@@ -55,8 +55,8 @@ setuptools.setup(
     extras_require={
         "dev": [
             "pandocfilters==1.5.0",
-            "pytest==6.2.5",
-            "pytest-sugar==0.9.4"
+            "pytest",
+            "pytest-sugar>=0.9.6"
         ]
     },
     entry_points={
