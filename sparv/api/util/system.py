@@ -6,7 +6,7 @@ import shlex
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import sparv.core.paths as paths
 from sparv.api import get_logger, SparvErrorMessage
@@ -184,3 +184,17 @@ def remove_path(path: Union[str, Path], host: Optional[str] = None):
             p.unlink()
         elif p.is_dir():
             shutil.rmtree(p)
+
+
+def gpus() -> Optional[List[int]]:
+    """Return a list of available GPUs, sorted by free memory in descending order.
+
+    Returns None on failure."""
+
+    try:
+        cmd = ["nvidia-smi", "--query-gpu=memory.free", "--format=csv"]
+        memory_info = subprocess.check_output(cmd).decode().splitlines()[1:]
+        memory = sorted(((int(free.split()[0]), i) for i, free in enumerate(memory_info)), reverse=True)
+        return [i[1] for i in memory]
+    except:
+        return None

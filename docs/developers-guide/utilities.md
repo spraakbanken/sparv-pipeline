@@ -196,6 +196,12 @@ Search for the binary for a program. Returns the path to binary, or `None` if no
 - `raise_error`: If set to `True` raises error if binary could not be found. Defaults to `False`.
 
 
+### gpus()
+Returns a list of available GPUs, ordered by free memory in descending order. Returns `None` if it fails.
+Currently only works for NVIDIA GPUs, and requires the `nvidia-smi` utility to be installed.
+Takes no arguments.
+
+
 ### kill_process()
 Kill a process, and ignore the error if it is already dead.
 

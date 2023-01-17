@@ -21,6 +21,7 @@
 - Added `MarkerOptional` class.
 - Added stats export for Swedish from the 1800s.
 - `korp:wordpicture` table name is now configurable using `korp.wordpicture_table`.
+- Added utility function `util.system.gpus()` which returns a list of GPUs, ordered by free memory in descending order.
 
 ### Changed
 
