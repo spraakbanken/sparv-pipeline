@@ -50,7 +50,7 @@ setuptools.setup(
         "snakemake==6.3.0",
         "stanza==1.4.0",
         "torch>=1.9.1",  # Used by Stanza; see https://github.com/spraakbanken/sparv-pipeline/issues/82
-        "typing-inspect==0.7.1"
+        "typing-inspect==0.8.0"
     ],
     extras_require={
         "dev": [
