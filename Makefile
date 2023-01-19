@@ -13,11 +13,17 @@ help:
 	@echo "test | run-all-tests"
 	@echo "   run all tests"
 	@echo ""
-	@echo "run-doc-tests"
-	@echo "   run all tests"
+	@echo "noexternal-tests"
+	@echo "   run all tests marked with 'noexternal'"
+	@echo ""
+	@echo "unit-tests"
+	@echo "   run all tests marked with 'unit'"
 	@echo ""
 	@echo "run-all-tests-w-coverage"
 	@echo "   run all tests with coverage collection"
+	@echo ""
+	@echo "run-noexternal-tests-w-coverage"
+	@echo "   run all tests marked with 'noexternal' with coverage collection"
 	@echo ""
 	@echo "lint"
 	@echo "   lint the code"
@@ -68,6 +74,10 @@ run-all-tests:
 .PHONY: noexternal-tests
 noexternal-tests:
 	${INVENV} pytest -m noexternal
+
+.PHONY: unit-tests
+unit-tests:
+	${INVENV} pytest -m unit
 
 .PHONY: run-all-tests-w-coverage
 run-all-tests-w-coverage:
