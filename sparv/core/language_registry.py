@@ -19,3 +19,8 @@ class LanguageRegistry(dict):
     def get_language_name_by_part3(part3: str) -> Optional[str]:
         lang = pycountry.languages.get(alpha_3=part3)
         return lang.name if lang else None
+
+    @staticmethod
+    def get_language_part1_by_part3(part3: str) -> Optional[str]:
+        lang = pycountry.languages.get(alpha_3=part3)
+        return lang.alpha_2 if lang else None
