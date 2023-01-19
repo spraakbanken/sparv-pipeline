@@ -39,10 +39,10 @@ setuptools.setup(
     python_requires=">=3.6.2",
     install_requires=[
         "appdirs==1.4.4",
-        "iso-639==0.4.5",
         "docx2python==1.27.1",
         "nltk==3.6.7",
         "protobuf~=3.19.0", # Used by Stanza; see https://github.com/spraakbanken/sparv-pipeline/issues/161
+        "pycountry==22.3.5",
         "python-dateutil==2.8.2",
         "PyYAML==6.0",
         "questionary==1.10.0",

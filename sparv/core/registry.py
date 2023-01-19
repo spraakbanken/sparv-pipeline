@@ -7,12 +7,12 @@ from collections import defaultdict
 from enum import Enum
 from typing import Callable, Dict, List, Optional, Tuple, Type, TypeVar
 
-import iso639
 import typing_inspect
 
 from sparv.core import config as sparv_config
 from sparv.core import paths
 from sparv.core.console import console
+from sparv.core.language_registry import LanguageRegistry
 from sparv.core.misc import SparvErrorMessage
 from sparv.api.classes import (BaseOutput, Config, Export, ExportAnnotations, ExportAnnotationsAllSourceFiles,
                                SourceAnnotations, SourceStructureParser, ModelOutput, OutputMarker, Wildcard)
@@ -64,7 +64,7 @@ all_module_classes = defaultdict(lambda: defaultdict(list))
 wizards = []
 
 # All supported languages
-languages = {}
+languages = LanguageRegistry()
 
 # All config keys containing lists of automatic annotations (i.e. ExportAnnotations)
 annotation_sources = {"export.annotations"}
@@ -297,14 +297,7 @@ def _add_to_registry(annotator):
     if annotator["language"]:
         # Add to set of supported languages...
         for lang in annotator["language"]:
-            if lang not in languages:
-                langcode, _, suffix = lang.partition("-")
-                if suffix:
-                    suffix = f" ({suffix})"
-                if langcode in iso639.languages.part3:
-                    languages[lang] = iso639.languages.get(part3=langcode).name + suffix
-                else:
-                    languages[lang] = lang
+            languages.add_language(lang)
         # ... but skip annotators for other languages than the one specified in the config
         if sparv_config.get("metadata.language") and not check_language(
                 sparv_config.get("metadata.language"), annotator["language"], sparv_config.get("metadata.variety")):
