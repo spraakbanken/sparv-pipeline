@@ -30,6 +30,8 @@
 
 ### Changed
 
+- Added support for Python 3.10.
+- Dropped support for Python 3.6.
 - `AnnotationAllSourceFiles` now have the same methods as `Annotation`.
 - The util function `install_mysql` can now install locally as well as to a remote server.
 - Pre-built SALDO models are now downloaded instead of being built on demand.
@@ -139,7 +141,7 @@
     - `korp.remote_cwb_registry` is now called `cwb.remote_registry_dir`
     - `korp.remote_host` has been split into `korp.remote_host` (host for SQL files) and `cwb.remote_host` (host for CWB
        files)
-    - install target `korp:install_corpus` has been renamed and split into `cwb:install_corpus` and 
+    - install target `korp:install_corpus` has been renamed and split into `cwb:install_corpus` and
       `cwb:install_corpus_scrambled`
 - Renamed the following stats exports:
     `stats_export:freq_list` is now called `stats_export:sbx_freq_list`
