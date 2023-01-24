@@ -137,7 +137,7 @@ def write_csv(out, column_names, freq_dict, delimiter, cutoff):
     with open(out, "w", encoding="utf-8") as csvfile:
         csv_writer = csv.writer(csvfile, delimiter=delimiter)
         csv_writer.writerow(column_names)
-        for annotations, freq in sorted(freq_dict.items(), key=lambda x: -x[1]):
+        for annotations, freq in sorted(freq_dict.items(), key=lambda x: (-x[1], x[0])):
             if cutoff and cutoff > freq:
                 break
             csv_writer.writerow(list(annotations) + [freq])
