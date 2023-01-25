@@ -39,13 +39,8 @@ HIDDEN_ANNOTATIONS = (
     "<token>:stanza.msd_hunpos_backoff_info"
 )
 
-# Annotations needed by reading mode (using export names)
-READING_MODE_ANNOTATIONS = (
-    "text:_id",
-    "sentence:id",
-    "_head",
-    "_tail"
-)
+# Annotations (using export names) to always include (if they exist), that would normally be excluded
+INCLUDED_ANNOTATIONS = ()
 
 LABELS = {
     "sentence": {
@@ -256,8 +251,10 @@ def config(id: Corpus = Corpus(),
 
     # Annotations
     presets = get_presets(remote_host, config_dir)
-    token_annotations, struct_annotations, _ = build_annotations(annotation_definitions, annotation_list, export_names,
-                                                                 hidden_annotations, presets, reading_mode, token)
+    token_annotations, struct_annotations, _ = build_annotations(
+        annotation_definitions, annotation_list, export_names, hidden_annotations, presets, INCLUDED_ANNOTATIONS,
+        token
+    )
 
     config_dict["struct_attributes"] = struct_annotations
     config_dict["pos_attributes"] = token_annotations
@@ -273,7 +270,7 @@ def config(id: Corpus = Corpus(),
         out_yaml.write(dict_to_yaml(config_dict))
 
 
-def build_annotations(annotation_definitions, annotation_list, export_names, hidden_annotations, presets, reading_mode,
+def build_annotations(annotation_definitions, annotation_list, export_names, hidden_annotations, presets, include,
                       token, text_annotation=None, cwb_annotations: bool = True):
     token_annotations = []
     struct_annotations = []
@@ -284,9 +281,7 @@ def build_annotations(annotation_definitions, annotation_list, export_names, hid
         export_name = export_names.get(annotation.name, annotation.name)
         # Skip certain annotations unless explicitly listed in annotation_definitions
         if (annotation.name in hidden_annotation_names or annotation.attribute_name is None or export_name.split(":", 1)[
-                -1].startswith("_")) and annotation.name not in annotation_definitions and not (
-            reading_mode and export_name in READING_MODE_ANNOTATIONS
-        ):
+                -1].startswith("_")) and annotation.name not in annotation_definitions and not export_name in include:
             logger.debug(f"Skipping annotation {annotation.name!r}")
             continue
         export_name_cwb = cwb_escape(export_name.replace(":", "_"))
