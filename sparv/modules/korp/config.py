@@ -214,6 +214,7 @@ def config(id: Corpus = Corpus(),
         config_dict["within"] = []
         for v in within:
             if isinstance(v, str):
+                v = cwb_escape(v)
                 n = 0
                 if " " in v:
                     n, _, v = v.partition(" ")
@@ -233,6 +234,7 @@ def config(id: Corpus = Corpus(),
         config_dict["context"] = []
         for v in context:
             if isinstance(v, str):
+                v = cwb_escape(v)
                 n = 1
                 if " " in v:
                     n, _, v = v.partition(" ")
