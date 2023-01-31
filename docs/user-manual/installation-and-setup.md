@@ -153,7 +153,7 @@ Download and unpack the zip-file from the [MaltParser webpage](http://www.maltpa
 |    |           |
 |:---|:----------|
 |**Purpose**                       |Creating Corpus Workbench binary files. Only needed if you want to be able to search corpora with this tool.
-|**Download**                      |[Corpus Workbench on SourceForge](https://cwb.sourceforge.io/download.php)
+|**Download**                      |[Corpus Workbench on SourceForge](https://cwb.sourceforge.io/install.php)
 |**License**                       |[GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.html)
 |**Version compatible with Sparv** |beta 3.4.21 (most likely works with newer versions)
 
