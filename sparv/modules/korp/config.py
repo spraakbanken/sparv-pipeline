@@ -1,8 +1,9 @@
 """Create configuration files for the Korp backend and frontend."""
 import itertools
 import subprocess
+from collections import defaultdict
 from pathlib import Path
-from typing import Optional, Union, List
+from typing import Dict, List, Optional, Union
 
 import yaml
 
@@ -352,23 +353,35 @@ def get_presets(remote_host, config_dir):
     return presets
 
 
-def build_description(description, short_description):
+def build_description(description, short_description) -> Union[Dict[str, str], str]:
     """Combine description and short_description if they exist."""
+    if isinstance(description, dict):
+        description_dd = defaultdict(lambda: None, description)
+    else:
+        description_dd = defaultdict(lambda: description if description is None else str(description))
+
+    if isinstance(short_description, dict):
+        short_description_dd = defaultdict(lambda: None, short_description)
+    else:
+        short_description_dd = defaultdict(
+            lambda: short_description if short_description is None else str(short_description)
+        )
+
     lang_dict = {}
-    description = description or {}
-    short_description = short_description or {}
-    langs = set(list(description.keys()) + list(short_description.keys()))
+    langs = set(list(description_dd.keys()) + list(short_description_dd.keys())) or {None}
+
     for lang in langs:
         descr = None
-        if short_description.get(lang) and description.get(lang):
-            descr = f"<b>{short_description.get(lang)}</b><br><br>{description.get(lang)}"
-        elif description.get(lang):
-            descr = description.get(lang)
-        elif short_description.get(lang):
-            descr = short_description.get(lang)
+        if short_description_dd[lang] and description_dd[lang]:
+            descr = f"<b>{short_description_dd[lang]}</b><br><br>{description_dd[lang]}"
+        elif description_dd[lang]:
+            descr = str(description_dd[lang])
+        elif short_description_dd[lang]:
+            descr = str(short_description_dd[lang])
         if descr:
             lang_dict[lang] = descr
-    return lang_dict
+
+    return lang_dict.get(None) or lang_dict
 
 
 @installer("Install Korp corpus configuration file.", uninstaller="korp:uninstall_config")
