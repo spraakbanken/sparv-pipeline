@@ -520,10 +520,12 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         rule.export_dirs = [str(p / "_")[:-1] for p in output_dirs]
 
     if rule.missing_config:
-        log_handler.messages["missing_configs"][rule.full_name].update(
-            [c for c in rule.missing_config if not c.startswith("<")])
-        log_handler.messages["missing_classes"][rule.full_name].update(
-            [c[1:-1] for c in rule.missing_config if c.startswith("<")])
+        missing_config = [c for c in rule.missing_config if not c.startswith("<")]
+        if missing_config:
+            log_handler.messages["missing_configs"][rule.full_name].update(missing_config)
+        missing_classes = [c[1:-1] for c in rule.missing_config if c.startswith("<")]
+        if missing_classes:
+            log_handler.messages["missing_classes"][rule.full_name].update(missing_classes)
 
     if rule.missing_binaries:
         log_handler.messages["missing_binaries"][rule.full_name].update(rule.missing_binaries)
