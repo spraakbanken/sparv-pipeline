@@ -50,12 +50,12 @@ where to set up its data directory. This will also populate the data directory w
 If you like, you can pre-build the model files. This step is optional, and the only advantage is that annotating your
 first corpus will be quicker since all the models are already set up. If you skip this step, models will be downloaded
 and built automatically on demand when annotating your first corpus. Pre-building models can be done by using the
-command `sparv build-models`. If you do this in a directory where there is no
+command `sparv build-models --all`. If you do this in a directory where there is no
 [corpus config](user-manual/corpus-configuration.md) you
 have to tell Sparv what language the models should be built for (otherwise the language of the corpus config is used).
 The language is provided as a three-letter code with the `--language` flag (use the `sparv languages` command for
 a list of available languages and their codes). For example, if you would like to build all the Swedish models you
-can run `sparv build-models --language swe`.
+can run `sparv build-models --all --language swe`.
 
 ## Installing Additional Third-party Software
 The Sparv Pipeline can be used together with several plugins and third-party software. Installation of the software
