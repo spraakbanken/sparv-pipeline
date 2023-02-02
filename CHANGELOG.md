@@ -42,6 +42,7 @@
 - Fixed bug where Sparv would hang if an error occurred in a preloaded annotator.
 - Fixed occasional crash in `cwb:encode` when old CWB export hadn't been removed first.
 - Fixed bug when using relative socket path while also using `--dir`.
+- Fix quoting of paths in `util.system.rsync`.
 
 ## [5.1.0] - 2022-11-03
 

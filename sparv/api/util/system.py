@@ -166,10 +166,10 @@ def rsync(local: Union[str, Path], host: Optional[str], remote: Union[str, Path]
         args = [local]
 
     if host:
-        subprocess.check_call(["ssh", host, f"mkdir -p '{remote_dir}'"])
+        subprocess.check_call(["ssh", host, f"mkdir -p {shlex.quote(remote_dir)}"])
         subprocess.check_call(["rsync"] + args + [f"{host}:{remote}"])
     else:
-        subprocess.check_call(["mkdir", "-p", f"'{remote_dir}'"])
+        subprocess.check_call(["mkdir", "-p", remote_dir])
         subprocess.check_call(["rsync"] + args + [remote])
 
 
