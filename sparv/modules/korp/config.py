@@ -1,5 +1,6 @@
 """Create configuration files for the Korp backend and frontend."""
 import itertools
+import shlex
 import subprocess
 from collections import defaultdict
 from pathlib import Path
@@ -332,7 +333,8 @@ def get_presets(remote_host, config_dir):
     """Get list of presets from file system."""
     presets = {}
     if remote_host and remote_host != "localhost":
-        cmd = ["ssh", remote_host, f"find '{config_dir}/attributes/'"]
+        remote_path = shlex.quote(f"{config_dir}/attributes/")
+        cmd = ["ssh", remote_host, f"find {remote_path}"]
     else:
         cmd = ["find", f"{config_dir}/attributes/"]
     logger.debug(f"Getting Korp annotation presets from {remote_host}:{config_dir}")
