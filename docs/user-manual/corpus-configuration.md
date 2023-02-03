@@ -50,11 +50,11 @@ used by multiple Sparv modules, while others are specific to one particular anno
 defines the name of the binary the hunpos module uses to run part-of-speech tagging). These module specific config
 options usually have default values which are defined by the module itself.
 
-When running Sparv your corpus config will be read and combined with Sparv's default config file (`config_default.yaml`
-in the [Sparv data directory](user-manual/installation-and-setup.md#setting-up-sparv)) and the default values defined by
-different Sparv modules. You can view the resulting configuration by running `sparv config`. Using the `config` command
-you can also inspect specific config variables, e.g. `sparv config metadata` or `sparv config metadata.language`. All
-default values can be overridden in your own corpus config.
+When running Sparv your corpus config will be read and combined with Sparv's default config file
+(`config/config_default.yaml` in the [Sparv data directory](user-manual/installation-and-setup.md#setting-up-sparv)) and
+the default values defined by different Sparv modules. You can view the resulting configuration by running `sparv
+config`. Using the `config` command you can also inspect specific config variables, e.g. `sparv config metadata` or
+`sparv config metadata.language`. All default values can be overridden in your own corpus config.
 
 There are a few config options that must be set (either through the default config or the corpus config):
   - `metadata.language` (default: `swe`)
