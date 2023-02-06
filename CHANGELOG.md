@@ -42,7 +42,8 @@
 - Fixed bug where Sparv would hang if an error occurred in a preloaded annotator.
 - Fixed occasional crash in `cwb:encode` when old CWB export hadn't been removed first.
 - Fixed bug when using relative socket path while also using `--dir`.
-- Fix quoting of paths in `util.system.rsync`.
+- Fixed quoting of paths in `util.system.rsync`.
+- It's no longer possible to create an infinite loop of classes referring to each other.
 
 ## [5.1.0] - 2022-11-03
 

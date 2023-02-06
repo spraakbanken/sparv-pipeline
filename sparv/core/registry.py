@@ -522,26 +522,37 @@ def expand_variables(string, rule_name: Optional[str] = None, is_annotation: boo
         # Split if list of alternatives
         strings = [s for s in string.split(", ") for string in strings]
 
+    def expand_classes(s: str, parents: set[str]) -> Tuple[Optional[str], Optional[str]]:
+        classes = find_classes(s, True)
+        if not classes:
+            return s, None
+        for cls in classes:
+            # Check that cls isn't among its parents
+            if cls.group(1) in parents:
+                raise SparvErrorMessage(
+                    f"The class {cls.group()} refers to itself, either directly or indirectly, leading to an infinite "
+                    "loop. Check your class definitions in your config file under the 'classes' section. Also check "
+                    "'import.text_annotation', which automatically sets the <text> class."
+                )
+            real_ann = _expand_class(cls.group(1))
+            if real_ann:
+                final_ann, rest_ = expand_classes(real_ann, parents.union([cls.group(1)]))
+                if rest_:
+                    return None, rest_
+                s = s.replace(cls.group(), final_ann, 1)
+            else:
+                return None, cls.group()
+        return s, None
+
     for string in strings:
         # Convert class names to real annotations
-        while True:
-            clss = find_classes(string, True)
-            if not clss:
-                break
-            for cls in clss:
-                real_ann = _expand_class(cls.group(1))
-                if real_ann:
-                    string = string.replace(cls.group(), real_ann)
-                else:
-                    rest.append(cls.group())
-                    break
-            else:
-                continue
-            break
+        string, unknown = expand_classes(string, set())
+        if unknown:
+            rest.append(unknown)
 
         if is_annotation and len(strings) > 1:
             # If multiple alternative annotations, return the first one that is explicitly used, or the last
-            if string in explicit_annotations or clss and set(clss).intersection(explicit_annotations):
+            if string in explicit_annotations:
                 break
 
     return string, rest
