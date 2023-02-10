@@ -1,6 +1,7 @@
 """Sparv preloader."""
 import logging
 import multiprocessing
+import os
 import pickle
 import socket
 import struct
@@ -13,8 +14,8 @@ from rich.logging import RichHandler
 
 from sparv.core import config, io, log_handler
 from sparv.core.console import console
-from sparv.core.snake_utils import SnakeStorage
 from sparv.core.misc import SparvErrorMessage
+from sparv.core.snake_utils import SnakeStorage
 
 INFO = "INFO"
 STATUS = "STATUS"
@@ -220,7 +221,7 @@ def worker(worker_no: int, server_socket, annotators: Dict[str, Preloader], stop
         client_sock.close()
 
 
-def serve(socket_path: str, processes: int, storage: SnakeStorage):
+def serve(socket_path: str, processes: int, storage: SnakeStorage, stop_signal: multiprocessing.Event):
     """Start the Sparv preloader socket server."""
     socket_file = Path(socket_path)
     if socket_file.exists():
@@ -285,11 +286,12 @@ def serve(socket_path: str, processes: int, storage: SnakeStorage):
 
     log.info(f"The Sparv preloader is ready and waiting for connections using the socket at {socket_file.absolute()}. "
              "Run Sparv with the command 'sparv run --socket /path/to/socket' to use the preloader. "
-             "Press Ctrl-C to exit, or run 'sparv preload stop --socket /path/to/socket'.")
+             "Press Ctrl-C to exit, or run 'sparv preload stop --socket /path/to/socket'. You can also stop the "
+             f"preloader by sending an interrupt signal to the process with id {os.getpid()}.")
 
     # Periodically check whether stop_event is set or not and stop all processes when set
     while True:
-        if stop_event.is_set():
+        if stop_event.is_set() or stop_signal.is_set():
             log.info("Stopping all workers...")
             for p in workers:
                 if p.is_alive():

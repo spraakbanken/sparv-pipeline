@@ -25,6 +25,7 @@
 - Sparv will automatically order the GPUs in the environment variable `CUDA_VISIBLE_DEVICES` by the amount of free
   memory that was available when Sparv started.
 - Stanza now always selects the GPU with the most free memory.
+- The preloader can now be gracefully stopped by sending an interrupt signal to the Sparv process.
 
 ### Changed
 

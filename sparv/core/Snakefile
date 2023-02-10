@@ -1,5 +1,7 @@
 """Snakefile used by Snakemake."""
+import multiprocessing
 import os
+import signal
 from pathlib import Path
 
 from rich import box
@@ -495,17 +497,20 @@ rule build_models:
     input:
         snake_storage.model_outputs
 
+if "preload" in selected_targets:
+    stop_signal = multiprocessing.Event()
+    signal.signal(signal.SIGINT, lambda _sig_no, _frame: stop_signal.set())
 
-rule preload:
-    run:
-        from sparv.core import preload
-        if config["preload_command"] == "start":
-            preload.serve(config["socket"], config["processes"], snake_storage)
-        elif config["preload_command"] == "stop":
-            if not Path(config["socket"]).is_socket():
-                raise SparvErrorMessage(f"Socket file '{config['socket']}' doesn't exist or isn't a socket.")
-            elif not preload.stop(config.get("socket")):
-                raise SparvErrorMessage(f"Could not connect to socket '{config.get('socket')}'.")
+    rule preload:
+        run:
+            from sparv.core import preload
+            if config["preload_command"] == "start":
+                preload.serve(config["socket"], config["processes"], snake_storage, stop_signal)
+            elif config["preload_command"] == "stop":
+                if not Path(config["socket"]).is_socket():
+                    raise SparvErrorMessage(f"Socket file '{config['socket']}' doesn't exist or isn't a socket.")
+                elif not preload.stop(config.get("socket")):
+                    raise SparvErrorMessage(f"Could not connect to socket '{config.get('socket')}'.")
 
 
 rule preload_list:

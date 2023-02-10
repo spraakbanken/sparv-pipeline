@@ -304,6 +304,7 @@ def main():
             config["preloader"] = True
             config["processes"] = args.processes
             config["preload_command"] = args.preload_command
+            config["targets"] = ["preload"]
             if args.list:
                 snakemake_args["targets"] = ["preload_list"]
 
