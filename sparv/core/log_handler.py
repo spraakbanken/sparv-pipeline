@@ -696,7 +696,7 @@ class LogHandler:
                     spacer = ""
                     table = Table(show_header=False, box=box.SIMPLE)
                     table.add_column("Task", no_wrap=True, min_width=self.jobs_max_len + 2, ratio=1)
-                    table.add_column("Time taken", no_wrap=True, width=10, justify="right", style="progress.remaining")
+                    table.add_column("Time taken", no_wrap=True, justify="right", style="progress.remaining")
                     table.add_column("Percentage", no_wrap=True, justify="right")
                     table.add_row("[b]Task[/]", "[default b]Time taken[/]", "[b]Percentage[/b]")
                     total_time = sum(self.stats_data.values())

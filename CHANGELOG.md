@@ -45,6 +45,7 @@
 - Fixed bug when using relative socket path while also using `--dir`.
 - Fixed quoting of paths in `util.system.rsync`.
 - It's no longer possible to create an infinite loop of classes referring to each other.
+- Elapsed time exceeding 24 hours no longer gets cut off in the `--stats` output.
 
 ## [5.1.0] - 2022-11-03
 
