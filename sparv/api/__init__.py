@@ -21,6 +21,8 @@ from .classes import (
     ExportAnnotationNames,
     ExportAnnotationsAllSourceFiles,
     ExportInput,
+    HeaderAnnotations,
+    HeaderAnnotationsAllSourceFiles,
     Headers,
     Language,
     Marker,

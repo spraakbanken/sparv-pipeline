@@ -61,7 +61,7 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
 
     # Get annotations list and export names
     annotation_list, token_attributes, export_names = util.export.get_annotation_names(
-        annotations, source_annotations or [], source_files=source_files, token_name=token.name,
+        annotations, source_annotations or [], token_name=token.name,
         remove_namespaces=remove_namespaces, sparv_namespace=sparv_namespace, source_namespace=source_namespace)
 
     # Get all token and struct annotations (except the span annotations)

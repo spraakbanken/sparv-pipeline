@@ -18,6 +18,7 @@ from sparv.core.console import console
 from sparv.api.classes import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, AnnotationData, Base,
                                BaseAnnotation, BaseOutput, Binary, BinaryDir, Config, Corpus, SourceFilename, Export,
                                ExportAnnotations, ExportAnnotationNames, ExportAnnotationsAllSourceFiles, ExportInput,
+                               HeaderAnnotations, HeaderAnnotationsAllSourceFiles,
                                Language, Model, ModelOutput, Output, OutputData, Source, SourceAnnotations,
                                SourceAnnotationsAllSourceFiles, Text)
 
@@ -408,13 +409,25 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 rule.parameters[param_name].append((annotation, export_name))
         # SourceAnnotations
         elif param_type in (SourceAnnotations, SourceAnnotationsAllSourceFiles):
-            rule.parameters[param_name] = sparv_config.get(param.default.config_name, None)
+            rule.parameters[param_name] = param_type(
+                param.default.config_name,
+                sparv_config.get(param.default.config_name)
+            )
             if param_type == SourceAnnotationsAllSourceFiles:
+                rule.parameters[param_name].source_files = storage.source_files
                 rule.inputs.extend(
                     expand(escape_wildcards(paths.work_dir / get_annotation_path(io.STRUCTURE_FILE, data=True)),
                            file=storage.source_files))
             else:
                 rule.inputs.append(paths.work_dir / get_annotation_path(io.STRUCTURE_FILE, data=True))
+        # HeaderAnnotations
+        elif param_type in (HeaderAnnotations, HeaderAnnotationsAllSourceFiles):
+            rule.parameters[param_name] = param_type(
+                param.default.config_name,
+                sparv_config.get(param.default.config_name)
+            )
+            if param_type == HeaderAnnotationsAllSourceFiles:
+                rule.parameters[param_name].source_files = storage.source_files
         # Corpus
         elif param.annotation == Corpus:
             rule.parameters[param_name] = Corpus(sparv_config.get("metadata.id"))
@@ -624,6 +637,8 @@ def get_parameters(rule_params):
             if isinstance(param, (ExportAnnotations, ExportAnnotationNames)):
                 for p in param:
                     p[0].source_file = file
+            elif isinstance(param, (SourceAnnotations, HeaderAnnotations)):
+                param.source_file = file
             else:
                 if not isinstance(param, (list, tuple)):
                     param = [param]

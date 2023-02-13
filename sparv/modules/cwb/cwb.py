@@ -184,7 +184,7 @@ def cwb_encode(corpus, annotations, source_annotations, source_files, words, vrt
 
     # Get annotation names
     annotation_list, token_attributes, export_names = util.export.get_annotation_names(
-        annotations, source_annotations, source_files=source_files, token_name=token_name,
+        annotations, source_annotations, token_name=token_name,
         remove_namespaces=remove_namespaces, sparv_namespace=sparv_namespace, source_namespace=source_namespace,
         keep_struct_names=True)
 

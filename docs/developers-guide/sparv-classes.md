@@ -246,6 +246,25 @@ function.
 - `all_files`: Set to `True` to get the export for all source files. Default: `False`
 
 
+## HeaderAnnotations
+Iterable containing header annotations from the source to be included in the export. This list is defined in the corpus
+configuration.
+
+**Arguments:**
+
+- `config_name`: The config variable pointing out what header annotations to include.
+
+
+## HeaderAnnotationsAllSourceFiles
+Iterable containing header annotations from the source to be included in the export. This list is defined in the corpus
+configuration. This differs from `HeaderAnnotations` in that the header annotations file (created by using
+`Headers`) of _every_ source file will be added as dependencies.
+
+**Arguments:**
+
+- `config_name`: The config variable pointing out what source annotations to include.
+
+
 ## Headers
 List of header annotation names for a given source file.
 
@@ -446,7 +465,7 @@ An instance of this class holds a path to the directory containing input files.
 
 
 ## SourceAnnotations
-List of source annotations to be included in the export. This list is defined in the corpus configuration.
+Iterable containing source annotations to be included in the export. This list is defined in the corpus configuration.
 
 **Arguments:**
 
@@ -454,8 +473,8 @@ List of source annotations to be included in the export. This list is defined in
 
 
 ## SourceAnnotationsAllSourceFiles
-List of source annotations to be included in the export. This list is defined in the corpus configuration. This
-differs from `SourceAnnotations` in that the source annotations structure file (created by using `SourceStructure`)
+Iterable containing source annotations to be included in the export. This list is defined in the corpus configuration.
+This differs from `SourceAnnotations` in that the source annotations structure file (created by using `SourceStructure`)
 of _every_ source file will be added as dependencies.
 
 **Arguments:**

@@ -26,6 +26,7 @@
   memory that was available when Sparv started.
 - Stanza now always selects the GPU with the most free memory.
 - The preloader can now be gracefully stopped by sending an interrupt signal to the Sparv process.
+- Added `HeaderAnnotations` and `HeaderAnnotationsAllSourceFiles` classes.
 
 ### Changed
 
@@ -36,6 +37,8 @@
 - `korp:relations`, `korp:relations_sql` and `korp:install_relations` has been renamed to `korp:wordpicture`,
   `korp:wordpicture_sql` and `korp:install_wordpicture` respectively.
 - Target path is no longer optional for the utility functions `install_path` and `rsync`.
+- The classes `SourceAnnotations` and `SourceAnnotationsAllSourceFiles` are now pre-parsed iterables instead of lists
+  that need parsing and expanding.
 
 ### Fixed
 

@@ -12,6 +12,7 @@ from sparv.api import (
     Export,
     ExportAnnotations,
     ExportInput,
+    HeaderAnnotations,
     MarkerOptional,
     Namespaces,
     OutputMarker,
@@ -47,7 +48,7 @@ def pretty(source_file: SourceFilename = SourceFilename(),
            word: Annotation = Annotation("[export.word]"),
            annotations: ExportAnnotations = ExportAnnotations("xml_export.annotations"),
            source_annotations: SourceAnnotations = SourceAnnotations("xml_export.source_annotations"),
-           header_annotations: SourceAnnotations = SourceAnnotations("xml_export.header_annotations"),
+           header_annotations: HeaderAnnotations = HeaderAnnotations("xml_export.header_annotations"),
            remove_namespaces: bool = Config("export.remove_module_namespaces", False),
            sparv_namespace: str = Config("export.sparv_namespace"),
            source_namespace: str = Config("export.source_namespace"),
@@ -91,7 +92,7 @@ def pretty(source_file: SourceFilename = SourceFilename(),
     if token not in annotation_list:
         logger.warning("The 'xml_export:pretty' export requires the <token> annotation for the output to include the "
                        "source text. Make sure to add <token> to the list of export annotations.")
-    h_annotations, h_export_names = util.export.get_header_names(header_annotations, source_file=source_file)
+    h_annotations, h_export_names = util.export.get_header_names(header_annotations, xml_namespaces)
     export_names.update(h_export_names)
     span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names, h_annotations,
                                                                      source_file=source_file, split_overlaps=True)
