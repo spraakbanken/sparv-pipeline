@@ -92,7 +92,7 @@ def timespan_sql_with_dateinfo(corpus: Corpus = Corpus(),
     datetimespans = defaultdict(int)
 
     for file in source_files:
-        text_tokens, orphans = Annotation(datefrom.name, source_file=file).get_children(token)
+        text_tokens, orphans = datefrom.get_children(file, token)
         if orphans:
             datespans[("0" * 8, "0" * 8)] += len(orphans)
             datetimespans[("0" * 14, "0" * 14)] += len(orphans)
