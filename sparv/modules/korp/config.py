@@ -25,7 +25,6 @@ from sparv.api import (
     uninstaller,
     util
 )
-from sparv.core.io import split_annotation
 from sparv.modules.cwb.cwb import cwb_escape
 
 logger = get_logger(__name__)
@@ -182,7 +181,8 @@ def config(id: Corpus = Corpus(),
         # Figure out based on available annotations and scrambling
         within = []
 
-        anns = set([split_annotation(a[0])[0] for a in itertools.chain(annotations, source_annotations or [])])
+        anns = set([a[0].split()[0] for a in itertools.chain(annotations, source_annotations or [])])
+
         if sentence and sentence.name in anns:
             within.append(export_names[sentence.name])
 
