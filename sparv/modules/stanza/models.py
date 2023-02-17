@@ -3,8 +3,7 @@
 import json
 import logging
 
-from sparv.api import Language, Model, ModelOutput, modelbuilder, get_logger
-from sparv.core.language_registry import LanguageRegistry
+from sparv.api import Language, Model, ModelOutput, modelbuilder, get_logger, util
 
 logger = get_logger(__name__)
 
@@ -69,8 +68,8 @@ def get_model(lang: Language = Language(),
               resources_file: ModelOutput = ModelOutput("stanza/[metadata.language]/resources.json")):
     """Download Stanza language models."""
     import stanza
-    lang_name = LanguageRegistry.get_language_name_by_part3(lang) or lang
-    stanza_lang = LanguageRegistry.get_language_part1_by_part3(lang)
+    lang_name = util.misc.get_language_name_by_part3(lang) or lang
+    stanza_lang = util.misc.get_language_part1_by_part3(lang)
     logger.info(f"Downloading Stanza language model for {lang_name}")
     stanza.download(lang=stanza_lang, model_dir=str(resources_file.path.parent), verbose=False,
                     logging_level=logging.WARNING)

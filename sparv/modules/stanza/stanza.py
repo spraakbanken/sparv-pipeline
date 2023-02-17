@@ -3,7 +3,6 @@
 from typing import Optional
 
 from sparv.api import Annotation, Config, Language, Model, Output, Text, annotator, get_logger, util
-from sparv.core.language_registry import LanguageRegistry
 from . import stanza_utils
 
 logger = get_logger(__name__)
@@ -60,7 +59,7 @@ def annotate(corpus_text: Text = Text(),
 
     # Define some values needed for Stanza Pipeline
     nlp_args = {
-        "lang": LanguageRegistry.get_language_part1_by_part3(lang),
+        "lang": util.misc.get_language_part1_by_part3(lang),
         "processors": "tokenize,mwt,pos,lemma,depparse,ner",  # Comma-separated list of processors to use
         "dir": str(resources_file.path.parent),
         "depparse_max_sentence_size": 200,  # Create new batch when encountering sentences larger than this

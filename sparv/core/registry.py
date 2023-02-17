@@ -12,7 +12,6 @@ import typing_inspect
 from sparv.core import config as sparv_config
 from sparv.core import paths
 from sparv.core.console import console
-from sparv.core.language_registry import LanguageRegistry
 from sparv.core.misc import SparvErrorMessage
 from sparv.api.classes import (BaseOutput, Config, Export, ExportAnnotations, ExportAnnotationsAllSourceFiles,
                                SourceAnnotations, SourceStructureParser, ModelOutput, OutputMarker, Wildcard)
@@ -40,6 +39,21 @@ class Module:
         self.name = name
         self.functions: Dict[str, dict] = {}
         self.description = None
+
+
+class LanguageRegistry(dict):
+    """Registry for supported languages."""
+
+    def add_language(self, lang: str) -> str:
+        from sparv.api import util
+        if lang not in self:
+            langcode, _, suffix = lang.partition("-")
+            iso_lang = util.misc.get_language_name_by_part3(langcode)
+            if iso_lang:
+                self[lang] = f"{iso_lang} ({suffix})" if suffix else iso_lang
+            else:
+                self[lang] = lang
+        return self[lang]
 
 
 # All loaded Sparv modules with their functions (possibly limited by the selected language)

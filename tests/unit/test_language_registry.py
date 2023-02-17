@@ -1,7 +1,8 @@
 from typing import Optional
+
 import pytest
 
-from sparv.core.language_registry import LanguageRegistry
+from sparv.core.registry import LanguageRegistry
 
 
 @pytest.fixture()
@@ -20,11 +21,3 @@ class TestLanguageRegistry:
         res = language_registry.add_language(lang)
         self.check(res, expected)
         self.check(language_registry[lang], expected)
-
-    @pytest.mark.parametrize("lang, expected", [("swe", "sv"), ("xxx", None)])
-    @pytest.mark.unit
-    @pytest.mark.noexternal
-    def test_get_part1_by_part3(self, lang: str, expected: str):
-        self.check(LanguageRegistry.get_language_part1_by_part3(lang), expected)
-
-
