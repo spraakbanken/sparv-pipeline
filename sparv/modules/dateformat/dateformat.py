@@ -66,7 +66,7 @@ def dateformat_pretty(in_date: Annotation = Annotation("[dateformat.datetime_fro
                       splitter: Optional[str] = Config("dateformat.splitter"),
                       regex: Optional[str] = Config("dateformat.regex")):
     """Convert existing dates to format YYYY-MM-DD."""
-    _formatter(in_date, Annotation(), out, Annotation(), informat, "%Y-%m-%d", splitter, regex)
+    _formatter(in_date, None, out, None, informat, "%Y-%m-%d", splitter, regex)
 
 
 @annotator("Convert existing times to specified output format", config=[
@@ -143,7 +143,7 @@ def resolution(out_resolution: OutputCommonData = OutputCommonData("dateformat.r
     out_resolution.write(resolutions)
 
 
-def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Output, out_to: Output,
+def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Output, out_to: Optional[Output],
                informat: str, outformat: str, splitter: str, regex: str):
     """Take existing dates/times and input formats and convert to specified output format."""
     def get_smallest_unit(informat):
@@ -192,8 +192,8 @@ def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Outpu
         return length
 
     # Check that the input annotation matches the output
-    if (in_from.annotation_name != out_from.annotation_name) or (
-        in_to.annotation_name != out_to.annotation_name):
+    if (in_from and in_from.annotation_name != out_from.annotation_name) or (
+        in_to and in_to.annotation_name != out_to.annotation_name):
         raise SparvErrorMessage("The 'dateformat' attributes must be attached to the same annotation as the input"
                                 f" (in this case the '{in_from.annotation_name}' annotation)")
 
@@ -202,8 +202,6 @@ def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Outpu
 
     informat = informat.split("|")
     outformat = outformat.split("|")
-    if splitter:
-        splitter = splitter
 
     assert len(outformat) == 1 or (len(outformat) == len(informat)), "The number of out-formats must be equal to one " \
                                                                      "or the number of in-formats."
