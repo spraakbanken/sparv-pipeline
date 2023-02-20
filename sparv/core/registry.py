@@ -5,7 +5,7 @@ import pkgutil
 import re
 from collections import defaultdict
 from enum import Enum
-from typing import Callable, Dict, List, Optional, Tuple, Type, TypeVar
+from typing import Callable, Dict, List, Optional, Set, Tuple, Type, TypeVar
 
 import typing_inspect
 
@@ -529,7 +529,7 @@ def expand_variables(string, rule_name: Optional[str] = None, is_annotation: boo
         # Split if list of alternatives
         strings = [s for s in string.split(", ") for string in strings]
 
-    def expand_classes(s: str, parents: set[str]) -> Tuple[Optional[str], Optional[str]]:
+    def expand_classes(s: str, parents: Set[str]) -> Tuple[Optional[str], Optional[str]]:
         classes = find_classes(s, True)
         if not classes:
             return s, None
