@@ -1,8 +1,5 @@
 name: CI
-
 on: [push, pull_request]
-
-
 
 jobs:
   checks:
@@ -13,51 +10,45 @@ jobs:
       max-parallel: 4
       fail-fast: false
       matrix:
-        # TODO: enable if decided to test 3.7
-        # python-version: ["3.7", "3.8", "3.9", "3.10"]
         python-version: ["3.8", "3.9", "3.10"]
         os: [ubuntu-latest]
         task:
           - name: Run tests
-            run: make noexternal-tests
+            run: |
+              source venv/bin/activate
+              pytest -m noexternal
 
     steps:
       - name: Checkout code
         uses: nschloe/action-cached-lfs-checkout@v1
-        # Use these to explicitly include/exclude files:
-        # with:
-        #   include: "*"
-        #   exclude: ""
-
 
       - name: Set up Python ${{ matrix.python-version }}
+        id: setup-python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
-      # ----------------------------------------------
-      #       load cached venv if cache exists
-      # ----------------------------------------------
+      # Load cached venv if cache exists
       - name: Load cached venv
-        id: cached-poetry-dependencies
+        id: cached-dependencies
         uses: actions/cache@v3.2.3
         with:
           path: venv
           key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/pyproject.toml') }}-${{ hashFiles('**/setup.py') }}-${{ hashFiles('.github/workflows/ci.yml') }}
 
-      #----------------------------------------------
-      # install dependencies if cache does not exist
-      #----------------------------------------------
-      - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      # Create virtual environment and install dependencies if cache does not exist
+      - name: Create venv and install dependencies
+        if: steps.cached-dependencies.outputs.cache-hit != 'true'
         run: |
-          make setup-venv
-          make dev
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install wheel
+          pip install -e .[dev]
 
       - name: Setup Sparv
         run: |
-          venv/bin/sparv setup -d $PWD
-          tree .
+          source venv/bin/activate
+          sparv setup -d $PWD
 
       - name: ${{ matrix.task.name }}
         run: ${{ matrix.task.run }}
