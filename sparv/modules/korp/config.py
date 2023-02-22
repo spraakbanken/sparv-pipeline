@@ -338,12 +338,7 @@ def get_presets(remote_host, config_dir):
     else:
         cmd = ["find", f"{config_dir}/attributes/"]
     logger.debug(f"Getting Korp annotation presets from {remote_host}:{config_dir}")
-    s = subprocess.run(
-        cmd,
-        stdout=subprocess.PIPE,  # TODO: Use capture_output=True when requiring Python 3.7
-        stderr=subprocess.PIPE,
-        encoding="utf-8"
-    )
+    s = subprocess.run(cmd, capture_output=True, encoding="utf-8")
     if s.returncode == 0:
         for p in s.stdout.splitlines():
             if not p.endswith(".yaml"):
