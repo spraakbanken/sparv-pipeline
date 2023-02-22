@@ -31,7 +31,7 @@
 ### Changed
 
 - Added support for Python 3.10.
-- Dropped support for Python 3.6.
+- Dropped support for Python 3.6 and 3.7.
 - `AnnotationAllSourceFiles` now have the same methods as `Annotation`.
 - The util function `install_mysql` can now install locally as well as to a remote server.
 - Pre-built SALDO models are now downloaded instead of being built on demand.

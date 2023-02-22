@@ -36,7 +36,7 @@ setuptools.setup(
     license="MIT",
     packages=setuptools.find_namespace_packages(include=["sparv", "sparv.*"]),
     zip_safe=False,
-    python_requires=">=3.6.2",
+    python_requires=">=3.8,<3.11",
     install_requires=[
         "appdirs==1.4.4",
         "docx2python==1.27.1",
