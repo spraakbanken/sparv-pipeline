@@ -183,7 +183,7 @@ def build_tokenlist(saldo_model: Model = Model("saldo/saldo.pickle"),
     wordforms = set()
 
     # Skip strings already handled by the tokenizer.
-    # Also skip words ending in comma (used by some multi word expressions in SALDO).
+    # Also skip words ending in comma (used by some multi-word expressions in SALDO).
     with open(saldo_model.path, "rb") as F:
         lexicon = pickle.load(F)
         for w in lexicon:

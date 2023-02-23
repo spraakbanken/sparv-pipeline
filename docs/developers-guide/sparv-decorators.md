@@ -83,7 +83,7 @@ def parse(source_file: SourceFilename = SourceFilename(),
 ## @exporter
 A function decorated with `@exporter` is used to produce "final" output (also called export), typically combining
 information from multiple annotations into one file. Output produced by an exporter is usually not used as input in any
-another module. An export can consist of one file per input corpus file or it can combine information from all input
+another module. An export can consist of one file per input corpus file, or it can combine information from all input
 files into one output file.
 
 **Arguments:**
@@ -205,7 +205,7 @@ A function decorated with `@wizard` is used to generate questions for the corpus
 
 - `config_keys`: a list of config keys to be set or changed by this function.
 - `source_structure`: Set to `True` if the function needs access to a `SourceStructureParser` instance (the one holding
-  information on the structure of the source files. Default: `False`
+  information on the structure of the source files). Default: `False`
 
 **Example:**
 ```python

@@ -47,8 +47,8 @@ When Sparv processes the corpus configuration it will look for config values in 
 priority order:
 1. the corpus configuration file
 2. a parent corpus configuration file
-2. the default configuration file in the [Sparv data directory](user-manual/installation-and-setup.md#setting-up-sparv)
-3. config default values defined in the Sparv decorators (as shown above)
+3. the default configuration file in the [Sparv data directory](user-manual/installation-and-setup.md#setting-up-sparv)
+4. config default values defined in the Sparv decorators (as shown above)
 
 This means that if a config parameter is given a default value in a Sparv decorator it can be overridden by the default
 configuration file which in turn can be overridden by the user's corpus config file.

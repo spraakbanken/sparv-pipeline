@@ -275,7 +275,7 @@ class SparvXMLParser:
                 yield prefix, uri
 
         def get_sparv_name(xml_name: str):
-            """Get the sparv notation of a tag or attr name with regards to XML namespaces."""
+            """Get the sparv notation of a tag or attr name with regard to XML namespaces."""
             ns_uri, tag = get_namespace(xml_name)
             if self.remove_namespaces:
                 return tag

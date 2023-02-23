@@ -140,7 +140,7 @@ def read_lmf(xml, annotation_elements=("writtenForm", "lemgram"), verbose=True, 
                             particle = False
                             mwe_gap = False
 
-                            # Is it the last word in the multi word expression?
+                            # Is it the last word in the multi-word expression?
                             if i == len(wordparts) - 1:
                                 lexicon.setdefault(multiwords[0], {}).setdefault(annotations, (set(), set(), mwe_gap, particle))[1].add(tuple(multiwords[1:]))
                                 multiwords = []

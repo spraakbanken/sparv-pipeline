@@ -78,7 +78,7 @@ def annotate(token: Annotation = Annotation("<token>"),
         affix: Character to put before and after sets of results.
         precision: Optional format string for appending precision to each value (e.g. ':%.3f').
         precision_filter: Precision filter with values 'max' (only use the annotations that are most probable),
-            'first' (only use the most probable annotation(s)), 'none' (use all annotations)".
+            'first' (only use the most probable annotation(s)), 'none' (use all annotations).
         min_precision: Only use annotations with a probability score higher than this.
         skip_multiword: Whether to disable annotation of multiword expressions.
         max_gaps (int): Max amount of gaps allowed within a multiword expression.
@@ -110,7 +110,7 @@ def main(token, word, sentence, reference, out_sense, out_lemgram, out_baseform,
             assert models_preloaded.get(name, None) is not None, "Lexicon %s not found!" % name
             lexicon_list.append((name, models_preloaded[name]))
 
-    # Combine annotation names in SALDO lexicon with out annotations
+    # Combine annotation names in SALDO lexicon without annotations
     annotations = []
     if out_baseform:
         annotations.append((out_baseform, "gf"))
@@ -179,7 +179,7 @@ def main(token, word, sentence, reference, out_sense, out_lemgram, out_baseform,
             # Check that we don't have any unwanted overlaps
             _remove_unwanted_overlaps(complete_multis)
 
-        # Then save the rest of the multi word expressions in sentence_tokens
+        # Then save the rest of the multi-word expressions in sentence_tokens
         _save_multiwords(complete_multis, sentence_tokens)
 
         for tok in list(sentence_tokens.values()):
@@ -381,7 +381,7 @@ def get_precision(msd, msdtags):
     """
     Calculate the precision of a Saldo annotation.
 
-    If the the word's msdtag is among the annotation's possible msdtags,
+    If the word's msdtag is among the annotation's possible msdtags,
     we return a high value (0.75), a partial match returns 0.66, missing MSD returns 0.5,
     and otherwise a low value (0.25).
     """

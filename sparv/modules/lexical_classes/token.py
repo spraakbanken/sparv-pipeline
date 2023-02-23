@@ -106,7 +106,7 @@ def annotate_words(out: Output, model: Model, saldoids: Annotation, pos: Annotat
     """
     if not lexicon:
         lexicon = util.misc.PickledLexicon(model.path)
-    # Otherwise use pre-loaded lexicon (from catapult)
+    # Otherwise use preloaded lexicon (from catapult)
 
     sense = saldoids.read()
     token_pos = list(pos.read())

@@ -437,7 +437,7 @@ def three_consonant_rule(compound):
 def rank_compounds(compounds, nst_model, stats_lexicon):
     """Return a list of compounds, ordered according to their ranks.
 
-    Ranking is being done according to the amount of affixes (the fewer the higher)
+    Ranking is being done according to the amount of affixes (the fewer, the higher)
     and the compound probability which is calculated as follows:
 
     p((w1, tag1)..(wn, tag1)) = p(w1, tag1) ... * p(wn, tagn) * p(tag1, ...tagn)

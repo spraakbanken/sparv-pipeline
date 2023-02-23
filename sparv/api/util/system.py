@@ -144,7 +144,7 @@ def find_binary(name: Union[str, list], search_paths=(), executable: bool = True
     if raise_error:
         err_msg = f"Couldn't find binary: {name[0]}\nSearched in: {', '.join(search_paths)}\n"
         if len(name) > 1:
-            err_msg += f"For binary names: {', '.join(name)}"
+            err_msg += f"for binary names: {', '.join(name)}"
         raise SparvErrorMessage(err_msg)
     else:
         return None

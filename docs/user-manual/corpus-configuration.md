@@ -70,7 +70,7 @@ The `metadata` section of your corpus config contains metadata about your corpus
 - `metadata.id` defines the machine name of the corpus. It is required by some exporter modules. This string may contain
   ascii letters, digits and dashes.
 
-- `metadata.name` is an optional human readable name of the corpus. This option is split into two fields, `eng` and
+- `metadata.name` is an optional human-readable name of the corpus. This option is split into two fields, `eng` and
   `swe` for defining a name in English and in Swedish.
 
 - `metadata.language` defines the language of the source files in the corpus. This should be an ISO 639-3 code. If not

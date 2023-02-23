@@ -61,7 +61,7 @@ Therefore, you do not need to annotate the corpus before installing. You can lis
 with `sparv install -l`.
 
 **`sparv clean`:** While annotating, Sparv will create a directory called `sparv-workdir` inside your corpus directory.
-You normally don't need to touch the files stored here. Leaving this directory as it is will usually lead to faster
+You normally don't need to touch the files stored here. Leaving this directory as it is usually leads to faster
 processing of your corpus if you for example want to add a new output format. However, if you would like to delete this
 directory (e.g. because you want to save disk space or because you want to rerun all annotations from scratch) you
 can do so by running `sparv clean`. The export directory and log files can also be removed with the `clean` command

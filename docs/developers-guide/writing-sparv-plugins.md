@@ -1,6 +1,6 @@
 # Writing Sparv Plugins
-The Sparv Pipeline is comprised of different modules like importers, annotators and exporters. Although many modules are
-shipped with the main Sparv package none of these modules are hard-coded into the Sparv Pipeline and therefore it can
+The Sparv Pipeline is made up of different modules like importers, annotators and exporters. Although many modules are
+shipped with the main Sparv package, none of these modules are hard-coded into the Sparv Pipeline, and therefore it can
 easily be extended with plugins. A plugin is a Sparv module that is not part of the main Sparv package. Writing a plugin
 is the recommended way of adding a new module to Sparv.
 
@@ -30,7 +30,7 @@ In the above example the `sbx_uppercase` directory is a Sparv module containing 
 `uppercase.py` and the mandatory [init file](#init-file) `__init__.py`. The [setup file](#setup-file) `setup.py` in the
 root directory is needed in order to install the plugin.
 
-The readme and license files are not strictly necessary for the plugin to work but we strongly recommend that you
+The readme and license files are not strictly necessary for the plugin to work, but we strongly recommend that you
 include these if you want to publish your plugin.
 
 
@@ -235,7 +235,7 @@ you should be able to inject your plugin into the Sparv Pipeline code using pipx
 pipx inject sparv-pipeline [pointer-to-sparv-plugin]
 ```
 
-So if you are trying to install the `sparv-sbx-uppercase` plugin and it exists on PyPI you can install it like this:
+So if you are trying to install the `sparv-sbx-uppercase` plugin and it exists on PyPI, you can install it like this:
 ```
 pipx inject sparv-pipeline sparv-sbx-uppercase
 ```

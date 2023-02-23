@@ -331,7 +331,7 @@ def backoff_with_info(
 def override(chunk: Annotation,
              repl: Annotation,
              out: Output):
-    """Replace values in 'chunk' with non empty values from 'repl'."""
+    """Replace values in 'chunk' with non-empty values from 'repl'."""
     def empty(val):
         if not val:
             return True
@@ -385,7 +385,7 @@ def source(out: Output = Output("<text>:misc.source"),
 @annotator("Get the first annotation from a cwb set")
 def first_from_set(out: Output,
                    chunk: Annotation):
-    """"Get the first annotation from a set."""
+    """Get the first annotation from a set."""
     out_annotation = []
     for val in chunk.read():
         out_annotation.append(util.misc.set_to_list(val)[0] if util.misc.set_to_list(val) else "")
