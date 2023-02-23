@@ -13,17 +13,14 @@ from sparv.api import (
     ExportAnnotations,
     ExportAnnotationsAllSourceFiles,
     HeaderAnnotations,
-    Headers,
     Namespaces,
     SourceAnnotations,
     SourceAnnotationsAllSourceFiles,
-    SourceStructure,
     SparvErrorMessage,
     get_logger,
     util
 )
 from sparv.core import io
-
 from .constants import SPARV_DEFAULT_NAMESPACE, XML_NAMESPACE_SEP
 
 logger = get_logger(__name__)

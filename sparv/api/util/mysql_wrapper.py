@@ -1,7 +1,6 @@
 """Util function for creating mysql files."""
 
 import os
-import shlex
 
 from sparv.api import get_logger
 from . import system

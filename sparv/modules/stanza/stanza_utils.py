@@ -1,6 +1,6 @@
 """Util functions used in stanza."""
 
-from sparv.api import Annotation, Output, SparvErrorMessage, annotator, util
+from sparv.api import Annotation, Output, SparvErrorMessage, annotator
 
 
 @annotator("Annotate tokens with IDs relative to their sentences")

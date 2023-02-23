@@ -5,7 +5,6 @@ from typing import Optional
 
 from sparv.api import (
     AllSourceFilenames,
-    Annotation,
     AnnotationAllSourceFiles,
     Config,
     Corpus,

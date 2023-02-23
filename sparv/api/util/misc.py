@@ -1,14 +1,13 @@
 """Misc util functions."""
 
 import pathlib
-import pycountry
-import re
 import unicodedata
-from collections import OrderedDict, defaultdict
-from typing import Iterable, List, Optional, Tuple, Union
+from typing import Optional, Union
+
+import pycountry
 
 from sparv.api import get_logger
-from sparv.api.classes import Annotation, Model
+from sparv.api.classes import Model
 from sparv.core.misc import parse_annotation_list  # noqa
 
 logger = get_logger(__name__)
