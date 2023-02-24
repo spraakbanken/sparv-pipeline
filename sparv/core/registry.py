@@ -545,10 +545,10 @@ def expand_variables(string, rule_name: Optional[str] = None, is_annotation: boo
             if real_ann:
                 final_ann, rest_ = expand_classes(real_ann, parents.union([cls.group(1)]))
                 if rest_:
-                    return None, rest_
+                    return "", rest_
                 s = s.replace(cls.group(), final_ann, 1)
             else:
-                return None, cls.group()
+                return "", cls.group()
         return s, None
 
     for string in strings:
