@@ -295,7 +295,8 @@ def get_annotation_names(annotations: Union[ExportAnnotations, ExportAnnotations
                          remove_namespaces=False, keep_struct_names=False,
                          sparv_namespace: Optional[str] = None,
                          source_namespace: Optional[str] = None,
-                         xml_mode: Optional[bool] = False):
+                         xml_mode: Optional[bool] = False) -> Tuple[List[Union[Annotation, AnnotationAllSourceFiles]],
+                                                                    List[str], Dict[str, str]]:
     """Get a list of annotations, token attributes and a dictionary for renamed annotations.
 
     Args:
@@ -363,7 +364,7 @@ def _create_export_names(annotations: List[Tuple[Union[Annotation, AnnotationAll
                          sparv_namespace: Optional[str] = None,
                          source_namespace: Optional[str] = None,
                          xml_namespaces: Optional[dict] = None,
-                         xml_mode: Optional[bool] = False):
+                         xml_mode: Optional[bool] = False) -> Dict[str, str]:
     """Create dictionary for renamed annotations."""
     if remove_namespaces:
         def shorten(annotation):
