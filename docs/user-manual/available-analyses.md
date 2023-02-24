@@ -64,7 +64,7 @@ preset](user-manual/corpus-configuration.md#annotation-presets) called `SWE_DEFA
 |    |            |
 |:---|:-----------|
 |**Description**  | Sentence segments are analysed to enrich tokens varje token with part-of-speech tags and morphosyntactic information. No longer used by default because Stanza's POS-tagging yields better results.
-|**Tool**         | [Hunpos](http://code.google.com/p/hunpos/)
+|**Tool**         | [Hunpos](https://code.google.com/archive/p/hunpos/)
 |**Model**        | [suc3_suc-tags_default-setting_utf8.model](https://github.com/spraakbanken/sparv-models/blob/master/hunpos/suc3_suc-tags_default-setting_utf8.model?raw=true) trained on [SUC 3.0](https://spraakbanken.gu.se/resurser/suc3)
 |**Tagset**       | [SUC MSD tags](https://spraakbanken.gu.se/korp/markup/msdtags.html)
 |**Annotations**  | - `<token>:hunpos.msd` (morphosyntactic tag) <br />- `<token>:hunpos.pos` (part-of-speech tag)
@@ -84,8 +84,8 @@ preset](user-manual/corpus-configuration.md#annotation-presets) called `SWE_DEFA
 |    |            |
 |:---|:-----------|
 |**Description**  | Sentence segments are analysed to enrich tokens with dependency information. No longer used by default because Stanza's dependency parsing yields better results.
-|**Tool**         | [MaltParser](http://www.maltparser.org/download.html)
-|**Model**        | [swemalt](http://www.maltparser.org/mco/swedish_parser/swemalt.html) trained on [Svensk trädbank](https://spraakbanken.gu.se/resurser/sv-treebank)
+|**Tool**         | [MaltParser](https://www.maltparser.org/download.html)
+|**Model**        | [swemalt](https://www.maltparser.org/mco/swedish_parser/swemalt.html) trained on [Svensk trädbank](https://spraakbanken.gu.se/resurser/sv-treebank)
 |**Tagset**       | [Mamba-Dep](https://svn.spraakdata.gu.se/sb-arkiv/pub/mamba.html)
 |**Annotations**  | - `<token>:malt.ref` (the token position within the sentence) <br />- `<token>:malt.dephead_ref` (dependency head, the ref of the word which the current word modifies or is dependent of) <br />- `<token>:malt.deprel` (dependency relation, the relation of the current word to its dependency head)
 |**Annotators**   | - `malt:annotate` <br />- `malt:make_ref`
@@ -146,7 +146,7 @@ preset](user-manual/corpus-configuration.md#annotation-presets) called `SWE_DEFA
 |    |            |
 |:---|:-----------|
 |**Description**  | Sentence segments are analysed and enriched with named entities.
-|**Tool**         | [hfst-SweNER](http://urn.fi/urn%3Anbn%3Afi%3Alb-2021101202)
+|**Tool**         | [hfst-SweNER](https://urn.fi/urn%3Anbn%3Afi%3Alb-2021101202)
 |**Model**        | included in the tool
 |**referenser**  | - [HFST-SweNER – A New NER Resource for Swedish](http://www.lrec-conf.org/proceedings/lrec2014/pdf/391_Paper.pdf) <br />- [Reducing the effect of name explosion](http://demo.spraakdata.gu.se/svedk/pbl/kokkinakisBNER.pdf)
 |**Tagset**       | [HFST-SweNER tags](https://svn.spraakdata.gu.se/sb-arkiv/pub/swener-tags.html)
@@ -187,7 +187,7 @@ for Swedish from the 1800's:
 |    |            |
 |:---|:-----------|
 |**Description**  | Sentence segments are analysed to enrich tokens with part-of-speech tags and morphosyntactic information.
-|**Tool**         | [Hunpos](http://code.google.com/p/hunpos/)
+|**Tool**         | [Hunpos](https://code.google.com/archive/p/hunpos/)
 |**Model**        | - [suc3_suc-tags_default-setting_utf8.model](https://github.com/spraakbanken/sparv-models/blob/master/hunpos/suc3_suc-tags_default-setting_utf8.model?raw=true) trained on [SUC 3.0](https://spraakbanken.gu.se/resurser/suc3) <br />- a word list along with the words' morphosyntactig information generated from the [Dalin morphology](https://spraakbanken.gu.se/resurser/dalinm) and the [Swedberg morphology](https://spraakbanken.gu.se/resurser/swedbergm)
 |**Tagset**       | [SUC MSD tags](https://spraakbanken.gu.se/korp/markup/msdtags.html)
 |**Annotations**  | - `<token>:hunpos.msd` (morphosyntactic tag) <br />- `<token>:hunpos.pos` (part-of-speech tag

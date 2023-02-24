@@ -39,7 +39,7 @@ def dateformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
                regex: Optional[str] = Config("dateformat.regex")):
     """Convert existing dates/times to specified date output format.
 
-    http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior
+    https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
 
     Args:
         in_from: Annotation containing from-dates (and times).
@@ -86,7 +86,7 @@ def timeformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
                regex: Optional[str] = Config("dateformat.regex")):
     """Convert existing dates/times to specified time output format.
 
-    http://docs.python.org/library/datetime.html#strftime-and-strptime-behavior
+    https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
 
     Args:
         in_from: Annotation containing from-dates (and times).

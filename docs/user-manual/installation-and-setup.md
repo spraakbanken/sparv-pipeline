@@ -72,7 +72,7 @@ you prior to annotating data.
 |**Purpose**                       |Swedish word-sense disambiguation. Recommended for standard Swedish annotations.
 |**Download**                      |[Sparv wsd](https://github.com/spraakbanken/sparv-wsd/raw/master/bin/saldowsd.jar)
 |**License**                       |[MIT](https://opensource.org/licenses/MIT)
-|**Dependencies**          		   |[Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+|**Dependencies**          		   |[Java](https://www.java.com/en/download/)
 
 [Sparv wsd](https://github.com/spraakbanken/sparv-wsd) is developed at Språkbanken and runs under the same license as
 the Sparv Pipeline. In order to use it within the Sparv Pipeline it is enough to download the saldowsd.jar from GitHub
@@ -82,7 +82,7 @@ the Sparv Pipeline. In order to use it within the Sparv Pipeline it is enough to
 |    |           |
 |:---|:----------|
 |**Purpose**                       |Swedish named-entity recognition. Recommended for standard Swedish annotations.
-|**Download**                      |[hfst-SweNER](http://urn.fi/urn%3Anbn%3Afi%3Alb-2021101202)
+|**Download**                      |[hfst-SweNER](https://urn.fi/urn%3Anbn%3Afi%3Alb-2021101202)
 |**Version compatible with Sparv** |0.9.3
 
 > [!NOTE]
@@ -141,12 +141,12 @@ with Hunpos to your path or copy it into your [Sparv data directory](#setting-up
 |    |           |
 |:---|:----------|
 |**Purpose**                       |Alternative Swedish dependency parser (if you don't want to use Stanza)
-|**Download**                      |[MaltParser webpage](http://www.maltparser.org/download.html)
-|**License**                       |[MaltParser license](http://www.maltparser.org/license.html) (open source)
+|**Download**                      |[MaltParser webpage](https://www.maltparser.org/download.html)
+|**License**                       |[MaltParser license](https://www.maltparser.org/license.html) (open source)
 |**Version compatible with Sparv** |1.7.2
-|**Dependencies**          		   |[Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+|**Dependencies**          		   |[Java](https://www.java.com/en/download/)
 
-Download and unpack the zip-file from the [MaltParser webpage](http://www.maltparser.org/download.html) and place the
+Download and unpack the zip-file from the [MaltParser webpage](https://www.maltparser.org/download.html) and place the
 `maltparser-1.7.2` directory inside the `bin` directory of the [Sparv data directory](#setting-up-sparv).
 
 ### Corpus Workbench
@@ -196,7 +196,7 @@ Swedish          |swe            |Sparv
 |    |           |
 |:---|:----------|
 |**Purpose**                       |POS-tagging and lemmatisation for [some languages](#software-for-analysing-other-languages-than-swedish)
-|**Download**                      |[TreeTagger webpage](http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/)
+|**Download**                      |[TreeTagger webpage](https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/)
 |**License**                       |[TreeTagger license](https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/Tagger-Licence) (freely available for research, education and evaluation)
 |**Version compatible with Sparv** |3.2.3 (may work with newer versions)
 
@@ -210,7 +210,7 @@ After downloading the software you need to have the `tree-tagger` binary in your
 |**Download**                      |[Stanford CoreNLP webpage](https://stanfordnlp.github.io/CoreNLP/history.html)
 |**License**                       |[GPL-2.0](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
 |**Version compatible with Sparv** |4.0.0 (may work with newer versions)
-|**Dependencies**          		  |[Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+|**Dependencies**          		  |[Java](https://www.java.com/en/download/)
 
 Please download, unzip and place contents inside the [Sparv data directory](#setting-up-sparv) under `bin/stanford_parser`.
 

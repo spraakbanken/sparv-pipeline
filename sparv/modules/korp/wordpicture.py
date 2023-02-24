@@ -107,7 +107,7 @@ def wordpicture(
 
     annotations = list(word.read_attributes((word, pos, lemgram, dephead, deprel, ref, baseform)))
 
-    # http://stp.ling.uu.se/~nivre/swedish_treebank/dep.html
+    # https://cl.lingfil.uu.se/~nivre/swedish_treebank/dep.html
     # Tuples with relations (head, rel, dep) to be found (with indexes) and an optional tuple specifying which info
     # should be stored and how
     rels = [

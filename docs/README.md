@@ -53,8 +53,8 @@ cd md2pdf
 ./make_pdf.sh
 ```
 
+<!--
 ## MISC
 
 ### URLs that may have to be updated regularly
-
-- Java download: http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
+-->
