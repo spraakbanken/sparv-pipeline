@@ -72,7 +72,10 @@ LABELS = {
     Config("korp.reading_mode", description="Reading mode configuration"),
     Config("korp.filters", description="List of annotations to use for filtering in Korp"),
     Config("korp.hidden_annotations", description="List of annotations not to include in corpus config",
-           default=HIDDEN_ANNOTATIONS)
+           default=HIDDEN_ANNOTATIONS),
+    Config("korp.keep_undefined_annotations",
+           description="Include all annotations in config, even those without an annotation definition/preset.",
+           default=False)
 ])
 def config(id: Corpus = Corpus(),
            name: dict = Config("metadata.name"),
@@ -107,6 +110,7 @@ def config(id: Corpus = Corpus(),
            source_namespace: str = Config("export.source_namespace"),
            remote_host: Optional[str] = Config("korp.remote_host"),
            config_dir: str = Config("korp.config_dir"),
+           keep_undefined_annotations: bool = Config("korp.keep_undefined_annotations"),
            out: Export = Export("korp.config/[metadata.id].yaml")):
     """Create Korp config file for the corpus, to be served by the Korp backend and used by the frontend.
 
@@ -142,6 +146,8 @@ def config(id: Corpus = Corpus(),
         source_namespace: The namespace to be added to all annotations present in the source.
         remote_host: Host where Korp configuration files are installed.
         config_dir: Path on remote host where Korp configuration files are located.
+        keep_undefined_annotations: Set to Trye to include all annotations in config, even those without an annotation
+            definition/preset.
         out: YAML file to create.
     """
     config_dict = {
@@ -257,7 +263,7 @@ def config(id: Corpus = Corpus(),
     presets = get_presets(remote_host, config_dir)
     token_annotations, struct_annotations, _ = build_annotations(
         annotation_definitions, annotation_list, export_names, hidden_annotations, presets, INCLUDED_ANNOTATIONS,
-        token
+        token, keep_undefined_annotations=keep_undefined_annotations
     )
 
     config_dict["struct_attributes"] = struct_annotations
@@ -274,8 +280,18 @@ def config(id: Corpus = Corpus(),
         out_yaml.write(dict_to_yaml(config_dict))
 
 
-def build_annotations(annotation_definitions, annotation_list, export_names, hidden_annotations, presets, include,
-                      token, text_annotation=None, cwb_annotations: bool = True):
+def build_annotations(
+    annotation_definitions,
+    annotation_list,
+    export_names,
+    hidden_annotations,
+    presets,
+    include,
+    token,
+    text_annotation=None,
+    cwb_annotations: bool = True,
+    keep_undefined_annotations: bool = False
+):
     token_annotations = []
     struct_annotations = []
     text_annotations = []
@@ -296,11 +312,14 @@ def build_annotations(annotation_definitions, annotation_list, export_names, hid
         if isinstance(definition, str):  # Referring to a preset
             # Check that preset exists
             if definition not in presets:
-                logger.warning(
-                    f"{annotation.name!r} is missing a definition, and {definition!r} is not available as a "
-                    "preset. Annotation will not be included.")
-                continue
-            if not is_token and presets[definition] == "positional":
+                if keep_undefined_annotations:
+                    definition = {"label": definition.replace("_", " ")}
+                else:
+                    logger.warning(
+                        f"{annotation.name!r} is missing a definition, and {definition!r} is not available as a "
+                        "preset. Annotation will not be included.")
+                    continue
+            elif not is_token and presets[definition] == "positional":
                 # Non-token annotation used as a token-annotation in Korp
                 is_token = True
         elif "preset" in definition:  # Extending a preset
