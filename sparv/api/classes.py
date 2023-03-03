@@ -7,7 +7,7 @@ import pickle
 import urllib.request
 import zipfile
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 import sparv.core
 from sparv.core import io
@@ -614,8 +614,17 @@ class Corpus(str):
     """Name of the corpus."""
 
 
-class AllSourceFilenames(List[str]):
+class AllSourceFilenames(Sequence[str]):
     """List with names of all source files."""
+
+    def __init__(self):
+        self.items: Sequence[str] = []
+
+    def __getitem__(self, index: int):
+        return self.items[index]
+
+    def __len__(self):
+        return len(self.items)
 
 
 class Config(str):
@@ -785,17 +794,23 @@ class ExportInput(str):
         self.all_files = all_files
 
 
-class ExportAnnotations(List[Tuple[Annotation, Optional[str]]]):
-    """List of annotations to include in export."""
+class ExportAnnotations(Sequence[Tuple[Annotation, Optional[str]]]):
+    """Iterable with annotations to include in export."""
 
     # If is_input = False the annotations won't be added to the rule's input.
     is_input = True
 
-    def __init__(self, config_name: str, items=(), is_input: Optional[bool] = None):
-        list.__init__(self, items)
+    def __init__(self, config_name: str, is_input: Optional[bool] = None):
         self.config_name = config_name
+        self.items = []
         if is_input is not None:
             self.is_input = is_input
+
+    def __getitem__(self, index: int):
+        return self.items[index]
+
+    def __len__(self):
+        return len(self.items)
 
 
 class ExportAnnotationNames(ExportAnnotations):
@@ -806,107 +821,128 @@ class ExportAnnotationNames(ExportAnnotations):
 
     is_input = False
 
-    def __init__(self, config_name: str, items=()):
-        super().__init__(config_name, items=items)
+    def __init__(self, config_name: str):
+        super().__init__(config_name)
 
 
-class ExportAnnotationsAllSourceFiles(List[Tuple[AnnotationAllSourceFiles, Optional[str]]]):
+class ExportAnnotationsAllSourceFiles(Sequence[Tuple[AnnotationAllSourceFiles, Optional[str]]]):
     """List of annotations to include in export."""
 
     # Always true for ExportAnnotationsAllSourceFiles
     is_input = True
 
-    def __init__(self, config_name: str, items=()):
-        list.__init__(self, items)
+    def __init__(self, config_name: str):
         self.config_name = config_name
+        self.items: Sequence[Tuple[AnnotationAllSourceFiles, Optional[str]]] = []
+
+    def __getitem__(self, index: int):
+        return self.items[index]
+
+    def __len__(self):
+        return len(self.items)
 
 
-class SourceAnnotations(Iterable[Tuple[Annotation, Optional[str]]]):
+class SourceAnnotations(Sequence[Tuple[Annotation, Optional[str]]]):
     """Iterable with source annotations to include in export."""
 
-    def __init__(self, config_name: str, items: Optional[Iterable[str]] = None, source_file: Optional[str] = None,
-                 _headers: bool = False):
+    def __init__(self, config_name: str, source_file: Optional[str] = None, _headers: bool = False):
         self.config_name = config_name
-        self.raw_list = items
-        self.annotations = []
+        self.raw_list = None
+        self.annotations: Sequence[Tuple[Annotation, Optional[str]]] = []
         self.source_file = source_file
         self.initialized = False
         self.headers = _headers
 
+    def _initialize(self):
+        assert self.source_file, "SourceAnnotation is missing source_file"
+
         # If raw_list is an empty list, don't add any source annotations automatically
         if not self.raw_list and self.raw_list is not None:
             self.initialized = True
+            return
 
-    def __iter__(self):
+        # Parse annotation list and read available source annotations
+        if self.headers:
+            h = Headers(self.source_file)
+            available_source_annotations = set(h.read()) if h.exists() else set()
+        else:
+            available_source_annotations = set(SourceStructure(self.source_file).read())
+        parsed_items = parse_annotation_list(self.raw_list, available_source_annotations)
+        # Only include annotations that are available in source
+        self.annotations = [
+            (Annotation(a[0], self.source_file), a[1]) for a in parsed_items if a[0] in available_source_annotations
+        ]
+        self.initialized = True
+
+    def __getitem__(self, index: int):
         if not self.initialized:
-            assert self.source_file, "SourceAnnotation is missing source_file"
-            # Parse annotation list and read available source annotations
-            if self.headers:
-                h = Headers(self.source_file)
-                available_source_annotations = set(h.read()) if h.exists() else set()
-            else:
-                available_source_annotations = set(SourceStructure(self.source_file).read())
-            parsed_items = parse_annotation_list(self.raw_list, available_source_annotations)
-            # Only include annotations that are available in source
-            self.annotations = [
-                (Annotation(a[0], self.source_file), a[1]) for a in parsed_items if a[0] in available_source_annotations
-            ]
-            self.initialized = True
-        for annotation in self.annotations:
-            yield annotation
+            self._initialize()
+        return self.annotations[index]
+
+    def __len__(self):
+        if not self.initialized:
+            self._initialize()
+        return len(self.annotations)
 
 
 class HeaderAnnotations(SourceAnnotations):
     """Iterable with header annotations to include in export."""
 
-    def __init__(self, config_name: str, items: Optional[Iterable[str]] = None, source_file: Optional[str] = None):
-        super().__init__(config_name, items, source_file, _headers=True)
+    def __init__(self, config_name: str, source_file: Optional[str] = None):
+        super().__init__(config_name, source_file, _headers=True)
 
 
-class SourceAnnotationsAllSourceFiles(Iterable[Tuple[AnnotationAllSourceFiles, Optional[str]]]):
+class SourceAnnotationsAllSourceFiles(Sequence[Tuple[AnnotationAllSourceFiles, Optional[str]]]):
     """Iterable with source annotations to include in export."""
 
-    def __init__(self, config_name: str, items: Optional[Iterable[str]] = None, source_files: Iterable[str]=(),
-                 headers: bool = False):
+    def __init__(self, config_name: str, source_files: Iterable[str]=(), headers: bool = False):
         self.config_name = config_name
-        self.raw_list = items
-        self.annotations = []
+        self.raw_list = None
+        self.annotations: Sequence[Tuple[AnnotationAllSourceFiles, Optional[str]]] = []
         self.source_files = source_files
         self.initialized = False
         self.headers = headers
+
+    def _initialize(self):
+        assert self.source_files, "SourceAnnotationsAllSourceFiles is missing source_files"
 
         # If raw_list is an empty list, don't add any source annotations automatically
         if not self.raw_list and self.raw_list is not None:
             self.initialized = True
 
-    def __iter__(self):
-        if not self.initialized:
-            assert self.source_files, "SourceAnnotationsAllSourceFiles is missing source_files"
-            # Parse annotation list and, if needed, read available source annotations
-            available_source_annotations = set()
-            for f in self.source_files:
-                if self.headers:
-                    h = Headers(f)
-                    if h.exists():
-                        available_source_annotations.update(h.read())
-                else:
-                    available_source_annotations.update(SourceStructure(f).read())
+        # Parse annotation list and, if needed, read available source annotations
+        available_source_annotations = set()
+        for f in self.source_files:
+            if self.headers:
+                h = Headers(f)
+                if h.exists():
+                    available_source_annotations.update(h.read())
+            else:
+                available_source_annotations.update(SourceStructure(f).read())
 
-            parsed_items = parse_annotation_list(self.raw_list, available_source_annotations)
-            # Only include annotations that are available in source
-            self.annotations = [
-                (AnnotationAllSourceFiles(a[0]), a[1]) for a in parsed_items if a[0] in available_source_annotations
-            ]
-            self.initialized = True
-        for annotation in self.annotations:
-            yield annotation
+        parsed_items = parse_annotation_list(self.raw_list, available_source_annotations)
+        # Only include annotations that are available in source
+        self.annotations = [
+            (AnnotationAllSourceFiles(a[0]), a[1]) for a in parsed_items if a[0] in available_source_annotations
+        ]
+        self.initialized = True
+
+    def __getitem__(self, index: int):
+        if not self.initialized:
+            self._initialize()
+        return self.annotations[index]
+
+    def __len__(self):
+        if not self.initialized:
+            self._initialize()
+        return len(self.annotations)
 
 
 class HeaderAnnotationsAllSourceFiles(SourceAnnotationsAllSourceFiles):
     """Iterable with header annotations to include in export."""
 
-    def __init__(self, config_name: str, items: Optional[Iterable[str]] = None, source_files: Iterable[str]=()):
-        super().__init__(config_name, items, source_files, headers=True)
+    def __init__(self, config_name: str, source_files: Iterable[str]=()):
+        super().__init__(config_name, source_files, headers=True)
 
 
 class Language(str):

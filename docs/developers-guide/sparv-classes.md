@@ -8,7 +8,7 @@ the available Sparv classes, their arguments, properties, and public methods.
 
 
 ## AllSourceFilenames
-An instance of this class holds a list with the names of all source files. It is typically used by exporter
+An instance of this class holds an iterable with the names of all source files. It is typically used by exporter
 functions that combine annotations from all source files.
 
 
@@ -210,8 +210,8 @@ An instance of this class represents an export file. This class is used to defin
 
 
 ## ExportAnnotations
-List of annotations to be included in the export. This list is defined in the corpus configuration. Annotation files
-for the current source file will automatically be added as dependencies when using this class.
+Iterable with annotations to be included in the export. This list is defined in the corpus configuration.
+Annotation files for the current source file will automatically be added as dependencies when using this class.
 
 **Arguments:**
 
@@ -219,8 +219,8 @@ for the current source file will automatically be added as dependencies when usi
 
 
 ## ExportAnnotationsAllSourceFiles
-List of annotations to be included in the export. This list is defined in the corpus configuration. Annotation files
-for _all_ source files will automatically be added as dependencies when using this class.
+Iterable with annotations to be included in the export. This list is defined in the corpus configuration.
+Annotation files for _all_ source files will automatically be added as dependencies when using this class.
 
 **Arguments:**
 
@@ -228,7 +228,7 @@ for _all_ source files will automatically be added as dependencies when using th
 
 
 ## ExportAnnotationNames
-List of annotations to be included in the export. This list is defined in the corpus configuration. Unlike
+Iterable with annotations to be included in the export. This list is defined in the corpus configuration. Unlike
 `ExportAnnotations`, the annotations will not be added as dependencies when using this class.
 
 **Arguments:**

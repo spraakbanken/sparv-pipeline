@@ -288,15 +288,21 @@ def calculate_element_hierarchy(source_file, spans_list):
     return hierarchy
 
 
-def get_annotation_names(annotations: Union[ExportAnnotations, ExportAnnotationsAllSourceFiles],
-                         source_annotations: Union[SourceAnnotations, SourceAnnotationsAllSourceFiles] = None,
-                         source_file: Optional[str] = None,
-                         token_name: Optional[str] = None,
-                         remove_namespaces=False, keep_struct_names=False,
-                         sparv_namespace: Optional[str] = None,
-                         source_namespace: Optional[str] = None,
-                         xml_mode: Optional[bool] = False) -> Tuple[List[Union[Annotation, AnnotationAllSourceFiles]],
-                                                                    List[str], Dict[str, str]]:
+def get_annotation_names(
+    annotations: Union[
+        ExportAnnotations,
+        ExportAnnotationsAllSourceFiles,
+        List[Tuple[Union[Annotation, AnnotationAllSourceFiles], Optional[str]]],
+    ],
+    source_annotations: Union[SourceAnnotations, SourceAnnotationsAllSourceFiles] = None,
+    source_file: Optional[str] = None,
+    token_name: Optional[str] = None,
+    remove_namespaces=False,
+    keep_struct_names=False,
+    sparv_namespace: Optional[str] = None,
+    source_namespace: Optional[str] = None,
+    xml_mode: Optional[bool] = False,
+) -> Tuple[List[Union[Annotation, AnnotationAllSourceFiles]], List[str], Dict[str, str]]:
     """Get a list of annotations, token attributes and a dictionary for renamed annotations.
 
     Args:
@@ -316,7 +322,7 @@ def get_annotation_names(annotations: Union[ExportAnnotations, ExportAnnotations
         export names.
     """
     # Combine all annotations
-    all_annotations = _remove_duplicates(annotations + list(source_annotations))
+    all_annotations = _remove_duplicates(list(annotations) + list(source_annotations))
 
     if token_name:
         # Get the names of all token attributes

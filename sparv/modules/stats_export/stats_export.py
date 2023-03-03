@@ -56,7 +56,7 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
         cutoff: The minimum frequency a word must have in order to be included in the result.
     """
     # Add "word" to annotations
-    annotations = [(word, None)] + annotations
+    annotations = [(word, None)] + list(annotations)
 
     # Get annotations list and export names
     annotation_list, token_attributes, export_names = util.export.get_annotation_names(

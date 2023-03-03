@@ -180,7 +180,7 @@ def cwb_encode(corpus, annotations, source_annotations, source_files, words, vrt
     vrtfiles.sort()
 
     # Word annotation should always be included in CWB export
-    annotations.insert(0, (words, None))
+    annotations = [(words, None)] + list(annotations)
 
     # Get annotation names
     annotation_list, token_attributes, export_names = util.export.get_annotation_names(
