@@ -544,11 +544,11 @@ def expand_variables(string, rule_name: Optional[str] = None, is_annotation: boo
             real_ann = _expand_class(cls.group(1))
             if real_ann:
                 final_ann, rest_ = expand_classes(real_ann, parents.union([cls.group(1)]))
-                if rest_:
-                    return "", rest_
                 s = s.replace(cls.group(), final_ann, 1)
+                if rest_:
+                    return s, rest_
             else:
-                return "", cls.group()
+                return s, cls.group()
         return s, None
 
     for string in strings:
