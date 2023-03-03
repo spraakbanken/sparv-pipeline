@@ -91,6 +91,7 @@ def timeformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
                informat: str = Config("dateformat.datetime_informat"),
                outformat: str = Config("dateformat.time_outformat"),
                splitter: Optional[str] = Config("dateformat.splitter"),
+               pre_regex: Optional[str] = Config("dateformat.pre_regex"),
                regex: Optional[str] = Config("dateformat.regex")):
     """Convert existing dates/times to specified time output format.
 
@@ -107,10 +108,12 @@ def timeformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
             Several formats can be specified separated by |. They will be tied to their respective in-format.
         splitter: One or more characters separating two dates in 'in_from',
             treating them as from-date and to-date.
+        pre_regex: Regular expression with a catching group whose content will be used in the parsing
+            instead of the whole string. Applied before splitting.
         regex: Regular expression with a catching group whose content will be used in the parsing
-            instead of the whole string.
+            instead of the whole string. Applied on each value after splitting.
     """
-    _formatter(in_from, in_to, out_from, out_to, informat, outformat, splitter, regex)
+    _formatter(in_from, in_to, out_from, out_to, informat, outformat, splitter, pre_regex, regex)
 
 
 @annotator("Get datetime resolutions from informat")
