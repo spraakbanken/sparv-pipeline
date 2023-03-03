@@ -19,8 +19,12 @@ logger = get_logger(__name__)
                        "by |. They will be tried in order."),
     Config("dateformat.splitter", description="One or more characters separating two dates in 'datetime_from', "
                                               "treating them as from-date and to-date."),
-    Config("dateformat.regex", description="Regular expression with a catching group whose content will be used in the "
-                                           "parsing instead of the whole string."),
+    Config("dateformat.pre_regex",
+           description="Regular expression with a catching group whose content will be used in the parsing instead of "
+                       "the whole string. Applied before splitting."),
+    Config("dateformat.regex",
+           description="Regular expression with a catching group whose content will be used in the parsing instead of "
+                       "the whole string. Applied on each value after splitting."),
     Config("dateformat.date_outformat", default="%Y%m%d",
            description="Desired format of the formatted dates. Several formats can be specified separated "
                        "by |. They will be tied to their respective in-format."),
@@ -36,6 +40,7 @@ def dateformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
                informat: str = Config("dateformat.datetime_informat"),
                outformat: str = Config("dateformat.date_outformat"),
                splitter: Optional[str] = Config("dateformat.splitter"),
+               pre_regex: Optional[str] = Config("dateformat.pre_regex"),
                regex: Optional[str] = Config("dateformat.regex")):
     """Convert existing dates/times to specified date output format.
 
@@ -52,10 +57,12 @@ def dateformat(in_from: Annotation = Annotation("[dateformat.datetime_from]"),
             Several formats can be specified separated by |. They will be tied to their respective in-format.
         splitter: One or more characters separating two dates in 'in_from',
             treating them as from-date and to-date.
+        pre_regex: Regular expression with a catching group whose content will be used in the parsing
+            instead of the whole string. Applied before splitting.
         regex: Regular expression with a catching group whose content will be used in the parsing
-            instead of the whole string.
+            instead of the whole string. Applied on each value after splitting.
     """
-    _formatter(in_from, in_to, out_from, out_to, informat, outformat, splitter, regex)
+    _formatter(in_from, in_to, out_from, out_to, informat, outformat, splitter, pre_regex, regex)
 
 
 @annotator("Convert existing dates to format YYYY-MM-DD")
@@ -64,9 +71,10 @@ def dateformat_pretty(in_date: Annotation = Annotation("[dateformat.datetime_fro
                                            description="Date without timestamp 'YYYY-MM-DD'"),
                       informat: str = Config("dateformat.datetime_informat"),
                       splitter: Optional[str] = Config("dateformat.splitter"),
+                      pre_regex: Optional[str] = Config("dateformat.pre_regex"),
                       regex: Optional[str] = Config("dateformat.regex")):
     """Convert existing dates to format YYYY-MM-DD."""
-    _formatter(in_date, None, out, None, informat, "%Y-%m-%d", splitter, regex)
+    _formatter(in_date, None, out, None, informat, "%Y-%m-%d", splitter, pre_regex, regex)
 
 
 @annotator("Convert existing times to specified output format", config=[
@@ -144,7 +152,7 @@ def resolution(out_resolution: OutputCommonData = OutputCommonData("dateformat.r
 
 
 def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Output, out_to: Optional[Output],
-               informat: str, outformat: str, splitter: str, regex: str):
+               informat: str, outformat: str, splitter: str, pre_regex: str, regex: str):
     """Take existing dates/times and input formats and convert to specified output format."""
     def get_smallest_unit(informat):
         smallest_unit = 0  # No date
@@ -215,6 +223,14 @@ def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Outpu
             ofrom[index] = None
             continue
 
+        if pre_regex:
+            matches = re.match(pre_regex, val)
+            val = [v for v in matches.groups() if v][0]
+            if not val:
+                # If the regex doesn't match, treat as no date
+                ofrom[index] = None
+                continue
+
         tries = 0
         for inf in informat:
             if splitter and splitter in inf:
@@ -278,6 +294,14 @@ def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Outpu
             if not val:
                 oto[index] = None
                 continue
+
+            if pre_regex:
+                matches = re.match(pre_regex, val)
+                val = [v for v in matches.groups() if v][0]
+                if not val:
+                    # If the regex doesn't match, treat as no date
+                    oto[index] = None
+                    continue
 
             tries = 0
             for inf in informat:
