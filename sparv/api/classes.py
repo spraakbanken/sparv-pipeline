@@ -864,9 +864,9 @@ class SourceAnnotations(Sequence[Tuple[Annotation, Optional[str]]]):
         # Parse annotation list and read available source annotations
         if self.headers:
             h = Headers(self.source_file)
-            available_source_annotations = set(h.read()) if h.exists() else set()
+            available_source_annotations = h.read() if h.exists() else []
         else:
-            available_source_annotations = set(SourceStructure(self.source_file).read())
+            available_source_annotations = SourceStructure(self.source_file).read()
         parsed_items = parse_annotation_list(self.raw_list, available_source_annotations)
         # Only include annotations that are available in source
         self.annotations = [
