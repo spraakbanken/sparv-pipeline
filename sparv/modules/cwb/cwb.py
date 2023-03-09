@@ -28,6 +28,8 @@ def vrt(source_file: SourceFilename = SourceFilename(),
         word: Annotation = Annotation("[export.word]"),
         annotations: ExportAnnotations = ExportAnnotations("cwb.annotations"),
         source_annotations: SourceAnnotations = SourceAnnotations("cwb.source_annotations"),
+        all_source_annotations: SourceAnnotationsAllSourceFiles = SourceAnnotationsAllSourceFiles(
+            "cwb.source_annotations"),
         remove_namespaces: bool = Config("export.remove_module_namespaces", False),
         sparv_namespace: str = Config("export.sparv_namespace"),
         source_namespace: str = Config("export.source_namespace")):
@@ -43,8 +45,17 @@ def vrt(source_file: SourceFilename = SourceFilename(),
     # Read words
     word_annotation = list(word.read())
 
+    # Make a list of all token attributes for all source files. We need this because all VRT files need to have the
+    # exact same token attributes in the same order.
+    all_token_attributes = [
+        a[0].attribute_name
+        for a in set(annotations).union(all_source_annotations)
+        if a[0].annotation_name == token.annotation_name and a[0].has_attribute()
+    ]
+    all_token_attributes.sort()
+
     # Get annotation spans, annotations list etc.
-    annotation_list, token_attributes, export_names = util.export.get_annotation_names(
+    annotation_list, _token_attributes, export_names = util.export.get_annotation_names(
         annotations, source_annotations, source_file=source_file, token_name=token.name,
         remove_namespaces=remove_namespaces, sparv_namespace=sparv_namespace, source_namespace=source_namespace)
     if token not in annotation_list:
@@ -52,7 +63,7 @@ def vrt(source_file: SourceFilename = SourceFilename(),
                        "the source text. Make sure to add <token> to the list of export annotations.")
     span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names,
                                                                      source_file=source_file)
-    vrt_data = create_vrt(span_positions, token.name, word_annotation, token_attributes, annotation_dict,
+    vrt_data = create_vrt(span_positions, token.name, word_annotation, all_token_attributes, annotation_dict,
                           export_names)
 
     # Write result to file
@@ -72,13 +83,15 @@ def vrt_scrambled(source_file: SourceFilename = SourceFilename(),
                   word: Annotation = Annotation("[export.word]"),
                   annotations: ExportAnnotations = ExportAnnotations("cwb.annotations"),
                   source_annotations: SourceAnnotations = SourceAnnotations("cwb.source_annotations"),
+                  all_source_annotations: SourceAnnotationsAllSourceFiles = SourceAnnotationsAllSourceFiles(
+                      "cwb.source_annotations"),
                   remove_namespaces: bool = Config("export.remove_module_namespaces", False),
                   sparv_namespace: str = Config("export.sparv_namespace"),
                   source_namespace: str = Config("export.source_namespace")):
     """Export annotations to vrt in scrambled order."""
     logger.progress(total=6)
     # Get annotation spans, annotations list etc.
-    annotation_list, token_attributes, export_names = util.export.get_annotation_names(
+    annotation_list, _token_attributes, export_names = util.export.get_annotation_names(
         annotations, source_annotations, source_file=source_file, token_name=token.name,
         remove_namespaces=remove_namespaces, sparv_namespace=sparv_namespace, source_namespace=source_namespace)
     logger.progress()
@@ -98,11 +111,20 @@ def vrt_scrambled(source_file: SourceFilename = SourceFilename(),
 
     logger.progress()
 
+    # Make a list of all token attributes for all source files. We need this because all VRT files need to have the
+    # exact same token attributes in the same order.
+    all_token_attributes = [
+        a[0].attribute_name
+        for a in set(annotations).union(all_source_annotations)
+        if a[0].annotation_name == token.annotation_name and a[0].has_attribute()
+    ]
+    all_token_attributes.sort()
+
     # Reorder chunks and open/close tags in correct order
     new_span_positions = util.export.scramble_spans(span_positions, chunk.name, chunk_order_data)
     logger.progress()
     # Make vrt format
-    vrt_data = create_vrt(new_span_positions, token.name, word_annotation, token_attributes, annotation_dict,
+    vrt_data = create_vrt(new_span_positions, token.name, word_annotation, all_token_attributes, annotation_dict,
                           export_names)
     logger.progress()
     # Create export dir
@@ -187,6 +209,9 @@ def cwb_encode(corpus, annotations, source_annotations, source_files, words, vrt
         annotations, source_annotations, token_name=token_name,
         remove_namespaces=remove_namespaces, sparv_namespace=sparv_namespace, source_namespace=source_namespace,
         keep_struct_names=True)
+
+    # Sort token attributes (but keep word first) to be in the same order as the VRT columns
+    token_attributes = token_attributes[:1] + sorted(token_attributes[1:])
 
     # Get VRT columns
     token_attributes = [(token_name + ":" + i) for i in token_attributes]
