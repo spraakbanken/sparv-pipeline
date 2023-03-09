@@ -1,4 +1,4 @@
-"""Parse XML source file."""
+"""Parse XML source files."""
 
 import copy
 import re
@@ -85,6 +85,7 @@ def parse(filename: SourceFilename = SourceFilename(),
         header_elements: Elements containing header metadata. Contents will not be included in corpus text.
         header_data: List of header elements and attributes from which to extract metadata.
         prefix: Optional prefix to add to annotations.
+        remove_namespaces: Set to True to remove any namespaces.
         encoding: Encoding of source file. Defaults to UTF-8.
         keep_control_chars: Set to True to keep control characters in the text.
         normalize: Normalize input using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.
@@ -185,14 +186,15 @@ class SparvXMLParser:
             start, start_subpos, end, end_subpos, name_orig, attrs = element
 
             # Handle possible skipping of element and attributes
-            if (name_orig, "") in self.skipped_elems:
-                return
-            if (name_orig, "*") in self.skipped_elems:
-                attrs = {}
-            for attr in attrs.copy():
-                attr_name = get_sparv_name(attr)
-                if (name_orig, attr_name) in self.skipped_elems:
-                    attrs.pop(attr)
+            if self.skipped_elems:
+                if (name_orig, "") in self.skipped_elems:
+                    return
+                if (name_orig, "*") in self.skipped_elems:
+                    attrs = {}
+                for attr in attrs.copy():
+                    attr_name = get_sparv_name(attr)
+                    if (name_orig, attr_name) in self.skipped_elems:
+                        attrs.pop(attr)
 
             if name_orig in self.targets:
                 # Rename element and/or attributes
@@ -434,7 +436,7 @@ class SparvXMLParser:
 
 def get_namespace(xml_name: str):
     """Search for a namespace in tag and return a tuple (URI, tagname)."""
-    m = re.match(r"\{(.*)\}(.+)", xml_name)
+    m = re.match(r"\{(.*)}(.+)", xml_name)
     return (m.group(1), m.group(2)) if m else ("", xml_name)
 
 
