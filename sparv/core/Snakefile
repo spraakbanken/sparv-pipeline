@@ -263,7 +263,7 @@ rule list_targets:
         table.add_column(no_wrap=True)
         table.add_column()
 
-        table.add_row("[b]Exports[/b]")
+        table.add_row("[b]Exporters[/b]")
         for target, desc, _lang in sorted(snake_storage.export_targets):
             table.add_row("  " + target, desc)
         table.add_row()
