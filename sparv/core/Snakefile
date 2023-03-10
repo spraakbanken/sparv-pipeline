@@ -143,6 +143,35 @@ def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
         for f in this_sm_rule.input:
             this_sm_rule.dependencies[f] = sm_rule
 
+
+def update_autocompletion_cache():
+    """If needed, update the cache of available targets (exporters/installers/rules etc.) used by tab autocompletion."""
+    import pickle
+
+    # Create cache
+    new_cache = dict.fromkeys(("import", "export", "install", "uninstall", "model"))
+    for target_type in new_cache:
+        new_cache[target_type] = sorted([t[0] for t in getattr(snake_storage,f"{target_type}_targets")])
+
+    new_cache["annotate"] = []
+    for target_type in ("named", "custom"):
+        new_cache["annotate"].extend([t[0] for t in getattr(snake_storage,f"{target_type}_targets")])
+        new_cache["annotate"].sort()
+
+    # Create or update cache file if needed
+    cache_file = Path(".cache")
+
+    if cache_file.is_file():
+        with open(cache_file, "rb") as cache_in:
+            current_cache = pickle.load(cache_in)
+    else:
+        current_cache = {}
+
+    if not current_cache == new_cache:
+        with open(cache_file, "wb") as cache_out:
+            pickle.dump(new_cache, cache_out)
+
+
 # Init the storage for some essential variables involving all rules
 snake_storage = snake_utils.SnakeStorage()
 
@@ -185,6 +214,9 @@ for key in registry.annotation_sources:
 
 # Load modules and create automatic rules
 make_rules(config_missing)
+
+# Update autocompletion cache
+update_autocompletion_cache()
 
 # Validate config usage in modules
 sparv_config.validate_module_config()

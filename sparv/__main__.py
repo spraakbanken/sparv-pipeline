@@ -1,8 +1,10 @@
 """Main Sparv executable."""
-
 import argparse
 import sys
 from pathlib import Path
+
+# PYTHON_ARGCOMPLETE_OK
+import argcomplete
 
 from sparv import __version__
 
@@ -49,6 +51,38 @@ class CustomHelpFormatter(argparse.RawDescriptionHelpFormatter):
         return result
 
 
+class Completer:
+    """Reads and returns cached autocompletion data."""
+
+    def __init__(self, completion_type):
+        self.type = completion_type
+
+    def __call__(self, parsed_args, **kwargs):
+        cache_file = (Path(parsed_args.dir) / ".cache") if parsed_args.dir else Path(".cache")
+
+        if cache_file.is_file():
+            import pickle
+
+            with open(cache_file, "rb") as cache:
+                cache_data = pickle.load(cache)
+        else:
+            cache_data = {}
+
+        return cache_data.get(self.type, [])
+
+
+class SortedCompletionFinder(argcomplete.CompletionFinder):
+    """Custom CompletionFinder that sorts the completions.
+
+    We use this instead of letting bash sort the completions, to sort flags separately.
+    """
+
+    def filter_completions(self, completions: list):
+        completions = super().filter_completions(completions)
+        completions.sort()
+        return completions
+
+
 def main():
     """Run Sparv Pipeline (main entry point for Sparv)."""
 
@@ -88,6 +122,7 @@ def main():
         "   create-file      Create specified file(s)",
         "   run-module       Run annotator module independently",
         "   preload          Preload annotators and models",
+        "   autocomplete     Enable tab completion in bash",
         "",
         "See 'sparv <command> -h' for help with a specific command",
         "For full documentation, visit https://spraakbanken.gu.se/sparv/docs/"
@@ -98,15 +133,21 @@ def main():
 
     # Annotate
     run_parser = subparsers.add_parser("run", description="Annotate a corpus and generate export files.")
-    run_parser.add_argument("output", nargs="*", default=[], help="The type of output format to generate")
+    run_parser.add_argument(
+        "output", nargs="*", default=[], help="The type of output format to generate",
+    ).completer = Completer("export")
     run_parser.add_argument("-l", "--list", action="store_true", help="List available output formats")
 
     install_parser = subparsers.add_parser("install", description="Install a corpus.")
-    install_parser.add_argument("type", nargs="*", default=[], help="The type of installation to perform")
+    install_parser.add_argument(
+        "type", nargs="*", default=[], help="The type of installation to perform"
+    ).completer = Completer("install")
     install_parser.add_argument("-l", "--list", action="store_true", help="List installations to be made")
 
     uninstall_parser = subparsers.add_parser("uninstall", description="Uninstall a corpus.")
-    uninstall_parser.add_argument("type", nargs="*", default=[], help="The type of uninstallation to perform")
+    uninstall_parser.add_argument(
+        "type", nargs="*", default=[], help="The type of uninstallation to perform"
+    ).completer = Completer("uninstall")
     uninstall_parser.add_argument("-l", "--list", action="store_true", help="List uninstallations to be made")
 
     clean_parser = subparsers.add_parser("clean", description="Remove output directories (by default only the "
@@ -144,7 +185,9 @@ def main():
                                           description=("Download and build the Sparv models. This is optional, as "
                                                        "models will be downloaded and built automatically the first "
                                                        "time they are needed."))
-    models_parser.add_argument("model", nargs="*", default=[], help="The model(s) to be built")
+    models_parser.add_argument(
+        "model", nargs="*", default=[], help="The model(s) to be built"
+    ).completer = Completer("model")
     models_parser.add_argument("-l", "--list", action="store_true", help="List available models")
     models_parser.add_argument("--language", help="Language (ISO 639-3) if different from current corpus language")
     models_parser.add_argument("--all", action="store_true", help="Build all models for the current language")
@@ -157,7 +200,7 @@ def main():
 
     runrule_parser = subparsers.add_parser("run-rule", description="Run specified rule(s) for creating annotations.")
     runrule_parser.add_argument("targets", nargs="*", default=["list"],
-                                help="Annotation(s) to create")
+                                help="Annotation(s) to create").completer = Completer("annotate")
     runrule_parser.add_argument("-l", "--list", action="store_true", help="List available rules")
     runrule_parser.add_argument("-w", "--wildcards", nargs="*", metavar="WILDCARD",
                                 help="Supply values for wildcards using the format 'name=value'")
@@ -173,6 +216,9 @@ def main():
     preloader_parser.add_argument("--socket", default="sparv.socket", help="Path to socket file")
     preloader_parser.add_argument("-j", "--processes", help="Number of processes to use", default=1, type=int)
     preloader_parser.add_argument("-l", "--list", action="store_true", help="List annotators available for preloading")
+
+    autocomplete_parser = subparsers.add_parser("autocomplete", description="Enable tab completion in bash")
+    autocomplete_parser.add_argument("--enable", action="store_true", help="Output script to be sourced in bash")
 
     # Add common arguments
     for subparser in [run_parser, runrule_parser]:
@@ -209,6 +255,9 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == "make":
         print("No rule to make target")
         sys.exit(1)
+
+    # Handle autocompletion
+    SortedCompletionFinder()(parser)
 
     # Parse arguments. We allow unknown arguments for the "run-module" command which is handled separately.
     args, unknown_args = parser.parse_known_args(args=None if sys.argv[1:] else ["--help"])
@@ -262,7 +311,7 @@ def main():
         print(f"{e.strerror}: {e.filename!r}")
         sys.exit(1)
 
-    if args.command not in ("build-models", "languages"):
+    if args.command not in ("autocomplete", "build-models", "languages"):
         if not config_exists:
             print(f"No config file ({paths.config_file}) found in working directory.")
             sys.exit(1)
@@ -411,6 +460,25 @@ def main():
                        "force_preloader": args.force_preloader,
                        "targets": snakemake_args["targets"],
                        "threads": args.cores})
+
+    elif args.command == "autocomplete":
+        if args.enable:
+            print(
+                argcomplete.shellcode(
+                    ["sparv"], complete_arguments=["-o nospace", "-o default", "-o bashdefault", "-o nosort"]
+                )
+            )
+        else:
+            print(
+                "To enable tab autocompletion for Sparv in bash, source the output of the 'sparv autocomplete --enable'"
+                " command in your shell by running the following:\n\n"
+                '    eval "$(sparv autocomplete --enable)"\n\n'
+                "To enable permanently, add the above line to ~/.bashrc by running the following in your terminal:\n\n"
+                "    echo 'eval \"$(sparv autocomplete --enable)\"' >> ~/.bashrc\n\n"
+                "Note: Autocompletion of some arguments, such as available exporters, will not be available until a "
+                "Sparv command (e.g. 'sparv run --list') has been run at least once for the current corpus."
+            )
+        sys.exit(0)
 
     if simple_target:
         # Force Snakemake to use threads to prevent unnecessary processes for simple targets
