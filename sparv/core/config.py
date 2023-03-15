@@ -9,6 +9,11 @@ from typing import Any, Optional
 import yaml
 import yaml.scanner
 
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
+
 from sparv.core import paths, registry
 from sparv.core.misc import SparvErrorMessage, get_logger
 
@@ -48,7 +53,7 @@ def read_yaml(yaml_file):
     """Read YAML file and handle errors."""
     try:
         with open(yaml_file, encoding="utf-8") as f:
-            data = yaml.load(f, Loader=yaml.FullLoader)
+            data = yaml.load(f, Loader=SafeLoader)
     except yaml.parser.ParserError as e:
         raise SparvErrorMessage("Could not parse the configuration file:\n" + str(e))
     except yaml.scanner.ScannerError as e:
