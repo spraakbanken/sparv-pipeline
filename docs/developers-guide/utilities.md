@@ -292,6 +292,17 @@ Take an iterable object and return a set in the format used by Corpus Workbench.
 - `encoding`: Encoding of `values`. Default: "UTF-8"
 
 
+### dump_yaml()
+Convert a dict to a YAML document string.
+
+**Arguments:**
+
+- `data`: The data to be dumped.
+- `resolve_alias`: Will replace aliases with their anchor's content if set to True.
+- `sort_keys`: Whether to sort the keys alphabetically.
+- `indent`: Number of spaces used for indentation.
+
+
 ### indent_xml()
 Add pretty-print indentation to an XML tree.
 

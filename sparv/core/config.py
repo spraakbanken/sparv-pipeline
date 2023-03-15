@@ -120,36 +120,6 @@ def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) 
                                     function="config")
 
 
-def dump_config(data, resolve_alias=False, sort_keys=False):
-    """Dump config YAML to string.
-
-    Args:
-        data: The data to be dumped.
-        resolve_alias: Will replace aliases with their anchor's content if set to True.
-        sort_keys: Whether to sort the keys alphabetically.
-    """
-    class IndentDumper(yaml.Dumper):
-        """Customized YAML dumper that indents lists."""
-
-        def increase_indent(self, flow=False, indentless=False):
-            """Force indentation."""
-            return super(IndentDumper, self).increase_indent(flow)
-
-    # Add custom string representer for prettier multiline strings
-    def str_representer(dumper, data):
-        if len(data.splitlines()) > 1:  # Check for multiline string
-            return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
-        return dumper.represent_scalar("tag:yaml.org,2002:str", data)
-    yaml.add_representer(str, str_representer)
-
-    if resolve_alias:
-        # Resolve aliases and replace them with their anchors' contents
-        yaml.Dumper.ignore_aliases = lambda *args: True
-
-    return yaml.dump(data, sort_keys=sort_keys, allow_unicode=True, Dumper=IndentDumper, indent=4,
-                     default_flow_style=False)
-
-
 def _get(name: str, config_dict=None):
     """Try to get value from config, raising an exception if key doesn't exist."""
     config_dict = config_dict if config_dict is not None else config

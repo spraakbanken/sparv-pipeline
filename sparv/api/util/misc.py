@@ -5,12 +5,52 @@ import unicodedata
 from typing import Optional, Union
 
 import pycountry
+import yaml
 
 from sparv.api import get_logger
 from sparv.api.classes import Model
 from sparv.core.misc import parse_annotation_list  # noqa
 
 logger = get_logger(__name__)
+
+
+def dump_yaml(data: dict, resolve_alias: bool = False, sort_keys: bool = False, indent: int = 2) -> str:
+    """Convert a dict to a YAML document string.
+
+    Args:
+        data: The data to be dumped.
+        resolve_alias: Will replace aliases with their anchor's content if set to True.
+        sort_keys: Whether to sort the keys alphabetically.
+        indent: Number of spaces used for indentation.
+    """
+
+    class IndentDumper(yaml.SafeDumper):
+        """Customized YAML dumper that indents lists."""
+
+        def increase_indent(self, flow=False, indentless=False):
+            """Force indentation."""
+            return super(IndentDumper, self).increase_indent(flow)
+
+    def str_representer(dumper, data):
+        """Custom string representer for prettier multiline strings."""
+        if "\n" in data:  # Check for multiline string
+            return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+        return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+    def obj_representer(dumper, data):
+        """Custom representer to cast subclasses of str to strings."""
+        return dumper.represent_scalar("tag:yaml.org,2002:str", str(data))
+
+    yaml.representer.SafeRepresenter.add_representer(str, str_representer)
+    yaml.representer.SafeRepresenter.add_multi_representer(str, obj_representer)
+
+    if resolve_alias:
+        # Resolve aliases and replace them with their anchors' contents
+        yaml.SafeDumper.ignore_aliases = lambda *args: True
+
+    return yaml.dump(
+        data, sort_keys=sort_keys, allow_unicode=True, Dumper=IndentDumper, indent=indent, default_flow_style=False
+    )
 
 
 # TODO: Split into two functions: one for Sparv-internal lists of values, and one used by the CWB module to create the
