@@ -558,8 +558,9 @@ def expand_variables(string, rule_name: Optional[str] = None, is_annotation: boo
             rest.append(unknown)
 
         if is_annotation and len(strings) > 1:
-            # If multiple alternative annotations, return the first one that is explicitly used, or the last
-            if string in explicit_annotations:
+            # If multiple alternative annotations, return the first one that is explicitly used as an export annotation,
+            # or referred to by a class in the config. As a fallback use the last annotation.
+            if string in explicit_annotations or string in annotation_classes["config_classes"].values():
                 break
 
     return string, rest
