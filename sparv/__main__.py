@@ -238,6 +238,8 @@ def main():
 
     autocomplete_parser = subparsers.add_parser("autocomplete", description="Enable tab completion in bash")
     autocomplete_parser.add_argument("--enable", action="store_true", help="Output script to be sourced in bash")
+    autocomplete_parser.add_argument("--enable-old", action="store_true",
+                                     help="Output script to be sourced in bash, for bash version 4.3 and below")
 
     # Add common arguments
     for subparser in [run_parser, runrule_parser]:
@@ -287,7 +289,7 @@ def main():
         run.main(unknown_args, log_level=args.log)
         sys.exit()
     elif args.command == "autocomplete":
-        if args.enable:
+        if args.enable or args.enable_old:
             import appdirs
             try:
                 # Create empty autocomplete cache if it doesn't exist
@@ -295,11 +297,10 @@ def main():
                 Path(appdirs.user_config_dir("sparv"), "autocomplete").touch()
             except FileNotFoundError:
                 pass
-            print(
-                argcomplete.shellcode(
-                    ["sparv"], complete_arguments=["-o nospace", "-o default", "-o bashdefault", "-o nosort"]
-                )
-            )
+            complete_arguments = ["-o nospace", "-o default", "-o bashdefault"]
+            if args.enable:
+                complete_arguments.append("-o nosort")
+            print(argcomplete.shellcode(["sparv"], complete_arguments=complete_arguments))
         else:
             print(
                 "To enable tab autocompletion for Sparv in bash, source the output of the 'sparv autocomplete --enable'"
@@ -307,6 +308,7 @@ def main():
                 '    eval "$(sparv autocomplete --enable)"\n\n'
                 "To enable permanently, add the above line to ~/.bashrc by running the following in your terminal:\n\n"
                 "    echo 'eval \"$(sparv autocomplete --enable)\"' >> ~/.bashrc\n\n"
+                "For bash version 4.3 and below, use the flag '--enable-old' instead.\n\n"
                 "Note: Autocompletion of some arguments, such as available exporters, will not be available until some "
                 "part of the Sparv pipeline (e.g. 'sparv run') has been run at least once since enabling "
                 "autocompletion."
