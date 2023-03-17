@@ -47,6 +47,7 @@ sparv_path = Path(__file__).parent.parent
 
 # Config file containing path to Sparv data dir
 sparv_config_file = Path(appdirs.user_config_dir("sparv"), "config.yaml")
+autocomplete_cache = Path(appdirs.user_config_dir("sparv"), "autocomplete")
 
 # Package-internal paths
 modules_dir = "modules"

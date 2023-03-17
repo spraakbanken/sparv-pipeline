@@ -146,30 +146,45 @@ def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
 
 def update_autocompletion_cache():
     """If needed, update the cache of available targets (exporters/installers/rules etc.) used by tab autocompletion."""
-    import pickle
 
-    # Create cache
-    new_cache = dict.fromkeys(("import", "export", "install", "uninstall", "model"))
-    for target_type in new_cache:
-        new_cache[target_type] = sorted([t[0] for t in getattr(snake_storage,f"{target_type}_targets")])
+    # Only update cache if it exists
+    if paths.autocomplete_cache.is_file():
+        import pickle
 
-    new_cache["annotate"] = []
-    for target_type in ("named", "custom"):
-        new_cache["annotate"].extend([t[0] for t in getattr(snake_storage,f"{target_type}_targets")])
-        new_cache["annotate"].sort()
+        # Collect data for cache
+        new_cache = dict.fromkeys(("import", "export", "install", "uninstall", "model"))
+        for target_type in new_cache:
+            new_cache[target_type] = sorted(
+                [t[0] for t in getattr(snake_storage, f"{target_type}_targets") if not t[0].startswith("custom.")]
+            )
 
-    # Create or update cache file if needed
-    cache_file = Path(".cache")
+        new_cache["annotate"] = []
+        for target_type in ("named", "custom"):
+            new_cache["annotate"].extend(
+                [t[0] for t in getattr(snake_storage, f"{target_type}_targets") if not t[0].startswith("custom.")]
+            )
+            new_cache["annotate"].sort()
 
-    if cache_file.is_file():
-        with open(cache_file, "rb") as cache_in:
-            current_cache = pickle.load(cache_in)
-    else:
-        current_cache = {}
+        # Create or update cache file if needed
+        cache_file = paths.autocomplete_cache
+        language = sparv_config.get("metadata.language")
 
-    if not current_cache == new_cache:
-        with open(cache_file, "wb") as cache_out:
-            pickle.dump(new_cache, cache_out)
+        try:
+            with open(cache_file, "rb") as cache_in:
+                current_cache = pickle.load(cache_in)
+        except:
+            current_cache = {}
+
+        default_language = sparv_config._config_default.get("metadata", {}).get("language")
+
+        if not (current_cache.get(language) == new_cache and current_cache.get("default_language") == default_language):
+            current_cache[language] = new_cache
+            current_cache["default_language"] = default_language
+            try:
+                with open(cache_file, "wb") as cache_out:
+                    pickle.dump(current_cache, cache_out)
+            except:
+                pass
 
 
 # Init the storage for some essential variables involving all rules

@@ -58,17 +58,36 @@ class Completer:
         self.type = completion_type
 
     def __call__(self, parsed_args, **kwargs):
-        cache_file = (Path(parsed_args.dir) / ".cache") if parsed_args.dir else Path(".cache")
+        # Read config file to find corpus language
+        config_file = Path(parsed_args.dir or Path.cwd(), "config.yaml")
+        cache_data = {}
 
-        if cache_file.is_file():
-            import pickle
+        if config_file.is_file():
+            import appdirs
+            import yaml
+            try:
+                from yaml import CSafeLoader as SafeLoader
+            except ImportError:
+                from yaml import SafeLoader
 
-            with open(cache_file, "rb") as cache:
-                cache_data = pickle.load(cache)
-        else:
-            cache_data = {}
+            with open(config_file, encoding="utf-8") as f:
+                data = yaml.load(f, Loader=SafeLoader)
+            language = data.get("metadata", {}).get("language")
 
-        return cache_data.get(self.type, [])
+            cache_file = Path(appdirs.user_config_dir("sparv"), "autocomplete")
+
+            if cache_file.is_file():
+                import pickle
+                try:
+                    with open(cache_file, "rb") as cache:
+                        cache_data = pickle.load(cache)
+                        if not language:
+                            language = cache_data.get("default_language")
+                        cache_data = cache_data.get(language, {})
+                except EOFError:  # Cache placeholder created but not yet populated
+                    pass
+
+            return cache_data.get(self.type, [])
 
 
 class SortedCompletionFinder(argcomplete.CompletionFinder):
@@ -267,6 +286,32 @@ def main():
         from sparv.core import run
         run.main(unknown_args, log_level=args.log)
         sys.exit()
+    elif args.command == "autocomplete":
+        if args.enable:
+            import appdirs
+            try:
+                # Create empty autocomplete cache if it doesn't exist
+                # The cache contents will only be populated if this file exists
+                Path(appdirs.user_config_dir("sparv"), "autocomplete").touch()
+            except FileNotFoundError:
+                pass
+            print(
+                argcomplete.shellcode(
+                    ["sparv"], complete_arguments=["-o nospace", "-o default", "-o bashdefault", "-o nosort"]
+                )
+            )
+        else:
+            print(
+                "To enable tab autocompletion for Sparv in bash, source the output of the 'sparv autocomplete --enable'"
+                " command in your shell by running the following:\n\n"
+                '    eval "$(sparv autocomplete --enable)"\n\n'
+                "To enable permanently, add the above line to ~/.bashrc by running the following in your terminal:\n\n"
+                "    echo 'eval \"$(sparv autocomplete --enable)\"' >> ~/.bashrc\n\n"
+                "Note: Autocompletion of some arguments, such as available exporters, will not be available until some "
+                "part of the Sparv pipeline (e.g. 'sparv run') has been run at least once since enabling "
+                "autocompletion."
+            )
+        sys.exit(0)
     else:
         import snakemake
         from snakemake.logging import logger
@@ -460,25 +505,6 @@ def main():
                        "force_preloader": args.force_preloader,
                        "targets": snakemake_args["targets"],
                        "threads": args.cores})
-
-    elif args.command == "autocomplete":
-        if args.enable:
-            print(
-                argcomplete.shellcode(
-                    ["sparv"], complete_arguments=["-o nospace", "-o default", "-o bashdefault", "-o nosort"]
-                )
-            )
-        else:
-            print(
-                "To enable tab autocompletion for Sparv in bash, source the output of the 'sparv autocomplete --enable'"
-                " command in your shell by running the following:\n\n"
-                '    eval "$(sparv autocomplete --enable)"\n\n'
-                "To enable permanently, add the above line to ~/.bashrc by running the following in your terminal:\n\n"
-                "    echo 'eval \"$(sparv autocomplete --enable)\"' >> ~/.bashrc\n\n"
-                "Note: Autocompletion of some arguments, such as available exporters, will not be available until a "
-                "Sparv command (e.g. 'sparv run --list') has been run at least once for the current corpus."
-            )
-        sys.exit(0)
 
     if simple_target:
         # Force Snakemake to use threads to prevent unnecessary processes for simple targets
