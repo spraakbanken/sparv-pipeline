@@ -379,27 +379,27 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             annotation_type = Annotation if param_type in (
                 ExportAnnotations, ExportAnnotationNames) else AnnotationAllSourceFiles
             plain_annotations = set()
-            possible_plain_annotations = []
-            for i, (export_annotation_name, export_name) in enumerate(export_annotations):
+            possible_plain_annotations = {}
+            full_annotations = {}  # Using a dict for deduplication (parse_annotation_list's deduping isn't enough)
+            for export_annotation_name, export_name in export_annotations:
                 annotation = annotation_type(export_annotation_name)
                 rule.configs.update(registry.find_config_variables(annotation.name))
                 rule.classes.update(registry.find_classes(annotation.name))
                 rule.missing_config.update(annotation.expand_variables(rule.full_name))
-                export_annotations[i] = (annotation, export_name)
+                full_annotations[annotation] = export_name
                 plain_name, attr = annotation.split()
                 if not attr:
                     plain_annotations.add(plain_name)
                 else:
-                    if plain_name not in possible_plain_annotations:
-                        possible_plain_annotations.append(plain_name)
+                    possible_plain_annotations[plain_name] = None
             # Add plain annotations where needed
             for a in possible_plain_annotations:
                 if a not in plain_annotations:
-                    export_annotations.append((annotation_type(a), None))
+                    full_annotations[annotation_type(a)] = None
 
             items = []
 
-            for annotation, export_name in export_annotations:
+            for annotation, export_name in full_annotations.items():
                 if param_value.is_input:
                     if param_type == ExportAnnotationsAllSourceFiles:
                         rule.inputs.extend(
