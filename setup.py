@@ -39,17 +39,17 @@ setuptools.setup(
     python_requires=">=3.8",
     install_requires=[
         "appdirs==1.4.4",
-        "argcomplete",
+        "argcomplete==3.0.5",
         "docx2python==1.27.1",
-        "nltk==3.6.7",
+        "nltk==3.8.1",
         "protobuf~=3.19.0", # Used by Stanza; see https://github.com/spraakbanken/sparv-pipeline/issues/161
         "pycountry==22.3.5",
         "python-dateutil==2.8.2",
         "PyYAML==6.0",
         "questionary==1.10.0",
-        "rich==11.0.0",
+        "rich==13.3.3",
         "snakemake==7.25.0",
-        "stanza==1.4.0",
+        "stanza==1.5.0",
         "torch>=1.9.1",  # Used by Stanza; see https://github.com/spraakbanken/sparv-pipeline/issues/82
         "typing-inspect==0.8.0"
     ],
