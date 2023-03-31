@@ -369,7 +369,10 @@ def main():
                   f"from a directory that has a config file ({paths.config_file}).")
             sys.exit(1)
 
-    snakemake_args = {"workdir": args.dir}
+    snakemake_args = {
+        "workdir": args.dir,
+        "rerun_triggers": "mtime"  # Only rerun rules based on file modification times
+    }
     config = {"run_by_sparv": True}
     simple_target = False
     log_level = ""

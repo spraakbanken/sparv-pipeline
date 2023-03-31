@@ -48,7 +48,7 @@ setuptools.setup(
         "PyYAML==6.0",
         "questionary==1.10.0",
         "rich==11.0.0",
-        "snakemake==6.3.0",
+        "snakemake==7.25.0",
         "stanza==1.4.0",
         "torch>=1.9.1",  # Used by Stanza; see https://github.com/spraakbanken/sparv-pipeline/issues/82
         "typing-inspect==0.8.0"

@@ -457,12 +457,13 @@ class LogHandler:
 
         if level == "run_info":
             # Parse list of jobs do to and total job count
-            lines = msg["msg"].splitlines()[2:]
-            total_jobs = lines[-1].strip()
+            lines = msg["msg"].splitlines()[3:]
+            total_jobs = lines[-1].split()[1]
             for j in lines[:-1]:
-                _, count, job = j.split("\t")
+                job, count, _, _ = j.split()
+                if ":" in job and not "::" in job:
+                    job = job + "*"  # Differentiate entrypoints from actual rules in the list
                 self.jobs[job.replace("::", ":")] = int(count)
-
             self.jobs_max_len = max(map(len, self.jobs))
 
             if self.use_progressbar and not self.bar_started:
@@ -513,21 +514,18 @@ class LogHandler:
                 self.progress.remove_task(this_job["task"])
             self.job_ids.pop((this_job["name"], this_job["file"]), None)
             self.current_jobs.pop(msg["jobid"], None)
-            if level == "job_error":
+            if level == "job_error" and msg.get("msg"):
                 self.messages["unhandled_error"].append(msg)
 
         elif level == "info":
-            if self.pass_through or msg["msg"] == "Nothing to be done.":
-                self.info(msg["msg"])
-
-        elif level == "error":
             if self.pass_through:
-                self.messages["unhandled_error"].append(msg)
-                return
-            handled = False
+                self.info(msg["msg"])
+            elif msg["msg"].startswith("Nothing to be done"):
+                self.info("Nothing to be done.")
 
-            # SparvErrorMessage exception from pipeline core
+        elif level == "debug":
             if "SparvErrorMessage" in msg["msg"]:
+                # SparvErrorMessage exception from pipeline core
                 # Parse error message
                 message = re.search(
                     r"{}([^\n]*)\n([^\n]*)\n(.*?){}".format(SparvErrorMessage.start_marker,
@@ -537,15 +535,21 @@ class LogHandler:
                     module, function, error_message = message.groups()
                     error_source = ":".join((module, function)) if module and function else None
                     self.messages["error"].append((error_source, error_message))
-                    handled = True
+                    self.handled_error = True
+            elif "exit status 123" in msg["msg"]:
+                # Exit status 123 means a Sparv module caused an exception, either a SparvErrorMessage exception, or
+                # an unexpected exception. Either way, the error message has already been logged, so it doesn't need to
+                # be printed again.
+                self.handled_error = True
 
-            # Exit status 123 means a Sparv module raised a SparvErrorMessage exception
-            # The error message has already been logged so doesn't need to be printed again
-            elif "exit status 123" in msg["msg"] or ("SystemExit" in msg["msg"] and "123" in msg["msg"]):
-                handled = True
+        elif level == "error":
+            if self.pass_through:
+                self.messages["unhandled_error"].append(msg)
+                return
+            handled = False
 
             # Errors due to missing config variables or binaries leading to missing input files
-            elif "MissingInputException" in msg["msg"]:
+            if "MissingInputException" in msg["msg"]:
                 msg_contents = re.search(r" for rule (\S+):\n(.+)", msg["msg"])
                 rule_name, filelist = msg_contents.groups()
                 rule_name = rule_name.replace("::", ":")
@@ -597,7 +601,8 @@ class LogHandler:
 
         elif level in ("warning", "job_error"):
             # Save other errors and warnings for later
-            self.messages["unhandled_error"].append(msg)
+            if msg.get("msg"):
+                self.messages["unhandled_error"].append(msg)
 
         elif level == "dag_debug" and "job" in msg:
             # Create regular expressions for searching for missing config variables or binaries
@@ -673,17 +678,19 @@ class LogHandler:
                     if self.log_level and logging._nameToLevel[self.log_level.upper()] > logging.DEBUG:
                         errmsg[0] += " To display further details about this error, rerun Sparv with the " \
                                      "'--log debug' argument.\n"
-                        if "msg" in error:
+                        if error.get("msg"):
+                            # Show only a summary of the error
+                            # Parsing is based on the format in format_error() in snakemake/exceptions.py
                             error_lines = error["msg"].splitlines()
-                            if " in line " in error_lines[0]:
-                                errmsg.append(error_lines[0].split(" in line ")[0] + ":")
+                            if " in file " in error_lines[0]:
+                                errmsg.append(error_lines[0].split(" in file ")[0] + ":")
                                 for line in error_lines[1:]:
                                     if line.startswith("  File "):
                                         break
                                     errmsg.append(line)
                     else:
                         errmsg.append("")
-                        errmsg.append(error.get("msg", "An unknown error occurred."))
+                        errmsg.append(error.get("msg") or "An unknown error occurred.")
                     self.error("\n".join(errmsg))
             else:
                 spacer = ""
