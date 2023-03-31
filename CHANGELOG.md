@@ -33,7 +33,7 @@
 
 ### Changed
 
-- Added support for Python 3.10.
+- Added support for Python 3.10 and 3.11.
 - Dropped support for Python 3.6 and 3.7.
 - `AnnotationAllSourceFiles` now have the same methods as `Annotation`.
 - The util function `install_mysql` can now install locally as well as to a remote server.

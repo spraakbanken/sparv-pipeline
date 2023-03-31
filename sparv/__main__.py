@@ -9,8 +9,8 @@ import argcomplete
 from sparv import __version__
 
 # Check Python version
-if sys.version_info < (3, 8, 0) or sys.version_info >= (3, 11, 0):
-    print("Python 3.8–3.10 is required.")
+if sys.version_info < (3, 8, 0):
+    print("Python 3.8 or newer is required.")
     sys.exit(1)
 
 
