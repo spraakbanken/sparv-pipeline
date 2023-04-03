@@ -550,7 +550,7 @@ class LogHandler:
 
             # Errors due to missing config variables or binaries leading to missing input files
             if "MissingInputException" in msg["msg"]:
-                msg_contents = re.search(r" for rule (\S+):\n(.+)", msg["msg"])
+                msg_contents = re.search(r" for rule (\S+):\n.*affected files:\n(.+)", msg["msg"], flags=re.DOTALL)
                 rule_name, filelist = msg_contents.groups()
                 rule_name = rule_name.replace("::", ":")
                 if self.missing_configs_re.search(filelist):
@@ -565,8 +565,7 @@ class LogHandler:
 
             # Missing output files
             elif "MissingOutputException" in msg["msg"]:
-                msg_contents = re.search(r"Missing files after .*?:\n(.+)\nThis might be due to", msg["msg"],
-                                         flags=re.DOTALL)
+                msg_contents = re.search(r"Missing files after .*?:\n(.+)", msg["msg"], flags=re.DOTALL)
                 missing_files = "\n • ".join(msg_contents.group(1).strip().splitlines())
                 message = f"The following output files were expected but are missing:\n" \
                           f" • {missing_files}\n" + missing_annotations_msg
