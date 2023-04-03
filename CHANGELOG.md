@@ -56,6 +56,8 @@
 - Fixed quoting of paths in `util.system.rsync`.
 - It's no longer possible to create an infinite loop of classes referring to each other.
 - Elapsed time exceeding 24 hours no longer gets cut off in the `--stats` output.
+- Fixed bug where error messages were not getting written to the log file when the `--log debug`
+  flag was used.
 
 ## [5.1.0] - 2022-11-03
 
