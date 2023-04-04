@@ -335,10 +335,10 @@ class SparvXMLParser:
             child_tail = None
             for child in element:
                 if not element_length:
-                    start_subpos += 1
+                    child_start_subpos = start_subpos + 1
                 else:
-                    start_subpos = 0
-                child_length, child_tail, end_subpos = iter_tree(child, start_pos + element_length, start_subpos)
+                    child_start_subpos = 0
+                child_length, child_tail, end_subpos = iter_tree(child, start_pos + element_length, child_start_subpos)
                 element_length += child_length + child_tail
             end_pos = start_pos + element_length
             if child_tail == 0:
