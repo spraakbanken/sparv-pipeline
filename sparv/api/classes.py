@@ -4,6 +4,7 @@ import gzip
 import os
 import pathlib
 import pickle
+import time
 import urllib.request
 import zipfile
 from abc import ABC, abstractmethod
@@ -526,7 +527,8 @@ class OutputMarker(OutputCommonData):
     """A class for creating a marker, indicating that something has run."""
 
     def write(self, value="", append: bool = False):
-        super().write(value)
+        # Write current timestamp, as Snakemake also compares checksums for small files, not just modified time
+        super().write(value or str(time.time()))
 
 
 class Text:
