@@ -46,6 +46,7 @@
   of lists that need parsing and expanding.
 - The classes `AllSourceFilenames`, `ExportAnnotations`, `ExportAnnotationsAllSourceFiles` and `ExportAnnotationNames`
   are now immutable iterables instead of lists.
+- Removed the flags `--rerun-incomplete` and `--mark-complete`, as Sparv will now always rerun incomplete files.
 
 ### Fixed
 

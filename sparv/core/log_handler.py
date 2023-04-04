@@ -581,16 +581,6 @@ class LogHandler:
                           "directory, run 'sparv run --unlock' to remove the lock."
                 self.messages["error"].append((None, message))
                 handled = True
-            elif "IncompleteFilesException:" in msg["msg"]:
-                msg_contents = re.search(r"Incomplete files:\n(.+)", msg["msg"], flags=re.DOTALL)
-                incomplete_files = "\n • ".join(msg_contents.group(1).strip().splitlines())
-                message = "The files below seem to be incomplete. If you are sure that certain files are not " \
-                          "incomplete, mark them as complete with 'sparv run --mark-complete <filenames>'.\n" \
-                          "To re-generate the files instead, rerun your command with the --rerun-incomplete flag.\n" \
-                          "Incomplete files:\n" \
-                          f" • {incomplete_files}"
-                self.messages["error"].append((None, message))
-                handled = True
 
             # Unhandled errors
             if not handled:
