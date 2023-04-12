@@ -92,33 +92,38 @@ def gather_annotations(annotations: List[Annotation],
             2. end position (larger indices first)
             3. the calculated element hierarchy
             """
-            def get_sort_key(span, sub_positions=False, empty_span=False):
+            def get_sort_key(span, hierarchy, sub_positions=False, empty_span=False):
                 """Return a sort key for span which makes span comparison possible."""
-                hierarchy_index = elem_hierarchy.index(span.name) if span.name in elem_hierarchy else -1
                 if empty_span:
                     if sub_positions:
-                        return (span.start, span.start_sub), hierarchy_index, (span.end, span.end_sub)
+                        return (span.start, span.start_sub), hierarchy, (span.end, span.end_sub)
                     else:
-                        return span.start, hierarchy_index, span.end
+                        return span.start, hierarchy, span.end
                 else:
                     if sub_positions:
-                        return (span.start, span.start_sub), (-span.end, -span.end_sub), hierarchy_index
+                        return (span.start, span.start_sub), (-span.end, -span.end_sub), hierarchy
                     else:
-                        return span.start, -span.end, hierarchy_index
+                        return span.start, -span.end, hierarchy
+
+            if self.name in elem_hierarchy and other_span.name in elem_hierarchy[self.name]:
+                self_hierarchy = elem_hierarchy[self.name][other_span.name]
+                other_hierarchy = 0 if self_hierarchy == 1 else 1
+            else:
+                self_hierarchy = other_hierarchy = -1
 
             # Sort empty spans according to hierarchy or put them first
             if (self.start, self.start_sub) == (self.end, self.end_sub) or (
                 other_span.start, other_span.start_sub) == (other_span.end, other_span.end_sub):
-                sort_key1 = get_sort_key(self, empty_span=True)
-                sort_key2 = get_sort_key(other_span, empty_span=True)
+                sort_key1 = get_sort_key(self, self_hierarchy, empty_span=True)
+                sort_key2 = get_sort_key(other_span, other_hierarchy, empty_span=True)
             # Both spans have sub positions
-            elif self.start_sub and other_span.start_sub:
-                sort_key1 = get_sort_key(self, sub_positions=True)
-                sort_key2 = get_sort_key(other_span, sub_positions=True)
+            elif self.start_sub is not False and other_span.start_sub is not False:
+                sort_key1 = get_sort_key(self, self_hierarchy, sub_positions=True)
+                sort_key2 = get_sort_key(other_span, other_hierarchy, sub_positions=True)
             # At least one of the spans does not have sub positions
             else:
-                sort_key1 = get_sort_key(self)
-                sort_key2 = get_sort_key(other_span)
+                sort_key1 = get_sort_key(self, self_hierarchy)
+                sort_key2 = get_sort_key(other_span, other_hierarchy)
 
             return sort_key1 < sort_key2
 
@@ -160,7 +165,7 @@ def gather_annotations(annotations: List[Annotation],
             if span.name in elem_hierarchy:
                 for i, (instruction, s) in enumerate(spans_dict[span.start]):
                     if instruction == "close":
-                        if s.name in elem_hierarchy and elem_hierarchy.index(s.name) < elem_hierarchy.index(span.name):
+                        if s.name in elem_hierarchy[span.name] and elem_hierarchy[span.name][s.name] == 1:
                             insert_index = i
                             break
             spans_dict[span.start].insert(insert_index, ("open", span))
@@ -232,59 +237,51 @@ def calculate_element_hierarchy(source_file, spans_list):
     """Calculate the hierarchy for spans with identical start and end positions.
 
     If two spans A and B have identical start and end positions, go through all occurrences of A and B
-    and check which element is most often parent to the other. That one will be first.
+    and check which element is most often parent to the other.
     """
     # Find elements with identical spans
     span_duplicates = defaultdict(set)
-    start_positions = defaultdict(set)
-    end_positions = defaultdict(set)
-    empty_span_starts = set()
+    startend_positions = defaultdict(set)
+    empty_span_starts = defaultdict(set)
     for span in spans_list:
+        # We don't include sub-positions here as we still need to compare spans with sub-positions with spans without
         span_duplicates[(span.start, span.end)].add(span.name)
-        start_positions[span.start].add(span.name)
-        end_positions[span.end].add(span.name)
-        if span.start == span.end:
-            empty_span_starts.add(span.start)
-    span_duplicates = [v for v in span_duplicates.values() if len(v) > 1]
-    # Add empty spans and spans with identical start positions
-    for span_start in empty_span_starts:
-        span_duplicates.append(start_positions[span_start])
-        span_duplicates.append(end_positions[span_start])
+        if (span.start, span.start_sub) == (span.end, span.end_sub):
+            empty_span_starts[span.name].add(span.start)
+        else:
+            startend_positions[span.start].add(span.name)
+            startend_positions[span.end].add(span.name)
+    span_duplicates = set(tuple(sorted(v)) for v in span_duplicates.values() if len(v) > 1)
 
-    # Flatten structure
-    unclear_spans = set([elem for elem_set in span_duplicates for elem in elem_set])
+    # Add empty spans and spans with identical start positions
+    empty_spans = set()
+    for empty_span, span_starts in empty_span_starts.items():
+        for span_start in span_starts:
+            for a in startend_positions[span_start]:
+                empty_spans.add(tuple(sorted((empty_span, a))))
 
     # Get pairs of relations that need to be ordered
-    relation_pairs = list(combinations(unclear_spans, r=2))
-    # Order each pair into [parent, children]
-    ordered_pairs = set()
+    relation_pairs = set()
+    for collisions in span_duplicates:
+        for combination in combinations(collisions, r=2):
+            relation_pairs.add(combination)
+    relation_pairs.update(empty_spans)
+
+    hierarchy = defaultdict(dict)
+
+    # Calculate parent-child relation for every pair
     for a, b in relation_pairs:
         a_annot = Annotation(a, source_file=source_file)
         b_annot = Annotation(b, source_file=source_file)
         a_parent = len([i for i in (b_annot.get_parents(a_annot)) if i is not None])
         b_parent = len([i for i in (a_annot.get_parents(b_annot)) if i is not None])
         if a_parent > b_parent:
-            ordered_pairs.add((a, b))
+            hierarchy[a][b] = 0
+            hierarchy[b][a] = 1
         elif a_parent < b_parent:
-            ordered_pairs.add((b, a))
+            hierarchy[b][a] = 0
+            hierarchy[a][b] = 1
 
-    hierarchy = []
-    error_msg = ("Something went wrong while sorting annotation elements. Could there be circular relations? "
-                 "The following elements could not be sorted: ")
-    # Loop until all unclear_spans are processed
-    while unclear_spans:
-        size = len(unclear_spans)
-        for span in unclear_spans.copy():
-            # Span is never a child in ordered_pairs, then it is first in the hierarchy
-            if not any([b == span for _a, b in ordered_pairs]):
-                hierarchy.append(span)
-                unclear_spans.remove(span)
-                # Remove pairs from ordered_pairs where span is the parent
-                for pair in ordered_pairs.copy():
-                    if pair[0] == span:
-                        ordered_pairs.remove(pair)
-        # Check that unclear_spans is getting smaller, otherwise there might be circularity
-        assert len(unclear_spans) < size, error_msg + " ".join(unclear_spans)
     return hierarchy
 
 
