@@ -369,7 +369,7 @@ def main():
 
     snakemake_args = {
         "workdir": args.dir,
-        "rerun_triggers": ["mtime"],  # Only rerun rules based on file modification times
+        "rerun_triggers": ["mtime", "input"],  # Rerun based on file modification times and changes to the set of input files
         "force_incomplete": True  # Always rerun incomplete files
     }
     config = {"run_by_sparv": True}
