@@ -1,6 +1,56 @@
 [build-system]
-requires = ["setuptools >= 40.1.0", "wheel"]
+requires = ["setuptools>=64.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "sparv-pipeline"
+dynamic = ["version"]
+description = "Språkbanken's text analysis tool"
+readme = "README.md"
+requires-python = ">=3.8"
+license.text = "MIT License"
+authors = [
+    { name = "Språkbanken", email = "sb-info@svenska.gu.se" }
+]
+dependencies = [
+    "appdirs==1.4.4",
+    "argcomplete==3.0.5",
+    "docx2python==1.27.1",
+    "nltk==3.8.1",
+    "protobuf~=3.19.0", # Used by Stanza; see https://github.com/spraakbanken/sparv-pipeline/issues/161
+    "pycountry==22.3.5",
+    "python-dateutil==2.8.2",
+    "PyYAML==6.0",
+    "questionary==1.10.0",
+    "rich==13.3.3",
+    "snakemake==7.25.0",
+    "stanza==1.5.0",
+    "torch>=1.9.1",  # Used by Stanza; see https://github.com/spraakbanken/sparv-pipeline/issues/82
+    "typing-inspect==0.8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pandocfilters==1.5.0",
+    "pytest",
+    "pytest-sugar>=0.9.6",
+]
+
+[project.urls]
+Homepage = "https://github.com/spraakbanken/sparv-pipeline/"
+Documentation = "https://spraakbanken.gu.se/sparv/"
+
+[project.scripts]
+sparv = "sparv.__main__:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "sparv.__version__"}
+
+[tool.setuptools.packages]
+find.include = ["sparv", "sparv.*"]
+
+[tool.setuptools.package-data]
+"sparv" = ["core/Snakefile", "resources/config/**"]
 
 [tool.black]
 line-length = 120
