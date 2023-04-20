@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=64.0.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "sparv-pipeline"
@@ -43,14 +43,10 @@ Documentation = "https://spraakbanken.gu.se/sparv/"
 [project.scripts]
 sparv = "sparv.__main__:main"
 
-[tool.setuptools.dynamic]
-version = {attr = "sparv.__version__"}
-
-[tool.setuptools.packages]
-find.include = ["sparv", "sparv.*"]
-
-[tool.setuptools.package-data]
-"sparv" = ["core/Snakefile", "resources/config/**"]
+[tool.hatch]
+version.path = "sparv/__init__.py"
+build.include = ["/sparv"]
+publish.index.disable = true  # Require confirmation to publish
 
 [tool.black]
 line-length = 120
