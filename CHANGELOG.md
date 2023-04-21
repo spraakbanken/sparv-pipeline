@@ -47,6 +47,8 @@
 - The classes `AllSourceFilenames`, `ExportAnnotations`, `ExportAnnotationsAllSourceFiles` and `ExportAnnotationNames`
   are now immutable iterables instead of lists.
 - Removed the flags `--rerun-incomplete` and `--mark-complete`, as Sparv will now always rerun incomplete files.
+- Sparv will now recognize when source files have been deleted and trigger the necessary reruns. Previously, only
+  additions and modifications were recognized.
 
 ### Fixed
 

@@ -44,8 +44,7 @@ Before cloning the repository with [git](https://git-scm.com/downloads) make sur
 Storage](https://git-lfs.github.com/) installed (`apt install git-lfs`). Some files will not be downloaded correctly
 otherwise.
 
-We recommend that you set up a virtual environment and install the dependencies (including the dev dependencies) listed
-in `setup.py`:
+Install the dependencies, including the dev dependencies. We recommend that you first set up a virtual environment:
 
 ```
 python3 -m venv venv
