@@ -34,7 +34,7 @@ jobs:
         uses: actions/cache@v3.2.3
         with:
           path: venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/pyproject.toml') }}-${{ hashFiles('**/setup.py') }}-${{ hashFiles('.github/workflows/ci.yml') }}
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/pyproject.toml') }}-${{ hashFiles('.github/workflows/ci.yml') }}
 
       # Create virtual environment and install dependencies if cache does not exist
       - name: Create venv and install dependencies
