@@ -22,43 +22,44 @@ sparv-sbx-uppercase/
 │   ├── uppercase.py
 │   └── __init__.py
 ├── LICENSE
-├── README.md
-└── setup.py
+├── pyproject.toml
+└── README.md
 ```
 
 In the above example the `sbx_uppercase` directory is a Sparv module containing the [module code](#module-code) in
-`uppercase.py` and the mandatory [init file](#init-file) `__init__.py`. The [setup file](#setup-file) `setup.py` in the
-root directory is needed in order to install the plugin.
+`uppercase.py` and the mandatory [init file](#init-file) `__init__.py`. The [project file](#pyprojecttoml)
+`pyproject.toml` in the root directory is needed in order to install the plugin.
 
 The readme and license files are not strictly necessary for the plugin to work, but we strongly recommend that you
 include these if you want to publish your plugin.
 
 
-## Setup File
-The `setup.py` is needed in order to install a plugin and connect it to the Sparv Pipeline. Here is a minimal example of
-a setup file (taken from the [Sparv plugin template](https://github.com/spraakbanken/sparv-plugin-template)):
-```python
-import setuptools
-
-setuptools.setup(
-    name="sparv-sbx-uppercase",
-    version="0.1",
-    description="Uppercase converter (example plug-in for Sparv)",
-    license="MIT",
-    packages=["sbx_uppercase"],
-    python_requires=">=3.6",
-    install_requires=["sparv-pipeline>=4,<5"],
-    entry_points={"sparv.plugin": ["sbx_uppercase = sbx_uppercase"]}
-)
+## pyproject.toml
+The `pyproject.toml` file is needed in order to install a plugin and connect it to the Sparv Pipeline. Here is a minimal
+example of a project file (taken from the [Sparv plugin template](https://github.com/spraakbanken/sparv-plugin-template)):
+```toml
+[project]
+name = "sparv-sbx-uppercase"
+version = "0.1.0"
+description = "Uppercase converter (example plug-in for Sparv)"
+readme = "README.md"
+license.text = "MIT License"
+dependencies = [
+    "sparv-pipeline~=5.0"
+]
+entry-points."sparv.plugin" = { sbx_uppercase = "sbx_uppercase" }
 ```
 
-Make sure to include the name of your module (i.e. the directory containing the Sparv code) in `packages`. You also need
-to make sure that there is a `sparv.plugin` entry point in `entry_points` that points to your module.
+Make sure that there is a `sparv.plugin` entry point in `project.entry-points` that points to your module (the directory
+containing the code). It is also a good idea to add `sparv-pipeline` to the list of dependencies, specifying which major
+version of Sparv the plugin is developed for, as it might not be compatible with future major versions.
+`"sparv-pipeline~=5.0"` under `dependencies` means that the plugin is compatible with any version of Sparv 5, but not
+Sparv 6.
 
-We strongly encourage you to also include the fields `author` and `author_email`.
+We strongly encourage you to also include the `project.authors` field.
 
-For more information about Python setup scripts check the [distutils
-documentation](https://docs.python.org/3/distutils/setupscript.html).
+For more information about `pyproject.toml` check the [Python Packaging User Guide
+](https://packaging.python.org/en/latest/specifications/declaring-project-metadata/).
 
 
 ## Init File
