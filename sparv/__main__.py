@@ -261,6 +261,7 @@ def main():
                                     "specified, 'info' if LOGLEVEL is not specified)",
                                nargs="?", choices=["debug", "info", "warning", "error", "critical"])
         subparser.add_argument("--stats", action="store_true", help="Show summary of time spent per annotator")
+        subparser.add_argument("--json-log", action="store_true", help="Use JSON format for logging")
         subparser.add_argument("--debug", action="store_true", help="Show debug messages")
         subparser.add_argument("--socket", help="Path to socket file created by the 'preload' command")
         subparser.add_argument("--force-preloader", action="store_true",
@@ -510,9 +511,17 @@ def main():
 
     # Disable Snakemake's default log handler and use our own
     logger.log_handler = []
-    progress = log_handler.LogHandler(progressbar=not simple_target, log_level=log_level, log_file_level=log_file_level,
-                                      simple=simple_mode, stats=stats, pass_through=pass_through, dry_run=dry_run,
-                                      keep_going=keep_going)
+    progress = log_handler.LogHandler(
+        progressbar=not (simple_target or args.json_log),
+        log_level=log_level,
+        log_file_level=log_file_level,
+        simple=simple_mode,
+        stats=stats,
+        pass_through=pass_through,
+        dry_run=dry_run,
+        keep_going=keep_going,
+        json=args.json_log,
+    )
     snakemake_args["log_handler"] = [progress.log_handler]
 
     config["log_server"] = progress.log_server

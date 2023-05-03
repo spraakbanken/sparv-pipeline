@@ -20,6 +20,7 @@ dependencies = [
     "protobuf~=3.19.0", # Used by Stanza; see https://github.com/spraakbanken/sparv-pipeline/issues/161
     "pycountry==22.3.5",
     "python-dateutil==2.8.2",
+    "python-json-logger==2.0.7",
     "PyYAML==6.0",
     "questionary==1.10.0",
     "rich==13.3.3",

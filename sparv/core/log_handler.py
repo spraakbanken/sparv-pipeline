@@ -9,13 +9,14 @@ import socketserver
 import struct
 import threading
 import time
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict, defaultdict
 from datetime import timedelta
 from pathlib import Path
 from typing import Optional
 
 import rich.box as box
 import rich.progress as progress
+from pythonjsonlogger import jsonlogger
 from rich.control import Control, ControlType
 from rich.logging import RichHandler
 from rich.table import Table
@@ -54,6 +55,10 @@ logging.Logger.progress = _log_progress
 # Add logging level used for progress output (must be lower than INTERNAL)
 PROGRESS = 90
 logging.addLevelName(PROGRESS, "PROGRESS")
+
+# Add logging level used for final messages when logging in JSON format, always displayed
+FINAL = 80
+logging.addLevelName(FINAL, "FINAL")
 
 
 def _export_dirs(self, dirs):
@@ -111,7 +116,7 @@ class LogLevelCounterHandler(logging.Handler):
 
     def emit(self, record):
         """Increment level counter for each log message."""
-        if record.levelno < PROGRESS:
+        if record.levelno < FINAL:
             self.levelcount[record.levelname] += 1
 
 
@@ -239,7 +244,7 @@ class LogHandler:
     icon = "\U0001f426"
 
     def __init__(self, progressbar=True, log_level=None, log_file_level=None, simple=False, stats=False,
-                 pass_through=False, dry_run=False, keep_going=False):
+                 pass_through=False, dry_run=False, keep_going=False, json=False):
         """Initialize log handler.
 
         Args:
@@ -251,12 +256,14 @@ class LogHandler:
             pass_through: Let Snakemake's log messages pass through uninterrupted.
             dry_run: Set to True to print summary about jobs.
             keep_going: Set to True if the keepgoing flag is enabled for Snakemake.
+            json: Set to True to enable JSON output.
         """
         self.use_progressbar = progressbar and console.is_terminal
         self.simple = simple or not console.is_terminal
         self.pass_through = pass_through
         self.dry_run = dry_run
         self.keep_going = keep_going
+        self.json = json
         self.log_level = log_level
         self.log_file_level = log_file_level
         self.log_filename = None
@@ -307,12 +314,34 @@ class LogHandler:
         internal_filter = InternalFilter()
         progress_internal_filter = ProgressInternalFilter()
 
+        # Set logger to use the lowest selected log level, but never higher than warning (we still want to count warnings)
+        self.logger.setLevel(
+            min(
+                logging.WARNING, getattr(logging, self.log_level.upper()), getattr(logging, self.log_file_level.upper())
+            )
+        )
+
         # stdout logger
-        stream_handler = ModifiedRichHandler(enable_link_path=False, rich_tracebacks=True, console=console)
+        if self.json:
+            stream_handler = logging.StreamHandler()
+        else:
+            stream_handler = ModifiedRichHandler(enable_link_path=False, rich_tracebacks=True, console=console)
+
         stream_handler.setLevel(self.log_level.upper())
         stream_handler.addFilter(internal_filter)
-        log_format = "%(message)s" if stream_handler.level > logging.DEBUG else "(%(process)d) - %(message)s"
-        stream_handler.setFormatter(logging.Formatter(log_format, datefmt=TIME_FORMAT))
+
+        if self.json:
+            stream_formatter = json_formatter = jsonlogger.JsonFormatter(LOG_FORMAT_DEBUG, rename_fields={
+                "asctime": "time",
+                "levelname": "level"
+            })
+        else:
+            stream_formatter = logging.Formatter(
+                "%(message)s" if stream_handler.level > logging.DEBUG else "(%(process)d) - %(message)s",
+                datefmt=TIME_FORMAT
+            )
+
+        stream_handler.setFormatter(stream_formatter)
         self.logger.addHandler(stream_handler)
 
         # File logger
@@ -321,8 +350,13 @@ class LogHandler:
                                                   encoding="UTF-8", delay=True)
         file_handler.setLevel(self.log_file_level.upper())
         file_handler.addFilter(progress_internal_filter)
-        log_format = LOG_FORMAT if file_handler.level > logging.DEBUG else LOG_FORMAT_DEBUG
-        file_handler.setFormatter(logging.Formatter(log_format))
+
+        if self.json:
+            file_formatter = json_formatter
+        else:
+            file_formatter = logging.Formatter(LOG_FORMAT if file_handler.level > logging.DEBUG else LOG_FORMAT_DEBUG)
+
+        file_handler.setFormatter(file_formatter)
         self.logger.addHandler(file_handler)
 
         # Level counter
@@ -354,7 +388,7 @@ class LogHandler:
         self.progress.start()
         self.bar = self.progress.add_task(self.icon, start=False, total=0, text="[dim]Preparing...[/dim]")
 
-        # Logging needs to be set up after the bar, to make use if its print hook
+        # Logging needs to be set up after the bar, to make use of its print hook
         self.setup_loggers()
 
     def start_bar(self, total: int):
@@ -363,20 +397,26 @@ class LogHandler:
         self.progress.start_task(self.bar)
         self.bar_started = True
 
-    @staticmethod
-    def info(msg):
+    def info(self, msg):
         """Print info message."""
-        console.print(Text(msg, style="green"))
+        if self.json:
+            self.logger.log(FINAL, msg)
+        else:
+            console.print(Text(msg, style="green"))
 
-    @staticmethod
-    def warning(msg):
+    def warning(self, msg):
         """Print warning message."""
-        console.print(Text(msg, style="yellow"))
+        if self.json:
+            self.logger.log(FINAL, msg)
+        else:
+            console.print(Text(msg, style="yellow"))
 
-    @staticmethod
-    def error(msg):
+    def error(self, msg):
         """Print error message."""
-        console.print(Text(msg, style="red"))
+        if self.json:
+            self.logger.log(FINAL, msg)
+        else:
+            console.print(Text(msg, style="red"))
 
     def log_handler(self, msg):
         """Log handler for Snakemake displaying a progress bar."""
@@ -476,8 +516,9 @@ class LogHandler:
                 # Advance progress
                 self.progress.advance(self.bar)
 
-            # Print regular updates if output is not a terminal (i.e. doesn't support the progress bar)
-            elif self.logger and not console.is_terminal:
+            # Print regular progress updates if output is not a terminal (i.e. doesn't support the progress bar) or
+            # output format is JSON
+            elif self.logger and (self.json or not console.is_terminal):
                 percentage = (100 * msg["done"]) // msg["total"]
                 if percentage > self.last_percentage:
                     self.last_percentage = percentage
@@ -646,12 +687,13 @@ class LogHandler:
             if self.handled_error:
                 # Print any collected core error messages
                 if self.messages["error"]:
-                    self.error("Sparv exited with the following error message{}:".format(
-                        "s" if len(self.messages) > 1 else ""))
+                    errmsg = ["Sparv exited with the following error message{}:".format(
+                        "s" if len(self.messages) > 1 else "")]
                     for message in self.messages["error"]:
                         error_source, msg = message
                         error_source = f"[{error_source}]\n" if error_source else ""
-                        self.error(f"\n{error_source}{msg}")
+                        errmsg.append(f"\n{error_source}{msg}")
+                    self.error("\n".join(errmsg))
                 else:
                     # Errors from modules have already been logged, so notify user
                     if self.log_filename:
@@ -739,7 +781,7 @@ class LogHandler:
 
 def setup_logging(log_server, log_level: str = "warning", log_file_level: str = "warning", file=None, job=None):
     """Set up logging with socket handler."""
-    # Use the lowest log level, but never higher than warning
+    # Set logger to use the lowest selected log level, but never higher than warning (we still want to count warnings)
     log_level = min(logging.WARNING, getattr(logging, log_level.upper()), getattr(logging, log_file_level.upper()))
     socket_logger = logging.getLogger("sparv")
     socket_logger.setLevel(log_level)
