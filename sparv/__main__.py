@@ -255,11 +255,11 @@ def main():
         subparser.add_argument("--log", metavar="LOGLEVEL", const="info",
                                help="Set the log level (default: 'warning' if --log is not specified, "
                                     "'info' if LOGLEVEL is not specified)",
-                               nargs="?", choices=["debug", "info", "warning", "error", "critical"])
+                               nargs="?", choices=["debug", "info", "warning", "error"])
         subparser.add_argument("--log-to-file", metavar="LOGLEVEL", const="info",
                                help="Set log level for logging to file (default: 'warning' if --log-to-file is not "
                                     "specified, 'info' if LOGLEVEL is not specified)",
-                               nargs="?", choices=["debug", "info", "warning", "error", "critical"])
+                               nargs="?", choices=["debug", "info", "warning", "error"])
         subparser.add_argument("--stats", action="store_true", help="Show summary of time spent per annotator")
         subparser.add_argument("--json-log", action="store_true", help="Use JSON format for logging")
         subparser.add_argument("--debug", action="store_true", help="Show debug messages")
