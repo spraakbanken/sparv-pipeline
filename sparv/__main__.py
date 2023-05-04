@@ -377,6 +377,7 @@ def main():
     simple_target = False
     log_level = ""
     log_file_level = ""
+    json_log = False
     simple_mode = False
     stats = False
     pass_through = False
@@ -485,6 +486,7 @@ def main():
 
         log_level = args.log or "warning"
         log_file_level = args.log_to_file or "warning"
+        json_log = args.json_log
         simple_mode = args.simple
         socket = args.socket
 
@@ -512,7 +514,7 @@ def main():
     # Disable Snakemake's default log handler and use our own
     logger.log_handler = []
     progress = log_handler.LogHandler(
-        progressbar=not (simple_target or args.json_log),
+        progressbar=not (simple_target or json_log),
         log_level=log_level,
         log_file_level=log_file_level,
         simple=simple_mode,
@@ -520,7 +522,7 @@ def main():
         pass_through=pass_through,
         dry_run=dry_run,
         keep_going=keep_going,
-        json=args.json_log,
+        json=json_log,
     )
     snakemake_args["log_handler"] = [progress.log_handler]
 
