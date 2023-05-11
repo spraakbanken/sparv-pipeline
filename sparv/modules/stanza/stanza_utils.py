@@ -17,6 +17,11 @@ def run_stanza(nlp, document, batch_size, max_sentence_length: int = 0, max_toke
     """Run Stanza and handle possible errors."""
     try:
         doc = nlp(document)
+    except RecursionError:
+        msg = "Stanza encountered a recursion error. To prevent this from happening you can try to limit " \
+              "the Stanza batch size by setting the 'stanza.batch_size' config variable to something lower " \
+              f"(current value: {batch_size}).\n"
+        raise SparvErrorMessage(msg)
     except RuntimeError as e:
         gpu_error = "CUDA out of memory" in str(e)
         cpu_error = "DefaultCPUAllocator: can't allocate memory" in str(e)
