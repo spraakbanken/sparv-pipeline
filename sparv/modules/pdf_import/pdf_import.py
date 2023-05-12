@@ -6,7 +6,7 @@ from typing import Optional
 
 import pdfplumber
 
-from sparv.api import Config, Output, Source, SourceFilename, SourceStructure, Text, importer, util
+from sparv.api import Config, Output, Source, SourceFilename, SourceStructure, SparvErrorMessage, Text, importer, util
 
 
 @importer("pdf import", file_extension="pdf", outputs=["text", "page:number"], text_annotation="text", config=[
@@ -41,7 +41,7 @@ def parse(source_file: SourceFilename = SourceFilename(),
         for n, p in enumerate(pdf.pages):
             pagetext = p.extract_text(layout=True, y_density=12)
             # Keep track of the page indentation
-            min_indent = min(map(len, re.findall(r"^ +", pagetext, flags=re.MULTILINE)))
+            min_indent = min(map(len, re.findall(r"^ +", pagetext, flags=re.MULTILINE)), default=0)
             if not keep_control_chars:
                 pagetext = util.misc.remove_control_characters(pagetext)
             if normalize:
@@ -57,6 +57,12 @@ def parse(source_file: SourceFilename = SourceFilename(),
                 end_position = start_position + len(pagetext) + 1
             pages.append((start_position, end_position))
             start_position = end_position
+
+    # Check if any text was found in the PDF
+    if not "".join(text.strip() for text in texts):
+        raise SparvErrorMessage(f"No text was found in the file '{source_file}.pdf'! This file cannot be processed " \
+                                "with Sparv. Please make sure that every PDF input file contains machine readable " \
+                                "text.")
 
     # Write page spans
     Output("{}.page".format(prefix) if prefix else "page", source_file=source_file).write(pages)
