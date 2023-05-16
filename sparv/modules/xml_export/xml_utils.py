@@ -137,6 +137,20 @@ def add_attrs(node, annotation, annotation_dict, export_names, index, include_em
             node.set(export_name, attrib_values[index])
 
 
+def replace_whitespace_in_names(export_names: dict) -> None:
+    """Replace whitespace with underscore in export names.
+
+    Args:
+        export_names: Dictionary with export names.
+    """
+    for n in export_names:
+        if " " in export_names[n]:
+            new_name = export_names[n].replace(" ", "_")
+            logger.warning("Whitespace is not permitted in XML element and attribute names. "
+                           f"{export_names[n]!r} will be renamed to {new_name!r}.")
+            export_names[n] = new_name
+
+
 def combine(corpus, out, source_files, xml_input, version_info_file=None):
     """Combine xml_files into one single file."""
     xml_files = [xml_input.replace("{file}", file) for file in source_files]

@@ -66,6 +66,7 @@ def scrambled(source_file: SourceFilename = SourceFilename(),
     if chunk not in annotation_list:
         raise SparvErrorMessage(
             "The annotation used for scrambling ({}) needs to be included in the output.".format(chunk))
+    xml_utils.replace_whitespace_in_names(export_names)
     span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names,
                                                                      source_file=source_file, split_overlaps=True)
 

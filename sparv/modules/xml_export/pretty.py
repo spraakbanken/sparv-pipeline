@@ -94,6 +94,7 @@ def pretty(source_file: SourceFilename = SourceFilename(),
                        "source text. Make sure to add <token> to the list of export annotations.")
     h_annotations, h_export_names = util.export.get_header_names(header_annotations, xml_namespaces)
     export_names.update(h_export_names)
+    xml_utils.replace_whitespace_in_names(export_names)
     span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names, h_annotations,
                                                                      source_file=source_file, split_overlaps=True)
     xmlstr = xml_utils.make_pretty_xml(span_positions, annotation_dict, export_names, token_name, word_annotation,
