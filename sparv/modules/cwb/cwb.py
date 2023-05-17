@@ -10,6 +10,7 @@ from typing import Optional
 from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Config, Corpus, SourceFilename, Export,
                        ExportAnnotations, ExportAnnotationNames, ExportInput, SourceAnnotations,
                        SourceAnnotationsAllSourceFiles, SparvErrorMessage, exporter, get_logger, util)
+from sparv.modules.xml_export import xml_utils
 
 logger = get_logger(__name__)
 
@@ -61,6 +62,7 @@ def vrt(source_file: SourceFilename = SourceFilename(),
     if token not in annotation_list:
         logger.warning("The 'cwb:vrt' export requires the <token> annotation for the output to include "
                        "the source text. Make sure to add <token> to the list of export annotations.")
+    xml_utils.replace_invalid_chars_in_names(export_names)
     span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names,
                                                                      source_file=source_file)
     vrt_data = create_vrt(span_positions, token.name, word_annotation, all_token_attributes, annotation_dict,
@@ -101,6 +103,7 @@ def vrt_scrambled(source_file: SourceFilename = SourceFilename(),
     if chunk not in annotation_list:
         raise SparvErrorMessage(
             "The annotation used for scrambling ({}) needs to be included in the output.".format(chunk))
+    xml_utils.replace_invalid_chars_in_names(export_names)
     span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names,
                                                                      source_file=source_file, split_overlaps=True)
     logger.progress()
@@ -209,6 +212,7 @@ def cwb_encode(corpus, annotations, source_annotations, source_files, words, vrt
         annotations, source_annotations, token_name=token_name,
         remove_namespaces=remove_namespaces, sparv_namespace=sparv_namespace, source_namespace=source_namespace,
         keep_struct_names=True)
+    xml_utils.replace_invalid_chars_in_names(export_names)
 
     # Sort token attributes (but keep word first) to be in the same order as the VRT columns
     token_attributes = token_attributes[:1] + sorted(token_attributes[1:])

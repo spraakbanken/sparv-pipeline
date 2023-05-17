@@ -72,7 +72,7 @@ def preserved_format(source_file: SourceFilename = SourceFilename(),
                                                                         xml_mode=True)
     h_annotations, h_export_names = util.export.get_header_names(header_annotations, xml_namespaces)
     export_names.update(h_export_names)
-    xml_utils.replace_whitespace_in_names(export_names)
+    xml_utils.replace_invalid_chars_in_names(export_names)
     span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names, h_annotations,
                                                                      source_file=source_file, flatten=False, split_overlaps=True)
     sorted_positions = [(pos, span[0], span[1]) for pos, spans in sorted(span_positions.items()) for span in spans]

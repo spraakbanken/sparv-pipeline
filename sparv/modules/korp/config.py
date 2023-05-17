@@ -23,6 +23,7 @@ from sparv.api import (
     util,
 )
 from sparv.modules.cwb.cwb import cwb_escape
+from sparv.modules.xml_export import xml_utils
 
 logger = get_logger(__name__)
 
@@ -198,6 +199,8 @@ def config(
         source_namespace=source_namespace,
         keep_struct_names=True,
     )
+
+    xml_utils.replace_invalid_chars_in_names(export_names)
 
     # Context and within
     if not within and not context:

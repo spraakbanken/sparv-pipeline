@@ -50,7 +50,8 @@
 - Removed the flags `--rerun-incomplete` and `--mark-complete`, as Sparv will now always rerun incomplete files.
 - Sparv will now recognize when source files have been deleted and trigger the necessary reruns. Previously, only
   additions and modifications were recognized.
-- Whitespace is now replaced with underscore in XML element and attribute names during XML export.
+- Illegal characters are now replaced with underscore in XML element and attribute names during XML export. This also
+  applies to CWB and Korp config exports.
 
 ### Fixed
 

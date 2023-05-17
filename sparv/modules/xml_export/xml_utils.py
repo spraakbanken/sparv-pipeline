@@ -137,18 +137,50 @@ def add_attrs(node, annotation, annotation_dict, export_names, index, include_em
             node.set(export_name, attrib_values[index])
 
 
-def replace_whitespace_in_names(export_names: dict) -> None:
-    """Replace whitespace with underscore in export names.
+def replace_invalid_chars_in_names(export_names: dict) -> None:
+    """Replace invalid characters with underscore in export names.
 
     Args:
         export_names: Dictionary with export names.
     """
+    # https://www.w3.org/TR/REC-xml/#NT-NameStartChar
+    start_chars = [
+        ":",
+        "A-Z",
+        "_",
+        "a-z",
+        "\xC0-\xD6",
+        "\xD8-\xF6",
+        "\xF8-\u02FF",
+        "\u0370-\u037D",
+        "\u037F-\u1FFF",
+        "\u200C-\u200D",
+        "\u2070-\u218F",
+        "\u2C00-\u2FEF",
+        "\u3001-\uD7FF",
+        "\uF900-\uFDCF",
+        "\uFDF0-\uFFFD",
+        "\u10000-\uEFFFF"
+    ]
+    chars = ["-", ".", "0-9", "\xB7", "\u0300-\u036F", "\u203F-\u2040"]
+
+    name_start_char = re.compile(r"[^{}]".format("".join(start_chars)))
+    name_char = re.compile(r"[^{}{}]".format("".join(chars), "".join(start_chars)))
+    namespace_split = re.compile(r"^({[^}]+})?(.+)")
+
     for n in export_names:
-        if " " in export_names[n]:
-            new_name = export_names[n].replace(" ", "_")
-            logger.warning("Whitespace is not permitted in XML element and attribute names. "
-                           f"{export_names[n]!r} will be renamed to {new_name!r}.")
-            export_names[n] = new_name
+        namespace, name = namespace_split.match(export_names[n]).groups()
+        original_name = name
+
+        if name_start_char.match(name[0]):
+            name = name_start_char.sub("_", name[0]) + name[1:]
+
+        if name_char.search(name[1:]):
+            name = name[0] + name_char.sub("_", name[1:])
+
+        if name != original_name:
+            logger.warning(f"The name {original_name!r} contains invalid characters and will be renamed to {name!r}.")
+            export_names[n] = (namespace or "") + name
 
 
 def combine(corpus, out, source_files, xml_input, version_info_file=None):
