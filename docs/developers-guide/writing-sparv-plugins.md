@@ -201,6 +201,7 @@ def uppercase(word: Annotation = Annotation("<token:word>"),
     ...
 ```
 
+
 ## Languages and varieties
 It is possible to restrict the use of an annotator, exporter, installer or modelbuilder to one or more specific
 language(s). This is done by passing a list of ISO 639-3 language codes to the optional `language` parameter in the
@@ -213,6 +214,9 @@ def ...
 Sparv functions are only available for use if one of their languages match the language in the [corpus config
 file](user-manual/corpus-configuration.md). If no language codes are provided in the decorator, the function is
 available for any corpus.
+
+You may also restrict a whole module, instead of just parts of a module, to one or more languages, by assigning a list
+of language codes to the `__language__` variable in the module's `__init__.py` file.
 
 Sparv also supports language varieties which is useful when you want to write Sparv functions for a specific variety of
 a language. For instance, Sparv has some built-in annotators that are restricted to corpora with historical Swedish from

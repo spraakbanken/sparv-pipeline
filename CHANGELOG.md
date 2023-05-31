@@ -31,6 +31,7 @@
 - Added `korp.keep_undefined_annotations` setting, to include even undefined annotations in the Korp config.
 - Added `dateformat.pre_regex` setting.
 - Added `--json-log` flag to enable JSON format for logging.
+- Added support for restricting a whole module to one or more languages by using the `__language__` variable.
 
 ### Changed
 

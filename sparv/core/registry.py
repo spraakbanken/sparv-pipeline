@@ -55,6 +55,8 @@ class LanguageRegistry(dict):
                 self[lang] = lang
         return self[lang]
 
+# Dictionary with annotators that will be added to Sparv unless they are excluded (e.g. due to incompatible language)
+_potential_annotators = defaultdict(list)
 
 # All loaded Sparv modules with their functions (possibly limited by the selected language)
 modules: Dict[str, Module] = {}
@@ -115,7 +117,7 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
             module_names.append(module.name)
             if not no_import:
                 m = importlib.import_module(".".join((path, module.name)))
-                add_module_metadata(m, module.name)
+                add_module_to_registry(m, module.name)
 
     if find_custom:
         custom_annotators = [a.get("annotator", "").split(":")[0] for a in sparv_config.get("custom_annotations", [])]
@@ -136,7 +138,7 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
                 except Exception as e:
                     raise SparvErrorMessage(f"Module '{module_name}' cannot be imported due to an error in file "
                                             f"'{module_path}': {e}")
-                add_module_metadata(m, module_name)
+                add_module_to_registry(m, module_name)
 
     # Search for installed plugins
     for entry_point in iter_entry_points("sparv.plugin"):
@@ -146,19 +148,35 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
             console.print(f"[red]:warning-emoji:  The plugin {entry_point.dist} could not be loaded. "
                           f"It requires {e.req}, but the current installed version is {e.dist}.\n")
             continue
-        add_module_metadata(m, entry_point.name)
+        add_module_to_registry(m, entry_point.name)
         module_names.append(entry_point.name)
 
     return module_names
 
 
-def add_module_metadata(module, module_name):
-    """Add module metadata."""
+def add_module_to_registry(module, module_name) -> None:
+    """Add module and its annotators to registry."""
+    if hasattr(module, "__language__"):
+        # Add to set of supported languages...
+        for lang in module.__language__:
+            languages.add_language(lang)
+        # ...but skip modules for other languages than the one specified in the config
+        if sparv_config.get("metadata.language") and not check_language(
+                sparv_config.get("metadata.language"), module.__language__, sparv_config.get("metadata.variety")):
+            del _potential_annotators[module_name]
+            return
     if hasattr(module, "__config__"):
         for cfg in module.__config__:
             handle_config(cfg, module_name)
-    if module_name in modules:
-        modules[module_name].description = getattr(module, "__description__", module.__doc__)
+
+    # Add module to registry
+    modules[module_name] = Module(module_name)
+    modules[module_name].description = getattr(module, "__description__", module.__doc__)
+
+    # Register annotators with Sparv
+    for a in _potential_annotators[module_name]:
+        _add_to_registry(a)
+    del _potential_annotators[module_name]
 
 
 def wizard(config_keys: List[str], source_structure: bool = False):
@@ -198,7 +216,7 @@ def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, 
     def decorator(f):
         """Add wrapped function to registry."""
         module_name = _get_module_name(f.__module__)
-        _add_to_registry({
+        _potential_annotators[module_name].append({
             "module_name": module_name,
             "description": description,
             "function": f,
@@ -400,8 +418,6 @@ def _add_to_registry(annotator):
         raise SparvErrorMessage(f"'{rule_name}' creates no OutputMarker, which is required by all installers and "
                                 "uninstallers.")
 
-    if module_name not in modules:
-        modules[module_name] = Module(module_name)
     if f_name in modules[module_name].functions:
         print("Annotator function '{}' collides with other function with same name in module '{}'.".format(f_name,
                                                                                                            module_name))

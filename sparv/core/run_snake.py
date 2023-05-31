@@ -88,8 +88,8 @@ if not use_preloader:
         name = module_name[len(custom_name) + 1:]
         module_path = paths.corpus_dir.resolve() / f"{name}.py"
         spec = importlib.util.spec_from_file_location(module_name, module_path)
-        m = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(m)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
     else:
         try:
             # Try to import standard Sparv module
@@ -99,11 +99,11 @@ if not use_preloader:
             entry_points = dict((e.name, e) for e in iter_entry_points(f"sparv.{plugin_name}"))
             entry_point = entry_points.get(module_name)
             if entry_point:
-                entry_point.load()
+                module = entry_point.load()
             else:
                 exit_with_error_message(
                     f"Couldn't load plugin '{module_name}'. Please make sure it was installed correctly.", "sparv")
-
+    registry.add_module_to_registry(module, module_name)
 
 # Get function name and parameters
 f_name = snakemake.params.f_name
