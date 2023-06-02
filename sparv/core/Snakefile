@@ -358,8 +358,11 @@ rule list_exports:
             table.add_column(no_wrap=True)
             table.add_column()
             for target, desc, language in selected_exports:
-                if not language or registry.check_language(sparv_config.get("metadata.language"), language,
-                                                        sparv_config.get("metadata.variety")):
+                if registry.check_language(
+                        sparv_config.get("metadata.language"),
+                        language,
+                        sparv_config.get("metadata.variety")
+                ):
                     table.add_row(target, desc)
             console.print(table)
 
@@ -370,8 +373,11 @@ rule list_exports:
             table.add_column(no_wrap=True)
             table.add_column()
             for target, desc, language in other_exports:
-                if not language or registry.check_language(sparv_config.get("metadata.language"), language,
-                                            sparv_config.get("metadata.variety")):
+                if registry.check_language(
+                        sparv_config.get("metadata.language"),
+                        language,
+                        sparv_config.get("metadata.variety")
+                ):
                     table.add_row(target, desc)
             console.print(table)
 

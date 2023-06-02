@@ -161,8 +161,9 @@ def add_module_to_registry(module, module_name) -> None:
         for lang in module.__language__:
             languages.add_language(lang)
         # ...but skip modules for other languages than the one specified in the config
-        if sparv_config.get("metadata.language") and not check_language(
-                sparv_config.get("metadata.language"), module.__language__, sparv_config.get("metadata.variety")):
+        if not check_language(
+                sparv_config.get("metadata.language"), module.__language__, sparv_config.get("metadata.variety")
+        ):
             del _potential_annotators[module_name]
             return
     if hasattr(module, "__config__"):
@@ -331,8 +332,9 @@ def _add_to_registry(annotator):
         for lang in annotator["language"]:
             languages.add_language(lang)
         # ... but skip annotators for other languages than the one specified in the config
-        if sparv_config.get("metadata.language") and not check_language(
-                sparv_config.get("metadata.language"), annotator["language"], sparv_config.get("metadata.variety")):
+        if not check_language(
+                sparv_config.get("metadata.language"), annotator["language"], sparv_config.get("metadata.variety")
+        ):
             return
 
     # Add config variables to config
@@ -388,10 +390,11 @@ def _add_to_registry(annotator):
                                 all_module_classes[language][cls].append(cls_target)
 
                     # Only add classes for relevant languages
-                    if not annotator["language"] or (
-                        annotator["language"] and sparv_config.get("metadata.language")
-                            and check_language(sparv_config.get("metadata.language"), annotator["language"],
-                                               sparv_config.get("metadata.variety"))):
+                    if check_language(
+                        sparv_config.get("metadata.language"),
+                        annotator["language"],
+                        sparv_config.get("metadata.variety")
+                    ):
                         if cls_target not in annotation_classes["module_classes"][cls]:
                             annotation_classes["module_classes"][cls].append(cls_target)
 
@@ -608,7 +611,17 @@ def check_language(corpus_lang: str, langs: List[str], corpus_lang_suffix: Optio
     """Check if corpus language is among a list of languages.
 
     Any suffix on corpus_lang will be ignored.
+
+    If langs is empty, always return True.
+    If corpus_lang is "__all__", always return True.
     """
+    if not langs or corpus_lang == "__all__":
+        return True
+
+    if not isinstance(corpus_lang, str):
+        return False
+
     if corpus_lang_suffix:
         corpus_lang = corpus_lang + "-" + corpus_lang_suffix
+
     return corpus_lang in langs or corpus_lang.split("-")[0] in langs

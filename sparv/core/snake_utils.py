@@ -144,9 +144,11 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
         return False
 
     # Skip any annotator that is not available for the selected corpus language
-    if rule.annotator_info["language"] and sparv_config.get("metadata.language") and \
-            not registry.check_language(sparv_config.get("metadata.language"), rule.annotator_info["language"],
-                                        sparv_config.get("metadata.variety")):
+    if not registry.check_language(
+        sparv_config.get("metadata.language"),
+        rule.annotator_info["language"],
+        sparv_config.get("metadata.variety")
+    ):
         return False
 
     # Get this function's parameters
@@ -750,7 +752,7 @@ def load_config(snakemake_config):
         config_missing = True
 
     # Some commands may override the corpus language
-    if snakemake_config.get("language"):
+    if "language" in snakemake_config:
         sparv_config.set_value("metadata.language", snakemake_config["language"])
 
     return config_missing

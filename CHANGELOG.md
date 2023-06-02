@@ -53,6 +53,7 @@
   additions and modifications were recognized.
 - Illegal characters are now replaced with underscore in XML element and attribute names during XML export. This also
   applies to CWB and Korp config exports.
+- Not specifying a corpus language now excludes all language specific annotators.
 
 ### Fixed
 
