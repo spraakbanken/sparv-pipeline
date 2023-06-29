@@ -5,6 +5,7 @@ import pkgutil
 import re
 from collections import defaultdict
 from enum import Enum
+from types import ModuleType
 from typing import Callable, Dict, List, Optional, Set, Tuple, Type, TypeVar
 
 import typing_inspect
@@ -154,9 +155,9 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
     return module_names
 
 
-def add_module_to_registry(module, module_name) -> None:
+def add_module_to_registry(module: ModuleType, module_name: str, skip_language_check: bool = False) -> None:
     """Add module and its annotators to registry."""
-    if hasattr(module, "__language__"):
+    if not skip_language_check and hasattr(module, "__language__"):
         # Add to set of supported languages...
         for lang in module.__language__:
             languages.add_language(lang)
@@ -176,7 +177,7 @@ def add_module_to_registry(module, module_name) -> None:
 
     # Register annotators with Sparv
     for a in _potential_annotators[module_name]:
-        _add_to_registry(a)
+        _add_to_registry(a, skip_language_check=skip_language_check)
     del _potential_annotators[module_name]
 
 
@@ -321,13 +322,13 @@ def modelbuilder(description: str, name: Optional[str] = None, config: Optional[
                       language=language, order=order)
 
 
-def _add_to_registry(annotator):
+def _add_to_registry(annotator: dict, skip_language_check: bool = False):
     """Add function to annotator registry. Used by annotator."""
     module_name = annotator["module_name"]
     f_name = annotator["function"].__name__ if not annotator["name"] else annotator["name"]
     rule_name = f"{module_name}:{f_name}"
 
-    if annotator["language"]:
+    if not skip_language_check and annotator["language"]:
         # Add to set of supported languages...
         for lang in annotator["language"]:
             languages.add_language(lang)

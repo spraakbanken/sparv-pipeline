@@ -103,7 +103,7 @@ if not use_preloader:
             else:
                 exit_with_error_message(
                     f"Couldn't load plugin '{module_name}'. Please make sure it was installed correctly.", "sparv")
-    registry.add_module_to_registry(module, module_name)
+    registry.add_module_to_registry(module, module_name, skip_language_check=True)
 
 # Get function name and parameters
 f_name = snakemake.params.f_name
