@@ -52,17 +52,18 @@ def make_rules(config_missing: bool) -> None:
         annotator = registry.modules[module_name].functions[f_name]
         make_rule(module_name, f_name, annotator, config_missing, custom_rule_obj)
 
-    # Check and set rule orders
-    ordered_rules = snake_utils.check_ruleorder(snake_storage)
-    for rule1, rule2 in ordered_rules:
-        # ruleorder:  rule1.rule_name > rule2.rule_name
-        workflow.ruleorder(rule1.rule_name, rule2.rule_name)
-    # Print ordered rules when in debug mode
-    if config.get("debug") and ordered_rules:
-        console.print("\n\n\n[b]ORDERED RULES:[/b]")
+    # Check and set rule orders (but not when language is set to __all__ for schema purposes)
+    if not config.get("language") == "__all__":
+        ordered_rules = snake_utils.check_ruleorder(snake_storage)
         for rule1, rule2 in ordered_rules:
-            print("    • {} > {}".format(rule1.rule_name, rule2.rule_name))
-        print()
+            # ruleorder:  rule1.rule_name > rule2.rule_name
+            workflow.ruleorder(rule1.rule_name, rule2.rule_name)
+        # Print ordered rules when in debug mode
+        if config.get("debug") and ordered_rules:
+            console.print("\n\n\n[b]ORDERED RULES:[/b]")
+            for rule1, rule2 in ordered_rules:
+                print("    • {} > {}".format(rule1.rule_name, rule2.rule_name))
+            print()
 
 
 def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missing: bool = False,
@@ -579,3 +580,11 @@ rule preload_list:
                 table.add_row(f"{module}:{a}", registry.modules[module].functions[a]["description"])
 
         console.print(table)
+
+
+rule schema:
+    run:
+        import json
+        from sparv.core import schema
+        json_schema = schema.build_json_schema(sparv_config.config_structure)
+        print(json.dumps(json_schema, indent=2))

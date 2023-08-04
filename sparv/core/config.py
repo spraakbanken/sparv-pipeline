@@ -16,6 +16,7 @@ except ImportError:
 
 from sparv.core import paths, registry
 from sparv.core.misc import SparvErrorMessage, get_logger
+from sparv.api.classes import Config
 
 logger = get_logger(__name__)
 
@@ -31,13 +32,13 @@ _config_default = {}  # Default config
 
 # Dict with info about config structure, prepopulated with some module-independent keys
 config_structure = {
-    "classes": {"_source": "core"},
-    "custom_annotations": {"_source": "core"},
-    "install": {"_source": "core"},
-    PARENT: {"_source": "core"},
-    MAX_THREADS: {"_source": "core"},
-    "preload": {"_source": "core"},
-    "uninstall": {"_source": "core"}
+    "classes": {"_source": "core", "_cfg": Config("uninstall", datatype=dict)},
+    "custom_annotations": {"_source": "core", "_cfg": Config("uninstall", datatype=list)},
+    "install": {"_source": "core", "_cfg": Config("uninstall", datatype=list)},
+    PARENT: {"_source": "core", "_cfg": Config("uninstall", datatype=str)},
+    MAX_THREADS: {"_source": "core", "_cfg": Config("uninstall", datatype=int)},
+    "preload": {"_source": "core", "_cfg": Config("uninstall", datatype=list)},
+    "uninstall": {"_source": "core", "_cfg": Config("uninstall", datatype=list)}
 }
 
 config_usage = defaultdict(set)  # For each config key, a list of annotators using that key
@@ -183,22 +184,25 @@ def _merge_dicts(d: dict, default: dict):
     return d
 
 
-def add_to_structure(name, default=None, description=None, annotator: Optional[str] = None):
+def add_to_structure(cfg: Config, annotator: Optional[str] = None):
     """Add config variable to config structure."""
-    set_value(name,
-              {"_default": default,
-               "_description": description,
-               "_source": "module"},
-              config_dict=config_structure
-              )
+    set_value(
+        cfg.name,
+        {
+            "_cfg": cfg,
+            "_source": "module"
+        },
+        config_dict=config_structure
+    )
 
     if annotator:
-        add_config_usage(name, annotator)
+        add_config_usage(cfg.name, annotator)
 
 
 def get_config_description(name):
     """Get description for config key."""
-    return _get(name, config_structure).get("_description")
+    cfg = _get(name, config_structure).get("_cfg")
+    return cfg.description if cfg else None
 
 
 def add_config_usage(config_key, annotator):

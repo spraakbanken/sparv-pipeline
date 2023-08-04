@@ -142,6 +142,7 @@ def main():
         "   run-module       Run annotator module independently",
         "   preload          Preload annotators and models",
         "   autocomplete     Enable tab completion in bash",
+        "   schema           Print a JSON schema for the Sparv config format",
         "",
         "See 'sparv <command> -h' for help with a specific command",
         "For full documentation, visit https://spraakbanken.gu.se/sparv/docs/"
@@ -240,6 +241,8 @@ def main():
     autocomplete_parser.add_argument("--enable", action="store_true", help="Output script to be sourced in bash")
     autocomplete_parser.add_argument("--enable-old", action="store_true",
                                      help="Output script to be sourced in bash, for bash version 4.3 and below")
+
+    subparsers.add_parser("schema", description="Print a JSON schema for the Sparv config format")
 
     # Add common arguments
     for subparser in [run_parser, runrule_parser]:
@@ -357,7 +360,7 @@ def main():
         print(f"{e.strerror}: {e.filename!r}")
         sys.exit(1)
 
-    if args.command not in ("autocomplete", "build-models", "languages"):
+    if args.command not in ("autocomplete", "build-models", "languages", "schema"):
         if not config_exists:
             print(f"No config file ({paths.config_file}) found in working directory.")
             sys.exit(1)
@@ -384,7 +387,7 @@ def main():
     dry_run = False
     keep_going = False
 
-    if args.command in ("modules", "config", "files", "clean", "presets", "classes", "languages", "preload"):
+    if args.command in ("modules", "config", "files", "clean", "presets", "classes", "languages", "preload", "schema"):
         snakemake_args["targets"] = [args.command]
         simple_target = True
         if args.command == "clean":
@@ -408,6 +411,10 @@ def main():
             config["targets"] = ["preload"]
             if args.list:
                 snakemake_args["targets"] = ["preload_list"]
+        elif args.command == "schema":
+            config["targets"] = ["schema"]
+            # For the schema we include modules from all languages
+            config["language"] = "__all__"
 
     elif args.command in ("run", "run-rule", "create-file", "install", "uninstall", "build-models"):
         try:

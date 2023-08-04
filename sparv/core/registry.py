@@ -40,6 +40,7 @@ class Module:
         self.name = name
         self.functions: Dict[str, dict] = {}
         self.description = None
+        self.language = None
 
 
 class LanguageRegistry(dict):
@@ -174,9 +175,13 @@ def add_module_to_registry(module: ModuleType, module_name: str, skip_language_c
     # Add module to registry
     modules[module_name] = Module(module_name)
     modules[module_name].description = getattr(module, "__description__", module.__doc__)
+    modules[module_name].language = getattr(module, "__language__", None)
 
     # Register annotators with Sparv
     for a in _potential_annotators[module_name]:
+        # Set annotator language to same as module, unless overridden
+        if hasattr(module, "__language__") and not a["language"]:
+            a["language"] = module.__language__
         _add_to_registry(a, skip_language_check=skip_language_check)
     del _potential_annotators[module_name]
 
@@ -341,7 +346,7 @@ def _add_to_registry(annotator: dict, skip_language_check: bool = False):
     # Add config variables to config
     if annotator["config"]:
         for c in annotator["config"]:
-            handle_config(c, module_name, rule_name)
+            handle_config(c, module_name, rule_name, annotator["language"])
 
     # Handle text annotation for selected importer
     if annotator["type"] == Annotator.importer and rule_name == sparv_config.get("import.importer"):
@@ -448,7 +453,12 @@ def find_implicit_classes() -> None:
                 annotation_classes["implicit_classes"][cls] = annotation
 
 
-def handle_config(cfg, module_name, rule_name: Optional[str] = None) -> None:
+def handle_config(
+    cfg: Config,
+    module_name: str,
+    rule_name: Optional[str] = None,
+    language: Optional[List[str]] = None
+) -> None:
     """Handle Config instances."""
     if not cfg.name.startswith(module_name + "."):
         raise SparvErrorMessage(f"Config option '{cfg.name}' in module '{module_name}' doesn't include module "
@@ -464,7 +474,20 @@ def handle_config(cfg, module_name, rule_name: Optional[str] = None) -> None:
             f"The config variable '{cfg.name}' in '{rule_name or module_name}' has already been declared.")
     if cfg.default is not None:
         sparv_config.set_default(cfg.name, cfg.default)
-    sparv_config.add_to_structure(cfg.name, cfg.default, description=cfg.description, annotator=rule_name)
+    if language:
+        langcodes = []
+        suffixes = []
+        for lang in language:
+            langcode, _, suffix = lang.partition("-")
+            langcodes.append(langcode)
+            suffixes.append(suffix)
+        suffixes = set(suffixes)
+        if len(suffixes) == 1 and next(iter(suffixes)) == "":
+            suffixes = []
+        cfg.conditions.append(Config("metadata.language", datatype=str, choices=langcodes))
+        if suffixes:
+            cfg.conditions.append(Config("metadata.variety", datatype=str, choices=suffixes))
+    sparv_config.add_to_structure(cfg, annotator=rule_name)
     if not cfg.description:
         raise SparvErrorMessage(f"Missing description for configuration key '{cfg.name}' in module '{module_name}'.")
 

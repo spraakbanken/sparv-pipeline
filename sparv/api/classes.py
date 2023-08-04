@@ -8,7 +8,7 @@ import time
 import urllib.request
 import zipfile
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 import sparv.core
 from sparv.core import io
@@ -635,10 +635,29 @@ class Config(str):
     def __new__(cls, name: str, *args, **kwargs):
         return super().__new__(cls, name)
 
-    def __init__(self, name: str, default: Any = None, description: Optional[str] = None):
+    def __init__(
+        self,
+        name: str,
+        default: Any = None,
+        description: Optional[str] = None,
+        datatype=None,
+        choices: Optional[Union[Iterable, Callable]] = None,
+        pattern: Optional[str] = None,
+        min: Optional[float] = None,
+        max: Optional[float] = None,
+        const: Optional[Any] = None,
+        conditions: Optional[List["Config"]] = None
+    ):
         self.name = name
         self.default = default
         self.description = description
+        self.datatype = datatype
+        self.choices = choices
+        self.pattern = pattern
+        self.min = min
+        self.max = max
+        self.const = const
+        self.conditions = conditions or []
 
 
 class Wildcard(str):
