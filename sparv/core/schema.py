@@ -6,7 +6,7 @@ import itertools
 import json
 import re
 from collections import defaultdict
-from typing import DefaultDict, List, Optional, Tuple, Union
+from typing import DefaultDict, List, Optional, Tuple, Type, Union
 
 import typing_inspect
 from sparv.api import Config, SparvErrorMessage
@@ -56,7 +56,13 @@ class Null(BaseProperty):
         super().__init__("null", **kwargs)
 
 class Array(BaseProperty):
-    def __init__(self, items: Optional[List[Union[String, Integer, Number, "Object"]]] = None, **kwargs):
+    def __init__(
+        self,
+        items: Optional[Type[Union[String, Integer, Number, Boolean, Null, Any, "Array", "Object"]]] = None,
+        **kwargs
+    ):
+        if items:
+            kwargs["items"] = items().schema
         super().__init__("array", **kwargs)
 
 class Object:
@@ -156,6 +162,21 @@ class JsonSchema(Object):
 
     def to_json(self):
         return json.dumps(self.schema, indent=2)
+
+
+def get_class_from_type(t):
+    """Get JSON schema class from Python type."""
+    types = {
+        str: String,
+        int: Integer,
+        float: Number,
+        bool: Boolean,
+        type(None): Null,
+        list: Array,
+        dict: Object,
+        None: Any
+    }
+    return types[t]
 
 
 def build_json_schema(config_structure: dict) -> dict:
@@ -286,7 +307,10 @@ def build_json_schema(config_structure: dict) -> dict:
                 datatype = Boolean(**kwargs)
             elif cfg_datatype is type(None):
                 datatype = Null(**kwargs)
-            elif cfg_datatype is list:
+            elif cfg_datatype is list or typing_inspect.get_origin(cfg_datatype) is list:
+                args = typing_inspect.get_args(cfg_datatype)
+                if args:
+                    kwargs["items"] = get_class_from_type(args[0])
                 datatype = Array(**kwargs)
             elif cfg_datatype is dict:
                 datatype = Object(**kwargs)
