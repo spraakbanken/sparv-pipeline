@@ -351,21 +351,30 @@ def validate(cfg: dict, schema: dict) -> None:
     """Validate a Sparv config using JSON schema."""
     import jsonschema
 
+    def build_path_string(path):
+        parts = []
+        for part in path:
+            if isinstance(part, str):
+                parts.append(part)
+            elif isinstance(part, int):
+                parts[-1] += f"[{part}]"
+        return ".".join(parts)
+
     try:
         jsonschema.validate(cfg, schema)
     except jsonschema.ValidationError as e:
         msg = ["There was a problem trying to parse the corpus config file.\n"]
 
-        if e.validator == "unevaluatedProperties":
-            # This only happens for unexpected keys at the root level
-            prop = re.search(r"'(.+)' was unexpected", e.message)
-            if prop:
-                msg.append(f"Unexpected property at root level: {prop.group(1)!r}")
-            else:
-                msg.append(e.message)
+        # Rephrase messages about unexpected keys
+        unknown_key = re.search(r"properties are not allowed \('(.+)' was unexpected", e.message)
+        if unknown_key:
+            full_path = ".".join(list(e.absolute_path) + [unknown_key.group(1)])
+            msg.append(f"Unexpected key in config file: {full_path!r}")
         else:
-            if e.absolute_path:
-                msg.append(f"Offending config path: {'.'.join(e.absolute_path)}")
             msg.append(e.message)
+            if e.absolute_path:
+                msg.append(f"Offending config path: {build_path_string(e.absolute_path)}")
+                if "description" in e.schema:
+                    msg.append(f"Description of config key: {e.schema['description']}")
 
         raise SparvErrorMessage("\n".join(msg))

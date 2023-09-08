@@ -223,25 +223,6 @@ def validate_module_config():
                     "are" if len(annotators) > 1 else "is", config_key), "sparv", "config")
 
 
-def validate_config(config_dict=None, structure=None, parent=""):
-    """Make sure the corpus config doesn't contain invalid keys."""
-    config_dict = config_dict or config
-    structure = structure or config_structure
-    for key in config_dict:
-        path = (parent + "." + key) if parent else key
-        if key not in structure:
-            if not parent:
-                raise SparvErrorMessage(f"Unknown key in config file: '{path}'. No module with that name found.",
-                                        module="sparv", function="config")
-            else:
-                module_name = parent.split(".", 1)[0]
-                raise SparvErrorMessage(f"Unknown key in config file: '{path}'. The module '{module_name}' "
-                                        f"doesn't have an option with that name.",
-                                        module="sparv", function="config")
-        elif not structure[key].get("_source"):
-            validate_config(config_dict[key], structure[key], path)
-
-
 def load_presets(lang, lang_variety):
     """Read presets files and return dictionaries with all available presets annotations and preset classes."""
     global presets

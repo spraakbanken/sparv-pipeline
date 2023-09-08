@@ -238,7 +238,10 @@ update_autocompletion_cache()
 sparv_config.validate_module_config()
 
 # Validate config
-sparv_config.validate_config()
+if not "schema" in selected_targets:
+    from sparv.core import schema
+    json_schema = schema.build_json_schema(sparv_config.config_structure)
+    schema.validate(sparv_config.config, json_schema)
 
 # Get reverse_config_usage dict for look-ups
 reverse_config_usage = snake_utils.get_reverse_config_usage()

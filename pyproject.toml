@@ -16,6 +16,7 @@ dependencies = [
     "appdirs==1.4.4",
     "argcomplete==3.0.5",
     "docx2python==1.27.1",
+    "jsonschema==4.19.0",
     "nltk==3.8.1",
     "pdfplumber==0.9.0",
     "protobuf~=3.19.0", # Used by Stanza; see https://github.com/spraakbanken/sparv-pipeline/issues/161
