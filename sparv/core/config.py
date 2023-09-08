@@ -36,7 +36,7 @@ config_structure = {
     "custom_annotations": {"_source": "core", "_cfg": Config("uninstall", datatype=list)},
     "install": {"_source": "core", "_cfg": Config("uninstall", datatype=list)},
     PARENT: {"_source": "core", "_cfg": Config("uninstall", datatype=str)},
-    MAX_THREADS: {"_source": "core", "_cfg": Config("uninstall", datatype=int)},
+    MAX_THREADS: {"_source": "core", "_cfg": Config("uninstall", datatype=dict)},
     "preload": {"_source": "core", "_cfg": Config("uninstall", datatype=list)},
     "uninstall": {"_source": "core", "_cfg": Config("uninstall", datatype=list)}
 }
