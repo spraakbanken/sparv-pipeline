@@ -281,6 +281,7 @@ class LogHandler:
         self.stats = stats
         self.stats_data = defaultdict(float)
         self.logger = None
+        self.terminated = False
 
         # Progress bar related variables
         self.progress: Optional[progress.Progress] = None
@@ -563,6 +564,10 @@ class LogHandler:
                 self.info(msg["msg"])
             elif msg["msg"].startswith("Nothing to be done"):
                 self.info("Nothing to be done.")
+            elif msg["msg"].startswith("Will exit after finishing currently running jobs"):
+                if not self.terminated:
+                    self.logger.log(logging.INFO, "Will exit after finishing currently running jobs")
+                    self.terminated = True
 
         elif level == "debug":
             if "SparvErrorMessage" in msg["msg"]:
@@ -765,6 +770,9 @@ class LogHandler:
                     table.add_row()
                     table.add_row(str(sum(self.jobs.values())), "Total number of tasks")
                     console.print(table)
+
+                if self.terminated:
+                    self.info(f"{spacer}Sparv was stopped by a TERM signal")
 
     @staticmethod
     def cleanup():
