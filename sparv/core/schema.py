@@ -66,9 +66,9 @@ class Array(BaseProperty):
         super().__init__("array", **kwargs)
 
 class Object:
-    def __init__(self, additional_properties: bool = True, description: Optional[str] = None, **kwargs):
-        if not additional_properties:
-            kwargs["additionalProperties"] = False
+    def __init__(self, additional_properties: Union[dict, bool] = True, description: Optional[str] = None, **kwargs):
+        if additional_properties is False or isinstance(additional_properties, dict):
+            kwargs["additionalProperties"] = additional_properties
         if description:
             kwargs["description"] = description
         self.obj_schema = {"type": "object", **kwargs}
@@ -312,7 +312,10 @@ def build_json_schema(config_structure: dict) -> dict:
                 if args:
                     kwargs["items"] = get_class_from_type(args[0])
                 datatype = Array(**kwargs)
-            elif cfg_datatype is dict:
+            elif cfg_datatype is dict or typing_inspect.get_origin(cfg_datatype) is dict:
+                args = typing_inspect.get_args(cfg_datatype)
+                if args:
+                    kwargs["additionalProperties"] = get_class_from_type(args[1])().schema
                 datatype = Object(**kwargs)
             elif cfg_datatype is None:
                 datatype = Any(**kwargs)
