@@ -1,7 +1,7 @@
 """Export annotated corpus data to pretty-printed xml."""
 
 import os
-from typing import Optional
+from typing import List, Optional
 
 from sparv.api import (
     AllSourceFilenames,
@@ -30,16 +30,31 @@ logger = get_logger(__name__)
 
 
 @exporter("XML export with one token element per line", config=[
-    Config("xml_export.filename", default="{file}_export.xml",
-           description="Filename pattern for resulting XML files, with '{file}' representing the source name."),
-    Config("xml_export.annotations", description="Sparv annotations to include."),
-    Config("xml_export.source_annotations",
-           description="List of annotations and attributes from the source data to include. Everything will be "
-                       "included by default."),
-    Config("xml_export.header_annotations",
-           description="List of headers from the source data to include. All headers will be included by default."),
-    Config("xml_export.include_empty_attributes", False,
-           description="Whether to include attributes even when they are empty.")
+    Config(
+        "xml_export.filename",
+        default="{file}_export.xml",
+        description="Filename pattern for resulting XML files, with '{file}' representing the source name.",
+        datatype=str,
+        pattern=r".*\{file\}.*"
+    ),
+    Config("xml_export.annotations", description="Sparv annotations to include.", datatype=List[str]),
+    Config(
+        "xml_export.source_annotations",
+        description="List of annotations and attributes from the source data to include. Everything will be included "
+                    "by default.",
+        datatype=List[str]
+    ),
+    Config(
+        "xml_export.header_annotations",
+        description="List of headers from the source data to include. All headers will be included by default.",
+        datatype=List[str],
+    ),
+    Config(
+        "xml_export.include_empty_attributes",
+        default=False,
+        description="Whether to include attributes even when they are empty.",
+        datatype=bool,
+    )
 ])
 def pretty(source_file: SourceFilename = SourceFilename(),
            fileid: AnnotationData = AnnotationData("<fileid>"),
@@ -107,10 +122,18 @@ def pretty(source_file: SourceFilename = SourceFilename(),
 
 
 @exporter("Combined XML export (all results in one file)", config=[
-    Config("xml_export.filename_combined", default="[metadata.id].xml",
-           description="Filename of resulting combined XML."),
-    Config("xml_export.include_version_info", default=True,
-           description="Whether to include annotation version info in the combined XML.")
+    Config(
+        "xml_export.filename_combined",
+        default="[metadata.id].xml",
+        description="Filename of resulting combined XML.",
+        datatype=str,
+    ),
+    Config(
+        "xml_export.include_version_info",
+        default=True,
+        description="Whether to include annotation version info in the combined XML.",
+        datatype=bool,
+    )
 ])
 def combined(corpus: Corpus = Corpus(),
              out: Export = Export("xml_export.combined/[xml_export.filename_combined]"),
@@ -126,8 +149,12 @@ def combined(corpus: Corpus = Corpus(),
 
 
 @exporter("Compressed combined XML export", config=[
-    Config("xml_export.filename_compressed", default="[metadata.id].xml.bz2",
-           description="Filename of resulting compressed combined XML.")
+    Config(
+        "xml_export.filename_compressed",
+        default="[metadata.id].xml.bz2",
+        description="Filename of resulting compressed combined XML.",
+        datatype=str,
+    )
 ])
 def compressed(out: Export = Export("xml_export.combined/[xml_export.filename_compressed]"),
                xmlfile: ExportInput = ExportInput("xml_export.combined/[xml_export.filename_combined]")):
@@ -136,8 +163,8 @@ def compressed(out: Export = Export("xml_export.combined/[xml_export.filename_co
 
 
 @installer("Copy compressed XML to a target path, optionally on a remote host", config=[
-    Config("xml_export.export_host", description="Remote host to copy XML export to"),
-    Config("xml_export.export_path", description="Target path to copy XML export to")
+    Config("xml_export.export_host", description="Remote host to copy XML export to", datatype=str),
+    Config("xml_export.export_path", description="Target path to copy XML export to", datatype=str)
 ], uninstaller="xml_export:uninstall")
 def install(
     corpus: Corpus = Corpus(),

@@ -10,11 +10,20 @@ from sparv.api import Config, Output, Source, SourceFilename, SourceStructure, S
 
 
 @importer("pdf import", file_extension="pdf", outputs=["text", "page:number"], text_annotation="text", config=[
-    Config("pdf_import.prefix", description="Optional prefix to add to annotation names."),
-    Config("pdf_import.keep_control_chars", False, description="Set to True if control characters should not be "
-                                                                "removed from the text."),
-    Config("pdf_import.normalize", "NFC", description="Normalize input using any of the following forms: "
-                                                       "'NFC', 'NFKC', 'NFD', and 'NFKD'.")
+    Config("pdf_import.prefix", description="Optional prefix to add to annotation names.", datatype=str),
+    Config(
+        "pdf_import.keep_control_chars",
+        default=False,
+        description="Set to True if control characters should not be removed from the text.",
+        datatype=bool,
+    ),
+    Config(
+        "pdf_import.normalize",
+        default="NFC",
+        description="Normalize input using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.",
+        datatype=str,
+        choices=("NFC", "NFKC", "NFD", "NFKD"),
+    )
 ])
 def parse(source_file: SourceFilename = SourceFilename(),
           source_dir: Source = Source(),

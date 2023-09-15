@@ -341,8 +341,12 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
 
 
 @exporter("Word Picture SQL for use in Korp", language=["swe"], config=[
-    Config("korp.wordpicture_no_sentences", default=False,
-           description="Set to 'true' to skip generating sentences table.")
+    Config(
+        "korp.wordpicture_no_sentences",
+        default=False,
+        description="Set to 'true' to skip generating sentences table.",
+        datatype=bool
+    )
 ])
 def wordpicture_sql(
     corpus: Corpus = Corpus(),

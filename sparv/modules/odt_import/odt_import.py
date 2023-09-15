@@ -11,11 +11,20 @@ logger = get_logger(__name__)
 
 
 @importer("odt import", file_extension="odt", outputs=["text"], text_annotation="text", config=[
-    Config("odt_import.prefix", description="Optional prefix to add to annotation names."),
-    Config("odt_import.keep_control_chars", False, description="Set to True if control characters should not be "
-                                                                "removed from the text."),
-    Config("odt_import.normalize", "NFC", description="Normalize input using any of the following forms: "
-                                                       "'NFC', 'NFKC', 'NFD', and 'NFKD'.")
+    Config("odt_import.prefix", description="Optional prefix to add to annotation names.", datatype=str),
+    Config(
+        "odt_import.keep_control_chars",
+        default=False,
+        description="Set to True if control characters should not be removed from the text.",
+        datatype=bool
+    ),
+    Config(
+        "odt_import.normalize",
+        default="NFC",
+        description="Normalize input using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.",
+        datatype=str,
+        choices=("NFC", "NFKC", "NFD", "NFKD"),
+    )
 ])
 def parse(source_file: SourceFilename = SourceFilename(),
           source_dir: Source = Source(),

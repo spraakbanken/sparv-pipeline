@@ -30,7 +30,7 @@ logger = get_logger(__name__)
 
 
 @exporter("Scrambled XML export", config=[
-    Config("xml_export.scramble_on", description="Annotation to use for scrambling.")
+    Config("xml_export.scramble_on", description="Annotation to use for scrambling.", datatype=str)
 ])
 def scrambled(source_file: SourceFilename = SourceFilename(),
               fileid: AnnotationData = AnnotationData("<fileid>"),
@@ -110,8 +110,8 @@ def compressed_scrambled(out: Export = Export("xml_export.combined_scrambled/[me
 
 
 @installer("Copy compressed scrambled XML to a target path, optionally on a remote host", config=[
-    Config("xml_export.export_scrambled_host", description="Remote host to copy scrambled XML export to"),
-    Config("xml_export.export_scrambled_path", description="Target path to copy scrambled XML export to")
+    Config("xml_export.export_scrambled_host", description="Remote host to copy scrambled XML export to", datatype=str),
+    Config("xml_export.export_scrambled_path", description="Target path to copy scrambled XML export to", datatype=str)
 ], uninstaller="xml_export:uninstall_scrambled")
 def install_scrambled(
     corpus: Corpus = Corpus(),

@@ -6,20 +6,42 @@ from typing import Optional
 from sparv.api import Config, SourceFilename, Output, Source, SourceStructure, Text, importer, util
 
 
-@importer("TXT import", file_extension="txt", outputs=["text"], text_annotation="text", config=[
-    Config("text_import.prefix", description="Optional prefix to add to annotation names."),
-    Config("text_import.encoding", util.constants.UTF8, description="Encoding of source file. Defaults to UTF-8."),
-    Config("text_import.keep_control_chars", False, description="Set to True if control characters should not be "
-                                                                "removed from the text."),
-    Config("text_import.normalize", "NFC", description="Normalize input using any of the following forms: "
-                                                       "'NFC', 'NFKC', 'NFD', and 'NFKD'.")
-])
-def parse(source_file: SourceFilename = SourceFilename(),
-          source_dir: Source = Source(),
-          prefix: Optional[str] = Config("text_import.prefix"),
-          encoding: str = Config("text_import.encoding"),
-          keep_control_chars: bool = Config("text_import.keep_control_chars"),
-          normalize: str = Config("text_import.normalize")) -> None:
+@importer(
+    "TXT import",
+    file_extension="txt",
+    outputs=["text"],
+    text_annotation="text",
+    config=[
+        Config("text_import.prefix", description="Optional prefix to add to annotation names.", datatype=str),
+        Config(
+            "text_import.encoding",
+            util.constants.UTF8,
+            description="Encoding of source file. Defaults to UTF-8.",
+            datatype=str,
+        ),
+        Config(
+            "text_import.keep_control_chars",
+            False,
+            description="Set to True if control characters should not be removed from the text.",
+            datatype=bool,
+        ),
+        Config(
+            "text_import.normalize",
+            default="NFC",
+            description="Normalize input using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.",
+            datatype=str,
+            choices=("NFC", "NFKC", "NFD", "NFKD"),
+        ),
+    ],
+)
+def parse(
+    source_file: SourceFilename = SourceFilename(),
+    source_dir: Source = Source(),
+    prefix: Optional[str] = Config("text_import.prefix"),
+    encoding: str = Config("text_import.encoding"),
+    keep_control_chars: bool = Config("text_import.keep_control_chars"),
+    normalize: str = Config("text_import.normalize"),
+) -> None:
     """Parse plain text file as input to the Sparv Pipeline.
 
     Args:

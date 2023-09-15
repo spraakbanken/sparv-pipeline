@@ -24,8 +24,13 @@ logger = get_logger(__name__)
 
 
 @exporter("XML export preserving whitespaces from source file", config=[
-    Config("xml_export.filename_formatted", default="{file}_export.xml",
-           description="Filename pattern for resulting XML files, with '{file}' representing the source name.")
+    Config(
+        "xml_export.filename_formatted",
+        default="{file}_export.xml",
+        description="Filename pattern for resulting XML files, with '{file}' representing the source name.",
+        datatype=str,
+        pattern=r".*\{file\}.*",
+    )
 ])
 def preserved_format(source_file: SourceFilename = SourceFilename(),
                      text: Text = Text(),

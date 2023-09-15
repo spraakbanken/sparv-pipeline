@@ -56,39 +56,49 @@ LABELS = {
 @exporter(
     "Create Korp config file for the corpus.",
     config=[
-        Config("korp.annotations", description="Sparv annotations to include. Leave blank to use cwb.annotations."),
+        Config(
+            "korp.annotations",
+            description="Sparv annotations to include. Leave blank to use cwb.annotations.",
+            datatype=List[str],
+        ),
         Config(
             "korp.source_annotations",
             description="List of annotations and attributes from the source data to include. Leave blank to use "
             "cwb.source_annotations.",
+            datatype=List[str],
         ),
         Config(
             "korp.annotation_definitions",
             description="Frontend definitions of annotations in 'annotations' and 'source_annotations'. Classes and "
             "config keys are currently not supported.",
+            datatype=dict,
         ),
         Config(
             "korp.context",
-            description="Contexts to use in Korp, from smaller to bigger. " "Leave blank to detect automatically.",
+            description="Contexts to use in Korp, from smaller to bigger. Leave blank to detect automatically.",
+            datatype=List[str],
         ),
         Config(
             "korp.within",
             description="Search boundaries to use in Korp, from smaller to bigger. "
             "Leave blank to detect automatically.",
+            datatype=List[str],
         ),
-        Config("korp.custom_annotations", description="Custom Korp-annotations."),
+        Config("korp.custom_annotations", description="Custom Korp-annotations.", datatype=List[dict]),
         Config("korp.morphology", description="Morphologies"),
-        Config("korp.reading_mode", description="Reading mode configuration"),
-        Config("korp.filters", description="List of annotations to use for filtering in Korp"),
+        Config("korp.reading_mode", description="Reading mode configuration", datatype=dict),
+        Config("korp.filters", description="List of annotations to use for filtering in Korp", datatype=List[str]),
         Config(
             "korp.hidden_annotations",
             description="List of annotations not to include in corpus config",
             default=HIDDEN_ANNOTATIONS,
+            datatype=List[str],
         ),
         Config(
             "korp.keep_undefined_annotations",
             description="Include all annotations in config, even those without an annotation definition/preset.",
             default=False,
+            datatype=bool,
         ),
     ],
 )

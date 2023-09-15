@@ -10,11 +10,20 @@ from sparv.api import Config, SourceFilename, Output, Source, SourceStructure, T
 
 
 @importer("docx import", file_extension="docx", outputs=["text"], text_annotation="text", config=[
-    Config("docx_import.prefix", description="Optional prefix to add to annotation names."),
-    Config("docx_import.keep_control_chars", False, description="Set to True if control characters should not be "
-                                                                "removed from the text."),
-    Config("docx_import.normalize", "NFC", description="Normalize input using any of the following forms: "
-                                                       "'NFC', 'NFKC', 'NFD', and 'NFKD'.")
+    Config("docx_import.prefix", description="Optional prefix to add to annotation names.", datatype=str),
+    Config(
+        "docx_import.keep_control_chars",
+        default=False,
+        description="Set to True if control characters should not be removed from the text.",
+        datatype=bool,
+    ),
+    Config(
+        "docx_import.normalize",
+        default="NFC",
+        description="Normalize input using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.",
+        datatype=str,
+        choices=("NFC", "NFKC", "NFD", "NFKD"),
+    )
 ])
 def parse(source_file: SourceFilename = SourceFilename(),
           source_dir: Source = Source(),

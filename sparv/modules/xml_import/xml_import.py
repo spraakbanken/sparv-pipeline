@@ -44,25 +44,61 @@ class XMLStructure(SourceStructureParser):
             self.annotations = sorted(elements)
         return self.annotations
 
-
-@importer("XML import", file_extension="xml", outputs=Config("xml_import.elements", []), config=[
-    Config("xml_import.elements", [], description="List of elements and attributes in source file. Only needed for "
-                                                  "renaming or when used as input to other annotations, as everything "
-                                                  "is parsed whether listed or not."),
-    Config("xml_import.skip", [], description="Elements and attributes to skip. "
-                                              "Use elementname:@contents to skip contents as well."),
-    Config("xml_import.header_elements", [], description="Elements containing header metadata. Contents will not be "
-                                                         "included in corpus text."),
-    Config("xml_import.header_data", [], description="List of header elements and attributes from which to extract "
-                                                     "metadata."),
-    Config("xml_import.prefix", description="Optional prefix to add to annotation names."),
-    Config("xml_import.remove_namespaces", False, description="Remove XML namespaces upon import."),
-    Config("xml_import.encoding", util.constants.UTF8, description="Encoding of source file. Defaults to UTF-8."),
-    Config("xml_import.keep_control_chars", False, description="Set to True if control characters should not be "
-                                                               "removed from the text."),
-    Config("xml_import.normalize", "NFC", description="Normalize input using any of the following forms: "
-                                                      "'NFC', 'NFKC', 'NFD', and 'NFKD'.")
-], structure=XMLStructure)
+@importer(
+    "XML import",
+    file_extension="xml",
+    outputs=Config("xml_import.elements", [], datatype=List[str]),
+    config=[
+        Config(
+            "xml_import.elements",
+            [],
+            description="List of elements and attributes in source file. Only needed for "
+            "renaming or when used as input to other annotations, as everything "
+            "is parsed whether listed or not.",
+            datatype=List[str],
+        ),
+        Config(
+            "xml_import.skip",
+            [],
+            description="Elements and attributes to skip. Use elementname:@contents to skip contents as well.",
+            datatype=List[str],
+        ),
+        Config(
+            "xml_import.header_elements",
+            [],
+            description="Elements containing header metadata. Contents will not be included in corpus text.",
+            datatype=List[str],
+        ),
+        Config(
+            "xml_import.header_data",
+            [],
+            description="List of header elements and attributes from which to extract metadata.",
+            datatype=List[str],
+        ),
+        Config("xml_import.prefix", description="Optional prefix to add to annotation names.", datatype=str),
+        Config("xml_import.remove_namespaces", False, description="Remove XML namespaces upon import.", datatype=bool),
+        Config(
+            "xml_import.encoding",
+            util.constants.UTF8,
+            description="Encoding of source file. Defaults to UTF-8.",
+            datatype=str,
+        ),
+        Config(
+            "xml_import.keep_control_chars",
+            False,
+            description="Set to True if control characters should not be removed from the text.",
+            datatype=bool,
+        ),
+        Config(
+            "xml_import.normalize",
+            default="NFC",
+            description="Normalize input using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.",
+            datatype=str,
+            choices=("NFC", "NFKC", "NFD", "NFKD"),
+        ),
+    ],
+    structure=XMLStructure,
+)
 def parse(filename: SourceFilename = SourceFilename(),
           source_dir: Source = Source(),
           elements: list = Config("xml_import.elements"),

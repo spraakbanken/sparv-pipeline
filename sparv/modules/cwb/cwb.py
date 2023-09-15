@@ -5,7 +5,7 @@ import re
 from collections import OrderedDict
 from glob import glob
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Config, Corpus, SourceFilename, Export,
                        ExportAnnotations, ExportAnnotationNames, ExportInput, SourceAnnotations,
@@ -18,10 +18,13 @@ CWB_MAX_LINE_LEN = 65534
 
 
 @exporter("VRT export", config=[
-    Config("cwb.source_annotations",
-           description="List of annotations and attributes from the source data to include. Everything will be "
-                       "included by default."),
-    Config("cwb.annotations", description="Sparv annotations to include.")
+    Config(
+        "cwb.source_annotations",
+        description="List of annotations and attributes from the source data to include. Everything will be included "
+                    "by default.",
+        datatype=List[str]
+    ),
+    Config("cwb.annotations", description="Sparv annotations to include.", datatype=List[str])
 ])
 def vrt(source_file: SourceFilename = SourceFilename(),
         out: Export = Export("cwb.vrt/{file}.vrt"),
@@ -75,7 +78,7 @@ def vrt(source_file: SourceFilename = SourceFilename(),
 
 
 @exporter("Scrambled VRT export", config=[
-    Config("cwb.scramble_on", description="Annotation to use for scrambling.")
+    Config("cwb.scramble_on", description="Annotation to use for scrambling.", datatype=str)
 ])
 def vrt_scrambled(source_file: SourceFilename = SourceFilename(),
                   out: Export = Export("cwb.vrt_scrambled/{file}.vrt"),
@@ -141,10 +144,10 @@ def vrt_scrambled(source_file: SourceFilename = SourceFilename(),
 
 
 @exporter("CWB encode", order=2, config=[
-    Config("cwb.bin_path", default="", description="Path to directory containing the CWB executables"),
-    Config("cwb.encoding", default="utf8", description="Encoding to use"),
-    Config("cwb.skip_compression", False, description="Whether to skip compression"),
-    Config("cwb.skip_validation", False, description="Whether to skip validation")
+    Config("cwb.bin_path", default="", description="Path to directory containing the CWB executables", datatype=str),
+    Config("cwb.encoding", default="utf8", description="Encoding to use", datatype=str),
+    Config("cwb.skip_compression", default=False, description="Whether to skip compression", datatype=bool),
+    Config("cwb.skip_validation", default=False, description="Whether to skip validation", datatype=bool)
 ])
 def encode(corpus: Corpus = Corpus(),
            annotations: ExportAnnotationNames = ExportAnnotationNames("cwb.annotations"),
