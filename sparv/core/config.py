@@ -4,7 +4,7 @@ import copy
 from collections import defaultdict
 from functools import reduce
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 import yaml
 import yaml.scanner
@@ -32,12 +32,12 @@ _config_default = {}  # Default config
 
 # Dict with info about config structure, prepopulated with some module-independent keys
 config_structure = {
-    "classes": {"_source": "core", "_cfg": Config("uninstall", datatype=dict)},
-    "custom_annotations": {"_source": "core", "_cfg": Config("uninstall", datatype=list)},
-    "install": {"_source": "core", "_cfg": Config("uninstall", datatype=list)},
-    PARENT: {"_source": "core", "_cfg": Config("uninstall", datatype=str)},
-    MAX_THREADS: {"_source": "core", "_cfg": Config("uninstall", datatype=dict)},
-    "preload": {"_source": "core", "_cfg": Config("uninstall", datatype=list)},
+    "classes": {"_source": "core", "_cfg": Config("classes", datatype=dict)},
+    "custom_annotations": {"_source": "core", "_cfg": Config("custom_annotations", datatype=list)},
+    "install": {"_source": "core", "_cfg": Config("install", datatype=list)},
+    PARENT: {"_source": "core", "_cfg": Config(PARENT, datatype=str)},
+    MAX_THREADS: {"_source": "core", "_cfg": Config(MAX_THREADS, datatype=Dict[str, int])},
+    "preload": {"_source": "core", "_cfg": Config("preload", datatype=list)},
     "uninstall": {"_source": "core", "_cfg": Config("uninstall", datatype=list)}
 }
 
