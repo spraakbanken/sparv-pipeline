@@ -33,6 +33,7 @@
 - Added `--json-log` flag to enable JSON format for logging.
 - Added support for restricting a whole module to one or more languages by using the `__language__` variable.
 - Running `sparv schema` will now generate a JSON schema which can be used to validate corpus config files.
+- More strict config validation, including validation of config values and data types.
 
 ### Changed
 
