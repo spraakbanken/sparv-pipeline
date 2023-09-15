@@ -10,13 +10,13 @@ from sparv.api import Model, ModelOutput, get_logger, modelbuilder
 logger = get_logger(__name__)
 
 
-@modelbuilder("Compound POS model", language=["swe"], order=1)
+@modelbuilder("Compound POS model", order=1)
 def download_nst_comp(out: ModelOutput = ModelOutput("saldo/nst_comp_pos.pickle")):
     """Download compound POS model from sparv-models repo."""
     out.download("https://github.com/spraakbanken/sparv-models/raw/master/saldo/nst_comp_pos.pickle")
 
 
-@modelbuilder("Compound POS model", language=["swe"], order=2)
+@modelbuilder("Compound POS model", order=2)
 def build_nst_comp(out: ModelOutput = ModelOutput("saldo/nst_comp_pos.pickle"),
                    nst_lexicon: Model = Model("saldo/nst_utf8.txt")):
     """Download NST lexicon and convert it to a compound POS model.

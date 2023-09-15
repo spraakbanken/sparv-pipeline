@@ -18,19 +18,19 @@ PART_DELIM2 = "^2"
 PART_DELIM3 = "^3"
 
 
-@modelbuilder("SALDO morphology XML", language=["swe"])
+@modelbuilder("SALDO morphology XML")
 def download_saldo_xml(out: ModelOutput = ModelOutput("saldo/saldom.xml")):
     """Download SALDO morphology XML."""
     out.download("https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/saldom/saldom.xml")
 
 
-@modelbuilder("SALDO morphology model", language=["swe"], order=1)
+@modelbuilder("SALDO morphology model", order=1)
 def download_saldo_pickle(out: ModelOutput = ModelOutput("saldo/saldo.pickle")):
     """Download SALDO morphology model from sparv-models repo."""
     out.download("https://github.com/spraakbanken/sparv-models/raw/master/saldo/saldo.pickle")
 
 
-@modelbuilder("SALDO morphology model", language=["swe"], order=2)
+@modelbuilder("SALDO morphology model", order=2)
 def build_saldo_pickle(out: ModelOutput = ModelOutput("saldo/saldo.pickle"),
                 saldom: Model = Model("saldo/saldom.xml")):
     """Save SALDO morphology as a pickle file."""

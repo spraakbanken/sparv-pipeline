@@ -31,13 +31,36 @@ def preloader(saldo_comp_model, stats_model):
     return SaldoCompLexicon(saldo_comp_model.path), StatsLexicon(stats_model.path)
 
 
-@annotator("Compound analysis", name="compound", language=["swe"], config=[
-    Config("saldo.comp_model", default="saldo/saldo.compound.pickle", description="Path to SALDO compound model"),
-    Config("saldo.comp_nst_model", default="saldo/nst_comp_pos.pickle",
-           description="Path to NST part of speech compound model"),
-    Config("saldo.comp_stats_model", default="saldo/stats.pickle", description="Path to statistics model"),
-    Config("saldo.comp_use_source", default=True, description="Also use source text as lexicon for compound analysis")
-], preloader=preloader, preloader_params=["saldo_comp_model", "stats_model"], preloader_target="preloaded_models")
+@annotator(
+    "Compound analysis",
+    name="compound",
+    config=[
+        Config(
+            "saldo.comp_model",
+            default="saldo/saldo.compound.pickle",
+            description="Path to SALDO compound model",
+            datatype=str,
+        ),
+        Config(
+            "saldo.comp_nst_model",
+            default="saldo/nst_comp_pos.pickle",
+            description="Path to NST part of speech compound model",
+            datatype=str,
+        ),
+        Config(
+            "saldo.comp_stats_model", default="saldo/stats.pickle", description="Path to statistics model", datatype=str
+        ),
+        Config(
+            "saldo.comp_use_source",
+            default=True,
+            description="Also use source text as lexicon for compound analysis",
+            datatype=bool,
+        ),
+    ],
+    preloader=preloader,
+    preloader_params=["saldo_comp_model", "stats_model"],
+    preloader_target="preloaded_models",
+)
 def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
                                                description="Compound analysis using lemgrams"),
              out_compwf: Output = Output("<token>:saldo.compwf", description="Compound analysis using wordforms"),
@@ -142,13 +165,13 @@ def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
     logger.progress()
 
 
-@modelbuilder("SALDO compound model", language=["swe"], order=1)
+@modelbuilder("SALDO compound model", order=1)
 def download_saldo_comp(out: ModelOutput = ModelOutput("saldo/saldo.compound.pickle")):
     """Download SALDO compound model from sparv-models repo."""
     out.download("https://github.com/spraakbanken/sparv-models/raw/master/saldo/saldo.compound.pickle")
 
 
-@modelbuilder("SALDO compound model", language=["swe"], order=2)
+@modelbuilder("SALDO compound model", order=2)
 def build_saldo_comp(out: ModelOutput = ModelOutput("saldo/saldo.compound.pickle"),
                      saldom: Model = Model("saldo/saldom.xml")):
     """Extract compound info from saldom.xml and save as a pickle file."""

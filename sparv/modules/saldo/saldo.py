@@ -21,26 +21,72 @@ def preloader(models):
     return {m.path.stem: SaldoLexicon(m.path) for m in models}
 
 
-@annotator("SALDO annotations", language=["swe"], config=[
-    Config("saldo.model", default="saldo/saldo.pickle", description="Path to SALDO model"),
-    Config("saldo.delimiter", default=util.constants.DELIM, description="Character to put between ambiguous results"),
-    Config("saldo.affix", default=util.constants.AFFIX, description="Character to put before and after sets of results"),
-    Config("saldo.precision", description="Format string for appending precision to each value (e.g. ':%.3f')"),
-    Config("saldo.precision_filter", default="max",
-           description="Precision filter with possible values 'max' (only use the most probable annotations), "
-                       "'first' (only use the single most probable annotation), 'none' (use all annotations)"),
-    Config("saldo.min_precision", default=0.66,
-           description="Only use annotations with a probability score greater than or equal to this. "
-                       "0.25: part-of-speech does not match, 0.5: part-of-speech is missing, 0.66: part-of-speech "
-                       "matches, 0.75: morphosyntactic descriptor matches"),
-    Config("saldo.skip_multiword", default=False, description="Whether to disable annotation of multiword expressions"),
-    Config("saldo.max_mwe_gaps", default=1, description="Max amount of gaps allowed within a multiword expression"),
-    Config("saldo.allow_multiword_overlap", default=False,
-           description="Whether all multiword expressions may overlap with each other. "
-                       "If set to False, some cleanup is done."),
-    Config("saldo.word_separator",
-           description="Character used to split the values of 'word' into several word variations"),
-], preloader=preloader, preloader_params=["models"], preloader_target="models_preloaded")
+@annotator(
+    "SALDO annotations",
+    config=[
+        Config("saldo.model", default="saldo/saldo.pickle", description="Path to SALDO model", datatype=str),
+        Config(
+            "saldo.delimiter",
+            default=util.constants.DELIM,
+            description="Character to put between ambiguous results",
+            datatype=str,
+        ),
+        Config(
+            "saldo.affix",
+            default=util.constants.AFFIX,
+            description="Character to put before and after sets of results",
+            datatype=str,
+        ),
+        Config(
+            "saldo.precision",
+            description="Format string for appending precision to each value (e.g. ':%.3f')",
+            datatype=str,
+        ),
+        Config(
+            "saldo.precision_filter",
+            default="max",
+            description="Precision filter with possible values 'max' (only use the most probable annotations), "
+            "'first' (only use the single most probable annotation), 'none' (use all annotations)",
+            datatype=str,
+            choices=("max", "first", "none"),
+        ),
+        Config(
+            "saldo.min_precision",
+            default=0.66,
+            description="Only use annotations with a probability score greater than or equal to this. "
+            "0.25: part-of-speech does not match, 0.5: part-of-speech is missing, 0.66: part-of-speech "
+            "matches, 0.75: morphosyntactic descriptor matches",
+            datatype=float,
+        ),
+        Config(
+            "saldo.skip_multiword",
+            default=False,
+            description="Whether to disable annotation of multiword expressions",
+            datatype=bool,
+        ),
+        Config(
+            "saldo.max_mwe_gaps",
+            default=1,
+            description="Max amount of gaps allowed within a multiword expression",
+            datatype=int,
+        ),
+        Config(
+            "saldo.allow_multiword_overlap",
+            default=False,
+            description="Whether all multiword expressions may overlap with each other. "
+            "If set to False, some cleanup is done.",
+            datatype=bool,
+        ),
+        Config(
+            "saldo.word_separator",
+            description="Character used to split the values of 'word' into several word variations",
+            datatype=str,
+        ),
+    ],
+    preloader=preloader,
+    preloader_params=["models"],
+    preloader_target="models_preloaded",
+)
 def annotate(token: Annotation = Annotation("<token>"),
              word: Annotation = Annotation("<token:word>"),
              sentence: Annotation = Annotation("<sentence>"),
