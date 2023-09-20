@@ -734,10 +734,13 @@ class Model(Base):
 
     def download(self, url: str):
         """Download file from url and save to modeldir."""
+        def log_progress(block_num, block_size, total_size):
+            if total_size > 0:
+                logger.progress(progress=block_num * block_size, total=total_size)
         os.makedirs(self.path.parent, exist_ok=True)
         logger.debug("Downloading from: %s", url)
         try:
-            urllib.request.urlretrieve(url, self.path)
+            urllib.request.urlretrieve(url, self.path, reporthook=log_progress)
             logger.info("Successfully downloaded %s", self.name)
         except Exception as e:
             logger.error("Download of %s from %s failed", self.name, url)
