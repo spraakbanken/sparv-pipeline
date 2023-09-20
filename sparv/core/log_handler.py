@@ -161,7 +161,7 @@ class InternalLogHandler(logging.Handler):
         if record.msg == "export_dirs":
             self.export_dirs_list.update(record.export_dirs)
         elif record.msg == "progress":
-            job_id = self.job_ids.get((record.job, record.file))
+            job_id = self.job_ids.get((record.job, record.file or ""))
             if job_id is not None:
                 try:
                     if not self.jobs[job_id]["task"]:
