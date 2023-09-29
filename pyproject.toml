@@ -27,7 +27,7 @@ dependencies = [
     "questionary==1.10.0",
     "rich==13.3.3",
     "snakemake==7.25.0",
-    "stanza==1.5.0",
+    "stanza==1.5.1",
     "torch>=1.9.1",  # Used by Stanza; see https://github.com/spraakbanken/sparv-pipeline/issues/82
     "typing-inspect==0.8.0",
 ]
