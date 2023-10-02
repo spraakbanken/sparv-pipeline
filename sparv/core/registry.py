@@ -212,54 +212,94 @@ def _get_module_name(module_string: str) -> str:
     return module_name
 
 
-def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, file_extension: Optional[str] = None,
-               outputs=(), text_annotation=None, structure=None, language: Optional[List[str]] = None,
-               config: Optional[List[Config]] = None, order: Optional[int] = None, abstract: bool = False,
-               wildcards: Optional[List[Wildcard]] = None, preloader: Optional[Callable] = None,
-               preloader_params: Optional[List[str]] = None, preloader_target: Optional[str] = None,
-               preloader_cleanup: Optional[Callable] = None, preloader_shared: bool = True,
-               uninstaller: Optional[str] = None):
+def _annotator(
+    description: str,
+    a_type: Annotator,
+    name: Optional[str] = None,
+    file_extension: Optional[str] = None,
+    outputs=(),
+    text_annotation=None,
+    structure=None,
+    language: Optional[List[str]] = None,
+    config: Optional[List[Config]] = None,
+    priority: Optional[int] = None,
+    order: Optional[int] = None,
+    abstract: bool = False,
+    wildcards: Optional[List[Wildcard]] = None,
+    preloader: Optional[Callable] = None,
+    preloader_params: Optional[List[str]] = None,
+    preloader_target: Optional[str] = None,
+    preloader_cleanup: Optional[Callable] = None,
+    preloader_shared: bool = True,
+    uninstaller: Optional[str] = None,
+):
     """Return a decorator for annotator functions, adding them to annotator registry."""
+
     def decorator(f):
         """Add wrapped function to registry."""
         module_name = _get_module_name(f.__module__)
-        _potential_annotators[module_name].append({
-            "module_name": module_name,
-            "description": description,
-            "function": f,
-            "name": name,
-            "type": a_type,
-            "file_extension": file_extension,
-            "outputs": outputs,
-            "text_annotation": text_annotation,
-            "structure": structure,
-            "language": language,
-            "config": config,
-            "order": order,
-            "abstract": abstract,
-            "wildcards": wildcards,
-            "preloader": preloader,
-            "preloader_params": preloader_params,
-            "preloader_target": preloader_target,
-            "preloader_cleanup": preloader_cleanup,
-            "preloader_shared": preloader_shared,
-            "uninstaller": uninstaller
-        })
+        _potential_annotators[module_name].append(
+            {
+                "module_name": module_name,
+                "description": description,
+                "function": f,
+                "name": name,
+                "type": a_type,
+                "file_extension": file_extension,
+                "outputs": outputs,
+                "text_annotation": text_annotation,
+                "structure": structure,
+                "language": language,
+                "config": config,
+                "priority": priority,
+                "order": order,
+                "abstract": abstract,
+                "wildcards": wildcards,
+                "preloader": preloader,
+                "preloader_params": preloader_params,
+                "preloader_target": preloader_target,
+                "preloader_cleanup": preloader_cleanup,
+                "preloader_shared": preloader_shared,
+                "uninstaller": uninstaller,
+            }
+        )
         return f
 
     return decorator
 
 
-def annotator(description: str, name: Optional[str] = None, language: Optional[List[str]] = None,
-              config: Optional[List[Config]] = None, order: Optional[int] = None,
-              wildcards: Optional[List[Wildcard]] = None, preloader: Optional[Callable] = None,
-              preloader_params: Optional[List[str]] = None, preloader_target: Optional[str] = None,
-              preloader_cleanup: Optional[Callable] = None, preloader_shared: bool = True):
+
+def annotator(
+    description: str,
+    name: Optional[str] = None,
+    language: Optional[List[str]] = None,
+    config: Optional[List[Config]] = None,
+    priority: Optional[int] = None,
+    order: Optional[int] = None,
+    wildcards: Optional[List[Wildcard]] = None,
+    preloader: Optional[Callable] = None,
+    preloader_params: Optional[List[str]] = None,
+    preloader_target: Optional[str] = None,
+    preloader_cleanup: Optional[Callable] = None,
+    preloader_shared: bool = True,
+):
     """Return a decorator for annotator functions, adding them to the annotator registry."""
-    return _annotator(description=description, a_type=Annotator.annotator, name=name, language=language,
-                      config=config, order=order, wildcards=wildcards, preloader=preloader,
-                      preloader_params=preloader_params, preloader_target=preloader_target,
-                      preloader_cleanup=preloader_cleanup, preloader_shared=preloader_shared)
+    return _annotator(
+        description=description,
+        a_type=Annotator.annotator,
+        name=name,
+        language=language,
+        config=config,
+        priority=priority,
+        order=order,
+        wildcards=wildcards,
+        preloader=preloader,
+        preloader_params=preloader_params,
+        preloader_target=preloader_target,
+        preloader_cleanup=preloader_cleanup,
+        preloader_shared=preloader_shared,
+    )
+
 
 
 def importer(description: str, file_extension: str, name: Optional[str] = None, outputs=None,
@@ -287,8 +327,15 @@ def importer(description: str, file_extension: str, name: Optional[str] = None, 
                       outputs=outputs, text_annotation=text_annotation, structure=structure, config=config)
 
 
-def exporter(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
-             language: Optional[List[str]] = None, order: Optional[int] = None, abstract: bool = False):
+def exporter(
+    description: str,
+    name: Optional[str] = None,
+    config: Optional[List[Config]] = None,
+    language: Optional[List[str]] = None,
+    priority: Optional[int] = None,
+    order: Optional[int] = None,
+    abstract: bool = False,
+):
     """Return a decorator for exporter functions.
 
     Args:
@@ -302,29 +349,74 @@ def exporter(description: str, name: Optional[str] = None, config: Optional[List
     Returns:
         A decorator
     """
-    return _annotator(description=description, a_type=Annotator.exporter, name=name, config=config, language=language,
-                      order=order, abstract=abstract)
+    return _annotator(
+        description=description,
+        a_type=Annotator.exporter,
+        name=name,
+        config=config,
+        language=language,
+        priority=priority,
+        order=order,
+        abstract=abstract,
+    )
 
 
-def installer(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
-              language: Optional[List[str]] = None, uninstaller: Optional[str] = None):
+def installer(
+    description: str,
+    name: Optional[str] = None,
+    config: Optional[List[Config]] = None,
+    language: Optional[List[str]] = None,
+    priority: Optional[int] = None,
+    uninstaller: Optional[str] = None,
+):
     """Return a decorator for installer functions."""
-    return _annotator(description=description, a_type=Annotator.installer, name=name, config=config, language=language,
-                      uninstaller=uninstaller)
+    return _annotator(
+        description=description,
+        a_type=Annotator.installer,
+        name=name,
+        config=config,
+        language=language,
+        priority=priority,
+        uninstaller=uninstaller,
+    )
 
 
-def uninstaller(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
-                language: Optional[List[str]] = None):
+def uninstaller(
+    description: str,
+    name: Optional[str] = None,
+    config: Optional[List[Config]] = None,
+    language: Optional[List[str]] = None,
+    priority: Optional[int] = None,
+):
     """Return a decorator for uninstaller functions."""
-    return _annotator(description=description, a_type=Annotator.uninstaller, name=name, config=config,
-                      language=language)
+    return _annotator(
+        description=description,
+        a_type=Annotator.uninstaller,
+        name=name,
+        config=config,
+        language=language,
+        priority=priority,
+    )
 
 
-def modelbuilder(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
-                 language: Optional[List[str]] = None, order: Optional[int] = None):
+def modelbuilder(
+    description: str,
+    name: Optional[str] = None,
+    config: Optional[List[Config]] = None,
+    language: Optional[List[str]] = None,
+    priority: Optional[int] = None,
+    order: Optional[int] = None,
+):
     """Return a decorator for modelbuilder functions."""
-    return _annotator(description=description, a_type=Annotator.modelbuilder, name=name, config=config,
-                      language=language, order=order)
+    return _annotator(
+        description=description,
+        a_type=Annotator.modelbuilder,
+        name=name,
+        config=config,
+        language=language,
+        priority=priority,
+        order=order,
+    )
 
 
 def _add_to_registry(annotator: dict, skip_language_check: bool = False):

@@ -34,6 +34,7 @@
 - Added support for restricting a whole module to one or more languages by using the `__language__` variable.
 - Running `sparv schema` will now generate a JSON schema which can be used to validate corpus config files.
 - More strict config validation, including validation of config values and data types.
+- Most Sparv decorators now have a `priority` parameter, to control the order in which functions are run.
 
 ### Changed
 

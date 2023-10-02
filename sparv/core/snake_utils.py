@@ -120,6 +120,7 @@ class RuleStorage:
         self.description = annotator_info["description"]
         self.file_extension = annotator_info["file_extension"]
         self.import_outputs = annotator_info["outputs"]
+        self.priority: int = annotator_info["priority"] or 0
         self.order = annotator_info["order"]
         self.abstract = annotator_info["abstract"]
         self.wildcards = annotator_info["wildcards"]  # Information about the wildcards used

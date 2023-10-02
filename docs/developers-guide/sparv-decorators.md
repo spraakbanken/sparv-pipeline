@@ -17,6 +17,8 @@ tokens, sentences, parts of speeches etc.) and outputs one or more new annotatio
 - `description`: Description of the annotator. Used for displaying help texts in the CLI.
 - `config`: List of Config instances defining config options for the annotator.
 - `language`: List of supported languages. If no list is supplied all languages are supported.
+- `priority`: Functions with higher priority will be preferred when scheduling which functions to run. The default
+  priority is 0.
 - `order`: If several annotators have the same output, this integer value will help decide which to try to use first. A
   lower number indicates higher priority.
 - `wildcards`: List of wildcards used in the annotator function's arguments.
@@ -92,6 +94,8 @@ files into one output file.
 - `name`: Optional name to use instead of the function name.
 - `config`: List of Config instances defining config options for the exporter.
 - `language`: List of supported languages. If no list is supplied all languages are supported.
+- `priority`: Functions with higher priority will be preferred when scheduling which functions to run. The default
+  priority is 0.
 - `order`: If several exporters have the same output, this integer value will help decide which to try to use first. A
   lower number indicates higher priority.
 - `abstract`: Set to True if this exporter has no output.
@@ -129,6 +133,8 @@ It is recommended that an installer removes any related uninstaller's marker, to
 - `name`: Optional name to use instead of the function name.
 - `config`: List of Config instances defining config options for the installer.
 - `language`: List of supported languages. If no list is supplied all languages are supported.
+- `priority`: Functions with higher priority will be preferred when scheduling which functions to run. The default
+  priority is 0.
 - `uninstaller`: Name of related uninstaller.
 
 **Example:**
@@ -161,6 +167,8 @@ It is recommended that an uninstaller removes any related installer's marker, to
 - `name`: Optional name to use instead of the function name.
 - `config`: List of Config instances defining config options for the uninstaller.
 - `language`: List of supported languages. If no list is supplied all languages are supported.
+- `priority`: Functions with higher priority will be preferred when scheduling which functions to run. The default
+  priority is 0.
 
 **Example:**
 ```python
@@ -188,6 +196,8 @@ your system it will be available for any corpus.
 - `name`: Optional name to use instead of the function name.
 - `config`: List of Config instances defining config options for the installer.
 - `language`: List of supported languages. If no list is supplied all languages are supported.
+- `priority`: Functions with higher priority will be preferred when scheduling which functions to run. The default
+  priority is 0.
 - `order`: If several modelbuilders have the same output, this integer value will help decide which to try to use first.
   A lower number indicates higher priority.
 
