@@ -441,7 +441,7 @@ def build_description(description, short_description) -> Union[Dict[str, str], s
     return lang_dict.get(None) or lang_dict
 
 
-@installer("Install Korp corpus configuration file.", uninstaller="korp:uninstall_config")
+@installer("Install Korp corpus configuration file.", uninstaller="korp:uninstall_config", priority=-1)
 def install_config(
     remote_host: Optional[str] = Config("korp.remote_host"),
     config_dir: str = Config("korp.config_dir"),
