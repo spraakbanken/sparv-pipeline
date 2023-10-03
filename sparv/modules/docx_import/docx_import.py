@@ -6,7 +6,7 @@ from typing import Optional
 from docx2python import docx2python
 from docx2python.iterators import iter_at_depth
 
-from sparv.api import Config, SourceFilename, Output, Source, SourceStructure, Text, importer, util
+from sparv.api import Config, SourceFilename, Output, Source, SourceStructure, Text, importer, util, SparvErrorMessage
 
 
 @importer("docx import", file_extension="docx", outputs=["text"], text_annotation="text", config=[
@@ -41,7 +41,10 @@ def parse(source_file: SourceFilename = SourceFilename(),
             'NFC' is used by default.
     """
     source_file_path = source_dir.get_path(source_file, ".docx")
-    d = docx2python(source_file_path)
+    try:
+        d = docx2python(source_file_path)
+    except Exception as e:
+        raise SparvErrorMessage(f"Failed to parse docx file '{source_file}'. {type(e).__name__}: {e}")
 
     # Extract all text from the body, ignoring headers and footers
     text = "\n\n".join(iter_at_depth(d.body, 4))

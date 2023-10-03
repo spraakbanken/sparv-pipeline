@@ -5,7 +5,8 @@ import xml.etree.ElementTree as etree
 import zipfile
 from typing import Optional
 
-from sparv.api import Config, SourceFilename, Output, Source, SourceStructure, Text, get_logger, importer, util
+from sparv.api import (Config, Output, Source, SourceFilename, SourceStructure, SparvErrorMessage, Text, get_logger,
+                       importer, util)
 
 logger = get_logger(__name__)
 
@@ -44,7 +45,10 @@ def parse(source_file: SourceFilename = SourceFilename(),
     source_file_path = str(source_dir.get_path(source_file, ".odt"))
 
     # Parse odt and extract all text content
-    text = OdtParser(source_file_path).text
+    try:
+        text = OdtParser(source_file_path).text
+    except Exception as e:
+        raise SparvErrorMessage(f"Failed to parse odt file '{source_file}'. {type(e).__name__}: {e}")
 
     if not keep_control_chars:
         text = util.misc.remove_control_characters(text)
