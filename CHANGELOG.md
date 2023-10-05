@@ -299,3 +299,9 @@
 - Improved code modularity
   - Increased independence between modules and language models
   - This facilitates adding new annotation modules and import/export formats.
+
+[5.1.0]: https://github.com/spraakbanken/sparv-pipeline/releases/tag/v5.1.0
+[5.0.0]: https://github.com/spraakbanken/sparv-pipeline/releases/tag/v5.0.0
+[4.1.1]: https://github.com/spraakbanken/sparv-pipeline/releases/tag/v4.1.1
+[4.1.0]: https://github.com/spraakbanken/sparv-pipeline/releases/tag/v4.1.0
+[4.0.0]: https://github.com/spraakbanken/sparv-pipeline/releases/tag/v4.0.0
