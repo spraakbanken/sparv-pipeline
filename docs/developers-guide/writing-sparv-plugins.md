@@ -332,7 +332,7 @@ This annotator uses a model. It also has an extra argument called `model_preload
 an already loaded model. In the decorator we point out the preloader function using the `preloader` parameter.
 `preloader_params` is a list of parameter names from the annotator, which the preloader needs as arguments. In this
 case it's only one: the `model` parameter. `preloader_target` points to a single parameter name of the annotator, which
-is the one that will recieve the return value from the preloader function.
+is the one that will receive the return value from the preloader function.
 
 When using the `sparv preload` command with this annotator, the preloader function will be run only once, and every
 time the annotator is used, it will get the preloaded model via the `model_preloaded` parameter.

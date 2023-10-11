@@ -154,7 +154,7 @@ Call a binary with `arguments` and `stdin` and return a pair `(stdout, stderr)`.
   is returned as the stderr component. Defaults to `False`.
 - `use_shell`: Don't use this unless you really have to! If set to `True` the binary will be executed through the shell.
   Defaults to `False`. Is automatically set to `True` when using `raw_command`.
-- `allow_error`: If set to `False` an exeption is raised if stderr is not empty and stderr and stdout will be logged.
+- `allow_error`: If set to `False` an exception is raised if stderr is not empty and stderr and stdout will be logged.
   Defaults to `False`.
 - `return_command`: If set to `True` the process is returned. Defaults to `False`.
 
@@ -238,7 +238,7 @@ Dictionary containing mappings (dictionaries) for of part-of-speech tag mappings
 
 
 ### pos_to_upos()
-Map POS tags to Universal Depenendy POS tags. This only works if there is a conversion function in
+Map POS tags to Universal Dependency POS tags. This only works if there is a conversion function in
 `util.tagsets.pos_to_upos` for the given language and tagset.
 
 **Arguments:**
@@ -390,7 +390,7 @@ Exception (class) used to notify users of errors in a friendly way without displ
 in the [Writing Sparv Plugins](developers-guide/writing-sparv-plugins#error-messages) section.
 
 > [!NOTE]
-> Only the `message` argument should be used when raisning this exception in a Sparv module.
+> Only the `message` argument should be used when raising this exception in a Sparv module.
 
 **Arguments:**
 

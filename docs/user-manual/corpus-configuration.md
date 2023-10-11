@@ -87,7 +87,7 @@ The `metadata` section of your corpus config contains metadata about your corpus
 The `import` section of your corpus config is used to give Sparv some information about your input files (i.e. your
 corpus).
 
-- `import.source_dir` defines the location of your input files and it defaults to `source`. Sparv will check the
+- `import.source_dir` defines the location of your input files, and it defaults to `source`. Sparv will check the
   source directory recursively for valid input files to process.
 
 - `import.importer` is used to tell Sparv which importer to use when processing your source files. The setting you

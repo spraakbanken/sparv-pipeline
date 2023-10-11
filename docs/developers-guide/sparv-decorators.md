@@ -185,9 +185,9 @@ def uninstall(corpus: Corpus = Corpus(),
 ```
 
 ## @modelbuilder
-A function decorated with `@modelbuilder` is used to setup a model used by other Sparv components (typically
+A function decorated with `@modelbuilder` is used to set up a model used by other Sparv components (typically
 annotators). Setting up a model could for example mean downloading a file, unzipping it, converting it into a different
-format and saving it in Sparv's data directory. A model is usually not specific to one corpus. Once a model is setup on
+format and saving it in Sparv's data directory. A model is usually not specific to one corpus. Once a model is set up on
 your system it will be available for any corpus.
 
 **Arguments:**

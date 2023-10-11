@@ -10,7 +10,7 @@ whitespace information) are not listed here.
 > configuration](user-manual/corpus-configuration.md#export-options)). Please observe that the annotations usually have
 > shorter names in the corpus exports.
 >
->**Annotators** are the names of the annotation functions (including their module names) which are used for procuding
+>**Annotators** are the names of the annotation functions (including their module names) which are used for producing
 >the annotations. They can be run directly with the `sparv run-rule [annotator]` command. In most cases this is not
 >necessary though, due to the fact that the annotation functions producing the annotations listed in the corpus config
 >file are executed automatically when running `sparv run`.
@@ -121,7 +121,7 @@ preset](user-manual/corpus-configuration.md#annotation-presets) called `SWE_DEFA
 |:---|:-----------|
 |**Description**  | SALDO IDs from the `<token>:saldo.sense`-attribute are enriched with likelihoods.
 |**Tool**         | [Sparv wsd](https://github.com/spraakbanken/sparv-wsd)
-|**Dokumentation**| [Running the Koala word sense disambiguators](https://github.com/spraakbanken/sparv-wsd/blob/master/README.pdf)
+|**Documentation**| [Running the Koala word sense disambiguators](https://github.com/spraakbanken/sparv-wsd/blob/master/README.pdf)
 |**Model**        | - [ALL_512_128_w10_A2_140403_ctx1.bin](https://github.com/spraakbanken/sparv-wsd/blob/master/models/scouse/ALL_512_128_w10_A2_140403_ctx1.bin) <br />- [lem_cbow0_s512_w10_NEW2_ctx.bin](https://github.com/spraakbanken/sparv-wsd/blob/master/models/scouse/lem_cbow0_s512_w10_NEW2_ctx.bin)
 |**Annotations**  | - `<token>:wsd.sense` (identifies senses in SALDO along with their likelihoods)
 |**Annotators**   | `wsd:annotate`
@@ -188,7 +188,7 @@ for Swedish from the 1800's:
 |:---|:-----------|
 |**Description**  | Sentence segments are analysed to enrich tokens with part-of-speech tags and morphosyntactic information.
 |**Tool**         | [Hunpos](https://code.google.com/archive/p/hunpos/)
-|**Model**        | - [suc3_suc-tags_default-setting_utf8.model](https://github.com/spraakbanken/sparv-models/blob/master/hunpos/suc3_suc-tags_default-setting_utf8.model?raw=true) trained on [SUC 3.0](https://spraakbanken.gu.se/resurser/suc3) <br />- a word list along with the words' morphosyntactig information generated from the [Dalin morphology](https://spraakbanken.gu.se/resurser/dalinm) and the [Swedberg morphology](https://spraakbanken.gu.se/resurser/swedbergm)
+|**Model**        | - [suc3_suc-tags_default-setting_utf8.model](https://github.com/spraakbanken/sparv-models/blob/master/hunpos/suc3_suc-tags_default-setting_utf8.model?raw=true) trained on [SUC 3.0](https://spraakbanken.gu.se/resurser/suc3) <br />- a word list along with the words' morphosyntactic information generated from the [Dalin morphology](https://spraakbanken.gu.se/resurser/dalinm) and the [Swedberg morphology](https://spraakbanken.gu.se/resurser/swedbergm)
 |**Tagset**       | [SUC MSD tags](https://spraakbanken.gu.se/korp/markup/msdtags.html)
 |**Annotations**  | - `<token>:hunpos.msd` (morphosyntactic tag) <br />- `<token>:hunpos.pos` (part-of-speech tag
 |**Annotators**   | - `hunpos:msdtag_hist` <br />- `hunpos:postag`

@@ -52,7 +52,7 @@ annotation is needed as input for a function, e.g. `Annotation("<token:word>")`.
 
 ## AnnotationAllSourceFiles
 Regular annotation but the source filename must be specified for all actions. Use as input to an annotator function to
-require the specificed annotation for every source file in the corpus.
+require the specified annotation for every source file in the corpus.
 
 **Arguments:**
 
@@ -144,7 +144,7 @@ This class represents an annotation holding arbitrary data, i.e. data that is no
 
 ## AnnotationDataAllSourceFiles
 Like [`AnnotationData`](#annotationdata), this class is used for annotations holding arbitrary data but the source file
-must be specified for all actions. Use as input to an annotator to require the specificed annotation for every source
+must be specified for all actions. Use as input to an annotator to require the specified annotation for every source
 file in the corpus.
 
 **Arguments:**
@@ -281,7 +281,7 @@ List of header annotation names for a given source file.
 
 
 ## Language
-In instance of this class holds information about the luanguage of the corpus. This information is retrieved from the
+In instance of this class holds information about the language of the corpus. This information is retrieved from the
 corpus configuration and is specified as ISO 639-3 code.
 
 

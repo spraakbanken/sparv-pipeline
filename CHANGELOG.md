@@ -270,7 +270,7 @@
   - New plugin system facilitates installation of Sparv plugins (like FreeLing).
 
 - New format for corpus config files
-  - The new format is yaml which is easier to write and more human readable than makefiles.
+  - The new format is yaml which is easier to write and more human-readable than makefiles.
   - There is a command-line wizard which helps you create corpus config files.
   - You no longer have to specify XML elements and attributes that should be kept from the original files. The  XML
     parser now parses all existing elements and their attributes by default. Their original names will be kept and

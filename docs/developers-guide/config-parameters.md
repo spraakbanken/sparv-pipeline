@@ -38,7 +38,7 @@ the decorator belonging to that same function, but the declaration may be done i
 Sparv function, or even a different module.
 
 Please note that it is mandatory to set a description for each declared config parameter. These descriptions are
-displayed to the user when lising modules with the `sparv modules` command.
+displayed to the user when listing modules with the `sparv modules` command.
 
 
 ## Config hierarchy
