@@ -139,7 +139,9 @@ if not use_preloader:
         # something went wrong.
         exit_with_error_message(e.message, "sparv.modules." + module_name)
     except Exception as e:
-        errmsg = f"An error occurred while executing {module_name}:{f_name}:\n\n  {type(e).__name__}: {e}"
+        current_file = f" for the file {snakemake.params.source_file!r}" if snakemake.params.source_file else ""
+        errmsg = f"An error occurred while executing {module_name}:{f_name}{current_file}:" \
+                 f"\n\n  {type(e).__name__}: {e}"
         if logger.level > logging.DEBUG:
             errmsg += f"\n\nTo display further details when errors occur, run Sparv with the '--log debug' or " \
                       "'--log-to-file debug' arguments."
