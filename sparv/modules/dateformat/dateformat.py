@@ -228,6 +228,8 @@ def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Outpu
 
         if pre_regex:
             matches = re.match(pre_regex, val)
+            if not matches:
+                raise SparvErrorMessage(f"dateformat.pre_regex did not match the value {val!r}")
             val = [v for v in matches.groups() if v][0]
             if not val:
                 # If the regex doesn't match, treat as no date
