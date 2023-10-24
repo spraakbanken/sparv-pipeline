@@ -34,7 +34,6 @@ def install_mysql(host: Optional[str], db_name: str, sqlfile: Union[str, List[st
         db_name: Name of the database.
         sqlfile: Path to a SQL file, or list of paths.
     """
-    local = host is None or host == "localhost"
 
     if isinstance(sqlfile, str):
         sqlfile = [sqlfile]
@@ -49,7 +48,7 @@ def install_mysql(host: Optional[str], db_name: str, sqlfile: Union[str, List[st
             logger.info("Skipping empty file: %s (%d/%d)", f, file_count, file_total)
         else:
             logger.info(f"Installing MySQL database: {db_name}, source: {f} ({file_count}/{file_total})")
-            if local:
+            if not host:
                 subprocess.check_call(
                     f"cat {shlex.quote(f)} | mysql {shlex.quote(db_name)}", shell=True
                 )

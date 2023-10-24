@@ -392,7 +392,7 @@ def build_annotations(
 def get_presets(remote_host, config_dir):
     """Get list of presets from file system."""
     presets = {}
-    if remote_host and remote_host != "localhost":
+    if remote_host:
         remote_path = shlex.quote(f"{config_dir}/attributes/")
         cmd = ["ssh", remote_host, f"find {remote_path}"]
     else:
