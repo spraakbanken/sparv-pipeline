@@ -57,6 +57,8 @@
 - Illegal characters are now replaced with underscore in XML element and attribute names during XML export. This also
   applies to CWB and Korp config exports.
 - Not specifying a corpus language now excludes all language specific annotators.
+- When an unhandled exception occurs, the relevant source document will be displayed in the log.
+- `localhost` as an installation target is no longer handled as if host was omitted.
 
 ### Fixed
 
@@ -69,6 +71,7 @@
 - Elapsed time exceeding 24 hours no longer gets cut off in the `--stats` output.
 - Fixed bug where error messages were not getting written to the log file when the `--log debug`
   flag was used.
+- Fixed bug that prevented Stanza from using GPU.
 
 ## [5.1.0] - 2022-11-03
 
