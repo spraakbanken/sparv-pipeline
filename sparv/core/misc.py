@@ -62,7 +62,7 @@ def parse_annotation_list(annotation_names: Optional[Iterable[str]], all_annotat
     possible_plain_annotations = set()
     omit_annotations = set()
     include_rest = False
-    plain_to_atts = defaultdict(list)
+    plain_to_atts = defaultdict(set)
 
     result: OrderedDict = OrderedDict()
     for a in annotation_names:
@@ -77,11 +77,11 @@ def parse_annotation_list(annotation_names: Optional[Iterable[str]], all_annotat
                 plain_name, attr = Annotation(name).split()
             else:
                 plain_name, attr = None, None
-            result.pop(name, None)
+            result.pop(name, None)  # Remove any previous occurrence first, to keep the order
             result[name] = export_name or None
             if attr:
                 possible_plain_annotations.add(plain_name)
-                plain_to_atts[plain_name].append(name)
+                plain_to_atts[plain_name].add(name)
             else:
                 plain_annotations.add(name)
 
@@ -91,17 +91,25 @@ def parse_annotation_list(annotation_names: Optional[Iterable[str]], all_annotat
 
     # Add all_annotations to result if required
     if include_rest and all_annotations:
-        for a in [a for a in all_annotations if not a in omit_annotations]:
-            if a not in result:
+        for a in all_annotations:
+            if a not in result and a not in omit_annotations:
                 result[a] = None
-                plain_name, _ = Annotation(a).split()
-                plain_to_atts[plain_name].append(a)
+                plain_name, attr = Annotation(a).split()
+                if attr:
+                    plain_to_atts[plain_name].add(a)
                 plain_annotations.add(plain_name)
 
     # Add annotations names without attributes to result if required
     if add_plain_annotations:
-        for a in sorted(possible_plain_annotations.difference(plain_annotations)):
-            if a not in result:
+        new_plain_annotations = possible_plain_annotations.difference(plain_annotations)
+        if omit_annotations:
+            # Don't add new plain annotation if all connected attributes have been omitted
+            for annotation in omit_annotations:
+                plain_name, _ = Annotation(annotation).split()
+                plain_to_atts[plain_name].discard(annotation)
+
+        for a in sorted(new_plain_annotations):
+            if a not in result and plain_to_atts[a]:
                 result[a] = None
 
     # Remove any exclusions from final list
