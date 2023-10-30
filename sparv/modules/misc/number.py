@@ -152,7 +152,7 @@ def count_chunks(out: OutputCommonData = OutputCommonData("misc.{annotation}_cou
             pass
 
     if chunk_count == 0:
-        logger.info(f"No {chunk.name} chunks found in corpus")
+        logger.info("No %s chunks found in corpus", chunk.name)
 
     # Write chunk count data
     out.write(str(chunk_count))
@@ -163,7 +163,7 @@ def count_chunks(out: OutputCommonData = OutputCommonData("misc.{annotation}_cou
 def count_zero_chunks(out: OutputCommonData = OutputCommonData("misc.{annotation}_count"),
                       _files: AllSourceFilenames = AllSourceFilenames()):
     """Create chunk count file for non-existent 'annotation' chunks."""
-    logger.info(f"No {out.name[5:-6]} chunks found in corpus")
+    logger.info("No %s chunks found in corpus", out.name[5:-6])
     out.write("0")
 
 

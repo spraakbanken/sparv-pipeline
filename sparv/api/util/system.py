@@ -159,10 +159,10 @@ def rsync(local: Union[str, Path], host: Optional[str], remote: Union[str, Path]
     remote_dir = os.path.dirname(remote)
 
     if os.path.isdir(local):
-        logger.info(f"Copying directory: {local} => {host + ':' if host else ''}{remote}")
+        logger.info("Copying directory: %s => %s%s", local, host + ":" if host else "", remote)
         args = ["--recursive", "--delete", f"{local}/"]
     else:
-        logger.info(f"Copying file: {local} => {host + ':' if host else ''}{remote}")
+        logger.info("Copying file: %s => %s%s", local, host + ":" if host else "", remote)
         args = [local]
 
     if host:

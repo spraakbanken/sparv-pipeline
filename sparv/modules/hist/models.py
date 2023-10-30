@@ -166,7 +166,7 @@ def read_lmf(xml, annotation_elements=("writtenForm", "lemgram"), verbose=True, 
                      "katt",
                      "doktor"]
         util.misc.test_lexicon(lexicon, testwords)
-        logger.info(f"OK, read {len(lexicon)} entries")
+        logger.info("OK, read %d entries", len(lexicon))
     return lexicon
 
 

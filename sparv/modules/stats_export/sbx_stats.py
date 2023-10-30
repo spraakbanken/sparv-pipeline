@@ -264,7 +264,7 @@ def uninstall_sbx_freq_list(
 ):
     """Uninstall SBX word frequency list."""
     remote_file = os.path.join(remote_dir, f"stats_{corpus_id}.csv")
-    logger.info(f"Removing SBX word frequency file {host + ':' if host else ''}{remote_file}")
+    logger.info("Removing SBX word frequency file %s%s", host + ":" if host else "", remote_file)
     util.install.uninstall_path(remote_file, host)
     install_marker.remove()
     marker.write()
@@ -280,7 +280,7 @@ def uninstall_sbx_freq_list_date(
 ):
     """Uninstall SBX word frequency list with dates."""
     remote_file = os.path.join(remote_dir, f"stats_{corpus_id}.csv")
-    logger.info(f"Removing SBX word frequency with dates file {host + ':' if host else ''}{remote_file}")
+    logger.info("Removing SBX word frequency with dates file %s%s", host + ":" if host else "", remote_file)
     util.install.uninstall_path(remote_file, host)
     install_marker.remove()
     marker.write()

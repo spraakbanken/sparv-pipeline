@@ -342,7 +342,7 @@ def build_annotations(
             and annotation.name not in annotation_definitions
             and not export_name in include
         ):
-            logger.debug(f"Skipping annotation {annotation.name!r}")
+            logger.debug("Skipping annotation '%s'", annotation.name)
             continue
         export_name_cwb = cwb_escape(export_name.replace(":", "_"))
         is_token = annotation.annotation_name == token.name
@@ -397,7 +397,11 @@ def get_presets(remote_host, config_dir):
         cmd = ["ssh", remote_host, f"find {remote_path}"]
     else:
         cmd = ["find", f"{config_dir}/attributes/"]
-    logger.debug(f"Getting Korp annotation presets from {remote_host}:{config_dir}")
+    logger.debug(
+        "Getting Korp annotation presets from %s%s",
+        remote_host + ":" if remote_host else "",
+        config_dir
+    )
     s = subprocess.run(cmd, capture_output=True, encoding="utf-8")
     if s.returncode == 0:
         for p in s.stdout.splitlines():
@@ -451,7 +455,11 @@ def install_config(
 ):
     """Install Korp corpus configuration file."""
     corpus_dir = Path(config_dir) / "corpora"
-    logger.info(f"Installing Korp corpus configuration file to {remote_host}:{corpus_dir}")
+    logger.info(
+        "Installing Korp corpus configuration file to %s%s",
+        remote_host + ":" if remote_host else "",
+        corpus_dir
+    )
     util.install.install_path(config_file, remote_host, corpus_dir)
     uninstall_marker.remove()
     marker.write()
@@ -468,7 +476,9 @@ def uninstall_config(
     """Uninstall Korp corpus configuration file."""
     corpus_file = Path(config_dir) / "corpora" / f"{corpus_id}.yaml"
     logger.info(
-        f"Uninstalling Korp corpus configuration file from {remote_host + ':' if remote_host else ''}{corpus_file}"
+        "Uninstalling Korp corpus configuration file from %s%s",
+        remote_host + ":" if remote_host else "",
+        corpus_file
     )
     util.install.uninstall_path(corpus_file, host=remote_host)
     install_marker.remove()

@@ -130,14 +130,17 @@ def annotate_swe(
 
         # Init Stanza pipeline
         if dep or fallback:
-            logger.debug(f"Running dependency parsing and POS-taggning on {len(sentences)} sentences"
-                         f" (using {'GPU' if use_gpu and not fallback else 'CPU'}).")
+            logger.debug(
+                "Running dependency parsing and POS-taggning on %d sentences (using %s).",
+                len(sentences),
+                "GPU" if use_gpu and not fallback else "CPU"
+            )
             nlp_args["processors"] = "tokenize,pos,lemma,depparse"  # Comma-separated list of processors to use
             nlp_args["use_gpu"] = use_gpu and not fallback
             nlp = stanza.Pipeline(**nlp_args)
 
         else:
-            logger.debug(f"Running POS-taggning on {len(sentences)} sentences.")
+            logger.debug("Running POS-taggning on %d sentences.", len(sentences))
             nlp_args["processors"] = "tokenize,pos"  # Comma-separated list of processors to use
             nlp_args["use_gpu"] = use_gpu
             nlp = stanza.Pipeline(**nlp_args)

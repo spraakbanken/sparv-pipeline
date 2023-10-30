@@ -70,11 +70,11 @@ def uninstall_corpus(
     assert corpus and data_dir and registry_dir  # Already checked by Sparv, but just to be sure
 
     registry_file = Path(registry_dir) / corpus
-    logger.info(f"Removing CWB registry file from {host + ':' if host else ''}{registry_file}")
+    logger.info("Removing CWB registry file from %s%s", host + ":" if host else "", registry_file)
     util.install.uninstall_path(registry_file, host=host)
 
     corpus_dir = Path(data_dir) / corpus
-    logger.info(f"Removing CWB data from {host + ':' if host else ''}{corpus_dir}")
+    logger.info("Removing CWB data from %s%s", host + ":" if host else "", corpus_dir)
     util.install.uninstall_path(corpus_dir, host=host)
 
     install_marker.remove()

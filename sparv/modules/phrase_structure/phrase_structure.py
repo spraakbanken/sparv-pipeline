@@ -54,24 +54,41 @@ def annotate(out_phrase: Output = Output("phrase_structure.phrase", description=
                 if not child[0].startswith("WORD:"):
                     start_pos = get_token_span(s[position])[0]
                     open_elem_stack.append(child + (start_pos,))
-                    logger.debug(f"<phrase name={child[0]} func={child[1]}> {s[position]}")
+                    logger.debug(
+                        "<phrase name=%s func=%s> %s",
+                        child[0],
+                        child[1],
+                        s[position]
+                    )
                 else:
                     # Close nodes
                     while open_elem_stack[-1][2] == child[2]:
                         start_pos = open_elem_stack[-1][3]
                         end_pos = get_token_span(s[position - 1])[1]
                         nodes.append(((start_pos, end_pos), open_elem_stack[-1][0], open_elem_stack[-1][1]))
-                        logger.debug(f"</phrase name={open_elem_stack[-1][0]} func={open_elem_stack[-1][1]}> {start_pos}-{end_pos}")
+                        logger.debug(
+                            "</phrase name=%s func=%s> %d-%d",
+                            open_elem_stack[-1][0],
+                            open_elem_stack[-1][1],
+                            start_pos,
+                            end_pos
+                        )
                         open_elem_stack.pop()
                     position += 1
-                    logger.debug(f"   {child[0][5:]}")
+                    logger.debug("   %s", child[0][5:])
 
             # Close remaining open nodes
             end_pos = get_token_span(s[-1])[1]
             for elem in reversed(open_elem_stack):
                 start_pos = elem[3]
                 nodes.append(((start_pos, end_pos), elem[0], elem[1]))
-                logger.debug(f"</phrase name={elem[0]} func={elem[1]}> {start_pos}-{end_pos}")
+                logger.debug(
+                    "</phrase name=%s func=%s> %d-%d",
+                    elem[0],
+                    elem[1],
+                    start_pos,
+                    end_pos
+                )
 
     # Sort nodes
     sorted_nodes = sorted(nodes)

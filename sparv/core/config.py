@@ -78,7 +78,7 @@ def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) 
     if DEFAULT_CONFIG.is_file():
         _config_default = read_yaml(DEFAULT_CONFIG)
     else:
-        logger.warning("Default config file is missing: {}".format(DEFAULT_CONFIG))
+        logger.warning("Default config file is missing: %s", DEFAULT_CONFIG)
         _config_default = {}
 
     if config_file:

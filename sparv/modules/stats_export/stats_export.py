@@ -120,7 +120,7 @@ def uninstall_freq_list(
 ):
     """Uninstall word frequency list."""
     remote_file = os.path.join(remote_dir, f"stats_{corpus_id}.csv")
-    logger.info(f"Removing word frequency file {host + ':' if host else ''}{remote_file}")
+    logger.info("Removing word frequency file %s%s", host + ":" if host else "", remote_file)
     util.install.uninstall_path(remote_file, host)
     install_marker.remove()
     marker.write()

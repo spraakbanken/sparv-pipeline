@@ -47,7 +47,7 @@ def install_mysql(host: Optional[str], db_name: str, sqlfile: Union[str, List[st
         elif os.path.getsize(f) < 10:
             logger.info("Skipping empty file: %s (%d/%d)", f, file_count, file_total)
         else:
-            logger.info(f"Installing MySQL database: {db_name}, source: {f} ({file_count}/{file_total})")
+            logger.info("Installing MySQL database: %s, source: %s (%d/%d)", db_name, f, file_count, file_total)
             if not host:
                 subprocess.check_call(
                     f"cat {shlex.quote(f)} | mysql {shlex.quote(db_name)}", shell=True

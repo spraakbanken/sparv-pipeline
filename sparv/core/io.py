@@ -111,7 +111,7 @@ def _write_single_annotation(source_file: str, annotation: str, values, append: 
             ctr += 1
     # Update file modification time even if nothing was written
     os.utime(file_path, None)
-    logger.info(f"Wrote {ctr} items: {source_file + '/' if source_file else ''}{annotation}")
+    logger.info("Wrote %d items: %s%s", ctr, source_file + "/" if source_file else "", annotation)
 
 
 def get_annotation_size(source_file: str, annotation: BaseAnnotation):
@@ -215,7 +215,7 @@ def _read_single_annotation(source_file: str, annotation: str, with_annotation_n
             if isinstance(e, OSError) and str(e) != "Invalid data stream":
                 raise e
             raise_format_error(ann_file)
-    logger.debug(f"Read {ctr} items: {source_file + '/' if source_file else ''}{annotation}")
+    logger.debug("Read %d items: %s%s", ctr, source_file + "/" if source_file else "", annotation)
 
 
 def write_data(source_file: Optional[str], name: Union[BaseAnnotation, str], value: str, append: bool = False):
@@ -228,8 +228,12 @@ def write_data(source_file: Optional[str], name: Union[BaseAnnotation, str], val
         f.write(value)
     # Update file modification time even if nothing was written
     os.utime(file_path, None)
-    logger.info(f"Wrote {len(value)} bytes: {source_file + '/' if source_file else ''}"
-                f"{name.name if isinstance(name, BaseAnnotation) else name}")
+    logger.info(
+        "Wrote %d bytes: %s%s",
+        len(value),
+        source_file + "/" if source_file else "",
+        name.name if isinstance(name, BaseAnnotation) else name
+    )
 
 
 def read_data(source_file: Optional[str], name: Union[BaseAnnotation, str]):
@@ -244,8 +248,12 @@ def read_data(source_file: Optional[str], name: Union[BaseAnnotation, str]):
                 raise e
             raise_format_error(file_path)
 
-    logger.debug(f"Read {len(data)} bytes: {source_file + '/' if source_file else ''}"
-                 f"{name.name if isinstance(name, BaseAnnotation) else name}")
+    logger.debug(
+        "Read %d bytes: %s%s",
+        len(data),
+        source_file + "/" if source_file else "",
+        name.name if isinstance(name, BaseAnnotation) else name
+    )
     return data
 
 

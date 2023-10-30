@@ -70,7 +70,7 @@ def get_model(lang: Language = Language(),
     import stanza
     lang_name = util.misc.get_language_name_by_part3(lang) or lang
     stanza_lang = util.misc.get_language_part1_by_part3(lang)
-    logger.info(f"Downloading Stanza language model for {lang_name}")
+    logger.info("Downloading Stanza language model for %s", lang_name)
     stanza.download(lang=stanza_lang, model_dir=str(resources_file.path.parent), verbose=False,
                     logging_level=logging.WARNING)
     zip_file = Model(f"stanza/{lang}/{stanza_lang}/default.zip")
