@@ -73,6 +73,14 @@ def scrambled(source_file: SourceFilename = SourceFilename(),
     # Reorder chunks
     new_span_positions = util.export.scramble_spans(span_positions, chunk.name, chunk_order)
 
+    # If the scrambled document contains no text, export a document containing just the root node and nothing else (we
+    # need to produce a file, and an empty file would be invalid XML).
+    # Alternatively, we could export the original (span_positions), but then any text outside the scramble_on chunks
+    # would be included, unscrambled, and we don't want to risk that.
+    if not new_span_positions:
+        logger.warning(f"{source_file!r} contains no text after scrambling (using the annotation {chunk.name!r})")
+        new_span_positions = [span_positions[0], span_positions[-1]]
+
     # Construct XML string
     xmlstr = xml_utils.make_pretty_xml(new_span_positions, annotation_dict, export_names, token.name, word_annotation,
                                        fileid_annotation, include_empty_attributes, sparv_namespace, xml_namespaces)

@@ -72,6 +72,7 @@
 - Fixed bug where error messages were not getting written to the log file when the `--log debug`
   flag was used.
 - Fixed bug that prevented Stanza from using GPU.
+- Fixed crash when exporting scrambled XML without any text.
 
 ## [5.1.0] - 2022-11-03
 
