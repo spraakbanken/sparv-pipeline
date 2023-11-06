@@ -87,6 +87,10 @@ class Completer:
                 except EOFError:  # Cache placeholder created but not yet populated
                     pass
 
+            # run-rule includes everything
+            if self.type == "annotate":
+                return [v for t in cache_data.values() for v in t]
+
             return cache_data.get(self.type, [])
 
 

@@ -154,14 +154,14 @@ def update_autocompletion_cache():
         import pickle
 
         # Collect data for cache
-        new_cache = dict.fromkeys(("import", "export", "install", "uninstall", "model"))
+        new_cache = dict.fromkeys(("export", "install", "uninstall", "model"))
         for target_type in new_cache:
             new_cache[target_type] = sorted(
                 [t[0] for t in getattr(snake_storage, f"{target_type}_targets") if not t[0].startswith("custom.")]
             )
 
         new_cache["annotate"] = []
-        for target_type in ("named", "custom"):
+        for target_type in ("named", "custom", "import"):
             new_cache["annotate"].extend(
                 [t[0] for t in getattr(snake_storage, f"{target_type}_targets") if not t[0].startswith("custom.")]
             )
