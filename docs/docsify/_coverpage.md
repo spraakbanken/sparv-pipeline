@@ -2,7 +2,7 @@
 
 # Sparv Pipeline Documentation
 
-> Språkbanken's text analysis tool
+> Språkbanken's analysis platform
 
 <p class="version"> version 5.1.1dev0 </p>
 
