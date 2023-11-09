@@ -1,4 +1,4 @@
-<img class="top-logo" src="_media/sparv.png" height="200">
+<img class="top-logo" src="_media/sparv_detailed.png" height="200">
 
 # Sparv Pipeline Documentation
 

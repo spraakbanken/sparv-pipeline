@@ -61,7 +61,7 @@ author: |
   |
   |
   |
-  | ![](../images/sparv.png){width=2.5cm}  
+  | ![](../images/sparv_detailed.png){width=2.5cm}
 ---
     "
 
