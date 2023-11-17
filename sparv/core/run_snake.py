@@ -5,7 +5,7 @@ import logging
 import sys
 import traceback
 
-from pkg_resources import iter_entry_points
+from importlib.metadata import entry_points
 
 from sparv.core import io, log_handler, paths
 from sparv.core import registry
@@ -16,7 +16,7 @@ plugin_name = "plugin"
 
 # The snakemake variable is provided automatically by Snakemake; the below is just to please the IDE
 try:
-    snakemake
+    snakemake  # noqa
 except NameError:
     from snakemake.script import Snakemake
     snakemake: Snakemake
@@ -96,7 +96,7 @@ if not use_preloader:
             module = importlib.import_module(".".join((modules_path, module_name)))
         except ModuleNotFoundError:
             # Try to find plugin module
-            entry_points = dict((e.name, e) for e in iter_entry_points(f"sparv.{plugin_name}"))
+            entry_points = dict((e.name, e) for e in entry_points(group=f"sparv.{plugin_name}"))
             entry_point = entry_points.get(module_name)
             if entry_point:
                 module = entry_point.load()
