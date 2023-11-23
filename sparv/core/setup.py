@@ -34,6 +34,7 @@ def check_sparv_version() -> Optional[bool]:
 
 def copy_resource_files(data_dir: pathlib.Path):
     """Copy resource files to data dir."""
+    # TODO: Use importlib.resources.files instead once we require Python 3.9
     resources_dir = pathlib.Path(pkg_resources.resource_filename("sparv", "resources"))
 
     for f in resources_dir.rglob("*"):
