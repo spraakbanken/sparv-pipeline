@@ -107,7 +107,10 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
     Returns:
         A list of available module names.
     """
-    from pkg_resources import iter_entry_points, VersionConflict
+    from importlib.metadata import entry_points
+    from packaging.requirements import Requirement
+
+    from sparv import __version__ as sparv_version
 
     modules_full_path = paths.sparv_path / paths.modules_dir
     core_modules_full_path = paths.sparv_path / paths.core_modules_dir
@@ -143,12 +146,29 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
                 add_module_to_registry(m, module_name)
 
     # Search for installed plugins
-    for entry_point in iter_entry_points("sparv.plugin"):
+    for entry_point in entry_points(group="sparv.plugin"):
+        skip = False
         try:
             m = entry_point.load()
-        except VersionConflict as e:
-            console.print(f"[red]:warning-emoji:  The plugin {entry_point.dist} could not be loaded. "
-                          f"It requires {e.req}, but the current installed version is {e.dist}.\n")
+            # Check compatibility with Sparv version
+            for requirement in entry_point.dist.requires:
+                req = Requirement(requirement)
+                if req.name == "sparv-pipeline":
+                    if not sparv_version in req.specifier:
+                        console.print(
+                            f"[red]:warning-emoji:  The plugin {entry_point.name} ({entry_point.dist.name}) could not "
+                            f"be loaded. It requires Sparv version {req.specifier}, but the currently running Sparv "
+                            f"version is {sparv_version}.\n"
+                        )
+                        skip = True
+                    break
+            if skip:
+                continue
+        except Exception as e:
+            console.print(
+                f"[red]:warning-emoji:  The plugin {entry_point.name} ({entry_point.dist.name}) could not be loaded:\n"
+                f"\n    {e}"
+            )
             continue
         add_module_to_registry(m, entry_point.name)
         module_names.append(entry_point.name)
