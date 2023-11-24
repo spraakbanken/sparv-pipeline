@@ -133,6 +133,8 @@ if not use_preloader:
         registry.modules[module_name].functions[f_name]["function"](**parameters)
         if snakemake.params.export_dirs:
             logger.export_dirs(snakemake.params.export_dirs)
+    except KeyboardInterrupt as e:
+        exit_with_error_message("Execution was terminated by an interrupt signal", "sparv.modules." + module_name)
     except SparvErrorMessage as e:
         # Any exception raised here would be printed directly to the terminal, due to how Snakemake runs the script.
         # Instead, we log the error message and exit with a non-zero status to signal to Snakemake that
