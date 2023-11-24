@@ -587,7 +587,16 @@ class LogHandler:
                 # an unexpected exception. Either way, the error message has already been logged, so it doesn't need to
                 # be printed again.
                 self.handled_error = True
-
+            elif "died with <Signals." in msg["msg"]:
+                # The run_snake.py subprocess was killed
+                signal_match = re.search(r"died with <Signals.([A-Z]+)", msg["msg"])
+                self.messages["error"].append(
+                    (
+                        None,
+                        f"A Sparv subprocess was unexpectedly killed due to receiving a {signal_match.group(1)} signal."
+                    )
+                )
+                self.handled_error = True
         elif level == "error":
             if self.pass_through:
                 self.messages["unhandled_error"].append(msg)
