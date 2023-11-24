@@ -183,14 +183,21 @@ the `bin` path inside the Sparv data directory.
 
 
 ## Config
-An instance of this class holds a configuration key name and its default value.
+An instance of this class holds a configuration key name and its default value. The datatype and values allowed can be
+specified, and will be used both for validating the config and when generating the Sparv config JSON schema.
 
 **Arguments:**
 
 - `name`: The name of the configuration key.
 - `default`: An optional default value of the configuration key.
 - `description`: An obligatory description.
-
+- `datatype`: Typehint specifying the allowed datatype(s).
+- `choices`: Iterable with valid choices.
+- `pattern`: Regular expression matching valid values (only for the datatype `str`).
+- `min`: A `float` representing the minimum numeric value.
+- `max`: A `float` representing the maximum numeric value.
+- `const`: Restrict the value to a single value.
+- `conditions`: List of `Config` objects with conditions that must also be met.
 
 ## Corpus
 An instance of this class holds the name (ID) of the corpus.

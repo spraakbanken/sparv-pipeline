@@ -32,6 +32,10 @@ export:
 > has its own section in the file, like the `metadata` and `export` sections in the example above.
 > By using the `sparv modules` command you can get a list of the available configuration keys and their descriptions.
 
+## Config Schema
+Running `sparv schema` will output a JSON schema which can be used in many text editors to validate your config file as
+you are creating it, and in some editors can be used to provide autocompletion.
+
 ## Corpus Config Wizard
 The corpus config wizard is a tool designed to help you create a corpus config file by asking questions about your
 corpus and the annotations you would like Sparv to add to it. Run `sparv wizard` in order to start the tool. When
