@@ -154,6 +154,7 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
             for requirement in entry_point.dist.requires:
                 req = Requirement(requirement)
                 if req.name == "sparv-pipeline":
+                    req.specifier.prereleases = True  # Accept pre-release versions of Sparv
                     if not sparv_version in req.specifier:
                         console.print(
                             f"[red]:warning-emoji:  The plugin {entry_point.name} ({entry_point.dist.name}) could not "
