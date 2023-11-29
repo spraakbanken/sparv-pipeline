@@ -107,7 +107,7 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
     Returns:
         A list of available module names.
     """
-    from importlib.metadata import entry_points
+    from importlib_metadata import entry_points
     from packaging.requirements import Requirement
 
     from sparv import __version__ as sparv_version

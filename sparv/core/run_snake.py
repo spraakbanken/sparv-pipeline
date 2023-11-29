@@ -5,7 +5,7 @@ import logging
 import sys
 import traceback
 
-from importlib.metadata import entry_points
+from importlib_metadata import entry_points
 
 from sparv.core import io, log_handler, paths
 from sparv.core import registry
