@@ -9,19 +9,17 @@ description = "Språkbanken's text analysis tool"
 readme = "README.md"
 requires-python = ">=3.8"
 license.text = "MIT License"
-authors = [
-    { name = "Språkbanken", email = "sb-info@svenska.gu.se" }
-]
+authors = [{ name = "Språkbanken", email = "sb-info@svenska.gu.se" }]
 dependencies = [
     "appdirs==1.4.4",
     "argcomplete==3.0.5",
     "docx2python==1.27.1",
-    "importlib-metadata==6.8.0",  # For Python <3.10 compatibility
+    "importlib-metadata==6.8.0", # For Python <3.10 compatibility
     "jsonschema==4.19.0",
     "nltk==3.8.1",
     "packaging>=21.0",
     "pdfplumber==0.9.0",
-    "protobuf~=3.19.0", # Used by Stanza; see https://github.com/spraakbanken/sparv-pipeline/issues/161
+    "protobuf>=3.19.0,<4.0.0",   # Used by Stanza; see https://github.com/spraakbanken/sparv-pipeline/issues/161
     "pycountry==22.3.5",
     "python-dateutil==2.8.2",
     "python-json-logger==2.0.7",
@@ -30,16 +28,12 @@ dependencies = [
     "rich==13.3.3",
     "snakemake==7.25.0",
     "stanza==1.5.1",
-    "torch>=1.9.1",  # Used by Stanza; see https://github.com/spraakbanken/sparv-pipeline/issues/82
+    "torch>=1.9.1",              # Used by Stanza; see https://github.com/spraakbanken/sparv-pipeline/issues/82
     "typing-inspect==0.8.0",
 ]
 
 [project.optional-dependencies]
-dev = [
-    "pandocfilters==1.5.0",
-    "pytest",
-    "pytest-sugar>=0.9.6",
-]
+dev = ["pandocfilters==1.5.0", "pytest", "pytest-sugar>=0.9.6"]
 
 [project.urls]
 Homepage = "https://github.com/spraakbanken/sparv-pipeline/"
@@ -51,7 +45,7 @@ sparv = "sparv.__main__:main"
 [tool.hatch]
 version.path = "sparv/__init__.py"
 build.include = ["/sparv"]
-publish.index.disable = true  # Require confirmation to publish
+publish.index.disable = true       # Require confirmation to publish
 
 [tool.black]
 line-length = 120
