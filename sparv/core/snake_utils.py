@@ -792,7 +792,7 @@ def get_install_outputs(snake_storage: SnakeStorage, install_types: Optional[Lis
     return install_outputs
 
 
-def get_export_targets(snake_storage, rules, file, wildcards):
+def get_export_targets(snake_storage, workflow: snakemake.Workflow, file, wildcards):
     """Get export targets from sparv_config."""
     all_outputs = []
     config_exports = set(sparv_config.get("export.default", []))
@@ -803,7 +803,7 @@ def get_export_targets(snake_storage, rules, file, wildcards):
             # Get all output files for all source files
             rule_outputs = expand(rule.outputs if not rule.abstract else rule.inputs, file=file, **wildcards)
             # Get Snakemake rule object
-            sm_rule = getattr(rules, rule.rule_name).rule
+            sm_rule = workflow.get_rule(rule.rule_name)
             all_outputs.append((sm_rule if not rule.abstract else None, rule_outputs))
 
     if config_exports:

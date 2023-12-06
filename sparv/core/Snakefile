@@ -119,7 +119,7 @@ def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
         return
 
     # Get Snakemake rule object
-    sm_rule = getattr(rules, rule_storage.rule_name).rule
+    sm_rule = workflow.get_rule(rule_storage.rule_name)
 
     dependencies = rule_storage.outputs if not rule_storage.abstract else rule_storage.inputs
 
@@ -141,7 +141,7 @@ def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
         # Set rule dependencies for every file, so Snakemake knows which rule to use in case of ambiguity.
         # Converting the values of rule_outputs to snakemake.io.IOFile objects is not enough, since file paths must match
         # for that to work (which they don't do once we've expanded the {file} wildcard).
-        this_sm_rule = getattr(rules, rule_storage.target_name).rule
+        this_sm_rule = workflow.get_rule(rule_storage.target_name)
         for f in this_sm_rule.input:
             this_sm_rule.dependencies[f] = sm_rule
 
@@ -441,7 +441,7 @@ rule list_uninstalls:
 
 # Rule for making exports defined in corpus config
 if "export_corpus" in selected_targets:
-    export_targets = snake_utils.get_export_targets(snake_storage, rules,
+    export_targets = snake_utils.get_export_targets(snake_storage, workflow,
         file=snake_utils.get_file_values(config, snake_storage), wildcards=snake_utils.get_wildcard_values(config))
 
     rule export_corpus:

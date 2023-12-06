@@ -501,7 +501,7 @@ class LogHandler:
             lines = msg["msg"].splitlines()[3:]
             total_jobs = lines[-1].split()[1]
             for j in lines[:-1]:
-                job, count, _, _ = j.split()
+                job, count = j.split()
                 if ":" in job and not "::" in job:
                     job = job + "*"  # Differentiate entrypoints from actual rules in the list
                 self.jobs[job.replace("::", ":")] = int(count)
