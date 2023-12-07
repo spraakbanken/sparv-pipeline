@@ -13,13 +13,13 @@ logger = get_logger(__name__)
 MIN_FREQ = 4
 
 
-@modelbuilder("Korp statistic model", language=["swe"], order=1)
+@modelbuilder("Korp statistic model", order=1)
 def download_korp_stats(out: ModelOutput = ModelOutput("saldo/stats.pickle")):
     """Download stats.pickle model."""
     out.download("https://github.com/spraakbanken/sparv-models/raw/master/saldo/stats.pickle")
 
 
-@modelbuilder("Korp statistic model", language=["swe"], order=2)
+@modelbuilder("Korp statistic model", order=2)
 def build_korp_stats(out: ModelOutput = ModelOutput("saldo/stats.pickle"),
                      _saldom: Model = Model("saldo/saldom.xml")):
     """Download Korp's word frequency file and convert it to a model."""

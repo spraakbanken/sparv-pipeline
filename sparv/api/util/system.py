@@ -6,7 +6,7 @@ import shlex
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import sparv.core.paths as paths
 from sparv.api import get_logger, SparvErrorMessage
@@ -144,45 +144,57 @@ def find_binary(name: Union[str, list], search_paths=(), executable: bool = True
     if raise_error:
         err_msg = f"Couldn't find binary: {name[0]}\nSearched in: {', '.join(search_paths)}\n"
         if len(name) > 1:
-            err_msg += f"For binary names: {', '.join(name)}"
+            err_msg += f"for binary names: {', '.join(name)}"
         raise SparvErrorMessage(err_msg)
     else:
         return None
 
 
-def rsync(local, host=None, remote=None):
+def rsync(local: Union[str, Path], host: Optional[str], remote: Union[str, Path]):
     """Transfer files and/or directories using rsync.
 
     When syncing directories, extraneous files in destination dirs are deleted.
     """
-    assert host or remote, "Either 'host' or 'remote' must be set."
-    if remote is None:
-        remote = local
+    assert local and remote, "Both 'local' and 'remote' must be set."
     remote_dir = os.path.dirname(remote)
 
     if os.path.isdir(local):
-        logger.info(f"Copying directory: {local} => {host + ':' if host else ''}{remote}")
+        logger.info("Copying directory: %s => %s%s", local, host + ":" if host else "", remote)
         args = ["--recursive", "--delete", f"{local}/"]
     else:
-        logger.info(f"Copying file: {local} => {host + ':' if host else ''}{remote}")
+        logger.info("Copying file: %s => %s%s", local, host + ":" if host else "", remote)
         args = [local]
 
     if host:
-        subprocess.check_call(["ssh", host, f"mkdir -p '{remote_dir}'"])
+        subprocess.check_call(["ssh", host, f"mkdir -p {shlex.quote(remote_dir)}"])
         subprocess.check_call(["rsync"] + args + [f"{host}:{remote}"])
     else:
-        subprocess.check_call(["mkdir", "-p", f"'{remote_dir}'"])
+        subprocess.check_call(["mkdir", "-p", remote_dir])
         subprocess.check_call(["rsync"] + args + [remote])
 
 
-def remove_path(path, host=None):
+def remove_path(path: Union[str, Path], host: Optional[str] = None):
     """Remove a file or directory, either locally or remotely."""
     assert path, "'path' must not be empty."
     if host:
-        subprocess.check_call(["ssh", host, f"rm -rf {shlex.quote(path)}"])
+        subprocess.check_call(["ssh", host, f"rm -rf {shlex.quote(str(path))}"])
     else:
         p = Path(path)
         if p.is_file():
             p.unlink()
         elif p.is_dir():
             shutil.rmtree(p)
+
+
+def gpus() -> Optional[List[int]]:
+    """Return a list of available GPUs, sorted by free memory in descending order.
+
+    Returns None on failure."""
+
+    try:
+        cmd = ["nvidia-smi", "--query-gpu=memory.free", "--format=csv"]
+        memory_info = subprocess.check_output(cmd).decode().splitlines()[1:]
+        memory = sorted(((int(free.split()[0]), i) for i, free in enumerate(memory_info)), reverse=True)
+        return [i[1] for i in memory]
+    except:
+        return None

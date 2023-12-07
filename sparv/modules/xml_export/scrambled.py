@@ -1,17 +1,36 @@
 """Export annotated corpus data to scrambled xml."""
 
 import os
+from typing import Optional
 
-from sparv.api import (AllSourceFilenames, Annotation, AnnotationData, Config, Corpus, Export, ExportAnnotations,
-                       ExportInput, Namespaces, OutputMarker, SourceAnnotations, SourceFilename, SparvErrorMessage,
-                       exporter, get_logger, installer, util)
+from sparv.api import (
+    AllSourceFilenames,
+    Annotation,
+    AnnotationData,
+    Config,
+    Corpus,
+    Export,
+    ExportAnnotations,
+    ExportInput,
+    MarkerOptional,
+    Namespaces,
+    OutputMarker,
+    SourceAnnotations,
+    SourceFilename,
+    SparvErrorMessage,
+    exporter,
+    get_logger,
+    installer,
+    uninstaller,
+    util
+)
 from . import xml_utils
 
 logger = get_logger(__name__)
 
 
 @exporter("Scrambled XML export", config=[
-    Config("xml_export.scramble_on", description="Annotation to use for scrambling.")
+    Config("xml_export.scramble_on", description="Annotation to use for scrambling.", datatype=str)
 ])
 def scrambled(source_file: SourceFilename = SourceFilename(),
               fileid: AnnotationData = AnnotationData("<fileid>"),
@@ -47,11 +66,20 @@ def scrambled(source_file: SourceFilename = SourceFilename(),
     if chunk not in annotation_list:
         raise SparvErrorMessage(
             "The annotation used for scrambling ({}) needs to be included in the output.".format(chunk))
+    xml_utils.replace_invalid_chars_in_names(export_names)
     span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names,
                                                                      source_file=source_file, split_overlaps=True)
 
     # Reorder chunks
     new_span_positions = util.export.scramble_spans(span_positions, chunk.name, chunk_order)
+
+    # If the scrambled document contains no text, export a document containing just the root node and nothing else (we
+    # need to produce a file, and an empty file would be invalid XML).
+    # Alternatively, we could export the original (span_positions), but then any text outside the scramble_on chunks
+    # would be included, unscrambled, and we don't want to risk that.
+    if not new_span_positions:
+        logger.warning(f"{source_file!r} contains no text after scrambling (using the annotation {chunk.name!r})")
+        new_span_positions = [span_positions[0], span_positions[-1]]
 
     # Construct XML string
     xmlstr = xml_utils.make_pretty_xml(new_span_positions, annotation_dict, export_names, token.name, word_annotation,
@@ -89,15 +117,31 @@ def compressed_scrambled(out: Export = Export("xml_export.combined_scrambled/[me
     xml_utils.compress(xmlfile, out)
 
 
-@installer("Copy compressed scrambled XML to remote host", config=[
-    Config("xml_export.export_scrambled_host", "", description="Remote host to copy scrambled XML export to"),
-    Config("xml_export.export_scrambled_path", "", description="Path on remote host to copy scrambled XML export to")
-])
-def install_scrambled(corpus: Corpus = Corpus(),
-                      bz2file: ExportInput = ExportInput(
-                          "xml_export.combined_scrambled/[metadata.id]_scrambled.xml.bz2"),
-                      out: OutputMarker = OutputMarker("xml_export.install_export_scrambled_marker"),
-                      export_path: str = Config("xml_export.export_scrambled_path"),
-                      host: str = Config("xml_export.export_scrambled_host")):
-    """Copy compressed combined scrambled XML to remote host."""
-    xml_utils.install_compressed_xml(corpus, bz2file, out, export_path, host)
+@installer("Copy compressed scrambled XML to a target path, optionally on a remote host", config=[
+    Config("xml_export.export_scrambled_host", description="Remote host to copy scrambled XML export to", datatype=str),
+    Config("xml_export.export_scrambled_path", description="Target path to copy scrambled XML export to", datatype=str)
+], uninstaller="xml_export:uninstall_scrambled")
+def install_scrambled(
+    corpus: Corpus = Corpus(),
+    bz2file: ExportInput = ExportInput("xml_export.combined_scrambled/[metadata.id]_scrambled.xml.bz2"),
+    marker: OutputMarker = OutputMarker("xml_export.install_export_scrambled_marker"),
+    uninstall_marker: MarkerOptional = MarkerOptional("xml_export.uninstall_export_scrambled_marker"),
+    export_path: str = Config("xml_export.export_scrambled_path"),
+    host: Optional[str] = Config("xml_export.export_scrambled_host")
+):
+    """Copy compressed combined scrambled XML to a target path, optionally on a remote host."""
+    xml_utils.install_compressed_xml(corpus, bz2file, marker, export_path, host)
+    uninstall_marker.remove()
+
+
+@uninstaller("Remove compressed scrambled XML from remote location")
+def uninstall_scrambled(
+    corpus: Corpus = Corpus(),
+    marker: OutputMarker = OutputMarker("xml_export.uninstall_export_scrambled_marker"),
+    install_marker: MarkerOptional = MarkerOptional("xml_export.install_export_scrambled_marker"),
+    export_path: str = Config("xml_export.export_scrambled_path"),
+    host: Optional[str] = Config("xml_export.export_scrambled_host")
+):
+    """Remove compressed XML from remote location."""
+    xml_utils.uninstall_compressed_xml(corpus, marker, export_path, host)
+    install_marker.remove()

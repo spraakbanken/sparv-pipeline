@@ -1,5 +1,82 @@
 # Changelog
 
+## [5.2.0] - 2023-12-07
+
+### Added
+
+- Added support for tab autocompletion in bash.
+- Added importer for PDF files.
+- Added new `misc:inherit` annotator for inheriting attributes.
+- Added `korp.wordpicture_no_sentences` setting to disable generation of Word Picture sentences table.
+- `util.mysql_wrapper` can now execute SQL queries remotely over SSH.
+- Added several uninstallers:
+  - `cwb:uninstall_corpus`
+  - `korp:uninstall_config`
+  - `korp:uninstall_lemgrams`
+  - `korp:uninstall_timespan`
+  - `korp:uninstall_wordpicture`
+  - `stats_export:uninstall_freq_list`
+  - `stats_export:uninstall_sbx_freq_list`
+  - `stats_export:uninstall_sbx_freq_list_date`
+  - `xml_export:uninstall`
+  - `xml_export:uninstall`
+- Added `MarkerOptional` class.
+- Added stats export for Swedish from the 1800s.
+- `korp:wordpicture` table name is now configurable using `korp.wordpicture_table`.
+- Added utility function `util.system.gpus()` which returns a list of GPUs, ordered by free memory in descending order.
+- Sparv will automatically order the GPUs in the environment variable `CUDA_VISIBLE_DEVICES` by the amount of free
+  memory that was available when Sparv started.
+- Stanza now always selects the GPU with the most free memory.
+- The preloader can now be gracefully stopped by sending an interrupt signal to the Sparv process.
+- Added `HeaderAnnotations` and `HeaderAnnotationsAllSourceFiles` classes.
+- Added `korp.keep_undefined_annotations` setting, to include even undefined annotations in the Korp config.
+- Added `dateformat.pre_regex` setting.
+- Added `--json-log` flag to enable JSON format for logging.
+- Added support for restricting a whole module to one or more languages by using the `__language__` variable.
+- Running `sparv schema` will now generate a JSON schema which can be used to validate corpus config files.
+- More strict config validation, including validation of config values and data types.
+- Most Sparv decorators now have a `priority` parameter, to control the order in which functions are run.
+- Added `util.misc.dump_yaml()` utility function for exporting YAML.
+
+### Changed
+
+- Added support for Python 3.10 and 3.11.
+- Dropped support for Python 3.6 and 3.7.
+- `AnnotationAllSourceFiles` now have the same methods as `Annotation`.
+- The util function `install_mysql` can now install locally as well as to a remote server.
+- Pre-built SALDO models are now downloaded instead of being built on demand.
+- `xml_export:install` and `xml_export:install_scrambled` can now install locally.
+- `korp:relations`, `korp:relations_sql` and `korp:install_relations` has been renamed to `korp:wordpicture`,
+  `korp:wordpicture_sql` and `korp:install_wordpicture` respectively.
+- Target path is no longer optional for the utility functions `install_path` and `rsync`.
+- The classes `SourceAnnotations` and `SourceAnnotationsAllSourceFiles` are now pre-parsed, immutable iterables instead
+  of lists that need parsing and expanding.
+- The classes `AllSourceFilenames`, `ExportAnnotations`, `ExportAnnotationsAllSourceFiles` and `ExportAnnotationNames`
+  are now immutable iterables instead of lists.
+- Removed the flags `--rerun-incomplete` and `--mark-complete`, as Sparv will now always rerun incomplete files.
+- Sparv will now recognize when source files have been deleted and trigger the necessary reruns. Previously, only
+  additions and modifications were recognized.
+- Illegal characters are now replaced with underscore in XML element and attribute names during XML export. This also
+  applies to CWB and Korp config exports.
+- Not specifying a corpus language now excludes all language specific annotators.
+- When an unhandled exception occurs, the relevant source document will be displayed in the log.
+- `localhost` as an installation target is no longer handled as if host was omitted.
+- Removed `critical` log level.
+
+### Fixed
+
+- Several bugs fixed in `korp:config`.
+- Fixed bug where Sparv would hang if an error occurred in a preloaded annotator.
+- Fixed occasional crash in `cwb:encode` when old CWB export hadn't been removed first.
+- Fixed bug when using relative socket path while also using `--dir`.
+- Fixed quoting of paths in `util.system.rsync`.
+- It's no longer possible to create an infinite loop of classes referring to each other.
+- Elapsed time exceeding 24 hours no longer gets cut off in the `--stats` output.
+- Fixed bug where error messages were not getting written to the log file when the `--log debug`
+  flag was used.
+- Fixed bug that prevented Stanza from using GPU.
+- Fixed crash when exporting scrambled XML without any text.
+
 ## [5.1.0] - 2022-11-03
 
 ### Added
@@ -89,7 +166,7 @@
     - `korp.remote_cwb_registry` is now called `cwb.remote_registry_dir`
     - `korp.remote_host` has been split into `korp.remote_host` (host for SQL files) and `cwb.remote_host` (host for CWB
        files)
-    - install target `korp:install_corpus` has been renamed and split into `cwb:install_corpus` and 
+    - install target `korp:install_corpus` has been renamed and split into `cwb:install_corpus` and
       `cwb:install_corpus_scrambled`
 - Renamed the following stats exports:
     `stats_export:freq_list` is now called `stats_export:sbx_freq_list`
@@ -200,7 +277,7 @@
   - New plugin system facilitates installation of Sparv plugins (like FreeLing).
 
 - New format for corpus config files
-  - The new format is yaml which is easier to write and more human readable than makefiles.
+  - The new format is yaml which is easier to write and more human-readable than makefiles.
   - There is a command-line wizard which helps you create corpus config files.
   - You no longer have to specify XML elements and attributes that should be kept from the original files. The  XML
     parser now parses all existing elements and their attributes by default. Their original names will be kept and
@@ -229,3 +306,10 @@
 - Improved code modularity
   - Increased independence between modules and language models
   - This facilitates adding new annotation modules and import/export formats.
+
+[5.2.0]: https://github.com/spraakbanken/sparv-pipeline/releases/tag/v5.2.0
+[5.1.0]: https://github.com/spraakbanken/sparv-pipeline/releases/tag/v5.1.0
+[5.0.0]: https://github.com/spraakbanken/sparv-pipeline/releases/tag/v5.0.0
+[4.1.1]: https://github.com/spraakbanken/sparv-pipeline/releases/tag/v4.1.1
+[4.1.0]: https://github.com/spraakbanken/sparv-pipeline/releases/tag/v4.1.0
+[4.0.0]: https://github.com/spraakbanken/sparv-pipeline/releases/tag/v4.0.0

@@ -43,10 +43,7 @@ def annotation_exists(annotation: BaseAnnotation, source_file: Optional[str] = N
 def remove_annotation(annotation: BaseAnnotation, source_file: Optional[str] = None):
     """Remove an annotation file."""
     annotation_path = get_annotation_path(source_file or annotation.source_file, annotation, data=annotation.data)
-    try:
-        annotation_path.unlink()  # TODO: Use missing_ok=True once we require Python 3.8
-    except FileNotFoundError:
-        pass
+    annotation_path.unlink(missing_ok=True)
 
 
 def write_annotation(source_file: str, annotation: BaseOutput, values, append: bool = False,
@@ -114,7 +111,7 @@ def _write_single_annotation(source_file: str, annotation: str, values, append: 
             ctr += 1
     # Update file modification time even if nothing was written
     os.utime(file_path, None)
-    logger.info(f"Wrote {ctr} items: {source_file + '/' if source_file else ''}{annotation}")
+    logger.info("Wrote %d items: %s%s", ctr, source_file + "/" if source_file else "", annotation)
 
 
 def get_annotation_size(source_file: str, annotation: BaseAnnotation):
@@ -135,9 +132,8 @@ def get_annotation_size(source_file: str, annotation: BaseAnnotation):
             with open_annotation_file(ann_file, mode="rb") as f:
                 reader = f.raw.read if hasattr(f, "raw") and hasattr(f.raw, "read") else f.read
                 count += sum(buf.count(b"\n") for buf in _generator(reader))
-        except (OSError, lzma.LZMAError, UnicodeDecodeError) as e:
-            # TODO: Use gzip.BadGzipFile instead of checking for "Not a gzipped file" once we require Python 3.8
-            if isinstance(e, OSError) and not ("Not a gzipped file" in str(e) or str(e) == "Invalid data stream"):
+        except (gzip.BadGzipFile, OSError, lzma.LZMAError, UnicodeDecodeError) as e:
+            if isinstance(e, OSError) and str(e) != "Invalid data stream":
                 raise e
             raise_format_error(ann_file)
 
@@ -215,12 +211,11 @@ def _read_single_annotation(source_file: str, annotation: str, with_annotation_n
                     value = re.sub(r"((?<!\\)(?:\\\\)*)\\n", r"\1\n", value).replace(r"\\", "\\")
                 yield value if not with_annotation_name else (value, annotation)
                 ctr += 1
-        except (OSError, lzma.LZMAError, UnicodeDecodeError) as e:
-            # TODO: Use gzip.BadGzipFile instead of checking for "Not a gzipped file" once we require Python 3.8
-            if isinstance(e, OSError) and not ("Not a gzipped file" in str(e) or str(e) == "Invalid data stream"):
+        except (gzip.BadGzipFile, OSError, lzma.LZMAError, UnicodeDecodeError) as e:
+            if isinstance(e, OSError) and str(e) != "Invalid data stream":
                 raise e
             raise_format_error(ann_file)
-    logger.debug(f"Read {ctr} items: {source_file + '/' if source_file else ''}{annotation}")
+    logger.debug("Read %d items: %s%s", ctr, source_file + "/" if source_file else "", annotation)
 
 
 def write_data(source_file: Optional[str], name: Union[BaseAnnotation, str], value: str, append: bool = False):
@@ -233,8 +228,12 @@ def write_data(source_file: Optional[str], name: Union[BaseAnnotation, str], val
         f.write(value)
     # Update file modification time even if nothing was written
     os.utime(file_path, None)
-    logger.info(f"Wrote {len(value)} bytes: {source_file + '/' if source_file else ''}"
-                f"{name.name if isinstance(name, BaseAnnotation) else name}")
+    logger.info(
+        "Wrote %d bytes: %s%s",
+        len(value),
+        source_file + "/" if source_file else "",
+        name.name if isinstance(name, BaseAnnotation) else name
+    )
 
 
 def read_data(source_file: Optional[str], name: Union[BaseAnnotation, str]):
@@ -244,14 +243,17 @@ def read_data(source_file: Optional[str], name: Union[BaseAnnotation, str]):
     with open_annotation_file(file_path) as f:
         try:
             data = f.read()
-        except (OSError, lzma.LZMAError, UnicodeDecodeError) as e:
-            # TODO: Use gzip.BadGzipFile instead of checking for "Not a gzipped file" once we require Python 3.8
-            if isinstance(e, OSError) and not ("Not a gzipped file" in str(e) or str(e) == "Invalid data stream"):
+        except (gzip.BadGzipFile, OSError, lzma.LZMAError, UnicodeDecodeError) as e:
+            if isinstance(e, OSError) and str(e) != "Invalid data stream":
                 raise e
             raise_format_error(file_path)
 
-    logger.debug(f"Read {len(data)} bytes: {source_file + '/' if source_file else ''}"
-                 f"{name.name if isinstance(name, BaseAnnotation) else name}")
+    logger.debug(
+        "Read %d bytes: %s%s",
+        len(data),
+        source_file + "/" if source_file else "",
+        name.name if isinstance(name, BaseAnnotation) else name
+    )
     return data
 
 

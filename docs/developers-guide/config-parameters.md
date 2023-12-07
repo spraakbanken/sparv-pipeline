@@ -38,7 +38,7 @@ the decorator belonging to that same function, but the declaration may be done i
 Sparv function, or even a different module.
 
 Please note that it is mandatory to set a description for each declared config parameter. These descriptions are
-displayed to the user when lising modules with the `sparv modules` command.
+displayed to the user when listing modules with the `sparv modules` command.
 
 
 ## Config hierarchy
@@ -47,8 +47,8 @@ When Sparv processes the corpus configuration it will look for config values in 
 priority order:
 1. the corpus configuration file
 2. a parent corpus configuration file
-2. the default configuration file in the [Sparv data directory](user-manual/installation-and-setup.md#setting-up-sparv)
-3. config default values defined in the Sparv decorators (as shown above)
+3. the default configuration file in the [Sparv data directory](user-manual/installation-and-setup.md#setting-up-sparv)
+4. config default values defined in the Sparv decorators (as shown above)
 
 This means that if a config parameter is given a default value in a Sparv decorator it can be overridden by the default
 configuration file which in turn can be overridden by the user's corpus config file.

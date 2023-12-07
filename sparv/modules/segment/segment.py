@@ -183,7 +183,7 @@ def build_tokenlist(saldo_model: Model = Model("saldo/saldo.pickle"),
     wordforms = set()
 
     # Skip strings already handled by the tokenizer.
-    # Also skip words ending in comma (used by some multi word expressions in SALDO).
+    # Also skip words ending in comma (used by some multi-word expressions in SALDO).
     with open(saldo_model.path, "rb") as F:
         lexicon = pickle.load(F)
         for w in lexicon:
@@ -205,7 +205,7 @@ def train_punkt_segmenter(textfiles, modelfile, encoding=util.constants.UTF8, pr
         textfiles = textfiles.split()
 
     logger.info("Reading files")
-    text = u""
+    text = ""
     for filename in textfiles:
         with open(filename, encoding=encoding) as stream:
             text += stream.read()

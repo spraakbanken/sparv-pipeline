@@ -30,7 +30,6 @@ build/
 dist/
 *.egg-info/
 *.egg
-MANIFEST*
 
 # Unit test / coverage reports
 .pytest_cache/

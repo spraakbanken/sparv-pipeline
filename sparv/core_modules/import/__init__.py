@@ -4,13 +4,18 @@ from sparv.api import Config, wizard
 from sparv.core import paths, registry
 
 __config__ = [
-    Config("import.text_annotation", description="Annotation representing a text"),
-    Config("import.source_dir", paths.source_dir, description="Directory containing corpus source files"),
-    Config("import.importer", description="Name of importer to use"),
-    Config("import.keep_control_chars", False, description="Set to True to keep control characters"),
-    Config("import.normalize", "NFC", description="Normalize input using any of the following forms: "
-                                                  "'NFC', 'NFKC', 'NFD', and 'NFKD'"),
-    Config("import.encoding", "UTF-8", description="Encoding of source files"),
+    Config("import.text_annotation", description="Annotation representing a text", datatype=str),
+    Config("import.source_dir", paths.source_dir, description="Directory containing corpus source files", datatype=str),
+    Config("import.importer", description="Name of importer to use", datatype=str),
+    Config("import.keep_control_chars", False, description="Set to True to keep control characters", datatype=bool),
+    Config(
+        "import.normalize",
+        default="NFC",
+        description="Normalize input using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'",
+        datatype=str,
+        choices=("NFC", "NFKC", "NFD", "NFKD"),
+    ),
+    Config("import.encoding", "UTF-8", description="Encoding of source files", datatype=str),
 ]
 
 

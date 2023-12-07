@@ -1,3 +1,58 @@
 [build-system]
-requires = ["setuptools >= 40.1.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sparv-pipeline"
+dynamic = ["version"]
+description = "Språkbanken's text analysis tool"
+readme = "README.md"
+requires-python = ">=3.8"
+license.text = "MIT License"
+authors = [
+    { name = "Språkbanken", email = "sb-info@svenska.gu.se" }
+]
+dependencies = [
+    "appdirs==1.4.4",
+    "argcomplete==3.1.6",
+    "docx2python==1.27.1",
+    "importlib-metadata==6.8.0", # For Python <3.10 compatibility
+    "jsonschema==4.20.0",
+    "nltk==3.8.1",
+    "packaging>=21.0",
+    "pdfplumber==0.10.3",
+    "protobuf>=3.19.0,<4.0.0",   # Used by Stanza; see https://github.com/spraakbanken/sparv-pipeline/issues/161
+    "pycountry==22.3.5",
+    "python-dateutil==2.8.2",
+    "python-json-logger==2.0.7",
+    "PyYAML==6.0.1",
+    "questionary==1.10.0",
+    "rich==13.7.0",
+    "snakemake==7.32.3",
+    "stanza==1.5.1",
+    "torch>=1.9.1",              # Used by Stanza; see https://github.com/spraakbanken/sparv-pipeline/issues/82
+    "typing-inspect==0.9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pandocfilters==1.5.0",
+    "pytest",
+    "pytest-sugar>=0.9.6",
+]
+
+[project.urls]
+Homepage = "https://github.com/spraakbanken/sparv-pipeline/"
+Documentation = "https://spraakbanken.gu.se/sparv/"
+
+[project.scripts]
+sparv = "sparv.__main__:main"
+
+[tool.hatch]
+version.path = "sparv/__init__.py"
+build.include = ["/sparv"]
+publish.index.disable = true       # Require confirmation to publish
+
+[tool.black]
+line-length = 120
+target-version = ["py38", "py39", "py310"]

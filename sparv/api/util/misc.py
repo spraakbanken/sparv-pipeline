@@ -1,95 +1,56 @@
 """Misc util functions."""
 
 import pathlib
-import re
 import unicodedata
-from collections import OrderedDict, defaultdict
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Union
+
+import pycountry
+import yaml
 
 from sparv.api import get_logger
-from sparv.api.classes import Annotation, Model
+from sparv.api.classes import Model
+from sparv.core.misc import parse_annotation_list  # noqa
 
 logger = get_logger(__name__)
 
 
-def parse_annotation_list(annotation_names: Optional[List[str]], all_annotations: Optional[List[str]] = None,
-                          add_plain_annotations: bool = True) -> List[Tuple[str, Optional[str]]]:
-    """Take a list of annotation names and possible export names, and return a list of tuples.
+def dump_yaml(data: dict, resolve_alias: bool = False, sort_keys: bool = False, indent: int = 2) -> str:
+    """Convert a dict to a YAML document string.
 
-    Each list item will be split into a tuple by the string ' as '.
-    Each tuple will contain 2 elements. If there is no ' as ' in the string, the second element will be None.
-
-    If there is an element called '...' everything from all_annotations will be included in the result, except for
-    the elements that are prefixed with 'not '.
-
-    If an annotation occurs more than once in the list, only the last occurrence will be kept. Similarly, if an
-    annotation is first included and then excluded (using 'not') it will be excluded from the result.
-
-    If a plain annotation (without attributes) is excluded, all its attributes will be excluded as well.
-
-    Plain annotations (without attributes) will be added if needed, unless add_plain_annotations is set to False.
-    Make sure to disable add_plain_annotations if the annotation names may include classes or config variables.
+    Args:
+        data: The data to be dumped.
+        resolve_alias: Will replace aliases with their anchor's content if set to True.
+        sort_keys: Whether to sort the keys alphabetically.
+        indent: Number of spaces used for indentation.
     """
-    if all_annotations is None:
-        all_annotations = []
-    if not annotation_names:
-        return [(a, None) for a in all_annotations]
 
-    plain_annotations = set()
-    possible_plain_annotations = set()
-    omit_annotations = set()
-    include_rest = False
-    plain_to_atts = defaultdict(list)
+    class IndentDumper(yaml.SafeDumper):
+        """Customized YAML dumper that indents lists."""
 
-    result: OrderedDict = OrderedDict()
-    for a in annotation_names:
-        # Check if this annotation should be omitted
-        if a.startswith("not ") and " as " not in a:
-            omit_annotations.add(a[4:])
-        elif a == "...":
-            include_rest = True
-        else:
-            name, _, export_name = a.partition(" as ")
-            if not re.match(r"^<[^>]+>$", name):  # Prevent splitting class names
-                plain_name, attr = Annotation(name).split()
-            else:
-                plain_name, attr = None, None
-            result.pop(name, None)
-            result[name] = export_name or None
-            if attr:
-                possible_plain_annotations.add(plain_name)
-                plain_to_atts[plain_name].append(name)
-            else:
-                plain_annotations.add(name)
+        def increase_indent(self, flow=False, indentless=False):
+            """Force indentation."""
+            return super(IndentDumper, self).increase_indent(flow)
 
-    # If only exclusions have been listed, include rest of annotations
-    if omit_annotations and not result:
-        include_rest = True
+    def str_representer(dumper, data):
+        """Custom string representer for prettier multiline strings."""
+        if "\n" in data:  # Check for multiline string
+            return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+        return dumper.represent_scalar("tag:yaml.org,2002:str", data)
 
-    # Add all_annotations to result if required
-    if include_rest and all_annotations:
-        for a in [a for a in all_annotations if not a in omit_annotations]:
-            if a not in result:
-                result[a] = None
-                plain_name, _ = Annotation(a).split()
-                plain_to_atts[plain_name].append(a)
-                plain_annotations.add(plain_name)
+    def obj_representer(dumper, data):
+        """Custom representer to cast subclasses of str to strings."""
+        return dumper.represent_scalar("tag:yaml.org,2002:str", str(data))
 
-    # Add annotations names without attributes to result if required
-    if add_plain_annotations:
-        for a in sorted(possible_plain_annotations.difference(plain_annotations)):
-            if a not in result:
-                result[a] = None
+    yaml.representer.SafeRepresenter.add_representer(str, str_representer)
+    yaml.representer.SafeRepresenter.add_multi_representer(str, obj_representer)
 
-    # Remove any exclusions from final list
-    if omit_annotations:
-        for annotation in omit_annotations:
-            result.pop(annotation, None)
-            # If we're excluding a plain annotation, also remove all attributes connected to it
-            for a in plain_to_atts[annotation]:
-                result.pop(a, None)
+    if resolve_alias:
+        # Resolve aliases and replace them with their anchors' contents
+        yaml.SafeDumper.ignore_aliases = lambda *args: True
 
-    return list(result.items())
+    return yaml.dump(
+        data, sort_keys=sort_keys, allow_unicode=True, Dumper=IndentDumper, indent=indent, default_flow_style=False
+    )
 
 
 # TODO: Split into two functions: one for Sparv-internal lists of values, and one used by the CWB module to create the
@@ -213,3 +174,15 @@ def indent_xml(elem, level=0, indentation="  ") -> None:
     else:
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
+
+
+def get_language_name_by_part3(part3: str) -> Optional[str]:
+    """Return language name in English given an ISO 639-3 code."""
+    lang = pycountry.languages.get(alpha_3=part3)
+    return lang.name if lang else None
+
+
+def get_language_part1_by_part3(part3: str) -> Optional[str]:
+    """Return ISO 639-1 code given an ISO 639-3 code."""
+    lang = pycountry.languages.get(alpha_3=part3)
+    return lang.alpha_2 if lang else None

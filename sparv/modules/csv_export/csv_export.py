@@ -1,6 +1,7 @@
 """CSV file export."""
 
 import os
+from typing import List
 
 from sparv.api import (Annotation, Config, SourceFilename, Export, ExportAnnotations, SourceAnnotations, exporter, get_logger,
                        util)
@@ -9,11 +10,14 @@ logger = get_logger(__name__)
 
 
 @exporter("CSV export", config=[
-    Config("csv_export.delimiter", default="\t", description="Delimiter separating fields."),
-    Config("csv_export.source_annotations",
-           description="List of annotations and attributes from the source data to include. Everything will be "
-                       "included by default."),
-    Config("csv_export.annotations", description="Sparv annotations to include.")
+    Config("csv_export.delimiter", default="\t", description="Delimiter separating fields.", datatype=str),
+    Config(
+        "csv_export.source_annotations",
+        description="List of annotations and attributes from the source data to include. Everything will be "
+                    "included by default.",
+        datatype=List[str],
+    ),
+    Config("csv_export.annotations", description="Sparv annotations to include.", datatype=List[str])
 ])
 def csv(source_file: SourceFilename = SourceFilename(),
         out: Export = Export("csv_export/{file}.csv"),

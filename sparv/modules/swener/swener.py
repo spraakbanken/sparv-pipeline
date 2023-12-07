@@ -14,7 +14,7 @@ TOK_SEP = " "
 
 
 @annotator("Named entity tagging with SweNER", language=["swe"],
-           config=[Config("swener.binary", default="hfst-swener", description="SweNER executable")])
+           config=[Config("swener.binary", default="hfst-swener", description="SweNER executable", datatype=str)])
 def annotate(out_ne: Output = Output("swener.ne", cls="named_entity", description="Named entity segments from SweNER"),
              out_ne_ex: Output = Output("swener.ne:swener.ex", description="Named entity expressions from SweNER"),
              out_ne_type: Output = Output("swener.ne:swener.type", cls="named_entity:type",

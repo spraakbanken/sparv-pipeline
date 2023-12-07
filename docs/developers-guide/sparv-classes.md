@@ -8,7 +8,7 @@ the available Sparv classes, their arguments, properties, and public methods.
 
 
 ## AllSourceFilenames
-An instance of this class holds a list with the names of all source files. It is typically used by exporter
+An instance of this class holds an iterable with the names of all source files. It is typically used by exporter
 functions that combine annotations from all source files.
 
 
@@ -33,6 +33,9 @@ annotation is needed as input for a function, e.g. `Annotation("<token:word>")`.
 - `exists()`: Return True if annotation file exists.
 - `remove()`: Remove annotation file.
 - `read(allow_newlines: bool = False)`: Yield each line from the annotation.
+- `read_spans(decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
+- `read_attributes(annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]], with_annotation_name: bool =
+  False, allow_newlines: bool = False)`: Yield tuples of multiple attributes on the same annotation.
 - `get_children(child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False)`: Return two lists.
     The first one is a list with n (= total number of parents) elements where every element is a list of indices in the
     child annotation. The second one is a list of orphans, i.e. containing indices in the child annotation that have no
@@ -43,16 +46,13 @@ annotation is needed as input for a function, e.g. `Annotation("<token:word>")`.
   elements where every element is an index in the parent annotation. Return None when no parent is found.
 - `read_parents_and_children(parent, child)`: Read parent and child annotations. Reorder them according to span
   position, but keep original index information.
-- `read_attributes(annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]], with_annotation_name: bool =
-  False, allow_newlines: bool = False)`: Yield tuples of multiple attributes on the same annotation.
-- `read_spans(decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
 - `create_empty_attribute()`: Return a list filled with None of the same size as this annotation.
 - `get_size()`: Get the number of values.
 
 
 ## AnnotationAllSourceFiles
 Regular annotation but the source filename must be specified for all actions. Use as input to an annotator function to
-require the specificed annotation for every source file in the corpus.
+require the specified annotation for every source file in the corpus.
 
 **Arguments:**
 
@@ -60,17 +60,30 @@ require the specificed annotation for every source file in the corpus.
 
 **Properties:**
 
+- `has_attribute`: Return True if the annotation has an attribute.
 - `annotation_name`: Get annotation name (excluding name of any attribute).
-- `attribute_name`: Get attribute name (excluding name of annotation)
+- `attribute_name`: Get attribute name (excluding name of annotation).
 
 **Methods:**
 
 - `split()`: Split name into annotation name and attribute.
-- `read(source_file: str)`: Yield each line from the annotation.
-- `read_spans(source_file: str, decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
-- `create_empty_attribute(source_file: str)`: Return a list filled with None of the same size as this annotation.
 - `exists(source_file: str)`: Return True if annotation file exists.
 - `remove(source_file: str)`: Remove annotation file.
+- `read(source_file: str, allow_newlines: bool = False)`: Yield each line from the annotation.
+- `read_spans(source_file: str, decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
+- `read_attributes(source_file: str, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]], with_annotation_name: bool =
+  False, allow_newlines: bool = False)`: Yield tuples of multiple attributes on the same annotation.
+- `get_children(source_file: str, child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False)`: Return two lists.
+    The first one is a list with n (= total number of parents) elements where every element is a list of indices in the
+    child annotation. The second one is a list of orphans, i.e. containing indices in the child annotation that have no
+    parent. Both parents and children are sorted according to their position in the source file, unless
+    preserve_parent_annotation_order is set to True, in which case the parents keep the order from the parent
+    annotation.
+- `get_parents(source_file: str, parent: BaseAnnotation, orphan_alert: bool = False)`: Return a list with n (= total number of children)
+  elements where every element is an index in the parent annotation. Return None when no parent is found.
+- `read_parents_and_children(source_file: str, parent, child)`: Read parent and child annotations. Reorder them according to span
+  position, but keep original index information.
+- `create_empty_attribute(source_file: str)`: Return a list filled with None of the same size as this annotation.
 - `get_size(source_file: str)`: Get the number of values.
 
 
@@ -131,7 +144,7 @@ This class represents an annotation holding arbitrary data, i.e. data that is no
 
 ## AnnotationDataAllSourceFiles
 Like [`AnnotationData`](#annotationdata), this class is used for annotations holding arbitrary data but the source file
-must be specified for all actions. Use as input to an annotator to require the specificed annotation for every source
+must be specified for all actions. Use as input to an annotator to require the specified annotation for every source
 file in the corpus.
 
 **Arguments:**
@@ -170,14 +183,21 @@ the `bin` path inside the Sparv data directory.
 
 
 ## Config
-An instance of this class holds a configuration key name and its default value.
+An instance of this class holds a configuration key name and its default value. The datatype and values allowed can be
+specified, and will be used both for validating the config and when generating the Sparv config JSON schema.
 
 **Arguments:**
 
 - `name`: The name of the configuration key.
 - `default`: An optional default value of the configuration key.
 - `description`: An obligatory description.
-
+- `datatype`: Typehint specifying the allowed datatype(s).
+- `choices`: Iterable with valid choices.
+- `pattern`: Regular expression matching valid values (only for the datatype `str`).
+- `min`: A `float` representing the minimum numeric value.
+- `max`: A `float` representing the maximum numeric value.
+- `const`: Restrict the value to a single value.
+- `conditions`: List of `Config` objects with conditions that must also be met.
 
 ## Corpus
 An instance of this class holds the name (ID) of the corpus.
@@ -197,8 +217,8 @@ An instance of this class represents an export file. This class is used to defin
 
 
 ## ExportAnnotations
-List of annotations to be included in the export. This list is defined in the corpus configuration. Annotation files
-for the current source file will automatically be added as dependencies when using this class.
+Iterable with annotations to be included in the export. This list is defined in the corpus configuration.
+Annotation files for the current source file will automatically be added as dependencies when using this class.
 
 **Arguments:**
 
@@ -206,8 +226,8 @@ for the current source file will automatically be added as dependencies when usi
 
 
 ## ExportAnnotationsAllSourceFiles
-List of annotations to be included in the export. This list is defined in the corpus configuration. Annotation files
-for _all_ source files will automatically be added as dependencies when using this class.
+Iterable with annotations to be included in the export. This list is defined in the corpus configuration.
+Annotation files for _all_ source files will automatically be added as dependencies when using this class.
 
 **Arguments:**
 
@@ -215,7 +235,7 @@ for _all_ source files will automatically be added as dependencies when using th
 
 
 ## ExportAnnotationNames
-List of annotations to be included in the export. This list is defined in the corpus configuration. Unlike
+Iterable with annotations to be included in the export. This list is defined in the corpus configuration. Unlike
 `ExportAnnotations`, the annotations will not be added as dependencies when using this class.
 
 **Arguments:**
@@ -231,6 +251,25 @@ function.
 
 - `val`: The export directory and filename pattern (e.g. `"xml_export.pretty/[xml_export.filename]"`).
 - `all_files`: Set to `True` to get the export for all source files. Default: `False`
+
+
+## HeaderAnnotations
+Iterable containing header annotations from the source to be included in the export. This list is defined in the corpus
+configuration.
+
+**Arguments:**
+
+- `config_name`: The config variable pointing out what header annotations to include.
+
+
+## HeaderAnnotationsAllSourceFiles
+Iterable containing header annotations from the source to be included in the export. This list is defined in the corpus
+configuration. This differs from `HeaderAnnotations` in that the header annotations file (created by using
+`Headers`) of _every_ source file will be added as dependencies.
+
+**Arguments:**
+
+- `config_name`: The config variable pointing out what source annotations to include.
 
 
 ## Headers
@@ -249,7 +288,7 @@ List of header annotation names for a given source file.
 
 
 ## Language
-In instance of this class holds information about the luanguage of the corpus. This information is retrieved from the
+In instance of this class holds information about the language of the corpus. This information is retrieved from the
 corpus configuration and is specified as ISO 639-3 code.
 
 
@@ -266,6 +305,11 @@ been run. Created by using `OutputMarker`.
 - `read()`: Read arbitrary corpus level string data from marker file.
 - `exists()`: Return True if marker file exists.
 - `remove()`: Remove marker file.
+
+
+## MarkerOptional
+Same as `Marker`, but if the marker file doesn't exist, it won't be created. This is mainly used to remove markers
+from connected (un)installers without triggering the connected (un)installation.
 
 
 ## Model
@@ -428,7 +472,7 @@ An instance of this class holds a path to the directory containing input files.
 
 
 ## SourceAnnotations
-List of source annotations to be included in the export. This list is defined in the corpus configuration.
+Iterable containing source annotations to be included in the export. This list is defined in the corpus configuration.
 
 **Arguments:**
 
@@ -436,8 +480,8 @@ List of source annotations to be included in the export. This list is defined in
 
 
 ## SourceAnnotationsAllSourceFiles
-List of source annotations to be included in the export. This list is defined in the corpus configuration. This
-differs from `SourceAnnotations` in that the source annotations structure file (created by using `SourceStructure`)
+Iterable containing source annotations to be included in the export. This list is defined in the corpus configuration.
+This differs from `SourceAnnotations` in that the source annotations structure file (created by using `SourceStructure`)
 of _every_ source file will be added as dependencies.
 
 **Arguments:**

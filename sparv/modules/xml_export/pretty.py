@@ -1,27 +1,60 @@
 """Export annotated corpus data to pretty-printed xml."""
 
 import os
+from typing import List, Optional
 
-from sparv.api import (AllSourceFilenames, Annotation, AnnotationData, Config, Corpus, Export, ExportAnnotations,
-                       ExportInput, Namespaces, OutputMarker, SourceAnnotations, SourceFilename, exporter,
-                       get_logger, installer, util)
-
+from sparv.api import (
+    AllSourceFilenames,
+    Annotation,
+    AnnotationData,
+    Config,
+    Corpus,
+    Export,
+    ExportAnnotations,
+    ExportInput,
+    HeaderAnnotations,
+    MarkerOptional,
+    Namespaces,
+    OutputMarker,
+    SourceAnnotations,
+    SourceFilename,
+    exporter,
+    get_logger,
+    installer,
+    uninstaller,
+    util
+)
 from . import xml_utils
 
 logger = get_logger(__name__)
 
 
 @exporter("XML export with one token element per line", config=[
-    Config("xml_export.filename", default="{file}_export.xml",
-           description="Filename pattern for resulting XML files, with '{file}' representing the source name."),
-    Config("xml_export.annotations", description="Sparv annotations to include."),
-    Config("xml_export.source_annotations",
-           description="List of annotations and attributes from the source data to include. Everything will be "
-                       "included by default."),
-    Config("xml_export.header_annotations",
-           description="List of headers from the source data to include. All headers will be included by default."),
-    Config("xml_export.include_empty_attributes", False,
-           description="Whether to include attributes even when they are empty.")
+    Config(
+        "xml_export.filename",
+        default="{file}_export.xml",
+        description="Filename pattern for resulting XML files, with '{file}' representing the source name.",
+        datatype=str,
+        pattern=r".*\{file\}.*"
+    ),
+    Config("xml_export.annotations", description="Sparv annotations to include.", datatype=List[str]),
+    Config(
+        "xml_export.source_annotations",
+        description="List of annotations and attributes from the source data to include. Everything will be included "
+                    "by default.",
+        datatype=List[str]
+    ),
+    Config(
+        "xml_export.header_annotations",
+        description="List of headers from the source data to include. All headers will be included by default.",
+        datatype=List[str],
+    ),
+    Config(
+        "xml_export.include_empty_attributes",
+        default=False,
+        description="Whether to include attributes even when they are empty.",
+        datatype=bool,
+    )
 ])
 def pretty(source_file: SourceFilename = SourceFilename(),
            fileid: AnnotationData = AnnotationData("<fileid>"),
@@ -30,7 +63,7 @@ def pretty(source_file: SourceFilename = SourceFilename(),
            word: Annotation = Annotation("[export.word]"),
            annotations: ExportAnnotations = ExportAnnotations("xml_export.annotations"),
            source_annotations: SourceAnnotations = SourceAnnotations("xml_export.source_annotations"),
-           header_annotations: SourceAnnotations = SourceAnnotations("xml_export.header_annotations"),
+           header_annotations: HeaderAnnotations = HeaderAnnotations("xml_export.header_annotations"),
            remove_namespaces: bool = Config("export.remove_module_namespaces", False),
            sparv_namespace: str = Config("export.sparv_namespace"),
            source_namespace: str = Config("export.source_namespace"),
@@ -74,8 +107,9 @@ def pretty(source_file: SourceFilename = SourceFilename(),
     if token not in annotation_list:
         logger.warning("The 'xml_export:pretty' export requires the <token> annotation for the output to include the "
                        "source text. Make sure to add <token> to the list of export annotations.")
-    h_annotations, h_export_names = util.export.get_header_names(header_annotations, source_file=source_file)
+    h_annotations, h_export_names = util.export.get_header_names(header_annotations, xml_namespaces)
     export_names.update(h_export_names)
+    xml_utils.replace_invalid_chars_in_names(export_names)
     span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names, h_annotations,
                                                                      source_file=source_file, split_overlaps=True)
     xmlstr = xml_utils.make_pretty_xml(span_positions, annotation_dict, export_names, token_name, word_annotation,
@@ -88,10 +122,18 @@ def pretty(source_file: SourceFilename = SourceFilename(),
 
 
 @exporter("Combined XML export (all results in one file)", config=[
-    Config("xml_export.filename_combined", default="[metadata.id].xml",
-           description="Filename of resulting combined XML."),
-    Config("xml_export.include_version_info", default=True,
-           description="Whether to include annotation version info in the combined XML.")
+    Config(
+        "xml_export.filename_combined",
+        default="[metadata.id].xml",
+        description="Filename of resulting combined XML.",
+        datatype=str,
+    ),
+    Config(
+        "xml_export.include_version_info",
+        default=True,
+        description="Whether to include annotation version info in the combined XML.",
+        datatype=bool,
+    )
 ])
 def combined(corpus: Corpus = Corpus(),
              out: Export = Export("xml_export.combined/[xml_export.filename_combined]"),
@@ -107,8 +149,12 @@ def combined(corpus: Corpus = Corpus(),
 
 
 @exporter("Compressed combined XML export", config=[
-    Config("xml_export.filename_compressed", default="[metadata.id].xml.bz2",
-           description="Filename of resulting compressed combined XML.")
+    Config(
+        "xml_export.filename_compressed",
+        default="[metadata.id].xml.bz2",
+        description="Filename of resulting compressed combined XML.",
+        datatype=str,
+    )
 ])
 def compressed(out: Export = Export("xml_export.combined/[xml_export.filename_compressed]"),
                xmlfile: ExportInput = ExportInput("xml_export.combined/[xml_export.filename_combined]")):
@@ -116,14 +162,31 @@ def compressed(out: Export = Export("xml_export.combined/[xml_export.filename_co
     xml_utils.compress(xmlfile, out)
 
 
-@installer("Copy compressed XML to remote host", config=[
-    Config("xml_export.export_host", "", description="Remote host to copy XML export to."),
-    Config("xml_export.export_path", "", description="Path on remote host to copy XML export to.")
-])
-def install(corpus: Corpus = Corpus(),
-            bz2file: ExportInput = ExportInput("xml_export.combined/[xml_export.filename_compressed]"),
-            out: OutputMarker = OutputMarker("xml_export.install_export_pretty_marker"),
-            export_path: str = Config("xml_export.export_path"),
-            host: str = Config("xml_export.export_host")):
-    """Copy compressed combined XML to remote host."""
-    xml_utils.install_compressed_xml(corpus, bz2file, out, export_path, host)
+@installer("Copy compressed XML to a target path, optionally on a remote host", config=[
+    Config("xml_export.export_host", description="Remote host to copy XML export to", datatype=str),
+    Config("xml_export.export_path", description="Target path to copy XML export to", datatype=str)
+], uninstaller="xml_export:uninstall")
+def install(
+    corpus: Corpus = Corpus(),
+    bz2file: ExportInput = ExportInput("xml_export.combined/[xml_export.filename_compressed]"),
+    marker: OutputMarker = OutputMarker("xml_export.install_export_pretty_marker"),
+    uninstall_marker: MarkerOptional = MarkerOptional("xml_export.uninstall_export_pretty_marker"),
+    export_path: str = Config("xml_export.export_path"),
+    host: Optional[str] = Config("xml_export.export_host")
+):
+    """Copy compressed XML to a target path, optionally on a remote host."""
+    xml_utils.install_compressed_xml(corpus, bz2file, marker, export_path, host)
+    uninstall_marker.remove()
+
+
+@uninstaller("Remove compressed XML from remote location")
+def uninstall(
+    corpus: Corpus = Corpus(),
+    marker: OutputMarker = OutputMarker("xml_export.uninstall_export_pretty_marker"),
+    install_marker: MarkerOptional = MarkerOptional("xml_export.install_export_pretty_marker"),
+    export_path: str = Config("xml_export.export_path"),
+    host: Optional[str] = Config("xml_export.export_host")
+):
+    """Remove compressed XML from remote location."""
+    xml_utils.uninstall_compressed_xml(corpus, marker, export_path, host)
+    install_marker.remove()

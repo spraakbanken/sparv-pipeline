@@ -31,7 +31,7 @@ def annotate(sense: Annotation = Annotation("<token:sense>"),
     """
     if not lexicon:
         lexicon = util.misc.PickledLexicon(model.path)
-    # Otherwise use pre-loaded lexicon (from catapult)
+    # Otherwise use preloaded lexicon (from catapult)
 
     result_scores = []
     result_labels = []

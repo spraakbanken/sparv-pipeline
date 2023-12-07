@@ -5,7 +5,7 @@ import logging
 import sys
 import traceback
 
-from pkg_resources import iter_entry_points
+from importlib_metadata import entry_points
 
 from sparv.core import io, log_handler, paths
 from sparv.core import registry
@@ -16,7 +16,7 @@ plugin_name = "plugin"
 
 # The snakemake variable is provided automatically by Snakemake; the below is just to please the IDE
 try:
-    snakemake
+    snakemake  # noqa
 except NameError:
     from snakemake.script import Snakemake
     snakemake: Snakemake
@@ -88,22 +88,22 @@ if not use_preloader:
         name = module_name[len(custom_name) + 1:]
         module_path = paths.corpus_dir.resolve() / f"{name}.py"
         spec = importlib.util.spec_from_file_location(module_name, module_path)
-        m = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(m)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
     else:
         try:
             # Try to import standard Sparv module
             module = importlib.import_module(".".join((modules_path, module_name)))
         except ModuleNotFoundError:
             # Try to find plugin module
-            entry_points = dict((e.name, e) for e in iter_entry_points(f"sparv.{plugin_name}"))
+            entry_points = dict((e.name, e) for e in entry_points(group=f"sparv.{plugin_name}"))
             entry_point = entry_points.get(module_name)
             if entry_point:
-                entry_point.load()
+                module = entry_point.load()
             else:
                 exit_with_error_message(
                     f"Couldn't load plugin '{module_name}'. Please make sure it was installed correctly.", "sparv")
-
+    registry.add_module_to_registry(module, module_name, skip_language_check=True)
 
 # Get function name and parameters
 f_name = snakemake.params.f_name
@@ -133,16 +133,20 @@ if not use_preloader:
         registry.modules[module_name].functions[f_name]["function"](**parameters)
         if snakemake.params.export_dirs:
             logger.export_dirs(snakemake.params.export_dirs)
+    except KeyboardInterrupt as e:
+        exit_with_error_message("Execution was terminated by an interrupt signal", "sparv.modules." + module_name)
     except SparvErrorMessage as e:
         # Any exception raised here would be printed directly to the terminal, due to how Snakemake runs the script.
         # Instead, we log the error message and exit with a non-zero status to signal to Snakemake that
         # something went wrong.
         exit_with_error_message(e.message, "sparv.modules." + module_name)
     except Exception as e:
-        errmsg = f"An error occurred while executing {module_name}:{f_name}:"
+        current_file = f" for the file {snakemake.params.source_file!r}" if snakemake.params.source_file else ""
+        errmsg = f"An error occurred while executing {module_name}:{f_name}{current_file}:" \
+                 f"\n\n  {type(e).__name__}: {e}"
         if logger.level > logging.DEBUG:
-            errmsg += f"\n\n  {type(e).__name__}: {e}\n\n" \
-                      "To display further details when errors occur, run Sparv with the '--log debug' argument."
+            errmsg += f"\n\nTo display further details when errors occur, run Sparv with the '--log debug' or " \
+                      "'--log-to-file debug' arguments."
         logger.error(errmsg)
         logger.debug(traceback.format_exc())
         sys.exit(123)

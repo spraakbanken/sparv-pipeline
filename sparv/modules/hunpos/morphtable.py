@@ -29,30 +29,25 @@ def saldo_morphtable(out: ModelOutput = ModelOutput("hunpos/saldo_suc-tags.morph
     """Create a morphtable file for use with Hunpos.
 
     A morphtable contains wordforms from SALDO's morphology (with accompanying tags) which are missing in SUC3.
-    Since the morphtable is case sensitive, both the original form and a capitalized form
+    Since the morphtable is case-sensitive, both the original form and a capitalized form
     is saved.
 
     Args:
-        out (str, optional): Resulting morphtable file to be written.
-            Defaults to ModelOutput("hunpos/saldo_suc-tags.morphtable").
-        saldo_model (str, optional): Path to a pickled SALDO model.
-            Defaults to Model("saldo/saldo.pickle").
-        suc (str, optional): Tab-separated file with wordforms from SUC, containing: frequency, wordform, tag.
-            Defaults to Model("hunpos/suc3_morphtable.words").
-        morphtable_base (str, optional): Existing morphtable file, whose contents will be included in the new one.
-            Defaults to Model("hunpos/suc.morphtable").
-        morphtable_patterns (str, optional): Optional file with regular expressions.
-            Defaults to Model("hunpos/suc.patterns").
-        add_capitalized (bool, optional): Whether or not capitalized word forms should be added. Defaults to True.
-        add_lowercase (bool, optional): Whether or not lower case word forms should be added. Defaults to False.
+        out: Resulting morphtable file to be written.
+        saldo_model: Path to a pickled SALDO model.
+        suc: Tab-separated file with wordforms from SUC, containing: frequency, wordform, tag.
+        morphtable_base: Existing morphtable file, whose contents will be included in the new one.
+        morphtable_patterns: Optional file with regular expressions.
+        add_capitalized: Whether capitalized word forms should be added.
+        add_lowercase: Whether lower case word forms should be added.
     """
     lex = saldo.SaldoLexicon(saldo_model.path)
     tags = defaultdict(set)
 
-    # Get all wordforms from SALDO
+    # Get all word forms from SALDO
     for word in list(lex.lexicon.keys()):
         words = lex.lookup(word)
-        # Filter out multi word expressions
+        # Filter out multi-word expressions
         words = [x for x in words if len(x[2]) == 0]
         if words:
             # Only use MSD not containing "-"

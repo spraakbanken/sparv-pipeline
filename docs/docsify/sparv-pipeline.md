@@ -26,4 +26,4 @@ Cite Sparv: *[Martin Hammarstedt, Anne Schumacher, Lars Borin, Markus Forsberg (
 >  <img src="_media/watch-releases.png" />
 > </p> -->
 >
-> Depending on your [notification settings](https://github.com/settings/notifications) you will now recieve notifications about new Sparv releases on GitHub's website, via email or on your phone.
+> Depending on your [notification settings](https://github.com/settings/notifications) you will now receive notifications about new Sparv releases on GitHub's website, via email or on your phone.

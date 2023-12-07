@@ -1,4 +1,4 @@
-"""Map different POS (or MSD) tags to simple Universal Depenendy POS (UPOS) tags.
+"""Map different POS (or MSD) tags to simple Universal Dependency POS (UPOS) tags.
 
 http://universaldependencies.org/u/pos/all.html
 """
@@ -27,7 +27,7 @@ FALLBACK = "X"
 
 
 def pos_to_upos(pos, lang, tagset):
-    """Map POS tags to Universal Depenendy POS tags."""
+    """Map POS tags to Universal Dependency POS tags."""
     if (lang, tagset) in CONVERTERS:
         lang_convert = CONVERTERS[(lang, tagset)]
         return lang_convert(pos)

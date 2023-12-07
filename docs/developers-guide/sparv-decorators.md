@@ -17,6 +17,8 @@ tokens, sentences, parts of speeches etc.) and outputs one or more new annotatio
 - `description`: Description of the annotator. Used for displaying help texts in the CLI.
 - `config`: List of Config instances defining config options for the annotator.
 - `language`: List of supported languages. If no list is supplied all languages are supported.
+- `priority`: Functions with higher priority will be preferred when scheduling which functions to run. The default
+  priority is 0.
 - `order`: If several annotators have the same output, this integer value will help decide which to try to use first. A
   lower number indicates higher priority.
 - `wildcards`: List of wildcards used in the annotator function's arguments.
@@ -83,7 +85,7 @@ def parse(source_file: SourceFilename = SourceFilename(),
 ## @exporter
 A function decorated with `@exporter` is used to produce "final" output (also called export), typically combining
 information from multiple annotations into one file. Output produced by an exporter is usually not used as input in any
-another module. An export can consist of one file per input corpus file or it can combine information from all input
+another module. An export can consist of one file per input corpus file, or it can combine information from all input
 files into one output file.
 
 **Arguments:**
@@ -92,6 +94,8 @@ files into one output file.
 - `name`: Optional name to use instead of the function name.
 - `config`: List of Config instances defining config options for the exporter.
 - `language`: List of supported languages. If no list is supplied all languages are supported.
+- `priority`: Functions with higher priority will be preferred when scheduling which functions to run. The default
+  priority is 0.
 - `order`: If several exporters have the same output, this integer value will help decide which to try to use first. A
   lower number indicates higher priority.
 - `abstract`: Set to True if this exporter has no output.
@@ -120,7 +124,8 @@ the XML output could be copied to a web server, or SQL data could be inserted in
 Every installer needs to create a marker of the type `OutputMarker` at the end of a successful installation. Simply
 call the `write()` method on the marker to create the required empty file.
 
-It is recommended that an installer removes any related uninstaller's marker, to enable uninstallation.
+It is recommended that an installer removes any related uninstaller's marker, to enable uninstallation. Use the
+`MarkerOptional` class to refer to the uninstaller's marker without triggering an unnecessary installation.
 
 **Arguments:**
 
@@ -128,19 +133,21 @@ It is recommended that an installer removes any related uninstaller's marker, to
 - `name`: Optional name to use instead of the function name.
 - `config`: List of Config instances defining config options for the installer.
 - `language`: List of supported languages. If no list is supplied all languages are supported.
+- `priority`: Functions with higher priority will be preferred when scheduling which functions to run. The default
+  priority is 0.
 - `uninstaller`: Name of related uninstaller.
 
 **Example:**
 ```python
 @installer("Copy compressed XML to remote host", config=[
-    Config("xml_export.export_host", "", description="Remote host to copy XML export to."),
-    Config("xml_export.export_path", "", description="Path on remote host to copy XML export to.")
+    Config("xml_export.export_host", description="Remote host to copy XML export to."),
+    Config("xml_export.export_path", description="Path on remote host to copy XML export to.")
 ])
 def install(corpus: Corpus = Corpus(),
             xmlfile: ExportInput = ExportInput("xml_export.combined/[metadata.id].xml.bz2"),
             out: OutputMarker = OutputMarker("xml_export.install_export_pretty_marker"),
             export_path: str = Config("xml_export.export_path"),
-            host: str = Config("xml_export.export_host")):
+            host: Optional[str] = Config("xml_export.export_host")):
     ...
 ```
 
@@ -151,7 +158,8 @@ remote location or delete corpus data from a database.
 Every uninstaller needs to create a marker of the type `OutputMarker` at the end of a successful uninstallation.
 Simply call the `write()` method on the marker to create the required empty file.
 
-It is recommended that an uninstaller removes any related installer's marker, to enable re-installation.
+It is recommended that an uninstaller removes any related installer's marker, to enable re-installation. Use the
+`MarkerOptional` class to refer to the installer's marker without triggering an unnecessary installation.
 
 **Arguments:**
 
@@ -159,25 +167,27 @@ It is recommended that an uninstaller removes any related installer's marker, to
 - `name`: Optional name to use instead of the function name.
 - `config`: List of Config instances defining config options for the uninstaller.
 - `language`: List of supported languages. If no list is supplied all languages are supported.
+- `priority`: Functions with higher priority will be preferred when scheduling which functions to run. The default
+  priority is 0.
 
 **Example:**
 ```python
 @uninstaller("Remove compressed XML from remote host", config=[
-    Config("xml_export.export_host", "", description="Remote host to remove XML export from."),
-    Config("xml_export.export_path", "", description="Path on remote host to remove XML export from.")
+    Config("xml_export.export_host", description="Remote host to remove XML export from."),
+    Config("xml_export.export_path", description="Path on remote host to remove XML export from.")
 ])
 def uninstall(corpus: Corpus = Corpus(),
               xmlfile: ExportInput = ExportInput("xml_export.combined/[metadata.id].xml.bz2"),
               out: OutputMarker = OutputMarker("xml_export.uninstall_export_pretty_marker"),
               export_path: str = Config("xml_export.export_path"),
-              host: str = Config("xml_export.export_host")):
+              host: Optional[str] = Config("xml_export.export_host")):
     ...
 ```
 
 ## @modelbuilder
-A function decorated with `@modelbuilder` is used to setup a model used by other Sparv components (typically
+A function decorated with `@modelbuilder` is used to set up a model used by other Sparv components (typically
 annotators). Setting up a model could for example mean downloading a file, unzipping it, converting it into a different
-format and saving it in Sparv's data directory. A model is usually not specific to one corpus. Once a model is setup on
+format and saving it in Sparv's data directory. A model is usually not specific to one corpus. Once a model is set up on
 your system it will be available for any corpus.
 
 **Arguments:**
@@ -186,6 +196,8 @@ your system it will be available for any corpus.
 - `name`: Optional name to use instead of the function name.
 - `config`: List of Config instances defining config options for the installer.
 - `language`: List of supported languages. If no list is supplied all languages are supported.
+- `priority`: Functions with higher priority will be preferred when scheduling which functions to run. The default
+  priority is 0.
 - `order`: If several modelbuilders have the same output, this integer value will help decide which to try to use first.
   A lower number indicates higher priority.
 
@@ -203,7 +215,7 @@ A function decorated with `@wizard` is used to generate questions for the corpus
 
 - `config_keys`: a list of config keys to be set or changed by this function.
 - `source_structure`: Set to `True` if the function needs access to a `SourceStructureParser` instance (the one holding
-  information on the structure of the source files. Default: `False`
+  information on the structure of the source files). Default: `False`
 
 **Example:**
 ```python

@@ -1,6 +1,6 @@
 # Writing Sparv Plugins
-The Sparv Pipeline is comprised of different modules like importers, annotators and exporters. Although many modules are
-shipped with the main Sparv package none of these modules are hard-coded into the Sparv Pipeline and therefore it can
+The Sparv Pipeline is made up of different modules like importers, annotators and exporters. Although many modules are
+shipped with the main Sparv package, none of these modules are hard-coded into the Sparv Pipeline, and therefore it can
 easily be extended with plugins. A plugin is a Sparv module that is not part of the main Sparv package. Writing a plugin
 is the recommended way of adding a new module to Sparv.
 
@@ -22,43 +22,44 @@ sparv-sbx-uppercase/
 │   ├── uppercase.py
 │   └── __init__.py
 ├── LICENSE
-├── README.md
-└── setup.py
+├── pyproject.toml
+└── README.md
 ```
 
 In the above example the `sbx_uppercase` directory is a Sparv module containing the [module code](#module-code) in
-`uppercase.py` and the mandatory [init file](#init-file) `__init__.py`. The [setup file](#setup-file) `setup.py` in the
-root directory is needed in order to install the plugin.
+`uppercase.py` and the mandatory [init file](#init-file) `__init__.py`. The [project file](#pyprojecttoml)
+`pyproject.toml` in the root directory is needed in order to install the plugin.
 
-The readme and license files are not strictly necessary for the plugin to work but we strongly recommend that you
+The readme and license files are not strictly necessary for the plugin to work, but we strongly recommend that you
 include these if you want to publish your plugin.
 
 
-## Setup File
-The `setup.py` is needed in order to install a plugin and connect it to the Sparv Pipeline. Here is a minimal example of
-a setup file (taken from the [Sparv plugin template](https://github.com/spraakbanken/sparv-plugin-template)):
-```python
-import setuptools
-
-setuptools.setup(
-    name="sparv-sbx-uppercase",
-    version="0.1",
-    description="Uppercase converter (example plug-in for Sparv)",
-    license="MIT",
-    packages=["sbx_uppercase"],
-    python_requires=">=3.6",
-    install_requires=["sparv-pipeline>=4,<5"],
-    entry_points={"sparv.plugin": ["sbx_uppercase = sbx_uppercase"]}
-)
+## pyproject.toml
+The `pyproject.toml` file is needed in order to install a plugin and connect it to the Sparv Pipeline. Here is a minimal
+example of a project file (taken from the [Sparv plugin template](https://github.com/spraakbanken/sparv-plugin-template)):
+```toml
+[project]
+name = "sparv-sbx-uppercase"
+version = "0.1.0"
+description = "Uppercase converter (example plug-in for Sparv)"
+readme = "README.md"
+license.text = "MIT License"
+dependencies = [
+    "sparv-pipeline~=5.0"
+]
+entry-points."sparv.plugin" = { sbx_uppercase = "sbx_uppercase" }
 ```
 
-Make sure to include the name of your module (i.e. the directory containing the Sparv code) in `packages`. You also need
-to make sure that there is a `sparv.plugin` entry point in `entry_points` that points to your module.
+Make sure that there is a `sparv.plugin` entry point in `project.entry-points` that points to your module (the directory
+containing the code). It is also a good idea to add `sparv-pipeline` to the list of dependencies, specifying which major
+version of Sparv the plugin is developed for, as it might not be compatible with future major versions.
+`"sparv-pipeline~=5.0"` under `dependencies` means that the plugin is compatible with any version of Sparv 5, but not
+Sparv 6.
 
-We strongly encourage you to also include the fields `author` and `author_email`.
+We strongly encourage you to also include the `project.authors` field.
 
-For more information about Python setup scripts check the [distutils
-documentation](https://docs.python.org/3/distutils/setupscript.html).
+For more information about `pyproject.toml` check the [Python Packaging User Guide
+](https://packaging.python.org/en/latest/specifications/declaring-project-metadata/).
 
 
 ## Init File
@@ -200,6 +201,7 @@ def uppercase(word: Annotation = Annotation("<token:word>"),
     ...
 ```
 
+
 ## Languages and varieties
 It is possible to restrict the use of an annotator, exporter, installer or modelbuilder to one or more specific
 language(s). This is done by passing a list of ISO 639-3 language codes to the optional `language` parameter in the
@@ -212,6 +214,9 @@ def ...
 Sparv functions are only available for use if one of their languages match the language in the [corpus config
 file](user-manual/corpus-configuration.md). If no language codes are provided in the decorator, the function is
 available for any corpus.
+
+You may also restrict a whole module, instead of just parts of a module, to one or more languages, by assigning a list
+of language codes to the `__language__` variable in the module's `__init__.py` file.
 
 Sparv also supports language varieties which is useful when you want to write Sparv functions for a specific variety of
 a language. For instance, Sparv has some built-in annotators that are restricted to corpora with historical Swedish from
@@ -235,7 +240,7 @@ you should be able to inject your plugin into the Sparv Pipeline code using pipx
 pipx inject sparv-pipeline [pointer-to-sparv-plugin]
 ```
 
-So if you are trying to install the `sparv-sbx-uppercase` plugin and it exists on PyPI you can install it like this:
+So if you are trying to install the `sparv-sbx-uppercase` plugin and it exists on PyPI, you can install it like this:
 ```
 pipx inject sparv-pipeline sparv-sbx-uppercase
 ```
@@ -327,7 +332,7 @@ This annotator uses a model. It also has an extra argument called `model_preload
 an already loaded model. In the decorator we point out the preloader function using the `preloader` parameter.
 `preloader_params` is a list of parameter names from the annotator, which the preloader needs as arguments. In this
 case it's only one: the `model` parameter. `preloader_target` points to a single parameter name of the annotator, which
-is the one that will recieve the return value from the preloader function.
+is the one that will receive the return value from the preloader function.
 
 When using the `sparv preload` command with this annotator, the preloader function will be run only once, and every
 time the annotator is used, it will get the preloaded model via the `model_preloaded` parameter.

@@ -3,16 +3,34 @@
 import os
 import xml.etree.ElementTree as etree
 
-from sparv.api import (AnnotationData, Config, Export, ExportAnnotations, Namespaces, SourceAnnotations, SourceFilename,
-                       SparvErrorMessage, Text, exporter, get_logger, util)
+from sparv.api import (
+    AnnotationData,
+    Config,
+    Export,
+    ExportAnnotations,
+    HeaderAnnotations,
+    Namespaces,
+    SourceAnnotations,
+    SourceFilename,
+    SparvErrorMessage,
+    Text,
+    exporter,
+    get_logger,
+    util
+)
 from . import xml_utils
 
 logger = get_logger(__name__)
 
 
 @exporter("XML export preserving whitespaces from source file", config=[
-    Config("xml_export.filename_formatted", default="{file}_export.xml",
-           description="Filename pattern for resulting XML files, with '{file}' representing the source name.")
+    Config(
+        "xml_export.filename_formatted",
+        default="{file}_export.xml",
+        description="Filename pattern for resulting XML files, with '{file}' representing the source name.",
+        datatype=str,
+        pattern=r".*\{file\}.*",
+    )
 ])
 def preserved_format(source_file: SourceFilename = SourceFilename(),
                      text: Text = Text(),
@@ -20,7 +38,7 @@ def preserved_format(source_file: SourceFilename = SourceFilename(),
                      out: Export = Export("xml_export.preserved_format/[xml_export.filename_formatted]"),
                      annotations: ExportAnnotations = ExportAnnotations("xml_export.annotations"),
                      source_annotations: SourceAnnotations = SourceAnnotations("xml_export.source_annotations"),
-                     header_annotations: SourceAnnotations = SourceAnnotations("xml_export.header_annotations"),
+                     header_annotations: HeaderAnnotations = HeaderAnnotations("xml_export.header_annotations"),
                      remove_namespaces: bool = Config("export.remove_module_namespaces", False),
                      sparv_namespace: str = Config("export.sparv_namespace"),
                      source_namespace: str = Config("export.source_namespace"),
@@ -57,8 +75,9 @@ def preserved_format(source_file: SourceFilename = SourceFilename(),
                                                                         sparv_namespace=sparv_namespace,
                                                                         source_namespace=source_namespace,
                                                                         xml_mode=True)
-    h_annotations, h_export_names = util.export.get_header_names(header_annotations, source_file=source_file)
+    h_annotations, h_export_names = util.export.get_header_names(header_annotations, xml_namespaces)
     export_names.update(h_export_names)
+    xml_utils.replace_invalid_chars_in_names(export_names)
     span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names, h_annotations,
                                                                      source_file=source_file, flatten=False, split_overlaps=True)
     sorted_positions = [(pos, span[0], span[1]) for pos, spans in sorted(span_positions.items()) for span in spans]

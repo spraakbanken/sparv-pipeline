@@ -3,8 +3,10 @@
 import re
 from typing import Optional
 
-from sparv.api import (Annotation, Binary, Config, Model, ModelOutput, Output, SparvErrorMessage, annotator, get_logger,
-                       modelbuilder, util)
+from sparv.api import (
+    Annotation, Binary, Config, Model, ModelOutput, Output, SparvErrorMessage, annotator, get_logger,
+    modelbuilder, util
+)
 from sparv.api.util.tagsets import tagmappings
 
 logger = get_logger(__name__)
@@ -101,7 +103,6 @@ def postag(out: Output = Output("<token>:hunpos.pos", cls="token:pos", descripti
 def hunpos_model(model: ModelOutput = ModelOutput("hunpos/suc3_suc-tags_default-setting_utf8.model"),
                  binary: Binary = Binary("[hunpos.binary]")):
     """Download the Hunpos model."""
-    from sys import platform
 
     def test_hunpos(model):
         stdin = TOK_SEP.join(["jag", "och", "du"]) + SENT_SEP

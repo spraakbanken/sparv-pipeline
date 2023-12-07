@@ -40,9 +40,9 @@ export:
     # Set to false if module name spaces should be kept in the export (e.g. 'pos' will be called 'hunpos.pos')
     remove_module_namespaces: true
     # A string representing the name space to be added to all annotations created by Sparv
-    sparv_namespace: Null
+    sparv_namespace:
     # A string representing the name space to be added to all annotations present in the source
-    source_namespace: Null
+    source_namespace:
 
 # Common settings for XML exporters
 # xml_export:

@@ -1,24 +1,33 @@
 """Import module for docx source files."""
 
 import unicodedata
+from typing import Optional
 
 from docx2python import docx2python
 from docx2python.iterators import iter_at_depth
 
-from sparv.api import Config, SourceFilename, Output, Source, SourceStructure, Text, importer, util
-
+from sparv.api import Config, SourceFilename, Output, Source, SourceStructure, Text, importer, util, SparvErrorMessage
 
 
 @importer("docx import", file_extension="docx", outputs=["text"], text_annotation="text", config=[
-    Config("docx_import.prefix", "", description="Optional prefix to add to annotation names."),
-    Config("docx_import.keep_control_chars", False, description="Set to True if control characters should not be "
-                                                                "removed from the text."),
-    Config("docx_import.normalize", "NFC", description="Normalize input using any of the following forms: "
-                                                       "'NFC', 'NFKC', 'NFD', and 'NFKD'.")
+    Config("docx_import.prefix", description="Optional prefix to add to annotation names.", datatype=str),
+    Config(
+        "docx_import.keep_control_chars",
+        default=False,
+        description="Set to True if control characters should not be removed from the text.",
+        datatype=bool,
+    ),
+    Config(
+        "docx_import.normalize",
+        default="NFC",
+        description="Normalize input using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.",
+        datatype=str,
+        choices=("NFC", "NFKC", "NFD", "NFKD"),
+    )
 ])
 def parse(source_file: SourceFilename = SourceFilename(),
           source_dir: Source = Source(),
-          prefix: str = Config("docx_import.prefix"),
+          prefix: Optional[str] = Config("docx_import.prefix"),
           keep_control_chars: bool = Config("docx_import.keep_control_chars"),
           normalize: str = Config("docx_import.normalize")) -> None:
     """Parse docx file as input to the Sparv Pipeline.
@@ -32,7 +41,10 @@ def parse(source_file: SourceFilename = SourceFilename(),
             'NFC' is used by default.
     """
     source_file_path = source_dir.get_path(source_file, ".docx")
-    d = docx2python(source_file_path)
+    try:
+        d = docx2python(source_file_path)
+    except Exception as e:
+        raise SparvErrorMessage(f"Failed to parse docx file '{source_file}'. {type(e).__name__}: {e}")
 
     # Extract all text from the body, ignoring headers and footers
     text = "\n\n".join(iter_at_depth(d.body, 4))

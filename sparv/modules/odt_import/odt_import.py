@@ -3,22 +3,33 @@
 import unicodedata
 import xml.etree.ElementTree as etree
 import zipfile
+from typing import Optional
 
-from sparv.api import Config, SourceFilename, Output, Source, SourceStructure, Text, get_logger, importer, util
+from sparv.api import (Config, Output, Source, SourceFilename, SourceStructure, SparvErrorMessage, Text, get_logger,
+                       importer, util)
 
 logger = get_logger(__name__)
 
 
 @importer("odt import", file_extension="odt", outputs=["text"], text_annotation="text", config=[
-    Config("odt_import.prefix", "", description="Optional prefix to add to annotation names."),
-    Config("odt_import.keep_control_chars", False, description="Set to True if control characters should not be "
-                                                                "removed from the text."),
-    Config("odt_import.normalize", "NFC", description="Normalize input using any of the following forms: "
-                                                       "'NFC', 'NFKC', 'NFD', and 'NFKD'.")
+    Config("odt_import.prefix", description="Optional prefix to add to annotation names.", datatype=str),
+    Config(
+        "odt_import.keep_control_chars",
+        default=False,
+        description="Set to True if control characters should not be removed from the text.",
+        datatype=bool
+    ),
+    Config(
+        "odt_import.normalize",
+        default="NFC",
+        description="Normalize input using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.",
+        datatype=str,
+        choices=("NFC", "NFKC", "NFD", "NFKD"),
+    )
 ])
 def parse(source_file: SourceFilename = SourceFilename(),
           source_dir: Source = Source(),
-          prefix: str = Config("odt_import.prefix"),
+          prefix: Optional[str] = Config("odt_import.prefix"),
           keep_control_chars: bool = Config("odt_import.keep_control_chars"),
           normalize: str = Config("odt_import.normalize")) -> None:
     """Parse odt file as input to the Sparv Pipeline.
@@ -34,7 +45,10 @@ def parse(source_file: SourceFilename = SourceFilename(),
     source_file_path = str(source_dir.get_path(source_file, ".odt"))
 
     # Parse odt and extract all text content
-    text = OdtParser(source_file_path).text
+    try:
+        text = OdtParser(source_file_path).text
+    except Exception as e:
+        raise SparvErrorMessage(f"Failed to parse odt file '{source_file}'. {type(e).__name__}: {e}")
 
     if not keep_control_chars:
         text = util.misc.remove_control_characters(text)

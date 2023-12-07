@@ -1,8 +1,25 @@
 """SBX specific annotation and export functions related to the stats export."""
+import os
+from typing import Optional
 
-from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Config, Export, ExportInput, Output,
-                       OutputMarker, annotator, exporter, get_logger, installer, util)
-
+from sparv.api import (
+    AllSourceFilenames,
+    Annotation,
+    AnnotationAllSourceFiles,
+    Config,
+    Corpus,
+    Export,
+    ExportInput,
+    MarkerOptional,
+    Output,
+    OutputMarker,
+    annotator,
+    exporter,
+    get_logger,
+    installer,
+    uninstaller,
+    util
+)
 from .stats_export import freq_list
 
 logger = get_logger(__name__)
@@ -77,22 +94,17 @@ def sbx_freq_list(
     """Create a word frequency list for the entire corpus.
 
     Args:
-        source_files (list, optional): The source files belonging to this corpus. Defaults to AllSourceFilenames.
-        word (str, optional): Word annotations. Defaults to AnnotationAllSourceFiles("<token:word>").
-        token (str, optional): Token span annotations. Defaults to AnnotationAllSourceFiles("<token>").
-        msd (str, optional): MSD annotations. Defaults to AnnotationAllSourceFiles("<token:msd>").
-        baseform (str, optional): Annotations with first baseform from each set.
-            Defaults to AnnotationAllSourceFiles("<token:baseform>").
-        sense (str, optional): Best sense annotations. Defaults to AnnotationAllSourceFiles("<token:sense>").
-        lemgram (str, optional): Annotations with first lemgram from each set.
-            Defaults to AnnotationAllSourceFiles("<token>:saldo.lemgram").
-        complemgram (str, optional): Conditional best compound lemgram annotations.
-            Defaults to AnnotationAllSourceFiles("<token>:saldo.complemgram").
-        out (str, optional): The output word frequency file.
-            Defaults to Export("stats_export.frequency_list_sbx/[metadata.id].csv").
-        delimiter (str, optional): Column delimiter to use in the csv. Defaults to Config("stats_export.delimiter").
-        cutoff (int, optional): The minimum frequency a word must have in order to be included in the result.
-            Defaults to Config("stats_export.cutoff").
+        source_files: The source files belonging to this corpus.
+        word: Word annotations.
+        token: Token span annotations.
+        msd: MSD annotations.
+        baseform: Annotations with first baseform from each set.
+        sense: Best sense annotations.
+        lemgram: Annotations with first lemgram from each set.
+        complemgram: Conditional best compound lemgram annotations.
+        out: The output word frequency file.
+        delimiter: Column delimiter to use in the csv.
+        cutoff: The minimum frequency a word must have in order to be included in the result.
     """
     annotations = [(word, "token"), (msd, "POS"), (baseform, "lemma"), (sense, "SALDO sense"), (lemgram, "lemgram"),
                    (complemgram, "compound")]
@@ -119,23 +131,18 @@ def sbx_freq_list_date(
     """Create a word frequency list for the entire corpus.
 
     Args:
-        source_files (list, optional): The source files belonging to this corpus. Defaults to AllSourceFilenames.
-        word (str, optional): Word annotations. Defaults to AnnotationAllSourceFiles("<token:word>").
-        token (str, optional): Token span annotations. Defaults to AnnotationAllSourceFiles("<token>").
-        msd (str, optional): MSD annotations. Defaults to AnnotationAllSourceFiles("<token:msd>").
-        baseform (str, optional): Annotations with first baseform from each set.
-            Defaults to AnnotationAllSourceFiles("<token:baseform>").
-        sense (str, optional): Best sense annotations. Defaults to AnnotationAllSourceFiles("<token:sense>").
-        lemgram (str, optional): Annotations with first lemgram from each set.
-            Defaults to AnnotationAllSourceFiles("<token>:saldo.lemgram").
-        complemgram (str, optional): Conditional best compound lemgram annotations.
-            Defaults to AnnotationAllSourceFiles("<token>:saldo.complemgram").
-        date (str, optional): date annotation
-        out (str, optional): The output word frequency file.
-            Defaults to Export("stats_export.frequency_list_sbx_date/[metadata.id].csv").
-        delimiter (str, optional): Column delimiter to use in the csv. Defaults to Config("stats_export.delimiter").
-        cutoff (int, optional): The minimum frequency a word must have in order to be included in the result.
-            Defaults to Config("stats_export.cutoff").
+        source_files: The source files belonging to this corpus.
+        word: Word annotations.
+        token: Token span annotations.
+        msd: MSD annotations.
+        baseform: Annotations with first baseform from each set.
+        sense: Best sense annotations.
+        lemgram: Annotations with first lemgram from each set.
+        complemgram: Conditional best compound lemgram annotations.
+        date: date annotation
+        out: The output word frequency file.
+        delimiter: Column delimiter to use in the csv.
+        cutoff: The minimum frequency a word must have in order to be included in the result.
     """
     annotations = [(word, "token"), (msd, "POS"), (baseform, "lemma"), (sense, "SALDO sense"), (lemgram, "lemgram"),
                    (complemgram, "compound"), (date, "date")]
@@ -178,7 +185,30 @@ def sbx_freq_list_simple(
               out=out, sparv_namespace="", source_namespace="", delimiter=delimiter, cutoff=cutoff)
 
 
-@exporter("Corpus word frequency list for Old Swedish (without part-of-speech)", language=["swe-fsv"], order=4)
+@exporter("Corpus word frequency list for Swedish from the 1800's", language=["swe-1800"], order=4)
+def sbx_freq_list_1800(
+    source_files: AllSourceFilenames = AllSourceFilenames(),
+    word: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:word>"),
+    token: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>"),
+    msd: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:msd>"),
+    baseform: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>:stats_export.baseform_first"),
+    sense: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>:hist.sense"),
+    lemgram: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>:stats_export.lemgram_first"),
+    complemgram: AnnotationAllSourceFiles = AnnotationAllSourceFiles(
+                                            "<token>:stats_export.complemgram_best_cond"),
+    out: Export = Export("stats_export.frequency_list_sbx/stats_[metadata.id].csv"),
+    delimiter: str = Config("stats_export.delimiter"),
+    cutoff: int = Config("stats_export.cutoff")):
+    """Create a word frequency list for the entire corpus."""
+
+    annotations = [(word, "token"), (msd, "POS"), (baseform, "lemma"), (sense, "SALDO sense"), (lemgram, "lemgram"),
+                   (complemgram, "compound")]
+
+    freq_list(source_files=source_files, word=word, token=token, annotations=annotations, source_annotations=[],
+              out=out, sparv_namespace="", source_namespace="", delimiter=delimiter, cutoff=cutoff)
+
+
+@exporter("Corpus word frequency list for Old Swedish (without part-of-speech)", language=["swe-fsv"], order=5)
 def sbx_freq_list_fsv(
     source_files: AllSourceFilenames = AllSourceFilenames(),
     token: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token>"),
@@ -195,23 +225,62 @@ def sbx_freq_list_fsv(
               out=out, sparv_namespace="", source_namespace="", delimiter=delimiter, cutoff=cutoff)
 
 
-@installer("Install SBX word frequency list on remote host")
+@installer("Install SBX word frequency list on remote host", uninstaller="stats_export:uninstall_sbx_freq_list")
 def install_sbx_freq_list(
     freq_list: ExportInput = ExportInput("stats_export.frequency_list_sbx/stats_[metadata.id].csv"),
-    out: OutputMarker = OutputMarker("stats_export.install_sbx_freq_list_marker"),
-    host: str = Config("stats_export.remote_host"),
-    target_dir: str = Config("stats_export.remote_dir")):
+    marker: OutputMarker = OutputMarker("stats_export.install_sbx_freq_list_marker"),
+    uninstall_marker: MarkerOptional = MarkerOptional("stats_export.uninstall_sbx_freq_list_marker"),
+    host: Optional[str] = Config("stats_export.remote_host"),
+    target_dir: str = Config("stats_export.remote_dir")
+):
     """Install frequency list on server by rsyncing."""
     util.install.install_path(freq_list, host, target_dir)
-    out.write()
+    uninstall_marker.remove()
+    marker.write()
 
 
-@installer("Install SBX word frequency list with dates on remote host")
+@installer("Install SBX word frequency list with dates on remote host",
+           uninstaller="stats_export:uninstall_sbx_freq_list_date")
 def install_sbx_freq_list_date(
     freq_list: ExportInput = ExportInput("stats_export.frequency_list_sbx_date/stats_[metadata.id].csv"),
-    out: OutputMarker = OutputMarker("stats_export.install_sbx_freq_list_date_marker"),
-    host: str = Config("stats_export.remote_host"),
-    target_dir: str = Config("stats_export.remote_dir")):
+    marker: OutputMarker = OutputMarker("stats_export.install_sbx_freq_list_date_marker"),
+    uninstall_marker: MarkerOptional = MarkerOptional("stats_export.uninstall_sbx_freq_list_date_marker"),
+    host: Optional[str] = Config("stats_export.remote_host"),
+    target_dir: str = Config("stats_export.remote_dir")
+):
     """Install frequency list on server by rsyncing."""
     util.install.install_path(freq_list, host, target_dir)
-    out.write()
+    uninstall_marker.remove()
+    marker.write()
+
+
+@uninstaller("Uninstall SBX word frequency list")
+def uninstall_sbx_freq_list(
+    corpus_id: Corpus = Corpus(),
+    marker: OutputMarker = OutputMarker("stats_export.uninstall_sbx_freq_list_marker"),
+    install_marker: MarkerOptional = MarkerOptional("stats_export.install_sbx_freq_list_marker"),
+    host: Optional[str] = Config("stats_export.remote_host"),
+    remote_dir: str = Config("stats_export.remote_dir")
+):
+    """Uninstall SBX word frequency list."""
+    remote_file = os.path.join(remote_dir, f"stats_{corpus_id}.csv")
+    logger.info("Removing SBX word frequency file %s%s", host + ":" if host else "", remote_file)
+    util.install.uninstall_path(remote_file, host)
+    install_marker.remove()
+    marker.write()
+
+
+@uninstaller("Uninstall SBX word frequency list with dates")
+def uninstall_sbx_freq_list_date(
+    corpus_id: Corpus = Corpus(),
+    marker: OutputMarker = OutputMarker("stats_export.uninstall_sbx_freq_list_date_marker"),
+    install_marker: MarkerOptional = MarkerOptional("stats_export.install_sbx_freq_list_date_marker"),
+    host: Optional[str] = Config("stats_export.remote_host"),
+    remote_dir: str = Config("stats_export.remote_dir")
+):
+    """Uninstall SBX word frequency list with dates."""
+    remote_file = os.path.join(remote_dir, f"stats_{corpus_id}.csv")
+    logger.info("Removing SBX word frequency with dates file %s%s", host + ":" if host else "", remote_file)
+    util.install.uninstall_path(remote_file, host)
+    install_marker.remove()
+    marker.write()

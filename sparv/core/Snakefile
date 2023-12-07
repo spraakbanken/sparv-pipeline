@@ -1,4 +1,7 @@
 """Snakefile used by Snakemake."""
+import multiprocessing
+import os
+import signal
 from pathlib import Path
 
 from rich import box
@@ -49,17 +52,18 @@ def make_rules(config_missing: bool) -> None:
         annotator = registry.modules[module_name].functions[f_name]
         make_rule(module_name, f_name, annotator, config_missing, custom_rule_obj)
 
-    # Check and set rule orders
-    ordered_rules = snake_utils.check_ruleorder(snake_storage)
-    for rule1, rule2 in ordered_rules:
-        # ruleorder:  rule1.rule_name > rule2.rule_name
-        workflow.ruleorder(rule1.rule_name, rule2.rule_name)
-    # Print ordered rules when in debug mode
-    if config.get("debug") and ordered_rules:
-        console.print("\n\n\n[b]ORDERED RULES:[/b]")
+    # Check and set rule orders (but not when language is set to __all__ for schema purposes)
+    if not config.get("language") == "__all__":
+        ordered_rules = snake_utils.check_ruleorder(snake_storage)
         for rule1, rule2 in ordered_rules:
-            print("    • {} > {}".format(rule1.rule_name, rule2.rule_name))
-        print()
+            # ruleorder:  rule1.rule_name > rule2.rule_name
+            workflow.ruleorder(rule1.rule_name, rule2.rule_name)
+        # Print ordered rules when in debug mode
+        if config.get("debug") and ordered_rules:
+            console.print("\n\n\n[b]ORDERED RULES:[/b]")
+            for rule1, rule2 in ordered_rules:
+                print("    • {} > {}".format(rule1.rule_name, rule2.rule_name))
+            print()
 
 
 def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missing: bool = False,
@@ -99,6 +103,7 @@ def make_rule(module_name: str, f_name: str, annotator_info: dict, config_missin
                 force_preloader=config.get("force_preloader", False),
                 compression=sparv_config.get("sparv.compression")
             resources: **resources
+            priority: rule_storage.priority
             # We use "script" instead of "run" since with "run" the whole Snakefile would have to be reloaded for every
             # single job, due to how Snakemake creates processes for run-jobs.
             script: "run_snake.py"
@@ -114,7 +119,7 @@ def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
         return
 
     # Get Snakemake rule object
-    sm_rule = getattr(rules, rule_storage.rule_name).rule
+    sm_rule = workflow.get_rule(rule_storage.rule_name)
 
     dependencies = rule_storage.outputs if not rule_storage.abstract else rule_storage.inputs
 
@@ -136,9 +141,53 @@ def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
         # Set rule dependencies for every file, so Snakemake knows which rule to use in case of ambiguity.
         # Converting the values of rule_outputs to snakemake.io.IOFile objects is not enough, since file paths must match
         # for that to work (which they don't do once we've expanded the {file} wildcard).
-        this_sm_rule = getattr(rules, rule_storage.target_name).rule
+        this_sm_rule = workflow.get_rule(rule_storage.target_name)
         for f in this_sm_rule.input:
             this_sm_rule.dependencies[f] = sm_rule
+
+
+def update_autocompletion_cache():
+    """If needed, update the cache of available targets (exporters/installers/rules etc.) used by tab autocompletion."""
+
+    # Only update cache if it exists
+    if paths.autocomplete_cache.is_file():
+        import pickle
+
+        # Collect data for cache
+        new_cache = dict.fromkeys(("export", "install", "uninstall", "model"))
+        for target_type in new_cache:
+            new_cache[target_type] = sorted(
+                [t[0] for t in getattr(snake_storage, f"{target_type}_targets") if not t[0].startswith("custom.")]
+            )
+
+        new_cache["annotate"] = []
+        for target_type in ("named", "custom", "import"):
+            new_cache["annotate"].extend(
+                [t[0] for t in getattr(snake_storage, f"{target_type}_targets") if not t[0].startswith("custom.")]
+            )
+            new_cache["annotate"].sort()
+
+        # Create or update cache file if needed
+        cache_file = paths.autocomplete_cache
+        language = sparv_config.get("metadata.language")
+
+        try:
+            with open(cache_file, "rb") as cache_in:
+                current_cache = pickle.load(cache_in)
+        except:
+            current_cache = {}
+
+        default_language = sparv_config._config_default.get("metadata", {}).get("language")
+
+        if not (current_cache.get(language) == new_cache and current_cache.get("default_language") == default_language):
+            current_cache[language] = new_cache
+            current_cache["default_language"] = default_language
+            try:
+                with open(cache_file, "wb") as cache_out:
+                    pickle.dump(current_cache, cache_out)
+            except:
+                pass
+
 
 # Init the storage for some essential variables involving all rules
 snake_storage = snake_utils.SnakeStorage()
@@ -183,11 +232,17 @@ for key in registry.annotation_sources:
 # Load modules and create automatic rules
 make_rules(config_missing)
 
+# Update autocompletion cache
+update_autocompletion_cache()
+
 # Validate config usage in modules
 sparv_config.validate_module_config()
 
 # Validate config
-sparv_config.validate_config()
+if not "schema" in selected_targets:
+    from sparv.core import schema
+    json_schema = schema.build_json_schema(sparv_config.config_structure)
+    schema.validate(sparv_config.config, json_schema)
 
 # Get reverse_config_usage dict for look-ups
 reverse_config_usage = snake_utils.get_reverse_config_usage()
@@ -198,6 +253,11 @@ if not config_missing and selected_targets and not snake_storage.source_files:
     named_targets.update(("export_corpus", "install_corpus"))
     if set(selected_targets).issubset(named_targets):
         raise SparvErrorMessage("No source files available!")
+
+# Sort GPUs visible to modules by available memory
+gpus = util.system.gpus()
+if gpus:
+    os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(map(str, gpus))
 
 # ==============================================================================
 # Static Snakemake Rules
@@ -255,7 +315,7 @@ rule list_targets:
         table.add_column(no_wrap=True)
         table.add_column()
 
-        table.add_row("[b]Exports[/b]")
+        table.add_row("[b]Exporters[/b]")
         for target, desc, _lang in sorted(snake_storage.export_targets):
             table.add_row("  " + target, desc)
         table.add_row()
@@ -303,8 +363,11 @@ rule list_exports:
             table.add_column(no_wrap=True)
             table.add_column()
             for target, desc, language in selected_exports:
-                if not language or registry.check_language(sparv_config.get("metadata.language"), language,
-                                                        sparv_config.get("metadata.variety")):
+                if registry.check_language(
+                        sparv_config.get("metadata.language"),
+                        language,
+                        sparv_config.get("metadata.variety")
+                ):
                     table.add_row(target, desc)
             console.print(table)
 
@@ -315,8 +378,11 @@ rule list_exports:
             table.add_column(no_wrap=True)
             table.add_column()
             for target, desc, language in other_exports:
-                if not language or registry.check_language(sparv_config.get("metadata.language"), language,
-                                            sparv_config.get("metadata.variety")):
+                if registry.check_language(
+                        sparv_config.get("metadata.language"),
+                        language,
+                        sparv_config.get("metadata.variety")
+                ):
                     table.add_row(target, desc)
             console.print(table)
 
@@ -375,7 +441,7 @@ rule list_uninstalls:
 
 # Rule for making exports defined in corpus config
 if "export_corpus" in selected_targets:
-    export_targets = snake_utils.get_export_targets(snake_storage, rules,
+    export_targets = snake_utils.get_export_targets(snake_storage, workflow,
         file=snake_utils.get_file_values(config, snake_storage), wildcards=snake_utils.get_wildcard_values(config))
 
     rule export_corpus:
@@ -489,17 +555,20 @@ rule build_models:
     input:
         snake_storage.model_outputs
 
+if "preload" in selected_targets:
+    stop_signal = multiprocessing.Event()
+    signal.signal(signal.SIGINT, lambda _sig_no, _frame: stop_signal.set())
 
-rule preload:
-    run:
-        from sparv.core import preload
-        if config["preload_command"] == "start":
-            preload.serve(config["socket"], config["processes"], snake_storage)
-        elif config["preload_command"] == "stop":
-            if not Path(config["socket"]).is_socket():
-                raise SparvErrorMessage(f"Socket file '{config['socket']}' doesn't exist or isn't a socket.")
-            elif not preload.stop(config.get("socket")):
-                raise SparvErrorMessage(f"Could not connect to socket '{config.get('socket')}'.")
+    rule preload:
+        run:
+            from sparv.core import preload
+            if config["preload_command"] == "start":
+                preload.serve(config["socket"], config["processes"], snake_storage, stop_signal)
+            elif config["preload_command"] == "stop":
+                if not Path(config["socket"]).is_socket():
+                    raise SparvErrorMessage(f"Socket file '{config['socket']}' doesn't exist or isn't a socket.")
+                elif not preload.stop(config.get("socket")):
+                    raise SparvErrorMessage(f"Could not connect to socket '{config.get('socket')}'.")
 
 
 rule preload_list:
@@ -515,3 +584,11 @@ rule preload_list:
                 table.add_row(f"{module}:{a}", registry.modules[module].functions[a]["description"])
 
         console.print(table)
+
+
+rule schema:
+    run:
+        import json
+        from sparv.core import schema
+        json_schema = schema.build_json_schema(sparv_config.config_structure)
+        print(json.dumps(json_schema, indent=2))

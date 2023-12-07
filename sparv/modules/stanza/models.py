@@ -3,9 +3,7 @@
 import json
 import logging
 
-import iso639
-
-from sparv.api import Language, Model, ModelOutput, modelbuilder, get_logger
+from sparv.api import Language, Model, ModelOutput, modelbuilder, get_logger, util
 
 logger = get_logger(__name__)
 
@@ -70,9 +68,9 @@ def get_model(lang: Language = Language(),
               resources_file: ModelOutput = ModelOutput("stanza/[metadata.language]/resources.json")):
     """Download Stanza language models."""
     import stanza
-    lang_name = iso639.languages.get(part3=lang).name if lang in iso639.languages.part3 else lang
-    stanza_lang = iso639.languages.get(part3=lang).part1
-    logger.info(f"Downloading Stanza language model for {lang_name}")
+    lang_name = util.misc.get_language_name_by_part3(lang) or lang
+    stanza_lang = util.misc.get_language_part1_by_part3(lang)
+    logger.info("Downloading Stanza language model for %s", lang_name)
     stanza.download(lang=stanza_lang, model_dir=str(resources_file.path.parent), verbose=False,
                     logging_level=logging.WARNING)
     zip_file = Model(f"stanza/{lang}/{stanza_lang}/default.zip")

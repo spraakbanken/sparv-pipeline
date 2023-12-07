@@ -5,8 +5,24 @@ import re
 from collections import defaultdict
 from typing import Optional
 
-from sparv.api import (AllSourceFilenames, Annotation, AnnotationDataAllSourceFiles, Config, Corpus, Export, ExportInput,
-                       OutputMarker, OutputData, annotator, exporter, get_logger, installer, util)
+from sparv.api import (
+    AllSourceFilenames,
+    Annotation,
+    AnnotationDataAllSourceFiles,
+    Config,
+    Corpus,
+    Export,
+    ExportInput,
+    MarkerOptional,
+    OutputMarker,
+    OutputData,
+    annotator,
+    exporter,
+    get_logger,
+    installer,
+    uninstaller,
+    util
+)
 from sparv.api.util.mysql_wrapper import MySQL
 
 logger = get_logger(__name__)
@@ -17,33 +33,72 @@ MAX_STRINGEXTRA_LENGTH = 32
 MAX_POS_LENGTH = 5
 
 
-@installer("Install Korp's Word Picture SQL on remote host", language=["swe"])
-def install_relations(sqlfile: ExportInput = ExportInput("korp.wordpicture/relations.sql"),
-                      out: OutputMarker = OutputMarker("korp.install_relations_marker"),
-                      db_name: str = Config("korp.mysql_dbname"),
-                      host: str = Config("korp.remote_host")):
+@installer("Install Korp's Word Picture SQL on remote host", language=["swe"], uninstaller="korp:uninstall_wordpicture")
+def install_wordpicture(
+    sqlfile: ExportInput = ExportInput("korp.wordpicture/wordpicture.sql"),
+    marker: OutputMarker = OutputMarker("korp.install_wordpicture_marker"),
+    uninstall_marker: MarkerOptional = MarkerOptional("korp.uninstall_wordpicture_marker"),
+    db_name: str = Config("korp.mysql_dbname"),
+    host: Optional[str] = Config("korp.remote_host")
+):
     """Install Korp's Word Picture SQL on remote host.
 
     Args:
-        sqlfile (str, optional): SQL file to be installed. Defaults to ExportInput("korp.wordpicture/relations.sql").
-        out (str, optional): Marker file to be written.
-        db_name (str, optional): Name of the data base. Defaults to Config("korp.mysql_dbname").
-        host (str, optional): Remote host to install to. Defaults to Config("korp.remote_host").
+        sqlfile: SQL file to be installed.
+        marker: Marker file to be written.
+        uninstall_marker: Uninstall marker to remove.
+        db_name: Name of the database.
+        host: Remote host to install to.
     """
     util.install.install_mysql(host, db_name, sqlfile)
-    out.write()
+    uninstall_marker.remove()
+    marker.write()
+
+
+@uninstaller("Uninstall lemgrams from database", language=["swe"])
+def uninstall_wordpicture(
+    corpus: Corpus = Corpus(),
+    marker: OutputMarker = OutputMarker("korp.uninstall_wordpicture_marker"),
+    install_marker: MarkerOptional = MarkerOptional("korp.install_wordpicture_marker"),
+    db_name: str = Config("korp.mysql_dbname"),
+    table_name: str = Config("korp.wordpicture_table"),
+    host: Optional[str] = Config("korp.remote_host")
+):
+    """Remove lemgram index data from database.
+
+    Args:
+        corpus: Corpus ID.
+        marker: Uninstall marker to write.
+        install_marker: Install marker to remove.
+        db_name: Name of the database.
+        table_name: Name of database table.
+        host: Remote host.
+    """
+    db_table = table_name + "_" + corpus.upper()
+    tables = ["", "_strings", "_rel", "_head_rel", "_dep_rel", "_sentences"]
+
+    sql = MySQL(database=db_name, host=host)
+    sql.drop_table(
+        *[db_table + t for t in tables],
+        *["temp_" + db_table + t for t in tables]
+    )
+
+    install_marker.remove()
+    marker.write()
 
 
 @annotator("Find dependencies for Korp's Word Picture", language=["swe"])
-def relations(out: OutputData = OutputData("korp.relations"),
-              word: Annotation = Annotation("<token:word>"),
-              pos: Annotation = Annotation("<token:pos>"),
-              lemgram: Annotation = Annotation("<token>:saldo.lemgram"),
-              dephead: Annotation = Annotation("<token:dephead>"),
-              deprel: Annotation = Annotation("<token:deprel>"),
-              sentence_id: Annotation = Annotation("<sentence>:misc.id"),
-              ref: Annotation = Annotation("<token:ref>"),
-              baseform: Annotation = Annotation("<token>:saldo.baseform")):
+def wordpicture(
+    out: OutputData = OutputData("korp.wordpicture"),
+    word: Annotation = Annotation("<token:word>"),
+    pos: Annotation = Annotation("<token:pos>"),
+    lemgram: Annotation = Annotation("<token>:saldo.lemgram"),
+    dephead: Annotation = Annotation("<token:dephead>"),
+    deprel: Annotation = Annotation("<token:deprel>"),
+    sentence_id: Annotation = Annotation("<sentence>:misc.id"),
+    ref: Annotation = Annotation("<token:ref>"),
+    baseform: Annotation = Annotation("<token>:saldo.baseform")
+):
     """Find certain dependencies between words, to be used by the Word Picture feature in Korp."""
     sentence_ids = sentence_id.read()
     sentence_tokens, _ = sentence_id.get_children(word)
@@ -52,7 +107,7 @@ def relations(out: OutputData = OutputData("korp.relations"),
 
     annotations = list(word.read_attributes((word, pos, lemgram, dephead, deprel, ref, baseform)))
 
-    # http://stp.ling.uu.se/~nivre/swedish_treebank/dep.html
+    # https://cl.lingfil.uu.se/~nivre/swedish_treebank/dep.html
     # Tuples with relations (head, rel, dep) to be found (with indexes) and an optional tuple specifying which info
     # should be stored and how
     rels = [
@@ -188,10 +243,29 @@ def relations(out: OutputData = OutputData("korp.relations"),
 
     triples = sorted(set(triples))
 
-    out_data = "\n".join(["\t".join((head, headpos, rel, dep, deppos, extra, sentid, refhead, refdep, str(bfhead),
-                                     str(bfdep), str(wfhead), str(wfdep))) for (
-                          head, headpos, rel, dep, deppos, extra, sentid, refhead, refdep, bfhead, bfdep, wfhead, wfdep)
-                          in triples])
+    out_data = "\n".join(
+        [
+            "\t".join(
+                (
+                    head.replace("\t", " "),
+                    headpos,
+                    rel,
+                    dep.replace("\t", " "),
+                    deppos,
+                    extra.replace("\t", " "),
+                    sentid,
+                    refhead,
+                    refdep,
+                    str(bfhead),
+                    str(bfdep),
+                    str(wfhead),
+                    str(wfdep)
+                )
+            )
+            for (head, headpos, rel, dep, deppos, extra, sentid, refhead, refdep, bfhead, bfdep, wfhead, wfdep) in
+            triples
+        ]
+    )
     out.write(out_data)
     logger.progress()
 
@@ -266,26 +340,39 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
     return x_rel_y * math.log((rel * x_rel_y) / (x_rel * rel_y * 1.0), 2)
 
 
-@exporter("Word Picture SQL for use in Korp", language=["swe"])
-def relations_sql(corpus: Corpus = Corpus(),
-                  out: Export = Export("korp.wordpicture/relations.sql"),
-                  relations: AnnotationDataAllSourceFiles = AnnotationDataAllSourceFiles("korp.relations"),
-                  source_files: Optional[AllSourceFilenames] = AllSourceFilenames(),
-                  source_files_list: str = "",
-                  split: bool = False):
+@exporter("Word Picture SQL for use in Korp", language=["swe"], config=[
+    Config(
+        "korp.wordpicture_no_sentences",
+        default=False,
+        description="Set to 'true' to skip generating sentences table.",
+        datatype=bool
+    )
+])
+def wordpicture_sql(
+    corpus: Corpus = Corpus(),
+    out: Export = Export("korp.wordpicture/wordpicture.sql"),
+    wordpicture: AnnotationDataAllSourceFiles = AnnotationDataAllSourceFiles("korp.wordpicture"),
+    no_sentences: bool = Config("korp.wordpicture_no_sentences"),
+    source_files: Optional[AllSourceFilenames] = AllSourceFilenames(),
+    source_files_list: str = "",
+    table_name: str = Config("korp.wordpicture_table"),
+    split: bool = False
+):
     """Calculate statistics of the dependencies and saves to SQL files.
 
     Args:
         corpus: the corpus name
         out: the name for the SQL file which will contain the resulting SQL statements
-        relations: the name of the relations annotation
+        wordpicture: the name of the wordpicture annotation
+        no_sentences: set to True to skip generating sentences table
         source_files: a list of source filenames
         source_files_list: can be used instead of source_files, and should be a file containing the name of source
             files, one per row
+        table_name: Name of database table
         split: when set to true leads to SQL commands being split into several parts, requiring less memory during
             creation, but installing the data will take much longer
     """
-    db_table = MYSQL_TABLE + "_" + corpus.upper()
+    db_table = table_name + "_" + corpus.upper()
 
     # Relations that will be grouped together
     rel_grouping = {
@@ -325,10 +412,10 @@ def relations_sql(corpus: Corpus = Corpus(),
             head_rel_count = defaultdict(int)   # Frequency of (head, rel)
             dep_rel_count = defaultdict(int)    # Frequency of (rel, dep)
 
-        relations_data = relations.read(file)
+        wordpicture_data = wordpicture.read(file)
 
-        for triple in relations_data.splitlines():
-            head, headpos, rel, dep, deppos, extra, sid, refh, refd, bfhead, bfdep, wfhead, wfdep = triple.split(u"\t")
+        for triple in wordpicture_data.splitlines():
+            head, headpos, rel, dep, deppos, extra, sid, refh, refd, bfhead, bfdep, wfhead, wfdep = triple.split("\t")
             bfhead, bfdep, wfhead, wfdep = int(bfhead), int(bfdep), int(wfhead), int(wfdep)
 
             if not (head, headpos) in strings:
@@ -351,7 +438,7 @@ def relations_sql(corpus: Corpus = Corpus(),
             freq.setdefault(head, {}).setdefault(rel, {}).setdefault(dep, [this_index, 0, [0, 0, 0, 0]])
             freq[head][rel][dep][1] += 1  # Frequency
 
-            if sentence_count[this_index] < MAX_SENTENCES:
+            if not no_sentences and sentence_count[this_index] < MAX_SENTENCES:
                 sentences.setdefault(this_index, set())
                 sentences[this_index].add((sid, refh, refd))  # Sentence ID and "ref" for both head and dep
                 sentence_count[this_index] += 1
@@ -373,25 +460,29 @@ def relations_sql(corpus: Corpus = Corpus(),
             if split:
                 # Don't print string table until the last file
                 _write_sql({}, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_table, split,
-                           first=(file_count == 1))
+                           first=(file_count == 1), no_sentences=no_sentences)
             else:
                 # Only save sentences data, save the rest for the last file
-                _write_sql({}, sentences, {}, {}, {}, {}, out, db_table, split, first=(file_count == 1))
+                _write_sql({}, sentences, {}, {}, {}, {}, out, db_table, split, first=(file_count == 1),
+                           no_sentences=no_sentences)
 
         logger.progress()
 
     # Create the final file, including the string table
     _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_table, split,
-               first=(file_count == 1), last=True)
+               first=(file_count == 1), last=True, no_sentences=no_sentences)
 
     logger.progress()
     logger.info("Done creating SQL files")
 
 
 def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_count, sql_file, db_table,
-               split=False, first=False, last=False):
+               split=False, first=False, last=False, no_sentences=False):
 
     temp_db_table = "temp_" + db_table
+    tables = ["", "_strings", "_rel", "_head_rel", "_dep_rel"]
+    if not no_sentences:
+        tables.append("_sentences")
     update_freq = "ON DUPLICATE KEY UPDATE freq = freq + VALUES(freq)" if split else ""
 
     mysql = MySQL(output=sql_file, append=True)
@@ -407,9 +498,10 @@ def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_coun
         mysql.create_table(temp_db_table + "_rel", drop=True, **MYSQL_REL)
         mysql.create_table(temp_db_table + "_head_rel", drop=True, **MYSQL_HEAD_REL)
         mysql.create_table(temp_db_table + "_dep_rel", drop=True, **MYSQL_DEP_REL)
-        mysql.create_table(temp_db_table + "_sentences", drop=True, **MYSQL_SENTENCES)
-        mysql.disable_keys(temp_db_table, temp_db_table + "_strings", temp_db_table + "_rel",
-                           temp_db_table + "_head_rel", temp_db_table + "_dep_rel", temp_db_table + "_sentences")
+        if not no_sentences:
+            mysql.create_table(temp_db_table + "_sentences", drop=True, **MYSQL_SENTENCES)
+
+        mysql.disable_keys(*[f"{temp_db_table}{t}" for t in tables])
         mysql.disable_checks()
         mysql.set_names()
 
@@ -483,32 +575,23 @@ def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_coun
 
     mysql.add_row(temp_db_table + "_dep_rel", rows, update_freq)
 
-    for index, sentenceset in sorted(sentences.items()):
-        for sentence in sorted(sentenceset):
-            srow = {
-                "id": index,
-                "sentence": sentence[0],
-                "start": int(sentence[1]),
-                "end": int(sentence[2])
-            }
-            sentence_rows.append(srow)
+    if not no_sentences:
+        for index, sentenceset in sorted(sentences.items()):
+            for sentence in sorted(sentenceset):
+                srow = {
+                    "id": index,
+                    "sentence": sentence[0],
+                    "start": int(sentence[1]),
+                    "end": int(sentence[2])
+                }
+                sentence_rows.append(srow)
 
-    mysql.add_row(temp_db_table + "_sentences", sentence_rows)
+        mysql.add_row(temp_db_table + "_sentences", sentence_rows)
 
     if last:
-        mysql.enable_keys(temp_db_table, temp_db_table + "_strings", temp_db_table + "_rel",
-                          temp_db_table + "_head_rel", temp_db_table + "_dep_rel", temp_db_table + "_sentences")
-        mysql.drop_table(db_table, db_table + "_strings", db_table + "_rel", db_table + "_head_rel",
-                         db_table + "_dep_rel", db_table + "_sentences")
-        mysql.rename_table({
-            temp_db_table: db_table,
-            temp_db_table + "_strings": db_table + "_strings",
-            temp_db_table + "_rel": db_table + "_rel",
-            temp_db_table + "_head_rel": db_table + "_head_rel",
-            temp_db_table + "_dep_rel": db_table + "_dep_rel",
-            temp_db_table + "_sentences": db_table + "_sentences"
-        })
-
+        mysql.enable_keys(*[f"{temp_db_table}{t}" for t in tables])
+        mysql.drop_table(*[f"{db_table}{t}" for t in tables])
+        mysql.rename_table({f"{temp_db_table}{t}": f"{db_table}{t}" for t in tables})
         mysql.enable_checks()
 
     logger.info("%s written", sql_file)
@@ -519,8 +602,6 @@ def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_coun
 # Names of every possible relation in the resulting database
 RELNAMES = ["SS", "OBJ", "ADV", "AA", "AT", "ET", "PA"]
 rel_enum = "ENUM(%s)" % ", ".join("'%s'" % r for r in RELNAMES)
-
-MYSQL_TABLE = "relations"
 
 MYSQL_RELATIONS = {"columns": [("id", int, 0, "NOT NULL"),
                                ("head", int, 0, "NOT NULL"),

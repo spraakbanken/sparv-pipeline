@@ -35,7 +35,7 @@ def text_spans(text: Text = Text(),
 
 
 @annotator("Head and tail whitespace characters for tokens", config=[
-    Config("misc.head_tail_max_length", default=None,
+    Config("misc.head_tail_max_length",
            description="If set to an int misc.head and misc.tail will be truncated to that many characters.")])
 def text_headtail(text: Text = Text(),
                   chunk: Annotation = Annotation("<token>"),
@@ -139,6 +139,21 @@ def struct_to_token(attr: Annotation = Annotation("{struct}:{attr}"),
     token_parents = token.get_parents(attr)
     attr_values = list(attr.read())
     out_values = [attr_values[p] if p is not None else "" for p in token_parents]
+    out.write(out_values)
+
+
+@annotator("Inherit {attr} from {parent}:{attr} to {child}", wildcards=[
+    Wildcard("parent", Wildcard.ANNOTATION),
+    Wildcard("child", Wildcard.ANNOTATION),
+    Wildcard("attr", Wildcard.ATTRIBUTE)
+])
+def inherit(parent: Annotation = Annotation("{parent}:{attr}"),
+            child: Annotation = Annotation("{child}"),
+            out: Output = Output("{child}:misc.inherit_{parent}_{attr}")):
+    """Inherit attribute from a structural parent annotation to a child."""
+    child_parents = child.get_parents(parent)
+    attr_values = list(parent.read())
+    out_values = [attr_values[p] if p is not None else "" for p in child_parents]
     out.write(out_values)
 
 
@@ -316,7 +331,7 @@ def backoff_with_info(
 def override(chunk: Annotation,
              repl: Annotation,
              out: Output):
-    """Replace values in 'chunk' with non empty values from 'repl'."""
+    """Replace values in 'chunk' with non-empty values from 'repl'."""
     def empty(val):
         if not val:
             return True
@@ -369,8 +384,8 @@ def source(out: Output = Output("<text>:misc.source"),
 
 @annotator("Get the first annotation from a cwb set")
 def first_from_set(out: Output,
-                   chunk: Annotation,):
-    """"Get the first annotation from a set."""
+                   chunk: Annotation):
+    """Get the first annotation from a set."""
     out_annotation = []
     for val in chunk.read():
         out_annotation.append(util.misc.set_to_list(val)[0] if util.misc.set_to_list(val) else "")

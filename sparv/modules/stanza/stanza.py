@@ -2,8 +2,6 @@
 
 from typing import Optional
 
-import iso639
-
 from sparv.api import Annotation, Config, Language, Model, Output, Text, annotator, get_logger, util
 from . import stanza_utils
 
@@ -41,17 +39,27 @@ def annotate(corpus_text: Text = Text(),
              max_sentence_length: int = Config("stanza.max_sentence_length"),
              cpu_fallback: bool = Config("stanza.cpu_fallback")):
     """Do dependency parsing using Stanza."""
+    import torch
     from stanza.pipeline.core import DownloadMethod
 
     # cpu_fallback only makes sense if use_gpu is True
     cpu_fallback = cpu_fallback and use_gpu
+
+    # Select the GPU with most free memory available
+    try:
+        if use_gpu:
+            gpus = util.system.gpus()
+            if gpus:
+                torch.cuda.set_device(gpus[0])
+    except:
+        pass
 
     # Read corpus_text and text_spans
     text_data = corpus_text.read()
 
     # Define some values needed for Stanza Pipeline
     nlp_args = {
-        "lang": iso639.languages.get(part3=lang).part1,
+        "lang": util.misc.get_language_part1_by_part3(lang),
         "processors": "tokenize,mwt,pos,lemma,depparse,ner",  # Comma-separated list of processors to use
         "dir": str(resources_file.path.parent),
         "depparse_max_sentence_size": 200,  # Create new batch when encountering sentences larger than this

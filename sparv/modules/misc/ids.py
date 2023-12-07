@@ -29,7 +29,7 @@ def file_id(out: OutputDataAllSourceFiles = OutputDataAllSourceFiles("misc.filei
         with open(source_files_list, encoding="utf-8") as f:
             source_files = f.read().strip().splitlines()
 
-    source_files.sort()
+    source_files = sorted(source_files)
     logger.progress(total=len(source_files))
 
     numfiles = len(source_files) * 2

@@ -13,6 +13,7 @@ from prompt_toolkit.styles import Style
 from questionary import prompt
 
 from sparv.api import SourceStructureParser, Wildcard
+from sparv.api.util.misc import dump_yaml
 from sparv.core import registry, paths, config, snake_utils
 from sparv.core.console import console
 
@@ -189,7 +190,7 @@ class Wizard:
     def save_config(self):
         """Save config to YAML file."""
         with open("config.yaml", mode="w", encoding="utf-8") as out_file:
-            out_file.write(config.dump_config({k: v for k, v in self.corpus_config.items() if not k.startswith("_")}))
+            out_file.write(dump_yaml({k: v for k, v in self.corpus_config.items() if not k.startswith("_")}))
         print("Your corpus configuration has been saved as 'config.yaml'.")
 
     def load_config(self):

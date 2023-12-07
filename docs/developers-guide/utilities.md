@@ -94,13 +94,14 @@ remotely.
 
 
 ### install_path()
-Transfer a file or directory to a target destination, optionally on a different host.
+Transfer a file or the contents of a directory to a target destination, optionally on a different host.
 
 **Arguments:**
 
-- `source_path`: Path to the local file or directory to sync.
-- `host` (optional): The remote host to install to.
-- `target_path`: The name of the target file or directory.
+- `source_path`: Path to the local file or directory to sync. If a directory is used, its contents are synced, not the
+   directory itself, and any extraneous files in destination directories are deleted.
+- `host`: The remote host to install to. Set to `None` to install locally.
+- `target_path`: Path to target file or directory.
 
 
 ### uninstall_path()
@@ -113,13 +114,13 @@ Remove a file or directory, optionally on a different host.
 
 
 ### install_mysql()
-Insert tables and data from local SQL-file to remote MySQL database.
+Insert tables and data from one or more SQL-files to local or remote MySQL database.
 
 **Arguments:**
 
-- `host`: The remote host to install to.
-- `db_name`: Name of the remote database.
-- `sqlfile`: Path to a local SQL file, or multiple paths separated by whitespaces.
+- `host`: The remote host to install to. Set to None to install locally.
+- `db_name`: Name of the database.
+- `sqlfile`: Path to a SQL file, or list of paths.
 
 
 ### install_mysql_dump()
@@ -153,7 +154,7 @@ Call a binary with `arguments` and `stdin` and return a pair `(stdout, stderr)`.
   is returned as the stderr component. Defaults to `False`.
 - `use_shell`: Don't use this unless you really have to! If set to `True` the binary will be executed through the shell.
   Defaults to `False`. Is automatically set to `True` when using `raw_command`.
-- `allow_error`: If set to `False` an exeption is raised if stderr is not empty and stderr and stdout will be logged.
+- `allow_error`: If set to `False` an exception is raised if stderr is not empty and stderr and stdout will be logged.
   Defaults to `False`.
 - `return_command`: If set to `True` the process is returned. Defaults to `False`.
 
@@ -195,6 +196,12 @@ Search for the binary for a program. Returns the path to binary, or `None` if no
 - `raise_error`: If set to `True` raises error if binary could not be found. Defaults to `False`.
 
 
+### gpus()
+Returns a list of available GPUs, ordered by free memory in descending order. Returns `None` if it fails.
+Currently only works for NVIDIA GPUs, and requires the `nvidia-smi` utility to be installed.
+Takes no arguments.
+
+
 ### kill_process()
 Kill a process, and ignore the error if it is already dead.
 
@@ -210,9 +217,8 @@ deleted.
 **Arguments:**
 
 - `local`: Path to a local file or directory.
-- `host`: The remote host to rsync to.
-- `remote`: Path on the remote host to rsync to. Defaults to `None`. If not provided, the path will be the same as on
-  the local machine.
+- `host`: The remote host to rsync to. Set to `None` to sync locally.
+- `remote`: Path to target file or directory.
 
 
 ## Tagsets
@@ -232,7 +238,7 @@ Dictionary containing mappings (dictionaries) for of part-of-speech tag mappings
 
 
 ### pos_to_upos()
-Map POS tags to Universal Depenendy POS tags. This only works if there is a conversion function in
+Map POS tags to Universal Dependency POS tags. This only works if there is a conversion function in
 `util.tagsets.pos_to_upos` for the given language and tagset.
 
 **Arguments:**
@@ -284,6 +290,17 @@ Take an iterable object and return a set in the format used by Corpus Workbench.
 - `sort: Set to `True` if you want to values to be sorted. Default: `False`
 - `maxlength`: Maximum length in characters for the resulting set. Default: 4095
 - `encoding`: Encoding of `values`. Default: "UTF-8"
+
+
+### dump_yaml()
+Convert a dict to a YAML document string.
+
+**Arguments:**
+
+- `data`: The data to be dumped.
+- `resolve_alias`: Will replace aliases with their anchor's content if set to True.
+- `sort_keys`: Whether to sort the keys alphabetically.
+- `indent`: Number of spaces used for indentation.
 
 
 ### indent_xml()
@@ -373,7 +390,7 @@ Exception (class) used to notify users of errors in a friendly way without displ
 in the [Writing Sparv Plugins](developers-guide/writing-sparv-plugins#error-messages) section.
 
 > [!NOTE]
-> Only the `message` argument should be used when raisning this exception in a Sparv module.
+> Only the `message` argument should be used when raising this exception in a Sparv module.
 
 **Arguments:**
 

@@ -6,6 +6,11 @@ from typing import Union, Optional
 import appdirs
 import yaml
 
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
+
 
 def read_sparv_config():
     """Get Sparv data path from config file."""
@@ -13,7 +18,7 @@ def read_sparv_config():
     if sparv_config_file.is_file():
         try:
             with open(sparv_config_file, encoding="utf-8") as f:
-                data = yaml.load(f, Loader=yaml.FullLoader)
+                data = yaml.load(f, Loader=SafeLoader)
         except:
             data = {}
     return data
@@ -42,6 +47,7 @@ sparv_path = Path(__file__).parent.parent
 
 # Config file containing path to Sparv data dir
 sparv_config_file = Path(appdirs.user_config_dir("sparv"), "config.yaml")
+autocomplete_cache = Path(appdirs.user_config_dir("sparv"), "autocomplete")
 
 # Package-internal paths
 modules_dir = "modules"

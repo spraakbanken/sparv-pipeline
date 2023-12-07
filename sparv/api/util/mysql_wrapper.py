@@ -12,9 +12,11 @@ MAX_ALLOWED_PACKET = 900000
 
 
 class MySQL:
-    binaries = ("mysql", "mysql5")
+    binaries = ("mysql", "mariadb")
 
-    def __init__(self, database=None, username=None, password=None, encoding="UTF-8", output="", append=False):
+    def __init__(
+        self, database=None, host=None, username=None, password=None, encoding="UTF-8", output=None, append=False
+    ):
         assert database or output, "Either 'database' or 'output' must be used."
         if database:
             self.arguments = [database]
@@ -22,6 +24,7 @@ class MySQL:
                 self.arguments += ["-u", username]
             if password:
                 self.arguments += ["-p", password]
+        self.host = host
         self.encoding = encoding
         self.output = output
         self.first_output = True
@@ -40,7 +43,15 @@ class MySQL:
                 outfile.write(sql + "\n")
         else:
             # Execute SQL statement
-            out, err = system.call_binary(self.binaries, self.arguments, sql % args, encoding=self.encoding)
+            if self.host is None:
+                out, err = system.call_binary(self.binaries, self.arguments, sql % args, encoding=self.encoding)
+            else:
+                out, err = system.call_binary(
+                    "ssh",
+                    [self.host, " ".join([self.binaries[0], *self.arguments])],
+                    stdin=sql % args,
+                    encoding=self.encoding
+                )
             if out:
                 logger.info("MySQL: %s", out)
             if err:
@@ -55,10 +66,11 @@ class MySQL:
             if isinstance(primary, str):
                 primary = primary.split()
             sqlcolumns += ["PRIMARY KEY (%s)" % _atomseq(primary)]
-        for index in indexes:
-            if isinstance(index, str):
-                index = index.split()
-            sqlcolumns += ["INDEX %s (%s)" % (_atom("-".join(index)), _atomseq(index))]
+        if indexes:
+            for index in indexes:
+                if isinstance(index, str):
+                    index = index.split()
+                sqlcolumns += ["INDEX %s (%s)" % (_atom("-".join(index)), _atomseq(index))]
         if constraints:
             for constraint in constraints:
                 sqlcolumns += ["CONSTRAINT %s %s (%s)" % (constraint[0], _atom(constraint[1]), _atomseq(constraint[2]))]

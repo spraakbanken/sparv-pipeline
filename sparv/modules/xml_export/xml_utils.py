@@ -137,6 +137,52 @@ def add_attrs(node, annotation, annotation_dict, export_names, index, include_em
             node.set(export_name, attrib_values[index])
 
 
+def replace_invalid_chars_in_names(export_names: dict) -> None:
+    """Replace invalid characters with underscore in export names.
+
+    Args:
+        export_names: Dictionary with export names.
+    """
+    # https://www.w3.org/TR/REC-xml/#NT-NameStartChar
+    start_chars = [
+        ":",
+        "A-Z",
+        "_",
+        "a-z",
+        "\xC0-\xD6",
+        "\xD8-\xF6",
+        "\xF8-\u02FF",
+        "\u0370-\u037D",
+        "\u037F-\u1FFF",
+        "\u200C-\u200D",
+        "\u2070-\u218F",
+        "\u2C00-\u2FEF",
+        "\u3001-\uD7FF",
+        "\uF900-\uFDCF",
+        "\uFDF0-\uFFFD",
+        "\u10000-\uEFFFF"
+    ]
+    chars = ["-", ".", "0-9", "\xB7", "\u0300-\u036F", "\u203F-\u2040"]
+
+    name_start_char = re.compile(r"[^{}]".format("".join(start_chars)))
+    name_char = re.compile(r"[^{}{}]".format("".join(chars), "".join(start_chars)))
+    namespace_split = re.compile(r"^({[^}]+})?(.+)")
+
+    for n in export_names:
+        namespace, name = namespace_split.match(export_names[n]).groups()
+        original_name = name
+
+        if name_start_char.match(name[0]):
+            name = name_start_char.sub("_", name[0]) + name[1:]
+
+        if name_char.search(name[1:]):
+            name = name[0] + name_char.sub("_", name[1:])
+
+        if name != original_name:
+            logger.warning(f"The name {original_name!r} contains invalid characters and will be renamed to {name!r}.")
+            export_names[n] = (namespace or "") + name
+
+
 def combine(corpus, out, source_files, xml_input, version_info_file=None):
     """Combine xml_files into one single file."""
     xml_files = [xml_input.replace("{file}", file) for file in source_files]
@@ -175,11 +221,16 @@ def compress(xmlfile, out):
             copyfileobj(infile, outfile)
 
 
-def install_compressed_xml(corpus, bz2file, out, export_path, host):
-    """Install xml file on remote server."""
-    if not host:
-        raise Exception("No host provided! Export not installed.")
+def install_compressed_xml(corpus, bz2file, marker, export_path, host):
+    """Install XML file."""
     filename = corpus + ".xml.bz2"
     remote_file_path = os.path.join(export_path, filename)
     util.install.install_path(bz2file, host, remote_file_path)
-    out.write()
+    marker.write()
+
+
+def uninstall_compressed_xml(corpus, marker, export_path, host):
+    """Uninstall XML file."""
+    remote_file_path = os.path.join(export_path, corpus + ".xml.bz2")
+    util.install.uninstall_path(remote_file_path, host)
+    marker.write()

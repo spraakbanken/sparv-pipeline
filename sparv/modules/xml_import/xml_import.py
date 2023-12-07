@@ -1,11 +1,11 @@
-"""Parse XML source file."""
+"""Parse XML source files."""
 
 import copy
 import re
 import unicodedata
 import xml.etree.ElementTree as etree
 from itertools import chain
-from typing import List
+from typing import List, Optional
 
 from sparv.api import (Config, Headers, Namespaces, Output, Source, SourceFilename, SourceStructure,
                        SourceStructureParser, SparvErrorMessage, Text, get_logger, importer, util)
@@ -44,32 +44,68 @@ class XMLStructure(SourceStructureParser):
             self.annotations = sorted(elements)
         return self.annotations
 
-
-@importer("XML import", file_extension="xml", outputs=Config("xml_import.elements", []), config=[
-    Config("xml_import.elements", [], description="List of elements and attributes in source file. Only needed for "
-                                                  "renaming or when used as input to other annotations, as everything "
-                                                  "is parsed whether listed or not."),
-    Config("xml_import.skip", [], description="Elements and attributes to skip. "
-                                              "Use elementname:@contents to skip contents as well."),
-    Config("xml_import.header_elements", [], description="Elements containing header metadata. Contents will not be "
-                                                         "included in corpus text."),
-    Config("xml_import.header_data", [], description="List of header elements and attributes from which to extract "
-                                                     "metadata."),
-    Config("xml_import.prefix", "", description="Optional prefix to add to annotation names."),
-    Config("xml_import.remove_namespaces", False, description="Remove XML namespaces upon import."),
-    Config("xml_import.encoding", util.constants.UTF8, description="Encoding of source file. Defaults to UTF-8."),
-    Config("xml_import.keep_control_chars", False, description="Set to True if control characters should not be "
-                                                               "removed from the text."),
-    Config("xml_import.normalize", "NFC", description="Normalize input using any of the following forms: "
-                                                      "'NFC', 'NFKC', 'NFD', and 'NFKD'.")
-], structure=XMLStructure)
+@importer(
+    "XML import",
+    file_extension="xml",
+    outputs=Config("xml_import.elements", [], datatype=List[str]),
+    config=[
+        Config(
+            "xml_import.elements",
+            [],
+            description="List of elements and attributes in source file. Only needed for "
+            "renaming or when used as input to other annotations, as everything "
+            "is parsed whether listed or not.",
+            datatype=List[str],
+        ),
+        Config(
+            "xml_import.skip",
+            [],
+            description="Elements and attributes to skip. Use elementname:@contents to skip contents as well.",
+            datatype=List[str],
+        ),
+        Config(
+            "xml_import.header_elements",
+            [],
+            description="Elements containing header metadata. Contents will not be included in corpus text.",
+            datatype=List[str],
+        ),
+        Config(
+            "xml_import.header_data",
+            [],
+            description="List of header elements and attributes from which to extract metadata.",
+            datatype=List[str],
+        ),
+        Config("xml_import.prefix", description="Optional prefix to add to annotation names.", datatype=str),
+        Config("xml_import.remove_namespaces", False, description="Remove XML namespaces upon import.", datatype=bool),
+        Config(
+            "xml_import.encoding",
+            util.constants.UTF8,
+            description="Encoding of source file. Defaults to UTF-8.",
+            datatype=str,
+        ),
+        Config(
+            "xml_import.keep_control_chars",
+            False,
+            description="Set to True if control characters should not be removed from the text.",
+            datatype=bool,
+        ),
+        Config(
+            "xml_import.normalize",
+            default="NFC",
+            description="Normalize input using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.",
+            datatype=str,
+            choices=("NFC", "NFKC", "NFD", "NFKD"),
+        ),
+    ],
+    structure=XMLStructure,
+)
 def parse(filename: SourceFilename = SourceFilename(),
           source_dir: Source = Source(),
           elements: list = Config("xml_import.elements"),
           skip: list = Config("xml_import.skip"),
           header_elements: list = Config("xml_import.header_elements"),
           header_data: list = Config("xml_import.header_data"),
-          prefix: str = Config("xml_import.prefix"),
+          prefix: Optional[str] = Config("xml_import.prefix"),
           remove_namespaces: bool = Config("xml_import.remove_namespaces"),
           encoding: str = Config("xml_import.encoding"),
           keep_control_chars: bool = Config("xml_import.keep_control_chars"),
@@ -85,6 +121,7 @@ def parse(filename: SourceFilename = SourceFilename(),
         header_elements: Elements containing header metadata. Contents will not be included in corpus text.
         header_data: List of header elements and attributes from which to extract metadata.
         prefix: Optional prefix to add to annotations.
+        remove_namespaces: Set to True to remove any namespaces.
         encoding: Encoding of source file. Defaults to UTF-8.
         keep_control_chars: Set to True to keep control characters in the text.
         normalize: Normalize input using any of the following forms: 'NFC', 'NFKC', 'NFD', and 'NFKD'.
@@ -100,7 +137,7 @@ class SparvXMLParser:
     """XML parser class for parsing XML."""
 
     def __init__(self, elements: list, skip: list, header_elements: list, header_data: list, source_dir: Source,
-                 encoding: str = util.constants.UTF8, prefix: str = "", remove_namespaces: bool = False,
+                 encoding: str = util.constants.UTF8, prefix: Optional[str] = None, remove_namespaces: bool = False,
                  keep_control_chars: bool = True, normalize: str = "NFC"):
         """Initialize XML parser."""
         self.source_dir = source_dir
@@ -185,14 +222,15 @@ class SparvXMLParser:
             start, start_subpos, end, end_subpos, name_orig, attrs = element
 
             # Handle possible skipping of element and attributes
-            if (name_orig, "") in self.skipped_elems:
-                return
-            if (name_orig, "*") in self.skipped_elems:
-                attrs = {}
-            for attr in attrs.copy():
-                attr_name = get_sparv_name(attr)
-                if (name_orig, attr_name) in self.skipped_elems:
-                    attrs.pop(attr)
+            if self.skipped_elems:
+                if (name_orig, "") in self.skipped_elems:
+                    return
+                if (name_orig, "*") in self.skipped_elems:
+                    attrs = {}
+                for attr in attrs.copy():
+                    attr_name = get_sparv_name(attr)
+                    if (name_orig, attr_name) in self.skipped_elems:
+                        attrs.pop(attr)
 
             if name_orig in self.targets:
                 # Rename element and/or attributes
@@ -275,7 +313,7 @@ class SparvXMLParser:
                 yield prefix, uri
 
         def get_sparv_name(xml_name: str):
-            """Get the sparv notation of a tag or attr name with regards to XML namespaces."""
+            """Get the sparv notation of a tag or attr name with regard to XML namespaces."""
             ns_uri, tag = get_namespace(xml_name)
             if self.remove_namespaces:
                 return tag
@@ -333,10 +371,10 @@ class SparvXMLParser:
             child_tail = None
             for child in element:
                 if not element_length:
-                    start_subpos += 1
+                    child_start_subpos = start_subpos + 1
                 else:
-                    start_subpos = 0
-                child_length, child_tail, end_subpos = iter_tree(child, start_pos + element_length, start_subpos)
+                    child_start_subpos = 0
+                child_length, child_tail, end_subpos = iter_tree(child, start_pos + element_length, child_start_subpos)
                 element_length += child_length + child_tail
             end_pos = start_pos + element_length
             if child_tail == 0:
@@ -434,7 +472,7 @@ class SparvXMLParser:
 
 def get_namespace(xml_name: str):
     """Search for a namespace in tag and return a tuple (URI, tagname)."""
-    m = re.match(r"\{(.*)\}(.+)", xml_name)
+    m = re.match(r"\{(.*)}(.+)", xml_name)
     return (m.group(1), m.group(2)) if m else ("", xml_name)
 
 

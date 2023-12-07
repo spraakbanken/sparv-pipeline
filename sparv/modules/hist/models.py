@@ -86,8 +86,8 @@ def read_lmf(xml, annotation_elements=("writtenForm", "lemgram"), verbose=True, 
         verbose (bool, optional): Whether to turn on verbose mode. Defaults to True.
         skip_multiword (bool, optional): Whether to make special entries for multiword expressions.
             Set this to False only if the tool used for text annotation cannot handle this at all. Defaults to False.
-        translate_tags (bool, optional): [description]. Defaults to True.
-        use_fallback (bool, optional): [description]. Defaults to False.
+        translate_tags (bool, optional): Whether to translate SALDO tags into SUC tags. Defaults to True.
+        use_fallback (bool, optional): Whether to get SUC POS tag from POS in lemgram as a fallback. Defaults to False.
 
     Returns:
         A lexicon dict:
@@ -140,7 +140,7 @@ def read_lmf(xml, annotation_elements=("writtenForm", "lemgram"), verbose=True, 
                             particle = False
                             mwe_gap = False
 
-                            # Is it the last word in the multi word expression?
+                            # Is it the last word in the multi-word expression?
                             if i == len(wordparts) - 1:
                                 lexicon.setdefault(multiwords[0], {}).setdefault(annotations, (set(), set(), mwe_gap, particle))[1].add(tuple(multiwords[1:]))
                                 multiwords = []
@@ -166,7 +166,7 @@ def read_lmf(xml, annotation_elements=("writtenForm", "lemgram"), verbose=True, 
                      "katt",
                      "doktor"]
         util.misc.test_lexicon(lexicon, testwords)
-        logger.info(f"OK, read {len(lexicon)} entries")
+        logger.info("OK, read %d entries", len(lexicon))
     return lexicon
 
 

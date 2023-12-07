@@ -32,6 +32,10 @@ export:
 > has its own section in the file, like the `metadata` and `export` sections in the example above.
 > By using the `sparv modules` command you can get a list of the available configuration keys and their descriptions.
 
+## Config Schema
+Running `sparv schema` will output a JSON schema which can be used in many text editors to validate your config file as
+you are creating it, and in some editors can be used to provide autocompletion.
+
 ## Corpus Config Wizard
 The corpus config wizard is a tool designed to help you create a corpus config file by asking questions about your
 corpus and the annotations you would like Sparv to add to it. Run `sparv wizard` in order to start the tool. When
@@ -50,11 +54,11 @@ used by multiple Sparv modules, while others are specific to one particular anno
 defines the name of the binary the hunpos module uses to run part-of-speech tagging). These module specific config
 options usually have default values which are defined by the module itself.
 
-When running Sparv your corpus config will be read and combined with Sparv's default config file (`config_default.yaml`
-in the [Sparv data directory](user-manual/installation-and-setup.md#setting-up-sparv)) and the default values defined by
-different Sparv modules. You can view the resulting configuration by running `sparv config`. Using the `config` command
-you can also inspect specific config variables, e.g. `sparv config metadata` or `sparv config metadata.language`. All
-default values can be overridden in your own corpus config.
+When running Sparv your corpus config will be read and combined with Sparv's default config file
+(`config/config_default.yaml` in the [Sparv data directory](user-manual/installation-and-setup.md#setting-up-sparv)) and
+the default values defined by different Sparv modules. You can view the resulting configuration by running `sparv
+config`. Using the `config` command you can also inspect specific config variables, e.g. `sparv config metadata` or
+`sparv config metadata.language`. All default values can be overridden in your own corpus config.
 
 There are a few config options that must be set (either through the default config or the corpus config):
   - `metadata.language` (default: `swe`)
@@ -70,7 +74,7 @@ The `metadata` section of your corpus config contains metadata about your corpus
 - `metadata.id` defines the machine name of the corpus. It is required by some exporter modules. This string may contain
   ascii letters, digits and dashes.
 
-- `metadata.name` is an optional human readable name of the corpus. This option is split into two fields, `eng` and
+- `metadata.name` is an optional human-readable name of the corpus. This option is split into two fields, `eng` and
   `swe` for defining a name in English and in Swedish.
 
 - `metadata.language` defines the language of the source files in the corpus. This should be an ISO 639-3 code. If not
@@ -87,7 +91,7 @@ The `metadata` section of your corpus config contains metadata about your corpus
 The `import` section of your corpus config is used to give Sparv some information about your input files (i.e. your
 corpus).
 
-- `import.source_dir` defines the location of your input files and it defaults to `source`. Sparv will check the
+- `import.source_dir` defines the location of your input files, and it defaults to `source`. Sparv will check the
   source directory recursively for valid input files to process.
 
 - `import.importer` is used to tell Sparv which importer to use when processing your source files. The setting you

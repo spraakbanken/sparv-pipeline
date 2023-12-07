@@ -1,14 +1,17 @@
 """Main Sparv executable."""
-
 import argparse
 import sys
 from pathlib import Path
 
+# PYTHON_ARGCOMPLETE_OK
+import argcomplete
+
 from sparv import __version__
 
 # Check Python version
-if sys.version_info < (3, 6, 2):
-    raise Exception("Python 3.6.2 or higher is required.")
+if sys.version_info < (3, 8, 0):
+    print("Python 3.8 or newer is required.")
+    sys.exit(1)
 
 
 class CustomArgumentParser(argparse.ArgumentParser):
@@ -46,6 +49,61 @@ class CustomHelpFormatter(argparse.RawDescriptionHelpFormatter):
         if isinstance(action, argparse._SubParsersAction):
             return ""
         return result
+
+
+class Completer:
+    """Reads and returns cached autocompletion data."""
+
+    def __init__(self, completion_type):
+        self.type = completion_type
+
+    def __call__(self, parsed_args, **kwargs):
+        # Read config file to find corpus language
+        config_file = Path(parsed_args.dir or Path.cwd(), "config.yaml")
+        cache_data = {}
+
+        if config_file.is_file():
+            import appdirs
+            import yaml
+            try:
+                from yaml import CSafeLoader as SafeLoader
+            except ImportError:
+                from yaml import SafeLoader
+
+            with open(config_file, encoding="utf-8") as f:
+                data = yaml.load(f, Loader=SafeLoader)
+            language = data.get("metadata", {}).get("language")
+
+            cache_file = Path(appdirs.user_config_dir("sparv"), "autocomplete")
+
+            if cache_file.is_file():
+                import pickle
+                try:
+                    with open(cache_file, "rb") as cache:
+                        cache_data = pickle.load(cache)
+                        if not language:
+                            language = cache_data.get("default_language")
+                        cache_data = cache_data.get(language, {})
+                except EOFError:  # Cache placeholder created but not yet populated
+                    pass
+
+            # run-rule includes everything
+            if self.type == "annotate":
+                return [v for t in cache_data.values() for v in t]
+
+            return cache_data.get(self.type, [])
+
+
+class SortedCompletionFinder(argcomplete.CompletionFinder):
+    """Custom CompletionFinder that sorts the completions.
+
+    We use this instead of letting bash sort the completions, to sort flags separately.
+    """
+
+    def filter_completions(self, completions: list):
+        completions = super().filter_completions(completions)
+        completions.sort()
+        return completions
 
 
 def main():
@@ -87,6 +145,8 @@ def main():
         "   create-file      Create specified file(s)",
         "   run-module       Run annotator module independently",
         "   preload          Preload annotators and models",
+        "   autocomplete     Enable tab completion in bash",
+        "   schema           Print a JSON schema for the Sparv config format",
         "",
         "See 'sparv <command> -h' for help with a specific command",
         "For full documentation, visit https://spraakbanken.gu.se/sparv/docs/"
@@ -97,22 +157,28 @@ def main():
 
     # Annotate
     run_parser = subparsers.add_parser("run", description="Annotate a corpus and generate export files.")
-    run_parser.add_argument("output", nargs="*", default=[], help="The type of output format to generate")
+    run_parser.add_argument(
+        "output", nargs="*", default=[], help="The type of output format to generate",
+    ).completer = Completer("export")
     run_parser.add_argument("-l", "--list", action="store_true", help="List available output formats")
 
     install_parser = subparsers.add_parser("install", description="Install a corpus.")
-    install_parser.add_argument("type", nargs="*", default=[], help="The type of installation to perform")
+    install_parser.add_argument(
+        "type", nargs="*", default=[], help="The type of installation to perform"
+    ).completer = Completer("install")
     install_parser.add_argument("-l", "--list", action="store_true", help="List installations to be made")
 
     uninstall_parser = subparsers.add_parser("uninstall", description="Uninstall a corpus.")
-    uninstall_parser.add_argument("type", nargs="*", default=[], help="The type of uninstallation to perform")
+    uninstall_parser.add_argument(
+        "type", nargs="*", default=[], help="The type of uninstallation to perform"
+    ).completer = Completer("uninstall")
     uninstall_parser.add_argument("-l", "--list", action="store_true", help="List uninstallations to be made")
 
     clean_parser = subparsers.add_parser("clean", description="Remove output directories (by default only the "
                                                               "sparv-workdir directory).")
-    clean_parser.add_argument("--export", action="store_true", help="Remove export directory")
-    clean_parser.add_argument("--logs", action="store_true", help="Remove logs directory")
-    clean_parser.add_argument("--all", action="store_true", help="Remove workdir, export and logs directories")
+    clean_parser.add_argument("-e", "--export", action="store_true", help="Remove export directory")
+    clean_parser.add_argument("-l", "--logs", action="store_true", help="Remove logs directory")
+    clean_parser.add_argument("-a", "--all", action="store_true", help="Remove workdir, export and logs directories")
 
     # Inspect
     config_parser = subparsers.add_parser("config", description="Display the corpus configuration.")
@@ -143,7 +209,9 @@ def main():
                                           description=("Download and build the Sparv models. This is optional, as "
                                                        "models will be downloaded and built automatically the first "
                                                        "time they are needed."))
-    models_parser.add_argument("model", nargs="*", default=[], help="The model(s) to be built")
+    models_parser.add_argument(
+        "model", nargs="*", default=[], help="The model(s) to be built"
+    ).completer = Completer("model")
     models_parser.add_argument("-l", "--list", action="store_true", help="List available models")
     models_parser.add_argument("--language", help="Language (ISO 639-3) if different from current corpus language")
     models_parser.add_argument("--all", action="store_true", help="Build all models for the current language")
@@ -156,7 +224,7 @@ def main():
 
     runrule_parser = subparsers.add_parser("run-rule", description="Run specified rule(s) for creating annotations.")
     runrule_parser.add_argument("targets", nargs="*", default=["list"],
-                                help="Annotation(s) to create")
+                                help="Annotation(s) to create").completer = Completer("annotate")
     runrule_parser.add_argument("-l", "--list", action="store_true", help="List available rules")
     runrule_parser.add_argument("-w", "--wildcards", nargs="*", metavar="WILDCARD",
                                 help="Supply values for wildcards using the format 'name=value'")
@@ -173,6 +241,13 @@ def main():
     preloader_parser.add_argument("-j", "--processes", help="Number of processes to use", default=1, type=int)
     preloader_parser.add_argument("-l", "--list", action="store_true", help="List annotators available for preloading")
 
+    autocomplete_parser = subparsers.add_parser("autocomplete", description="Enable tab completion in bash")
+    autocomplete_parser.add_argument("--enable", action="store_true", help="Output script to be sourced in bash")
+    autocomplete_parser.add_argument("--enable-old", action="store_true",
+                                     help="Output script to be sourced in bash, for bash version 4.3 and below")
+
+    subparsers.add_parser("schema", description="Print a JSON schema for the Sparv config format")
+
     # Add common arguments
     for subparser in [run_parser, runrule_parser]:
         subparser.add_argument("-f", "--file", nargs="+", default=[], help="Only annotate specified input file(s)")
@@ -187,12 +262,13 @@ def main():
         subparser.add_argument("--log", metavar="LOGLEVEL", const="info",
                                help="Set the log level (default: 'warning' if --log is not specified, "
                                     "'info' if LOGLEVEL is not specified)",
-                               nargs="?", choices=["debug", "info", "warning", "error", "critical"])
+                               nargs="?", choices=["debug", "info", "warning", "error"])
         subparser.add_argument("--log-to-file", metavar="LOGLEVEL", const="info",
                                help="Set log level for logging to file (default: 'warning' if --log-to-file is not "
                                     "specified, 'info' if LOGLEVEL is not specified)",
-                               nargs="?", choices=["debug", "info", "warning", "error", "critical"])
+                               nargs="?", choices=["debug", "info", "warning", "error"])
         subparser.add_argument("--stats", action="store_true", help="Show summary of time spent per annotator")
+        subparser.add_argument("--json-log", action="store_true", help="Use JSON format for logging")
         subparser.add_argument("--debug", action="store_true", help="Show debug messages")
         subparser.add_argument("--socket", help="Path to socket file created by the 'preload' command")
         subparser.add_argument("--force-preloader", action="store_true",
@@ -201,13 +277,14 @@ def main():
 
     # Add extra arguments to 'run' that we want to come last
     run_parser.add_argument("--unlock", action="store_true", help="Unlock the working directory")
-    run_parser.add_argument("--mark-complete", nargs="+", metavar="FILE", help="Mark output files as complete")
-    run_parser.add_argument("--rerun-incomplete", action="store_true", help="Rerun incomplete output files")
 
     # Backward compatibility
     if len(sys.argv) > 1 and sys.argv[1] == "make":
         print("No rule to make target")
         sys.exit(1)
+
+    # Handle autocompletion
+    SortedCompletionFinder()(parser)
 
     # Parse arguments. We allow unknown arguments for the "run-module" command which is handled separately.
     args, unknown_args = parser.parse_known_args(args=None if sys.argv[1:] else ["--help"])
@@ -217,6 +294,32 @@ def main():
         from sparv.core import run
         run.main(unknown_args, log_level=args.log)
         sys.exit()
+    elif args.command == "autocomplete":
+        if args.enable or args.enable_old:
+            import appdirs
+            try:
+                # Create empty autocomplete cache if it doesn't exist
+                # The cache contents will only be populated if this file exists
+                Path(appdirs.user_config_dir("sparv"), "autocomplete").touch()
+            except FileNotFoundError:
+                pass
+            complete_arguments = ["-o nospace", "-o default", "-o bashdefault"]
+            if args.enable:
+                complete_arguments.append("-o nosort")
+            print(argcomplete.shellcode(["sparv"], complete_arguments=complete_arguments))
+        else:
+            print(
+                "To enable tab autocompletion for Sparv in bash, source the output of the 'sparv autocomplete --enable'"
+                " command in your shell by running the following:\n\n"
+                '    eval "$(sparv autocomplete --enable)"\n\n'
+                "To enable permanently, add the above line to ~/.bashrc by running the following in your terminal:\n\n"
+                "    echo 'eval \"$(sparv autocomplete --enable)\"' >> ~/.bashrc\n\n"
+                "For bash version 4.3 and below, use the flag '--enable-old' instead.\n\n"
+                "Note: Autocompletion of some arguments, such as available exporters, will not be available until some "
+                "part of the Sparv pipeline (e.g. 'sparv run') has been run at least once since enabling "
+                "autocompletion."
+            )
+        sys.exit(0)
     else:
         import snakemake
         from snakemake.logging import logger
@@ -261,7 +364,7 @@ def main():
         print(f"{e.strerror}: {e.filename!r}")
         sys.exit(1)
 
-    if args.command not in ("build-models", "languages"):
+    if args.command not in ("autocomplete", "build-models", "languages", "schema"):
         if not config_exists:
             print(f"No config file ({paths.config_file}) found in working directory.")
             sys.exit(1)
@@ -272,18 +375,23 @@ def main():
                   f"from a directory that has a config file ({paths.config_file}).")
             sys.exit(1)
 
-    snakemake_args = {"workdir": args.dir}
+    snakemake_args = {
+        "workdir": args.dir,
+        "rerun_triggers": ["mtime", "input"],  # Rerun based on file modification times and changes to the set of input files
+        "force_incomplete": True  # Always rerun incomplete files
+    }
     config = {"run_by_sparv": True}
     simple_target = False
     log_level = ""
     log_file_level = ""
+    json_log = False
     simple_mode = False
     stats = False
     pass_through = False
     dry_run = False
     keep_going = False
 
-    if args.command in ("modules", "config", "files", "clean", "presets", "classes", "languages", "preload"):
+    if args.command in ("modules", "config", "files", "clean", "presets", "classes", "languages", "preload", "schema"):
         snakemake_args["targets"] = [args.command]
         simple_target = True
         if args.command == "clean":
@@ -300,12 +408,17 @@ def main():
                 if getattr(args, t):
                     config["types"].append(t)
         elif args.command == "preload":
-            config["socket"] = args.socket
+            config["socket"] = str(Path(args.socket).resolve())
             config["preloader"] = True
             config["processes"] = args.processes
             config["preload_command"] = args.preload_command
+            config["targets"] = ["preload"]
             if args.list:
                 snakemake_args["targets"] = ["preload_list"]
+        elif args.command == "schema":
+            config["targets"] = ["schema"]
+            # For the schema we include modules from all languages
+            config["language"] = "__all__"
 
     elif args.command in ("run", "run-rule", "create-file", "install", "uninstall", "build-models"):
         try:
@@ -332,12 +445,6 @@ def main():
                 snakemake_args["unlock"] = args.unlock
                 simple_target = True
                 pass_through = True
-            if args.mark_complete:
-                snakemake_args["cleanup_metadata"] = args.mark_complete
-                simple_target = True
-                pass_through = True
-            elif args.rerun_incomplete:
-                snakemake_args["force_incomplete"] = True
             if args.list:
                 snakemake_args["targets"] = ["list_exports"]
             elif args.output:
@@ -390,19 +497,26 @@ def main():
 
         log_level = args.log or "warning"
         log_file_level = args.log_to_file or "warning"
+        json_log = args.json_log
         simple_mode = args.simple
+        socket = args.socket
+
+        if socket:
+            # Convert to absolute path, to work together with --dir
+            socket_path = Path(socket).resolve()
+            if not socket_path.is_socket():
+                print(f"Socket file '{socket}' doesn't exist or isn't a socket.")
+                sys.exit(1)
+            socket = str(socket_path)
+
         config.update({"debug": args.debug,
                        "file": vars(args).get("file", []),
                        "log_level": log_level,
                        "log_file_level": log_file_level,
-                       "socket": args.socket,
+                       "socket": socket,
                        "force_preloader": args.force_preloader,
                        "targets": snakemake_args["targets"],
                        "threads": args.cores})
-        # If using socket, make sure that socket file exists
-        if args.socket and not Path(args.socket).is_socket():
-            print(f"Socket file '{args.socket}' doesn't exist or isn't a socket.")
-            sys.exit(1)
 
     if simple_target:
         # Force Snakemake to use threads to prevent unnecessary processes for simple targets
@@ -410,9 +524,17 @@ def main():
 
     # Disable Snakemake's default log handler and use our own
     logger.log_handler = []
-    progress = log_handler.LogHandler(progressbar=not simple_target, log_level=log_level, log_file_level=log_file_level,
-                                      simple=simple_mode, stats=stats, pass_through=pass_through, dry_run=dry_run,
-                                      keep_going=keep_going)
+    progress = log_handler.LogHandler(
+        progressbar=not (simple_target or json_log),
+        log_level=log_level,
+        log_file_level=log_file_level,
+        simple=simple_mode,
+        stats=stats,
+        pass_through=pass_through,
+        dry_run=dry_run,
+        keep_going=keep_going,
+        json=json_log,
+    )
     snakemake_args["log_handler"] = [progress.log_handler]
 
     config["log_server"] = progress.log_server

@@ -1,11 +1,27 @@
 """Build word frequency list."""
 
 import csv
+import os.path
 from collections import defaultdict
+from typing import Optional
 
-from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Config, Export,
-                       ExportAnnotationsAllSourceFiles, ExportInput, OutputMarker, SourceAnnotationsAllSourceFiles,
-                       exporter, get_logger, installer, util)
+from sparv.api import (
+    AllSourceFilenames,
+    AnnotationAllSourceFiles,
+    Config,
+    Corpus,
+    Export,
+    ExportAnnotationsAllSourceFiles,
+    ExportInput,
+    MarkerOptional,
+    OutputMarker,
+    SourceAnnotationsAllSourceFiles,
+    exporter,
+    get_logger,
+    installer,
+    uninstaller,
+    util
+)
 
 logger = get_logger(__name__)
 
@@ -27,29 +43,24 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
     """Create a word frequency list for the entire corpus.
 
     Args:
-        source_files (list, optional): The source files belonging to this corpus. Defaults to AllSourceFilenames.
-        word (str, optional): Word annotations. Defaults to AnnotationAllSourceFiles("<token:word>").
-        token (str, optional): Token span annotations. Defaults to AnnotationAllSourceFiles("<token>").
-        annotations (str, optional): All automatic annotations to include in the export. Defaults to
-            ExportAnnotationsAllSourceFiles("stats_export.annotations").
-        source_annotations (str, optional): All source annotations to include in the export. If left empty, none will be
-            included. Defaults to SourceAnnotations("stats_export.source_annotations").
+        source_files: The source files belonging to this corpus.
+        word: Word annotations.
+        token: Token span annotations.
+        annotations: All automatic annotations to include in the export.
+        source_annotations: All source annotations to include in the export. If left empty, none will be included.
         remove_namespaces: Whether to remove module "namespaces" from element and attribute names.
-            Disabled by default.
         sparv_namespace: The namespace to be added to all Sparv annotations.
         source_namespace: The namespace to be added to all annotations present in the source.
-        out (str, optional): The output word frequency file.
-            Defaults to Export("stats_export.frequency_list/[metadata.id].csv").
-        delimiter (str, optional): Column delimiter to use in the csv. Defaults to Config("stats_export.delimiter").
-        cutoff (int, optional): The minimum frequency a word must have in order to be included in the result.
-            Defaults to Config("stats_export.cutoff").
+        out: The output word frequency file.
+        delimiter: Column delimiter to use in the csv.
+        cutoff: The minimum frequency a word must have in order to be included in the result.
     """
     # Add "word" to annotations
-    annotations = [(word, None)] + annotations
+    annotations = [(word, None)] + list(annotations)
 
     # Get annotations list and export names
     annotation_list, token_attributes, export_names = util.export.get_annotation_names(
-        annotations, source_annotations or [], source_files=source_files, token_name=token.name,
+        annotations, source_annotations or [], token_name=token.name,
         remove_namespaces=remove_namespaces, sparv_namespace=sparv_namespace, source_namespace=source_namespace)
 
     # Get all token and struct annotations (except the span annotations)
@@ -62,10 +73,9 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
         # Get values for struct annotations (per token)
         struct_values = []
         for struct_annotation in struct_annotations:
-            struct_annot = Annotation(struct_annotation.name, source_file=source_file)
-            token_parents = Annotation(token.name, source_file=source_file).get_parents(struct_annot)
+            token_parents = token.get_parents(source_file, struct_annotation)
             try:
-                struct_annot_list = list(struct_annot.read())
+                struct_annot_list = list(struct_annotation.read(source_file))
                 struct_values.append([struct_annot_list[p] if p is not None else "" for p in token_parents])
             # Handle cases where some source files are missing structural source annotations
             except FileNotFoundError:
@@ -86,14 +96,34 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
     write_csv(out, column_names, freq_dict, delimiter, cutoff)
 
 
-@installer("Install word frequency list on remote host")
-def install_freq_list(freq_list: ExportInput = ExportInput("stats_export.frequency_list/stats_[metadata.id].csv"),
-                      out: OutputMarker = OutputMarker("stats_export.install_freq_list_marker"),
-                      host: str = Config("stats_export.remote_host"),
-                      target_dir: str = Config("stats_export.remote_dir")):
+@installer("Install word frequency list on remote host", uninstaller="stats_export:uninstall_freq_list")
+def install_freq_list(
+    freq_list: ExportInput = ExportInput("stats_export.frequency_list/stats_[metadata.id].csv"),
+    marker: OutputMarker = OutputMarker("stats_export.install_freq_list_marker"),
+    uninstall_marker: MarkerOptional = MarkerOptional("stats_export.uninstall_freq_list_marker"),
+    host: Optional[str] = Config("stats_export.remote_host"),
+    target_dir: str = Config("stats_export.remote_dir")
+):
     """Install frequency list on server by rsyncing."""
     util.install.install_path(freq_list, host, target_dir)
-    out.write()
+    uninstall_marker.remove()
+    marker.write()
+
+
+@uninstaller("Uninstall word frequency list")
+def uninstall_freq_list(
+    corpus_id: Corpus = Corpus(),
+    marker: OutputMarker = OutputMarker("stats_export.uninstall_freq_list_marker"),
+    install_marker: MarkerOptional = MarkerOptional("stats_export.install_freq_list_marker"),
+    host: Optional[str] = Config("stats_export.remote_host"),
+    remote_dir: str = Config("stats_export.remote_dir")
+):
+    """Uninstall word frequency list."""
+    remote_file = os.path.join(remote_dir, f"stats_{corpus_id}.csv")
+    logger.info("Removing word frequency file %s%s", host + ":" if host else "", remote_file)
+    util.install.uninstall_path(remote_file, host)
+    install_marker.remove()
+    marker.write()
 
 
 ################################################################################
@@ -105,7 +135,7 @@ def write_csv(out, column_names, freq_dict, delimiter, cutoff):
     with open(out, "w", encoding="utf-8") as csvfile:
         csv_writer = csv.writer(csvfile, delimiter=delimiter)
         csv_writer.writerow(column_names)
-        for annotations, freq in sorted(freq_dict.items(), key=lambda x: -x[1]):
+        for annotations, freq in sorted(freq_dict.items(), key=lambda x: (-x[1], x[0])):
             if cutoff and cutoff > freq:
                 break
             csv_writer.writerow(list(annotations) + [freq])

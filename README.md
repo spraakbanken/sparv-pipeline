@@ -15,7 +15,7 @@ If you have any questions, problems or suggestions please contact <sb-sparv@sven
 * A Unix-like environment (e.g. Linux, OS X or [Windows Subsystem for
   Linux](https://docs.microsoft.com/en-us/windows/wsl/about)) *Note:* Most of Sparv's features should work in a Windows
   environment as well, but since we don't do any testing on Windows we cannot guarantee anything.
-* [Python 3.6.2](http://python.org/) or newer
+* [Python 3.8](https://python.org/) or newer.
 
 ## Installation
 
@@ -44,8 +44,7 @@ Before cloning the repository with [git](https://git-scm.com/downloads) make sur
 Storage](https://git-lfs.github.com/) installed (`apt install git-lfs`). Some files will not be downloaded correctly
 otherwise.
 
-We recommend that you set up a virtual environment and install the dependencies (including the dev dependencies) listed
-in `setup.py`:
+Install the dependencies, including the dev dependencies. We recommend that you first set up a virtual environment:
 
 ```
 python3 -m venv venv

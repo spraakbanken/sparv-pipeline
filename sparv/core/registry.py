@@ -5,9 +5,9 @@ import pkgutil
 import re
 from collections import defaultdict
 from enum import Enum
-from typing import Callable, Dict, List, Optional, Tuple, Type, TypeVar
+from types import ModuleType
+from typing import Callable, Dict, List, Optional, Set, Tuple, Type, TypeVar
 
-import iso639
 import typing_inspect
 
 from sparv.core import config as sparv_config
@@ -40,7 +40,25 @@ class Module:
         self.name = name
         self.functions: Dict[str, dict] = {}
         self.description = None
+        self.language = None
 
+
+class LanguageRegistry(dict):
+    """Registry for supported languages."""
+
+    def add_language(self, lang: str) -> str:
+        from sparv.api import util
+        if lang not in self:
+            langcode, _, suffix = lang.partition("-")
+            iso_lang = util.misc.get_language_name_by_part3(langcode)
+            if iso_lang:
+                self[lang] = f"{iso_lang} ({suffix})" if suffix else iso_lang
+            else:
+                self[lang] = lang
+        return self[lang]
+
+# Dictionary with annotators that will be added to Sparv unless they are excluded (e.g. due to incompatible language)
+_potential_annotators = defaultdict(list)
 
 # All loaded Sparv modules with their functions (possibly limited by the selected language)
 modules: Dict[str, Module] = {}
@@ -64,7 +82,7 @@ all_module_classes = defaultdict(lambda: defaultdict(list))
 wizards = []
 
 # All supported languages
-languages = {}
+languages = LanguageRegistry()
 
 # All config keys containing lists of automatic annotations (i.e. ExportAnnotations)
 annotation_sources = {"export.annotations"}
@@ -89,7 +107,10 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
     Returns:
         A list of available module names.
     """
-    from pkg_resources import iter_entry_points, VersionConflict
+    from importlib_metadata import entry_points
+    from packaging.requirements import Requirement
+
+    from sparv import __version__ as sparv_version
 
     modules_full_path = paths.sparv_path / paths.modules_dir
     core_modules_full_path = paths.sparv_path / paths.core_modules_dir
@@ -101,7 +122,7 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
             module_names.append(module.name)
             if not no_import:
                 m = importlib.import_module(".".join((path, module.name)))
-                add_module_metadata(m, module.name)
+                add_module_to_registry(m, module.name)
 
     if find_custom:
         custom_annotators = [a.get("annotator", "").split(":")[0] for a in sparv_config.get("custom_annotations", [])]
@@ -122,29 +143,68 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
                 except Exception as e:
                     raise SparvErrorMessage(f"Module '{module_name}' cannot be imported due to an error in file "
                                             f"'{module_path}': {e}")
-                add_module_metadata(m, module_name)
+                add_module_to_registry(m, module_name)
 
     # Search for installed plugins
-    for entry_point in iter_entry_points("sparv.plugin"):
+    for entry_point in entry_points(group="sparv.plugin"):
+        skip = False
         try:
             m = entry_point.load()
-        except VersionConflict as e:
-            console.print(f"[red]:warning-emoji:  The plugin {entry_point.dist} could not be loaded. "
-                          f"It requires {e.req}, but the current installed version is {e.dist}.\n")
+            # Check compatibility with Sparv version
+            for requirement in entry_point.dist.requires:
+                req = Requirement(requirement)
+                if req.name == "sparv-pipeline":
+                    req.specifier.prereleases = True  # Accept pre-release versions of Sparv
+                    if not sparv_version in req.specifier:
+                        console.print(
+                            f"[red]:warning-emoji:  The plugin {entry_point.name} ({entry_point.dist.name}) could not "
+                            f"be loaded. It requires Sparv version {req.specifier}, but the currently running Sparv "
+                            f"version is {sparv_version}.\n"
+                        )
+                        skip = True
+                    break
+            if skip:
+                continue
+        except Exception as e:
+            console.print(
+                f"[red]:warning-emoji:  The plugin {entry_point.name} ({entry_point.dist.name}) could not be loaded:\n"
+                f"\n    {e}"
+            )
             continue
-        add_module_metadata(m, entry_point.name)
+        add_module_to_registry(m, entry_point.name)
         module_names.append(entry_point.name)
 
     return module_names
 
 
-def add_module_metadata(module, module_name):
-    """Add module metadata."""
+def add_module_to_registry(module: ModuleType, module_name: str, skip_language_check: bool = False) -> None:
+    """Add module and its annotators to registry."""
+    if not skip_language_check and hasattr(module, "__language__"):
+        # Add to set of supported languages...
+        for lang in module.__language__:
+            languages.add_language(lang)
+        # ...but skip modules for other languages than the one specified in the config
+        if not check_language(
+                sparv_config.get("metadata.language"), module.__language__, sparv_config.get("metadata.variety")
+        ):
+            del _potential_annotators[module_name]
+            return
     if hasattr(module, "__config__"):
         for cfg in module.__config__:
             handle_config(cfg, module_name)
-    if module_name in modules:
-        modules[module_name].description = getattr(module, "__description__", module.__doc__)
+
+    # Add module to registry
+    modules[module_name] = Module(module_name)
+    modules[module_name].description = getattr(module, "__description__", module.__doc__)
+    modules[module_name].language = getattr(module, "__language__", None)
+
+    # Register annotators with Sparv
+    for a in _potential_annotators[module_name]:
+        # Set annotator language to same as module, unless overridden
+        if hasattr(module, "__language__") and not a["language"]:
+            a["language"] = module.__language__
+        _add_to_registry(a, skip_language_check=skip_language_check)
+    del _potential_annotators[module_name]
 
 
 def wizard(config_keys: List[str], source_structure: bool = False):
@@ -173,54 +233,94 @@ def _get_module_name(module_string: str) -> str:
     return module_name
 
 
-def _annotator(description: str, a_type: Annotator, name: Optional[str] = None, file_extension: Optional[str] = None,
-               outputs=(), text_annotation=None, structure=None, language: Optional[List[str]] = None,
-               config: Optional[List[Config]] = None, order: Optional[int] = None, abstract: bool = False,
-               wildcards: Optional[List[Wildcard]] = None, preloader: Optional[Callable] = None,
-               preloader_params: Optional[List[str]] = None, preloader_target: Optional[str] = None,
-               preloader_cleanup: Optional[Callable] = None, preloader_shared: bool = True,
-               uninstaller: Optional[str] = None):
+def _annotator(
+    description: str,
+    a_type: Annotator,
+    name: Optional[str] = None,
+    file_extension: Optional[str] = None,
+    outputs=(),
+    text_annotation=None,
+    structure=None,
+    language: Optional[List[str]] = None,
+    config: Optional[List[Config]] = None,
+    priority: Optional[int] = None,
+    order: Optional[int] = None,
+    abstract: bool = False,
+    wildcards: Optional[List[Wildcard]] = None,
+    preloader: Optional[Callable] = None,
+    preloader_params: Optional[List[str]] = None,
+    preloader_target: Optional[str] = None,
+    preloader_cleanup: Optional[Callable] = None,
+    preloader_shared: bool = True,
+    uninstaller: Optional[str] = None,
+):
     """Return a decorator for annotator functions, adding them to annotator registry."""
+
     def decorator(f):
         """Add wrapped function to registry."""
         module_name = _get_module_name(f.__module__)
-        _add_to_registry({
-            "module_name": module_name,
-            "description": description,
-            "function": f,
-            "name": name,
-            "type": a_type,
-            "file_extension": file_extension,
-            "outputs": outputs,
-            "text_annotation": text_annotation,
-            "structure": structure,
-            "language": language,
-            "config": config,
-            "order": order,
-            "abstract": abstract,
-            "wildcards": wildcards,
-            "preloader": preloader,
-            "preloader_params": preloader_params,
-            "preloader_target": preloader_target,
-            "preloader_cleanup": preloader_cleanup,
-            "preloader_shared": preloader_shared,
-            "uninstaller": uninstaller
-        })
+        _potential_annotators[module_name].append(
+            {
+                "module_name": module_name,
+                "description": description,
+                "function": f,
+                "name": name,
+                "type": a_type,
+                "file_extension": file_extension,
+                "outputs": outputs,
+                "text_annotation": text_annotation,
+                "structure": structure,
+                "language": language,
+                "config": config,
+                "priority": priority,
+                "order": order,
+                "abstract": abstract,
+                "wildcards": wildcards,
+                "preloader": preloader,
+                "preloader_params": preloader_params,
+                "preloader_target": preloader_target,
+                "preloader_cleanup": preloader_cleanup,
+                "preloader_shared": preloader_shared,
+                "uninstaller": uninstaller,
+            }
+        )
         return f
 
     return decorator
 
 
-def annotator(description: str, name: Optional[str] = None, language: Optional[List[str]] = None,
-              config: Optional[List[Config]] = None, order: Optional[int] = None,
-              wildcards: Optional[List[Wildcard]] = None, preloader: Optional[Callable] = None,
-              preloader_params: Optional[List[str]] = None, preloader_target: Optional[str] = None,
-              preloader_cleanup: Optional[Callable] = None, preloader_shared: bool = True):
+
+def annotator(
+    description: str,
+    name: Optional[str] = None,
+    language: Optional[List[str]] = None,
+    config: Optional[List[Config]] = None,
+    priority: Optional[int] = None,
+    order: Optional[int] = None,
+    wildcards: Optional[List[Wildcard]] = None,
+    preloader: Optional[Callable] = None,
+    preloader_params: Optional[List[str]] = None,
+    preloader_target: Optional[str] = None,
+    preloader_cleanup: Optional[Callable] = None,
+    preloader_shared: bool = True,
+):
     """Return a decorator for annotator functions, adding them to the annotator registry."""
-    return _annotator(description=description, a_type=Annotator.annotator, name=name, language=language,
-                      config=config, order=order, wildcards=wildcards, preloader=preloader,
-                      preloader_params=preloader_params, preloader_target=preloader_target,
-                      preloader_cleanup=preloader_cleanup, preloader_shared=preloader_shared)
+    return _annotator(
+        description=description,
+        a_type=Annotator.annotator,
+        name=name,
+        language=language,
+        config=config,
+        priority=priority,
+        order=order,
+        wildcards=wildcards,
+        preloader=preloader,
+        preloader_params=preloader_params,
+        preloader_target=preloader_target,
+        preloader_cleanup=preloader_cleanup,
+        preloader_shared=preloader_shared,
+    )
+
 
 
 def importer(description: str, file_extension: str, name: Optional[str] = None, outputs=None,
@@ -248,8 +348,15 @@ def importer(description: str, file_extension: str, name: Optional[str] = None, 
                       outputs=outputs, text_annotation=text_annotation, structure=structure, config=config)
 
 
-def exporter(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
-             language: Optional[List[str]] = None, order: Optional[int] = None, abstract: bool = False):
+def exporter(
+    description: str,
+    name: Optional[str] = None,
+    config: Optional[List[Config]] = None,
+    language: Optional[List[str]] = None,
+    priority: Optional[int] = None,
+    order: Optional[int] = None,
+    abstract: bool = False,
+):
     """Return a decorator for exporter functions.
 
     Args:
@@ -263,57 +370,96 @@ def exporter(description: str, name: Optional[str] = None, config: Optional[List
     Returns:
         A decorator
     """
-    return _annotator(description=description, a_type=Annotator.exporter, name=name, config=config, language=language,
-                      order=order, abstract=abstract)
+    return _annotator(
+        description=description,
+        a_type=Annotator.exporter,
+        name=name,
+        config=config,
+        language=language,
+        priority=priority,
+        order=order,
+        abstract=abstract,
+    )
 
 
-def installer(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
-              language: Optional[List[str]] = None, uninstaller: Optional[str] = None):
+def installer(
+    description: str,
+    name: Optional[str] = None,
+    config: Optional[List[Config]] = None,
+    language: Optional[List[str]] = None,
+    priority: Optional[int] = None,
+    uninstaller: Optional[str] = None,
+):
     """Return a decorator for installer functions."""
-    return _annotator(description=description, a_type=Annotator.installer, name=name, config=config, language=language,
-                      uninstaller=uninstaller)
+    return _annotator(
+        description=description,
+        a_type=Annotator.installer,
+        name=name,
+        config=config,
+        language=language,
+        priority=priority,
+        uninstaller=uninstaller,
+    )
 
 
-def uninstaller(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
-                language: Optional[List[str]] = None):
+def uninstaller(
+    description: str,
+    name: Optional[str] = None,
+    config: Optional[List[Config]] = None,
+    language: Optional[List[str]] = None,
+    priority: Optional[int] = None,
+):
     """Return a decorator for uninstaller functions."""
-    return _annotator(description=description, a_type=Annotator.uninstaller, name=name, config=config,
-                      language=language)
+    return _annotator(
+        description=description,
+        a_type=Annotator.uninstaller,
+        name=name,
+        config=config,
+        language=language,
+        priority=priority,
+    )
 
 
-def modelbuilder(description: str, name: Optional[str] = None, config: Optional[List[Config]] = None,
-                 language: Optional[List[str]] = None, order: Optional[int] = None):
+def modelbuilder(
+    description: str,
+    name: Optional[str] = None,
+    config: Optional[List[Config]] = None,
+    language: Optional[List[str]] = None,
+    priority: Optional[int] = None,
+    order: Optional[int] = None,
+):
     """Return a decorator for modelbuilder functions."""
-    return _annotator(description=description, a_type=Annotator.modelbuilder, name=name, config=config,
-                      language=language, order=order)
+    return _annotator(
+        description=description,
+        a_type=Annotator.modelbuilder,
+        name=name,
+        config=config,
+        language=language,
+        priority=priority,
+        order=order,
+    )
 
 
-def _add_to_registry(annotator):
+def _add_to_registry(annotator: dict, skip_language_check: bool = False):
     """Add function to annotator registry. Used by annotator."""
     module_name = annotator["module_name"]
     f_name = annotator["function"].__name__ if not annotator["name"] else annotator["name"]
     rule_name = f"{module_name}:{f_name}"
 
-    if annotator["language"]:
+    if not skip_language_check and annotator["language"]:
         # Add to set of supported languages...
         for lang in annotator["language"]:
-            if lang not in languages:
-                langcode, _, suffix = lang.partition("-")
-                if suffix:
-                    suffix = f" ({suffix})"
-                if langcode in iso639.languages.part3:
-                    languages[lang] = iso639.languages.get(part3=langcode).name + suffix
-                else:
-                    languages[lang] = lang
+            languages.add_language(lang)
         # ... but skip annotators for other languages than the one specified in the config
-        if sparv_config.get("metadata.language") and not check_language(
-                sparv_config.get("metadata.language"), annotator["language"], sparv_config.get("metadata.variety")):
+        if not check_language(
+                sparv_config.get("metadata.language"), annotator["language"], sparv_config.get("metadata.variety")
+        ):
             return
 
     # Add config variables to config
     if annotator["config"]:
         for c in annotator["config"]:
-            handle_config(c, module_name, rule_name)
+            handle_config(c, module_name, rule_name, annotator["language"])
 
     # Handle text annotation for selected importer
     if annotator["type"] == Annotator.importer and rule_name == sparv_config.get("import.importer"):
@@ -363,10 +509,11 @@ def _add_to_registry(annotator):
                                 all_module_classes[language][cls].append(cls_target)
 
                     # Only add classes for relevant languages
-                    if not annotator["language"] or (
-                        annotator["language"] and sparv_config.get("metadata.language")
-                            and check_language(sparv_config.get("metadata.language"), annotator["language"],
-                                               sparv_config.get("metadata.variety"))):
+                    if check_language(
+                        sparv_config.get("metadata.language"),
+                        annotator["language"],
+                        sparv_config.get("metadata.variety")
+                    ):
                         if cls_target not in annotation_classes["module_classes"][cls]:
                             annotation_classes["module_classes"][cls].append(cls_target)
 
@@ -393,8 +540,6 @@ def _add_to_registry(annotator):
         raise SparvErrorMessage(f"'{rule_name}' creates no OutputMarker, which is required by all installers and "
                                 "uninstallers.")
 
-    if module_name not in modules:
-        modules[module_name] = Module(module_name)
     if f_name in modules[module_name].functions:
         print("Annotator function '{}' collides with other function with same name in module '{}'.".format(f_name,
                                                                                                            module_name))
@@ -421,7 +566,12 @@ def find_implicit_classes() -> None:
                 annotation_classes["implicit_classes"][cls] = annotation
 
 
-def handle_config(cfg, module_name, rule_name: Optional[str] = None) -> None:
+def handle_config(
+    cfg: Config,
+    module_name: str,
+    rule_name: Optional[str] = None,
+    language: Optional[List[str]] = None
+) -> None:
     """Handle Config instances."""
     if not cfg.name.startswith(module_name + "."):
         raise SparvErrorMessage(f"Config option '{cfg.name}' in module '{module_name}' doesn't include module "
@@ -437,7 +587,20 @@ def handle_config(cfg, module_name, rule_name: Optional[str] = None) -> None:
             f"The config variable '{cfg.name}' in '{rule_name or module_name}' has already been declared.")
     if cfg.default is not None:
         sparv_config.set_default(cfg.name, cfg.default)
-    sparv_config.add_to_structure(cfg.name, cfg.default, description=cfg.description, annotator=rule_name)
+    if language:
+        langcodes = []
+        suffixes = []
+        for lang in language:
+            langcode, _, suffix = lang.partition("-")
+            langcodes.append(langcode)
+            suffixes.append(suffix)
+        suffixes = set(suffixes)
+        if len(suffixes) == 1 and next(iter(suffixes)) == "":
+            suffixes = []
+        cfg.conditions.append(Config("metadata.language", datatype=str, choices=langcodes))
+        if suffixes:
+            cfg.conditions.append(Config("metadata.variety", datatype=str, choices=suffixes))
+    sparv_config.add_to_structure(cfg, annotator=rule_name)
     if not cfg.description:
         raise SparvErrorMessage(f"Missing description for configuration key '{cfg.name}' in module '{module_name}'.")
 
@@ -522,26 +685,38 @@ def expand_variables(string, rule_name: Optional[str] = None, is_annotation: boo
         # Split if list of alternatives
         strings = [s for s in string.split(", ") for string in strings]
 
+    def expand_classes(s: str, parents: Set[str]) -> Tuple[Optional[str], Optional[str]]:
+        classes = find_classes(s, True)
+        if not classes:
+            return s, None
+        for cls in classes:
+            # Check that cls isn't among its parents
+            if cls.group(1) in parents:
+                raise SparvErrorMessage(
+                    f"The class {cls.group()} refers to itself, either directly or indirectly, leading to an infinite "
+                    "loop. Check your class definitions in your config file under the 'classes' section. Also check "
+                    "'import.text_annotation', which automatically sets the <text> class."
+                )
+            real_ann = _expand_class(cls.group(1))
+            if real_ann:
+                final_ann, rest_ = expand_classes(real_ann, parents.union([cls.group(1)]))
+                s = s.replace(cls.group(), final_ann, 1)
+                if rest_:
+                    return s, rest_
+            else:
+                return s, cls.group()
+        return s, None
+
     for string in strings:
         # Convert class names to real annotations
-        while True:
-            clss = find_classes(string, True)
-            if not clss:
-                break
-            for cls in clss:
-                real_ann = _expand_class(cls.group(1))
-                if real_ann:
-                    string = string.replace(cls.group(), real_ann)
-                else:
-                    rest.append(cls.group())
-                    break
-            else:
-                continue
-            break
+        string, unknown = expand_classes(string, set())
+        if unknown:
+            rest.append(unknown)
 
         if is_annotation and len(strings) > 1:
-            # If multiple alternative annotations, return the first one that is explicitly used, or the last
-            if string in explicit_annotations or clss and set(clss).intersection(explicit_annotations):
+            # If multiple alternative annotations, return the first one that is explicitly used as an export annotation,
+            # or referred to by a class in the config. As a fallback use the last annotation.
+            if string in explicit_annotations or string in annotation_classes["config_classes"].values():
                 break
 
     return string, rest
@@ -573,7 +748,17 @@ def check_language(corpus_lang: str, langs: List[str], corpus_lang_suffix: Optio
     """Check if corpus language is among a list of languages.
 
     Any suffix on corpus_lang will be ignored.
+
+    If langs is empty, always return True.
+    If corpus_lang is "__all__", always return True.
     """
+    if not langs or corpus_lang == "__all__":
+        return True
+
+    if not isinstance(corpus_lang, str):
+        return False
+
     if corpus_lang_suffix:
         corpus_lang = corpus_lang + "-" + corpus_lang_suffix
+
     return corpus_lang in langs or corpus_lang.split("-")[0] in langs

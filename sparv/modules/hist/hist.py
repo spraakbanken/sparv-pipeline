@@ -27,13 +27,13 @@ def annotate_saldo(
         msd: Optional[Annotation] = Annotation("<token:msd>"),
         delimiter: str = Config("hist.delimiter"),
         affix: str = Config("hist.affix"),
-        precision: str = Config("saldo.precision"),
+        precision: Optional[str] = Config("saldo.precision"),
         precision_filter: str = Config("saldo.precision_filter"),
         min_precision: float = Config("saldo.min_precision"),
         skip_multiword: bool = Config("saldo.skip_multiword"),
         max_gaps: int = Config("hist.max_mwe_gaps"),
         allow_multiword_overlap: bool = Config("saldo.allow_multiword_overlap"),
-        word_separator: str = Config("saldo.word_separator"),
+        word_separator: Optional[str] = Config("saldo.word_separator"),
         models_preloaded: Optional[dict] = None):
     """Use lexicon models (SALDO, Dalin and Swedberg) to annotate (potentially msd-tagged) words."""
     saldo.main(token=token, word=word, sentence=sentence, reference=reference, out_sense=out_sense,
@@ -61,7 +61,7 @@ def annotate_saldo_fsv(
         models: List[Model] = [Model("[hist.fsv_model]")],
         delimiter: str = Config("hist.delimiter"),
         affix: str = Config("hist.affix"),
-        precision: str = Config("saldo.precision"),
+        precision: Optional[str] = Config("saldo.precision"),
         precision_filter: str = Config("saldo.precision_filter"),
         min_precision: float = Config("hist.fsv_min_precision"),
         skip_multiword: bool = Config("saldo.skip_multiword"),
@@ -86,12 +86,11 @@ def extract_pos(out: Output = Output("<token>:hist.homograph_set", description="
     """Extract POS tags from lemgrams.
 
     Args:
-        out (Output): The output annotation. Defaults to Output("<token>:hist.homograph_set").
-        lemgrams (Annotation): Input lemgram annotation. Defaults to Annotation("<token>:saldo.lemgram").
-        extralemgrams (Optional[Annotation], optional): Additional annotation from which more pos-tags can be extracted.
-            Defaults to Annotation("[hist.extralemgrams]").
-        delimiter (str): Character to put between ambiguous results. Defaults to Config("hist.delimiter").
-        affix (str): Character to put before and after sets of results. Defaults to Config("hist.affix").
+        out: The output annotation.
+        lemgrams: Input lemgram annotation.
+        extralemgrams: Additional annotation from which more pos-tags can be extracted.
+        delimiter: Character to put between ambiguous results.
+        affix: Character to put before and after sets of results.
     """
     def oktag(tag):
         return tag is not None and tag.group(1) not in ["e", "sxc", "mxc"]
@@ -123,15 +122,15 @@ def lemgram_fallback(
     """Lookup lemgrams in models for words that do not already have a lemgram.
 
     Args:
-        out (Output): The output annotation. Defaults to Output("<token>:hist.lemgram").
-        word (Annotation): Input annotation with token strings. Defaults to Annotation("<token:word>").
-        msd (Annotation): Input annotation with POS and morphosyntactig desciptions. Defaults to Annotation("<token:msd>").
-        lemgram (Annotation): Input annotation with SALDO lemgrams. Defaults to Annotation("<token>:saldo.lemgram").
-        key (str): Key to lookup in the models. Defaults to Config("hist.lemgram_key").
-        models (List[Model], optional): A list of lexicon models. Defaults to [Model("[hist.dalin_model]"), Model("[hist.swedberg_model]")].
-        delimiter (str): Character to put between ambiguous results. Defaults to Config("hist.delimiter").
-        affix (str): Character to put before and after sets of results. Defaults to Config("hist.affix").
-        models_preloaded (dict, optional): Preloaded models. Defaults to None.
+        out: The output annotation.
+        word: Input annotation with token strings.
+        msd: Input annotation with POS and morphosyntactig desciptions.
+        lemgram: Input annotation with SALDO lemgrams.
+        key: Key to lookup in the models.
+        models: A list of lexicon models.
+        delimiter: Character to put between ambiguous results.
+        affix: Character to put before and after sets of results.
+        models_preloaded: Preloaded models.
 
     """
     _annotate_fallback(out=out, word=word, msd=msd, main_annotation=lemgram, key=key, models=models, delimiter=delimiter,
@@ -156,15 +155,15 @@ def baseform_fallback(
     """Lookup baseforms in models for words that do not already have a baseform.
 
     Args:
-        out (Output): The output annotation. Defaults to Output("<token>:hist.baseform").
-        word (Annotation): Input annotation with token strings. Defaults to Annotation("<token:word>").
-        msd (Annotation): Input annotation with POS and morphosyntactig desciptions. Defaults to Annotation("<token:msd>").
-        baseform (Annotation): Input annotation with SALDO baseforms. Defaults to Annotation("<token>:saldo.baseform").
-        key (str): Key to lookup in the models. Defaults to Config("hist.baseform_key").
-        models (List[Model], optional): A list of lexicon models. Defaults to [Model("[hist.dalin_model]"), Model("[hist.swedberg_model]")].
-        delimiter (str): Character to put between ambiguous results. Defaults to Config("hist.delimiter").
-        affix (str): Character to put before and after sets of results. Defaults to Config("hist.affix").
-        models_preloaded (dict, optional): Preloaded models. Defaults to None.
+        out: The output annotation.
+        word: Input annotation with token strings.
+        msd: Input annotation with POS and morphosyntactig desciptions.
+        baseform: Input annotation with SALDO baseforms.
+        key: Key to lookup in the models.
+        models: A list of lexicon models.
+        delimiter: Character to put between ambiguous results.
+        affix: Character to put before and after sets of results.
+        models_preloaded: Preloaded models.
 
     """
     _annotate_fallback(out=out, word=word, msd=msd, main_annotation=baseform, key=key, models=models, delimiter=delimiter,
@@ -179,11 +178,10 @@ def posset(pos: Annotation = Annotation("<token:pos>"),
     """Annotate with POS sets by converting a single POS into a set (mostly used to make corpora comparable).
 
     Args:
-        pos (Annotation, optional): Input annotation with part-of-speech tags. Defaults to Annotation("<token:pos>").
-        out (Output, optional): Output annotation with sets of part-of-speech tags.
-            Defaults to Output("<token>:hist.homograph_set").
-        delimiter (str): Character to put between ambiguous results. Defaults to Config("hist.delimiter").
-        affix (str): Character to put before and after sets of results. Defaults to Config("hist.affix").
+        pos: Input annotation with part-of-speech tags.
+        out: Output annotation with sets of part-of-speech tags.
+        delimiter: Character to put between ambiguous results.
+        affix: Character to put before and after sets of results.
     """
     def makeset(_, thepos):
         """Annotate thepos with separators (dummy function)."""
@@ -205,13 +203,13 @@ def spelling_variants(word: Annotation = Annotation("<token:word>"),
     """Use a lexicon model and a spelling model to annotate words with their spelling variants.
 
     Args:
-        word (Annotation, optional): Input annotation with token strings. Defaults to Annotation("<token:word>").
-        out (Output, optional): Output annotation with spelling variations. Defaults to Output("").
-        spellingmodel (Model): The spelling model. Defaults to Model("[hist.fsv_spelling]")
-        model (Model): The lexicon model. Defaults to Model("[hist.fsv_model]")
-        delimiter (str): Character to put between ambiguous results. Defaults to Config("hist.delimiter").
-        affix (str): Character to put before and after sets of results. Defaults to Config("hist.affix").
-        model_preloaded (dict, optional): Preloaded morphology model. Defaults to None.
+        word: Input annotation with token strings.
+        out: Output annotation with spelling variations.
+        spellingmodel: The spelling model.
+        model: The lexicon model.
+        delimiter: Character to put between ambiguous results.
+        affix: Character to put before and after sets of results.
+        model_preloaded: Preloaded morphology model.
     """
     # # Load model
     # model_name = model.path.stem
@@ -263,8 +261,8 @@ def all_spelling_variants(
 # Auxiliaries
 ################################################################################
 
-def _annotate_standard(out, input_annotation, annotator, extra_input="", delimiter: str = util.constants.DELIM,
-                       affix: str = util.constants.AFFIX, split=True):
+def _annotate_standard(out, input_annotation, annotator, extra_input:str = "", delimiter: str = util.constants.DELIM,
+                       affix: str = util.constants.AFFIX, split:bool = True):
     """Apply the 'annotator' function to the annotations in 'input_annotation' and write the new output to 'out'.
 
     Args:
@@ -272,12 +270,11 @@ def _annotate_standard(out, input_annotation, annotator, extra_input="", delimit
         input_annotation: The input annotation.
         annotator: function which is to be applied to the input annotation.
             It should have type :: oldannotations -> newannotations
-        extra_input (str, optional): An additional input annotation. Defaults to "".
-        delimiter (str, optional): Delimiter character to put between ambiguous results. Defaults to
-            util.constants.DELIM.
-        affix (str, optional): Character to put before and after results. Defaults to util.constants.AFFIX.
-        split (bool, optional): Defines whether the input annatoation is a set, with elements separated by delimiter.
-            If so, return a list. Else, return one single element. Defaults to True.
+        extra_input: An additional input annotation.
+        delimiter: Delimiter character to put between ambiguous results.
+        affix: Character to put before and after results.
+        split: Defines whether the input annatoation is a set, with elements separated by delimiter.
+            If so, return a list. Else, return one single element.
     """
     # Join input_annotation and extra_input with delimiter
     annotations = input_annotation.read()

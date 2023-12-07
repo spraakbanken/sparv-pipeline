@@ -18,14 +18,20 @@ PART_DELIM2 = "^2"
 PART_DELIM3 = "^3"
 
 
-@modelbuilder("SALDO morphology XML", language=["swe"])
-def download_saldo(out: ModelOutput = ModelOutput("saldo/saldom.xml")):
+@modelbuilder("SALDO morphology XML")
+def download_saldo_xml(out: ModelOutput = ModelOutput("saldo/saldom.xml")):
     """Download SALDO morphology XML."""
     out.download("https://svn.spraakdata.gu.se/sb-arkiv/pub/lexikon/saldom/saldom.xml")
 
 
-@modelbuilder("SALDO morphology model", language=["swe"])
-def build_saldo(out: ModelOutput = ModelOutput("saldo/saldo.pickle"),
+@modelbuilder("SALDO morphology model", order=1)
+def download_saldo_pickle(out: ModelOutput = ModelOutput("saldo/saldo.pickle")):
+    """Download SALDO morphology model from sparv-models repo."""
+    out.download("https://github.com/spraakbanken/sparv-models/raw/master/saldo/saldo.pickle")
+
+
+@modelbuilder("SALDO morphology model", order=2)
+def build_saldo_pickle(out: ModelOutput = ModelOutput("saldo/saldo.pickle"),
                 saldom: Model = Model("saldo/saldom.xml")):
     """Save SALDO morphology as a pickle file."""
     tagmap = tagmappings.mappings["saldo_to_suc"]
@@ -177,7 +183,8 @@ def read_lmf(xml, tagmap, annotation_elements=("gf", "lem", "saldo"), verbose=Tr
                     x_insert = "1"
 
                 # Only vbm and certain paradigms allow gaps
-                gap_allowed = (pos == "vbm" or p in (u"abm_x1_var_än", u"knm_x_ju_ju", u"pnm_x1_inte_ett_dugg", u"pnm_x1_vad_än", u"ppm_x1_för_skull"))
+                gap_allowed = (pos == "vbm" or p in (
+                    "abm_x1_var_än", "knm_x_ju_ju", "pnm_x1_inte_ett_dugg", "pnm_x1_vad_än", "ppm_x1_för_skull"))
 
                 table = elem.find("table")
                 multiwords = []

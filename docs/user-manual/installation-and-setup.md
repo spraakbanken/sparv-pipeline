@@ -4,7 +4,7 @@ additional software that you may need to install in order to run all the analyse
 
 ## Prerequisites
 In order to install Sparv you will need a Unix-like environment (e.g. Linux, macOS or [Windows Subsystem for
-Linux](https://docs.microsoft.com/en-us/windows/wsl/about)) with [Python 3.6.2](http://python.org/) or newer.
+Linux](https://docs.microsoft.com/en-us/windows/wsl/about)) with [Python 3.8](https://python.org/) or newer.
 
 > [!NOTE]
 > Most of Sparv's features should work in a Windows environment as well, but since we don't do any testing on Windows
@@ -50,12 +50,12 @@ where to set up its data directory. This will also populate the data directory w
 If you like, you can pre-build the model files. This step is optional, and the only advantage is that annotating your
 first corpus will be quicker since all the models are already set up. If you skip this step, models will be downloaded
 and built automatically on demand when annotating your first corpus. Pre-building models can be done by using the
-command `sparv build-models`. If you do this in a directory where there is no
+command `sparv build-models --all`. If you do this in a directory where there is no
 [corpus config](user-manual/corpus-configuration.md) you
 have to tell Sparv what language the models should be built for (otherwise the language of the corpus config is used).
 The language is provided as a three-letter code with the `--language` flag (use the `sparv languages` command for
 a list of available languages and their codes). For example, if you would like to build all the Swedish models you
-can run `sparv build-models --language swe`.
+can run `sparv build-models --all --language swe`.
 
 ## Installing Additional Third-party Software
 The Sparv Pipeline can be used together with several plugins and third-party software. Installation of the software
@@ -72,7 +72,7 @@ you prior to annotating data.
 |**Purpose**                       |Swedish word-sense disambiguation. Recommended for standard Swedish annotations.
 |**Download**                      |[Sparv wsd](https://github.com/spraakbanken/sparv-wsd/raw/master/bin/saldowsd.jar)
 |**License**                       |[MIT](https://opensource.org/licenses/MIT)
-|**Dependencies**          		   |[Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+|**Dependencies**          		   |[Java](https://www.java.com/en/download/)
 
 [Sparv wsd](https://github.com/spraakbanken/sparv-wsd) is developed at Språkbanken and runs under the same license as
 the Sparv Pipeline. In order to use it within the Sparv Pipeline it is enough to download the saldowsd.jar from GitHub
@@ -82,7 +82,7 @@ the Sparv Pipeline. In order to use it within the Sparv Pipeline it is enough to
 |    |           |
 |:---|:----------|
 |**Purpose**                       |Swedish named-entity recognition. Recommended for standard Swedish annotations.
-|**Download**                      |[hfst-SweNER](http://urn.fi/urn%3Anbn%3Afi%3Alb-2021101202)
+|**Download**                      |[hfst-SweNER](https://urn.fi/urn%3Anbn%3Afi%3Alb-2021101202)
 |**Version compatible with Sparv** |0.9.3
 
 > [!NOTE]
@@ -141,19 +141,19 @@ with Hunpos to your path or copy it into your [Sparv data directory](#setting-up
 |    |           |
 |:---|:----------|
 |**Purpose**                       |Alternative Swedish dependency parser (if you don't want to use Stanza)
-|**Download**                      |[MaltParser webpage](http://www.maltparser.org/download.html)
-|**License**                       |[MaltParser license](http://www.maltparser.org/license.html) (open source)
+|**Download**                      |[MaltParser webpage](https://www.maltparser.org/download.html)
+|**License**                       |[MaltParser license](https://www.maltparser.org/license.html) (open source)
 |**Version compatible with Sparv** |1.7.2
-|**Dependencies**          		   |[Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+|**Dependencies**          		   |[Java](https://www.java.com/en/download/)
 
-Download and unpack the zip-file from the [MaltParser webpage](http://www.maltparser.org/download.html) and place the
+Download and unpack the zip-file from the [MaltParser webpage](https://www.maltparser.org/download.html) and place the
 `maltparser-1.7.2` directory inside the `bin` directory of the [Sparv data directory](#setting-up-sparv).
 
 ### Corpus Workbench
 |    |           |
 |:---|:----------|
 |**Purpose**                       |Creating Corpus Workbench binary files. Only needed if you want to be able to search corpora with this tool.
-|**Download**                      |[Corpus Workbench on SourceForge](https://cwb.sourceforge.io/download.php)
+|**Download**                      |[Corpus Workbench on SourceForge](https://cwb.sourceforge.io/install.php)
 |**License**                       |[GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.html)
 |**Version compatible with Sparv** |beta 3.4.21 (most likely works with newer versions)
 
@@ -196,7 +196,7 @@ Swedish          |swe            |Sparv
 |    |           |
 |:---|:----------|
 |**Purpose**                       |POS-tagging and lemmatisation for [some languages](#software-for-analysing-other-languages-than-swedish)
-|**Download**                      |[TreeTagger webpage](http://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/)
+|**Download**                      |[TreeTagger webpage](https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/)
 |**License**                       |[TreeTagger license](https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/Tagger-Licence) (freely available for research, education and evaluation)
 |**Version compatible with Sparv** |3.2.3 (may work with newer versions)
 
@@ -210,7 +210,7 @@ After downloading the software you need to have the `tree-tagger` binary in your
 |**Download**                      |[Stanford CoreNLP webpage](https://stanfordnlp.github.io/CoreNLP/history.html)
 |**License**                       |[GPL-2.0](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
 |**Version compatible with Sparv** |4.0.0 (may work with newer versions)
-|**Dependencies**          		  |[Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html)
+|**Dependencies**          		  |[Java](https://www.java.com/en/download/)
 
 Please download, unzip and place contents inside the [Sparv data directory](#setting-up-sparv) under `bin/stanford_parser`.
 
@@ -241,10 +241,14 @@ Please follow the installation instructions given in the fast_align repository a
 
 ## Plugins
 
-If you have the Sparv Pipeline installed on your machine, you can install plugins by injecting them into the Sparv
-Pipeline code using pipx:
+Plugins for Sparv can be installed by one of the following commands, depending on whether you installed Sparv using pipx
+or pip:
 ```
 pipx inject sparv-pipeline [pointer-to-sparv-plugin]
+```
+
+```
+pip install [pointer-to-sparv-plugin]
 ```
 
 The `pointer-to-sparv-plugin` can be a package available on the [Python Package Index (PyPI)](https://pypi.org/), a
@@ -252,12 +256,16 @@ remote public repository, or a local directory on your machine.
 
 For now there are two plugins available for Sparv:
 [sparv-sbx-freeling](https://github.com/spraakbanken/sparv-sbx-freeling) and
-[sparv-sbx-metadata](https://github.com/spraakbanken/sparv-sbx-metadata). Please refer to their GitHub page for more
+[sparv-sbx-metadata](https://github.com/spraakbanken/sparv-sbx-metadata). Please refer to their GitHub pages for more
 information.
 
-Plugins can be uninstalled by running:
+Plugins can be uninstalled using one of the following commands:
 ```
 pipx runpip sparv-pipeline uninstall [name-of-sparv-plugin]
+```
+
+```
+pip uninstall [name-of-sparv-plugin]
 ```
 
 ## Uninstalling Sparv

@@ -4,13 +4,19 @@ import copy
 from collections import defaultdict
 from functools import reduce
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 import yaml
 import yaml.scanner
 
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
+
 from sparv.core import paths, registry
 from sparv.core.misc import SparvErrorMessage, get_logger
+from sparv.api.classes import Config
 
 logger = get_logger(__name__)
 
@@ -26,13 +32,13 @@ _config_default = {}  # Default config
 
 # Dict with info about config structure, prepopulated with some module-independent keys
 config_structure = {
-    "classes": {"_source": "core"},
-    "custom_annotations": {"_source": "core"},
-    "install": {"_source": "core"},
-    PARENT: {"_source": "core"},
-    MAX_THREADS: {"_source": "core"},
-    "preload": {"_source": "core"},
-    "uninstall": {"_source": "core"}
+    "classes": {"_source": "core", "_cfg": Config("classes", datatype=dict)},
+    "custom_annotations": {"_source": "core", "_cfg": Config("custom_annotations", datatype=list)},
+    "install": {"_source": "core", "_cfg": Config("install", datatype=list)},
+    PARENT: {"_source": "core", "_cfg": Config(PARENT, datatype=str)},
+    MAX_THREADS: {"_source": "core", "_cfg": Config(MAX_THREADS, datatype=Dict[str, int])},
+    "preload": {"_source": "core", "_cfg": Config("preload", datatype=list)},
+    "uninstall": {"_source": "core", "_cfg": Config("uninstall", datatype=list)}
 }
 
 config_usage = defaultdict(set)  # For each config key, a list of annotators using that key
@@ -48,7 +54,7 @@ def read_yaml(yaml_file):
     """Read YAML file and handle errors."""
     try:
         with open(yaml_file, encoding="utf-8") as f:
-            data = yaml.load(f, Loader=yaml.FullLoader)
+            data = yaml.load(f, Loader=SafeLoader)
     except yaml.parser.ParserError as e:
         raise SparvErrorMessage("Could not parse the configuration file:\n" + str(e))
     except yaml.scanner.ScannerError as e:
@@ -72,7 +78,7 @@ def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) 
     if DEFAULT_CONFIG.is_file():
         _config_default = read_yaml(DEFAULT_CONFIG)
     else:
-        logger.warning("Default config file is missing: {}".format(DEFAULT_CONFIG))
+        logger.warning("Default config file is missing: %s", DEFAULT_CONFIG)
         _config_default = {}
 
     if config_file:
@@ -113,36 +119,6 @@ def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) 
         if not isinstance(config[key], (dict, list)):
             raise SparvErrorMessage(f"The config section '{key}' could not be parsed.", module="sparv",
                                     function="config")
-
-
-def dump_config(data, resolve_alias=False, sort_keys=False):
-    """Dump config YAML to string.
-
-    Args:
-        data: The data to be dumped.
-        resolve_alias: Will replace aliases with their anchor's content if set to True.
-        sort_keys: Whether to sort the keys alphabetically.
-    """
-    class IndentDumper(yaml.Dumper):
-        """Customized YAML dumper that indents lists."""
-
-        def increase_indent(self, flow=False, indentless=False):
-            """Force indentation."""
-            return super(IndentDumper, self).increase_indent(flow)
-
-    # Add custom string representer for prettier multiline strings
-    def str_representer(dumper, data):
-        if len(data.splitlines()) > 1:  # Check for multiline string
-            return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
-        return dumper.represent_scalar("tag:yaml.org,2002:str", data)
-    yaml.add_representer(str, str_representer)
-
-    if resolve_alias:
-        # Resolve aliases and replace them with their anchors' contents
-        yaml.Dumper.ignore_aliases = lambda *args: True
-
-    return yaml.dump(data, sort_keys=sort_keys, allow_unicode=True, Dumper=IndentDumper, indent=4,
-                     default_flow_style=False)
 
 
 def _get(name: str, config_dict=None):
@@ -208,22 +184,25 @@ def _merge_dicts(d: dict, default: dict):
     return d
 
 
-def add_to_structure(name, default=None, description=None, annotator: Optional[str] = None):
+def add_to_structure(cfg: Config, annotator: Optional[str] = None):
     """Add config variable to config structure."""
-    set_value(name,
-              {"_default": default,
-               "_description": description,
-               "_source": "module"},
-              config_dict=config_structure
-              )
+    set_value(
+        cfg.name,
+        {
+            "_cfg": cfg,
+            "_source": "module"
+        },
+        config_dict=config_structure
+    )
 
     if annotator:
-        add_config_usage(name, annotator)
+        add_config_usage(cfg.name, annotator)
 
 
 def get_config_description(name):
     """Get description for config key."""
-    return _get(name, config_structure).get("_description")
+    cfg = _get(name, config_structure).get("_cfg")
+    return cfg.description if cfg else None
 
 
 def add_config_usage(config_key, annotator):
@@ -242,25 +221,6 @@ def validate_module_config():
                 "The annotator{} {} {} trying to access the config key '{}' which isn't declared anywhere.".format(
                     "s" if len(annotators) > 1 else "", ", ".join(annotators),
                     "are" if len(annotators) > 1 else "is", config_key), "sparv", "config")
-
-
-def validate_config(config_dict=None, structure=None, parent=""):
-    """Make sure the corpus config doesn't contain invalid keys."""
-    config_dict = config_dict or config
-    structure = structure or config_structure
-    for key in config_dict:
-        path = (parent + "." + key) if parent else key
-        if key not in structure:
-            if not parent:
-                raise SparvErrorMessage(f"Unknown key in config file: '{path}'. No module with that name found.",
-                                        module="sparv", function="config")
-            else:
-                module_name = parent.split(".", 1)[0]
-                raise SparvErrorMessage(f"Unknown key in config file: '{path}'. The module '{module_name}' "
-                                        f"doesn't have an option with that name.",
-                                        module="sparv", function="config")
-        elif not structure[key].get("_source"):
-            validate_config(config_dict[key], structure[key], path)
 
 
 def load_presets(lang, lang_variety):

@@ -2,13 +2,13 @@
 This section will give a brief overview of how Sparv modules work and introduce some general concepts. More details are
 provided in the following chapters.
 
-The Sparv Pipeline is comprised of some core functionality and many different modules containing Sparv functions that
+The Sparv Pipeline is made up of a core and different modules. The modules contain Sparv functions that
 serve different purposes like reading and parsing source files, building or downloading models, producing
 annotations and producing output files that contain the source text and annotations. All of these modules (i.e. the
-code inside the `sparv/modules` directory) are replacable. A Sparv function is decorated with a special
+code inside the `sparv/modules` directory) are replaceable. A Sparv function is decorated with a special
 [decorator](developers-guide/sparv-decorators) that tells Sparv what purpose it serves. A function's parameters hold
 information about what input is needed in order to run the function and what output is produced by it. The Sparv core
-automatically finds all decorated functions, scans their parameters and builds a registry for what modules are available
+automatically finds all decorated functions, scans their parameters and builds a registry of what modules are available
 and how they depend on each other.
 
 
@@ -34,7 +34,7 @@ Some Sparv functions may require annotations from other functions before they ca
 expressed in the function arguments. By using special [Sparv classes](developers-guide/sparv-classes) as default
 arguments in a function's signature the central Sparv registry can automatically keep track of what annotations can be
 produced by what function and in what order things need to be run. These dependencies can either be described in a
-module specific manner or in a more abstact way. For example, an annotator producing word base forms (or lemmas) may
+module specific manner or in a more abstract way. For example, an annotator producing word base forms (or lemmas) may
 depend on a part-of-speech annotation with a specific tagset and therefore this annotator might define that its input
 needs to be an annotation produced by a specific module. A part-of-speech tagger on the other hand usually needs word
 segments as input, and it probably does not matter exactly what module produces these segments. In this case the

@@ -18,30 +18,33 @@ corpora](https://github.com/spraakbanken/sparv-pipeline/releases/latest/download
 When running `sparv` (or `sparv -h`) the available sparv commands will be listed:
 ```
 Annotating a corpus:
-    run              Annotate a corpus and generate export files
-    install          Annotate and install a corpus on remote server
-    clean            Remove output directories
+   run              Annotate a corpus and generate export files
+   install          Install a corpus
+   uninstall        Uninstall a corpus
+   clean            Remove output directories
 
 Inspecting corpus details:
-    config           Display the corpus config
-    files            List available corpus source files (input for Sparv)
+   config           Display the corpus config
+   files            List available corpus source files (input for Sparv)
 
 Show annotation info:
-    modules          List available modules and annotations
-    presets          List available annotation presets
-    classes          List available annotation classes
-    languages        List supported languages
+   modules          List available modules and annotations
+   presets          List available annotation presets
+   classes          List available annotation classes
+   languages        List supported languages
 
 Setting up the Sparv Pipeline:
-    setup            Set up the Sparv data directory
-    wizard           Run config wizard to create a corpus config
-    build-models     Download and build the Sparv models (optional)
+   setup            Set up the Sparv data directory
+   wizard           Run config wizard to create a corpus config
+   build-models     Download and build the Sparv models (optional)
 
 Advanced commands:
-    run-rule         Run specified rule(s) for creating annotations
-    create-file      Create specified file(s)
-    run-module       Run annotator module independently
-    preload          Preload annotators and models
+   run-rule         Run specified rule(s) for creating annotations
+   create-file      Create specified file(s)
+   run-module       Run annotator module independently
+   preload          Preload annotators and models
+   autocomplete     Enable tab completion in bash
+   schema           Print a JSON schema for the Sparv config format
 ```
 
 Every command in the Sparv command line interface has a help text which can be accessed with the `-h` flag. Below we
@@ -61,7 +64,7 @@ Therefore, you do not need to annotate the corpus before installing. You can lis
 with `sparv install -l`.
 
 **`sparv clean`:** While annotating, Sparv will create a directory called `sparv-workdir` inside your corpus directory.
-You normally don't need to touch the files stored here. Leaving this directory as it is will usually lead to faster
+You normally don't need to touch the files stored here. Leaving this directory as it is usually leads to faster
 processing of your corpus if you for example want to add a new output format. However, if you would like to delete this
 directory (e.g. because you want to save disk space or because you want to rerun all annotations from scratch) you
 can do so by running `sparv clean`. The export directory and log files can also be removed with the `clean` command

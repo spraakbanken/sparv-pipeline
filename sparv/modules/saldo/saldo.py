@@ -21,27 +21,72 @@ def preloader(models):
     return {m.path.stem: SaldoLexicon(m.path) for m in models}
 
 
-@annotator("SALDO annotations", language=["swe"], config=[
-    Config("saldo.model", default="saldo/saldo.pickle", description="Path to SALDO model"),
-    Config("saldo.delimiter", default=util.constants.DELIM, description="Character to put between ambiguous results"),
-    Config("saldo.affix", default=util.constants.AFFIX, description="Character to put before and after sets of results"),
-    Config("saldo.precision", "",
-           description="Format string for appending precision to each value (e.g. ':%.3f')"),
-    Config("saldo.precision_filter", default="max",
-           description="Precision filter with possible values 'max' (only use the most probable annotations), "
-                       "'first' (only use the single most probable annotation), 'none' (use all annotations)"),
-    Config("saldo.min_precision", default=0.66,
-           description="Only use annotations with a probability score greater than or equal to this. "
-                       "0.25: part-of-speech does not match, 0.5: part-of-speech is missing, 0.66: part-of-speech "
-                       "matches, 0.75: morphosyntactic descriptor matches"),
-    Config("saldo.skip_multiword", default=False, description="Whether to disable annotation of multiword expressions"),
-    Config("saldo.max_mwe_gaps", default=1, description="Max amount of gaps allowed within a multiword expression"),
-    Config("saldo.allow_multiword_overlap", default=False,
-           description="Whether all multiword expressions may overlap with each other. "
-                       "If set to False, some cleanup is done."),
-    Config("saldo.word_separator", default="",
-           description="Character used to split the values of 'word' into several word variations"),
-], preloader=preloader, preloader_params=["models"], preloader_target="models_preloaded")
+@annotator(
+    "SALDO annotations",
+    config=[
+        Config("saldo.model", default="saldo/saldo.pickle", description="Path to SALDO model", datatype=str),
+        Config(
+            "saldo.delimiter",
+            default=util.constants.DELIM,
+            description="Character to put between ambiguous results",
+            datatype=str,
+        ),
+        Config(
+            "saldo.affix",
+            default=util.constants.AFFIX,
+            description="Character to put before and after sets of results",
+            datatype=str,
+        ),
+        Config(
+            "saldo.precision",
+            description="Format string for appending precision to each value (e.g. ':%.3f')",
+            datatype=str,
+        ),
+        Config(
+            "saldo.precision_filter",
+            default="max",
+            description="Precision filter with possible values 'max' (only use the most probable annotations), "
+            "'first' (only use the single most probable annotation), 'none' (use all annotations)",
+            datatype=str,
+            choices=("max", "first", "none"),
+        ),
+        Config(
+            "saldo.min_precision",
+            default=0.66,
+            description="Only use annotations with a probability score greater than or equal to this. "
+            "0.25: part-of-speech does not match, 0.5: part-of-speech is missing, 0.66: part-of-speech "
+            "matches, 0.75: morphosyntactic descriptor matches",
+            datatype=float,
+        ),
+        Config(
+            "saldo.skip_multiword",
+            default=False,
+            description="Whether to disable annotation of multiword expressions",
+            datatype=bool,
+        ),
+        Config(
+            "saldo.max_mwe_gaps",
+            default=1,
+            description="Max amount of gaps allowed within a multiword expression",
+            datatype=int,
+        ),
+        Config(
+            "saldo.allow_multiword_overlap",
+            default=False,
+            description="Whether all multiword expressions may overlap with each other. "
+            "If set to False, some cleanup is done.",
+            datatype=bool,
+        ),
+        Config(
+            "saldo.word_separator",
+            description="Character used to split the values of 'word' into several word variations",
+            datatype=str,
+        ),
+    ],
+    preloader=preloader,
+    preloader_params=["models"],
+    preloader_target="models_preloaded",
+)
 def annotate(token: Annotation = Annotation("<token>"),
              word: Annotation = Annotation("<token:word>"),
              sentence: Annotation = Annotation("<sentence>"),
@@ -54,47 +99,39 @@ def annotate(token: Annotation = Annotation("<token>"),
              msd: Optional[Annotation] = Annotation("<token:msd>"),
              delimiter: str = Config("saldo.delimiter"),
              affix: str = Config("saldo.affix"),
-             precision: str = Config("saldo.precision"),
+             precision: Optional[str] = Config("saldo.precision"),
              precision_filter: str = Config("saldo.precision_filter"),
              min_precision: float = Config("saldo.min_precision"),
              skip_multiword: bool = Config("saldo.skip_multiword"),
              max_gaps: int = Config("saldo.max_mwe_gaps"),
              allow_multiword_overlap: bool = Config("saldo.allow_multiword_overlap"),
-             word_separator: str = Config("saldo.word_separator"),
+             word_separator: Optional[str] = Config("saldo.word_separator"),
              models_preloaded: Optional[dict] = None):
     """Use the Saldo lexicon model to annotate msd-tagged words.
 
     Args:
-        token (Annotation): Input annotation with token spans. Defaults to Annotation("<token>").
-        word (Annotation): Input annotation with token strings. Defaults to Annotation("<token:word>").
-        sentence (Annotation): Input annotation with sentence spans. Defaults to Annotation("<sentence>").
-        reference (Annotation): Input annotation with token indices for each sentence.
-            Defaults to Annotation("<token:ref>").
-        out_sense (Output): Output annotation with senses from SALDO. Defaults to Output("<token>:saldo.sense").
-        out_lemgram (Output): Output annotation with lemgrams from SALDO. Defaults to Output("<token>:saldo.lemgram").
-        out_baseform (Output): Output annotation with baseforms from SALDO.
-            Defaults to Output("<token>:saldo.baseform").
-        models (List[Model]): A list of pickled lexicons, typically the SALDO model (saldo.pickle)
-            and optional lexicons for older Swedish. Defaults to [Model("[saldo.model]")].
-        msd (Annotation, optional): Input annotation with POS and morphological descriptions.
-            Defaults to Annotation("<token:msd>").
-        delimiter (str): Character to put between ambiguous results. Defaults to Config("saldo.delimiter").
-        affix (str): Character to put before and after sets of results. Defaults to Config("saldo.affix").
-        precision (str): Format string for appending precision to each value (e.g. ':%.3f'). use empty string for no
-            precision. Defaults to Config("saldo.precision").
-        precision_filter (str): Precision filter with values 'max' (only use the annotations that are most probable),
-            'first' (only use the most probable annotation(s)), 'none' (use all annotations)".
-            Defaults to Config("saldo.precision_filter").
-        min_precision (float): Only use annotations with a probability score higher than this.
-            Defaults to Config("saldo.min_precision").
-        skip_multiword (bool): Whether to disable annotation of multiword expressions.
-            Defaults to Config("saldo.skip_multiword").
-        max_gaps (int): Max amount of gaps allowed within a multiword expression. Defaults to Config("saldo.max_gaps").
-        allow_multiword_overlap (bool): Whether all multiword expressions may overlap with each other. If set to False,
-            some cleanup is done. Defaults to Config("saldo.allow_multiword_overlap").
-        word_separator (str): Character used to split the values of 'word' into several word variations.
-            Defaults to Config("saldo.word_separator").
-        models_preloaded (dict, optional): Preloaded models. Defaults to None.
+        token: Input annotation with token spans.
+        word: Input annotation with token strings.
+        sentence: Input annotation with sentence spans.
+        reference: Input annotation with token indices for each sentence.
+        out_sense: Output annotation with senses from SALDO.
+        out_lemgram: Output annotation with lemgrams from SALDO.
+        out_baseform: Output annotation with baseforms from SALDO.
+        models: A list of pickled lexicons, typically the SALDO model (saldo.pickle)
+            and optional lexicons for older Swedish.
+        msd: Input annotation with POS and morphological descriptions.
+        delimiter: Character to put between ambiguous results.
+        affix: Character to put before and after sets of results.
+        precision: Optional format string for appending precision to each value (e.g. ':%.3f').
+        precision_filter: Precision filter with values 'max' (only use the annotations that are most probable),
+            'first' (only use the most probable annotation(s)), 'none' (use all annotations).
+        min_precision: Only use annotations with a probability score higher than this.
+        skip_multiword: Whether to disable annotation of multiword expressions.
+        max_gaps (int): Max amount of gaps allowed within a multiword expression.
+        allow_multiword_overlap: Whether all multiword expressions may overlap with each other. If set to False,
+            some cleanup is done.
+        word_separator: Character used to split the values of 'word' into several word variations.
+        models_preloaded: Preloaded models.
     """
     main(token=token, word=word, sentence=sentence, reference=reference, out_sense=out_sense, out_lemgram=out_lemgram,
          out_baseform=out_baseform, models=models, msd=msd, delimiter=delimiter, affix=affix, precision=precision,
@@ -119,7 +156,7 @@ def main(token, word, sentence, reference, out_sense, out_lemgram, out_baseform,
             assert models_preloaded.get(name, None) is not None, "Lexicon %s not found!" % name
             lexicon_list.append((name, models_preloaded[name]))
 
-    # Combine annotation names in SALDO lexicon with out annotations
+    # Combine annotation names in SALDO lexicon without annotations
     annotations = []
     if out_baseform:
         annotations.append((out_baseform, "gf"))
@@ -188,7 +225,7 @@ def main(token, word, sentence, reference, out_sense, out_lemgram, out_baseform,
             # Check that we don't have any unwanted overlaps
             _remove_unwanted_overlaps(complete_multis)
 
-        # Then save the rest of the multi word expressions in sentence_tokens
+        # Then save the rest of the multi-word expressions in sentence_tokens
         _save_multiwords(complete_multis, sentence_tokens)
 
         for tok in list(sentence_tokens.values()):
@@ -390,7 +427,7 @@ def get_precision(msd, msdtags):
     """
     Calculate the precision of a Saldo annotation.
 
-    If the the word's msdtag is among the annotation's possible msdtags,
+    If the word's msdtag is among the annotation's possible msdtags,
     we return a high value (0.75), a partial match returns 0.66, missing MSD returns 0.5,
     and otherwise a low value (0.25).
     """

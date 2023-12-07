@@ -1,16 +1,27 @@
 """General metadata about corpus."""
 import re
+from typing import Dict, Union
 
 from sparv.api import Config, wizard
 from sparv.core import registry
 
 __config__ = [
-    Config("metadata.id", description="Machine name of corpus (a-z, 0-9, -)"),
-    Config("metadata.name", description="Human readable name of corpus"),
-    Config("metadata.language", description="Language of source files (ISO 639-3)"),
-    Config("metadata.variety", description="Language variety of source files (if applicable)"),
-    Config("metadata.description", description="Description of corpus"),
-    Config("metadata.short_description", description="Short description of corpus (one line)")
+    Config("metadata.id", description="Machine name of corpus (a-z, 0-9, -)", datatype=str, pattern=r"^[a-z0-9-]+$"),
+    Config("metadata.name", description="Human readable name of corpus", datatype=Dict[str, str]),
+    Config(
+        "metadata.language",
+        description="Language of source files (ISO 639-3)",
+        datatype=Union[str, None],
+        choices=lambda: sorted(set(l.split("-")[0] for l in registry.languages)) + [None]
+    ),
+    Config(
+        "metadata.variety",
+        description="Language variety of source files (if applicable)",
+        datatype=str,
+        choices=lambda: sorted(set(l.split("-")[1] for l in registry.languages if "-" in l))
+    ),
+    Config("metadata.description", description="Description of corpus", datatype=Dict[str, str]),
+    Config("metadata.short_description", description="Short description of corpus (one line)", datatype=Dict[str, str])
 ]
 
 

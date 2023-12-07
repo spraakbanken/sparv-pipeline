@@ -1,9 +1,10 @@
 """Util functions for installations on remote servers."""
 
 import os
+import shlex
 import subprocess
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, List
 
 from sparv.api import get_logger
 from sparv.api.util import system
@@ -11,39 +12,50 @@ from sparv.api.util import system
 logger = get_logger(__name__)
 
 
-def install_path(source_path: Union[str, Path],
-                 host: Optional[str] = None,
-                 target_path: Optional[Union[str, Path]] = None) -> None:
-    """Transfer a file or directory to a target destination, optionally on a different host."""
+def install_path(
+    source_path: Union[str, Path],
+    host: Optional[str],
+    target_path: Union[str, Path]
+) -> None:
+    """Transfer a file or the contents of a directory to a target destination, optionally on a different host."""
     system.rsync(source_path, host, target_path)
 
 
-def uninstall_path(path: Union[str, Path] = None, host: Optional[str] = None) -> None:
+def uninstall_path(path: Union[str, Path], host: Optional[str] = None) -> None:
     """Remove a file or directory, optionally on a remote host."""
     system.remove_path(path, host)
 
 
-def install_mysql(host, db_name, sqlfile):
-    """Insert tables and data from local SQL-file to remote MySQL database.
+def install_mysql(host: Optional[str], db_name: str, sqlfile: Union[str, List[str]]):
+    """Insert tables and data from SQL-file(s) to local or remote MySQL database.
 
-    sqlfile may be a whitespace separated list of SQL files.
+    Args:
+        host: The remote host to install to. Set to None to install locally.
+        db_name: Name of the database.
+        sqlfile: Path to a SQL file, or list of paths.
     """
-    if not host:
-        raise Exception("No host provided! Installations aborted.")
 
-    sqlfiles = sqlfile.split()
+    if isinstance(sqlfile, str):
+        sqlfile = [sqlfile]
     file_count = 0
-    file_total = len(sqlfiles)
+    file_total = len(sqlfile)
 
-    for sqlf in sqlfiles:
+    for f in sqlfile:
         file_count += 1
-        if not os.path.exists(sqlf):
-            logger.error("Missing SQL file: %s", sqlf)
-        elif os.path.getsize(sqlf) < 10:
-            logger.info("Skipping empty file: %s (%d/%d)", sqlf, file_count, file_total)
+        if not os.path.exists(f):
+            logger.error("Missing SQL file: %s", f)
+        elif os.path.getsize(f) < 10:
+            logger.info("Skipping empty file: %s (%d/%d)", f, file_count, file_total)
         else:
-            logger.info("Installing MySQL database: %s, source: %s (%d/%d)", db_name, sqlf, file_count, file_total)
-            subprocess.check_call('cat %s | ssh %s "mysql %s"' % (sqlf, host, db_name), shell=True)
+            logger.info("Installing MySQL database: %s, source: %s (%d/%d)", db_name, f, file_count, file_total)
+            if not host:
+                subprocess.check_call(
+                    f"cat {shlex.quote(f)} | mysql {shlex.quote(db_name)}", shell=True
+                )
+            else:
+                subprocess.check_call(
+                    f"cat {shlex.quote(f)} | ssh {shlex.quote(host)} {shlex.quote(f'mysql {db_name}')}", shell=True
+                )
 
 
 def install_mysql_dump(host, db_name, tables):
