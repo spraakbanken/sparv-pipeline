@@ -1,10 +1,11 @@
 # Changelog
 
-## [5.2.0.dev0]
+## [5.2.0] - 2023-12-07
 
 ### Added
 
 - Added support for tab autocompletion in bash.
+- Added importer for PDF files.
 - Added new `misc:inherit` annotator for inheriting attributes.
 - Added `korp.wordpicture_no_sentences` setting to disable generation of Word Picture sentences table.
 - `util.mysql_wrapper` can now execute SQL queries remotely over SSH.
@@ -35,6 +36,7 @@
 - Running `sparv schema` will now generate a JSON schema which can be used to validate corpus config files.
 - More strict config validation, including validation of config values and data types.
 - Most Sparv decorators now have a `priority` parameter, to control the order in which functions are run.
+- Added `util.misc.dump_yaml()` utility function for exporting YAML.
 
 ### Changed
 
@@ -59,6 +61,7 @@
 - Not specifying a corpus language now excludes all language specific annotators.
 - When an unhandled exception occurs, the relevant source document will be displayed in the log.
 - `localhost` as an installation target is no longer handled as if host was omitted.
+- Removed `critical` log level.
 
 ### Fixed
 
@@ -304,6 +307,7 @@
   - Increased independence between modules and language models
   - This facilitates adding new annotation modules and import/export formats.
 
+[5.2.0]: https://github.com/spraakbanken/sparv-pipeline/releases/tag/v5.2.0
 [5.1.0]: https://github.com/spraakbanken/sparv-pipeline/releases/tag/v5.1.0
 [5.0.0]: https://github.com/spraakbanken/sparv-pipeline/releases/tag/v5.0.0
 [4.1.1]: https://github.com/spraakbanken/sparv-pipeline/releases/tag/v4.1.1
