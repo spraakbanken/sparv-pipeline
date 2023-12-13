@@ -42,7 +42,8 @@ If you want to run the tests you will need to clone this project from
 
 Before cloning the repository with [git](https://git-scm.com/downloads) make sure you have [Git Large File
 Storage](https://git-lfs.github.com/) installed (`apt install git-lfs`). Some files will not be downloaded correctly
-otherwise.
+otherwise. If you happen to clone the repository before installing Git Large File Storage you will have to run `git lfs
+fetch` in order to update the corpus and annotation files.
 
 Install the dependencies, including the dev dependencies. We recommend that you first set up a virtual environment:
 
