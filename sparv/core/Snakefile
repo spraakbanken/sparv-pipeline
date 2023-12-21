@@ -591,4 +591,5 @@ rule schema:
         import json
         from sparv.core import schema
         json_schema = schema.build_json_schema(sparv_config.config_structure)
-        print(json.dumps(json_schema, indent=2))
+        params = {"separators": (",", ":")} if config["compact"] else {"indent": 2}
+        print(json.dumps(json_schema, **params))

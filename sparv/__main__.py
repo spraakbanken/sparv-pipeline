@@ -246,7 +246,9 @@ def main():
     autocomplete_parser.add_argument("--enable-old", action="store_true",
                                      help="Output script to be sourced in bash, for bash version 4.3 and below")
 
-    subparsers.add_parser("schema", description="Print a JSON schema for the Sparv config format")
+    schema_parser = subparsers.add_parser("schema", description="Print a JSON schema for the Sparv config format")
+    schema_parser.add_argument("--compact", action="store_true", help="Don't indent output")
+
 
     # Add common arguments
     for subparser in [run_parser, runrule_parser]:
@@ -417,6 +419,7 @@ def main():
                 snakemake_args["targets"] = ["preload_list"]
         elif args.command == "schema":
             config["targets"] = ["schema"]
+            config["compact"] = args.compact
             # For the schema we include modules from all languages
             config["language"] = "__all__"
 

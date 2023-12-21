@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Added `--compact` flag for `sparv schema` command, resulting in compact output.
+
+### Changed
+
+### Fixed
+
 ## [5.2.0] - 2023-12-07
 
 ### Added
