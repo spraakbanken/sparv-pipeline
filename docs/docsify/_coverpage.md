@@ -1,10 +1,10 @@
 <img class="top-logo" src="_media/sparv_detailed.png" height="200">
 
-# Sparv Pipeline Documentation
+# Sparv Pipeline Documentation (development version)
 
 > Språkbanken's analysis platform
 
-<p class="version"> version 5.2.0 </p>
+<p class="version"> version 5.3.0.dev0 </p>
 
 <p class="links">
     <a class="button" target="_blank" href="https://github.com/spraakbanken/sparv-pipeline">Sparv on GitHub</a>
