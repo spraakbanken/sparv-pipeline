@@ -37,7 +37,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pandocfilters==1.5.0",
-    "pytest",
+    "pytest>=6.0.0",
     "pytest-sugar>=0.9.6",
 ]
 
@@ -56,3 +56,17 @@ publish.index.disable = true       # Require confirmation to publish
 [tool.black]
 line-length = 120
 target-version = ["py38", "py39", "py310"]
+
+[tool.pytest.ini_options]
+addopts = "-s -v --tb=no"
+testpaths = ["tests"]
+markers = [
+    "slow: tests that potentially take a long time to complete",
+    "swe: tests for Swedish corpora",
+    "swehist: tests for corpora with historical Swedish",
+    "treetagger: tests for Treetagger corpora",
+    "freeling: tests for FreeLing corpora",
+    "stanford: tests for Stanford Parser corpora",
+    "noexternal: tests that don't rely on external tools",
+    "unit: unit tests",
+]
