@@ -55,7 +55,6 @@ publish.index.disable = true       # Require confirmation to publish
 
 [tool.black]
 line-length = 120
-target-version = ["py38", "py39", "py310"]
 
 [tool.pytest.ini_options]
 addopts = "-s -v --tb=no"
