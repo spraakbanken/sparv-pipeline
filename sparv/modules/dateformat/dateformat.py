@@ -157,23 +157,23 @@ def resolution(out_resolution: OutputCommonData = OutputCommonData("dateformat.r
 def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Output, out_to: Optional[Output],
                informat: str, outformat: str, splitter: str, pre_regex: str, regex: str):
     """Take existing dates/times and input formats and convert to specified output format."""
-    def get_smallest_unit(informat):
-        smallest_unit = 0  # No date
+    def get_smallest_unit(informat) -> Optional[str]:
+        smallest_unit = None  # No date
 
         if "%y" not in informat and "%Y" not in informat:
             pass
         elif "%b" not in informat and "%B" not in informat and "%m" not in informat:
-            smallest_unit = 1  # year
+            smallest_unit = "years"
         elif "%d" not in informat:
-            smallest_unit = 2  # month
+            smallest_unit = "months"
         elif "%H" not in informat and "%I" not in informat:
-            smallest_unit = 3  # day
+            smallest_unit = "days"
         elif "%M" not in informat:
-            smallest_unit = 4  # hour
+            smallest_unit = "hours"
         elif "%S" not in informat:
-            smallest_unit = 5  # minute
+            smallest_unit = "minutes"
         else:
-            smallest_unit = 6  # second
+            smallest_unit = "seconds"
 
         return smallest_unit
 
@@ -348,18 +348,8 @@ def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Outpu
                                 raise ValueError
                         todates.append(datetime.datetime.strptime(v, inf[i]))
                     smallest_unit = get_smallest_unit(inf[0])
-                    if smallest_unit == 1:
-                        add = relativedelta(years=1)
-                    elif smallest_unit == 2:
-                        add = relativedelta(months=1)
-                    elif smallest_unit == 3:
-                        add = relativedelta(days=1)
-                    elif smallest_unit == 4:
-                        add = relativedelta(hours=1)
-                    elif smallest_unit == 5:
-                        add = relativedelta(minutes=1)
-                    elif smallest_unit == 6:
-                        add = relativedelta(seconds=1)
+                    if smallest_unit:
+                        add = relativedelta(**{smallest_unit: 1})
 
                     todates = [todate + add - relativedelta(seconds=1) for todate in todates]
                     oto[index] = todates[-1].strftime(outformat[0] if len(outformat) == 1 else outformat[tries - 1])
