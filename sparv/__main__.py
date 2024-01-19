@@ -193,6 +193,7 @@ def main():
     modules_parser.add_argument("--installers", action="store_true", help="List info for installers")
     modules_parser.add_argument("--uninstallers", action="store_true", help="List info for uninstallers")
     modules_parser.add_argument("--all", action="store_true", help="List info for all module types")
+    modules_parser.add_argument("--json", action="store_true", help="Print output in JSON format")
     modules_parser.add_argument("names", nargs="*", default=[], help="Specific module(s) to display")
 
     subparsers.add_parser("presets", description="Display all available annotation presets.")
@@ -404,6 +405,7 @@ def main():
             config["options"] = args.options
         elif args.command == "modules":
             config["types"] = []
+            config["json"] = args.json
             if args.names:
                 config["names"] = args.names
             for t in ["annotators", "importers", "exporters", "installers", "uninstallers", "all"]:

@@ -5,6 +5,7 @@
 ### Added
 
 - Added `--compact` flag for `sparv schema` command, resulting in compact output.
+- Added `--json` flag for `sparv modules` command.
 
 ### Changed
 
