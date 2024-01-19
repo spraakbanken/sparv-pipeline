@@ -146,6 +146,10 @@ def print_modules_info(
                             "default": default
                         }
                 module_data["functions"][f_name] = f_data
+
+                if module_type == "exporters":
+                    f_data["exports"] = modules[module_name][f_name].get("exports", [])
+
             modules_data[module_type][module_name] = module_data
 
     if json_output:

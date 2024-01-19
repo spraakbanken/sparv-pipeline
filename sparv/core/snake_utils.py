@@ -503,6 +503,9 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 rule.file_annotations.append(param_name)
             if "{" in param_value:
                 rule.wildcard_annotations.append(param_name)
+            if rule.exporter:
+                storage.all_exporters[rule.module_name][rule.f_name].setdefault("exports", [])
+                storage.all_exporters[rule.module_name][rule.f_name]["exports"].append(str(export_path))
         # ExportInput
         elif param_type == ExportInput:
             rule.configs.update(registry.find_config_variables(param.default))
