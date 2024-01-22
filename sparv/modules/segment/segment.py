@@ -19,7 +19,8 @@ logger = get_logger(__name__)
 
 
 @annotator("Automatic tokenization", config=[
-    Config("segment.token_segmenter", default="better_word", description="Token segmenter to use"),
+    Config("segment.token_segmenter", default="better_word", description="Token segmenter to use", datatype=str,
+           choices=lambda: sorted(SEGMENTERS)),
     Config("segment.token_chunk", default="<sentence>",
            description="Text chunk (annotation) to use as input when tokenizing"),
     Config("segment.existing_tokens", description="Optional existing token annotation"),
@@ -33,14 +34,16 @@ def tokenize(text: Text = Text(),
              segmenter: str = Config("segment.token_segmenter"),
              existing_segments: Optional[Annotation] = Annotation("[segment.existing_tokens]"),
              model: Optional[Model] = Model("[segment.tokenizer_config]"),
-             token_list: Optional[Model] = Model("[segment.token_list]")):
+             token_list: Optional[Model] = Model("[segment.token_list]")) -> None:
     """Tokenize text."""
     do_segmentation(text=text, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,
                     model=model, token_list=token_list)
 
 
 @annotator("Automatic segmentation of sentences", config=[
-    Config("segment.sentence_segmenter", default="punkt_sentence", description="Sentence segmenter to use"),
+    Config("segment.sentence_segmenter", default="punkt_sentence", description="Sentence segmenter to use",
+           datatype=str,
+           choices=lambda: sorted(SEGMENTERS)),
     Config("segment.sentence_chunk", default="<paragraph>, <text>",
            description="Text chunk (annotation) to use as input when segmenting"),
     Config("segment.existing_sentences", description="Optional existing sentence annotation"),
@@ -51,14 +54,15 @@ def sentence(text: Text = Text(),
              chunk: Optional[Annotation] = Annotation("[segment.sentence_chunk]"),
              segmenter: str = Config("segment.sentence_segmenter"),
              existing_segments: Optional[Annotation] = Annotation("[segment.existing_sentences]"),
-             model: Optional[Model] = Model("[segment.sentence_model]")):
+             model: Optional[Model] = Model("[segment.sentence_model]")) -> None:
     """Split text into sentences."""
     do_segmentation(text=text, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,
                     model=model)
 
 
 @annotator("Automatic segmentation of paragraphs", config=[
-    Config("segment.paragraph_segmenter", default="blanklines", description="Paragraph segmenter to use"),
+    Config("segment.paragraph_segmenter", default="blanklines", description="Paragraph segmenter to use", datatype=str,
+           choices=lambda: sorted(SEGMENTERS)),
     Config("segment.paragraph_chunk", default="<text>",
            description="Text chunk (annotation) to use as input when segmenting"),
     Config("segment.existing_paragraphs", description="Optional existing paragraph annotation")
@@ -68,7 +72,7 @@ def paragraph(text: Text = Text(),
               chunk: Optional[Annotation] = Annotation("[segment.paragraph_chunk]"),
               segmenter: str = Config("segment.paragraph_segmenter"),
               existing_segments: Optional[Annotation] = Annotation("[segment.existing_paragraphs]"),
-              model: Optional[Model] = None):
+              model: Optional[Model] = None) -> None:
     """Split text into paragraphs."""
     do_segmentation(text=text, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments,
                     model=model)
@@ -76,7 +80,7 @@ def paragraph(text: Text = Text(),
 
 def do_segmentation(text: Text, out: Output, segmenter, chunk: Optional[Annotation] = None,
                     existing_segments: Optional[Annotation] = None, model: Optional[Model] = None,
-                    token_list: Optional[Model] = None):
+                    token_list: Optional[Model] = None) -> None:
     """Segment all chunks (e.g. sentences) into smaller "tokens" (e.g. words), and annotate them as "element" (e.g. w).
 
     Segmentation is done by the given "segmenter"; some segmenters take
@@ -434,20 +438,14 @@ class FSVParagraphSplitter:
 
         return spans
 
-
-######################################################################
-
-SEGMENTERS = dict(whitespace=nltk.WhitespaceTokenizer,
-                  linebreaks=LinebreakTokenizer,
-                  blanklines=nltk.BlanklineTokenizer,
-                  punkt_sentence=PunktSentenceTokenizer,
-                  punctuation=PunctuationTokenizer,
-                  better_word=BetterWordTokenizer,
-                  crf_tokenizer=CRFTokenizer,
-                  simple_word_punkt=nltk.WordPunctTokenizer,
-                  fsv_paragraph=FSVParagraphSplitter
-                  )
-
-if not do_segmentation.__doc__:
-    do_segmentation.__doc__ = ""
-do_segmentation.__doc__ += "The following segmenters are available: %s" % ", ".join(sorted(SEGMENTERS))
+SEGMENTERS = {
+    "whitespace": nltk.WhitespaceTokenizer,
+    "linebreaks": LinebreakTokenizer,
+    "blanklines": nltk.BlanklineTokenizer,
+    "punkt_sentence": PunktSentenceTokenizer,
+    "punctuation": PunctuationTokenizer,
+    "better_word": BetterWordTokenizer,
+    "crf_tokenizer": CRFTokenizer,
+    "simple_word_punkt": nltk.WordPunctTokenizer,
+    "fsv_paragraph": FSVParagraphSplitter
+}
