@@ -194,7 +194,7 @@ def main():
     modules_parser.add_argument("--uninstallers", action="store_true", help="List info for uninstallers")
     modules_parser.add_argument("--all", action="store_true", help="List info for all module types")
     modules_parser.add_argument("--json", action="store_true", help="Print output in JSON format")
-    modules_parser.add_argument("names", nargs="*", default=[], help="Specific module(s) to display")
+    modules_parser.add_argument("names", nargs="*", default=[], help="Specific module(s) or annotator(s) to display")
 
     subparsers.add_parser("presets", description="Display all available annotation presets.")
     subparsers.add_parser("classes", description="Display all available annotation classes.")

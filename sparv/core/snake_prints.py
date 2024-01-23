@@ -85,22 +85,32 @@ def print_modules_info(
     if not module_types or "all" in module_types:
         module_types = all_module_types.keys()
 
-    module_names = [n.lower() for n in module_names]
     modules_data = {}
-    invalid_modules = set(module_names)
+    invalid_modules = set()
+    invalid_functions = {}
+    selected_modules = {}
+
+    if module_names:
+        for m in module_names:
+            module, _, function = m.partition(":")
+            selected_modules.setdefault(module, set())
+            if function:
+                selected_modules[module].add(function)
+        invalid_modules = set(selected_modules.keys())
+        invalid_functions = {k: set(v) for k, v in selected_modules.items()}
 
     for module_type in module_types:
         modules = all_module_types.get(module_type)
 
         # Filter modules
         if module_names:
-            modules = {k: v for k, v in modules.items() if k in module_names}
+            modules = {k: v for k, v in modules.items() if k in selected_modules}
             invalid_modules = invalid_modules - modules.keys()
 
         if not modules:
             continue
 
-        modules_data[module_type] = {}
+        module_type_data = {}
 
         for module_name in sorted(modules):
             module_data = {"functions": {}}
@@ -114,7 +124,13 @@ def print_modules_info(
             if description:
                 module_data["description"] = description
 
-            for f_name in sorted(modules[module_name]):
+            if module_names and selected_modules[module_name]:
+                functions = sorted(f for f in modules[module_name] if f in selected_modules[module_name])
+                invalid_functions[module_name] -= set(functions)
+            else:
+                functions = sorted(modules[module_name])
+
+            for f_name in functions:
                 f_data = {"description": modules[module_name][f_name]["description"]}
 
                 # Get parameters
@@ -150,18 +166,37 @@ def print_modules_info(
                 if module_type == "exporters":
                     f_data["exports"] = modules[module_name][f_name].get("exports", [])
 
-            modules_data[module_type][module_name] = module_data
+            if module_data["functions"]:
+                module_type_data[module_name] = module_data
+
+        if module_type_data:
+            modules_data[module_type] = module_type_data
+
+    if module_names:
+        invalid_functions = [
+            f"{m}:{f}" for m in invalid_functions for f in invalid_functions[m] if m not in invalid_modules
+        ]
 
     if json_output:
-        if invalid_modules:
-            modules_data["UNKNOWN_MODULES"] = list(invalid_modules)
+        if module_names:
+            if invalid_modules:
+                modules_data["UNKNOWN_MODULES"] = list(invalid_modules)
+            if invalid_functions:
+                modules_data["UNKNOWN_FUNCTIONS"] = list(invalid_functions)
+
         console.print(json.dumps(modules_data, indent=4))
     else:
         print_modules(modules_data)
         if invalid_modules:
             console.print(
-                "[red]Module{} not found: {}[/red]".format(
+                "[red]unknown module{}: {}[/red]".format(
                     "s" if len(invalid_modules) > 1 else "", ", ".join(invalid_modules)
+                )
+            )
+        if invalid_functions:
+            console.print(
+                "[red]Unknown function{}: {}[/red]".format(
+                    "s" if len(invalid_functions) > 1 else "", ", ".join(invalid_functions)
                 )
             )
 
