@@ -6,7 +6,7 @@ import re
 from collections import OrderedDict, defaultdict
 from itertools import combinations
 from pathlib import Path
-from typing import Any, List, Optional, Set, Tuple, Union
+from typing import Any, DefaultDict, List, Optional, Set, Tuple, Union
 
 import snakemake
 from snakemake.io import expand
@@ -828,12 +828,12 @@ def make_param_dict(params):
     return param_dict
 
 
-def get_reverse_config_usage():
-    """Get config variables used by each annotator."""
+def get_reverse_config_usage() -> DefaultDict[str, list]:
+    """Get a dictionary with annotators as keys, and lists of the config variables they use as values."""
     reverse_config_usage = defaultdict(list)
     for config_key in sparv_config.config_usage:
         for annotator in sparv_config.config_usage[config_key]:
-            reverse_config_usage[annotator].append((config_key, sparv_config.get_config_description(config_key)))
+            reverse_config_usage[annotator].append(config_key)
     return reverse_config_usage
 
 

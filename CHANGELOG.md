@@ -7,6 +7,7 @@
 - Added `--compact` flag for `sparv schema` command, resulting in compact output.
 - Added `--json` flag for `sparv modules` command.
 - The command `sparv modules` now also takes annotators in addition to modules as arguments to filter the output.
+- The detailed `sparv modules` listings now include info about accepted values for config variables.
 
 ### Changed
 

@@ -2,7 +2,10 @@
 import json
 from typing import List
 
+import typing_inspect
+import yaml
 from rich import box
+from rich.markup import escape
 from rich.padding import Padding
 from rich.panel import Panel
 from rich.rule import Rule
@@ -12,7 +15,7 @@ from sparv.core import config, registry, snake_utils
 from sparv.core.console import console
 
 
-def prettyprint_yaml(in_dict):
+def prettyprint_yaml(in_dict: dict) -> None:
     """Pretty-print YAML."""
     from rich.syntax import Syntax
     from sparv.api.util.misc import dump_yaml
@@ -82,6 +85,17 @@ def print_modules_info(
         "uninstallers": snake_storage.all_uninstallers
     }
 
+    def quoted_representer(dumper: yaml.Dumper, data: str) -> yaml.ScalarNode:
+        """Surround YAML strings with quotes, and escape them for Rich."""
+        return dumper.represent_scalar("tag:yaml.org,2002:str", escape(data), style="'")
+
+    def tuple_representer(dumper: yaml.Dumper, data: tuple) -> yaml.SequenceNode:
+        """Handle tuples when dumping YAML."""
+        return dumper.represent_sequence("tag:yaml.org,2002:seq", data)
+
+    yaml.add_representer(str, quoted_representer)
+    yaml.add_representer(tuple, tuple_representer)
+
     if not module_types or "all" in module_types:
         module_types = all_module_types.keys()
 
@@ -144,13 +158,52 @@ def print_modules_info(
                 if f_anns := modules[module_name][f_name].get("annotations", {}):
                     f_data["annotations"] = {}
                     for f_ann in sorted(f_anns):
-                        f_data["annotations"][f_ann[0].name] = {"description": f_ann[1]}
+                        f_data["annotations"][f_ann[0].original_name] = {"description": f_ann[1]}
                         if f_ann[0].cls:
-                            f_data["annotations"][f_ann[0].name]["class"] = f_ann[0].cls
+                            f_data["annotations"][f_ann[0].original_name]["class"] = f_ann[0].cls
+                        if f_ann[0].name != f_ann[0].original_name:
+                            f_data["annotations"][f_ann[0].original_name]["resolved_name"] = f_ann[0].name
 
                 # Config variables
                 if f_config := reverse_config_usage.get(f"{module_name}:{f_name}"):
-                    f_data["config"] = {config_key[0]: config_key[1] for config_key in sorted(f_config)}
+                    f_data["config"] = {}
+                    for config_key in sorted(f_config):
+                        config_info = {}
+                        if config_object := config.get_config_object(config_key):
+                            config_info["description"] = config_object.description
+                            datatypes = []
+
+                            if config_object.datatype is not None:
+                                # Datatype is either a single type or a union of types
+                                if typing_inspect.is_union_type(config_object.datatype):
+                                    cfg_datatypes = typing_inspect.get_args(config_object.datatype)
+                                else:
+                                    cfg_datatypes = [config_object.datatype]
+
+                                for cfg_datatype in cfg_datatypes:
+                                    if cfg_datatype is str:
+                                        datatypes.append(cfg_datatype.__name__)
+                                        if config_object.choices:
+                                            config_info["choices"] = config_object.choices() if callable(
+                                                config_object.choices) else config_object.choices
+                                        if config_object.pattern:
+                                            config_info["pattern"] = config_object.pattern
+                                    elif cfg_datatype is list or typing_inspect.get_origin(cfg_datatype) is list:
+                                        args = typing_inspect.get_args(cfg_datatype)
+                                        if args:
+                                            datatypes.append(f"list\[{args[0].__name__}]")
+                                        else:
+                                            datatypes.append("list")
+                                    else:
+                                        datatypes.append(cfg_datatype.__name__)
+
+                            if config_object.default is not None:
+                                config_info["default"] = config_object.default
+
+                            if datatypes:
+                                config_info["datatype"] = datatypes
+
+                        f_data["config"][config_key] = config_info
 
                 # Parameters. Always include parameters for custom annotators.
                 if (include_params and params) or "custom_annotator" in f_data:
@@ -186,7 +239,7 @@ def print_modules_info(
 
         console.print(json.dumps(modules_data, indent=4))
     else:
-        print_modules(modules_data)
+        _print_modules(modules_data)
         if invalid_modules:
             console.print(
                 "[red]unknown module{}: {}[/red]".format(
@@ -201,8 +254,8 @@ def print_modules_info(
             )
 
 
-def print_modules(modules_data: dict) -> None:
-    """Print module information."""
+def _print_modules(modules_data: dict) -> None:
+    """Pretty print module information."""
     # Box styles
     left_line = box.Box("    \n┃   \n┃   \n┃   \n┃   \n┃   \n┃   \n    ")
     minimal = box.Box("    \n  │ \n╶─┼╴\n  │ \n╶─┼╴\n╶─┼╴\n  │ \n    \n")
@@ -227,14 +280,14 @@ def print_modules(modules_data: dict) -> None:
 
             # Module description
             if "description" in module_data:
-                console.print(Padding(module_data["description"], (0, 4, 1, 4)))
+                console.print(Padding(escape(module_data["description"]), (0, 4, 1, 4)))
 
             for f_name, f_data in module_data["functions"].items():
                 # Function name and description
                 console.print(
                     Padding(
                         Panel(
-                            f"[b]{f_name.upper()}[/b]\n[i]{f_data['description']}[/i]",
+                            f"[b]{f_name.upper()}[/b]\n[i]{escape(f_data['description'])}[/i]",
                             box=left_line,
                             padding=(0, 1),
                             border_style="bright_green"
@@ -259,10 +312,17 @@ def print_modules(modules_data: dict) -> None:
                     table.add_column()
                     for f_ann, ann_data in f_data["annotations"].items():
                         table.add_row(
-                            f"• {f_ann}"
-                            + (f"\n  [i dim]class:[/] <{ann_data['class']}>" if "class" in ann_data else ""),
-                            ann_data["description"]
+                            f"• {escape(f_ann)}",
+                            escape(ann_data["description"] or "")
                         )
+                        if "resolved_name" in ann_data or "class" in ann_data:
+                            inner_table = Table(show_header=False, padding=(0, 1, 0, 0), box=None)
+                            inner_table.add_column(justify="left", style="i dim")
+                            if "resolved_name" in ann_data:
+                                inner_table.add_row("resolved name:", ann_data["resolved_name"])
+                            if "class" in ann_data:
+                                inner_table.add_row("class:", f"<{ann_data['class']}>")
+                            table.add_row("", Padding(inner_table, (0, 0, 0, 2)))
                     console.print(Padding(table, (0, 0, 0, 4)))
                 elif "custom_annotator" in f_data:
                     # Print info about custom annotators
@@ -297,8 +357,46 @@ def print_modules(modules_data: dict) -> None:
                     )
                     table.add_column(no_wrap=True)
                     table.add_column()
-                    for config_key, config_desc in f_data["config"].items():
-                        table.add_row("• " + config_key, config_desc or "")
+                    for config_key, config_info in f_data["config"].items():
+                        table.add_row(
+                            f"• {escape(config_key)}",
+                            escape(config_info.get("description", "[i dim]No description available[/]"))
+                        )
+                        if "datatype" in config_info:
+                            inner_table = Table(show_header=False, padding=(0, 1, 0, 0), box=None)
+                            inner_table.add_column(justify="left", style="i dim")
+                            inner_table.add_row(
+                                f"type{'s' if len(config_info['datatype']) > 1 else ''}:",
+                                f"{', '.join(config_info['datatype'])}"
+                            )
+
+                            presentation = {
+                                "str": {
+                                    "pattern": "regexp",
+                                }
+                            }
+
+                            for datatype in config_info["datatype"]:
+                                if datatype in presentation:
+                                    for key in presentation[datatype]:
+                                        if key in config_info:
+                                            inner_table.add_row(
+                                                f"{presentation[datatype][key]}:",
+                                                f"{escape(config_info[key])}"
+                                            )
+
+                            if "choices" in config_info:
+                                choices = yaml.dump(config_info["choices"], default_flow_style=True, width=9999)[1:-2]
+                                inner_table.add_row("values:", escape(choices))
+                            if "default" in config_info:
+                                inner_table.add_row(
+                                    "default:",
+                                    yaml.dump(
+                                        config_info["default"], default_flow_style=True
+                                    ).strip().removesuffix("\n...")
+                                )
+
+                            table.add_row("", Padding(inner_table, (0, 0, 0, 2)))
                     console.print(Padding(table, (0, 0, 0, 4)))
 
                 # Parameters
@@ -318,7 +416,7 @@ def print_modules(modules_data: dict) -> None:
                         opt_str = "(optional) " if p_data.get("optional") else ""
                         typ_str = p_data["type"]
                         def_str = f", default: {p_data['default']!r}" if p_data["default"] is not None else ""
-                        table.add_row("• " + p, f"{opt_str}{typ_str}{def_str}")
+                        table.add_row("• " + p, escape(f"{opt_str}{typ_str}{def_str}"))
                     console.print(Padding(table, (0, 0, 0, 4)))
                 console.print()
 
