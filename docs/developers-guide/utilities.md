@@ -221,8 +221,8 @@ deleted.
 - `remote`: Path to target file or directory.
 
 
-## Tagsets
-`sparv.api.util.tagsets` is a subpackage with modules containing functions and objects related to tagset conversions.
+## Tag Sets
+`sparv.api.util.tagsets` is a subpackage with modules containing functions and objects related to tag set conversions.
 
 ### tagmappings.join_tag()
 Convert a complex SUC or SALDO tag record into a string.
@@ -234,18 +234,18 @@ Convert a complex SUC or SALDO tag record into a string.
 
 
 ### tagmappings.mappings
-Dictionary containing mappings (dictionaries) for of part-of-speech tag mappings between different tag sets.
+Mappings of part-of-speech tags between different tag sets.
 
 
 ### pos_to_upos()
 Map POS tags to Universal Dependency POS tags. This only works if there is a conversion function in
-`util.tagsets.pos_to_upos` for the given language and tagset.
+`util.tagsets.pos_to_upos` for the given language and tag set.
 
 **Arguments:**
 
 - `pos`: The part-of-speech tag to convert.
 - `lang`: The language code.
-- `tagset`: The name of the tagset that `pos` belongs to.
+- `tagset`: The name of the tag set that `pos` belongs to.
 
 
 ### tagmappings.split_tag()
@@ -269,7 +269,7 @@ Convert SUC MSD tags into UCoNNL feature list (universal morphological features)
 
 
 ### tagmappings.tags
-Dictionary containing sets of part-of-speech tags.
+Different sets of part-of-speech tags.
 
 
 ## Miscellaneous Utils

@@ -1,7 +1,7 @@
 """This module contains translations between Saldo, SUC, Parole and Granska-ish tagsets.
 
 The Parole and SUC tags are described here:
-  http://spraakbanken.gu.se/parole/tags.phtml
+  https://spraakbanken.gu.se/parole/tags.html
 
 * Constants:
 
@@ -41,20 +41,20 @@ saldo_to_granska: 1-many mapping between Saldo and Granska-ish
 saldo_to_parole: 1-many mapping between Saldo and Parole
 saldo_to_saldo: 1-many identity mapping of Saldo tags
 """
+from typing import Dict, Set, Union
 
 TAGSEP = "."
 
 
-def split_tag(tag, sep=TAGSEP):
+def split_tag(tag: str, sep: str = TAGSEP) -> tuple:
     """Split a tag "X.Y.Z" into a tuple ("X", "Y.Z")."""
-    pos_msd = tag.split(sep, 1)
+    pos_msd = tuple(tag.split(sep, 1))
     if len(pos_msd) == 1:
         return pos_msd[0], ""
-    else:
-        return pos_msd
+    return pos_msd
 
 
-def join_tag(tag, sep=TAGSEP):
+def join_tag(tag: Union[dict, tuple], sep: str = TAGSEP) -> str:
     """Join a complex tag into a string.
 
     The tag can be a dict {"pos": pos, "msd": msd} or a tuple (pos, msd).
@@ -66,7 +66,7 @@ def join_tag(tag, sep=TAGSEP):
     return pos + sep + msd if msd else pos
 
 
-suc_descriptions = {
+_suc_descriptions = {
     "AB": "adverb",
     "AB.AN": "adverb förkortning",
     "AB.KOM": "adverb komparativ",
@@ -226,9 +226,8 @@ suc_descriptions = {
     "VB.SUP.SFO": "verb supinum s-form",
 }
 
-
 # This is automatically created from Saldo by saldo.saldo_model.extract_tags()
-saldo_tags = {
+_saldo_tags = {
     "ab c",
     "ab invar",
     "ab komp",
@@ -848,9 +847,8 @@ saldo_tags = {
     "vbm sup s-form"
 }
 
-
 # Mapping from SALDO POS tags (as found in lemgrams) to SUC POS tags
-saldo_pos_to_suc = {
+_saldo_pos_to_suc = {
     "nn": ["NN"],
     "av": ["JJ"],
     "vb": ["VB"],
@@ -885,8 +883,7 @@ saldo_pos_to_suc = {
     "pma": ["PM"]
 }
 
-
-suc_to_parole = {
+_suc_to_parole = {
     "AB": "RG0S",
     "AB.AN": "RG0A",
     "AB.KOM": "RGCS",
@@ -1046,9 +1043,8 @@ suc_to_parole = {
     "VB.SUP.SFO": "V@IUSS",
 }
 
-
 # This mapping, courtesy of Eva Forsbom
-granska_to_parole = {
+_granska_to_parole = {
     "pc.an": "AF00000A",
     "pc.prf.utr+neu.plu.ind+def.gen": "AF00PG0S",
     "pc.prf.utr+neu.plu.ind+def.nom": "AF00PN0S",
@@ -1223,42 +1219,7 @@ granska_to_parole = {
     "uo": "XF",
 }
 
-parole_to_suc = dict((parole, suc) for (suc, parole) in list(suc_to_parole.items()))
-
-granska_to_suc = dict((granska, parole_to_suc[parole]) for (granska, parole) in list(granska_to_parole.items()))
-
-parole_to_granska = {}
-for granska, parole in list(granska_to_parole.items()):
-    parole_to_granska.setdefault(parole, set()).add(granska)
-
-suc_to_granska = dict((suc, parole_to_granska[parole]) for (suc, parole) in list(suc_to_parole.items()))
-
-suc_tags = set(suc_descriptions)
-
-suc_to_simple = dict((suc, split_tag(suc)[0]) for suc in suc_tags)
-
-simple_tags = set(suc_to_simple.values())
-
-granska_tags = set(granska_to_parole)
-
-parole_tags = set(parole_to_suc)
-
-
-assert suc_tags == set(suc_to_parole.keys())
-assert suc_tags == set(suc_to_granska.keys())
-assert suc_tags == set(parole_to_suc.values())
-assert suc_tags == set(granska_to_suc.values())
-
-assert granska_tags == set(granska_to_parole.keys())
-assert granska_tags == set(granska_to_suc.keys())
-assert granska_tags == set().union(*list(parole_to_granska.values()))
-assert granska_tags == set().union(*list(suc_to_granska.values()))
-
-assert parole_tags == set(parole_to_suc.keys())
-assert parole_tags == set(parole_to_granska.keys())
-assert parole_tags == set(suc_to_parole.values())
-assert parole_tags == set(granska_to_parole.values())
-
+_granska_tags = set(_granska_to_parole)
 
 ######################################################################
 # Here we automatically create the 1-many dictionaries
@@ -1354,67 +1315,223 @@ _suc_tag_replacements = [
 ]
 
 
-def _make_saldo_to_suc(compound=False):
+def _make_saldo_to_suc(compound: bool = False) -> Dict[str, Set[str]]:
+    """Generate SALDO to SUC tag mapping."""
     import re
+
     tagmap = {}
-    for saldotag in saldo_tags:
-        params = saldotag.split()
+    for saldo_tag in _saldo_tags:
+        params = saldo_tag.split()
         if not compound:
-            if saldotag.endswith((" c", " ci", " cm")) or not params or (len(params[0]) == 3 and params[0].endswith(("m", "h"))):
+            if (
+                saldo_tag.endswith((" c", " ci", " cm"))
+                or not params
+                or (len(params[0]) == 3 and params[0].endswith(("m", "h")))
+            ):
                 # Skip multiword units and compound/end syllables
                 continue
-        else:
-            if not params or (len(params[0]) == 3 and params[0].endswith("m")):
-                # Skip multiword units
-                continue
+        elif not params or (len(params[0]) == 3 and params[0].endswith("m")):
+            # Skip multiword units
+            continue
         paramstr = " ".join(saldo_params_to_suc.get(prm, prm.upper()) for prm in params)
-        for (pre, post) in _suc_tag_replacements:
-            m = re.match(pre, paramstr)
-            if m:
+        replacement = None
+        m = None
+        for pre, post in _suc_tag_replacements:
+            if m := re.match(pre, paramstr):
+                replacement = post
                 break
-        if m is None:
-            print(paramstr)
-            print()
-        sucfilter = m.expand(post).replace(" ", r"\.").replace("+", r"\+")
-        tagmap[saldotag] = set(suctag for suctag in suc_tags
-                               if re.match(sucfilter, suctag))
+        if replacement is None:
+            raise Exception(paramstr)
+        suc_filter = m.expand(replacement).replace(" ", r"\.").replace("+", r"\+")
+        tagmap[saldo_tag] = {suc_tag for suc_tag in tags.suc_tags if re.match(suc_filter, suc_tag)}
     return tagmap
 
 
-saldo_to_suc = _make_saldo_to_suc()
-saldo_to_suc_compound = _make_saldo_to_suc(compound=True)  # For use with the compound module
+class Mappings:
+    """Class with methods for accessing tag mappings."""
 
-saldo_to_parole = dict((saldotag, set(suc_to_parole[suctag] for suctag in suctags))
-                       for saldotag, suctags in list(saldo_to_suc.items()))
+    def __init__(self) -> None:
+        """Initialise Mappings."""
+        self.mappings = {}
 
-saldo_to_granska = dict((saldotag, set().union(*(suc_to_granska[suctag] for suctag in suctags)))
-                        for saldotag, suctags in list(saldo_to_suc.items()))
+    def __getitem__(self, item: str) -> dict:
+        """Get a tag mapping through subscripting for backward compatibility."""
+        if item in self.mappings:
+            return self.mappings[item]
+        return getattr(self, item)
 
-saldo_to_saldo = dict((saldotag, {saldotag}) for saldotag in saldo_tags)
+    @property
+    def granska_to_parole(self) -> Dict[str, str]:
+        """Return Granska to Parole tag mapping."""
+        return _granska_to_parole
+
+    @property
+    def granska_to_suc(self) -> Dict[str, str]:
+        """Return Granska to SUC tag mapping."""
+        if "granska_to_suc" not in self.mappings:
+            self.mappings["granska_to_suc"] = {
+                granska: self.parole_to_suc[parole] for (granska, parole) in list(_granska_to_parole.items())
+            }
+        return self.mappings["granska_to_suc"]
+
+    @property
+    def parole_to_granska(self) -> Dict[str, str]:
+        """Return Parole to Granska tag mapping."""
+        if "parole_to_granska" not in self.mappings:
+            self.mappings["parole_to_granska"] = {}
+            for granska, parole in list(_granska_to_parole.items()):
+                self.mappings["parole_to_granska"].setdefault(parole, set()).add(granska)
+        return self.mappings["parole_to_granska"]
+
+    @property
+    def parole_to_suc(self) -> Dict[str, str]:
+        """Return Parole to SUC tag mapping."""
+        if "parole_to_suc" not in self.mappings:
+            self.mappings["parole_to_suc"] = {parole: suc for (suc, parole) in list(_suc_to_parole.items())}
+        return self.mappings["parole_to_suc"]
+
+    @property
+    def saldo_to_granska(self) -> Dict[str, str]:
+        """Return SALDO to Granska tag mapping."""
+        if "saldo_to_granska" not in self.mappings:
+            self.mappings["saldo_to_granska"] = {
+                saldo_tag: set().union(*(self.suc_to_granska[suc_tag] for suc_tag in suc_tags))
+                for saldo_tag, suc_tags in list(self.saldo_to_suc.items())
+            }
+        return self.mappings["saldo_to_granska"]
+
+    @property
+    def saldo_to_parole(self) -> Dict[str, str]:
+        """Return SALDO to Parole tag mapping."""
+        if "saldo_to_parole" not in self.mappings:
+            self.mappings["saldo_to_parole"] = {
+                saldo_tag: {_suc_to_parole[suc_tag] for suc_tag in suc_tags}
+                for saldo_tag, suc_tags in list(self.saldo_to_suc.items())
+            }
+        return self.mappings["saldo_to_parole"]
+
+    @property
+    def saldo_to_saldo(self) -> Dict[str, str]:
+        """Return SALDO to SALDO tag mapping."""
+        if "saldo_to_saldo" not in self.mappings:
+            self.mappings["saldo_to_saldo"] = {saldo_tag: {saldo_tag} for saldo_tag in _saldo_tags}
+        return self.mappings["saldo_to_saldo"]
+
+    @property
+    def saldo_to_suc_compound(self) -> Dict[str, str]:
+        """Return SALDO to SUC compund tag mapping."""
+        if "saldo_to_suc_compound" not in self.mappings:
+            self.mappings["saldo_to_suc_compound"] = _make_saldo_to_suc(compound=True)
+        return self.mappings["saldo_to_suc_compound"]
+
+    @property
+    def saldo_to_suc(self) -> Dict[str, str]:
+        """Return SALDO to SUC tag mapping."""
+        if "saldo_to_suc" not in self.mappings:
+            self.mappings["saldo_to_suc"] = _make_saldo_to_suc()
+        return self.mappings["saldo_to_suc"]
+
+    @property
+    def saldo_pos_to_suc(self) -> Dict[str, str]:
+        """Return SALDO pos to SUC tag mapping."""
+        return _saldo_pos_to_suc
+
+    @property
+    def suc_descriptions(self) -> Dict[str, str]:
+        """Return SUC descriptions mapping."""
+        return _suc_descriptions
+
+    @property
+    def suc_to_granska(self) -> Dict[str, str]:
+        """Return SUC to Granska tag mapping."""
+        if "suc_to_granska" not in self.mappings:
+            self.mappings["suc_to_granska"] = {
+                suc: self.parole_to_granska[parole] for (suc, parole) in list(_suc_to_parole.items())
+            }
+        return self.mappings["suc_to_granska"]
+
+    @property
+    def suc_to_parole(self) -> Dict[str, str]:
+        """Return SUC to Parole tag mapping."""
+        return _suc_to_parole
+
+    @property
+    def suc_to_simple(self) -> Dict[str, str]:
+        """Return SUC to SUC pos tag mapping."""
+        if "suc_to_simple" not in self.mappings:
+            self.mappings["suc_to_simple"] = {suc: split_tag(suc)[0] for suc in tags.suc_tags}
+        return self.mappings["suc_to_simple"]
+
+    @property
+    def saldo_params_to_suc(self) -> Dict[str, str]:
+        """Return SALDO params to SUC tag mapping."""
+        return saldo_params_to_suc
 
 
-mappings = {
-    "granska_to_parole": granska_to_parole,
-    "granska_to_suc": granska_to_suc,
-    "parole_to_granska": parole_to_granska,
-    "parole_to_suc": parole_to_suc,
-    "saldo_to_granska": saldo_to_granska,
-    "saldo_to_parole": saldo_to_parole,
-    "saldo_to_saldo": saldo_to_saldo,
-    "saldo_to_suc_compound": saldo_to_suc_compound,
-    "saldo_to_suc": saldo_to_suc,
-    "saldo_pos_to_suc": saldo_pos_to_suc,
-    "suc_descriptions": suc_descriptions,
-    "suc_to_granska": suc_to_granska,
-    "suc_to_parole": suc_to_parole,
-    "suc_to_simple": suc_to_simple,
-    "saldo_params_to_suc": saldo_params_to_suc,
-}
+mappings = Mappings()
 
-tags = {
-    "granska_tags": granska_tags,
-    "parole_tags": parole_tags,
-    "saldo_tags": saldo_tags,
-    "simple_tags": simple_tags,
-    "suc_tags": suc_tags,
-}
+
+class Tags:
+    """Class with methods for accessing tag sets."""
+
+    def __init__(self) -> None:
+        """Initialize Tags class."""
+        self.tags = {
+            "granska_tags": _granska_tags,
+            "saldo_tags": _saldo_tags
+        }
+
+    def __getitem__(self, item: str) -> dict:
+        """Get a tag set through subscripting for backward compatibility."""
+        if item in self.tags:
+            return self.tags[item]
+        return getattr(self, item)
+
+    @property
+    def granska_tags(self) -> Set[str]:
+        """Return Granska tag set."""
+        return self.tags["granska_tags"]
+
+    @property
+    def parole_tags(self) -> Set[str]:
+        """Return Parole tag set."""
+        if "parole_tags" not in self.tags:
+            self.tags["parole_tags"] = set(mappings.parole_to_suc)
+        return self.tags["parole_tags"]
+
+    @property
+    def saldo_tags(self) -> Set[str]:
+        """Return SALDO tag set."""
+        return self.tags["saldo_tags"]
+
+    @property
+    def simple_tags(self) -> Set[str]:
+        """Return SUC pos tag set."""
+        if "simple_tags" not in self.tags:
+            self.tags["simple_tags"] = set(mappings.suc_to_simple.values())
+        return self.tags["simple_tags"]
+
+    @property
+    def suc_tags(self) -> Set[str]:
+        """Return SUC tag set."""
+        if "suc_tags" not in self.tags:
+            self.tags["suc_tags"] = set(_suc_descriptions)
+        return self.tags["suc_tags"]
+
+
+tags = Tags()
+
+# assert tags.suc_tags == set(mappings.suc_to_parole.keys())
+# assert tags.suc_tags == set(mappings.suc_to_granska.keys())
+# assert tags.suc_tags == set(mappings.parole_to_suc.values())
+# assert tags.suc_tags == set(mappings.granska_to_suc.values())
+#
+# assert _granska_tags == set(mappings.granska_to_parole.keys())
+# assert _granska_tags == set(mappings.granska_to_suc.keys())
+# assert _granska_tags == set().union(*list(mappings.parole_to_granska.values()))
+# assert _granska_tags == set().union(*list(mappings.suc_to_granska.values()))
+#
+# assert tags.parole_tags == set(mappings.parole_to_suc.keys())
+# assert tags.parole_tags == set(mappings.parole_to_granska.keys())
+# assert tags.parole_tags == set(_suc_to_parole.values())
+# assert tags.parole_tags == set(_granska_to_parole.values())
