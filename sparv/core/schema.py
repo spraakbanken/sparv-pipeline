@@ -26,25 +26,54 @@ class Any(BaseProperty):
         super().__init__(None, **kwargs)
 
 class String(BaseProperty):
-    def __init__(self, pattern=None, choices=None, min=None, max=None, allow_null=False, **kwargs):
+    """Class representing a string."""
+    def __init__(
+        self,
+        pattern: Optional[str] = None,
+        choices: Optional[List[str]] = None,
+        min_len: Optional[int] = None,
+        max_len: Optional[int] = None,
+        allow_null: bool = False,
+        **kwargs
+    ) -> None:
         if pattern:
             kwargs["pattern"] = pattern
         if choices:
             if callable(choices):
                 choices = choices()
             kwargs["enum"] = list(choices)
-        if min:
-            kwargs["min"] = min
-        if max:
-            kwargs["max"] = max
+        if min_len is not None:
+            kwargs["minLength"] = min_len
+        if max_len is not None:
+            kwargs["maxLength"] = max_len
         super().__init__("string", allow_null, **kwargs)
 
 class Integer(BaseProperty):
-    def __init__(self, **kwargs):
+    """Class representing an integer."""
+    def __init__(
+        self,
+        min_value: Optional[int] = None,
+        max_value: Optional[int] = None,
+        **kwargs
+    ):
+        if min_value is not None:
+            kwargs["minimum"] = min_value
+        if max_value is not None:
+            kwargs["maximum"] = max_value
         super().__init__("integer", **kwargs)
 
 class Number(BaseProperty):
-    def __init__(self, **kwargs):
+    """Class representing either a float or an integer."""
+    def __init__(
+        self,
+        min_value: Optional[Union[int, float]],
+        max_value: Optional[Union[int, float]],
+        **kwargs
+    ):
+        if min_value is not None:
+            kwargs["minimum"] = min_value
+        if max_value is not None:
+            kwargs["maximum"] = max_value
         super().__init__("number", **kwargs)
 
 class Boolean(BaseProperty):
@@ -295,14 +324,22 @@ def build_json_schema(config_structure: dict) -> dict:
                 datatype = String(
                     pattern=cfg.pattern,
                     choices=cfg.choices,
-                    min=cfg.min,
-                    max=cfg.max,
+                    min_len=cfg.min_len,
+                    max_len=cfg.max_len,
                     **kwargs
                 )
             elif cfg_datatype is int:
-                datatype = Integer(**kwargs)
+                datatype = Integer(
+                    min_value=cfg.min_value,
+                    max_value=cfg.max_value,
+                    **kwargs
+                )
             elif cfg_datatype is float:
-                datatype = Number(**kwargs)
+                datatype = Number(
+                    min_value=cfg.min_value,
+                    max_value=cfg.max_value,
+                    **kwargs
+                )
             elif cfg_datatype is bool:
                 datatype = Boolean(**kwargs)
             elif cfg_datatype is type(None):

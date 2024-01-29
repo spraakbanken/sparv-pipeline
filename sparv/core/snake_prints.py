@@ -188,6 +188,12 @@ def print_modules_info(
                                                 config_object.choices) else config_object.choices
                                         if config_object.pattern:
                                             config_info["pattern"] = config_object.pattern
+                                    elif cfg_datatype in (int, float):
+                                        datatypes.append(cfg_datatype.__name__)
+                                        if config_object.min_value is not None:
+                                            config_info["min_value"] = config_object.min_value
+                                        if config_object.max_value is not None:
+                                            config_info["max_value"] = config_object.max_value
                                     elif cfg_datatype is list or typing_inspect.get_origin(cfg_datatype) is list:
                                         args = typing_inspect.get_args(cfg_datatype)
                                         if args:
@@ -373,6 +379,16 @@ def _print_modules(modules_data: dict) -> None:
                             presentation = {
                                 "str": {
                                     "pattern": "regexp",
+                                    "min_len": "min length",
+                                    "max_len": "max length"
+                                },
+                                "int": {
+                                    "min_value": "min",
+                                    "max_value": "max"
+                                },
+                                "float": {
+                                    "min_value": "min",
+                                    "max_value": "max"
                                 }
                             }
 
@@ -382,7 +398,9 @@ def _print_modules(modules_data: dict) -> None:
                                         if key in config_info:
                                             inner_table.add_row(
                                                 f"{presentation[datatype][key]}:",
-                                                f"{escape(config_info[key])}"
+                                                yaml.dump(
+                                                    config_info[key], default_flow_style=True
+                                                ).strip().removesuffix("\n...")
                                             )
 
                             if "choices" in config_info:

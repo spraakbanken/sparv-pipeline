@@ -632,7 +632,7 @@ class AllSourceFilenames(Sequence[str]):
 class Config(str):
     """Class holding configuration key names."""
 
-    def __new__(cls, name: str, *args, **kwargs):
+    def __new__(cls, name: str, *args, **kwargs) -> str:
         return super().__new__(cls, name)
 
     def __init__(
@@ -640,22 +640,26 @@ class Config(str):
         name: str,
         default: Any = None,
         description: Optional[str] = None,
-        datatype=None,
+        datatype: Optional[type] = None,
         choices: Optional[Union[Iterable, Callable]] = None,
         pattern: Optional[str] = None,
-        min: Optional[float] = None,
-        max: Optional[float] = None,
+        min_len: Optional[int] = None,
+        max_len: Optional[int] = None,
+        min_value: Optional[Union[int, float]] = None,
+        max_value: Optional[Union[int, float]] = None,
         const: Optional[Any] = None,
         conditions: Optional[List["Config"]] = None
-    ):
+    ) -> None:
         self.name = name
         self.default = default
         self.description = description
         self.datatype = datatype
         self.choices = choices
         self.pattern = pattern
-        self.min = min
-        self.max = max
+        self.min_len = min_len
+        self.max_len = max_len
+        self.min_value = min_value
+        self.max_value = max_value
         self.const = const
         self.conditions = conditions or []
 
