@@ -1,29 +1,33 @@
-"""
-Functions for creating and validating JSON schemas.
-"""
+"""Functions for creating and validating JSON schemas."""
 
 import itertools
 import json
 import re
 from collections import defaultdict
-from typing import DefaultDict, List, Optional, Tuple, Type, Union
+from typing import DefaultDict, List, Optional, Sequence, Tuple, Type, Union
 
 import typing_inspect
+
 from sparv.api import Config, SparvErrorMessage
 from sparv.core import registry
 
 NO_COND = ((), ())
 
+
 class BaseProperty:
-    def __init__(self, prop_type: Optional[str], allow_null: Optional[bool] = False, **kwargs):
+    """Base class for other types of properties."""
+    def __init__(self, prop_type: Optional[str], allow_null: Optional[bool] = False, **kwargs) -> None:
         self.schema = {
             "type": prop_type if not allow_null else [prop_type, "null"],
             **kwargs
         } if prop_type else kwargs
 
+
 class Any(BaseProperty):
+    """Class representing any type."""
     def __init__(self, **kwargs):
         super().__init__(None, **kwargs)
+
 
 class String(BaseProperty):
     """Class representing a string."""
@@ -48,6 +52,7 @@ class String(BaseProperty):
             kwargs["maxLength"] = max_len
         super().__init__("string", allow_null, **kwargs)
 
+
 class Integer(BaseProperty):
     """Class representing an integer."""
     def __init__(
@@ -61,6 +66,7 @@ class Integer(BaseProperty):
         if max_value is not None:
             kwargs["maximum"] = max_value
         super().__init__("integer", **kwargs)
+
 
 class Number(BaseProperty):
     """Class representing either a float or an integer."""
@@ -76,15 +82,21 @@ class Number(BaseProperty):
             kwargs["maximum"] = max_value
         super().__init__("number", **kwargs)
 
+
 class Boolean(BaseProperty):
+    """Class representing a boolean."""
     def __init__(self, **kwargs):
         super().__init__("boolean", **kwargs)
 
+
 class Null(BaseProperty):
+    """Class representing a null value."""
     def __init__(self, **kwargs):
         super().__init__("null", **kwargs)
 
+
 class Array(BaseProperty):
+    """Class representing an array of values."""
     def __init__(
         self,
         items: Optional[Type[Union[String, Integer, Number, Boolean, Null, Any, "Array", "Object"]]] = None,
@@ -94,8 +106,13 @@ class Array(BaseProperty):
             kwargs["items"] = items().schema
         super().__init__("array", **kwargs)
 
+
 class Object:
-    def __init__(self, additional_properties: Union[dict, bool] = True, description: Optional[str] = None, **kwargs):
+    """Class representing an object."""
+    def __init__(
+        self, additional_properties: Union[dict, bool] = True, description: Optional[str] = None,
+        **kwargs
+    ):
         if additional_properties is False or isinstance(additional_properties, dict):
             kwargs["additionalProperties"] = additional_properties
         if description:
@@ -124,8 +141,9 @@ class Object:
         prop_obj: Union[List, Union[String, Integer, Number, "Object", Any]],
         required: bool = False,
         condition: Optional[Tuple[Tuple["Object", ...], Tuple["Object", ...]]] = None
-    ):
-        if condition and not condition == NO_COND:
+    ) -> "Object":
+        """Add a property to the object."""
+        if condition and condition != NO_COND:
             self.allof[condition].append((name, prop_obj))
         else:
             self.properties[name] = prop_obj
@@ -134,7 +152,8 @@ class Object:
         return self
 
     @property
-    def schema(self):
+    def schema(self) -> dict:
+        """Return JSON schema for current object and its children as a dictionary."""
         prop_schemas = {}
         for name, prop_obj in self.properties.items():
             if isinstance(prop_obj, list):
@@ -177,9 +196,12 @@ class Object:
             self.obj_schema["allOf"] = conditionals
         return self.obj_schema
 
-class JsonSchema(Object):
 
-    def __init__(self):
+class JsonSchema(Object):
+    """Class representing a JSON schema."""
+
+    def __init__(self) -> None:
+        """Initialize the JSON schema."""
         super().__init__(**{
             "$schema": "https://json-schema.org/draft/2020-12/schema",
             "$id": "https://spraakbanken.gu.se/sparv/schema.json",
@@ -189,11 +211,12 @@ class JsonSchema(Object):
             "unevaluatedProperties": False
         })
 
-    def to_json(self):
+    def to_json(self) -> str:
+        """Return the JSON schema as a string."""
         return json.dumps(self.schema, indent=2)
 
 
-def get_class_from_type(t):
+def get_class_from_type(t: Type) -> Type:
     """Get JSON schema class from Python type."""
     types = {
         str: String,
@@ -254,16 +277,16 @@ def build_json_schema(config_structure: dict) -> dict:
 
                     for combination in combinations:
                         if no_cond:
-                            combination = (NO_COND,) + combination
+                            combination = (NO_COND, *combination)
 
                         child_obj = Object(additional_properties=False, description=description)
 
                         for cond in combination:
                             for subkey, prop in children[cond]:
                                 child_obj.add_property(subkey, prop, required=is_condition)
-                        positive_conds = tuple(set(cc for c in combination for cc in c[0] or (None,)))
+                        positive_conds = tuple({cc for c in combination for cc in c[0] or (None,)})
                         negative_conds = tuple(
-                            set(cc for c in conds if c != NO_COND for cc in c[0] if cc not in positive_conds)
+                            {cc for c in conds if c != NO_COND for cc in c[0] if cc not in positive_conds}
                         )
 
                         if not set(positive_conds).intersection(set(negative_conds)):
@@ -274,7 +297,9 @@ def build_json_schema(config_structure: dict) -> dict:
                     prop, condition = handle_property(structure[key]["_cfg"])
                 except ValueError:
                     full_key = f"{parent_name}.{key}" if parent_name else key
-                    raise ValueError(f"Unsupported datatype for '{full_key}': '{structure[key]['_cfg'].datatype}'")
+                    raise ValueError(
+                        f"Unsupported datatype for '{full_key}': '{structure[key]['_cfg'].datatype}'"
+                    ) from None
 
                 conditionals[(condition, ())].append((key, prop))
 
@@ -293,8 +318,7 @@ def build_json_schema(config_structure: dict) -> dict:
     def handle_property(
         cfg: Config
     ) -> Tuple[Union[BaseProperty, List[BaseProperty]], Tuple[Object, ...]]:
-        """
-        Handle a property and its conditions.
+        """Handle a property and its conditions.
 
         Args:
             cfg: A Config object
@@ -357,7 +381,7 @@ def build_json_schema(config_structure: dict) -> dict:
             elif cfg_datatype is None:
                 datatype = Any(**kwargs)
             else:
-                raise ValueError()
+                raise ValueError
             datatypes.append(datatype)
 
         if cfg.conditions:
@@ -391,7 +415,7 @@ def validate(cfg: dict, schema: dict) -> None:
     """Validate a Sparv config using JSON schema."""
     import jsonschema
 
-    def build_path_string(path):
+    def build_path_string(path: Sequence) -> str:
         parts = []
         for part in path:
             if isinstance(part, str):
@@ -408,7 +432,7 @@ def validate(cfg: dict, schema: dict) -> None:
         # Rephrase messages about unexpected keys
         unknown_key = re.search(r"properties are not allowed \('(.+)' was unexpected", e.message)
         if unknown_key:
-            full_path = ".".join(list(e.absolute_path) + [unknown_key.group(1)])
+            full_path = ".".join([*list(e.absolute_path), unknown_key.group(1)])
             msg.append(f"Unexpected key in config file: {full_path!r}")
         else:
             msg.append(e.message)
@@ -417,4 +441,4 @@ def validate(cfg: dict, schema: dict) -> None:
                 if "description" in e.schema:
                     msg.append(f"Description of config key: {e.schema['description']}")
 
-        raise SparvErrorMessage("\n".join(msg))
+        raise SparvErrorMessage("\n".join(msg)) from None
