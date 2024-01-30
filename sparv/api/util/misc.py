@@ -4,7 +4,6 @@ import pathlib
 import unicodedata
 from typing import Optional, Union
 
-import pycountry
 import yaml
 
 from sparv.api import get_logger
@@ -178,11 +177,15 @@ def indent_xml(elem, level=0, indentation="  ") -> None:
 
 def get_language_name_by_part3(part3: str) -> Optional[str]:
     """Return language name in English given an ISO 639-3 code."""
+    import pycountry
+
     lang = pycountry.languages.get(alpha_3=part3)
     return lang.name if lang else None
 
 
 def get_language_part1_by_part3(part3: str) -> Optional[str]:
     """Return ISO 639-1 code given an ISO 639-3 code."""
+    import pycountry
+
     lang = pycountry.languages.get(alpha_3=part3)
     return lang.alpha_2 if lang else None

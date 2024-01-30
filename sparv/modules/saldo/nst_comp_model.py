@@ -3,8 +3,6 @@
 import pickle
 import re
 
-from nltk import FreqDist, LidstoneProbDist
-
 from sparv.api import Model, ModelOutput, get_logger, modelbuilder
 
 logger = get_logger(__name__)
@@ -34,6 +32,8 @@ def make_model(nst_infile, picklefile, protocol=-1):
     The model is a LidstoneProbDist (NLTK) which has compounded POS tags (SUC set) as keys (e.g. "NN+NN")
     and smoothed probabilities as values.
     """
+    from nltk import FreqDist, LidstoneProbDist
+
     # Collect all compounds from nst data
     nst_full_compounds = set()
     with open(nst_infile, encoding='UTF-8') as f:

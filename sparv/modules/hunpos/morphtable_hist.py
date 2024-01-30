@@ -5,17 +5,12 @@ import re
 from sparv.api import Model, ModelOutput, modelbuilder
 from sparv.api.util.tagsets import tagmappings
 
-# Constants
-SALDO_TO_SUC = tagmappings.mappings["saldo_to_suc"]
-SALDO_TO_SUC["pm"] = {"PM.NOM"}
-SALDO_TO_SUC["nl invar"] = {"NL.NOM"}
-
 
 @modelbuilder("Hunpos morphtable for Swedish historical resources", language=["swe-1800"])
 def hist_morphtable(out: ModelOutput = ModelOutput("hunpos/hist/dalinm-swedberg_saldo_suc-tags.morphtable"),
                     swedberg: Model = Model("hunpos/hist/swedberg-gender.hunpos"),
                     dalin: Model = Model("hunpos/hist/dalinm.hunpos"),
-                    saldosuc_morphtable: Model = Model("hunpos/saldo_suc-tags.morphtable")):
+                    saldosuc_morphtable: Model = Model("hunpos/saldo_suc-tags.morphtable")) -> None:
     """Read files and make a morphtable together with the information from SALDO (saldosuc_morphtable).
 
     Args:
@@ -24,6 +19,61 @@ def hist_morphtable(out: ModelOutput = ModelOutput("hunpos/hist/dalinm-swedberg_
         dalin: Wordlist from Dalin and corresponding SALDO MSD-tags.
         saldosuc_morphtable: SALDO Hunpos morphtable.
     """
+    saldo_to_suc = tagmappings.mappings.saldo_to_suc
+    saldo_to_suc["pm"] = {"PM.NOM"}
+    saldo_to_suc["nl invar"] = {"NL.NOM"}
+
+    def _read_saldosuc(words, saldosuc_morphtable):
+        for line in open(saldosuc_morphtable, encoding="utf-8").readlines():
+            xs = line.strip().split("\t")
+            words.setdefault(xs[0], set()).update(set(xs[1:]))
+
+    def _force_parse(msd):
+        # This is a modification of _make_saldo_to_suc in utils.tagsets.py
+        params = msd.split()
+
+        # try ignoring gender, m/f => u
+        for i, param in enumerate(params):
+            if param.strip() in ["m", "f"]:
+                params[i] = "u"
+        new_suc = saldo_to_suc.get(" ".join(params), "")
+
+        if new_suc:
+            # print "Add translation", msd,new_suc
+            saldo_to_suc[msd] = new_suc
+            return new_suc
+
+        # try changing place: nn sg n indef nom => nn n sg indef nom
+        if params[0] == "nn":
+            new_suc = saldo_to_suc.get(" ".join([params[0], params[2], params[1], params[3], params[4]]), "")
+
+        if new_suc:
+            # print "Add translation", msd,new_suc
+            saldo_to_suc[msd] = new_suc
+            return new_suc
+
+        # try adding case info: av pos def pl => av pos def pl nom/gen
+        if params[0] == "av":
+            new_suc = saldo_to_suc.get(" ".join(params + ["nom"]), set())
+            new_suc.update(saldo_to_suc.get(" ".join(params + ["gen"]), set()))
+
+        if new_suc:
+            # print "Add translation", msd,new_suc
+            saldo_to_suc[msd] = new_suc
+            return new_suc
+
+        paramstr = " ".join(tagmappings.mappings["saldo_params_to_suc"].get(prm, prm.upper()) for prm in params)
+        for (pre, post) in tagmappings._suc_tag_replacements:
+            m = re.match(pre, paramstr)
+            if m:
+                break
+        if m is None:
+            return set()
+        sucfilter = m.expand(post).replace(" ", r"\.").replace("+", r"\+")
+        new_suc = set(suctag for suctag in tagmappings.tags["suc_tags"] if re.match(sucfilter, suctag))
+        saldo_to_suc[msd] = new_suc
+        return new_suc
+
     words = {}
     _read_saldosuc(words, saldosuc_morphtable.path)
     for fil in [dalin, swedberg]:
@@ -39,7 +89,7 @@ def hist_morphtable(out: ModelOutput = ModelOutput("hunpos/hist/dalinm-swedberg_
                     word = word.split()[0]
 
             # If the tag is not present, we try to translate it anyway
-            suc = SALDO_TO_SUC.get(msd, "")
+            suc = saldo_to_suc.get(msd, "")
             if not suc:
                 suc = _force_parse(msd)
             if suc:
@@ -49,59 +99,6 @@ def hist_morphtable(out: ModelOutput = ModelOutput("hunpos/hist/dalinm-swedberg_
         for w, ts in list(words.items()):
             line = ("\t".join([w] + list(ts)) + "\n")
             out.write(line)
-
-
-def _read_saldosuc(words, saldosuc_morphtable):
-    for line in open(saldosuc_morphtable, encoding="utf-8").readlines():
-        xs = line.strip().split("\t")
-        words.setdefault(xs[0], set()).update(set(xs[1:]))
-
-
-def _force_parse(msd):
-    # This is a modification of _make_saldo_to_suc in utils.tagsets.py
-    params = msd.split()
-
-    # try ignoring gender, m/f => u
-    for i, param in enumerate(params):
-        if param.strip() in ["m", "f"]:
-            params[i] = "u"
-    new_suc = SALDO_TO_SUC.get(" ".join(params), "")
-
-    if new_suc:
-        # print "Add translation", msd,new_suc
-        SALDO_TO_SUC[msd] = new_suc
-        return new_suc
-
-    # try changing place: nn sg n indef nom => nn n sg indef nom
-    if params[0] == "nn":
-        new_suc = SALDO_TO_SUC.get(" ".join([params[0], params[2], params[1], params[3], params[4]]), "")
-
-    if new_suc:
-        # print "Add translation", msd,new_suc
-        SALDO_TO_SUC[msd] = new_suc
-        return new_suc
-
-    # try adding case info: av pos def pl => av pos def pl nom/gen
-    if params[0] == "av":
-        new_suc = SALDO_TO_SUC.get(" ".join(params + ["nom"]), set())
-        new_suc.update(SALDO_TO_SUC.get(" ".join(params + ["gen"]), set()))
-
-    if new_suc:
-        # print "Add translation", msd,new_suc
-        SALDO_TO_SUC[msd] = new_suc
-        return new_suc
-
-    paramstr = " ".join(tagmappings.mappings["saldo_params_to_suc"].get(prm, prm.upper()) for prm in params)
-    for (pre, post) in tagmappings._suc_tag_replacements:
-        m = re.match(pre, paramstr)
-        if m:
-            break
-    if m is None:
-        return set()
-    sucfilter = m.expand(post).replace(" ", r"\.").replace("+", r"\+")
-    new_suc = set(suctag for suctag in tagmappings.tags["suc_tags"] if re.match(sucfilter, suctag))
-    SALDO_TO_SUC[msd] = new_suc
-    return new_suc
 
 
 @modelbuilder("Swedberg wordlist", language=["swe-1800"])
