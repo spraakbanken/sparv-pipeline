@@ -32,10 +32,10 @@ annotation is needed as input for a function, e.g. `Annotation("<token:word>")`.
 - `split()`: Split name into annotation name and attribute.
 - `exists()`: Return True if annotation file exists.
 - `remove()`: Remove annotation file.
-- `read(allow_newlines: bool = False)`: Yield each line from the annotation.
+- `read()`: Yield each line from the annotation.
 - `read_spans(decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
 - `read_attributes(annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]], with_annotation_name: bool =
-  False, allow_newlines: bool = False)`: Yield tuples of multiple attributes on the same annotation.
+  False)`: Yield tuples of multiple attributes on the same annotation.
 - `get_children(child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False)`: Return two lists.
     The first one is a list with n (= total number of parents) elements where every element is a list of indices in the
     child annotation. The second one is a list of orphans, i.e. containing indices in the child annotation that have no
@@ -69,10 +69,10 @@ require the specified annotation for every source file in the corpus.
 - `split()`: Split name into annotation name and attribute.
 - `exists(source_file: str)`: Return True if annotation file exists.
 - `remove(source_file: str)`: Remove annotation file.
-- `read(source_file: str, allow_newlines: bool = False)`: Yield each line from the annotation.
+- `read(source_file: str)`: Yield each line from the annotation.
 - `read_spans(source_file: str, decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
 - `read_attributes(source_file: str, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]], with_annotation_name: bool =
-  False, allow_newlines: bool = False)`: Yield tuples of multiple attributes on the same annotation.
+  False)`: Yield tuples of multiple attributes on the same annotation.
 - `get_children(source_file: str, child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False)`: Return two lists.
     The first one is a list with n (= total number of parents) elements where every element is a list of indices in the
     child annotation. The second one is a list of orphans, i.e. containing indices in the child annotation that have no
@@ -368,7 +368,7 @@ Regular annotation or attribute used as output (e.g. of an annotator function).
 **Methods:**
 
 - `split()`: Split name into annotation name and attribute.
-- `write(values, append: bool = False, allow_newlines: bool = False, source_file: Optional[str] = None)`: Write an
+- `write(values, source_file: Optional[str] = None)`: Write an
   annotation to file. Existing annotation will be overwritten. 'values' should be a list of values.
 - `exists()`: Return True if annotation file exists.
 - `remove()`: Remove annotation file.
@@ -386,7 +386,7 @@ file must be specified for all actions.
 **Methods:**
 
 - `split()`: Split name into annotation name and attribute.
-- `write(values, source_file: str, append: bool = False, allow_newlines: bool = False)`: Write an annotation to file.
+- `write(values, source_file: str)`: Write an annotation to file.
    Existing annotation will be overwritten. 'values' should be a list of values.
 - `exists(source_file: str)`: Return True if annotation file exists.
 - `remove(source_file: str)`: Remove annotation file.
@@ -403,7 +403,7 @@ Similar to [`OutputData`](#outputdata) but for a data annotation that is valid f
 **Methods:**
 
 - `split()`: Split name into annotation name and attribute.
-- `write(value, append: bool = False)`: Write arbitrary corpus level string data to annotation file.
+- `write(value)`: Write arbitrary corpus level string data to annotation file.
 - `exists()`: Return True if annotation file exists.
 - `remove()`: Remove annotation file.
 
@@ -421,7 +421,7 @@ is used as output.
 **Methods:**
 
 - `split()`: Split name into annotation name and attribute.
-- `write(value, append: bool = False)`: Write arbitrary corpus level string data to annotation file.
+- `write(value)`: Write arbitrary corpus level string data to annotation file.
 - `exists()`: Return True if annotation file exists.
 - `remove()`: Remove annotation file.
 
@@ -438,7 +438,7 @@ but the source file must be specified for all actions.
 **Methods:**
 
 - `split()`: Split name into annotation name and attribute.
-- `write(value, source_file: str, append: bool = False)`: Write arbitrary corpus level string data to annotation file.
+- `write(value, source_file: str)`: Write arbitrary corpus level string data to annotation file.
 - `exists(source_file: str)`: Return True if annotation file exists.
 - `remove(source_file: str)`: Remove annotation file.
 

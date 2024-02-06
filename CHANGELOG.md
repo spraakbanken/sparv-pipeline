@@ -11,6 +11,11 @@
 
 ### Changed
 
+- The internal data format (in the `sparv-workdir` directory) has been changed for performance reasons. You will need to
+  run `sparv clean` before running Sparv on any existing corpora using the old data format.
+- The parameters `append` and `allow_newline` have been removed from the Sparv class methods to simplify the code.
+  `append` was never used, and newlines are now preserved by default.
+
 ### Fixed
 
 ## [5.2.0] - 2023-12-07

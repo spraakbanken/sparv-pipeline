@@ -135,9 +135,9 @@ class CommonAnnotationMixin(BaseAnnotation):
         super().__init__(name, source_file)
         self._size = {}
 
-    def _read(self, source_file: str, allow_newlines: bool = False):
+    def _read(self, source_file: str):
         """Yield each line from the annotation."""
-        return io.read_annotation(source_file, self, allow_newlines=allow_newlines)
+        return io.read_annotation(source_file, self)
 
     def _read_spans(self, source_file: str, decimals=False, with_annotation_name=False):
         """Yield the spans of the annotation."""
@@ -145,10 +145,9 @@ class CommonAnnotationMixin(BaseAnnotation):
 
     @staticmethod
     def _read_attributes(source_file: str, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]],
-                         with_annotation_name: bool = False, allow_newlines: bool = False):
+                         with_annotation_name: bool = False):
         """Yield tuples of multiple attributes on the same annotation."""
-        return io.read_annotation_attributes(source_file, annotations, with_annotation_name=with_annotation_name,
-                                             allow_newlines=allow_newlines)
+        return io.read_annotation_attributes(source_file, annotations, with_annotation_name=with_annotation_name)
 
     def _get_size(self, source_file: str):
         """Get number of values."""
@@ -268,18 +267,18 @@ class CommonAnnotationMixin(BaseAnnotation):
 class Annotation(CommonAnnotationMixin, CommonMixin, BaseAnnotation):
     """Regular Annotation tied to one source file."""
 
-    def read(self, allow_newlines: bool = False):
+    def read(self):
         """Yield each line from the annotation."""
-        return self._read(self.source_file, allow_newlines=allow_newlines)
+        return self._read(self.source_file)
 
     def read_spans(self, decimals=False, with_annotation_name=False):
         """Yield the spans of the annotation."""
         return self._read_spans(self.source_file, decimals=decimals, with_annotation_name=with_annotation_name)
 
     def read_attributes(self, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]],
-                        with_annotation_name: bool = False, allow_newlines: bool = False):
+                        with_annotation_name: bool = False):
         """Yield tuples of multiple attributes on the same annotation."""
-        return self._read_attributes(self.source_file, annotations, with_annotation_name, allow_newlines)
+        return self._read_attributes(self.source_file, annotations, with_annotation_name)
 
     def get_children(self, child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False):
         """Return two lists.
@@ -359,10 +358,9 @@ class AnnotationAllSourceFiles(CommonAnnotationMixin, CommonAllSourceFilesMixin,
         return self._read_spans(source_file, decimals=decimals, with_annotation_name=with_annotation_name)
 
     def read_attributes(self, source_file: str, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]],
-                        with_annotation_name: bool = False, allow_newlines: bool = False):
+                        with_annotation_name: bool = False):
         """Yield tuples of multiple attributes on the same annotation."""
-        return self._read_attributes(source_file, annotations, with_annotation_name=with_annotation_name,
-                                     allow_newlines=allow_newlines)
+        return self._read_attributes(source_file, annotations, with_annotation_name=with_annotation_name)
 
     def get_children(self, source_file: str, child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False):
         """Return two lists.
@@ -453,12 +451,12 @@ class Output(CommonMixin, BaseOutput):
                  source_file: Optional[str] = None):
         super().__init__(name, cls, description=description, source_file=source_file)
 
-    def write(self, values, append: bool = False, allow_newlines: bool = False, source_file: Optional[str] = None):
+    def write(self, values, source_file: Optional[str] = None):
         """Write an annotation to file. Existing annotation will be overwritten.
 
         'values' should be a list of values.
         """
-        io.write_annotation(self.source_file or source_file, self, values, append, allow_newlines)
+        io.write_annotation(self.source_file or source_file, self, values)
 
 
 class OutputAllSourceFiles(CommonAllSourceFilesMixin, BaseOutput):
@@ -469,12 +467,12 @@ class OutputAllSourceFiles(CommonAllSourceFilesMixin, BaseOutput):
     def __init__(self, name: str = "", cls: Optional[str] = None, description: Optional[str] = None):
         super().__init__(name, cls, description=description)
 
-    def write(self, values, source_file: str, append: bool = False, allow_newlines: bool = False):
+    def write(self, values, source_file: str):
         """Write an annotation to file. Existing annotation will be overwritten.
 
         'values' should be a list of values.
         """
-        io.write_annotation(source_file, self, values, append, allow_newlines)
+        io.write_annotation(source_file, self, values)
 
 
 class OutputData(CommonMixin, BaseOutput):
@@ -486,9 +484,9 @@ class OutputData(CommonMixin, BaseOutput):
                  source_file: Optional[str] = None):
         super().__init__(name, cls, description=description, source_file=source_file)
 
-    def write(self, value, append: bool = False):
+    def write(self, value):
         """Write arbitrary string data to annotation file."""
-        io.write_data(self.source_file, self, value, append)
+        io.write_data(self.source_file, self, value)
 
 
 class OutputDataAllSourceFiles(CommonAllSourceFilesMixin, BaseOutput):
@@ -504,9 +502,9 @@ class OutputDataAllSourceFiles(CommonAllSourceFilesMixin, BaseOutput):
         """Read arbitrary string data from annotation file."""
         return io.read_data(source_file, self)
 
-    def write(self, value, source_file: str, append: bool = False):
+    def write(self, value, source_file: str):
         """Write arbitrary string data to annotation file."""
-        io.write_data(source_file, self, value, append)
+        io.write_data(source_file, self, value)
 
 
 class OutputCommonData(CommonMixin, BaseOutput):
@@ -518,15 +516,15 @@ class OutputCommonData(CommonMixin, BaseOutput):
     def __init__(self, name: str = "", cls: Optional[str] = None, description: Optional[str] = None):
         super().__init__(name, cls, description=description)
 
-    def write(self, value, append: bool = False):
+    def write(self, value):
         """Write arbitrary corpus level string data to annotation file."""
-        io.write_data(None, self, value, append)
+        io.write_data(None, self, value)
 
 
 class OutputMarker(OutputCommonData):
     """A class for creating a marker, indicating that something has run."""
 
-    def write(self, value="", append: bool = False):
+    def write(self, value=""):
         # Write current timestamp, as Snakemake also compares checksums for small files, not just modified time
         super().write(value or str(time.time()))
 

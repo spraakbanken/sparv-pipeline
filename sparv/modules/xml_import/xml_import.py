@@ -453,8 +453,7 @@ class SparvXMLParser:
 
             for attr in attributes:
                 full_attr = "{}.{}".format(self.prefix, attr) if self.prefix else attr
-                Output("{}:{}".format(full_element, full_attr), source_file=self.file).write(attributes[attr],
-                                                                                             allow_newlines=is_header)
+                Output("{}:{}".format(full_element, full_attr), source_file=self.file).write(attributes[attr])
                 if element not in self.header_elements:
                     structure.append("{}:{}".format(full_element, full_attr))
 

@@ -146,8 +146,7 @@ def gather_annotations(annotations: List[Annotation],
             elif is_header:
                 try:
                     annotation_dict[base_name][util.constants.HEADER_CONTENTS] = list(
-                        Annotation(f"{base_name}:{util.constants.HEADER_CONTENTS}", source_file=source_file).read(
-                        allow_newlines=True))
+                        Annotation(f"{base_name}:{util.constants.HEADER_CONTENTS}", source_file=source_file).read())
                 except FileNotFoundError:
                     raise SparvErrorMessage(f"Could not find data for XML header '{base_name}'. "
                                             "Was this element listed in 'xml_import.header_elements'?")
