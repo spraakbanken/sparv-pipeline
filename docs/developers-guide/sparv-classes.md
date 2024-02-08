@@ -36,12 +36,10 @@ annotation is needed as input for a function, e.g. `Annotation("<token:word>")`.
 - `read_spans(decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
 - `read_attributes(annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]], with_annotation_name: bool =
   False)`: Yield tuples of multiple attributes on the same annotation.
-- `get_children(child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False)`: Return two lists.
+- `get_children(child: BaseAnnotation, orphan_alert=False)`: Return two lists.
     The first one is a list with n (= total number of parents) elements where every element is a list of indices in the
     child annotation. The second one is a list of orphans, i.e. containing indices in the child annotation that have no
-    parent. Both parents and children are sorted according to their position in the source file, unless
-    preserve_parent_annotation_order is set to True, in which case the parents keep the order from the parent
-    annotation.
+    parent. Both parents and children are sorted according to their position in the source file.
 - `get_parents(parent: BaseAnnotation, orphan_alert: bool = False)`: Return a list with n (= total number of children)
   elements where every element is an index in the parent annotation. Return None when no parent is found.
 - `read_parents_and_children(parent, child)`: Read parent and child annotations. Reorder them according to span
@@ -73,12 +71,10 @@ require the specified annotation for every source file in the corpus.
 - `read_spans(source_file: str, decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
 - `read_attributes(source_file: str, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]], with_annotation_name: bool =
   False)`: Yield tuples of multiple attributes on the same annotation.
-- `get_children(source_file: str, child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False)`: Return two lists.
+- `get_children(source_file: str, child: BaseAnnotation, orphan_alert=False)`: Return two lists.
     The first one is a list with n (= total number of parents) elements where every element is a list of indices in the
     child annotation. The second one is a list of orphans, i.e. containing indices in the child annotation that have no
-    parent. Both parents and children are sorted according to their position in the source file, unless
-    preserve_parent_annotation_order is set to True, in which case the parents keep the order from the parent
-    annotation.
+    parent. Both parents and children are sorted according to their position in the source file.
 - `get_parents(source_file: str, parent: BaseAnnotation, orphan_alert: bool = False)`: Return a list with n (= total number of children)
   elements where every element is an index in the parent annotation. Return None when no parent is found.
 - `read_parents_and_children(source_file: str, parent, child)`: Read parent and child annotations. Reorder them according to span

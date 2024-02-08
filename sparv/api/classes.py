@@ -8,7 +8,7 @@ import time
 import urllib.request
 import zipfile
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Sequence, Tuple, Union
 
 import sparv.core
 from sparv.core import io
@@ -159,107 +159,95 @@ class CommonAnnotationMixin(BaseAnnotation):
         """Return a list filled with None of the same size as this annotation."""
         return [None] * self._get_size(source_file)
 
-    def _read_parents_and_children(self, source_file: str, parent: BaseAnnotation, child: BaseAnnotation):
-        """Read parent and child annotations.
-
-        Reorder them according to span position, but keep original index information.
-        """
-        parent_spans = sorted(enumerate(io.read_annotation_spans(source_file, parent, decimals=True)), key=lambda x: x[1])
-        child_spans = sorted(enumerate(io.read_annotation_spans(source_file, child, decimals=True)), key=lambda x: x[1])
+    @staticmethod
+    def _read_parents_and_children(
+        source_file: str,
+        parent: BaseAnnotation,
+        child: BaseAnnotation
+    ) -> Tuple[Iterator, Iterator]:
+        """Read parent and child annotations."""
+        parent_spans = list(io.read_annotation_spans(source_file, parent, decimals=True))
+        child_spans = list(io.read_annotation_spans(source_file, child, decimals=True))
 
         # Only use sub-positions if both parent and child have them
-        if parent_spans and child_spans:
-            if len(parent_spans[0][1][0]) == 1 or len(child_spans[0][1][0]) == 1:
-                parent_spans = [(p[0], (p[1][0][0], p[1][1][0])) for p in parent_spans]
-                child_spans = [(c[0], (c[1][0][0], c[1][1][0])) for c in child_spans]
+        if parent_spans and child_spans and (len(parent_spans[0][0]) == 1 or len(child_spans[0][0]) == 1):
+            parent_spans = [(p[0][0], p[1][0]) for p in parent_spans]
+            child_spans = [(c[0][0], c[1][0]) for c in child_spans]
 
         return iter(parent_spans), iter(child_spans)
 
-    def _get_children(self, source_file: str, child: BaseAnnotation, orphan_alert=False,
-                      preserve_parent_annotation_order=False):
+    def _get_children(self, source_file: str, child: BaseAnnotation, orphan_alert: bool = False):
         """Return two lists.
 
         The first one is a list with n (= total number of parents) elements where every element is a list
         of indices in the child annotation.
         The second one is a list of orphans, i.e. containing indices in the child annotation that have no parent.
-        Both parents and children are sorted according to their position in the source file, unless
-        preserve_parent_annotation_order is set to True, in which case the parents keep the order from the parent
-        annotation.
+        Both parents and children are sorted according to their position in the source file.
         """
         parent_spans, child_spans = self._read_parents_and_children(source_file, self, child)
         parent_children = []
         orphans = []
-        previous_parent_i = None
+        previous_parent_span = None
         try:
-            parent_i, parent_span = next(parent_spans)
-            parent_children.append((parent_i, []))
+            parent_span = next(parent_spans)
+            parent_children.append([])
         except StopIteration:
-            parent_i = None
             parent_span = None
 
-        for child_i, child_span in child_spans:
+        for child_i, child_span in enumerate(child_spans):
             if parent_span:
                 while child_span[1] > parent_span[1]:
-                    previous_parent_i = parent_i
+                    previous_parent_span = parent_span
                     try:
-                        parent_i, parent_span = next(parent_spans)
-                        parent_children.append((parent_i, []))
+                        parent_span = next(parent_spans)
+                        parent_children.append([])
                     except StopIteration:
                         parent_span = None
                         break
             if parent_span is None or parent_span[0] > child_span[0]:
                 if orphan_alert:
                     logger.warning("Child '%s' missing parent; closest parent is %s",
-                                   child_i, parent_i or previous_parent_i)
+                                   child_i, parent_span or previous_parent_span)
                 orphans.append(child_i)
             else:
-                parent_children[-1][1].append(child_i)
+                parent_children[-1].append(child_i)
 
         # Add rest of parents
         if parent_span is not None:
-            for parent_i, parent_span in parent_spans:
-                parent_children.append((parent_i, []))
-
-        if preserve_parent_annotation_order:
-            # Restore parent order
-            parent_children = [p for _, p in sorted(parent_children)]
-        else:
-            parent_children = [p for _, p in parent_children]
+            parent_children.extend([] for _ in parent_spans)
 
         return parent_children, orphans
 
-    def _get_parents(self, source_file: str, parent: BaseAnnotation, orphan_alert: bool = False):
-        """Return a list with n (= total number of children) elements where every element is an index in the parent annotation.
+    def _get_parents(self, source_file: str, parent: BaseAnnotation, orphan_alert: bool = False) -> list:
+        """Return a list with n (=number of children) elements where every element is an index in the parent annotation.
 
-        Return None when no parent is found.
+        Return empty list when no parent is found.
         """
         parent_spans, child_spans = self._read_parents_and_children(source_file, parent, self)
+        parent_index_spans = enumerate(parent_spans)
         child_parents = []
-        previous_parent_i = None
+        previous_parent_span = None
         try:
-            parent_i, parent_span = next(parent_spans)
+            parent_i, parent_span = next(parent_index_spans)
         except StopIteration:
             parent_i = None
             parent_span = None
 
-        for child_i, child_span in child_spans:
+        for child_span in child_spans:
             while parent_span is not None and child_span[1] > parent_span[1]:
-                previous_parent_i = parent_i
+                previous_parent_span = parent_span
                 try:
-                    parent_i, parent_span = next(parent_spans)
+                    parent_i, parent_span = next(parent_index_spans)
                 except StopIteration:
                     parent_span = None
                     break
             if parent_span is None or parent_span[0] > child_span[0]:
                 if orphan_alert:
                     logger.warning("Child '%s' missing parent; closest parent is %s",
-                                   child_i, parent_i or previous_parent_i)
-                child_parents.append((child_i, None))
+                                   child_span, parent_span or previous_parent_span)
+                child_parents.append(None)
             else:
-                child_parents.append((child_i, parent_i))
-
-        # Restore child order
-        child_parents = [p for _, p in sorted(child_parents)]
+                child_parents.append(parent_i)
 
         return child_parents
 
@@ -280,17 +268,15 @@ class Annotation(CommonAnnotationMixin, CommonMixin, BaseAnnotation):
         """Yield tuples of multiple attributes on the same annotation."""
         return self._read_attributes(self.source_file, annotations, with_annotation_name)
 
-    def get_children(self, child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False):
+    def get_children(self, child: BaseAnnotation, orphan_alert=False):
         """Return two lists.
 
         The first one is a list with n (= total number of parents) elements where every element is a list
         of indices in the child annotation.
         The second one is a list of orphans, i.e. containing indices in the child annotation that have no parent.
-        Both parents and children are sorted according to their position in the source file, unless
-        preserve_parent_annotation_order is set to True, in which case the parents keep the order from the parent
-        annotation.
+        Both parents and children are sorted according to their position in the source file.
         """
-        return self._get_children(self.source_file, child, orphan_alert, preserve_parent_annotation_order)
+        return self._get_children(self.source_file, child, orphan_alert)
 
     def get_parents(self, parent: BaseAnnotation, orphan_alert: bool = False):
         """Return a list with n (= total number of children) elements where every element is an index in the parent annotation.
@@ -362,17 +348,15 @@ class AnnotationAllSourceFiles(CommonAnnotationMixin, CommonAllSourceFilesMixin,
         """Yield tuples of multiple attributes on the same annotation."""
         return self._read_attributes(source_file, annotations, with_annotation_name=with_annotation_name)
 
-    def get_children(self, source_file: str, child: BaseAnnotation, orphan_alert=False, preserve_parent_annotation_order=False):
+    def get_children(self, source_file: str, child: BaseAnnotation, orphan_alert=False):
         """Return two lists.
 
         The first one is a list with n (= total number of parents) elements where every element is a list
         of indices in the child annotation.
         The second one is a list of orphans, i.e. containing indices in the child annotation that have no parent.
-        Both parents and children are sorted according to their position in the source file, unless
-        preserve_parent_annotation_order is set to True, in which case the parents keep the order from the parent
-        annotation.
+        Both parents and children are sorted according to their position in the source file.
         """
-        return self._get_children(source_file, child, orphan_alert, preserve_parent_annotation_order)
+        return self._get_children(source_file, child, orphan_alert)
 
     def get_parents(self, source_file: str, parent: BaseAnnotation, orphan_alert: bool = False):
         """Return a list with n (= total number of children) elements where every element is an index in the parent annotation.
