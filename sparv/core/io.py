@@ -89,11 +89,16 @@ def _write_single_annotation(
     is_span = not split_annotation(annotation)[1]
 
     if is_span:
+        if not isinstance(values, list):
+            values = list(values)
         # Make sure that spans are sorted
         assert all(values[i] <= values[i + 1] for i in range(len(values) - 1)), "Annotation spans must be sorted."
         # Always save spans with decimal tuples
         if values and not isinstance(values[0][0], tuple):
             values = [((v[0],), (v[1],)) for v in values]
+    else:
+        # Convert all values to strings; convert None to empty string
+        values = [str(v) if v is not None else "" for v in values]
     file_path = get_annotation_path(source_file, annotation, root)
     file_path.parent.mkdir(parents=True, exist_ok=True)
     write_annotation_file(file_path, values)
