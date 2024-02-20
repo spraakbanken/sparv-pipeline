@@ -79,11 +79,14 @@ def lemgram_sql(corpus: Corpus = Corpus(),
     corpus = corpus.upper()
     result = defaultdict(int)
 
+    logger.progress(total=len(source_files) + 1)
+
     for file in source_files:
         for lg in lemgram.read(file):
             for value in lg.split("|"):
                 if value and ":" not in value:
                     result[value] += 1
+        logger.progress()
 
     mysql = MySQL(output=out)
     mysql.create_table(MYSQL_TABLE, drop=False, **MYSQL_INDEX)
@@ -100,6 +103,7 @@ def lemgram_sql(corpus: Corpus = Corpus(),
 
     logger.info("Creating SQL")
     mysql.add_row(MYSQL_TABLE, rows)
+    logger.progress()
 
 
 MYSQL_TABLE = "lemgram_index"

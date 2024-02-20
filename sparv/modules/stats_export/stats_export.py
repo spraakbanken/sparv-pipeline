@@ -55,6 +55,7 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
         delimiter: Column delimiter to use in the csv.
         cutoff: The minimum frequency a word must have in order to be included in the result.
     """
+    logger.progress(total=len(source_files) + 1)
     # Add "word" to annotations
     annotations = [(word, None)] + list(annotations)
 
@@ -86,6 +87,7 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
         for n, token_annotations_tuple in enumerate(tokens):
             structs_tuple = tuple([struct[n] for struct in struct_values])
             freq_dict[token_annotations_tuple + structs_tuple] += 1
+        logger.progress()
 
     # Create header
     struct_header_names = [export_names.get(a.annotation_name, a.annotation_name) + ":" + export_names[a.name]
@@ -94,6 +96,7 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
     column_names.append("count")
 
     write_csv(out, column_names, freq_dict, delimiter, cutoff)
+    logger.progress()
 
 
 @installer("Install word frequency list on remote host", uninstaller="stats_export:uninstall_freq_list")

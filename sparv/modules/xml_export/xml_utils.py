@@ -187,6 +187,7 @@ def combine(corpus, out, source_files, xml_input, version_info_file=None):
     """Combine xml_files into one single file."""
     xml_files = [xml_input.replace("{file}", file) for file in source_files]
     xml_files.sort()
+    logger.progress(total=len(xml_files))
     with open(out, "w", encoding="utf-8") as outf:
         print("<?xml version='1.0' encoding='UTF-8'?>", file=outf)
         if version_info_file:
@@ -205,6 +206,7 @@ def combine(corpus, out, source_files, xml_input, version_info_file=None):
                         continue
                     # Indent line
                     outf.write(f"{INDENTATION}{line}")
+                logger.progress()
         print("</corpus>", file=outf)
         logger.info("Exported: %s" % out)
 
