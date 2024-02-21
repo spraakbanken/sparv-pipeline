@@ -19,6 +19,8 @@
 
 ### Fixed
 
+- Fixed Stanza which was broken for English.
+
 ## [5.2.0] - 2023-12-07
 
 ### Added

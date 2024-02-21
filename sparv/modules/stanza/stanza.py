@@ -251,8 +251,8 @@ class Token:
     def __init__(self, stanza_w, offset=0, token_dephead_count=0):
         """Set attributes."""
         self.word = stanza_w.text  # Mostly used for debugging
-        self.start = int(stanza_w.misc.split("|")[0].strip("start_char=")) + offset
-        self.end = int(stanza_w.misc.split("|")[1].strip("end_char=")) + offset
+        self.start = stanza_w.start_char + offset
+        self.end = stanza_w.end_char + offset
         self.upos = stanza_w.upos
         self.pos = stanza_w.xpos
         self.baseform = stanza_w.lemma
