@@ -34,8 +34,16 @@ def clear_directory(path):
     os.makedirs(path, exist_ok=True)
 
 
-def call_java(jar, arguments, options=[], stdin="", search_paths=(),
-              encoding=None, verbose=False, return_command=False):
+def call_java(
+    jar: str,
+    arguments: Union[list, tuple],
+    options: Union[list, tuple] = (),
+    stdin: str = "",
+    search_paths: Union[list, tuple] = (),
+    encoding: Optional[str] = None,
+    verbose: bool = False,
+    return_command: bool = False
+):
     """Call java with a jar file, command line arguments and stdin.
 
     Returns a pair (stdout, stderr).
@@ -47,14 +55,25 @@ def call_java(jar, arguments, options=[], stdin="", search_paths=(),
     assert isinstance(arguments, (list, tuple))
     assert isinstance(options, (list, tuple))
     jarfile = find_binary(jar, search_paths, executable=False)
-    # For WSD: use = instead of space in arguments
-    # TODO: Remove when fixed!
-    if isinstance(arguments[0], tuple):
-        arguments = ["{}={}".format(x, y) for x, y in arguments]
-    java_args = list(options) + ["-jar", jarfile] + list(arguments)
-    return call_binary("java", arguments=java_args, stdin=stdin,
-                       search_paths=search_paths, encoding=encoding,
-                       verbose=verbose, return_command=return_command)
+    java_executable = "java"
+    # If JAVA_HOME is set, try to find java there
+    if java_home := os.getenv("JAVA_HOME"):
+        java_executable = Path(java_home) / "bin" / "java"
+        if not java_executable.is_file():
+            java_executable = "java"
+
+    # Convert tuple arguments to "a=b"
+    arguments = [f"{a[0]}={a[1]}" if isinstance(a, tuple) else a for a in arguments]
+    java_args = [*options, "-jar", jarfile, *arguments]
+    return call_binary(
+        str(java_executable),
+        arguments=java_args,
+        stdin=stdin,
+        search_paths=search_paths,
+        encoding=encoding,
+        verbose=verbose,
+        return_command=return_command,
+    )
 
 
 def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(), encoding=None, verbose=False,
