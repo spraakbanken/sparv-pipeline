@@ -104,8 +104,13 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
         return stdout, stderr
 
 
-def find_binary(name: Union[str, list], search_paths=(), executable: bool = True, allow_dir: bool = False,
-                raise_error: bool = False) -> Optional[str]:
+def find_binary(
+    name: Union[str, List[str]],
+    search_paths: Union[list, tuple] = (),
+    executable: bool = True,
+    allow_dir: bool = False,
+    raise_error: bool = False
+) -> Optional[str]:
     """Search for the binary for a program.
 
     Args:
@@ -121,12 +126,19 @@ def find_binary(name: Union[str, list], search_paths=(), executable: bool = True
     if isinstance(name, str):
         name = [name]
     name = list(map(os.path.expanduser, name))
-    search_paths = list(search_paths) + ["."] + [paths.bin_dir] + os.getenv("PATH").split(":")
+    search_paths = [*list(search_paths), ".", paths.bin_dir, *os.getenv("PATH").split(":")]
     search_paths = list(map(os.path.expanduser, search_paths))
 
-    # Use 'which' first
+    # Use absolute paths or 'which' first
     for binary in name:
-        if not os.path.dirname(binary) == "":
+        binary_path = Path(binary)
+        if binary_path.parent:
+            # If absolute path, use if executable exists
+            if (binary_path.is_absolute() and binary_path.is_file()) or (allow_dir and binary_path.is_dir()):
+                if executable and not allow_dir:
+                    assert os.access(binary_path, os.X_OK), f"Binary is not executable: {binary_path}"
+                return str(binary_path)
+            # Skip any relative paths in this step
             continue
         path_to_bin = shutil.which(binary)
         if path_to_bin:
@@ -135,10 +147,10 @@ def find_binary(name: Union[str, list], search_paths=(), executable: bool = True
     # Look for file in paths
     for directory in search_paths:
         for binary in name:
-            path_to_bin = os.path.join(directory, binary)
-            if os.path.isfile(path_to_bin) or (allow_dir and os.path.isdir(path_to_bin)):
+            path_to_bin = Path(directory) / binary
+            if path_to_bin.is_file() or (allow_dir and path_to_bin.is_dir()):
                 if executable and not allow_dir:
-                    assert os.access(path_to_bin, os.X_OK), "Binary is not executable: %s" % path_to_bin
+                    assert os.access(path_to_bin, os.X_OK), f"Binary is not executable: {path_to_bin}"
                 return path_to_bin
 
     if raise_error:
@@ -146,8 +158,7 @@ def find_binary(name: Union[str, list], search_paths=(), executable: bool = True
         if len(name) > 1:
             err_msg += f"for binary names: {', '.join(name)}"
         raise SparvErrorMessage(err_msg)
-    else:
-        return None
+    return None
 
 
 def rsync(local: Union[str, Path], host: Optional[str], remote: Union[str, Path]):

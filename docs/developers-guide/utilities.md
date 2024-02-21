@@ -142,7 +142,8 @@ Call a binary with `arguments` and `stdin` and return a pair `(stdout, stderr)`.
 
 **Arguments:**
 
-- `name`: Name of the binary call.
+- `name`: Name of the binary to call (optionally with absolute or relative path). Either a string or a list of strings,
+  where the first binary found will be used.
 - `arguments`: Arguments to pass to the call. Defaults to `()`.
 - `stdin`: Stdin input to pass to the call. Defaults to `""`.
 - `raw_command`: Don't use this unless you really have to! String holding the raw command that will be executed through
