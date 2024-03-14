@@ -42,7 +42,7 @@ def make_model(nst_infile, picklefile, protocol=-1):
             word = fields[0]
             comp = fields[3].replace("!", "")
             pos = fields[4]
-            if "+" in comp and "_" not in word and not (comp.startswith("+") or comp.startswith("-")):
+            if "+" in comp and "_" not in word and not (comp.startswith(("+", "-"))):
                 nst_full_compounds.add((word, comp, pos))
 
     # Build POS probability model

@@ -74,7 +74,7 @@ def make_model(stats_infile, picklefile, smoothingparam=0.001, min_freq=MIN_FREQ
             if freq < min_freq:
                 break
             # Get rid of all URLs
-            if word.startswith("http://") or word.startswith("https://") or word.startswith("www."):
+            if word.startswith(("http://", "https://", "www.")):
                 continue
             # # Words that only occur once may only contain letters and hyphens
             # if fields[4] == "1" and any(not (c.isalpha() or c == "-") for c in word):

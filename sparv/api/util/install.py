@@ -37,17 +37,15 @@ def install_mysql(host: Optional[str], db_name: str, sqlfile: Union[str, List[st
 
     if isinstance(sqlfile, str):
         sqlfile = [sqlfile]
-    file_count = 0
     file_total = len(sqlfile)
 
-    for f in sqlfile:
-        file_count += 1
+    for file_count, f in enumerate(sqlfile):
         if not os.path.exists(f):
             logger.error("Missing SQL file: %s", f)
         elif os.path.getsize(f) < 10:
-            logger.info("Skipping empty file: %s (%d/%d)", f, file_count, file_total)
+            logger.info("Skipping empty file: %s (%d/%d)", f, file_count + 1, file_total)
         else:
-            logger.info("Installing MySQL database: %s, source: %s (%d/%d)", db_name, f, file_count, file_total)
+            logger.info("Installing MySQL database: %s, source: %s (%d/%d)", db_name, f, file_count + 1, file_total)
             if not host:
                 subprocess.check_call(
                     f"cat {shlex.quote(f)} | mysql {shlex.quote(db_name)}", shell=True

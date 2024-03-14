@@ -24,9 +24,10 @@ def hist_morphtable(out: ModelOutput = ModelOutput("hunpos/hist/dalinm-swedberg_
     saldo_to_suc["nl invar"] = {"NL.NOM"}
 
     def _read_saldosuc(words, saldosuc_morphtable):
-        for line in open(saldosuc_morphtable, encoding="utf-8").readlines():
-            xs = line.strip().split("\t")
-            words.setdefault(xs[0], set()).update(set(xs[1:]))
+        with open(saldosuc_morphtable, encoding="utf-8") as f:
+            for line in f:
+                xs = line.strip().split("\t")
+                words.setdefault(xs[0], set()).update(set(xs[1:]))
 
     def _force_parse(msd):
         # This is a modification of _make_saldo_to_suc in utils.tagsets.py
@@ -77,25 +78,26 @@ def hist_morphtable(out: ModelOutput = ModelOutput("hunpos/hist/dalinm-swedberg_
     words = {}
     _read_saldosuc(words, saldosuc_morphtable.path)
     for fil in [dalin, swedberg]:
-        for line in open(fil.path, encoding="utf-8").readlines():
-            if not line.strip():
-                continue
-            xs = line.split("\t")
-            word, msd = xs[0].strip(), xs[1].strip()
-            if " " in word:
-                if msd.startswith("nn"):  # We assume that the head of a noun mwe is the last word
-                    word = word.split()[-1]
-                if msd.startswith("vb"):  # We assume that the head of a verbal mwe is the first word
-                    word = word.split()[0]
+        with fil.path.open(encoding="utf-8") as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                xs = line.split("\t")
+                word, msd = xs[0].strip(), xs[1].strip()
+                if " " in word:
+                    if msd.startswith("nn"):  # We assume that the head of a noun mwe is the last word
+                        word = word.split()[-1]
+                    if msd.startswith("vb"):  # We assume that the head of a verbal mwe is the first word
+                        word = word.split()[0]
 
-            # If the tag is not present, we try to translate it anyway
-            suc = saldo_to_suc.get(msd, "")
-            if not suc:
-                suc = _force_parse(msd)
-            if suc:
-                words.setdefault(word.lower(), set()).update(suc)
-                words.setdefault(word.title(), set()).update(suc)
-    with open(out.path, encoding="UTF-8", mode="w") as out:
+                # If the tag is not present, we try to translate it anyway
+                suc = saldo_to_suc.get(msd, "")
+                if not suc:
+                    suc = _force_parse(msd)
+                if suc:
+                    words.setdefault(word.lower(), set()).update(suc)
+                    words.setdefault(word.title(), set()).update(suc)
+    with out.path.open(encoding="UTF-8", mode="w") as out:
         for w, ts in list(words.items()):
             line = ("\t".join([w] + list(ts)) + "\n")
             out.write(line)

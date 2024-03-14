@@ -45,7 +45,7 @@ def gather_annotations(annotations: List[Annotation],
     class Span:
         """Object to store span information."""
 
-        __slots__ = [
+        __slots__ = (
             "name",
             "index",
             "start",
@@ -56,7 +56,7 @@ def gather_annotations(annotations: List[Annotation],
             "is_header",
             "node",
             "overlap_id"
-        ]
+        )
 
         def __init__(self, name, index, start, end, export_names, is_header):
             """Set attributes."""

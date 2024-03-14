@@ -34,7 +34,7 @@ def download_saldo_pickle(out: ModelOutput = ModelOutput("saldo/saldo.pickle")):
 def build_saldo_pickle(out: ModelOutput = ModelOutput("saldo/saldo.pickle"),
                 saldom: Model = Model("saldo/saldom.xml")):
     """Save SALDO morphology as a pickle file."""
-    tagmap = tagmappings.mappings["saldo_to_suc"]
+    tagmap = tagmappings.mappings.saldo_to_suc
     lmf_to_pickle(saldom.path, out.path, tagmap)
 
 
