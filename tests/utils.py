@@ -3,6 +3,7 @@
 import difflib
 import filecmp
 import pathlib
+import pickle
 import re
 import shutil
 import subprocess
@@ -127,8 +128,14 @@ def _cmp_dirs(a: pathlib.Path,
 
 def _filediff(a: pathlib.Path, b: pathlib.Path):
     """Print a unified diff of files a and b."""
-    a_contents = a.read_text(encoding="utf-8").splitlines()
-    b_contents = b.read_text(encoding="utf-8").splitlines()
+    try:
+        # Try opening as pickle files first
+        a_contents = "\n".join(map(str, pickle.load(a.open("rb"))))
+        b_contents = "\n".join(map(str, pickle.load(b.open("rb"))))
+    except pickle.UnpicklingError:
+        # Compare as text files
+        a_contents = a.read_text(encoding="utf-8").splitlines()
+        b_contents = b.read_text(encoding="utf-8").splitlines()
 
     diff = difflib.unified_diff(a_contents, b_contents, fromfile=str(a), tofile=str(b))
     for line in diff:
