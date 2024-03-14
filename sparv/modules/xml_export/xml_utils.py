@@ -6,7 +6,7 @@ import os
 import re
 import xml.etree.ElementTree as etree
 from shutil import copyfileobj
-from typing import Optional
+from typing import Optional, Sequence
 
 from sparv.api import SparvErrorMessage, get_logger, util
 
@@ -183,17 +183,25 @@ def replace_invalid_chars_in_names(export_names: dict) -> None:
             export_names[n] = (namespace or "") + name
 
 
-def combine(corpus, out, source_files, xml_input, version_info_file=None):
-    """Combine xml_files into one single file."""
+def combine(
+    corpus: str,
+    out: str,
+    source_files: Sequence[str],
+    xml_input: str,
+    version_info_file: Optional[str] = None,
+    compress: bool = False
+) -> None:
+    """Combine XML files into one single XML file, optionally compressing it."""
     xml_files = [xml_input.replace("{file}", file) for file in source_files]
     xml_files.sort()
     logger.progress(total=len(xml_files))
-    with open(out, "w", encoding="utf-8") as outf:
+    opener = bz2.open if compress else open
+    with opener(out, "wt", encoding="utf-8") as outf:
         print("<?xml version='1.0' encoding='UTF-8'?>", file=outf)
         if version_info_file:
             print("<!--", file=outf)
             with open(version_info_file, encoding="utf-8") as vi:
-                for line in vi.readlines():
+                for line in vi:
                     print(line.strip(), file=outf)
             print("-->", file=outf)
         print('<corpus id="%s">' % corpus.replace("&", "&amp;").replace('"', "&quot;"), file=outf)
@@ -208,7 +216,7 @@ def combine(corpus, out, source_files, xml_input, version_info_file=None):
                     outf.write(f"{INDENTATION}{line}")
                 logger.progress()
         print("</corpus>", file=outf)
-        logger.info("Exported: %s" % out)
+        logger.info("Exported: %s", out)
 
 
 def compress(xmlfile, out):

@@ -17,6 +17,8 @@
   run `sparv clean` before running Sparv on any existing corpora using the old data format.
 - The parameters `append` and `allow_newline` have been removed from the Sparv class methods to simplify the code.
   `append` was never used, and newlines are now preserved by default.
+- `xml_export:compressed` and `xml_export:compressed_scrambled` no longer need to first create uncompressed combined
+  files.
 
 ### Fixed
 

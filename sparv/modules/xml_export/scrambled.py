@@ -103,18 +103,22 @@ def combined_scrambled(corpus: Corpus = Corpus(),
                        version_info: ExportInput = ExportInput("version_info/info_[metadata.id].yaml"),
                        include_version_info: bool = Config("xml_export.include_version_info")):
     """Combine XML export files into a single XML file."""
-    if include_version_info:
-        xml_utils.combine(corpus, out, source_files, xml_input, version_info)
-    else:
-        xml_utils.combine(corpus, out, source_files, xml_input)
+    xml_utils.combine(corpus, out, source_files, xml_input, version_info if include_version_info else None)
 
 
 @exporter("Compressed combined scrambled XML export")
-def compressed_scrambled(out: Export = Export("xml_export.combined_scrambled/[metadata.id]_scrambled.xml.bz2"),
-                         xmlfile: ExportInput = ExportInput(
-                             "xml_export.combined_scrambled/[metadata.id]_scrambled.xml")):
+def compressed_scrambled(
+    corpus: Corpus = Corpus(),
+    out: Export = Export("xml_export.combined_scrambled/[metadata.id]_scrambled.xml.bz2"),
+    source_files: AllSourceFilenames = AllSourceFilenames(),
+    xml_input: ExportInput = ExportInput(
+        "xml_export.scrambled/[xml_export.filename]",all_files=True
+    ),
+    version_info: ExportInput = ExportInput("version_info/info_[metadata.id].yaml"),
+    include_version_info: bool = Config("xml_export.include_version_info")
+) -> None:
     """Compress combined XML export."""
-    xml_utils.compress(xmlfile, out)
+    xml_utils.combine(corpus, out, source_files, xml_input, version_info if include_version_info else None, True)
 
 
 @installer("Copy compressed scrambled XML to a target path, optionally on a remote host", config=[
