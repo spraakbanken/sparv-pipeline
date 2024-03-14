@@ -756,8 +756,12 @@ def load_config(snakemake_config):
         config_missing = True
 
     # Some commands may override the corpus language
-    if "language" in snakemake_config:
-        sparv_config.set_value("metadata.language", snakemake_config["language"])
+    if snakemake_config.get("language"):
+        language = snakemake_config["language"]
+        if "-" in language:
+            language, _, lang_variety = language.partition("-")
+            sparv_config.set_value("metadata.variety", lang_variety)
+        sparv_config.set_value("metadata.language", language)
 
     return config_missing
 

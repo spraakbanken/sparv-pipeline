@@ -496,9 +496,13 @@ rule list_models:
             if sparv_config.get("metadata.language") not in registry.languages:
                 console.print("Unsupported language: " + sparv_config.get("metadata.language"))
                 return
-            table = Table(title="Models for current language ({})".format(
-                registry.languages[sparv_config.get("metadata.language")]),
-                          box=box.SIMPLE, show_header=False, title_justify="left")
+            table = Table(
+                title="Models for {}{}".format(
+                    registry.languages[sparv_config.get("metadata.language")],
+                    f" ({sparv_config.get('metadata.variety')})" if sparv_config.get("metadata.variety") else ""
+                ),
+                box=box.SIMPLE, show_header=False, title_justify="left"
+            )
             table.add_column(no_wrap=True)
             table.add_column()
             for target, desc, language in sorted(snake_storage.model_targets):
