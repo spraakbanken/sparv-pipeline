@@ -117,36 +117,75 @@ def main():
     parser.add_argument("-v", "--version", action="version", version=f"Sparv Pipeline v{__version__}",
                         help="Show Sparv's version number and exit")
     parser.add_argument("-d", "--dir", help="Specify corpus directory")
+
+    # Help messages for subparsers
+    help = {
+        "run": "Annotate a corpus and generate export files",
+        "install": "Install a corpus",
+        "uninstall": "Uninstall a corpus",
+        "clean": {
+            "short": "Remove output directories",
+            "long": "Remove output directories (by default only the sparv-workdir directory)"
+        },
+        "config": "Display the corpus configuration",
+        "files": "List available corpus source files that can be annotated by Sparv",
+        "modules": "List available modules and annotations",
+        "presets": "List available annotation presets",
+        "classes": "List available annotation classes",
+        "languages": "List supported languages",
+        "setup": {
+            "short": "Set up the Sparv data directory",
+            "long": "Set up the Sparv data directory. Run without arguments for interactive setup."
+        },
+        "wizard": "Run config wizard to create a corpus config",
+        "build-models": {
+            "short": "Download and build the Sparv models (optional)",
+            "long": (
+                "Download and build the Sparv models. This is optional, as models will be downloaded and built "
+                "automatically the first time they are needed."
+            )
+        },
+        "run-module": "Run annotator module independently",
+        "run-rule": "Run specified rule(s) for creating annotations",
+        "create-file": {
+            "short": "Create specified file(s)",
+            "long": "Create specified file(s). The full path must be supplied and wildcards must be replaced."
+        },
+        "preload": "Preload annotators and models",
+        "autocomplete": "Enable tab completion in bash/zsh",
+        "schema": "Print a JSON schema for the Sparv config format"
+    }
+
     description = [
         "",
         "Annotating a corpus:",
-        "   run              Annotate a corpus and generate export files",
-        "   install          Install a corpus",
-        "   uninstall        Uninstall a corpus",
-        "   clean            Remove output directories",
+        f"   run              {help['run']}",
+        f"   install          {help['install']}",
+        f"   uninstall        {help['uninstall']}",
+        f"   clean            {help['clean']['short']}",
         "",
         "Inspecting corpus details:",
-        "   config           Display the corpus config",
-        "   files            List available corpus source files (input for Sparv)",
+        f"   config           {help['config']}",
+        f"   files            {help['files']}",
         "",
         "Show annotation info:",
-        "   modules          List available modules and annotations",
-        "   presets          List available annotation presets",
-        "   classes          List available annotation classes",
-        "   languages        List supported languages",
+        f"   modules          {help['modules']}",
+        f"   presets          {help['presets']}",
+        f"   classes          {help['classes']}",
+        f"   languages        {help['languages']}",
         "",
         "Setting up the Sparv Pipeline:",
-        "   setup            Set up the Sparv data directory",
-        "   wizard           Run config wizard to create a corpus config",
-        "   build-models     Download and build the Sparv models (optional)",
+        f"   setup            {help['setup']['short']}",
+        f"   wizard           {help['wizard']}",
+        f"   build-models     {help['build-models']['short']}",
         "",
         "Advanced commands:",
-        "   run-rule         Run specified rule(s) for creating annotations",
-        "   create-file      Create specified file(s)",
-        "   run-module       Run annotator module independently",
-        "   preload          Preload annotators and models",
-        "   autocomplete     Enable tab completion in bash",
-        "   schema           Print a JSON schema for the Sparv config format",
+        f"   run-rule         {help['run-rule']}",
+        f"   create-file      {help['create-file']['short']}",
+        f"   run-module       {help['run-module']}",
+        f"   preload          {help['preload']}",
+        f"   autocomplete     {help['autocomplete']}",
+        f"   schema           {help['schema']}",
         "",
         "See 'sparv <command> -h' for help with a specific command",
         "For full documentation, visit https://spraakbanken.gu.se/sparv/docs/"
@@ -156,37 +195,37 @@ def main():
     subparsers.required = True
 
     # Annotate
-    run_parser = subparsers.add_parser("run", description="Annotate a corpus and generate export files.")
+    run_parser = subparsers.add_parser("run", help=help["run"], description=help["run"])
     run_parser.add_argument(
         "output", nargs="*", default=[], help="The type of output format to generate",
     ).completer = Completer("export")
     run_parser.add_argument("-l", "--list", action="store_true", help="List available output formats")
 
-    install_parser = subparsers.add_parser("install", description="Install a corpus.")
+    install_parser = subparsers.add_parser("install", help=help["install"], description=help["install"])
     install_parser.add_argument(
         "type", nargs="*", default=[], help="The type of installation to perform"
     ).completer = Completer("install")
     install_parser.add_argument("-l", "--list", action="store_true", help="List installations to be made")
 
-    uninstall_parser = subparsers.add_parser("uninstall", description="Uninstall a corpus.")
+    uninstall_parser = subparsers.add_parser("uninstall", help=help["uninstall"], description=help["uninstall"])
     uninstall_parser.add_argument(
         "type", nargs="*", default=[], help="The type of uninstallation to perform"
     ).completer = Completer("uninstall")
     uninstall_parser.add_argument("-l", "--list", action="store_true", help="List uninstallations to be made")
 
-    clean_parser = subparsers.add_parser("clean", description="Remove output directories (by default only the "
-                                                              "sparv-workdir directory).")
+    clean_parser = subparsers.add_parser("clean", help=help["clean"]["short"], description=help["clean"]["long"])
     clean_parser.add_argument("-e", "--export", action="store_true", help="Remove export directory")
     clean_parser.add_argument("-l", "--logs", action="store_true", help="Remove logs directory")
     clean_parser.add_argument("-a", "--all", action="store_true", help="Remove workdir, export and logs directories")
 
     # Inspect
-    config_parser = subparsers.add_parser("config", description="Display the corpus configuration.")
+    config_parser = subparsers.add_parser("config", help=help["config"], description=help["config"])
     config_parser.add_argument("options", nargs="*", default=[], help="Specific options(s) in config to display")
-    subparsers.add_parser("files", description="List available corpus source files that can be annotated by Sparv.")
+
+    subparsers.add_parser("files", help=help["files"], description=help["files"])
 
     # Annotation info
-    modules_parser = subparsers.add_parser("modules", description="List available modules and annotations.")
+    modules_parser = subparsers.add_parser("modules", help=help["modules"], description=help["modules"])
     modules_parser.add_argument("--annotators", action="store_true", help="List info for annotators")
     modules_parser.add_argument("--importers", action="store_true", help="List info for importers")
     modules_parser.add_argument("--exporters", action="store_true", help="List info for exporters")
@@ -196,58 +235,72 @@ def main():
     modules_parser.add_argument("--json", action="store_true", help="Print output in JSON format")
     modules_parser.add_argument("names", nargs="*", default=[], help="Specific module(s) or annotator(s) to display")
 
-    subparsers.add_parser("presets", description="Display all available annotation presets.")
-    subparsers.add_parser("classes", description="Display all available annotation classes.")
-    subparsers.add_parser("languages", description="List supported languages.")
+    subparsers.add_parser("presets", help=help["presets"], description=help["presets"])
+    subparsers.add_parser("classes", help=help["classes"], description=help["classes"])
+    subparsers.add_parser("languages", help=help["languages"], description=help["languages"])
 
     # Setup
-    setup_parser = subparsers.add_parser("setup", description="Set up the Sparv data directory. Run without arguments "
-                                                              "for interactive setup.")
+    setup_parser = subparsers.add_parser("setup", help=help["setup"]["short"], description=help["setup"]["long"])
     setup_parser.add_argument("-d", "--dir", help="Directory to use as Sparv data directory")
     setup_parser.add_argument("--reset", action="store_true", help="Reset data directory setting.")
 
-    models_parser = subparsers.add_parser("build-models",
-                                          description=("Download and build the Sparv models. This is optional, as "
-                                                       "models will be downloaded and built automatically the first "
-                                                       "time they are needed."))
+    models_parser = subparsers.add_parser(
+        "build-models",
+        help=help["build-models"]["short"],
+        description=help["build-models"]["long"]
+    )
     models_parser.add_argument(
         "model", nargs="*", default=[], help="The model(s) to be built"
     ).completer = Completer("model")
     models_parser.add_argument("-l", "--list", action="store_true", help="List available models")
     models_parser.add_argument("--language", help="Language (ISO 639-3) if different from current corpus language")
     models_parser.add_argument("--all", action="store_true", help="Build all models for the current language")
-    subparsers.add_parser("wizard", description="Run config wizard to create a corpus config")
+
+    subparsers.add_parser("wizard", help=help["wizard"], description=help["wizard"])
 
     # Advanced commands
-    runmodule = subparsers.add_parser("run-module", no_help=True)
+    runmodule = subparsers.add_parser(
+        "run-module",
+        no_help=True,
+        help=help["run-module"],
+        description=help["run-module"]
+    )
     runmodule.add_argument("--log", metavar="LOGLEVEL", help="Set the log level (default: 'info')", default="info",
                            choices=["debug", "info", "warning", "error", "critical"])
 
-    runrule_parser = subparsers.add_parser("run-rule", description="Run specified rule(s) for creating annotations.")
+    runrule_parser = subparsers.add_parser("run-rule", help=help["run-rule"], description=help["run-rule"])
     runrule_parser.add_argument("targets", nargs="*", default=["list"],
                                 help="Annotation(s) to create").completer = Completer("annotate")
     runrule_parser.add_argument("-l", "--list", action="store_true", help="List available rules")
     runrule_parser.add_argument("-w", "--wildcards", nargs="*", metavar="WILDCARD",
                                 help="Supply values for wildcards using the format 'name=value'")
     runrule_parser.add_argument("--force", action="store_true", help="Force recreation of target")
-    createfile_parser = subparsers.add_parser("create-file", description=("Create specified file(s). "
-                                              "The full path must be supplied and wildcards must be replaced."))
+
+    createfile_parser = subparsers.add_parser(
+        "create-file",
+        help=help["create-file"]["short"],
+        description=help["create-file"]["long"]
+    )
     createfile_parser.add_argument("targets", nargs="*", default=["list"], help="File(s) to create")
     createfile_parser.add_argument("-l", "--list", action="store_true", help="List available files that can be created")
     createfile_parser.add_argument("--force", action="store_true", help="Force recreation of target")
 
-    preloader_parser = subparsers.add_parser("preload", description="Preload annotators and models")
+    preloader_parser = subparsers.add_parser("preload", help=help["preload"], description=help["preload"])
     preloader_parser.add_argument("preload_command", nargs="?", default="start", choices=["start", "stop"])
     preloader_parser.add_argument("--socket", default="sparv.socket", help="Path to socket file")
     preloader_parser.add_argument("-j", "--processes", help="Number of processes to use", default=1, type=int)
     preloader_parser.add_argument("-l", "--list", action="store_true", help="List annotators available for preloading")
 
-    autocomplete_parser = subparsers.add_parser("autocomplete", description="Enable tab completion in bash")
-    autocomplete_parser.add_argument("--enable", action="store_true", help="Output script to be sourced in bash")
+    autocomplete_parser = subparsers.add_parser(
+        "autocomplete",
+        help=help["autocomplete"],
+        description=help["autocomplete"]
+    )
+    autocomplete_parser.add_argument("--enable", action="store_true", help="Output script to be sourced in bash/zsh")
     autocomplete_parser.add_argument("--enable-old", action="store_true",
                                      help="Output script to be sourced in bash, for bash version 4.3 and below")
 
-    schema_parser = subparsers.add_parser("schema", description="Print a JSON schema for the Sparv config format")
+    schema_parser = subparsers.add_parser("schema", help=help["schema"], description=help["schema"])
     schema_parser.add_argument("--compact", action="store_true", help="Don't indent output")
 
 
@@ -312,12 +365,16 @@ def main():
             print(argcomplete.shellcode(["sparv"], complete_arguments=complete_arguments))
         else:
             print(
-                "To enable tab autocompletion for Sparv in bash, source the output of the 'sparv autocomplete --enable'"
-                " command in your shell by running the following:\n\n"
+                "To enable tab autocompletion for Sparv in bash or zsh, source the output of the 'sparv autocomplete "
+                "--enable' command in your shell by running the following:\n\n"
                 '    eval "$(sparv autocomplete --enable)"\n\n'
-                "To enable permanently, add the above line to ~/.bashrc by running the following in your terminal:\n\n"
-                "    echo 'eval \"$(sparv autocomplete --enable)\"' >> ~/.bashrc\n\n"
+                "To enable permanently, add the above line to ~/.bashrc (for bash) or ~/.zshrc (for zsh) by running "
+                "one of the following commands in your terminal:\n\n"
+                "    echo 'eval \"$(sparv autocomplete --enable)\"' >> ~/.bashrc\n"
+                "    echo 'eval \"$(sparv autocomplete --enable)\"' >> ~/.zshrc\n\n"
                 "For bash version 4.3 and below, use the flag '--enable-old' instead.\n\n"
+                "For zsh, instead of editing ~/.zshrc, you can save the output of the command to a file in "
+                "one of the directories in $fpath.\n\n"
                 "Note: Autocompletion of some arguments, such as available exporters, will not be available until some "
                 "part of the Sparv pipeline (e.g. 'sparv run') has been run at least once since enabling "
                 "autocompletion."

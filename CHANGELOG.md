@@ -9,6 +9,7 @@
 - The command `sparv modules` now also takes annotators in addition to modules as arguments to filter the output.
 - The detailed `sparv modules` listings now include info about accepted values for config variables.
 - Sparv now respects the `JAVA_HOME` environment variable.
+- Added autocomplete instructions for `zsh`.
 
 ### Changed
 

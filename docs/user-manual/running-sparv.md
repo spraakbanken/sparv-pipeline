@@ -24,8 +24,8 @@ Annotating a corpus:
    clean            Remove output directories
 
 Inspecting corpus details:
-   config           Display the corpus config
-   files            List available corpus source files (input for Sparv)
+   config           Display the corpus configuration
+   files            List available corpus source files that can be annotated by Sparv
 
 Show annotation info:
    modules          List available modules and annotations
@@ -36,14 +36,14 @@ Show annotation info:
 Setting up the Sparv Pipeline:
    setup            Set up the Sparv data directory
    wizard           Run config wizard to create a corpus config
-   build-models     Download and build the Sparv models (optional)
+   build-models     Download and build the Sparv models
 
 Advanced commands:
    run-rule         Run specified rule(s) for creating annotations
    create-file      Create specified file(s)
    run-module       Run annotator module independently
    preload          Preload annotators and models
-   autocomplete     Enable tab completion in bash
+   autocomplete     Enable tab completion in bash/zsh
    schema           Print a JSON schema for the Sparv config format
 ```
 
