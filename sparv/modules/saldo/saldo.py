@@ -228,7 +228,7 @@ def main(token, word, sentence, reference, out_sense, out_lemgram, out_baseform,
         # Then save the rest of the multi-word expressions in sentence_tokens
         _save_multiwords(complete_multis, sentence_tokens)
 
-        for tok in list(sentence_tokens.values()):
+        for tok in sentence_tokens.values():
             out_annotation[tok["token_index"]] = _join_annotation(tok["annotations"], delimiter, affix)
 
         # Loop to next sentence
@@ -410,7 +410,7 @@ def _save_multiwords(complete_multis, sentence_tokens):
         for tok_ref in c[0]:
             if first:
                 first_ref = tok_ref
-            for ann, val in list(c[1].items()):
+            for ann, val in c[1].items():
                 if not first:
                     val = [x + ":" + first_ref for x in val]
                 sentence_tokens[tok_ref]["annotations"].setdefault(ann, []).extend(val)

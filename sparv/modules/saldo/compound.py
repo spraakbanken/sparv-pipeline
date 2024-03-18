@@ -325,7 +325,7 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
             if first:
                 first = False
             else:
-                for i in reversed(list(range(n))):
+                for i in reversed(range(n)):
                     if indices[i] != i + nn - n:
                         break
                 else:
@@ -659,7 +659,7 @@ def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
     for word in lexicon:
         lemgrams = []
 
-        for lemgram, annotation in list(lexicon[word].items()):
+        for lemgram, annotation in lexicon[word].items():
             msds = PART_DELIM2.join(annotation["msd"])
             tags = PART_DELIM2.join(annotation.get("tags", []))
             lemgrams.append(PART_DELIM1.join([lemgram, msds, annotation["pos"], tags]))

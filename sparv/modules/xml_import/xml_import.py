@@ -342,7 +342,7 @@ class SparvXMLParser:
             uri, _ = get_namespace(element.tag)
             if uri:
                 element.tag = element.tag[len("{" + uri + "}"):]
-            for k in list(element.attrib.keys()):
+            for k in element.attrib.keys():
                 uri, _ = get_namespace(k)
                 if uri:
                     element.set(k[len("{" + uri + "}"):], element.attrib[k])

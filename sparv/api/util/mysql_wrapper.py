@@ -82,7 +82,7 @@ class MySQL:
 
         sql += ",\n ".join(sqlcolumns) + ") "
 
-        for key, value in list(kwargs.items()):
+        for key, value in kwargs.items():
             sql += " %s = %s " % (key, value)
         sql += ";"
         self.execute(sql)
@@ -116,14 +116,14 @@ class MySQL:
         self.execute("SET NAMES %s;" % encoding)
 
     def delete_rows(self, table, conditions):
-        conditions = " AND ".join(["%s = %s" % (_atom(k), _value(v)) for (k, v) in list(conditions.items())])
+        conditions = " AND ".join(["%s = %s" % (_atom(k), _value(v)) for (k, v) in conditions.items()])
         self.execute("DELETE FROM %s WHERE %s;" % (_atom(table), conditions))
 
     def drop_table(self, *tables):
         self.execute("DROP TABLE IF EXISTS %s;" % _atomseq(tables))
 
     def rename_table(self, tables):
-        renames = ["%s TO %s" % (_atom(old), _atom(new)) for old, new in list(tables.items())]
+        renames = ["%s TO %s" % (_atom(old), _atom(new)) for old, new in tables.items()]
         self.execute("RENAME TABLE %s;" % ", ".join(renames))
 
     def add_row(self, table, rows, extra=""):
@@ -142,7 +142,7 @@ class MySQL:
 
         for row in rows:
             if isinstance(row, dict):
-                rowlist = sorted(list(row.items()), key=lambda x: x[0])
+                rowlist = sorted(row.items(), key=lambda x: x[0])
                 valueline = "(%s)" % (_valueseq([x[1] for x in rowlist]))
                 input_length += len(valueline)
                 if input_length > MAX_ALLOWED_PACKET:
@@ -195,7 +195,7 @@ def _valueseq(vals):
 
 def _dict(dct, filter_null=False):
     assert isinstance(dct, dict)
-    return ", ".join("%s = %s" % (_atom(k), _value(v)) for (k, v) in list(dct.items())
+    return ", ".join("%s = %s" % (_atom(k), _value(v)) for (k, v) in dct.items()
                      if not (filter_null and v is None))
 
 

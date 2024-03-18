@@ -94,7 +94,7 @@ def lemgram_sql(corpus: Corpus = Corpus(),
     mysql.set_names()
 
     rows = []
-    for lemgram, freq in list(result.items()):
+    for lemgram, freq in result.items():
         rows.append({
             "lemgram": lemgram,
             "corpus": corpus,

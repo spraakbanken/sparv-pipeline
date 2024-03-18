@@ -201,7 +201,7 @@ def _convert_default(pos, inhs, param):
     if tags:
         return tags
     tags = []
-    for t in list(tagmap.keys()):
+    for t in tagmap:
         if t.split()[0] == pos:
             tags.extend(tagmap.get(t))
     return tags

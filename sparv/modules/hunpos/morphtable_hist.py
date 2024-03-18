@@ -98,7 +98,7 @@ def hist_morphtable(out: ModelOutput = ModelOutput("hunpos/hist/dalinm-swedberg_
                     words.setdefault(word.lower(), set()).update(suc)
                     words.setdefault(word.title(), set()).update(suc)
     with out.path.open(encoding="UTF-8", mode="w") as out:
-        for w, ts in list(words.items()):
+        for w, ts in words.items():
             line = ("\t".join([w] + list(ts)) + "\n")
             out.write(line)
 

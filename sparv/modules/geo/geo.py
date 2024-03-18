@@ -164,7 +164,7 @@ def load_model(model: Model, language=()):
         m = pickle.load(infile)
 
     result = defaultdict(set)
-    for _geonameid, l in list(m.items()):
+    for l in m.values():
         result[l["name"].lower()].add((l["name"], l["latitude"], l["longitude"], l["country"], l["population"]))
         for lang in l["alternative_names"]:
             if lang in language or not language:

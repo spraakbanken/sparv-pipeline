@@ -85,7 +85,7 @@ class SaldoLexicon:
         picklex = {}
         for word in lexicon:
             annotations = []
-            for annotation, extra in list(lexicon[word].items()):
+            for annotation, extra in lexicon[word].items():
                 # annotationlist = PART_DELIM3.join(annotation)
                 annotationlist = PART_DELIM2.join(k + PART_DELIM3 + PART_DELIM3.join(annotation[k]) for k in annotation)
                 taglist = PART_DELIM3.join(sorted(extra[0]))
@@ -114,7 +114,7 @@ class SaldoLexicon:
         with open(saldofile, "w") as F:
             for word in sorted(lexicon):
                 annotations = [PART_DELIM.join([annotation] + sorted(postags))
-                               for annotation, postags in list(lexicon[word].items())]
+                               for annotation, postags in lexicon[word].items()]
                 print(" ".join([word] + annotations).encode(util.constants.UTF8), file=F)
         if verbose:
             logger.info("OK, saved")
@@ -263,6 +263,6 @@ def extract_tags(lexicon):
       - lexicon = {wordform: {annotation: set(possible tags)}}
     """
     tags = set()
-    for annotations in list(lexicon.values()):
+    for annotations in lexicon.values():
         tags.update(*list(annotations.values()))
     return tags

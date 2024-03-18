@@ -1370,7 +1370,7 @@ class Mappings:
         """Return Granska to SUC tag mapping."""
         if "granska_to_suc" not in self.mappings:
             self.mappings["granska_to_suc"] = {
-                granska: self.parole_to_suc[parole] for (granska, parole) in list(_granska_to_parole.items())
+                granska: self.parole_to_suc[parole] for (granska, parole) in _granska_to_parole.items()
             }
         return self.mappings["granska_to_suc"]
 
@@ -1379,7 +1379,7 @@ class Mappings:
         """Return Parole to Granska tag mapping."""
         if "parole_to_granska" not in self.mappings:
             self.mappings["parole_to_granska"] = {}
-            for granska, parole in list(_granska_to_parole.items()):
+            for granska, parole in _granska_to_parole.items():
                 self.mappings["parole_to_granska"].setdefault(parole, set()).add(granska)
         return self.mappings["parole_to_granska"]
 
@@ -1387,7 +1387,7 @@ class Mappings:
     def parole_to_suc(self) -> Dict[str, str]:
         """Return Parole to SUC tag mapping."""
         if "parole_to_suc" not in self.mappings:
-            self.mappings["parole_to_suc"] = {parole: suc for (suc, parole) in list(_suc_to_parole.items())}
+            self.mappings["parole_to_suc"] = {parole: suc for (suc, parole) in _suc_to_parole.items()}
         return self.mappings["parole_to_suc"]
 
     @property
@@ -1396,7 +1396,7 @@ class Mappings:
         if "saldo_to_granska" not in self.mappings:
             self.mappings["saldo_to_granska"] = {
                 saldo_tag: set().union(*(self.suc_to_granska[suc_tag] for suc_tag in suc_tags))
-                for saldo_tag, suc_tags in list(self.saldo_to_suc.items())
+                for saldo_tag, suc_tags in self.saldo_to_suc.items()
             }
         return self.mappings["saldo_to_granska"]
 
@@ -1406,7 +1406,7 @@ class Mappings:
         if "saldo_to_parole" not in self.mappings:
             self.mappings["saldo_to_parole"] = {
                 saldo_tag: {_suc_to_parole[suc_tag] for suc_tag in suc_tags}
-                for saldo_tag, suc_tags in list(self.saldo_to_suc.items())
+                for saldo_tag, suc_tags in self.saldo_to_suc.items()
             }
         return self.mappings["saldo_to_parole"]
 
@@ -1446,7 +1446,7 @@ class Mappings:
         """Return SUC to Granska tag mapping."""
         if "suc_to_granska" not in self.mappings:
             self.mappings["suc_to_granska"] = {
-                suc: self.parole_to_granska[parole] for (suc, parole) in list(_suc_to_parole.items())
+                suc: self.parole_to_granska[parole] for (suc, parole) in _suc_to_parole.items()
             }
         return self.mappings["suc_to_granska"]
 

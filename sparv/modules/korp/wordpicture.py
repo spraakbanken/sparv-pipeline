@@ -188,7 +188,7 @@ def wordpicture(
             return result
 
         # Look for relations
-        for v in list(tokens.values()):
+        for v in tokens.values():
             for d in v["dep"]:
                 for rel in rels:
                     r = rel[0]
@@ -199,26 +199,26 @@ def wordpicture(
                                       (d[1]["lemgram"], d[1]["word"], d[1]["pos"], d[1]["ref"]), ("", None), sentid,
                                       v["ref"], d[1]["ref"])
                         else:
-                            lookup = dict(list(zip(list(map(str, sorted(r.keys()))), (v, d[0], d[1]))))
-                            i = set(rel[0].keys()).intersection(set(rel[1].keys())).pop()
+                            lookup = dict(zip(map(str, sorted(r)), (v, d[0], d[1])))
+                            i = set(rel[0]).intersection(set(rel[1])).pop()
                             rel2 = [x[1] for x in sorted(rel[1].items())]
-                            index1 = list(rel[0].keys()).index(i)
-                            index2 = list(rel[1].keys()).index(i)
+                            index1 = list(rel[0]).index(i)
+                            index2 = list(rel[1]).index(i)
                             if index1 == 2 and index2 == 0:
                                 result = _findrel(d[1], rel2[1], rel2[2])
                                 if result:
                                     lookup.update(dict(
-                                        list(zip(list(map(str, sorted(rel[1].keys()))), (d[1], rel2[1], result[0])))))
+                                        zip(map(str, sorted(rel[1])), (d[1], rel2[1], result[0]))))
                             elif index1 == 0 and index2 == 0:
                                 result = _findrel(v, rel2[1], rel2[2])
                                 if result:
                                     lookup.update(
-                                        dict(list(zip(list(map(str, sorted(rel[1].keys()))), (v, rel2[1], result[0])))))
+                                        dict(zip(map(str, sorted(rel[1])), (v, rel2[1], result[0]))))
 
                             pp = rel[-1]
-                            if len(list(lookup.keys())) > 3:
-                                lookup_bf = dict((key, val["bf"]) for key, val in list(lookup.items()) if isinstance(val, dict))
-                                lookup_ref = dict((key, val["ref"]) for key, val in list(lookup.items()) if isinstance(val, dict))
+                            if len(list(lookup)) > 3:
+                                lookup_bf = {key: val["bf"] for key, val in lookup.items() if isinstance(val, dict)}
+                                lookup_ref = {key: val["ref"] for key, val in lookup.items() if isinstance(val, dict)}
                                 triple = (
                                     (lookup[str(pp[0])]["lemgram"], lookup[str(pp[0])]["word"],
                                      lookup[str(pp[0])]["pos"], lookup[str(pp[0])]["ref"]),
@@ -281,7 +281,7 @@ def _mutate_triple(triple):
     is_lemgrams = {}
     parts = {"head": head, "dep": dep}
 
-    for part, val in list(parts.items()):
+    for part, val in parts.items():
         if val[0].startswith("|") and val[0].endswith("|"):
             parts[part] = [w[:w.find(":")] if ":" in w else w for w in val[0].split("|") if w]
             is_lemgrams[part] = True

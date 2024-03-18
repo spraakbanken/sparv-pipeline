@@ -45,7 +45,7 @@ def saldo_morphtable(out: ModelOutput = ModelOutput("hunpos/saldo_suc-tags.morph
     tags = defaultdict(set)
 
     # Get all word forms from SALDO
-    for word in list(lex.lexicon.keys()):
+    for word in lex.lexicon:
         words = lex.lookup(word)
         # Filter out multi-word expressions
         words = [x for x in words if len(x[2]) == 0]

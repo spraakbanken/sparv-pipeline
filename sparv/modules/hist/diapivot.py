@@ -62,7 +62,7 @@ def build_diapivot(out: ModelOutput = ModelOutput("hist/diapivot.pickle")):
     picklex = {}
     for lem in xml_lexicon:
         lemgrams = []
-        for saldo, match in list(xml_lexicon[lem].items()):
+        for saldo, match in xml_lexicon[lem].items():
             lemgrams.append(PART_DELIM1.join([saldo, match]))
         picklex[lem] = sorted(lemgrams)
 

@@ -13,7 +13,7 @@ def align_texts(sentence1, sentence2, link1, link2, sent_parents1, sent_parents2
     - out_sentlink1 and out_sentlink2, are the resulting annotations for the new sentence links
     """
 
-    REVERSED_LINK2 = {v: k for k, v in list(util.read_annotation(link2).items())}
+    REVERSED_LINK2 = {v: k for k, v in util.read_annotation(link2).items()}
     SENTPARENTS1 = util.read_annotation(sent_parents1)
     SENTPARENTS2 = util.read_annotation(sent_parents2)
     SENT1 = util.read_annotation(sentence1)
@@ -91,7 +91,7 @@ def align(t1, t2, mean_xy, variance_xy, bead_costs):
                 m[i, j] = min((m[i - di, j - dj][0] +
                                length_cost(t1[i - di:i], t2[j - dj:j], mean_xy, variance_xy) +
                                bead_cost, di, dj)
-                              for (di, dj), bead_cost in list(BEAD_COSTS.items())
+                              for (di, dj), bead_cost in BEAD_COSTS.items()
                               if i - di >= 0 and j - dj >= 0)
     i, j = len(t1), len(t2)
     while True:
