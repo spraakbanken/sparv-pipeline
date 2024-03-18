@@ -95,13 +95,15 @@ select = [
     "W",      # pycodestyle: warnings
 ]
 ignore = [
-    "ANN101", # flake8-annotations: missing-type-self (deprecated)
-    "ANN102", # flake8-annotations: missing-type-cls (deprecated)
-    "ANN401", # flake8-annotations: any-type
-    "B008",   # flake8-bugbear: function-call-in-default-argument
-    "COM812", # flake8-commas: missing-trailing-comma
-    "PLR09",  # Pylint: too-many-*
-    "SIM105", # flake8-simplify: suppressible-exception
+    "ANN101",  # flake8-annotations: missing-type-self (deprecated)
+    "ANN102",  # flake8-annotations: missing-type-cls (deprecated)
+    "ANN401",  # flake8-annotations: any-type
+    "B008",    # flake8-bugbear: function-call-in-default-argument
+    "COM812",  # flake8-commas: missing-trailing-comma
+    "E741",    # pycodestyle: ambiguous-variable-name
+    "PLR09",   # Pylint: too-many-*
+    "PLR1702", # Pylint: too-many-nested-blocks
+    "SIM105",  # flake8-simplify: suppressible-exception
 ]
 preview = true
 
