@@ -63,7 +63,7 @@ preset](user-manual/corpus-configuration.md#annotation-presets) called `SWE_DEFA
 ### POS-tagging with Hunpos
 |    |            |
 |:---|:-----------|
-|**Description**  | Sentence segments are analysed to enrich tokens varje token with part-of-speech tags and morphosyntactic information. No longer used by default because Stanza's POS-tagging yields better results.
+|**Description**  | Sentence segments are analysed to enrich tokens with part-of-speech tags and morphosyntactic information. No longer used by default because Stanza's POS-tagging yields better results.
 |**Tool**         | [Hunpos](https://code.google.com/archive/p/hunpos/)
 |**Model**        | [suc3_suc-tags_default-setting_utf8.model](https://github.com/spraakbanken/sparv-models/blob/master/hunpos/suc3_suc-tags_default-setting_utf8.model?raw=true) trained on [SUC 3.0](https://spraakbanken.gu.se/resurser/suc3)
 |**Tagset**       | [SUC MSD tags](https://spraakbanken.gu.se/korp/markup/msdtags.html)
