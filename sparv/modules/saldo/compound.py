@@ -108,7 +108,8 @@ def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
         nst_model = pickle.load(f)
 
     word_msd_baseform_annotations = list(word.read_attributes((word, msd, baseform_tmp)))
-    logger.progress(total=len(word_msd_baseform_annotations) + 3)
+    logger.progress(total=103)
+    per_percent = int(len(word_msd_baseform_annotations) / 100)
 
     # Create alternative lexicon (for words within the source file)
     altlexicon = InFileLexicon(word_msd_baseform_annotations if comp_use_source else [])
@@ -122,7 +123,7 @@ def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
 
     previous_compounds = {}
 
-    for word, msd, baseform_orig in word_msd_baseform_annotations:
+    for counter, (word, msd, baseform_orig) in enumerate(word_msd_baseform_annotations):
         key = (word, msd)
         if key in previous_compounds:
             compounds = previous_compounds[key]
@@ -155,6 +156,10 @@ def annotate(out_complemgrams: Output = Output("<token>:saldo.complemgram",
         else:
             make_new_baseforms(baseform_annotation, msd, compounds, stats_lexicon, altlexicon, delimiter, affix)
 
+        if per_percent and counter % per_percent == 0:
+            logger.progress()
+
+    if per_percent == 0:
         logger.progress()
 
     out_complemgrams.write(complem_annotation)
