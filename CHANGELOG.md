@@ -23,6 +23,7 @@
 ### Fixed
 
 - Fixed Stanza which was broken for English.
+- SweNER no longer hangs on (extremely) long tokens.
 
 ## [5.2.0] - 2023-12-07
 

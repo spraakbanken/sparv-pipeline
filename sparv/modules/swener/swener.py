@@ -11,6 +11,7 @@ logger = get_logger(__name__)
 RESTART_THRESHOLD_LENGTH = 64000
 SENT_SEP = "\n"
 TOK_SEP = " "
+MAX_TOKEN_LENGTH = 1024  # SweNER sometimes hangs on very long tokens
 
 
 @annotator("Named entity tagging with SweNER", language=["swe"],
@@ -51,8 +52,13 @@ def annotate(out_ne: Output = Output("swener.ne", cls="named_entity", descriptio
 
     # Collect all text
     word_annotation = list(word.read())
-    stdin = SENT_SEP.join(TOK_SEP.join(word_annotation[token_index] for token_index in sent)
-                          for sent in sentences)
+    stdin = SENT_SEP.join(
+        TOK_SEP.join(
+            word_annotation[token_index] if len(word_annotation[token_index]) <= MAX_TOKEN_LENGTH else "-"
+            for token_index in sent
+        )
+        for sent in sentences
+    )
     # Escape <, > and &
     stdin = xml.sax.saxutils.escape(stdin)
 
