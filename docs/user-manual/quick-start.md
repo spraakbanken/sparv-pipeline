@@ -22,7 +22,7 @@ python3 --version
 > [!NOTE]
 > On some systems, the command may be called `python` instead of `python3`.
 
-Continue by [installing pipx](https://pipxproject.github.io/pipx/installation/) if you haven't already:
+Continue by [installing pipx](https://pipx.pypa.io/stable/installation/) if you haven't already:
 ```
 python3 -m pip install --user pipx
 python3 -m pipx ensurepath

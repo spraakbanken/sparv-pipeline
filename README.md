@@ -20,7 +20,7 @@ If you have any questions, problems or suggestions please contact <sb-sparv@sven
 ## Installation
 
 Sparv is available on [PyPI](https://pypi.org/project/sparv-pipeline/) and can be installed using
-[pip](https://pip.pypa.io/en/stable/installing) or [pipx](https://pipxproject.github.io/pipx/).
+[pip](https://pip.pypa.io/en/stable/installation/) or [pipx](https://pipx.pypa.io/stable/).
 We recommend using pipx, which will install Sparv in an isolated environment while still making it available to be run
 from anywhere.
 
