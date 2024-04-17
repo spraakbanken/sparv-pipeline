@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 license.text = "MIT License"
 authors = [
-    { name = "Språkbanken", email = "sb-info@svenska.gu.se" }
+    { name = "Språkbanken Text", email = "sb-info@svenska.gu.se" }
 ]
 dependencies = [
     "appdirs==1.4.4",
