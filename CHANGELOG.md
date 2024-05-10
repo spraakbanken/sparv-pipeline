@@ -24,6 +24,7 @@
 
 - Fixed Stanza which was broken for English.
 - SweNER no longer hangs on (extremely) long tokens.
+- Fixed config validation for `korp.context` and `korp.within`.
 
 ## [5.2.0] - 2023-12-07
 

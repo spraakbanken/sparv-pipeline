@@ -76,13 +76,13 @@ LABELS = {
         Config(
             "korp.context",
             description="Contexts to use in Korp, from smaller to bigger. Leave blank to detect automatically.",
-            datatype=List[str],
+            datatype=List[dict],
         ),
         Config(
             "korp.within",
             description="Search boundaries to use in Korp, from smaller to bigger. "
             "Leave blank to detect automatically.",
-            datatype=List[str],
+            datatype=List[dict],
         ),
         Config("korp.custom_annotations", description="Custom Korp-annotations.", datatype=List[dict]),
         Config("korp.morphology", description="Morphologies"),
