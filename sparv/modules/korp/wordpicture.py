@@ -55,7 +55,7 @@ def install_wordpicture(
     marker.write()
 
 
-@uninstaller("Uninstall lemgrams from database", language=["swe"])
+@uninstaller("Uninstall Korp's Word Picture from database", language=["swe"])
 def uninstall_wordpicture(
     corpus: Corpus = Corpus(),
     marker: OutputMarker = OutputMarker("korp.uninstall_wordpicture_marker"),
@@ -64,7 +64,7 @@ def uninstall_wordpicture(
     table_name: str = Config("korp.wordpicture_table"),
     host: Optional[str] = Config("korp.remote_host")
 ):
-    """Remove lemgram index data from database.
+    """Remove Korp's Word Picture data from database.
 
     Args:
         corpus: Corpus ID.
