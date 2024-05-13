@@ -103,7 +103,14 @@ class Array(BaseProperty):
         **kwargs
     ):
         if items:
-            kwargs["items"] = items().schema
+            if isinstance(items, list):
+                kwargs["items"] = {"type": []}
+                for item in items:
+                    item_schema = item().schema
+                    kwargs["items"]["type"].append(item_schema.pop("type"))
+                    kwargs["items"].update(item_schema)
+            else:
+                kwargs["items"] = items().schema
         super().__init__("array", **kwargs)
 
 
@@ -371,7 +378,10 @@ def build_json_schema(config_structure: dict) -> dict:
             elif cfg_datatype is list or typing_inspect.get_origin(cfg_datatype) is list:
                 args = typing_inspect.get_args(cfg_datatype)
                 if args:
-                    kwargs["items"] = get_class_from_type(args[0])
+                    if typing_inspect.is_union_type(args[0]):
+                        kwargs["items"] = [get_class_from_type(a) for a in typing_inspect.get_args(args[0])]
+                    else:
+                        kwargs["items"] = get_class_from_type(args[0])
                 datatype = Array(**kwargs)
             elif cfg_datatype is dict or typing_inspect.get_origin(cfg_datatype) is dict:
                 args = typing_inspect.get_args(cfg_datatype)
@@ -413,7 +423,7 @@ def build_json_schema(config_structure: dict) -> dict:
 
 def validate(cfg: dict, schema: dict) -> None:
     """Validate a Sparv config using JSON schema."""
-    import jsonschema
+    import jsonschema  # noqa: PLC0415
 
     def build_path_string(path: Sequence) -> str:
         parts = []
