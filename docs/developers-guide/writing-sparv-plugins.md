@@ -97,14 +97,16 @@ template](https://github.com/spraakbanken/sparv-plugin-template):
 from sparv.api import Annotation, Output, annotator
 
 @annotator("Convert every word to uppercase.")
-def uppercase(word: Annotation = Annotation("<token:word>"),
-              out: Output = Output("<token>:sbx_uppercase.upper")):
+def uppercase(
+    word: Annotation = Annotation("<token:word>"),
+    out: Output = Output("<token>:sbx_uppercase.upper")
+):
     """Convert to uppercase."""
     out.write([val.upper() for val in word.read()])
 ```
 
 In this script we import two classes from Sparv (`Annotation` and `Output`) and the `annotator` decorator. Please note
-that nothing should be imported from the Sparv code unless it is directly available from the sparv.api package (i.e.
+that nothing should be imported from the Sparv code unless it is directly available from the `sparv.api` package (i.e.
 `from sparv.api import ...`). Any other sub-packages (like `sparv.core`) are for internal use only, and are subject
 to change without notice.
 

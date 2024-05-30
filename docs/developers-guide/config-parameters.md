@@ -4,18 +4,24 @@ A Sparv user can steer and customise the use of Sparv functions to some extent b
 [corpus config file](user-manual/corpus-configuration.md). Each function decorated with a [Sparv
 decorator](developers-guide/sparv-decorators) (except for wizard functions) may take a `config` argument which contains
 a list of config parameters, their descriptions and optional default values. The config parameters declared here can
-then be referenced in the function's arguments:
+then be referenced in the function's arguments, either by using the `Config` class, or by using the
+`[...]` syntax in other classes' arguments:
 ```python
-@annotator("Dependency parsing using MaltParser", language=["swe"], config=[
-    Config("malt.jar", default="maltparser-1.7.2/maltparser-1.7.2.jar",
-           description="Path name of the executable .jar file"),
-    Config("malt.model", default="malt/swemalt-1.7.2.mco", description="Path to Malt model")
-])
-def annotate(maltjar: Binary = Binary("[malt.jar]"),
-             model: Model = Model("[malt.model]"),
-             ...):
+@annotator(
+    "Word sense disambiguation",
+    config=[
+        Config("wsd.sense_model", default="wsd/ALL_512_128_w10_A2_140403_ctx1.bin", description="Path to sense model"),
+        Config("wsd.jar", default="wsd/saldowsd.jar", description="Path name of the executable .jar file"),
+        Config("wsd.default_prob", default=-1.0, description="Default value for unanalyzed senses"),
+        ...
+    ],
+)
+def annotate(
+    wsdjar: Binary = Binary("[wsd.jar]"),
+    sense_model: Model = Model("[wsd.sense_model]"),
+    default_prob: float = Config("wsd.default_prob"),
     ...
-    process = maltstart(maltjar, model)
+):
     ...
 ```
 
