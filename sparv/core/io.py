@@ -91,8 +91,14 @@ def _write_single_annotation(
     if is_span:
         if not isinstance(values, list):
             values = list(values)
-        # Make sure that spans are sorted
-        assert all(values[i] <= values[i + 1] for i in range(len(values) - 1)), "Annotation spans must be sorted."
+        # Validate that spans are sorted
+        for i in range(len(values) - 1):
+            if values[i] > values[i + 1]:
+                raise SparvErrorMessage(
+                    f"Annotation spans must be sorted. values[{i}]={values[i]} > values[{i+1}]={values[i+1]}",
+                    module="core.io",
+                    function="_write_single_annotation",
+                )
         # Always save spans with decimal tuples
         if values and not isinstance(values[0][0], tuple):
             values = [((v[0],), (v[1],)) for v in values]
