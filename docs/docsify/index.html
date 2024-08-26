@@ -68,6 +68,9 @@
         auto2top: true,
         coverpage: true,
         loadSidebar: true,
+        alias: {
+          "/.*/_sidebar.md": "/_sidebar.md"  // Avoid trying to load sidebar from subfolders
+        },
         // maxLevel: 6,
         subMaxLevel: 6,
         homepage: "sparv-pipeline.md",
