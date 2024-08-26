@@ -13,3 +13,4 @@
     - [Config Parameters](developers-guide/config-parameters.md)
     - [Wildcards](developers-guide/wildcards.md)
     - [Utilities](developers-guide/utilities.md)
+- [Changelog](CHANGELOG.md)
