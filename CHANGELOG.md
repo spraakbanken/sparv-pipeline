@@ -26,6 +26,7 @@
 - SweNER no longer hangs on (extremely) long tokens.
 - Fixed config validation for `korp.context` and `korp.within`.
 - Fixed crash when removing namespaces from attributes in `xml_import:parse`.
+- Fixed tab autocompletion not working with Python 3.12.
 
 ## [5.2.0] - 2023-12-07
 
