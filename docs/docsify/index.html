@@ -19,14 +19,45 @@
     <div id="app"></div>
 
     <style>
-      /* Make h1 headings bold */
+      /* Make h1 headings in sidebar bold */
       .sidebar-nav > ul > li,
       li > a {
         font-weight: bold;
         color: #364149;
         font-size: 15px;
       }
-      /* Fix buttons */
+
+      /* Remove dashes from navigation items in sidebar */
+      .app-sub-sidebar li:before {
+        content: '';
+      }
+
+      /* Add separator lines between sections in sidebar */
+      .sidebar .sidebar-nav {
+        margin-left: 15px;
+      }
+      .sidebar-nav > ul {
+        margin: 0 !important;
+      }
+      .sidebar-nav > ul > li:not(:last-child)::after {
+        content: " ";
+        display: block;
+        width: 100%;
+        height: 12px;
+        margin-left: -15px;
+        margin-bottom: 15px;
+        padding-right: 15px;
+        border-bottom: 1px solid #eee;
+      }
+
+      /* Set fixed max-width of main content */
+      .markdown-section {
+        max-width: 1000px;
+        margin: 0;
+        padding: 0 40px 40px 40px;
+      }
+
+      /* Fix buttons on cover page */
       section.cover .cover-main > p.links a {
         border-radius: 2rem;
         border: 1px solid var(--theme-color, #42b983);
@@ -40,7 +71,7 @@
         text-decoration: none;
         transition: all 0.15s ease;
       }
-      section.cover .cover-main > p.links a:last-child {
+      section.cover .cover-main > p.links a:first-child {
         background-color: var(--theme-color, #42b983);
         color: #fff;
       }
@@ -59,6 +90,17 @@
       }
       section.cover p.version {
         font-size: 1.3em;
+      }
+
+      /* Add icon to search field */
+      .sidebar .search input[type=search] {
+        min-width: 0;
+        padding-left: 38px;
+        border: none;
+        background-color: rgba(0, 0, 0, 0);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath fill='%2357606a' d='M10.68 11.74a6 6 0 0 1-7.922-8.982 6 6 0 0 1 8.982 7.922l3.04 3.04a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215ZM11.5 7a4.499 4.499 0 1 0-8.997 0A4.499 4.499 0 0 0 11.5 7Z'/%3E%3C/svg%3E");
+        background-position: 14px center;
+        background-repeat: no-repeat;
       }
     </style>
 
