@@ -5,7 +5,8 @@ Sparv plugins developed by Språkbanken. Please note that this is not a complete
 a summary of the linguistic analyses. Technical annotations (e.g. the automatic assignment of IDs or the calculation of
 whitespace information) are not listed here.
 
-> [!NOTE] **Annotations** are the names of the annotations as they are used in the corpus config file in the
+> [!NOTE]
+> **Annotations** are the names of the annotations as they are used in the corpus config file in the
 > `export.annotations` section (read more about this in the [section about corpus
 > configuration](user-manual/corpus-configuration.md#export-options)). Please observe that the annotations usually have
 > shorter names in the corpus exports.

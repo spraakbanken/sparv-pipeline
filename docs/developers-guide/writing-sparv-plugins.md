@@ -4,7 +4,8 @@ shipped with the main Sparv package, none of these modules are hard-coded into t
 easily be extended with plugins. A plugin is a Sparv module that is not part of the main Sparv package. Writing a plugin
 is the recommended way of adding a new module to Sparv.
 
-> [!NOTE] When writing a plugin please always prefix your Python package with a namespace followed by an underscore to
+> [!NOTE]
+> When writing a plugin please always prefix your Python package with a namespace followed by an underscore to
 > mark which organisation or developer the plugin belongs to. This is necessary to avoid clashes in package names and
 > obligatory plugin namespaces will be enforced in the future. In the example below we used the prefix "sbx_" (for
 > Språkbanken Text).

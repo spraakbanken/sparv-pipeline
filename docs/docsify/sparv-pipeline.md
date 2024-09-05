@@ -14,6 +14,7 @@ Cite Sparv: *[Martin Hammarstedt, Anne Schumacher, Lars Borin, Markus Forsberg (
 
 > [!TIP]
 > Did you know that you can get notified about new Sparv releases by subscribing to our GitHub repository? Here's how:
+>
 > 1. Log in to GitHub
 > 2. Go to https://github.com/spraakbanken/sparv-pipeline
 > 3. Click "Watch" in the upper right corner

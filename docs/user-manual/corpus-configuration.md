@@ -350,7 +350,8 @@ xml_import:
     elements:
         - s
 ```
-> [!ATTENTION] Please note that you need to tell Sparv that `s` is an annotation imported from your corpus data. This is
+> [!ATTENTION]
+> Please note that you need to tell Sparv that `s` is an annotation imported from your corpus data. This is
 > done by listing `s` under `xml_import.elements` as is done in the above example.
 
 
@@ -516,7 +517,8 @@ similar to a plugin, but is available only to the corpus in the same directory.
 The full documentation for how to write a Sparv annotator can be found in the [developer's
 guide](developers-guide/writing-sparv-plugins#module-code), but here is a quick example.
 
-> [!TIP] The following example uses the `@annotator` decorator for creating an annotator, but it is possible to create
+> [!TIP]
+> The following example uses the `@annotator` decorator for creating an annotator, but it is possible to create
 > your own importer, exporter, installer or model builder using the appropriate Sparv decorator. You can read more about
 > decorators in the [developer's guide](developers-guide/sparv-decorators).
 

@@ -30,7 +30,8 @@ pipx install sparv-pipeline
 To verify that your installation of Sparv was successful, run the command `sparv`. The Sparv help should now be
 displayed.
 
-> [!NOTE] After upgrading your system's Python version pipx may sometimes stop working. Some issues can be resolved by
+> [!NOTE]
+> After upgrading your system's Python version pipx may sometimes stop working. Some issues can be resolved by
 > running `pipx reinstall-all`. If this fails, try to manually remove the pipx local environment directory (by default
 > located in `~/.local/pipx`) and reinstall Sparv.
 
