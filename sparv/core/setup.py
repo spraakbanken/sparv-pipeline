@@ -1,5 +1,6 @@
 """Functions for setting up the Sparv data dir and config."""
 import filecmp
+import importlib.resources
 import os
 import pathlib
 import shutil
@@ -7,7 +8,6 @@ import sys
 from typing import Optional
 
 import appdirs
-import pkg_resources
 from rich.padding import Padding
 from rich.prompt import Confirm
 
@@ -34,16 +34,13 @@ def check_sparv_version() -> Optional[bool]:
 
 def copy_resource_files(data_dir: pathlib.Path):
     """Copy resource files to data dir."""
-    # TODO: Use importlib.resources.files instead once we require Python 3.9
-    resources_dir = pathlib.Path(pkg_resources.resource_filename("sparv", "resources"))
-
-    for f in resources_dir.rglob("*"):
-        rel_f = f.relative_to(resources_dir)
-        if f.is_dir():
-            (data_dir / rel_f).mkdir(parents=True, exist_ok=True)
-        else:
-            # Check if file already exists in data dir
-            if (data_dir / rel_f).is_file():
+    resources_dir = importlib.resources.files("sparv") / "resources"
+    with importlib.resources.as_file(resources_dir) as path:
+        for f in path.rglob("*"):
+            rel_f = f.relative_to(resources_dir)
+            if f.is_dir():
+                (data_dir / rel_f).mkdir(parents=True, exist_ok=True)
+            elif (data_dir / rel_f).is_file():
                 # Only copy if files are different
                 if not filecmp.cmp(f, (data_dir / rel_f)):
                     shutil.copy((data_dir / rel_f), (data_dir / rel_f.parent / (rel_f.name + ".bak")))
