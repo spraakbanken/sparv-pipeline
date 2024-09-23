@@ -1,7 +1,7 @@
 # Quick Start
 
 This quick start guide will get you started with Sparv in just a few minutes, and will guide you through
-annotating your first corpus. For a more comprehensive [installation](user-manual/installation-and-setup.md) and
+annotating your first corpus. For a more comprehensive [installation](installation-and-setup.md) and
 user guide, please refer to the full documentation.
 
 > [!INFO]
@@ -38,7 +38,7 @@ To verify that the installation was successful, try running Sparv which should p
 sparv
 ```
 
-Finish the installation by running the [Sparv setup](user-manual/installation-and-setup.md#sparv-data-directory)
+Finish the installation by running the [Sparv setup](installation-and-setup.md#sparv-data-directory)
 command, to select a location for Sparv to save its models and configuration:
 ```
 sparv setup
@@ -76,8 +76,8 @@ Next, use your favourite plain text editor (i.e. not Word) to create a source fi
 ## Creating the Config File
 
 For Sparv to know what to do with your corpus, you first need to create a
-[configuration file](user-manual/corpus-configuration.md). This can be accomplished
-either by running the [corpus config wizard](user-manual/corpus-configuration.md#corpus-config-wizard), or by writing it
+[configuration file](corpus-configuration.md). This can be accomplished
+either by running the [corpus config wizard](corpus-configuration.md#corpus-config-wizard), or by writing it
 by hand. Using the wizard is usually easier, but for now, let's get our hands dirty and write it by hand!
 
 Use your text editor to create a file called `config.yaml` directly under your corpus directory. Remember to save it
@@ -154,5 +154,5 @@ It is also possible to annotate texts in other languages, e.g., English. Just ch
 
 > [!NOTE]
 > Some annotations may require
-> [additional software to be installed](user-manual/installation-and-setup.md#installing-additional-third-party-software)
+> [additional software to be installed](installation-and-setup.md#installing-additional-third-party-software)
 > before you can use them.

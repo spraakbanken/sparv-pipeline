@@ -1,0 +1,78 @@
+site_name: Sparv Pipeline
+site_url: https://spraakbanken.gu.se/sparv/
+repo_url: https://github.com/spraakbanken/sparv-pipeline
+docs_dir: mkdocs
+#copyright: Copyright &copy; 2024 Språkbanken Text
+
+theme:
+  name: material
+  palette:
+    primary: green # green
+    accent: deep orange
+  font:
+    text: Source Sans 3
+  logo: images/sparv_detailed_white.png
+  favicon: images/sparv_detailed.png
+  custom_dir: mkdocs/overrides
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.sections  # Display sections as headers (no effect when using tabs)
+    - navigation.tabs
+    - navigation.tracking
+    - navigation.top  # Go to top button
+    # - navigation.tabs.sticky
+    - toc.integrate  # Render table of contents for each page as part of the left navigation
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+  icon:
+    admonition:
+      note: octicons/tag-16
+      abstract: octicons/checklist-16
+      info: octicons/info-16
+      tip: octicons/squirrel-16
+      success: octicons/check-16
+      question: octicons/question-16
+      warning: octicons/alert-16
+      failure: octicons/x-circle-16
+      danger: octicons/zap-16
+      bug: octicons/bug-16
+      example: octicons/beaker-16
+      quote: octicons/quote-16
+nav:
+  - User Manual:
+    - Introduction: user-manual/intro.md
+    - Quick Start: user-manual/quick-start.md
+    - Installation and Setup: user-manual/installation-and-setup.md
+    - Running Sparv: user-manual/running-sparv.md
+    - Requirements for Source Files: user-manual/requirements-for-source-files.md
+    - Corpus Configuration: user-manual/corpus-configuration.md
+    - Available analyses: user-manual/available-analyses.md
+  - Developer's Guide:
+    - General Concepts: developers-guide/general-concepts.md
+    - Writing Sparv Plugins: developers-guide/writing-sparv-plugins.md
+    - Sparv Decorators: developers-guide/sparv-decorators.md
+    - Sparv Classes: developers-guide/sparv-classes.md
+    - Config Parameters: developers-guide/config-parameters.md
+    - Wildcards: developers-guide/wildcards.md
+    - Utilities: developers-guide/utilities.md
+  - Changelog: changelog.md
+not_in_nav: |  # Don't warn about certain files not being included in the navigation
+  /index.md
+extra:
+  social: [null]  # Dummy value to enable the overrides/social.html to display the SBX logo in the footer
+  version: 5.3.0.dev0 (development version)  # Sparv version
+extra_css:
+  - stylesheets/extra.css
+markdown_extensions:
+  - admonition
+  - attr_list  # Needed for image alignment
+  - pymdownx.highlight
+  - pymdownx.superfences  # Needed by highlighting
+  - toc:
+      permalink: true
+plugins:
+  - search
+  - gh-admonitions  # https://github.com/PGijsbers/admonitions

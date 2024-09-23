@@ -8,7 +8,7 @@ whitespace information) are not listed here.
 > [!NOTE]
 > **Annotations** are the names of the annotations as they are used in the corpus config file in the
 > `export.annotations` section (read more about this in the [section about corpus
-> configuration](user-manual/corpus-configuration.md#export-options)). Please observe that the annotations usually have
+> configuration](corpus-configuration.md#export-options)). Please observe that the annotations usually have
 > shorter names in the corpus exports.
 >
 >**Annotators** are the names of the annotation functions (including their module names) which are used for producing
@@ -19,7 +19,7 @@ whitespace information) are not listed here.
 
 ## Analyses for contemporary Swedish
 For analysing texts in contemporary Swedish we recommend using the [annotation
-preset](user-manual/corpus-configuration.md#annotation-presets) called `SWE_DEFAULT`.
+preset](corpus-configuration.md#annotation-presets) called `SWE_DEFAULT`.
 
 ### Sentence segmentation with PunktSentenceTokenizer
 |    |            |
@@ -180,7 +180,7 @@ preset](user-manual/corpus-configuration.md#annotation-presets) called `SWE_DEFA
 
 
 ## Analyses for Swedish from the 1800's
-We recommend using the [annotation preset](user-manual/corpus-configuration.md#annotation-presets) called `SWE_1800`.
+We recommend using the [annotation preset](corpus-configuration.md#annotation-presets) called `SWE_1800`.
 All analyses for contemporary Swedish are also available for this variety. Beyond that some analyses have been adapted
 for Swedish from the 1800's:
 
@@ -204,7 +204,7 @@ for Swedish from the 1800's:
 |**Annotators**   | - `hist:annotate_saldo` <br />- `hist:diapivot_annotate` <br />- `hist:combine_lemgrams`
 
 ## Analyses for Old Swedish
-We recommend using the [annotation preset](user-manual/corpus-configuration.md#annotation-presets) called `SWE_FSV`.
+We recommend using the [annotation preset](corpus-configuration.md#annotation-presets) called `SWE_FSV`.
 All analyses for contemporary Swedish are available for this language variety. However, we do not recommend using them
 due to the fact that the spelling often differs too much to give satisfying results. At Språkbanken Text we use the
 following analyses for texts written in Old Swedish:
@@ -244,10 +244,10 @@ following analyses for texts written in Old Swedish:
 
 ## Analyses for other languages than Swedish
 Sparv supports analyses for a number of different languages. A list of which languages are supported and what analysis
-tools are available can be found in the [installation and setup section](user-manual/installation-and-setup.md#software-for-analysing-other-languages-than-swedish).
+tools are available can be found in the [installation and setup section](installation-and-setup.md#software-for-analysing-other-languages-than-swedish).
 
 ### Analyses from TreeTagger
-We recommend using the [annotation preset](user-manual/corpus-configuration.md#annotation-presets) called `TREETAGGER`.
+We recommend using the [annotation preset](corpus-configuration.md#annotation-presets) called `TREETAGGER`.
 
 |    |            |
 |:---|:-----------|
@@ -259,7 +259,7 @@ We recommend using the [annotation preset](user-manual/corpus-configuration.md#a
 |**Annotators**   | `treetagger:annotate`
 
 ### Analyses from FreeLing
-We recommend using the [annotation preset](user-manual/corpus-configuration.md#annotation-presets) called `SBX_FREELING`
+We recommend using the [annotation preset](corpus-configuration.md#annotation-presets) called `SBX_FREELING`
 or `SBX_FREELING_FULL` (for languages supporting named entity recognition).
 
 |    |            |
@@ -272,7 +272,7 @@ or `SBX_FREELING_FULL` (for languages supporting named entity recognition).
 |**Annotators**   | `freeling:annotate` or `freeling:annotate_full` (depending on the language)
 
 ### Analyses from Stanza (for English)
-We recommend using the [annotation preset](user-manual/corpus-configuration.md#annotation-presets) called `STANZA`.
+We recommend using the [annotation preset](corpus-configuration.md#annotation-presets) called `STANZA`.
 
 |    |            |
 |:---|:-----------|
@@ -284,7 +284,7 @@ We recommend using the [annotation preset](user-manual/corpus-configuration.md#a
 |**Annotators**   | - `stanza:annotate` <br />- `stanza:make_ref`
 
 ### Analyses from Stanford Parser (for English)
-We recommend using the [annotation preset](user-manual/corpus-configuration.md#annotation-presets) called `STANFORD`.
+We recommend using the [annotation preset](corpus-configuration.md#annotation-presets) called `STANFORD`.
 
 |    |            |
 |:---|:-----------|

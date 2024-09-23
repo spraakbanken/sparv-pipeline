@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-
 # Script for syncing documentation to server
+
+# Exit on any errors
+set -e
 
 # Read variables user, host, path from config.sh
 source config.sh
@@ -8,5 +10,8 @@ source config.sh
 # Update version number
 ./set_version.sh
 
+# Build docs
+mkdocs build
+
 # Sync files
-rsync -rcLv --delete ./* $user@$host:${path:?} --exclude '*.sh' --exclude '.gitignore'
+rsync -rcLv --delete site/* $user@$host:${path:?}

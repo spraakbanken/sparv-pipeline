@@ -52,7 +52,7 @@ If you like, you can pre-build the model files. This step is optional, and the o
 first corpus will be quicker since all the models are already set up. If you skip this step, models will be downloaded
 and built automatically on demand when annotating your first corpus. Pre-building models can be done by using the
 command `sparv build-models --all`. If you do this in a directory where there is no
-[corpus config](user-manual/corpus-configuration.md) you
+[corpus config](corpus-configuration.md) you
 have to tell Sparv what language the models should be built for (otherwise the language of the corpus config is used).
 The language is provided as a three-letter code with the `--language` flag (use the `sparv languages` command for
 a list of available languages and their codes). For example, if you would like to build all the Swedish models you
@@ -93,7 +93,7 @@ The current version of hfst-SweNER is written for Python 2 while Sparv uses Pyth
 be patched. After extracting the archive, go to the `hfst-swener-0.9.3/scripts` directory and create the file
 `swener.patch` with the following contents:
 
-```
+```diff
 --- convert-namex-tags.py
 +++ convert-namex-tags.py
 @@ -1 +1 @@
@@ -135,7 +135,7 @@ On newer macOS you probably have to compile Hunpos from source. [This GitHub rep
 instructions that should work.
 
 When using Sparv with Hunpos on Windows you will have to set the config variable `hunpos.binary: hunpos-tag.exe` in your
-[corpus configuration](user-manual/corpus-configuration.md). You will also have to add the `cygwin1.dll` file that comes
+[corpus configuration](corpus-configuration.md). You will also have to add the `cygwin1.dll` file that comes
 with Hunpos to your path or copy it into your [Sparv data directory](#setting-up-sparv) along with the Hunpos binaries.
 
 ### MaltParser

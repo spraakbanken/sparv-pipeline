@@ -55,7 +55,7 @@ defines the name of the binary the hunpos module uses to run part-of-speech tagg
 options usually have default values which are defined by the module itself.
 
 When running Sparv your corpus config will be read and combined with Sparv's default config file
-(`config/config_default.yaml` in the [Sparv data directory](user-manual/installation-and-setup.md#setting-up-sparv)) and
+(`config/config_default.yaml` in the [Sparv data directory](installation-and-setup.md#setting-up-sparv)) and
 the default values defined by different Sparv modules. You can view the resulting configuration by running `sparv
 config`. Using the `config` command you can also inspect specific config variables, e.g. `sparv config metadata` or
 `sparv config metadata.language`. All default values can be overridden in your own corpus config.
@@ -380,7 +380,7 @@ combine different presets with each other.
 Sparv comes with a set of default presets, and you can use the `sparv presets` command to see which are available for
 your corpus, and which annotations they include.
 Presets are defined in YAML files and can be found in the [Sparv data
-directory](user-manual/installation-and-setup.md#setting-up-sparv) under `config/presets`. You can also add your own
+directory](installation-and-setup.md#setting-up-sparv) under `config/presets`. You can also add your own
 presets just by adding YAML files to this directory.
 
 It is possible to exclude specific annotations from a preset by using the `not` keyword. In the following example we are
@@ -515,12 +515,12 @@ to all your corpora. An alternative to creating a plugin is creating a user-defi
 similar to a plugin, but is available only to the corpus in the same directory.
 
 The full documentation for how to write a Sparv annotator can be found in the [developer's
-guide](developers-guide/writing-sparv-plugins#module-code), but here is a quick example.
+guide](../developers-guide/writing-sparv-plugins.md#module-code), but here is a quick example.
 
 > [!TIP]
 > The following example uses the `@annotator` decorator for creating an annotator, but it is possible to create
 > your own importer, exporter, installer or model builder using the appropriate Sparv decorator. You can read more about
-> decorators in the [developer's guide](developers-guide/sparv-decorators).
+> decorators in the [developer's guide](../developers-guide/sparv-decorators.md).
 
 Creating a user-defined custom annotator involves the following three steps:
 1. Create a Python script with an annotator and place it in your corpus directory
@@ -586,6 +586,6 @@ There is an example of a user-defined custom annotator in the standard-swe
 [example corpus](https://github.com/spraakbanken/sparv-pipeline/releases/latest/download/example_corpora.zip).
 
 If you need more information on how to write an annotator function please refer to the [developer's
-guide](developers-guide/writing-sparv-plugins#module-code). If you have written a rather general annotator module, you
+guide](../developers-guide/writing-sparv-plugins.md#module-code). If you have written a rather general annotator module, you
 could consider making it into a Sparv plugin. This way other people will be able to use your annotator. Read more about
-writing plugins in the [developer's guide](developers-guide/writing-sparv-plugins).
+writing plugins in the [developer's guide](../developers-guide/writing-sparv-plugins.md).

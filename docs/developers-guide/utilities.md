@@ -388,7 +388,7 @@ utilities on this page, they are found directly under `sparv.api`.
 
 ### SparvErrorMessage
 Exception (class) used to notify users of errors in a friendly way without displaying traceback. Its usage is described
-in the [Writing Sparv Plugins](developers-guide/writing-sparv-plugins#error-messages) section.
+in the [Writing Sparv Plugins](writing-sparv-plugins.md#error-messages) section.
 
 > [!NOTE]
 > Only the `message` argument should be used when raising this exception in a Sparv module.
@@ -402,7 +402,7 @@ in the [Writing Sparv Plugins](developers-guide/writing-sparv-plugins#error-mess
 
 ### get_logger()
 Get a logger that is a child of `sparv.modules`. Its usage is described in the
-[Writing Sparv Plugins](developers-guide/writing-sparv-plugins#logging) section.
+[Writing Sparv Plugins](writing-sparv-plugins.md#logging) section.
 
 **Arguments:**
 

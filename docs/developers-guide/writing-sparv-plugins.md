@@ -90,7 +90,7 @@ __description__ = "Example for a Sparv annotator that converts tokens to upperca
 
 ## Module Code
 A Sparv module is a Python package containing at least one Python script that imports [Sparv
-classes](developers-guide/sparv-classes) (and [util functions](developers-guide/utilities) if needed) which are used for
+classes](sparv-classes.md) (and [util functions](utilities.md) if needed) which are used for
 describing dependencies to other entities (e.g. annotations or models) handled or created by the pipeline. Here is the
 code for or uppercase example (taken from the [Sparv plugin
 template](https://github.com/spraakbanken/sparv-plugin-template):
@@ -187,7 +187,7 @@ logger.progress(5)
 
 ## Error Messages
 When raising critical errors that should be displayed to the user (e.g. to tell the user that he/she did something
-wrong) you should use the [SparvErrorMessage class](developers-guide/utilities#SparvErrorMessage). This will raise an
+wrong) you should use the [SparvErrorMessage class](utilities.md#sparverrormessage). This will raise an
 exception (and thus stop the current Sparv process) and notify the user of errors in a friendly way without displaying
 the usual Python traceback.
 ```python
@@ -215,7 +215,7 @@ def ...
 ```
 
 Sparv functions are only available for use if one of their languages match the language in the [corpus config
-file](user-manual/corpus-configuration.md). If no language codes are provided in the decorator, the function is
+file](../user-manual/corpus-configuration.md). If no language codes are provided in the decorator, the function is
 available for any corpus.
 
 You may also restrict a whole module, instead of just parts of a module, to one or more languages, by assigning a list

@@ -36,6 +36,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "mkdocs-material==9.5.34",
+    "mkdocs-github-admonitions-plugin==0.0.2",
     "pandocfilters==1.5.0",
     "pytest>=6.0.0",
     "pytest-sugar>=0.9.6",

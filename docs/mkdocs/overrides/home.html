@@ -1,0 +1,141 @@
+<!-- Elements added to "home.html" will only be displayed on the home page -->
+
+{% extends "main.html" %}
+{% block tabs %}
+{# super() #}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+
+<style>
+  .md-header {
+    background-color: #ffffff;
+    color: black;
+  }
+
+  /* Hide logo and title */
+  .md-header__topic, a.md-logo, .md-search {
+    display: none !important;
+  }
+
+  /* Hide main content */
+  .md-content {
+    display: none;
+  }
+
+  .md-container {
+    background-image: url("images/background.png");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: bottom right;
+    background-color: #ffffff;
+  }
+
+  .mdx-hero {
+    color: var(--md-typeset-color);
+    justify-content: center;
+  }
+
+  .mdx-hero h1 {
+    font-size: 5em;
+    margin-bottom: 1rem;
+    color: currentColor;
+    font-weight: 500;
+    font-family: "Jost", "Source Sans 3", sans-serif;
+  }
+
+  .mdx-hero h1 span.sparv {
+    color: #f0581a;
+  }
+
+  .mdx-hero p {
+    font-size: 1rem;
+  }
+
+  .mdx-hero__content {
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.75);
+    border-radius: 25px;
+  }
+
+  .mdx-hero .md-button {
+    margin-top: .5rem;
+    margin-right: .5rem;
+    color: black;
+  }
+
+  .mdx-hero .md-button--primary {
+    background-color: black;
+    color: white;
+    border-color: black;
+  }
+
+  .mdx-hero .md-button:focus,
+  .mdx-hero .md-button:hover {
+    background-color: #f0581a;
+    color: white;
+    border-color: #f0581a;
+  }
+
+  @media screen and (max-width: 30em) {
+    .mdx-hero h1 {
+      font-size: 1.4rem
+    }
+  }
+
+  @media screen and (min-width: 60em) {
+    .mdx-hero {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mdx-hero__content {
+      margin: 2rem;
+      padding: 2rem;
+    }
+  }
+
+  .sbx-logo {
+    padding-top: 2.5em;
+  }
+
+  .sbx-logo img {
+    height: 2em;
+  }
+</style>
+
+<section>
+  <div class="md-grid md-typeset">
+    <div class="mdx-hero">
+      <div class="mdx-hero__content">
+        <h1><span class="sparv">Sparv</span> Pipeline</h1>
+        <p>Språkbanken's analysis platform</p>
+        <p>v{{ config.extra.version }}</p>
+
+        <a href="user-manual/intro" class="md-button md-button--primary">
+          User Manual
+        </a>
+
+        <a href="developers-guide/general-concepts" class="md-button md-button--primary">
+          Developer's Guide
+        </a>
+
+        <a href="https://spraakbanken.gu.se/sparv/gui" target="_blank" class="md-button">
+          Sparv v2 GUI
+        </a>
+
+        <div class="sbx-logo">
+          <a target="_blank" href="https://spraakbanken.gu.se/">
+            <img src="images/sprakbanken_text.svg" alt="Språkbanken Text" draggable="false">
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+{% block content %}{% endblock %}
+{% block footer %}{% endblock %}

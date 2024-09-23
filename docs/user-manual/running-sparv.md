@@ -1,6 +1,6 @@
 # Running Sparv
 Sparv is run from the command line. Typically, you will want to run Sparv from within a corpus directory containing some
-text files (the corpus) and a [corpus config file](user-manual/corpus-configuration.md). A typical corpus directory
+text files (the corpus) and a [corpus config file](corpus-configuration.md). A typical corpus directory
 structure could look like this:
 
 ```
@@ -74,22 +74,22 @@ by adding appropriate flags. Check out the available options (`sparv clean -h`) 
 **`sparv modules`:** List available modules and annotations.
 
 **`sparv presets`:** List available annotation presets available for your corpus. You can read more about presets in the
-[section about annotation presets](user-manual/corpus-configuration.md#annotation-presets).
+[section about annotation presets](corpus-configuration.md#annotation-presets).
 
 **`sparv classes`:** List available annotation classes. You can read more about classes in the [section about annotation
-classes](user-manual/corpus-configuration.md#annotation-classes).
+classes](corpus-configuration.md#annotation-classes).
 
 **`sparv languages`:** List supported languages.
 
 ## Inspecting Corpus Details
 **`sparv config`:** This command lets you inspect the configuration for your corpus. You can read more about this in the
-[section about corpus configuration](user-manual/corpus-configuration.md).
+[section about corpus configuration](corpus-configuration.md).
 
 **`sparv files`:** By using this command you can list all available source files belonging to your corpus.
 
 ## Setting Up the Sparv Pipeline
 **`sparv setup`** and **`sparv build-models`:** These commands are explained in the section [Setting Up
-Sparv](user-manual/installation-and-setup.md#setting-up-sparv).
+Sparv](installation-and-setup.md#setting-up-sparv).
 
 ## Advanced Commands
 **`sparv run-rule`** and **`sparv create-file`:** Instruct Sparv to run the specified annotation rule or to create

@@ -2,3 +2,5 @@
 tests/**/gold_export/** filter=lfs diff=lfs merge=lfs -text
 tests/**/gold_sparv-workdir/** filter=lfs diff=lfs merge=lfs -text
 tests/**/source/** filter=lfs diff=lfs merge=lfs -text
+*.jpg filter=lfs diff=lfs merge=lfs -text
+*.png filter=lfs diff=lfs merge=lfs -text

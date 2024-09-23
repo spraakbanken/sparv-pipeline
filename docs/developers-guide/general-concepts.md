@@ -6,14 +6,14 @@ The Sparv Pipeline is made up of a core and different modules. The modules conta
 serve different purposes like reading and parsing source files, building or downloading models, producing
 annotations and producing output files that contain the source text and annotations. All of these modules (i.e. the
 code inside the `sparv/modules` directory) are replaceable. A Sparv function is decorated with a special
-[decorator](developers-guide/sparv-decorators) that tells Sparv what purpose it serves. A function's parameters hold
+[decorator](sparv-decorators.md) that tells Sparv what purpose it serves. A function's parameters hold
 information about what input is needed in order to run the function and what output is produced by it. The Sparv core
 automatically finds all decorated functions, scans their parameters and builds a registry of what modules are available
 and how they depend on each other.
 
 
 ## Annotations
-The most common Sparv function is the [annotator](developers-guide/sparv-decorators#annotator) which produces one or
+The most common Sparv function is the [annotator](sparv-decorators.md#annotator) which produces one or
 more annotations. An annotation consists of spans that hold information about what text positions it covers and an
 optional attribute for each span. For example, a function that segments a text into tokens produces a span annotation
 that tells us where each token begins and ends in the source text. A function that produces part-of-speech tags on the
@@ -31,7 +31,7 @@ the `stanza` module is called `segment.token:stanza.pos` because it adds part-of
 
 ## Dependencies
 Some Sparv functions may require annotations from other functions before they can be run. These dependencies are
-expressed in the function arguments. By using special [Sparv classes](developers-guide/sparv-classes) as default
+expressed in the function arguments. By using special [Sparv classes](sparv-classes.md) as default
 arguments in a function's signature the central Sparv registry can automatically keep track of what annotations can be
 produced by what function and in what order things need to be run. These dependencies can either be described in a
 module specific manner or in a more abstract way. For example, an annotator producing word base forms (or lemmas) may
@@ -48,7 +48,7 @@ annotations such as tokens, sentences and text units. They simplify dependencies
 the flexibility of the annotation pipeline. Many annotation modules need tokenised text as input, but they might not
 care about what tokeniser is being used. So instead of telling a module that it needs tokens produced by another
 specific module we can tell it to take the class `<token>` as input. In the [corpus
-configuration](user-manual/corpus-configuration.md) we can then set `classes.token` to `segment.token` which tells Sparv
+configuration](../user-manual/corpus-configuration.md) we can then set `classes.token` to `segment.token` which tells Sparv
 that `<token>` refers to output produced by the `segment` module.
 
 Annotation classes are valid across all modules and may be used wherever you see fit. There is no closed set of

@@ -526,7 +526,7 @@ An instance of this class represents the corpus text.
 
 ## Wildcard
 An instance of this class holds wildcard information. It is typically used in the `wildcards` list passed as an argument
-to the [`@annotator` decorator](developers-guide/sparv-decorators.md#annotator), e.g.:
+to the [`@annotator` decorator](sparv-decorators.md#annotator), e.g.:
 ```python
 @annotator("Number {annotation} by relative position within {parent}", wildcards=[
     Wildcard("annotation", Wildcard.ANNOTATION),

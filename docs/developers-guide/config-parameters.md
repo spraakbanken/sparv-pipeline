@@ -1,8 +1,8 @@
 # Config Parameters
 
 A Sparv user can steer and customise the use of Sparv functions to some extent by setting config parameters in the
-[corpus config file](user-manual/corpus-configuration.md). Each function decorated with a [Sparv
-decorator](developers-guide/sparv-decorators) (except for wizard functions) may take a `config` argument which contains
+[corpus config file](../user-manual/corpus-configuration.md). Each function decorated with a [Sparv
+decorator](sparv-decorators.md) (except for wizard functions) may take a `config` argument which contains
 a list of config parameters, their descriptions and optional default values. The config parameters declared here can
 then be referenced in the function's arguments, either by using the `Config` class, or by using the
 `[...]` syntax in other classes' arguments:
@@ -53,7 +53,7 @@ When Sparv processes the corpus configuration it will look for config values in 
 priority order:
 1. the corpus configuration file
 2. a parent corpus configuration file
-3. the default configuration file in the [Sparv data directory](user-manual/installation-and-setup.md#setting-up-sparv)
+3. the default configuration file in the [Sparv data directory](../user-manual/installation-and-setup.md#setting-up-sparv)
 4. config default values defined in the Sparv decorators (as shown above)
 
 This means that if a config parameter is given a default value in a Sparv decorator it can be overridden by the default

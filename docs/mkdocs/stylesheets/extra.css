@@ -1,0 +1,22 @@
+/* Section headings in navigation */
+.md-nav__item--section>.md-nav__link {
+    font-weight: 700;
+    color: var(--md-typeset-color) !important;
+}
+
+/* Headers */
+.md-typeset h1, .md-typeset h2, .md-typeset h3, .md-typeset h4, .md-typeset h5, .md-typeset h6 {
+    font-weight: 500;
+}
+
+/* Tab bar */
+.md-tabs {
+    background-color: var(--md-code-bg-color) !important;
+    color: var(--md-typeset-color) !important;
+}
+
+/* Bird on the intro page */
+.intro-logo {
+    width: 200px;
+    transform: scaleX(-1);
+}

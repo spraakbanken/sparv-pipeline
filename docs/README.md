@@ -3,39 +3,34 @@
 Sparv's documentation is written in markdown and can be rendered as HTML or PDF.
 
 
-## Setup HTML documentation
+## Generate HTML documentation
 
-Create symlinks to documentation directories if needed:
-```
-cd docsify
-ln -s ../user-manual user-manual
-ln -s ../developers-guide developers-guide
-ln -s ../images _media
-cd ..
+To build the HTML version of the documentation we are using `mkdocs`. Install the optional `dev` dependencies to get
+the necessary tools, i.e. by running `pip install .[dev]` in the Sparv root directory. 
+
+### Serve documentation with mkdocs
+
+```sh
+mkdocs serve
 ```
 
-Set Sparv version number:
-```
-cd doscify
+The documentation should now be available under http://localhost:8000/.
+
+### Update Sparv version number in the documentation
+
+```sh
 ./set_version.sh
-cd ..
 ```
 
-Serve documentation with python (from the `docs` directory):
-```
-python3 -m http.server --directory docsify 3000
+### Build HTML documentation
+
+```sh
+mkdocs build
 ```
 
-*or* with docsify (from the `docs` directory):
-```
-npm i docsify-cli -g
-docsify serve docsify --port 3000
-```
+### Sync HTML documentation to server
 
-The documentation should now be available under http://localhost:3000/.
-
-Sync HTML documentation to server:
-- Create a file `config.sh` inside the docsify directory containing variables `user` (the user to use for login to
+- Create a file `config.sh` inside the docs directory containing the variables `user` (the user to use for login to
   server), `host` (the address to the host) and `path` (the absolute path on the server to the root of the
   documentation)
 - Run `./sync_doc.sh`.
@@ -43,12 +38,12 @@ Sync HTML documentation to server:
 ## Render documentation as PDF
 
 Install requirements (markdown and latex):
-```
+```sh
 sudo apt-get install markdown pandoc texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra
 ```
 
 Convert User Manual and Developer's Guide from markdown to PDF:
-```
+```sh
 cd md2pdf
 ./make_pdf.sh
 ```
