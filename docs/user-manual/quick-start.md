@@ -13,7 +13,7 @@ user guide, please refer to the full documentation.
 
 ## Installation
 
-Begin by making sure that you have [Python 3.8](https://python.org/) or newer installed by running the following
+Begin by making sure that you have [Python 3.9](https://python.org/) or newer installed by running the following
 in your terminal:
 ```
 python3 --version

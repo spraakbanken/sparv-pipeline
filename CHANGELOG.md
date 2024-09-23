@@ -13,6 +13,7 @@
 
 ### Changed
 
+- Dropped support for Python 3.8.
 - The internal data format (in the `sparv-workdir` directory) has been changed for performance reasons. You will need to
   run `sparv clean` before running Sparv on any existing corpora using the old data format.
 - The parameters `append` and `allow_newline` have been removed from the Sparv class methods to simplify the code.
