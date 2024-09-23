@@ -106,7 +106,7 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token_name: s
             node_stack.pop()
 
     # Pretty formatting of XML tree
-    util.misc.indent_xml(root_span.node, indentation=INDENTATION)
+    etree.indent(root_span.node, space=INDENTATION)
 
     # We use write() instead of tostring() here to be able to get an XML declaration
     stream = io.StringIO()
