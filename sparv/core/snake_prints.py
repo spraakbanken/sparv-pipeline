@@ -196,7 +196,7 @@ def print_modules_info(
                                     elif cfg_datatype is list or typing_inspect.get_origin(cfg_datatype) is list:
                                         args = typing_inspect.get_args(cfg_datatype)
                                         if args:
-                                            datatypes.append(f"list\[{args[0].__name__}]")
+                                            datatypes.append(f"list[{args[0].__name__}]")
                                         else:
                                             datatypes.append("list")
                                     else:
