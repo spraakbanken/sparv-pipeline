@@ -427,7 +427,7 @@ rule clean:
             full_path = Path.cwd() / d
             if full_path.is_dir():
                 shutil.rmtree(full_path)
-                snake_utils.print_sparv_info(f"'{d}' directory removed")
+                snake_utils.print_sparv_info("'{}' directory removed".format(d))
                 something_removed = True
         if not something_removed:
             snake_utils.print_sparv_info("Nothing to remove")
@@ -500,7 +500,7 @@ rule list_models:
             table = Table(
                 title="Models for {}{}".format(
                     registry.languages[sparv_config.get("metadata.language")],
-                    f" ({sparv_config.get('metadata.variety')})" if sparv_config.get("metadata.variety") else ""
+                    " ({})".format(sparv_config.get("metadata.variety")) if sparv_config.get("metadata.variety") else ""
                 ),
                 box=box.SIMPLE, show_header=False, title_justify="left"
             )
@@ -576,9 +576,9 @@ if "preload" in selected_targets:
                 preload.serve(config["socket"], config["processes"], snake_storage, stop_signal)
             elif config["preload_command"] == "stop":
                 if not Path(config["socket"]).is_socket():
-                    raise SparvErrorMessage(f"Socket file '{config['socket']}' doesn't exist or isn't a socket.")
+                    raise SparvErrorMessage("Socket file '{}' doesn't exist or isn't a socket.".format(config["socket"]))
                 elif not preload.stop(config.get("socket")):
-                    raise SparvErrorMessage(f"Could not connect to socket '{config.get('socket')}'.")
+                    raise SparvErrorMessage("Could not connect to socket '{}'.".format(config.get("socket")))
 
 
 rule preload_list:
@@ -591,7 +591,7 @@ rule preload_list:
 
         for module, annotators in sorted(snake_storage.all_preloaders.items()):
             for a in sorted(annotators):
-                table.add_row(f"{module}:{a}", registry.modules[module].functions[a]["description"])
+                table.add_row("{}:{}".format(module, a), registry.modules[module].functions[a]["description"])
 
         console.print(table)
 
