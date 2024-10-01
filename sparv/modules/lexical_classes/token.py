@@ -1,7 +1,5 @@
 """Annotate words with lexical classes from Blingbring or SweFN."""
 
-from typing import List
-
 from sparv.api import Annotation, Config, Model, Output, annotator, get_logger, util
 from sparv.api.util.constants import AFFIX, DELIM, SCORESEP
 
@@ -17,7 +15,7 @@ def blingbring_words(out: Output = Output("<token>:lexical_classes.blingbring",
                      model: Model = Model("[lexical_classes.bb_word_model]"),
                      saldoids: Annotation = Annotation("<token:sense>"),
                      pos: Annotation = Annotation("<token:pos>"),
-                     pos_limit: List[str] = ["NN", "VB", "JJ", "AB"],
+                     pos_limit: list[str] = ["NN", "VB", "JJ", "AB"],
                      class_set: str = "bring",
                      disambiguate: bool = True,
                      connect_ids: bool = False,
@@ -57,7 +55,7 @@ def swefn_words(out: Output = Output("<token>:lexical_classes.swefn",
                 model: Model = Model("[lexical_classes.swefn_word_model]"),
                 saldoids: Annotation = Annotation("<token:sense>"),
                 pos: Annotation = Annotation("<token:pos>"),
-                pos_limit: List[str] = ["NN", "VB", "JJ", "AB"],
+                pos_limit: list[str] = ["NN", "VB", "JJ", "AB"],
                 disambiguate: bool = True,
                 connect_ids: bool = False,
                 delimiter: str = DELIM,
@@ -81,7 +79,7 @@ def swefn_words(out: Output = Output("<token>:lexical_classes.swefn",
                    connect_ids=connect_ids, delimiter=delimiter, affix=affix, scoresep=scoresep, lexicon=lexicon)
 
 
-def annotate_words(out: Output, model: Model, saldoids: Annotation, pos: Annotation, annotate, pos_limit: List[str],
+def annotate_words(out: Output, model: Model, saldoids: Annotation, pos: Annotation, annotate, pos_limit: list[str],
                    class_set=None, disambiguate=True, connect_ids=False, delimiter=DELIM, affix=AFFIX,
                    scoresep=SCORESEP, lexicon=None):
     """

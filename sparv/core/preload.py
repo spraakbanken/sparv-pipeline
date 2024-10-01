@@ -8,7 +8,7 @@ import struct
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Dict, Iterator
+from typing import Iterator
 
 from rich.logging import RichHandler
 
@@ -135,7 +135,7 @@ def recvall(sock, size: int):
     return buf
 
 
-def handle(client_sock, annotators: Dict[str, Preloader]):
+def handle(client_sock, annotators: dict[str, Preloader]):
     """Handle request and execute preloaded function."""
     # Get data
     data = receive_data(client_sock)
@@ -194,7 +194,7 @@ def handle(client_sock, annotators: Dict[str, Preloader]):
         annotator.preloaded = annotator.cleanup(**{**annotator.params, **{annotator.target: annotator.preloaded}})
 
 
-def worker(worker_no: int, server_socket, annotators: Dict[str, Preloader], stop_event):
+def worker(worker_no: int, server_socket, annotators: dict[str, Preloader], stop_event):
     """Listen to the socket server and handle incoming requests."""
     log.info(f"Worker {worker_no} started")
 

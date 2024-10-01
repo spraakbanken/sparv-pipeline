@@ -7,8 +7,9 @@ import logging
 import lzma
 import os
 import pickle
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Iterator, List, Optional, Tuple, Union
+from typing import Any, Optional, Union
 
 from sparv.api.classes import BaseAnnotation, BaseOutput
 from sparv.core import paths
@@ -175,7 +176,7 @@ def read_annotation(
             yield next(all_annotations[ann])
 
 
-def read_annotation_attributes(source_file: str, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]],
+def read_annotation_attributes(source_file: str, annotations: Union[list[BaseAnnotation], tuple[BaseAnnotation, ...]],
                                with_annotation_name: bool = False) -> Iterator[tuple]:
     """Yield tuples of multiple attributes on the same annotation."""
     assert isinstance(annotations, (tuple, list)), "'annotations' argument must be tuple or list"
@@ -236,7 +237,7 @@ def read_data(source_file: Optional[str], name: Union[BaseAnnotation, str]) -> A
     return data
 
 
-def split_annotation(annotation: Union[BaseAnnotation, str]) -> Tuple[str, str]:
+def split_annotation(annotation: Union[BaseAnnotation, str]) -> tuple[str, str]:
     """Split annotation into annotation name and attribute."""
     if isinstance(annotation, BaseAnnotation):
         annotation = annotation.name

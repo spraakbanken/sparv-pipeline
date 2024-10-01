@@ -5,7 +5,7 @@ import re
 import unicodedata
 import xml.etree.ElementTree as etree
 from itertools import chain
-from typing import List, Optional
+from typing import Optional
 
 from sparv.api import (Config, Headers, Namespaces, Output, Source, SourceFilename, SourceStructure,
                        SourceStructureParser, SparvErrorMessage, Text, get_logger, importer, util)
@@ -30,7 +30,7 @@ class XMLStructure(SourceStructureParser):
             ]
         }
 
-    def get_annotations(self, corpus_config: dict) -> List[str]:
+    def get_annotations(self, corpus_config: dict) -> list[str]:
         """Get, store and return XML structure."""
         if self.annotations is None:
             elements = set()
@@ -47,7 +47,7 @@ class XMLStructure(SourceStructureParser):
 @importer(
     "XML import",
     file_extension="xml",
-    outputs=Config("xml_import.elements", [], datatype=List[str]),
+    outputs=Config("xml_import.elements", [], datatype=list[str]),
     config=[
         Config(
             "xml_import.elements",
@@ -55,25 +55,25 @@ class XMLStructure(SourceStructureParser):
             description="List of elements and attributes in source file. Only needed for "
             "renaming or when used as input to other annotations, as everything "
             "is parsed whether listed or not.",
-            datatype=List[str],
+            datatype=list[str],
         ),
         Config(
             "xml_import.skip",
             [],
             description="Elements and attributes to skip. Use elementname:@contents to skip contents as well.",
-            datatype=List[str],
+            datatype=list[str],
         ),
         Config(
             "xml_import.header_elements",
             [],
             description="Elements containing header metadata. Contents will not be included in corpus text.",
-            datatype=List[str],
+            datatype=list[str],
         ),
         Config(
             "xml_import.header_data",
             [],
             description="List of header elements and attributes from which to extract metadata.",
-            datatype=List[str],
+            datatype=list[str],
         ),
         Config("xml_import.prefix", description="Optional prefix to add to annotation names.", datatype=str),
         Config("xml_import.remove_namespaces", False, description="Remove XML namespaces upon import.", datatype=bool),

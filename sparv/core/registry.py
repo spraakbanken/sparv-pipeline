@@ -6,7 +6,7 @@ import re
 from collections import defaultdict
 from enum import Enum
 from types import ModuleType
-from typing import Callable, Dict, List, Optional, Set, Tuple, Type, TypeVar
+from typing import Callable, Optional, TypeVar
 
 import typing_inspect
 
@@ -38,7 +38,7 @@ class Module:
 
     def __init__(self, name):
         self.name = name
-        self.functions: Dict[str, dict] = {}
+        self.functions: dict[str, dict] = {}
         self.description = None
         self.language = None
 
@@ -61,7 +61,7 @@ class LanguageRegistry(dict):
 _potential_annotators = defaultdict(list)
 
 # All loaded Sparv modules with their functions (possibly limited by the selected language)
-modules: Dict[str, Module] = {}
+modules: dict[str, Module] = {}
 
 # All available annotation classes for the selected language, collected from modules and corpus config
 annotation_classes = {
@@ -207,7 +207,7 @@ def add_module_to_registry(module: ModuleType, module_name: str, skip_language_c
     del _potential_annotators[module_name]
 
 
-def wizard(config_keys: List[str], source_structure: bool = False):
+def wizard(config_keys: list[str], source_structure: bool = False):
     """Return a wizard decorator."""
     def decorator(f):
         """Add wrapped function to wizard registry."""
@@ -241,14 +241,14 @@ def _annotator(
     outputs=(),
     text_annotation=None,
     structure=None,
-    language: Optional[List[str]] = None,
-    config: Optional[List[Config]] = None,
+    language: Optional[list[str]] = None,
+    config: Optional[list[Config]] = None,
     priority: Optional[int] = None,
     order: Optional[int] = None,
     abstract: bool = False,
-    wildcards: Optional[List[Wildcard]] = None,
+    wildcards: Optional[list[Wildcard]] = None,
     preloader: Optional[Callable] = None,
-    preloader_params: Optional[List[str]] = None,
+    preloader_params: Optional[list[str]] = None,
     preloader_target: Optional[str] = None,
     preloader_cleanup: Optional[Callable] = None,
     preloader_shared: bool = True,
@@ -293,13 +293,13 @@ def _annotator(
 def annotator(
     description: str,
     name: Optional[str] = None,
-    language: Optional[List[str]] = None,
-    config: Optional[List[Config]] = None,
+    language: Optional[list[str]] = None,
+    config: Optional[list[Config]] = None,
     priority: Optional[int] = None,
     order: Optional[int] = None,
-    wildcards: Optional[List[Wildcard]] = None,
+    wildcards: Optional[list[Wildcard]] = None,
     preloader: Optional[Callable] = None,
-    preloader_params: Optional[List[str]] = None,
+    preloader_params: Optional[list[str]] = None,
     preloader_target: Optional[str] = None,
     preloader_cleanup: Optional[Callable] = None,
     preloader_shared: bool = True,
@@ -324,8 +324,8 @@ def annotator(
 
 
 def importer(description: str, file_extension: str, name: Optional[str] = None, outputs=None,
-             text_annotation: Optional[str] = None, structure: Optional[Type[SourceStructureParser]] = None,
-             config: Optional[List[Config]] = None):
+             text_annotation: Optional[str] = None, structure: Optional[type[SourceStructureParser]] = None,
+             config: Optional[list[Config]] = None):
     """Return a decorator for importer functions.
 
     Args:
@@ -351,8 +351,8 @@ def importer(description: str, file_extension: str, name: Optional[str] = None, 
 def exporter(
     description: str,
     name: Optional[str] = None,
-    config: Optional[List[Config]] = None,
-    language: Optional[List[str]] = None,
+    config: Optional[list[Config]] = None,
+    language: Optional[list[str]] = None,
     priority: Optional[int] = None,
     order: Optional[int] = None,
     abstract: bool = False,
@@ -385,8 +385,8 @@ def exporter(
 def installer(
     description: str,
     name: Optional[str] = None,
-    config: Optional[List[Config]] = None,
-    language: Optional[List[str]] = None,
+    config: Optional[list[Config]] = None,
+    language: Optional[list[str]] = None,
     priority: Optional[int] = None,
     uninstaller: Optional[str] = None,
 ):
@@ -405,8 +405,8 @@ def installer(
 def uninstaller(
     description: str,
     name: Optional[str] = None,
-    config: Optional[List[Config]] = None,
-    language: Optional[List[str]] = None,
+    config: Optional[list[Config]] = None,
+    language: Optional[list[str]] = None,
     priority: Optional[int] = None,
 ):
     """Return a decorator for uninstaller functions."""
@@ -423,8 +423,8 @@ def uninstaller(
 def modelbuilder(
     description: str,
     name: Optional[str] = None,
-    config: Optional[List[Config]] = None,
-    language: Optional[List[str]] = None,
+    config: Optional[list[Config]] = None,
+    language: Optional[list[str]] = None,
     priority: Optional[int] = None,
     order: Optional[int] = None,
 ):
@@ -570,7 +570,7 @@ def handle_config(
     cfg: Config,
     module_name: str,
     rule_name: Optional[str] = None,
-    language: Optional[List[str]] = None
+    language: Optional[list[str]] = None
 ) -> None:
     """Handle Config instances."""
     if not cfg.name.startswith(module_name + "."):
@@ -638,7 +638,7 @@ def find_classes(string, match_objects: bool = False):
     return result
 
 
-def expand_variables(string, rule_name: Optional[str] = None, is_annotation: bool = False) -> Tuple[str, List[str]]:
+def expand_variables(string, rule_name: Optional[str] = None, is_annotation: bool = False) -> tuple[str, list[str]]:
     """Take a string and replace [config] references with config values, and <class> references with real annotations.
 
     Config references are replaced before classes.
@@ -685,7 +685,7 @@ def expand_variables(string, rule_name: Optional[str] = None, is_annotation: boo
         # Split if list of alternatives
         strings = [s for s in string.split(", ") for string in strings]
 
-    def expand_classes(s: str, parents: Set[str]) -> Tuple[Optional[str], Optional[str]]:
+    def expand_classes(s: str, parents: set[str]) -> tuple[Optional[str], Optional[str]]:
         classes = find_classes(s, True)
         if not classes:
             return s, None
@@ -731,7 +731,7 @@ def get_type_hint_type(type_hint):
 
     is_list = False
 
-    if origin in (list, List, tuple, Tuple):
+    if origin in (list, list, tuple, tuple):
         is_list = True
         args = typing_inspect.get_args(type_hint)
         if args and not type(args[0]) == TypeVar:
@@ -744,7 +744,7 @@ def get_type_hint_type(type_hint):
     return type_, is_list, optional
 
 
-def check_language(corpus_lang: str, langs: List[str], corpus_lang_suffix: Optional[str] = None) -> bool:
+def check_language(corpus_lang: str, langs: list[str], corpus_lang_suffix: Optional[str] = None) -> bool:
     """Check if corpus language is among a list of languages.
 
     Any suffix on corpus_lang will be ignored.

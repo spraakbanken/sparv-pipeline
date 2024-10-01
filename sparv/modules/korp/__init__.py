@@ -1,6 +1,4 @@
 """Korp-related annotators, exporters and installers."""
-from typing import List
-
 from sparv.api import Config
 from . import config, lemgram_index, wordpicture, timespan
 
@@ -11,7 +9,7 @@ __config__ = [
         "korp.modes",
         default=[{"name": "default"}],
         description="The Korp modes in which the corpus will be published",
-        datatype=List[dict],
+        datatype=list[dict],
     ),
     Config(
         "korp.protected",

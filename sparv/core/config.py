@@ -4,7 +4,7 @@ import copy
 from collections import defaultdict
 from functools import reduce
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 
 import yaml
 import yaml.scanner
@@ -39,7 +39,7 @@ config_structure = {
         "_cfg": Config("install", description="List of default installers to run", datatype=list)
     },
     PARENT: {"_source": "core", "_cfg": Config(PARENT, datatype=str)},
-    MAX_THREADS: {"_source": "core", "_cfg": Config(MAX_THREADS, datatype=Dict[str, int])},
+    MAX_THREADS: {"_source": "core", "_cfg": Config(MAX_THREADS, datatype=dict[str, int])},
     "preload": {"_source": "core", "_cfg": Config("preload", datatype=list)},
     "uninstall": {"_source": "core", "_cfg": Config("uninstall", datatype=list)}
 }

@@ -1,17 +1,16 @@
 """Word frequency list generation."""
-from typing import List
 
 from sparv.api import Config
 
 from . import stats_export, sbx_stats
 
 __config__ = [
-    Config("stats_export.annotations", description="Sparv annotations to include.", datatype=List[str]),
+    Config("stats_export.annotations", description="Sparv annotations to include.", datatype=list[str]),
     Config(
         "stats_export.source_annotations",
         description="List of annotations and attributes from the source data to include. None will be included by "
         "default.",
-        datatype=List[str],
+        datatype=list[str],
     ),
     Config("stats_export.delimiter", default="\t", description="Delimiter separating columns", datatype=str),
     Config(

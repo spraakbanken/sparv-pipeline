@@ -1,7 +1,7 @@
 """Annotators for historical Swedish."""
 
 import re
-from typing import List, Optional
+from typing import Optional
 
 import sparv.modules.saldo.saldo as saldo
 from sparv.api import Annotation, Config, Model, Output, annotator, get_logger, util
@@ -23,7 +23,7 @@ def annotate_saldo(
                                      description="Lemgrams from SALDO, Dalin and Swedberg"),
         out_baseform: Output = Output("<token>:hist.baseform", cls="token:baseform",
                                       description="Baseforms from SALDO, Dalin and Swedberg"),
-        models: List[Model] = [Model("[saldo.model]"), Model("[hist.dalin_model]"), Model("[hist.swedberg_model]")],
+        models: list[Model] = [Model("[saldo.model]"), Model("[hist.dalin_model]"), Model("[hist.swedberg_model]")],
         msd: Optional[Annotation] = Annotation("<token:msd>"),
         delimiter: str = Config("hist.delimiter"),
         affix: str = Config("hist.affix"),
@@ -58,7 +58,7 @@ def annotate_saldo_fsv(
                                      description="Lemgrams from Schlyter and Söderwall"),
         out_baseform: Output = Output("<token>:hist.baseform", cls="token:baseform",
                                       description="Baseforms from Schlyter and Söderwall"),
-        models: List[Model] = [Model("[hist.fsv_model]")],
+        models: list[Model] = [Model("[hist.fsv_model]")],
         delimiter: str = Config("hist.delimiter"),
         affix: str = Config("hist.affix"),
         precision: Optional[str] = Config("saldo.precision"),
@@ -114,7 +114,7 @@ def lemgram_fallback(
     msd: Annotation = Annotation("<token:msd>"),
     lemgram: Annotation = Annotation("<token>:saldo.lemgram"),
     key: str = Config("hist.lemgram_key"),
-    models: List[Model] = [Model("[hist.dalin_model]"), Model("[hist.swedberg_model]")],
+    models: list[Model] = [Model("[hist.dalin_model]"), Model("[hist.swedberg_model]")],
     delimiter: str = Config("hist.delimiter"),
     affix: str = Config("hist.affix"),
     models_preloaded: Optional[dict] = None
@@ -147,7 +147,7 @@ def baseform_fallback(
     msd: Annotation = Annotation("<token:msd>"),
     baseform: Annotation = Annotation("<token>:saldo.baseform"),
     key: str = Config("hist.baseform_key"),
-    models: List[Model] = [Model("[hist.dalin_model]"), Model("[hist.swedberg_model]")],
+    models: list[Model] = [Model("[hist.dalin_model]"), Model("[hist.swedberg_model]")],
     delimiter: str = Config("hist.delimiter"),
     affix: str = Config("hist.affix"),
     models_preloaded: Optional[dict] = None

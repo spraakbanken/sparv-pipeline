@@ -5,7 +5,7 @@ import re
 from collections import OrderedDict
 from glob import glob
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Config, Corpus, SourceFilename, Export,
                        ExportAnnotations, ExportAnnotationNames, ExportInput, SourceAnnotations,
@@ -22,9 +22,9 @@ CWB_MAX_LINE_LEN = 65534
         "cwb.source_annotations",
         description="List of annotations and attributes from the source data to include. Everything will be included "
                     "by default.",
-        datatype=List[str]
+        datatype=list[str]
     ),
-    Config("cwb.annotations", description="Sparv annotations to include.", datatype=List[str])
+    Config("cwb.annotations", description="Sparv annotations to include.", datatype=list[str])
 ])
 def vrt(source_file: SourceFilename = SourceFilename(),
         out: Export = Export("cwb.vrt/{file}.vrt"),

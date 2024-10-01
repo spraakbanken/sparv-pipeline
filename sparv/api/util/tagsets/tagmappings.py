@@ -41,7 +41,7 @@ saldo_to_granska: 1-many mapping between Saldo and Granska-ish
 saldo_to_parole: 1-many mapping between Saldo and Parole
 saldo_to_saldo: 1-many identity mapping of Saldo tags
 """
-from typing import Dict, Set, Union
+from typing import Union
 
 TAGSEP = "."
 
@@ -1315,7 +1315,7 @@ _suc_tag_replacements = [
 ]
 
 
-def _make_saldo_to_suc(compound: bool = False) -> Dict[str, Set[str]]:
+def _make_saldo_to_suc(compound: bool = False) -> dict[str, set[str]]:
     """Generate SALDO to SUC tag mapping."""
     import re
 
@@ -1361,12 +1361,12 @@ class Mappings:
         return getattr(self, item)
 
     @property
-    def granska_to_parole(self) -> Dict[str, str]:
+    def granska_to_parole(self) -> dict[str, str]:
         """Return Granska to Parole tag mapping."""
         return _granska_to_parole
 
     @property
-    def granska_to_suc(self) -> Dict[str, str]:
+    def granska_to_suc(self) -> dict[str, str]:
         """Return Granska to SUC tag mapping."""
         if "granska_to_suc" not in self.mappings:
             self.mappings["granska_to_suc"] = {
@@ -1375,7 +1375,7 @@ class Mappings:
         return self.mappings["granska_to_suc"]
 
     @property
-    def parole_to_granska(self) -> Dict[str, str]:
+    def parole_to_granska(self) -> dict[str, str]:
         """Return Parole to Granska tag mapping."""
         if "parole_to_granska" not in self.mappings:
             self.mappings["parole_to_granska"] = {}
@@ -1384,14 +1384,14 @@ class Mappings:
         return self.mappings["parole_to_granska"]
 
     @property
-    def parole_to_suc(self) -> Dict[str, str]:
+    def parole_to_suc(self) -> dict[str, str]:
         """Return Parole to SUC tag mapping."""
         if "parole_to_suc" not in self.mappings:
             self.mappings["parole_to_suc"] = {parole: suc for (suc, parole) in _suc_to_parole.items()}
         return self.mappings["parole_to_suc"]
 
     @property
-    def saldo_to_granska(self) -> Dict[str, str]:
+    def saldo_to_granska(self) -> dict[str, str]:
         """Return SALDO to Granska tag mapping."""
         if "saldo_to_granska" not in self.mappings:
             self.mappings["saldo_to_granska"] = {
@@ -1401,7 +1401,7 @@ class Mappings:
         return self.mappings["saldo_to_granska"]
 
     @property
-    def saldo_to_parole(self) -> Dict[str, str]:
+    def saldo_to_parole(self) -> dict[str, str]:
         """Return SALDO to Parole tag mapping."""
         if "saldo_to_parole" not in self.mappings:
             self.mappings["saldo_to_parole"] = {
@@ -1411,38 +1411,38 @@ class Mappings:
         return self.mappings["saldo_to_parole"]
 
     @property
-    def saldo_to_saldo(self) -> Dict[str, str]:
+    def saldo_to_saldo(self) -> dict[str, str]:
         """Return SALDO to SALDO tag mapping."""
         if "saldo_to_saldo" not in self.mappings:
             self.mappings["saldo_to_saldo"] = {saldo_tag: {saldo_tag} for saldo_tag in _saldo_tags}
         return self.mappings["saldo_to_saldo"]
 
     @property
-    def saldo_to_suc_compound(self) -> Dict[str, str]:
+    def saldo_to_suc_compound(self) -> dict[str, str]:
         """Return SALDO to SUC compund tag mapping."""
         if "saldo_to_suc_compound" not in self.mappings:
             self.mappings["saldo_to_suc_compound"] = _make_saldo_to_suc(compound=True)
         return self.mappings["saldo_to_suc_compound"]
 
     @property
-    def saldo_to_suc(self) -> Dict[str, str]:
+    def saldo_to_suc(self) -> dict[str, str]:
         """Return SALDO to SUC tag mapping."""
         if "saldo_to_suc" not in self.mappings:
             self.mappings["saldo_to_suc"] = _make_saldo_to_suc()
         return self.mappings["saldo_to_suc"]
 
     @property
-    def saldo_pos_to_suc(self) -> Dict[str, str]:
+    def saldo_pos_to_suc(self) -> dict[str, str]:
         """Return SALDO pos to SUC tag mapping."""
         return _saldo_pos_to_suc
 
     @property
-    def suc_descriptions(self) -> Dict[str, str]:
+    def suc_descriptions(self) -> dict[str, str]:
         """Return SUC descriptions mapping."""
         return _suc_descriptions
 
     @property
-    def suc_to_granska(self) -> Dict[str, str]:
+    def suc_to_granska(self) -> dict[str, str]:
         """Return SUC to Granska tag mapping."""
         if "suc_to_granska" not in self.mappings:
             self.mappings["suc_to_granska"] = {
@@ -1451,19 +1451,19 @@ class Mappings:
         return self.mappings["suc_to_granska"]
 
     @property
-    def suc_to_parole(self) -> Dict[str, str]:
+    def suc_to_parole(self) -> dict[str, str]:
         """Return SUC to Parole tag mapping."""
         return _suc_to_parole
 
     @property
-    def suc_to_simple(self) -> Dict[str, str]:
+    def suc_to_simple(self) -> dict[str, str]:
         """Return SUC to SUC pos tag mapping."""
         if "suc_to_simple" not in self.mappings:
             self.mappings["suc_to_simple"] = {suc: split_tag(suc)[0] for suc in tags.suc_tags}
         return self.mappings["suc_to_simple"]
 
     @property
-    def saldo_params_to_suc(self) -> Dict[str, str]:
+    def saldo_params_to_suc(self) -> dict[str, str]:
         """Return SALDO params to SUC tag mapping."""
         return saldo_params_to_suc
 
@@ -1488,31 +1488,31 @@ class Tags:
         return getattr(self, item)
 
     @property
-    def granska_tags(self) -> Set[str]:
+    def granska_tags(self) -> set[str]:
         """Return Granska tag set."""
         return self.tags["granska_tags"]
 
     @property
-    def parole_tags(self) -> Set[str]:
+    def parole_tags(self) -> set[str]:
         """Return Parole tag set."""
         if "parole_tags" not in self.tags:
             self.tags["parole_tags"] = set(mappings.parole_to_suc)
         return self.tags["parole_tags"]
 
     @property
-    def saldo_tags(self) -> Set[str]:
+    def saldo_tags(self) -> set[str]:
         """Return SALDO tag set."""
         return self.tags["saldo_tags"]
 
     @property
-    def simple_tags(self) -> Set[str]:
+    def simple_tags(self) -> set[str]:
         """Return SUC pos tag set."""
         if "simple_tags" not in self.tags:
             self.tags["simple_tags"] = set(mappings.suc_to_simple.values())
         return self.tags["simple_tags"]
 
     @property
-    def suc_tags(self) -> Set[str]:
+    def suc_tags(self) -> set[str]:
         """Return SUC tag set."""
         if "suc_tags" not in self.tags:
             self.tags["suc_tags"] = set(_suc_descriptions)

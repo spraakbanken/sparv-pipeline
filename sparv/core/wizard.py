@@ -5,7 +5,7 @@ import sys
 import textwrap
 from collections import defaultdict
 from pathlib import Path
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, Optional, Union
 
 import questionary.prompts.common
 from prompt_toolkit.shortcuts import clear as clear_screen
@@ -32,7 +32,7 @@ DONE = "✅ DONE"
 class BasicSourceStructure(SourceStructureParser):
     """Simple SourceStructureParser implementation which doesn't scan source files."""
 
-    def get_annotations(self, corpus_config: dict) -> List[str]:
+    def get_annotations(self, corpus_config: dict) -> list[str]:
         """Return annotations."""
         return self.annotations
 
@@ -94,7 +94,7 @@ class Wizard:
                 elif rule_storage.exporter and rule_made:
                     self.exporters[module_name][f_name] = rule_storage
 
-    def q(self, questions: Union[List[dict], dict], clear: bool = False, save_prompt: bool = True):
+    def q(self, questions: Union[list[dict], dict], clear: bool = False, save_prompt: bool = True):
         """Ask questions and handle interruptions.
 
         Args:
@@ -133,7 +133,7 @@ class Wizard:
         return answer
 
     @staticmethod
-    def set_defaults(questions: Union[List[dict], dict]):
+    def set_defaults(questions: Union[list[dict], dict]):
         """Add default values to questions based on existing config."""
 
         def handle_checkbox_choices(choices, config_value):
@@ -179,7 +179,7 @@ class Wizard:
 
         return questions
 
-    def get_module_wizard(self, module_wizard: Tuple[Callable, list, bool]) -> List[dict]:
+    def get_module_wizard(self, module_wizard: tuple[Callable, list, bool]) -> list[dict]:
         """Get wizard from module."""
         args = [self.corpus_config]
         if module_wizard[2]:

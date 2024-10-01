@@ -34,7 +34,7 @@ annotation is needed as input for a function, e.g. `Annotation("<token:word>")`.
 - `remove()`: Remove annotation file.
 - `read()`: Yield each line from the annotation.
 - `read_spans(decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
-- `read_attributes(annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]], with_annotation_name: bool =
+- `read_attributes(annotations: Union[list[BaseAnnotation], tuple[BaseAnnotation, ...]], with_annotation_name: bool =
   False)`: Yield tuples of multiple attributes on the same annotation.
 - `get_children(child: BaseAnnotation, orphan_alert=False)`: Return two lists.
     The first one is a list with n (= total number of parents) elements where every element is a list of indices in the
@@ -69,7 +69,7 @@ require the specified annotation for every source file in the corpus.
 - `remove(source_file: str)`: Remove annotation file.
 - `read(source_file: str)`: Yield each line from the annotation.
 - `read_spans(source_file: str, decimals=False, with_annotation_name=False)`: Yield the spans of the annotation.
-- `read_attributes(source_file: str, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]], with_annotation_name: bool =
+- `read_attributes(source_file: str, annotations: Union[list[BaseAnnotation], tuple[BaseAnnotation, ...]], with_annotation_name: bool =
   False)`: Yield tuples of multiple attributes on the same annotation.
 - `get_children(source_file: str, child: BaseAnnotation, orphan_alert=False)`: Return two lists.
     The first one is a list with n (= total number of parents) elements where every element is a list of indices in the
@@ -278,7 +278,7 @@ List of header annotation names for a given source file.
 **Methods:**
 
 - `read()`: Read the headers file and return a list of header annotation names.
-- `write(header_annotations: List[str])`: Write headers file.
+- `write(header_annotations: list[str])`: Write headers file.
 - `exists()`: Return True if headers file exists for this source file.
 - `remove()`: Remove headers file.
 

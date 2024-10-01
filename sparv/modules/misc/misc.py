@@ -1,7 +1,7 @@
 """Small annotators that don't fit as standalone python files."""
 
 import re
-from typing import List, Optional
+from typing import Optional
 
 from sparv.api import Annotation, Config, SourceFilename, Output, SparvErrorMessage, Text, Wildcard, annotator, util
 from sparv.api.util.tagsets import tagmappings, pos_to_upos, suc_to_feats
@@ -281,7 +281,7 @@ def concat(out: Output,
 
 @annotator("Concatenate two or more annotations, with an optional separator")
 def concat2(out: Output,
-            annotations: List[Annotation],
+            annotations: list[Annotation],
             separator: str = ""):
     """Concatenate two or more annotations, with an optional separator."""
     annotations = [list(a.read()) for a in annotations]

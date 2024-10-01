@@ -4,7 +4,7 @@ import shlex
 import subprocess
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 
 from sparv.api import (
     AnnotationName,
@@ -59,13 +59,13 @@ LABELS = {
         Config(
             "korp.annotations",
             description="Sparv annotations to include. Leave blank to use cwb.annotations.",
-            datatype=List[str],
+            datatype=list[str],
         ),
         Config(
             "korp.source_annotations",
             description="List of annotations and attributes from the source data to include. Leave blank to use "
             "cwb.source_annotations.",
-            datatype=List[str],
+            datatype=list[str],
         ),
         Config(
             "korp.annotation_definitions",
@@ -76,23 +76,23 @@ LABELS = {
         Config(
             "korp.context",
             description="Contexts to use in Korp, from smaller to bigger. Leave blank to detect automatically.",
-            datatype=List[Union[dict, str]]
+            datatype=list[Union[dict, str]]
         ),
         Config(
             "korp.within",
             description="Search boundaries to use in Korp, from smaller to bigger. "
             "Leave blank to detect automatically.",
-            datatype=List[Union[dict, str]]
+            datatype=list[Union[dict, str]]
         ),
-        Config("korp.custom_annotations", description="Custom Korp-annotations.", datatype=List[dict]),
+        Config("korp.custom_annotations", description="Custom Korp-annotations.", datatype=list[dict]),
         Config("korp.morphology", description="Morphologies"),
         Config("korp.reading_mode", description="Reading mode configuration", datatype=dict),
-        Config("korp.filters", description="List of annotations to use for filtering in Korp", datatype=List[str]),
+        Config("korp.filters", description="List of annotations to use for filtering in Korp", datatype=list[str]),
         Config(
             "korp.hidden_annotations",
             description="List of annotations not to include in corpus config",
             default=HIDDEN_ANNOTATIONS,
-            datatype=List[str],
+            datatype=list[str],
         ),
         Config(
             "korp.keep_undefined_annotations",
@@ -118,7 +118,7 @@ def config(
     custom_annotations: Optional[list] = Config("korp.custom_annotations"),
     morphology: Optional[list] = Config("korp.morphology"),
     reading_mode: Optional[dict] = Config("korp.reading_mode"),
-    hidden_annotations: List[AnnotationName] = Config("korp.hidden_annotations"),
+    hidden_annotations: list[AnnotationName] = Config("korp.hidden_annotations"),
     filters: Optional[list] = Config("korp.filters"),
     sentence: Optional[AnnotationName] = AnnotationName("<sentence>"),
     paragraph: Optional[AnnotationName] = AnnotationName("<paragraph>"),
@@ -414,7 +414,7 @@ def get_presets(remote_host, config_dir):
     return presets
 
 
-def build_description(description, short_description) -> Union[Dict[str, str], str]:
+def build_description(description, short_description) -> Union[dict[str, str], str]:
     """Combine description and short_description if they exist."""
     if isinstance(description, dict):
         description_dd = defaultdict(lambda: None, description)

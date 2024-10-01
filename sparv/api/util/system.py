@@ -6,7 +6,7 @@ import shlex
 import shutil
 import subprocess
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import sparv.core.paths as paths
 from sparv.api import get_logger, SparvErrorMessage
@@ -124,7 +124,7 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
 
 
 def find_binary(
-    name: Union[str, List[str]],
+    name: Union[str, list[str]],
     search_paths: Union[list, tuple] = (),
     executable: bool = True,
     allow_dir: bool = False,
@@ -216,7 +216,7 @@ def remove_path(path: Union[str, Path], host: Optional[str] = None):
             shutil.rmtree(p)
 
 
-def gpus() -> Optional[List[int]]:
+def gpus() -> Optional[list[int]]:
     """Return a list of available GPUs, sorted by free memory in descending order.
 
     Returns None on failure."""

@@ -4,7 +4,7 @@ import itertools
 import json
 import re
 from collections import defaultdict
-from typing import DefaultDict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Optional, Sequence, Union
 
 import typing_inspect
 
@@ -34,7 +34,7 @@ class String(BaseProperty):
     def __init__(
         self,
         pattern: Optional[str] = None,
-        choices: Optional[List[str]] = None,
+        choices: Optional[list[str]] = None,
         min_len: Optional[int] = None,
         max_len: Optional[int] = None,
         allow_null: bool = False,
@@ -99,7 +99,7 @@ class Array(BaseProperty):
     """Class representing an array of values."""
     def __init__(
         self,
-        items: Optional[Type[Union[String, Integer, Number, Boolean, Null, Any, "Array", "Object"]]] = None,
+        items: Optional[type[Union[String, Integer, Number, Boolean, Null, Any, "Array", "Object"]]] = None,
         **kwargs
     ):
         if items:
@@ -127,7 +127,7 @@ class Object:
         self.obj_schema = {"type": "object", **kwargs}
         self.properties = {}
         self.required = []
-        self.allof: DefaultDict[Tuple[Tuple[Object, ...], Tuple[Object, ...]], list] = defaultdict(list)
+        self.allof: defaultdict[tuple[tuple[Object, ...], tuple[Object, ...]], list] = defaultdict(list)
 
     def __hash__(self):
         return hash(json.dumps(self.schema, sort_keys=True))
@@ -145,9 +145,9 @@ class Object:
     def add_property(
         self,
         name: str,
-        prop_obj: Union[List, Union[String, Integer, Number, "Object", Any]],
+        prop_obj: Union[list, Union[String, Integer, Number, "Object", Any]],
         required: bool = False,
-        condition: Optional[Tuple[Tuple["Object", ...], Tuple["Object", ...]]] = None
+        condition: Optional[tuple[tuple["Object", ...], tuple["Object", ...]]] = None
     ) -> "Object":
         """Add a property to the object."""
         if condition and condition != NO_COND:
@@ -223,7 +223,7 @@ class JsonSchema(Object):
         return json.dumps(self.schema, indent=2)
 
 
-def get_class_from_type(t: Type) -> Type:
+def get_class_from_type(t: type) -> type:
     """Get JSON schema class from Python type."""
     types = {
         str: String,
@@ -247,12 +247,12 @@ def build_json_schema(config_structure: dict) -> dict:
         parent_obj: Optional[Object] = None,
         parent_name: Optional[str] = None,
         is_condition: Optional[bool] = False
-    ) -> DefaultDict[Tuple[Tuple[Optional[Object], ...], Tuple[Object, ...]], list]:
+    ) -> defaultdict[tuple[tuple[Optional[Object], ...], tuple[Object, ...]], list]:
         """Handle dictionary which will become an object in the JSON schema.
 
         Return a dictionary with conditionals as keys and lists of children to each conditional as values.
         """
-        conditionals: DefaultDict[Tuple[Tuple[Optional[Object], ...], Tuple[Object, ...]], list] = defaultdict(list)
+        conditionals: defaultdict[tuple[tuple[Optional[Object], ...], tuple[Object, ...]], list] = defaultdict(list)
 
         for key in structure:
             if not structure[key].get("_source"):  # Not a leaf, has children
@@ -324,7 +324,7 @@ def build_json_schema(config_structure: dict) -> dict:
 
     def handle_property(
         cfg: Config
-    ) -> Tuple[Union[BaseProperty, List[BaseProperty]], Tuple[Object, ...]]:
+    ) -> tuple[Union[BaseProperty, list[BaseProperty]], tuple[Object, ...]]:
         """Handle a property and its conditions.
 
         Args:

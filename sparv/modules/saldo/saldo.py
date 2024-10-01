@@ -2,7 +2,7 @@
 
 import itertools
 import re
-from typing import List, Optional
+from typing import Optional
 
 from sparv.api import Annotation, Config, Model, Output, annotator, get_logger, util
 
@@ -95,7 +95,7 @@ def annotate(token: Annotation = Annotation("<token>"),
              out_lemgram: Output = Output("<token>:saldo.lemgram", cls="token:lemgram", description="SALDO lemgrams"),
              out_baseform: Output = Output("<token>:saldo.baseform", cls="token:baseform",
                                            description="Baseforms from SALDO"),
-             models: List[Model] = [Model("[saldo.model]")],
+             models: list[Model] = [Model("[saldo.model]")],
              msd: Optional[Annotation] = Annotation("<token:msd>"),
              delimiter: str = Config("saldo.delimiter"),
              affix: str = Config("saldo.affix"),

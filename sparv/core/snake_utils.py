@@ -6,7 +6,7 @@ import re
 from collections import OrderedDict, defaultdict
 from itertools import combinations
 from pathlib import Path
-from typing import Any, DefaultDict, List, Optional, Set, Tuple, Union
+from typing import Any, Optional, Union
 
 import snakemake
 from snakemake.io import expand
@@ -49,14 +49,14 @@ class SnakeStorage:
         self.model_outputs = []  # Outputs from modelbuilders, used in build_models
         self.install_outputs = defaultdict(list)  # Outputs from all installers, used in rule install_corpus
         self.uninstall_outputs = defaultdict(list)  # Outputs from all uninstallers, used in rule uninstall_corpus
-        self.all_rules: List[RuleStorage] = []  # List containing all rules created
+        self.all_rules: list[RuleStorage] = []  # List containing all rules created
         self.ordered_rules = []  # List of rules containing rule order
         self.preloader_info = {}
 
         self._source_files = None  # Auxiliary variable for the source_files property
 
     @property
-    def source_files(self) -> List[str]:
+    def source_files(self) -> list[str]:
         """Get list of all available source files."""
         if self._source_files is None:
             if not sparv_config.get("import.importer"):
@@ -582,7 +582,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
 def name_custom_rule(rule, storage):
     """Create unique name for custom rule."""
-    def get_new_suffix(name: str, existing_names: List[str]) -> str:
+    def get_new_suffix(name: str, existing_names: list[str]) -> str:
         """Find a numerical suffix that leads to a unique rule name."""
         i = 2
         new_name = name + str(i)
@@ -600,7 +600,7 @@ def name_custom_rule(rule, storage):
         rule.full_name += suffix
 
 
-def check_ruleorder(storage: SnakeStorage) -> Set[Tuple[RuleStorage, RuleStorage]]:
+def check_ruleorder(storage: SnakeStorage) -> set[tuple[RuleStorage, RuleStorage]]:
     """Order rules where necessary and print warning if rule order is missing."""
     ruleorder_pairs = set()
     ordered_rules = set()
@@ -766,7 +766,7 @@ def load_config(snakemake_config):
     return config_missing
 
 
-def get_install_outputs(snake_storage: SnakeStorage, install_types: Optional[List] = None, uninstall: bool = False):
+def get_install_outputs(snake_storage: SnakeStorage, install_types: Optional[list] = None, uninstall: bool = False):
     """Collect files to be created for all (un)installations given as argument or listed in config.(un)install."""
     unknown = []
     install_outputs = []
@@ -832,7 +832,7 @@ def make_param_dict(params):
     return param_dict
 
 
-def get_reverse_config_usage() -> DefaultDict[str, list]:
+def get_reverse_config_usage() -> defaultdict[str, list]:
     """Get a dictionary with annotators as keys, and lists of the config variables they use as values."""
     reverse_config_usage = defaultdict(list)
     for config_key in sparv_config.config_usage:

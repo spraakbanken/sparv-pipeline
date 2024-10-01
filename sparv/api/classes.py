@@ -8,7 +8,7 @@ import time
 import urllib.request
 import zipfile
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Iterable, Iterator, Optional, Sequence, Union
 
 import sparv.core
 from sparv.core import io
@@ -28,7 +28,7 @@ class Base(ABC):
         self.original_name = name
         self.root = pathlib.Path.cwd()  # Save current working dir as root
 
-    def expand_variables(self, rule_name: str = "") -> List[str]:
+    def expand_variables(self, rule_name: str = "") -> list[str]:
         """Update name by replacing <class> references with annotation names, and [config] references with config values.
 
         Return a list of any unresolved config references.
@@ -70,7 +70,7 @@ class BaseAnnotation(Base):
         if is_input is not None:
             self.is_input = is_input
 
-    def expand_variables(self, rule_name: str = "") -> List[str]:
+    def expand_variables(self, rule_name: str = "") -> list[str]:
         """Update name by replacing <class> references with annotation names, and [config] references with config values.
 
         Return a list of any unresolved config references.
@@ -79,7 +79,7 @@ class BaseAnnotation(Base):
         self.name = new_value
         return rest
 
-    def split(self) -> Tuple[str, str]:
+    def split(self) -> tuple[str, str]:
         """Split name into annotation name and attribute."""
         return io.split_annotation(self.name)
 
@@ -144,7 +144,7 @@ class CommonAnnotationMixin(BaseAnnotation):
         return io.read_annotation_spans(source_file, self, decimals=decimals, with_annotation_name=with_annotation_name)
 
     @staticmethod
-    def _read_attributes(source_file: str, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]],
+    def _read_attributes(source_file: str, annotations: Union[list[BaseAnnotation], tuple[BaseAnnotation, ...]],
                          with_annotation_name: bool = False):
         """Yield tuples of multiple attributes on the same annotation."""
         return io.read_annotation_attributes(source_file, annotations, with_annotation_name=with_annotation_name)
@@ -164,7 +164,7 @@ class CommonAnnotationMixin(BaseAnnotation):
         source_file: str,
         parent: BaseAnnotation,
         child: BaseAnnotation
-    ) -> Tuple[Iterator, Iterator]:
+    ) -> tuple[Iterator, Iterator]:
         """Read parent and child annotations."""
         parent_spans = list(io.read_annotation_spans(source_file, parent, decimals=True))
         child_spans = list(io.read_annotation_spans(source_file, child, decimals=True))
@@ -263,7 +263,7 @@ class Annotation(CommonAnnotationMixin, CommonMixin, BaseAnnotation):
         """Yield the spans of the annotation."""
         return self._read_spans(self.source_file, decimals=decimals, with_annotation_name=with_annotation_name)
 
-    def read_attributes(self, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]],
+    def read_attributes(self, annotations: Union[list[BaseAnnotation], tuple[BaseAnnotation, ...]],
                         with_annotation_name: bool = False):
         """Yield tuples of multiple attributes on the same annotation."""
         return self._read_attributes(self.source_file, annotations, with_annotation_name)
@@ -343,7 +343,7 @@ class AnnotationAllSourceFiles(CommonAnnotationMixin, CommonAllSourceFilesMixin,
         """Yield the spans of the annotation."""
         return self._read_spans(source_file, decimals=decimals, with_annotation_name=with_annotation_name)
 
-    def read_attributes(self, source_file: str, annotations: Union[List[BaseAnnotation], Tuple[BaseAnnotation, ...]],
+    def read_attributes(self, source_file: str, annotations: Union[list[BaseAnnotation], tuple[BaseAnnotation, ...]],
                         with_annotation_name: bool = False):
         """Yield tuples of multiple attributes on the same annotation."""
         return self._read_attributes(source_file, annotations, with_annotation_name=with_annotation_name)
@@ -542,7 +542,7 @@ class SourceStructure(BaseAnnotation):
     def __init__(self, source_file):
         super().__init__(io.STRUCTURE_FILE, source_file)
 
-    def read(self) -> List[str]:
+    def read(self) -> list[str]:
         """Read structure file."""
         return io.read_data(self.source_file, self).split("\n")
 
@@ -560,11 +560,11 @@ class Headers(CommonMixin, BaseAnnotation):
     def __init__(self, source_file):
         super().__init__(io.HEADERS_FILE, source_file)
 
-    def read(self) -> List[str]:
+    def read(self) -> list[str]:
         """Read headers file."""
         return io.read_data(self.source_file, self).splitlines()
 
-    def write(self, header_annotations: List[str]):
+    def write(self, header_annotations: list[str]):
         """Write headers file."""
         io.write_data(self.source_file, self, "\n".join(header_annotations))
 
@@ -585,7 +585,7 @@ class Namespaces(BaseAnnotation):
         except FileNotFoundError:
             return {}
 
-    def write(self, namespaces: Dict[str, str]):
+    def write(self, namespaces: dict[str, str]):
         """Write namespace file."""
         io.write_data(self.source_file, self, "\n".join([f"{k} {v}" for k, v in namespaces.items()]))
 
@@ -630,7 +630,7 @@ class Config(str):
         min_value: Optional[Union[int, float]] = None,
         max_value: Optional[Union[int, float]] = None,
         const: Optional[Any] = None,
-        conditions: Optional[List["Config"]] = None
+        conditions: Optional[list["Config"]] = None
     ) -> None:
         self.name = name
         self.default = default
@@ -804,7 +804,7 @@ class ExportInput(str):
         self.all_files = all_files
 
 
-class ExportAnnotations(Sequence[Tuple[Annotation, Optional[str]]]):
+class ExportAnnotations(Sequence[tuple[Annotation, Optional[str]]]):
     """Iterable with annotations to include in export."""
 
     # If is_input = False the annotations won't be added to the rule's input.
@@ -835,7 +835,7 @@ class ExportAnnotationNames(ExportAnnotations):
         super().__init__(config_name)
 
 
-class ExportAnnotationsAllSourceFiles(Sequence[Tuple[AnnotationAllSourceFiles, Optional[str]]]):
+class ExportAnnotationsAllSourceFiles(Sequence[tuple[AnnotationAllSourceFiles, Optional[str]]]):
     """List of annotations to include in export."""
 
     # Always true for ExportAnnotationsAllSourceFiles
@@ -843,7 +843,7 @@ class ExportAnnotationsAllSourceFiles(Sequence[Tuple[AnnotationAllSourceFiles, O
 
     def __init__(self, config_name: str):
         self.config_name = config_name
-        self.items: Sequence[Tuple[AnnotationAllSourceFiles, Optional[str]]] = []
+        self.items: Sequence[tuple[AnnotationAllSourceFiles, Optional[str]]] = []
 
     def __getitem__(self, index: int):
         return self.items[index]
@@ -852,13 +852,13 @@ class ExportAnnotationsAllSourceFiles(Sequence[Tuple[AnnotationAllSourceFiles, O
         return len(self.items)
 
 
-class SourceAnnotations(Sequence[Tuple[Annotation, Optional[str]]]):
+class SourceAnnotations(Sequence[tuple[Annotation, Optional[str]]]):
     """Iterable with source annotations to include in export."""
 
     def __init__(self, config_name: str, source_file: Optional[str] = None, _headers: bool = False):
         self.config_name = config_name
         self.raw_list = None
-        self.annotations: Sequence[Tuple[Annotation, Optional[str]]] = []
+        self.annotations: Sequence[tuple[Annotation, Optional[str]]] = []
         self.source_file = source_file
         self.initialized = False
         self.headers = _headers
@@ -902,13 +902,13 @@ class HeaderAnnotations(SourceAnnotations):
         super().__init__(config_name, source_file, _headers=True)
 
 
-class SourceAnnotationsAllSourceFiles(Sequence[Tuple[AnnotationAllSourceFiles, Optional[str]]]):
+class SourceAnnotationsAllSourceFiles(Sequence[tuple[AnnotationAllSourceFiles, Optional[str]]]):
     """Iterable with source annotations to include in export."""
 
     def __init__(self, config_name: str, source_files: Iterable[str]=(), headers: bool = False):
         self.config_name = config_name
         self.raw_list = None
-        self.annotations: Sequence[Tuple[AnnotationAllSourceFiles, Optional[str]]] = []
+        self.annotations: Sequence[tuple[AnnotationAllSourceFiles, Optional[str]]] = []
         self.source_files = source_files
         self.initialized = False
         self.headers = headers
@@ -983,7 +983,7 @@ class SourceStructureParser(ABC):
         return {}
 
     @abstractmethod
-    def get_annotations(self, corpus_config: dict) -> List[str]:
+    def get_annotations(self, corpus_config: dict) -> list[str]:
         """Return a list of annotations including attributes.
 
         Each value has the format 'annotation:attribute' or 'annotation'.
@@ -991,7 +991,7 @@ class SourceStructureParser(ABC):
         """
         pass
 
-    def get_plain_annotations(self, corpus_config: dict) -> List[str]:
+    def get_plain_annotations(self, corpus_config: dict) -> list[str]:
         """Return a list of plain annotations without attributes.
 
         Each value has the format 'annotation'.

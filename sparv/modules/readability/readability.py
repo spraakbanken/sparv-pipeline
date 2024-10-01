@@ -1,7 +1,6 @@
 """Calculate readability measures."""
 
 from math import log
-from typing import List
 
 from sparv.api import Annotation, Output, annotator, get_logger
 
@@ -14,7 +13,7 @@ def lix(text: Annotation = Annotation("<text>"),
         word: Annotation = Annotation("<token:word>"),
         pos: Annotation = Annotation("<token:pos>"),
         out: Output = Output("<text>:readability.lix", description="LIX values for text chunks"),
-        skip_pos: List[str] = ["MAD", "MID", "PAD"],
+        skip_pos: list[str] = ["MAD", "MID", "PAD"],
         fmt: str = "%.2f"):
     """Create LIX annotation for text."""
     # Read annotation files and get parent_children relations
@@ -66,7 +65,7 @@ def ovix(text: Annotation = Annotation("<text>"),
          word: Annotation = Annotation("<token:word>"),
          pos: Annotation = Annotation("<token:pos>"),
          out: Output = Output("<text>:readability.ovix", description="OVIX values for text chunks"),
-         skip_pos: List[str] = ["MAD", "MID", "PAD"],
+         skip_pos: list[str] = ["MAD", "MID", "PAD"],
          fmt: str = "%.2f"):
     """Create OVIX annotation for text."""
     text_children, _orphans = text.get_children(word)
@@ -119,8 +118,8 @@ def ovix_calc(words):
 def nominal_ratio(text: Annotation = Annotation("<text>"),
                   pos: Annotation = Annotation("<token:pos>"),
                   out: Output = Output("<text>:readability.nk", description="Nominal ratios for text chunks"),
-                  noun_pos: List[str] = ["NN", "PP", "PC"],
-                  verb_pos: List[str] = ["PN", "AB", "VB"],
+                  noun_pos: list[str] = ["NN", "PP", "PC"],
+                  verb_pos: list[str] = ["PN", "AB", "VB"],
                   fmt: str = "%.2f"):
     """Create nominal ratio annotation for text."""
     text_children, _orphans = text.get_children(pos)
@@ -137,7 +136,7 @@ def nominal_ratio(text: Annotation = Annotation("<text>"),
     logger.progress()
 
 
-def nominal_ratio_calc(pos: List[str], noun_pos: List[str], verb_pos: List[str]):
+def nominal_ratio_calc(pos: list[str], noun_pos: list[str], verb_pos: list[str]):
     """
     Calculate nominal ratio (nominalkvot).
 
@@ -163,7 +162,7 @@ def nominal_ratio_calc(pos: List[str], noun_pos: List[str], verb_pos: List[str])
         return float('inf')
 
 
-def actual_words(cols, skip_pos: List[str]):
+def actual_words(cols, skip_pos: list[str]):
     """
     Remove words with punctuation and delimiter POS (provided by skip_pos).
 

@@ -3,7 +3,7 @@
 import logging
 import re
 from collections import OrderedDict, defaultdict
-from typing import Iterable, List, Optional, Tuple
+from typing import Iterable, Optional
 
 
 class SparvErrorMessage(Exception):
@@ -34,7 +34,7 @@ def get_logger(name):
 
 
 def parse_annotation_list(annotation_names: Optional[Iterable[str]], all_annotations: Optional[Iterable[str]] = None,
-                          add_plain_annotations: bool = True) -> List[Tuple[str, Optional[str]]]:
+                          add_plain_annotations: bool = True) -> list[tuple[str, Optional[str]]]:
     """Take a list of annotation names and possible export names, and return a list of tuples.
 
     Each list item will be split into a tuple by the string ' as '.

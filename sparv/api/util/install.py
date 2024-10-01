@@ -4,7 +4,7 @@ import os
 import shlex
 import subprocess
 from pathlib import Path
-from typing import Optional, Union, List
+from typing import Optional, Union
 
 from sparv.api import get_logger
 from sparv.api.util import system
@@ -26,7 +26,7 @@ def uninstall_path(path: Union[str, Path], host: Optional[str] = None) -> None:
     system.remove_path(path, host)
 
 
-def install_mysql(host: Optional[str], db_name: str, sqlfile: Union[str, List[str]]):
+def install_mysql(host: Optional[str], db_name: str, sqlfile: Union[str, list[str]]):
     """Insert tables and data from SQL-file(s) to local or remote MySQL database.
 
     Args:

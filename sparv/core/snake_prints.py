@@ -1,6 +1,5 @@
 """Printing functions for Snakefile."""
 import json
-from typing import List
 
 import typing_inspect
 import yaml
@@ -69,8 +68,8 @@ def print_modules_summary(snake_storage: snake_utils.SnakeStorage, json_output: 
 
 
 def print_modules_info(
-    module_types: List[str],
-    module_names: List[str],
+    module_types: list[str],
+    module_names: list[str],
     snake_storage: snake_utils.SnakeStorage,
     reverse_config_usage: dict,
     json_output: bool = False,

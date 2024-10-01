@@ -1,7 +1,7 @@
 """Export annotated corpus data to pretty-printed xml."""
 
 import os
-from typing import List, Optional
+from typing import Optional
 
 from sparv.api import (
     AllSourceFilenames,
@@ -37,17 +37,17 @@ logger = get_logger(__name__)
         datatype=str,
         pattern=r".*\{file\}.*"
     ),
-    Config("xml_export.annotations", description="Sparv annotations to include.", datatype=List[str]),
+    Config("xml_export.annotations", description="Sparv annotations to include.", datatype=list[str]),
     Config(
         "xml_export.source_annotations",
         description="List of annotations and attributes from the source data to include. Everything will be included "
                     "by default.",
-        datatype=List[str]
+        datatype=list[str]
     ),
     Config(
         "xml_export.header_annotations",
         description="List of headers from the source data to include. All headers will be included by default.",
-        datatype=List[str],
+        datatype=list[str],
     ),
     Config(
         "xml_export.include_empty_attributes",
