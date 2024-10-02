@@ -5,8 +5,9 @@ import io
 import os
 import re
 import xml.etree.ElementTree as etree
+from collections.abc import Sequence
 from shutil import copyfileobj
-from typing import Optional, Sequence
+from typing import Optional
 
 from sparv.api import SparvErrorMessage, get_logger, util
 

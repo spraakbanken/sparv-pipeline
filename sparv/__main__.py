@@ -384,6 +384,7 @@ def main():
         import snakemake
         from snakemake.logging import logger
         from snakemake.utils import available_cpu_count
+
         from sparv.core import log_handler, paths, setup
         args = parser.parse_args()
 

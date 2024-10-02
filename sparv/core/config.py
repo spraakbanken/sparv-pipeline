@@ -14,9 +14,9 @@ try:
 except ImportError:
     from yaml import SafeLoader
 
+from sparv.api.classes import Config
 from sparv.core import paths, registry
 from sparv.core.misc import SparvErrorMessage, get_logger
-from sparv.api.classes import Config
 
 logger = get_logger(__name__)
 

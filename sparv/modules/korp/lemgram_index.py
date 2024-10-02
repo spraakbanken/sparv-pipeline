@@ -16,7 +16,7 @@ from sparv.api import (
     get_logger,
     installer,
     uninstaller,
-    util
+    util,
 )
 from sparv.api.util.mysql_wrapper import MySQL
 

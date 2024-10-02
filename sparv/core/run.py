@@ -6,8 +6,8 @@ import inspect
 import logging
 import sys
 
+from sparv.api.classes import Annotation, AnnotationData, Config, Output, OutputData, SourceFilename
 from sparv.core import log_handler, paths, registry
-from sparv.api.classes import Annotation, AnnotationData, Config, SourceFilename, Output, OutputData
 
 
 def main(argv=None, log_level: str = "info"):

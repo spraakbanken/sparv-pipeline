@@ -7,8 +7,21 @@ import xml.etree.ElementTree as etree
 from itertools import chain
 from typing import Optional
 
-from sparv.api import (Config, Headers, Namespaces, Output, Source, SourceFilename, SourceStructure,
-                       SourceStructureParser, SparvErrorMessage, Text, get_logger, importer, util)
+from sparv.api import (
+    Config,
+    Headers,
+    Namespaces,
+    Output,
+    Source,
+    SourceFilename,
+    SourceStructure,
+    SourceStructureParser,
+    SparvErrorMessage,
+    Text,
+    get_logger,
+    importer,
+    util,
+)
 
 logger = get_logger(__name__)
 

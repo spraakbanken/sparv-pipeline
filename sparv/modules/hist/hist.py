@@ -3,9 +3,9 @@
 import re
 from typing import Optional
 
-import sparv.modules.saldo.saldo as saldo
 from sparv.api import Annotation, Config, Model, Output, annotator, get_logger, util
 from sparv.api.util.tagsets import tagmappings
+from sparv.modules.saldo import saldo
 
 logger = get_logger(__name__)
 

@@ -4,7 +4,7 @@ Pandoc filter for removing links that won't work in PDF and reformatting docsify
 https://pandoc.org/filters.html
 """
 
-from pandocfilters import Str, Strong, toJSONFilter, BlockQuote
+from pandocfilters import BlockQuote, Str, Strong, toJSONFilter
 
 
 def fix_document(key, value, _format, _meta):

@@ -3,7 +3,8 @@
 import logging
 import re
 from collections import OrderedDict, defaultdict
-from typing import Iterable, Optional
+from collections.abc import Iterable
+from typing import Optional
 
 
 class SparvErrorMessage(Exception):

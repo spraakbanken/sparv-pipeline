@@ -6,9 +6,9 @@ import pickle
 import socket
 import struct
 import time
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
 
 from rich.logging import RichHandler
 

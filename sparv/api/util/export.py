@@ -18,9 +18,10 @@ from sparv.api import (
     SourceAnnotationsAllSourceFiles,
     SparvErrorMessage,
     get_logger,
-    util
+    util,
 )
 from sparv.core import io
+
 from .constants import SPARV_DEFAULT_NAMESPACE, XML_NAMESPACE_SEP
 
 logger = get_logger(__name__)

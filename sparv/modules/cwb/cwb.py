@@ -7,9 +7,24 @@ from glob import glob
 from pathlib import Path
 from typing import Optional
 
-from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Config, Corpus, SourceFilename, Export,
-                       ExportAnnotations, ExportAnnotationNames, ExportInput, SourceAnnotations,
-                       SourceAnnotationsAllSourceFiles, SparvErrorMessage, exporter, get_logger, util)
+from sparv.api import (
+    AllSourceFilenames,
+    Annotation,
+    AnnotationAllSourceFiles,
+    Config,
+    Corpus,
+    Export,
+    ExportAnnotationNames,
+    ExportAnnotations,
+    ExportInput,
+    SourceAnnotations,
+    SourceAnnotationsAllSourceFiles,
+    SourceFilename,
+    SparvErrorMessage,
+    exporter,
+    get_logger,
+    util,
+)
 from sparv.modules.xml_export import xml_utils
 
 logger = get_logger(__name__)

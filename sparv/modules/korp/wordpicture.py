@@ -14,14 +14,14 @@ from sparv.api import (
     Export,
     ExportInput,
     MarkerOptional,
-    OutputMarker,
     OutputData,
+    OutputMarker,
     annotator,
     exporter,
     get_logger,
     installer,
     uninstaller,
-    util
+    util,
 )
 from sparv.api.util.mysql_wrapper import MySQL
 

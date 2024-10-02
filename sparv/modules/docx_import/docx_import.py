@@ -6,7 +6,7 @@ from typing import Optional
 from docx2python import docx2python
 from docx2python.iterators import iter_at_depth
 
-from sparv.api import Config, SourceFilename, Output, Source, SourceStructure, Text, importer, util, SparvErrorMessage
+from sparv.api import Config, Output, Source, SourceFilename, SourceStructure, SparvErrorMessage, Text, importer, util
 
 
 @importer("docx import", file_extension="docx", outputs=["text"], text_annotation="text", config=[

@@ -5,8 +5,18 @@ import xml.etree.ElementTree as etree
 import zipfile
 from typing import Optional
 
-from sparv.api import (Config, Output, Source, SourceFilename, SourceStructure, SparvErrorMessage, Text, get_logger,
-                       importer, util)
+from sparv.api import (
+    Config,
+    Output,
+    Source,
+    SourceFilename,
+    SourceStructure,
+    SparvErrorMessage,
+    Text,
+    get_logger,
+    importer,
+    util,
+)
 
 logger = get_logger(__name__)
 

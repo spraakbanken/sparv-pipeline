@@ -1,3 +1,3 @@
 """Miscellaneous annotations."""
 
-from . import misc, ids, number
+from . import ids, misc, number

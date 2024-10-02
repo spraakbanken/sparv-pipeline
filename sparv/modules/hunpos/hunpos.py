@@ -4,8 +4,17 @@ import re
 from typing import Optional
 
 from sparv.api import (
-    Annotation, Binary, Config, Model, ModelOutput, Output, SparvErrorMessage, annotator, get_logger,
-    modelbuilder, util
+    Annotation,
+    Binary,
+    Config,
+    Model,
+    ModelOutput,
+    Output,
+    SparvErrorMessage,
+    annotator,
+    get_logger,
+    modelbuilder,
+    util,
 )
 from sparv.api.util.tagsets import tagmappings
 

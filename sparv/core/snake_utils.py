@@ -11,16 +11,40 @@ from typing import Any, Optional, Union
 import snakemake
 from snakemake.io import expand
 
-from sparv.api import util, SparvErrorMessage
+from sparv.api import SparvErrorMessage, util
+from sparv.api.classes import (
+    AllSourceFilenames,
+    Annotation,
+    AnnotationAllSourceFiles,
+    AnnotationData,
+    Base,
+    BaseAnnotation,
+    BaseOutput,
+    Binary,
+    BinaryDir,
+    Config,
+    Corpus,
+    Export,
+    ExportAnnotationNames,
+    ExportAnnotations,
+    ExportAnnotationsAllSourceFiles,
+    ExportInput,
+    HeaderAnnotations,
+    HeaderAnnotationsAllSourceFiles,
+    Language,
+    Model,
+    ModelOutput,
+    Output,
+    OutputData,
+    Source,
+    SourceAnnotations,
+    SourceAnnotationsAllSourceFiles,
+    SourceFilename,
+    Text,
+)
 from sparv.core import config as sparv_config
 from sparv.core import io, log_handler, paths, registry
 from sparv.core.console import console
-from sparv.api.classes import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, AnnotationData, Base,
-                               BaseAnnotation, BaseOutput, Binary, BinaryDir, Config, Corpus, SourceFilename, Export,
-                               ExportAnnotations, ExportAnnotationNames, ExportAnnotationsAllSourceFiles, ExportInput,
-                               HeaderAnnotations, HeaderAnnotationsAllSourceFiles,
-                               Language, Model, ModelOutput, Output, OutputData, Source, SourceAnnotations,
-                               SourceAnnotationsAllSourceFiles, Text)
 
 
 class SnakeStorage:

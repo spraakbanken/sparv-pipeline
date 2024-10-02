@@ -16,8 +16,9 @@ from sparv.api import (
     Text,
     exporter,
     get_logger,
-    util
+    util,
 )
+
 from . import xml_utils
 
 logger = get_logger(__name__)

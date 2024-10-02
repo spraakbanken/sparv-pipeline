@@ -5,6 +5,7 @@ import pathlib
 import pytest
 
 from sparv.api.util.system import find_binary
+
 from . import utils
 
 

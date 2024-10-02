@@ -14,9 +14,8 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Optional
 
-import rich.box as box
-import rich.progress as progress
 from pythonjsonlogger import jsonlogger
+from rich import box, progress
 from rich.control import Control, ControlType
 from rich.logging import RichHandler
 from rich.table import Table

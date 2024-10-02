@@ -17,6 +17,7 @@ from sparv.core.console import console
 def prettyprint_yaml(in_dict: dict) -> None:
     """Pretty-print YAML."""
     from rich.syntax import Syntax
+
     from sparv.api.util.misc import dump_yaml
     yaml_str = dump_yaml(in_dict, resolve_alias=True, sort_keys=True)
     # Print syntax highlighted

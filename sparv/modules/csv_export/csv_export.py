@@ -2,8 +2,17 @@
 
 import os
 
-from sparv.api import (Annotation, Config, SourceFilename, Export, ExportAnnotations, SourceAnnotations, exporter, get_logger,
-                       util)
+from sparv.api import (
+    Annotation,
+    Config,
+    Export,
+    ExportAnnotations,
+    SourceAnnotations,
+    SourceFilename,
+    exporter,
+    get_logger,
+    util,
+)
 
 logger = get_logger(__name__)
 

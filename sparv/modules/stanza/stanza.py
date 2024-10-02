@@ -3,6 +3,7 @@
 from typing import Optional
 
 from sparv.api import Annotation, Config, Language, Model, Output, Text, annotator, get_logger, util
+
 from . import stanza_utils
 
 logger = get_logger(__name__)
@@ -40,6 +41,7 @@ def annotate(corpus_text: Text = Text(),
              cpu_fallback: bool = Config("stanza.cpu_fallback")):
     """Do dependency parsing using Stanza."""
     import torch
+
     from stanza.pipeline.core import DownloadMethod
 
     # cpu_fallback only makes sense if use_gpu is True

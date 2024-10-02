@@ -3,8 +3,18 @@
 import pickle
 from collections import defaultdict
 
-from sparv.api import (Annotation, Config, Model, ModelOutput, Output, Wildcard, annotator, get_logger, modelbuilder,
-                       util)
+from sparv.api import (
+    Annotation,
+    Config,
+    Model,
+    ModelOutput,
+    Output,
+    Wildcard,
+    annotator,
+    get_logger,
+    modelbuilder,
+    util,
+)
 
 logger = get_logger(__name__)
 

@@ -22,8 +22,9 @@ from sparv.api import (
     get_logger,
     installer,
     uninstaller,
-    util
+    util,
 )
+
 from . import xml_utils
 
 logger = get_logger(__name__)

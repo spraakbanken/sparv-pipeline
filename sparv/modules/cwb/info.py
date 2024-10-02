@@ -3,8 +3,18 @@
 import time
 from datetime import datetime
 
-from sparv.api import (AllSourceFilenames, AnnotationAllSourceFiles, AnnotationCommonData, Config, Export,
-                       OutputCommonData, SparvErrorMessage, annotator, exporter, get_logger)
+from sparv.api import (
+    AllSourceFilenames,
+    AnnotationAllSourceFiles,
+    AnnotationCommonData,
+    Config,
+    Export,
+    OutputCommonData,
+    SparvErrorMessage,
+    annotator,
+    exporter,
+    get_logger,
+)
 
 logger = get_logger(__name__)
 

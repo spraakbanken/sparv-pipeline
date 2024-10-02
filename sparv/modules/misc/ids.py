@@ -5,8 +5,17 @@ import random
 from binascii import hexlify
 from typing import Optional
 
-from sparv.api import (AllSourceFilenames, Annotation, AnnotationData, SourceFilename, Output, Wildcard,
-                       OutputDataAllSourceFiles, annotator, get_logger)
+from sparv.api import (
+    AllSourceFilenames,
+    Annotation,
+    AnnotationData,
+    Output,
+    OutputDataAllSourceFiles,
+    SourceFilename,
+    Wildcard,
+    annotator,
+    get_logger,
+)
 
 logger = get_logger(__name__)
 _ID_LENGTH = 10

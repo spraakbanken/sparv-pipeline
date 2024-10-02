@@ -8,7 +8,8 @@ import time
 import urllib.request
 import zipfile
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Iterable, Iterator, Optional, Sequence, Union
+from collections.abc import Iterable, Iterator, Sequence
+from typing import Any, Callable, Optional, Union
 
 import sparv.core
 from sparv.core import io

@@ -3,7 +3,7 @@
 import json
 import logging
 
-from sparv.api import Language, Model, ModelOutput, modelbuilder, get_logger, util
+from sparv.api import Language, Model, ModelOutput, get_logger, modelbuilder, util
 
 logger = get_logger(__name__)
 

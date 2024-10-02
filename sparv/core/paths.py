@@ -1,7 +1,7 @@
 """Paths used by Sparv."""
 import os
 from pathlib import Path
-from typing import Union, Optional
+from typing import Optional, Union
 
 import appdirs
 import yaml

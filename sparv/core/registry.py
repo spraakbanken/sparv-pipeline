@@ -10,12 +10,22 @@ from typing import Callable, Optional, TypeVar
 
 import typing_inspect
 
+from sparv.api.classes import (
+    BaseOutput,
+    Config,
+    Export,
+    ExportAnnotations,
+    ExportAnnotationsAllSourceFiles,
+    ModelOutput,
+    OutputMarker,
+    SourceAnnotations,
+    SourceStructureParser,
+    Wildcard,
+)
 from sparv.core import config as sparv_config
 from sparv.core import paths
 from sparv.core.console import console
 from sparv.core.misc import SparvErrorMessage
-from sparv.api.classes import (BaseOutput, Config, Export, ExportAnnotations, ExportAnnotationsAllSourceFiles,
-                               SourceAnnotations, SourceStructureParser, ModelOutput, OutputMarker, Wildcard)
 
 modules_path = ".".join(("sparv", paths.modules_dir))
 core_modules_path = ".".join(("sparv", paths.core_modules_dir))

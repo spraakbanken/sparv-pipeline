@@ -1,6 +1,7 @@
 """Korp-related annotators, exporters and installers."""
 from sparv.api import Config
-from . import config, lemgram_index, wordpicture, timespan
+
+from . import config, lemgram_index, timespan, wordpicture
 
 __config__ = [
     Config("korp.remote_host", description="Remote host to install to. Leave blank to install locally.", datatype=str),

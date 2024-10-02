@@ -1,6 +1,6 @@
 """Word sense disambiguation based on SALDO annotation."""
 
-from sparv.api import Annotation, Binary, Config, Model, ModelOutput, Output, annotator, modelbuilder, get_logger, util
+from sparv.api import Annotation, Binary, Config, Model, ModelOutput, Output, annotator, get_logger, modelbuilder, util
 
 logger = get_logger(__name__)
 

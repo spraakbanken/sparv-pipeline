@@ -7,8 +7,19 @@ You do not need to download any parameter files as Sparv will download these for
 """
 
 
-from sparv.api import (Annotation, Binary, Config, Language, Model, ModelOutput, Output, annotator, get_logger,
-                       modelbuilder, util)
+from sparv.api import (
+    Annotation,
+    Binary,
+    Config,
+    Language,
+    Model,
+    ModelOutput,
+    Output,
+    annotator,
+    get_logger,
+    modelbuilder,
+    util,
+)
 from sparv.api.util.tagsets import pos_to_upos
 
 logger = get_logger(__name__)

@@ -18,8 +18,9 @@ from sparv.api import (
     get_logger,
     installer,
     uninstaller,
-    util
+    util,
 )
+
 from .stats_export import freq_list
 
 logger = get_logger(__name__)

@@ -8,8 +8,8 @@ import subprocess
 from pathlib import Path
 from typing import Optional, Union
 
-import sparv.core.paths as paths
-from sparv.api import get_logger, SparvErrorMessage
+from sparv.api import SparvErrorMessage, get_logger
+from sparv.core import paths
 
 logger = get_logger(__name__)
 

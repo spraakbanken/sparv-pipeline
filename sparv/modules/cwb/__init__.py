@@ -1,6 +1,7 @@
 """Exports, encodes and aligns corpora for Corpus Workbench."""
 
 from sparv.api import Config
+
 from . import cwb, info, install_corpus
 
 __config__ = [

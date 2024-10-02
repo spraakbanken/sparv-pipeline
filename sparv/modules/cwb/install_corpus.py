@@ -14,7 +14,7 @@ from sparv.api import (
     get_logger,
     installer,
     uninstaller,
-    util
+    util,
 )
 
 logger = get_logger(__name__)

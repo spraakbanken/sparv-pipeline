@@ -3,7 +3,7 @@
 import unicodedata
 from typing import Optional
 
-from sparv.api import Config, SourceFilename, Output, Source, SourceStructure, Text, importer, util
+from sparv.api import Config, Output, Source, SourceFilename, SourceStructure, Text, importer, util
 
 
 @importer(

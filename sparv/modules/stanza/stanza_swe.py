@@ -1,6 +1,7 @@
 """POS tagging, lemmatisation and dependency parsing with Stanza."""
 
 from sparv.api import Annotation, Config, Model, Output, annotator, get_logger, util
+
 from . import stanza_utils
 
 logger = get_logger(__name__)
@@ -36,8 +37,9 @@ def annotate_swe(
         cpu_fallback: bool = Config("stanza.cpu_fallback"),
         max_token_length: int = Config("stanza.max_token_length")):
     """Do dependency parsing using Stanza."""
-    import stanza
     import torch
+
+    import stanza
     from stanza.pipeline.core import DownloadMethod
 
     # cpu_fallback only makes sense if use_gpu is True

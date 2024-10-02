@@ -7,8 +7,7 @@ import traceback
 
 from importlib_metadata import entry_points
 
-from sparv.core import io, log_handler, paths
-from sparv.core import registry
+from sparv.core import io, log_handler, paths, registry
 from sparv.core.misc import SparvErrorMessage
 
 custom_name = "custom"
@@ -62,8 +61,9 @@ use_preloader = snakemake.params.use_preloader
 preloader_busy = False
 
 if use_preloader:
-    from sparv.core import preload
     import socket
+
+    from sparv.core import preload
     sock = None
     try:
         if snakemake.params.force_preloader:

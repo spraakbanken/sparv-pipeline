@@ -5,8 +5,16 @@ import re
 from binascii import hexlify
 from collections import defaultdict
 
-from sparv.api import (AllSourceFilenames, Annotation, AnnotationAllSourceFiles, Output, OutputCommonData, Wildcard, annotator,
-                       get_logger)
+from sparv.api import (
+    AllSourceFilenames,
+    Annotation,
+    AnnotationAllSourceFiles,
+    Output,
+    OutputCommonData,
+    Wildcard,
+    annotator,
+    get_logger,
+)
 
 START_DEFAULT = 1
 

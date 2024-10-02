@@ -3,8 +3,8 @@
 import re
 from typing import Optional
 
-from sparv.api import Annotation, Config, SourceFilename, Output, SparvErrorMessage, Text, Wildcard, annotator, util
-from sparv.api.util.tagsets import tagmappings, pos_to_upos, suc_to_feats
+from sparv.api import Annotation, Config, Output, SourceFilename, SparvErrorMessage, Text, Wildcard, annotator, util
+from sparv.api.util.tagsets import pos_to_upos, suc_to_feats, tagmappings
 
 
 @annotator("Text value of a span (usually a token)", config=[

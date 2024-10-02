@@ -2,7 +2,7 @@
 
 from sparv.api import Config
 
-from . import stats_export, sbx_stats
+from . import sbx_stats, stats_export
 
 __config__ = [
     Config("stats_export.annotations", description="Sparv annotations to include.", datatype=list[str]),
