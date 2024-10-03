@@ -41,6 +41,7 @@ saldo_to_granska: 1-many mapping between Saldo and Granska-ish
 saldo_to_parole: 1-many mapping between Saldo and Parole
 saldo_to_saldo: 1-many identity mapping of Saldo tags
 """
+import re
 from typing import Union
 
 TAGSEP = "."
@@ -1317,8 +1318,6 @@ _suc_tag_replacements = [
 
 def _make_saldo_to_suc(compound: bool = False) -> dict[str, set[str]]:
     """Generate SALDO to SUC tag mapping."""
-    import re
-
     tagmap = {}
     for saldo_tag in _saldo_tags:
         params = saldo_tag.split()

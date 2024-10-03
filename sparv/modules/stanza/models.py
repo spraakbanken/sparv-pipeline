@@ -67,7 +67,7 @@ def stanza_dep_model(model: ModelOutput = ModelOutput("stanza/swe/dep/sv_talbank
 def get_model(lang: Language = Language(),
               resources_file: ModelOutput = ModelOutput("stanza/[metadata.language]/resources.json")):
     """Download Stanza language models."""
-    import stanza
+    import stanza  # noqa: PLC0415
     lang_name = util.misc.get_language_name_by_part3(lang) or lang
     stanza_lang = util.misc.get_language_part1_by_part3(lang)
     logger.info("Downloading Stanza language model for %s", lang_name)

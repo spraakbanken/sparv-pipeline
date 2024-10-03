@@ -40,9 +40,9 @@ def annotate(corpus_text: Text = Text(),
              max_sentence_length: int = Config("stanza.max_sentence_length"),
              cpu_fallback: bool = Config("stanza.cpu_fallback")):
     """Do dependency parsing using Stanza."""
-    import torch
+    import torch  # noqa: PLC0415
 
-    from stanza.pipeline.core import DownloadMethod
+    from stanza.pipeline.core import DownloadMethod  # noqa: PLC0415
 
     # cpu_fallback only makes sense if use_gpu is True
     cpu_fallback = cpu_fallback and use_gpu
@@ -117,7 +117,7 @@ def annotate(corpus_text: Text = Text(),
 
 def process_tokens(sentences, token_spans, text_data, nlp_args, stanza_args):
     """Process pre-tokenized text with Stanza."""
-    import stanza
+    import stanza  # noqa: PLC0415
 
     # Init Stanza pipeline
     nlp_args["tokenize_pretokenized"] = True
@@ -165,7 +165,7 @@ def process_tokens(sentences, token_spans, text_data, nlp_args, stanza_args):
 
 def process_sentences(sentence_spans, text_data, nlp_args, stanza_args):
     """Process pre-sentence segmented text with Stanza."""
-    import stanza
+    import stanza  # noqa: PLC0415
 
     # Init Stanza pipeline
     nlp_args["tokenize_no_ssplit"] = True
@@ -215,7 +215,7 @@ def process_sentences(sentence_spans, text_data, nlp_args, stanza_args):
 
 def process_text(text_spans, text_data, nlp_args, stanza_args):
     """Process text with Stanza (including sentence segmentation)."""
-    import stanza
+    import stanza  # noqa: PLC0415
 
     # Init Stanza pipeline
     nlp = stanza.Pipeline(**nlp_args)

@@ -37,10 +37,10 @@ def annotate_swe(
         cpu_fallback: bool = Config("stanza.cpu_fallback"),
         max_token_length: int = Config("stanza.max_token_length")):
     """Do dependency parsing using Stanza."""
-    import torch
+    import torch  # noqa: PLC0415
 
-    import stanza
-    from stanza.pipeline.core import DownloadMethod
+    import stanza  # noqa: PLC0415
+    from stanza.pipeline.core import DownloadMethod  # noqa: PLC0415
 
     # cpu_fallback only makes sense if use_gpu is True
     cpu_fallback = cpu_fallback and use_gpu
@@ -192,7 +192,7 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
            use_gpu: bool = Config("stanza.use_gpu"),
            batch_size: int = Config("stanza.batch_size")):
     """Do dependency parsing using Stanza."""
-    import stanza
+    import stanza  # noqa: PLC0415
 
     sentences, orphans = sentence.get_children(token)
     sentences.append(orphans)
@@ -256,8 +256,8 @@ def dep_parse(out_dephead: Output = Output("<token>:stanza.dephead", cls="token:
               max_sentence_length: int = Config("stanza.max_sentence_length"),
               cpu_fallback: bool = Config("stanza.cpu_fallback")):
     """Do dependency parsing using Stanza."""
-    import stanza
-    from stanza.models.common.doc import Document
+    import stanza  # noqa: PLC0415
+    from stanza.models.common.doc import Document  # noqa: PLC0415
 
     # cpu_fallback only makes sense if use_gpu is True
     cpu_fallback = cpu_fallback and use_gpu

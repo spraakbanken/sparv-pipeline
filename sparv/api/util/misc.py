@@ -157,7 +157,7 @@ class PickledLexicon:
 
 def get_language_name_by_part3(part3: str) -> Optional[str]:
     """Return language name in English given an ISO 639-3 code."""
-    import pycountry
+    import pycountry  # noqa: PLC0415
 
     lang = pycountry.languages.get(alpha_3=part3)
     return lang.name if lang else None
@@ -165,7 +165,7 @@ def get_language_name_by_part3(part3: str) -> Optional[str]:
 
 def get_language_part1_by_part3(part3: str) -> Optional[str]:
     """Return ISO 639-1 code given an ISO 639-3 code."""
-    import pycountry
+    import pycountry  # noqa: PLC0415
 
     lang = pycountry.languages.get(alpha_3=part3)
     return lang.alpha_2 if lang else None

@@ -62,7 +62,7 @@ def make_model(stats_infile, picklefile, smoothingparam=0.001, min_freq=MIN_FREQ
     The model is a LidstoneProbDist (NLTK) which has tuples (wordform, MSD-tag) as keys
     and smoothed probabilities as values.
     """
-    from nltk import FreqDist, LidstoneProbDist
+    from nltk import FreqDist, LidstoneProbDist  # noqa: PLC0415
 
     fdist = FreqDist()
     with open(stats_infile, encoding="UTF-8") as f:
