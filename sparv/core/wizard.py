@@ -161,9 +161,9 @@ class Wizard:
                 config_value = None
             if config_value is not None:
                 question_type = question["type"]
-                if question_type in ("text", "password", "input"):
+                if question_type in {"text", "password", "input"}:
                     question["default"] = config_value
-                elif question_type in ("select", "list") and question.get("choices"):
+                elif question_type in {"select", "list"} and question.get("choices"):
                     default_obj = None
                     for i, item in enumerate(question["choices"]):
                         if (isinstance(item, dict) and item["value"] == config_value) or item == config_value:

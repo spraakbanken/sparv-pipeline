@@ -93,7 +93,7 @@ def extract_pos(out: Output = Output("<token>:hist.homograph_set", description="
         affix: Character to put before and after sets of results.
     """
     def oktag(tag):
-        return tag is not None and tag.group(1) not in ["e", "sxc", "mxc"]
+        return tag is not None and tag.group(1) not in {"e", "sxc", "mxc"}
 
     def mkpos(_, thelems):
         pos = [re.search(r"\.\.(.*?)\.", lem) for lem in thelems]

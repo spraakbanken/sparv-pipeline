@@ -394,7 +394,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 continue
             rule.parameters[param_name] = annotations_list if param_list else annotations_list[0]
         # ExportAnnotations
-        elif param_type in (ExportAnnotations, ExportAnnotationNames, ExportAnnotationsAllSourceFiles):
+        elif param_type in {ExportAnnotations, ExportAnnotationNames, ExportAnnotationsAllSourceFiles}:
             if not isinstance(param_value, param_type):
                 param_value = param_type(param_value)
 
@@ -403,8 +403,8 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             if not annotations:
                 rule.missing_config.add(source)
             export_annotations = util.misc.parse_annotation_list(annotations, add_plain_annotations=False)
-            annotation_type = Annotation if param_type in (
-                ExportAnnotations, ExportAnnotationNames) else AnnotationAllSourceFiles
+            annotation_type = Annotation if param_type in {
+                ExportAnnotations, ExportAnnotationNames} else AnnotationAllSourceFiles
             plain_annotations = set()
             possible_plain_annotations = {}
             full_annotations = {}  # Using a dict for deduplication (parse_annotation_list's deduping isn't enough)
@@ -438,7 +438,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             param_value.items = items
             rule.parameters[param_name] = param_value
         # SourceAnnotations
-        elif param_type in (SourceAnnotations, SourceAnnotationsAllSourceFiles):
+        elif param_type in {SourceAnnotations, SourceAnnotationsAllSourceFiles}:
             if not isinstance(param_value, param_type):
                 param_value = param_type(param_value)
             param_value: Union[SourceAnnotations, SourceAnnotationsAllSourceFiles]
@@ -452,7 +452,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             else:
                 rule.inputs.append(paths.work_dir / get_annotation_path(io.STRUCTURE_FILE, data=True))
         # HeaderAnnotations
-        elif param_type in (HeaderAnnotations, HeaderAnnotationsAllSourceFiles):
+        elif param_type in {HeaderAnnotations, HeaderAnnotationsAllSourceFiles}:
             if not isinstance(param_value, param_type):
                 param_value = param_type(param_value)
             param_value.raw_list = sparv_config.get(param_value.config_name)
@@ -499,7 +499,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 else:
                     rule.parameters[param_name] = model_param[0]
         # Binary
-        elif param_type in (Binary, BinaryDir):
+        elif param_type in {Binary, BinaryDir}:
             rule.configs.update(registry.find_config_variables(param.default))
             rule.classes.update(registry.find_classes(param.default))
             param_value, missing_configs = registry.expand_variables(param.default, rule.full_name)

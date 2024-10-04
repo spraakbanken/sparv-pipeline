@@ -171,7 +171,7 @@ def _eng_Penn_convert(pos):
         "LS": "X",
         "SYM": "SYM"
     }
-    if pos in ["NN", "NNS"]:
+    if pos in {"NN", "NNS"}:
         return "NOUN"
     if pos.startswith("N"):
         return "PROPN"
@@ -210,7 +210,7 @@ def _bul_BulTreeBank_convert(pos):
         "R": "ADP",
         "I": "INTJ"
     }
-    if pos[0] in ["N", "V", "C"]:
+    if pos[0] in {"N", "V", "C"}:
         return pos_dict.get(pos[0:2], FALLBACK)
     if pos.startswith("PT"):
         return "PUNCT"
@@ -403,7 +403,7 @@ def _ron_MULTEXT_convert(pos):
         "Y": "X",  # abbreviation
         "X": "X"
     }
-    if pos[0] in ["N", "V", "C", "S"]:
+    if pos[0] in {"N", "V", "C", "S"}:
         return pos_dict.get(pos[0:2], FALLBACK)
     else:
         return pos_dict.get(pos[0], FALLBACK)

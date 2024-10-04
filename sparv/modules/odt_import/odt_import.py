@@ -94,7 +94,7 @@ class OdtParser():
         # Iterate the XML and extract all strings
         self.text = ""
         for child in content.iter():
-            if child.tag in [self.ns("text:p"), self.ns("text:h")]:
+            if child.tag in {self.ns("text:p"), self.ns("text:h")}:
                 self.text += self.get_text(child) + "\n\n"
         # Remove the final two linebreaks
         if self.text:

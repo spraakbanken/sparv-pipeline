@@ -138,7 +138,7 @@ def read_xml(xml):
                 [lexicon.update({d: {'saldo': saldo, 'match': m}}) for (d, m) in dalin]
 
             # Done parsing section. Clear tree to save memory
-            if elem.tag in ['LexicalEntry', 'frame', 'resFrame']:
+            if elem.tag in {'LexicalEntry', 'frame', 'resFrame'}:
                 root.clear()
 
     testwords = ["tigerhjerta..nn.1",

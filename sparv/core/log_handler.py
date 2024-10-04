@@ -642,7 +642,7 @@ class LogHandler:
             else:
                 self.handled_error = True
 
-        elif level in ("warning", "job_error"):
+        elif level in {"warning", "job_error"}:
             # Save other errors and warnings for later
             if msg.get("msg"):
                 self.messages["unhandled_error"].append(msg)

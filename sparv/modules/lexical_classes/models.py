@@ -173,7 +173,7 @@ def read_swefn(xml, verbose=True):
                     lexicon.setdefault(saldosense, set()).add(sid)
 
             # Done parsing section. Clear tree to save memory
-            if elem.tag in ['LexicalEntry', 'frame', 'resFrame']:
+            if elem.tag in {'LexicalEntry', 'frame', 'resFrame'}:
                 root.clear()
 
     testwords = ["slant..1",

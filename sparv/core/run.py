@@ -71,7 +71,7 @@ def main(argv=None, log_level: str = "info"):
             f_args = {"type": arg_type}
             if not required:
                 # Check if the default value is of a type we can handle when running a single module alone
-                if (arg_type in (str, int, bool) and not isinstance(param_default, Config)) or param_default is None:
+                if (arg_type in {str, int, bool} and not isinstance(param_default, Config)) or param_default is None:
                     # We can handle this
                     f_args["default"] = param_default
                     if arg_type == bool and param_default is False:
@@ -99,7 +99,7 @@ def main(argv=None, log_level: str = "info"):
     source_file = args.source_file if "source_file" in args else None
     has_source = args.has_source_ if "has_source_" in args else False
     for k, v in vars(args).items():
-        if k in ("f_", "_annotator", "has_source_"):
+        if k in {"f_", "_annotator", "has_source_"}:
             continue
         if not has_source and k in "source_file":
             continue

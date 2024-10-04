@@ -183,8 +183,8 @@ def read_lmf(xml, tagmap, annotation_elements=("gf", "lem", "saldo"), verbose=Tr
                     x_insert = "1"
 
                 # Only vbm and certain paradigms allow gaps
-                gap_allowed = (pos == "vbm" or p in (
-                    "abm_x1_var_än", "knm_x_ju_ju", "pnm_x1_inte_ett_dugg", "pnm_x1_vad_än", "ppm_x1_för_skull"))
+                gap_allowed = (pos == "vbm" or p in {
+                    "abm_x1_var_än", "knm_x_ju_ju", "pnm_x1_inte_ett_dugg", "pnm_x1_vad_än", "ppm_x1_för_skull"})
 
                 table = elem.find("table")
                 multiwords = []
@@ -193,7 +193,7 @@ def read_lmf(xml, tagmap, annotation_elements=("gf", "lem", "saldo"), verbose=Tr
                     word = form.findtext("wf")
                     param = form.findtext("param")
 
-                    if param in ("frag", "c", "ci", "cm"):
+                    if param in {"frag", "c", "ci", "cm"}:
                         # We don't use these wordforms, so skip
                         continue
                     elif param[-1].isdigit() and param[-2:] != "-1":
@@ -221,7 +221,7 @@ def read_lmf(xml, tagmap, annotation_elements=("gf", "lem", "saldo"), verbose=Tr
                             lexicon.setdefault(word, {}).setdefault(annotations, (set(), set(), False, False))[0].update(tags)
 
             # Done parsing section. Clear tree to save memory
-            if elem.tag in ["LexicalEntry", "frame", "resFrame"]:
+            if elem.tag in {"LexicalEntry", "frame", "resFrame"}:
                 root.clear()
 
     testwords = ["äggtoddyarna",

@@ -546,7 +546,7 @@ def _add_to_registry(annotator: dict, skip_language_check: bool = False):
                 raise SparvErrorMessage(f"Illegal export path for export '{val.default}' in module '{module_name}'. "
                                         "The export subdirectory must include the module name as prefix.")
 
-    if annotator["type"] in (Annotator.installer, Annotator.uninstaller) and not has_marker:
+    if annotator["type"] in {Annotator.installer, Annotator.uninstaller} and not has_marker:
         raise SparvErrorMessage(f"'{rule_name}' creates no OutputMarker, which is required by all installers and "
                                 "uninstallers.")
 
@@ -741,7 +741,7 @@ def get_type_hint_type(type_hint):
 
     is_list = False
 
-    if origin in (list, list, tuple, tuple):
+    if origin in {list, list, tuple, tuple}:
         is_list = True
         args = typing_inspect.get_args(type_hint)
         if args and not type(args[0]) == TypeVar:

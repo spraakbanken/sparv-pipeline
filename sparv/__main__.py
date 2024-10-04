@@ -425,7 +425,7 @@ def main():
         print(f"{e.strerror}: {e.filename!r}")
         sys.exit(1)
 
-    if args.command not in ("autocomplete", "build-models", "languages", "schema"):
+    if args.command not in {"autocomplete", "build-models", "languages", "schema"}:
         if not config_exists:
             print(f"No config file ({paths.config_file}) found in working directory.")
             sys.exit(1)
@@ -452,7 +452,7 @@ def main():
     dry_run = False
     keep_going = False
 
-    if args.command in ("modules", "config", "files", "clean", "presets", "classes", "languages", "preload", "schema"):
+    if args.command in {"modules", "config", "files", "clean", "presets", "classes", "languages", "preload", "schema"}:
         snakemake_args["targets"] = [args.command]
         simple_target = True
         if args.command == "clean":
@@ -483,7 +483,7 @@ def main():
             # For the schema we include modules from all languages
             config["language"] = "__all__"
 
-    elif args.command in ("run", "run-rule", "create-file", "install", "uninstall", "build-models"):
+    elif args.command in {"run", "run-rule", "create-file", "install", "uninstall", "build-models"}:
         try:
             cores = args.cores or available_cpu_count()
         except NotImplementedError:

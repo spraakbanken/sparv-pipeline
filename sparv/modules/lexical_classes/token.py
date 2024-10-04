@@ -26,7 +26,7 @@ def blingbring_words(out: Output = Output("<token>:lexical_classes.blingbring",
     """Blingbring specific wrapper for annotate_words. See annotate_words for more info."""
     # pos_limit="NN VB JJ AB" | None
 
-    if class_set not in ["bring", "roget_head", "roget_subsection", "roget_section", "roget_class"]:
+    if class_set not in {"bring", "roget_head", "roget_subsection", "roget_section", "roget_class"}:
         logger.warning("Class '%s' not available. Fallback to 'bring'.")
         class_set = "bring"
 

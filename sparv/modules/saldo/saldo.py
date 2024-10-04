@@ -341,7 +341,7 @@ def _find_multiword_expressions(incomplete_multis, complete_multis, thewords, re
                 # For completed noun multis, check that at least one of the words is a noun:
                 elif not skip_pos_check and "..nnm." in x[0]["lem"][0]:
                     for tag in msdtag_list:
-                        if tag[:2] in ("NN", "PM", "UO"):
+                        if tag[:2] in {"NN", "PM", "UO"}:
                             complete_multis.append((x[2], x[0]))
                             break
 

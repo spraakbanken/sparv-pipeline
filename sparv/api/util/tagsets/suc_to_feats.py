@@ -45,7 +45,7 @@ def suc_to_feats(pos, msd, delim="."):
     msd = [i for i in msd.split(delim) if i != "-"]
 
     # If it's not punctuation and if there are MSDs apart from POS
-    if pos not in ["MAD", "MID", "PAD"] and len(msd) > 1:
+    if pos not in {"MAD", "MID", "PAD"} and len(msd) > 1:
         feats = []
         for i in msd:
             if MSD_TO_FEATS.get(i):

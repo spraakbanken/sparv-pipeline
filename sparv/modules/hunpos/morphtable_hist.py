@@ -35,7 +35,7 @@ def hist_morphtable(out: ModelOutput = ModelOutput("hunpos/hist/dalinm-swedberg_
 
         # try ignoring gender, m/f => u
         for i, param in enumerate(params):
-            if param.strip() in ["m", "f"]:
+            if param.strip() in {"m", "f"}:
                 params[i] = "u"
         new_suc = saldo_to_suc.get(" ".join(params), "")
 

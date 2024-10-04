@@ -220,7 +220,7 @@ class SaldoCompLexicon:
     def get_suffixes(self, suffix, msd=None):
         """Get all possible suffixes."""
         return [(suffix, s[0], tuple(s[3])) for s in self.lookup(suffix)
-                if (s[2] in ("nn", "vb", "av") or s[2][-1] == "h")
+                if (s[2] in {"nn", "vb", "av"} or s[2][-1] == "h")
                 and set(s[1]).difference({"c", "ci", "cm", "sms"})
                 and (msd in s[3] or not msd or [partial for partial in s[3] if partial.startswith(msd[:msd.find(".")])])
                 ]
@@ -287,7 +287,7 @@ class InFileLexicon:
     def get_suffixes(self, suffix, msd=None):
         """Get all possible suffixes."""
         return [(suffix, "0", (s[1],)) for s in self.lookup(suffix.lower())
-                if (s[1][0:2] in ("NN", "VB", "AV"))
+                if (s[1][0:2] in {"NN", "VB", "AV"})
                 and (not msd or msd in s[1] or s[1].startswith(msd[:msd.find(".")]))
                 ]
 
@@ -434,13 +434,13 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
 
 def exception(w):
     """Filter out unwanted suffixes."""
-    return w.lower() in [
+    return w.lower() in {
         "il", "ör", "en", "ens", "ar", "ars",
         "or", "ors", "ur", "urs", "lös", "tik", "bar",
         "lik", "het", "hets", "lig", "ligt", "te", "tet", "tets",
         "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l",
         "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x",
-        "y", "z", "ä"]
+        "y", "z", "ä"}
 
 
 def three_consonant_rule(compound):
@@ -644,7 +644,7 @@ def read_lmf(xml: pathlib.Path, tagset: str = "SUC"):
                             lexicon[word][lem].setdefault("tags", set()).update(tags)
 
             # Done parsing section. Clear tree to save memory
-            if elem.tag in ["LexicalEntry", "frame", "resFrame"]:
+            if elem.tag in {"LexicalEntry", "frame", "resFrame"}:
                 root.clear()
 
     logger.info("OK, read")

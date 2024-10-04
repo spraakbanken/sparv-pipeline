@@ -91,7 +91,7 @@ def do_segmentation(text: Text, out: Output, segmenter, chunk: Optional[Annotati
 
     segmenter_args = {}
     if model and "model" in inspect.getfullargspec(segmenter).args:
-        if model.path.suffix in [".pickle", ".pkl"]:
+        if model.path.suffix in {".pickle", ".pkl"}:
             with open(model.path, "rb") as M:
                 model_arg = pickle.load(M, encoding="UTF-8")
         else:
@@ -173,7 +173,7 @@ def build_tokenlist(saldo_model: Model = Model("saldo/saldo.pickle"),
     """Build a list of words from a SALDO model, to help BetterWordTokenizer."""
     segmenter_args = []
     if model:
-        if model.path.suffix in [".pickle", ".pkl"]:
+        if model.path.suffix in {".pickle", ".pkl"}:
             with open(model.path, "rb") as m:
                 model_arg = pickle.load(m)
         else:
@@ -322,9 +322,9 @@ class BetterWordTokenizer:
                             self.case_sensitive = (val.lower() == "true")
                         elif key.startswith("misc_"):
                             self.patterns["misc"].append(val)
-                        elif key in ("start", "within", "end"):
+                        elif key in {"start", "within", "end"}:
                             self.patterns[key] = re.escape(val)
-                        elif key in ("multi", "number"):
+                        elif key in {"multi", "number"}:
                             self.patterns[key] = val
                         # For backwards compatibility
                         elif key == "token_list":

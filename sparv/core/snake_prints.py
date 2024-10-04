@@ -188,7 +188,7 @@ def print_modules_info(
                                                 config_object.choices) else config_object.choices
                                         if config_object.pattern:
                                             config_info["pattern"] = config_object.pattern
-                                    elif cfg_datatype in (int, float):
+                                    elif cfg_datatype in {int, float}:
                                         datatypes.append(cfg_datatype.__name__)
                                         if config_object.min_value is not None:
                                             config_info["min_value"] = config_object.min_value

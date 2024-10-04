@@ -261,7 +261,7 @@ class Terminal:
         return 1
 
     def is_punctuation(self):
-        return self.t.pos in ["MAD", "MID", "PAD"]
+        return self.t.pos in {"MAD", "MID", "PAD"}
 
     def is_name(self):
         return self.t.pos == "PM"
@@ -469,7 +469,7 @@ def _get_coord_label(in_list):
 
 def _has_subject(token):
     for c in token.deps:
-        if c.deprel in ["SS", "ES", "FS"] and c.pos != "IE":
+        if c.deprel in {"SS", "ES", "FS"} and c.pos != "IE":
             return True
     return False
 
@@ -489,7 +489,7 @@ def _starts_with_wh(token):
     for c in token.deps:
         if (c.position < token.position) and (c.pos[0] == "H"):
             return True
-        if c.pos not in ["MAD", "MID", "PAD"]:
+        if c.pos not in {"MAD", "MID", "PAD"}:
             return False
     return False
 

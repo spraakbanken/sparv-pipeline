@@ -158,7 +158,7 @@ def read_lmf(xml, annotation_elements=("writtenForm", "lemgram"), verbose=True, 
                                 lexicon.setdefault(word, {}).setdefault(annotations, (set(), set(), False, False))[0].update(tags)
 
             # Done parsing section. Clear tree to save memory
-            if elem.tag in ["LexicalEntry", "frame", "resFrame"]:
+            if elem.tag in {"LexicalEntry", "frame", "resFrame"}:
                 root.clear()
     if verbose:
         testwords = ["äplebuske",
