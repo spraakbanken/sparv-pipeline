@@ -11,7 +11,7 @@ def fix_document(key, value, _format, _meta):
     """Remove links that won't work in PDF and reformat docsify block quotes."""
     if key == "Link":
         url = value[2][0]
-        if url.startswith("user-manual") or url.startswith("developers-guide"):
+        if url.startswith(("user-manual", "developers-guide")):
             # Return the link text
             return value[1]
     # Reformat the text inside block quotes

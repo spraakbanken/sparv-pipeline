@@ -58,12 +58,12 @@ def saldo_morphtable(out: ModelOutput = ModelOutput("hunpos/saldo_suc-tags.morph
                         if add_capitalized:
                             # Add a capitalized form of the word
                             capitalized = word[0].upper() + word[1:]
-                            if not word == capitalized:
+                            if word != capitalized:
                                 tags[capitalized].add(msd)
                         if add_lowercase:
                             # Add a lower case form of the word
                             lower = word.lower()
-                            if not word == lower:
+                            if word != lower:
                                 tags[lower].add(msd)
 
     # Read SUC words
@@ -75,7 +75,7 @@ def saldo_morphtable(out: ModelOutput = ModelOutput("hunpos/saldo_suc-tags.morph
             if word in tags:
                 del tags[word]
             # If the word is not a name, and exists as lowercase in SALDO, remove it
-            elif not msd.startswith("PM") and not word.lower() == word and word.lower() in tags:
+            elif not msd.startswith("PM") and word.lower() != word and word.lower() in tags:
                 del tags[word.lower()]
 
     # Read regular expressions from pattern file

@@ -29,7 +29,7 @@ def setup_wizard(_: dict):
         "type": "path",
         "name": "import.source_dir",
         "message": "Relative path to the current directory containing your source files:",
-        "validate": lambda x: os.path.isdir(x),
+        "validate": os.path.isdir,
         "default": paths.source_dir
     }]
 

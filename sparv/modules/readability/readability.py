@@ -53,9 +53,9 @@ def lix_calc(sentences):
             word_counter += 1
             length_counter += int(len(word) > 6)
     if word_counter == 0 and sentence_counter == 0:
-        return float('NaN')
+        return float("NaN")
     elif word_counter == 0 or sentence_counter == 0:
-        return float('inf')
+        return float("inf")
     else:
         return word_counter / sentence_counter + 100 * length_counter / word_counter
 
@@ -107,9 +107,9 @@ def ovix_calc(words):
             seen.add(word)
             uw += 1
     if w == 0:
-        return float('NaN')
+        return float("NaN")
     elif uw == w:
-        return float('inf')
+        return float("inf")
     else:
         return log(w) / log(2 - log(uw) / log(w))
 
@@ -159,7 +159,7 @@ def nominal_ratio_calc(pos: list[str], noun_pos: list[str], verb_pos: list[str])
         nk = float(nouns) / float(verbs)
         return nk
     except ZeroDivisionError:
-        return float('inf')
+        return float("inf")
 
 
 def actual_words(cols, skip_pos: list[str]):

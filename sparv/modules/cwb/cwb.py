@@ -243,7 +243,7 @@ def cwb_encode(corpus, annotations, source_annotations, source_files, words, vrt
 
     # Get VRT structs
     struct_annotations = [cwb_escape(export_names.get(a.name, a.name)) for a in annotation_list if
-                          not a.annotation_name == token_name]
+                          a.annotation_name != token_name]
     structs = parse_structural_attributes(struct_annotations)
 
     data_dir = Path(out_marker).resolve().parent
@@ -256,7 +256,7 @@ def cwb_encode(corpus, annotations, source_annotations, source_files, words, vrt
 
     # Remove any existing files in data dir except for the .info file
     for f in data_dir.glob("*"):
-        if not f.name == ".info":
+        if f.name != ".info":
             f.unlink()
 
     encode_args = ["-s", "-p", "-",

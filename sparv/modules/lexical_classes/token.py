@@ -38,7 +38,7 @@ def blingbring_words(out: Output = Output("<token>:lexical_classes.blingbring",
                 if connect_IDs:
                     rogetid = rogetid.union(set(i + scoresep + sid for i in lexicon.lookup(sid, default=set())))
                 else:
-                    rogetid = rogetid.union(lexicon.lookup(sid, default=dict()).get(class_set, set()))
+                    rogetid = rogetid.union(lexicon.lookup(sid, default={}).get(class_set, set()))
         return sorted(rogetid)
 
     annotate_words(out, model, saldoids, pos, annotate_bring, pos_limit=pos_limit, disambiguate=disambiguate,

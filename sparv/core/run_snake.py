@@ -145,7 +145,7 @@ if not use_preloader:
         errmsg = f"An error occurred while executing {module_name}:{f_name}{current_file}:" \
                  f"\n\n  {type(e).__name__}: {e}"
         if logger.level > logging.DEBUG:
-            errmsg += f"\n\nTo display further details when errors occur, run Sparv with the '--log debug' or " \
+            errmsg += "\n\nTo display further details when errors occur, run Sparv with the '--log debug' or " \
                       "'--log-to-file debug' arguments."
         logger.error(errmsg)
         logger.debug(traceback.format_exc())

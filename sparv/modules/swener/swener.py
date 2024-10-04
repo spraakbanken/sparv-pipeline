@@ -143,7 +143,7 @@ def parse_swener_output(sentences: list, token: Annotation, output, out_ne: Outp
 
                         # If this child has a tail and it doesn't start with a space, or if it has no tail at all
                         # despite not being the last child, it means this NE ends in the middle of a token.
-                        if (child.tail and child.tail.strip() and not child.tail[0] == " ") or (
+                        if (child.tail and child.tail.strip() and child.tail[0] != " ") or (
                                 not child.tail and count < len(children) - 1):
                             i -= 1
                             # logger.warning("Split token returned by name tagger.")
@@ -152,8 +152,8 @@ def parse_swener_output(sentences: list, token: Annotation, output, out_ne: Outp
                 if child.tail and child.tail.strip():
                     i += len(child.tail.strip().split(TOK_SEP))
 
-                if (child.tag == "sroot" and child.text and not child.text[-1] == " ") or (
-                        child.tail and not child.tail[-1] == " "):
+                if (child.tag == "sroot" and child.text and child.text[-1] != " ") or (
+                        child.tail and child.tail[-1] != " "):
                     # The next NE would start in the middle of a token, so decrease the counter by 1
                     i -= 1
         except IndexError:

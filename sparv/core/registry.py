@@ -67,6 +67,7 @@ class LanguageRegistry(dict):
                 self[lang] = lang
         return self[lang]
 
+
 # Dictionary with annotators that will be added to Sparv unless they are excluded (e.g. due to incompatible language)
 _potential_annotators = defaultdict(list)
 
@@ -165,7 +166,7 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
                 req = Requirement(requirement)
                 if req.name == "sparv-pipeline":
                     req.specifier.prereleases = True  # Accept pre-release versions of Sparv
-                    if not sparv_version in req.specifier:
+                    if sparv_version not in req.specifier:
                         console.print(
                             f"[red]:warning-emoji:  The plugin {entry_point.name} ({entry_point.dist.name}) could not "
                             f"be loaded. It requires Sparv version {req.specifier}, but the currently running Sparv "
@@ -479,7 +480,7 @@ def _add_to_registry(annotator: dict, skip_language_check: bool = False):
 
     has_marker = False  # Needed by installers and uninstallers
 
-    for _param, val in inspect.signature(annotator["function"]).parameters.items():
+    for val in inspect.signature(annotator["function"]).parameters.values():
         if isinstance(val.default, BaseOutput):
             if not has_marker and val.annotation == OutputMarker:
                 has_marker = True
@@ -492,10 +493,9 @@ def _add_to_registry(annotator: dict, skip_language_check: bool = False):
                 if not ann_name.startswith(module_name + "."):
                     raise SparvErrorMessage(f"Output annotation '{ann_name}' in module '{module_name}' doesn't include "
                                             "module name as prefix.")
-            else:
-                if not attr.startswith(module_name + "."):
-                    raise SparvErrorMessage(f"Output annotation '{ann}' in module '{module_name}' doesn't include "
-                                            "module name as prefix in attribute.")
+            elif not attr.startswith(module_name + "."):
+                raise SparvErrorMessage(f"Output annotation '{ann}' in module '{module_name}' doesn't include "
+                                        "module name as prefix in attribute.")
 
             # Add to class registry
             if cls:
@@ -744,7 +744,7 @@ def get_type_hint_type(type_hint):
     if origin in {list, list, tuple, tuple}:
         is_list = True
         args = typing_inspect.get_args(type_hint)
-        if args and not type(args[0]) == TypeVar:
+        if args and type(args[0]) != TypeVar:
             type_ = args[0]
         else:
             type_ = origin

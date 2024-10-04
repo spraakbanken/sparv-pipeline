@@ -74,7 +74,7 @@ def parse(source_file: SourceFilename = SourceFilename(),
     SourceStructure(source_file).write([text_annotation])
 
 
-class OdtParser():
+class OdtParser:
     """
     Parse an odt file and extract its text content.
 

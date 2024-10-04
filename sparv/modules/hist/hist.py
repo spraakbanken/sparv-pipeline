@@ -99,7 +99,7 @@ def extract_pos(out: Output = Output("<token>:hist.homograph_set", description="
         pos = [re.search(r"\.\.(.*?)\.", lem) for lem in thelems]
         mapping = tagmappings.mappings["saldo_pos_to_suc"]
         pos_lists = [mapping.get(p.group(1), []) for p in pos if oktag(p)]
-        return sorted(list(set([y for x in pos_lists for y in x])))
+        return sorted(set([y for x in pos_lists for y in x]))
 
     _annotate_standard(out, lemgrams, mkpos, extralemgrams, delimiter=delimiter, affix=affix)
 
@@ -240,7 +240,7 @@ def spelling_variants(word: Annotation = Annotation("<token:word>"),
 
     def findvariants(_, theword):
         variants = [x_d for x_d in variations.get(theword.lower(), []) if x_d[0] != theword]
-        return sorted(list(set([v for v, d in variants])))
+        return sorted(set([v for v, d in variants]))
         # variants_lists = [_get_single_annotation([lexicon], v, "lem", "") for v, _d in variants]
         # return set([y for x in variants_lists for y in x])
 

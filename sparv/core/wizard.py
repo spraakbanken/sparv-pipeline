@@ -673,7 +673,7 @@ class Wizard:
                     if wildcards:
                         self.has_wildcard_choices = True
                         wc_dict = {wc.name: wc for wc in wildcards}
-                        wildcard_max_len = max([len(wc.name) for wc in wildcards])
+                        wildcard_max_len = max(len(wc.name) for wc in wildcards)
                         selected_wildcards = {}
                         for a in selected_annotations[module][f_name]:
                             if "wildcards" in a:
@@ -830,7 +830,7 @@ class Wizard:
                                },
                            ] + annotators
                 }, **{"default": preselected} if preselected else {}), clear=True)["annotator"]
-            if not annotator_choice == "_done":
+            if annotator_choice != "_done":
                 module, annotator = annotator_choice
                 max_len2 = max(len(a[0].original_name) for a in
                                self.snake_storage.all_annotators[module][annotator]["annotations"])

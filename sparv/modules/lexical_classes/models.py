@@ -165,7 +165,7 @@ def read_swefn(xml, verbose=True):
 
     for event, elem in context:
         if event == "end":
-            if elem.tag == 'LexicalEntry':
+            if elem.tag == "LexicalEntry":
                 sense = elem.find("Sense")
                 sid = sense.get("id").lstrip("swefn--")
                 for lu in sense.findall("feat[@att='LU']"):
@@ -173,7 +173,7 @@ def read_swefn(xml, verbose=True):
                     lexicon.setdefault(saldosense, set()).add(sid)
 
             # Done parsing section. Clear tree to save memory
-            if elem.tag in {'LexicalEntry', 'frame', 'resFrame'}:
+            if elem.tag in {"LexicalEntry", "frame", "resFrame"}:
                 root.clear()
 
     testwords = ["slant..1",

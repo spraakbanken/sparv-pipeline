@@ -219,7 +219,8 @@ def remove_path(path: Union[str, Path], host: Optional[str] = None):
 def gpus() -> Optional[list[int]]:
     """Return a list of available GPUs, sorted by free memory in descending order.
 
-    Returns None on failure."""
+    Returns None on failure.
+    """
 
     try:
         cmd = ["nvidia-smi", "--query-gpu=memory.free", "--format=csv"]

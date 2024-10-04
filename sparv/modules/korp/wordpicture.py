@@ -149,7 +149,7 @@ def wordpicture(
 
             tokens[token_index] = this
 
-            if not token_dh == "-":
+            if token_dh != "-":
                 token_dh = int(token_dh)
                 # This token is looking for a head (token is not root)
                 dep_triple = (token_dr, this)
@@ -337,7 +337,7 @@ def mi_lex(rel, x_rel_y, x_rel, rel_y):
     - x_rel is the frequency of (head, rel)
     - rel_y is the frequency of (rel, dep)
     """
-    return x_rel_y * math.log((rel * x_rel_y) / (x_rel * rel_y * 1.0), 2)
+    return x_rel_y * math.log2((rel * x_rel_y) / (x_rel * rel_y * 1.0))
 
 
 @exporter("Word Picture SQL for use in Korp", language=["swe"], config=[
@@ -456,7 +456,7 @@ def wordpicture_sql(
                 dep_rel_count[(dep, rel)] += 1
 
         # If not the last file
-        if not file_count == len(source_files):
+        if file_count != len(source_files):
             if split:
                 # Don't print string table until the last file
                 _write_sql({}, sentences, freq, rel_count, head_rel_count, dep_rel_count, out, db_table, split,

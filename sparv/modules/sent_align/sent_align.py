@@ -39,19 +39,19 @@ def align_texts(sentence1, sentence2, link1, link2, sent_parents1, sent_parents2
             for s1, s2 in gachalign(linkedsents1, linkedsents2, mean="gacha"):
                 linkcounter += 1
                 if s1:
-                    newlink1 = util.mkEdge('link', [util.edgeStart(s1[0]), util.edgeEnd(s1[-1])])
+                    newlink1 = util.mkEdge("link", [util.edgeStart(s1[0]), util.edgeEnd(s1[-1])])
                     OUT_SENTLINK1[newlink1] = str(linkcounter)
 
                 if s2:
-                    newlink2 = util.mkEdge('link', [util.edgeStart(s2[0]), util.edgeEnd(s2[-1])])
+                    newlink2 = util.mkEdge("link", [util.edgeStart(s2[0]), util.edgeEnd(s2[-1])])
                     OUT_SENTLINK2[newlink2] = str(linkcounter)
 
         # annotation if a link has text in one language but is empty in the other one
         elif linkkey1 in SENTPARENTS1 or linkkey2 in SENTPARENTS2:
             linkcounter += 1
-            newlink1 = util.mkEdge('link', [util.edgeStart(linkkey1), util.edgeEnd(linkkey1)])
+            newlink1 = util.mkEdge("link", [util.edgeStart(linkkey1), util.edgeEnd(linkkey1)])
             OUT_SENTLINK1[newlink1] = str(linkcounter)
-            newlink2 = util.mkEdge('link', [util.edgeStart(linkkey2), util.edgeEnd(linkkey2)])
+            newlink2 = util.mkEdge("link", [util.edgeStart(linkkey2), util.edgeEnd(linkkey2)])
             OUT_SENTLINK2[newlink2] = str(linkcounter)
 
     util.write_annotation(out_sentlink1, OUT_SENTLINK1)
@@ -110,13 +110,14 @@ def length_cost(sx, sy, mean_xy, variance_xy):
     delta = (l2-l1*c)/math.sqrt(l1*s2)
     If l2/l1 != 1 then the following should be considered:
     delta = (l2-l1*c)/math.sqrt((l1+l2*c)/2 * s2)
-    substituting c = 1 and c = l2/l1, gives the original cost function."""
+    substituting c = 1 and c = l2/l1, gives the original cost function.
+    """
     lx, ly = sum(sx), sum(sy)
     m = (lx + ly * mean_xy) / 2
     try:
         delta = (lx - ly * mean_xy) / math.sqrt(m * variance_xy)
     except ZeroDivisionError:
-        return float('-inf')
+        return float("-inf")
     return - 100 * (math.log(2) + norm_logsf(abs(delta)))
 
 
@@ -137,10 +138,10 @@ def norm_logsf(z):
     try:
         return math.log(1 - norm_cdf(z))
     except ValueError:
-        return float('-inf')
+        return float("-inf")
 
 
 ######################################################################
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     util.run.main(align_texts)

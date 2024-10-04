@@ -295,7 +295,7 @@ def backoff(chunk: Annotation,
     """Replace empty values in 'chunk' with values from 'backoff'."""
     # Function was called 'merge' before.
     backoff = list(backoff.read())
-    out.write((val if val else backoff[n] for (n, val) in enumerate(chunk.read())))
+    out.write((val or backoff[n] for (n, val) in enumerate(chunk.read())))
 
 
 @annotator("Replace empty values in 'chunk' with values from 'backoff' and output info about which annotator each "

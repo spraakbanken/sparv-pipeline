@@ -70,7 +70,7 @@ def ids(source_file: SourceFilename = SourceFilename(),
     """Create unique IDs for every span of an existing annotation."""
     logger.progress()
     fileid = fileid.read()
-    prefix = prefix + fileid
+    prefix += fileid
 
     ann = list(annotation.read())
     out_annotation = []
@@ -98,6 +98,6 @@ def _make_id(prefix, existing_ids=()):
     """Create a unique identifier with a given prefix."""
     while True:
         n = random.getrandbits(_ID_LENGTH * 4)
-        ident = prefix + hex(n)[2:].zfill(_ID_LENGTH)
+        ident = prefix + hex(n)[2:].zfill(_ID_LENGTH)  # noqa: FURB116, for performance
         if ident not in existing_ids:
             return ident

@@ -127,7 +127,7 @@ def _parse_output(stdout, lang, add_to_index):
                 named_entity = ""
             if dephead_ref == "0":  # 0 = empty dephead
                 dephead_ref = ""
-            start, end = [add_to_index + int(i) for i in [start, end]]
+            start, end = (add_to_index + int(i) for i in [start, end])
             token = Token(ref, word, pos, upos, lemma, named_entity, dephead_ref, deprel, start, end)
             sentence.append(token)
 

@@ -388,7 +388,7 @@ def main():
         from sparv.core import log_handler, paths, setup
         args = parser.parse_args()
 
-    if args.command not in ("setup",):
+    if args.command != "setup":
         # Make sure that Sparv data dir is set
         if not paths.get_data_path():
             print(f"The path to Sparv's data directory needs to be configured, either by running 'sparv setup' or by "

@@ -49,12 +49,12 @@ class SaldoLexicon:
         if verbose:
             logger.info("Reading Saldo lexicon: %s", saldofile)
         if saldofile.suffix == ".pickle":
-            with open(saldofile, "rb") as F:
-                self.lexicon = pickle.load(F)
+            with open(saldofile, "rb") as f:
+                self.lexicon = pickle.load(f)
         else:
             lexicon = self.lexicon = {}
-            with open(saldofile, "rb") as F:
-                for line in F:
+            with open(saldofile, "rb") as f:
+                for line in f:
                     row = line.decode(util.constants.UTF8).split()
                     word = row.pop(0)
                     lexicon[word] = row
@@ -96,8 +96,8 @@ class SaldoLexicon:
 
             picklex[word] = sorted(annotations)
 
-        with open(saldofile, "wb") as F:
-            pickle.dump(picklex, F, protocol=protocol)
+        with open(saldofile, "wb") as f:
+            pickle.dump(picklex, f, protocol=protocol)
         if verbose:
             logger.info("OK, saved")
 
@@ -111,11 +111,11 @@ class SaldoLexicon:
         """
         if verbose:
             logger.info("Saving LMF lexicon in text format")
-        with open(saldofile, "w") as F:
+        with open(saldofile, "w", encoding="UTF-8") as f:
             for word in sorted(lexicon):
                 annotations = [PART_DELIM.join([annotation] + sorted(postags))
                                for annotation, postags in lexicon[word].items()]
-                print(" ".join([word] + annotations).encode(util.constants.UTF8), file=F)
+                print(" ".join([word] + annotations).encode(util.constants.UTF8), file=f)
         if verbose:
             logger.info("OK, saved")
 

@@ -89,7 +89,7 @@ def load_config(config_file: Optional[str], config_dict: Optional[dict] = None) 
         global _config_user
         _config_user = read_yaml(config_file) or {}
 
-        def handle_parents(cfg, current_dir=Path(".")) -> dict:
+        def handle_parents(cfg, current_dir=Path()) -> dict:
             """Combine parent configs recursively."""
             combined_parents = {}
             if cfg.get(PARENT):

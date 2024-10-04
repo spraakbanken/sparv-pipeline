@@ -507,7 +507,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             binary = util.system.find_binary(param_value, executable=False, allow_dir=param_type == BinaryDir)
             if not binary:
                 rule.missing_binaries.add(param_value)
-            binary = Path(binary if binary else param_value)
+            binary = Path(binary or param_value)
             rule.inputs.append(binary)
             rule.parameters[param_name] = param_type(binary)
         # Source

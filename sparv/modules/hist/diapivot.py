@@ -122,10 +122,10 @@ def read_xml(xml):
 
     for event, elem in context:
         if event == "end":
-            if elem.tag == 'LexicalEntry':
+            if elem.tag == "LexicalEntry":
 
                 lemma = elem.find("Lemma")
-                dalin, saldo = [], ''
+                dalin, saldo = [], ""
                 for form in lemma.findall("FormRepresentation"):
                     cat = _findval(form, "category")
                     lem = _findval(form, "lemgram")
@@ -135,10 +135,10 @@ def read_xml(xml):
                         match = _findval(form, "match")
                         dalin += [(lem, match)]
 
-                [lexicon.update({d: {'saldo': saldo, 'match': m}}) for (d, m) in dalin]
+                [lexicon.update({d: {"saldo": saldo, "match": m}}) for (d, m) in dalin]
 
             # Done parsing section. Clear tree to save memory
-            if elem.tag in {'LexicalEntry', 'frame', 'resFrame'}:
+            if elem.tag in {"LexicalEntry", "frame", "resFrame"}:
                 root.clear()
 
     testwords = ["tigerhjerta..nn.1",

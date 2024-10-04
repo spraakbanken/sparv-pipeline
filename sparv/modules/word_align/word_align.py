@@ -42,7 +42,7 @@ def align_texts(word1, word2, linktok1, linktok2, link1, link2, linkref2, out_wo
 
 def make_sent_aligned_text(WORD1, WORD2, linktok1, linktok2, link1, link2, out_sentences):
     """ Make a sentence aligned text file (serves as input for fast_align)."""
-    out_sent_linked = open(out_sentences, 'w', encoding='utf-8')
+    out_sent_linked = open(out_sentences, "w", encoding="utf-8")
     LINKTOK1 = util.read_annotation(linktok1)
     LINKTOK2 = util.read_annotation(linktok2)
     REVERSED_LINK2 = {v: k for k, v in util.read_annotation(link2).items()}
@@ -68,11 +68,11 @@ def word_align(sentencefile, indexfile1, indexfile2):
     """ Word link the sentences in sentencefile. Return a string of word link indices."""
     # align
     out1, _ = util.system.call_binary("word_alignment/fast_align", ["-i", sentencefile, "-d", "-o", "-v"])
-    with open(indexfile1, 'wb') as f:
+    with open(indexfile1, "wb") as f:
         f.write(out1)
     # reverse align
     out2, _ = util.system.call_binary("word_alignment/fast_align", ["-i", sentencefile, "-d", "-o", "-v", "-r"])
-    with open(indexfile2, 'wb') as f:
+    with open(indexfile2, "wb") as f:
         f.write(out2)
     # symmetrise
     indices, _ = util.system.call_binary("word_alignment/atools", ["-i", indexfile1, "-j", indexfile2, "-c", "grow-diag-final-and"])
@@ -102,5 +102,5 @@ def word_align(sentencefile, indexfile1, indexfile2):
 
 ######################################################################
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     util.run.main(align_texts)

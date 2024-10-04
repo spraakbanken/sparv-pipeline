@@ -57,6 +57,7 @@ class XMLStructure(SourceStructureParser):
             self.annotations = sorted(elements)
         return self.annotations
 
+
 @importer(
     "XML import",
     file_extension="xml",
@@ -258,7 +259,7 @@ class SparvXMLParser:
 
             # Save attrs in data
             self.data.setdefault(name, {"attrs": set(), "elements": []})
-            attr_keys = [get_sparv_name(attr) for attr in attrs.keys()]
+            attr_keys = [get_sparv_name(attr) for attr in attrs]
             self.data[name]["attrs"].update(set(attr_keys))
 
             # Add attribute data collected from header
@@ -403,7 +404,7 @@ class SparvXMLParser:
             try:
                 tree = etree.parse(source_file)
             except Exception as e:
-                raise SparvErrorMessage(f"The XML input file could not be parsed. Error: {str(e)}")
+                raise SparvErrorMessage(f"The XML input file could not be parsed. Error: {e!s}")
             root = tree.getroot()
         else:
             text = source_file.read_text(encoding="utf-8")
@@ -414,7 +415,7 @@ class SparvXMLParser:
             try:
                 root = etree.fromstring(text)
             except Exception as e:
-                raise SparvErrorMessage(f"The XML input file could not be parsed. Error: {str(e)}")
+                raise SparvErrorMessage(f"The XML input file could not be parsed. Error: {e!s}")
 
         iter_tree(root)
 

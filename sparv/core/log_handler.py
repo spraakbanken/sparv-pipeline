@@ -187,7 +187,7 @@ class ModifiedRichHandler(RichHandler):
 
     def emit(self, record: logging.LogRecord) -> None:
         """Replace path with name and call parent method."""
-        record.pathname = record.name if not record.name == "sparv_logging" else ""
+        record.pathname = record.name if record.name != "sparv_logging" else ""
         record.lineno = 0
         super().emit(record)
 
@@ -546,7 +546,7 @@ class LogHandler:
 
                     self.job_ids[(msg["msg"], file)] = msg["jobid"]
 
-        elif (level == "job_finished" or level == "job_error" and self.keep_going) and self.use_progressbar and msg[
+        elif (level == "job_finished" or (level == "job_error" and self.keep_going)) and self.use_progressbar and msg[
                 "jobid"] in self.current_jobs:
             this_job = self.current_jobs[msg["jobid"]]
             if self.stats:
@@ -627,7 +627,7 @@ class LogHandler:
                 handled = True
             elif "Exiting because a job execution failed." in msg["msg"]:
                 pass
-            elif "run_snake.py\' returned non-zero exit status 1." in msg["msg"]:
+            elif "run_snake.py' returned non-zero exit status 1." in msg["msg"]:
                 handled = True
             elif "Error: Directory cannot be locked." in msg["msg"]:
                 message = "Directory cannot be locked. Please make sure that no other Sparv instance is currently " \
@@ -669,7 +669,7 @@ class LogHandler:
                     self.handled_error = True
                     # We need to stop Snakemake by raising an exception, and BrokenPipeError is the only exception
                     # not leading to a full traceback being printed (due to Snakemake's handling of exceptions)
-                    raise BrokenPipeError()
+                    raise BrokenPipeError
 
     def stop(self):
         """Stop the progress bar and output any messages."""

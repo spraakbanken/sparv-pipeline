@@ -47,16 +47,16 @@ def gather_annotations(annotations: list[Annotation],
         """Object to store span information."""
 
         __slots__ = (
-            "name",
-            "index",
-            "start",
             "end",
-            "start_sub",
             "end_sub",
             "export",
+            "index",
             "is_header",
+            "name",
             "node",
-            "overlap_id"
+            "overlap_id",
+            "start",
+            "start_sub"
         )
 
         def __init__(self, name, index, start, end, export_names, is_header):
@@ -199,12 +199,12 @@ def _handle_overlaps(spans_dict):
                 span_stack.append(span)
             elif event == "close":
                 closing_span = span_stack.pop()
-                if not closing_span == span:
+                if closing_span != span:
                     # Overlapping spans found
                     overlap_stack = []
 
                     # Close all overlapping spans and add an overlap ID to them
-                    while not closing_span == span:
+                    while closing_span != span:
                         overlap_count += 1
                         closing_span.overlap_id = overlap_count
 
@@ -379,8 +379,7 @@ def _create_export_names(annotations: list[tuple[Union[Annotation, AnnotationAll
             """
             def remove_before_dot(name):
                 # Always remove "custom."
-                if name.startswith("custom."):
-                    name = name[7:]
+                name = name.removeprefix("custom.")
                 # Remove everything before first "."
                 if "." in name:
                     name = name.split(".", 1)[1]
@@ -440,7 +439,7 @@ def _create_export_names(annotations: list[tuple[Union[Annotation, AnnotationAll
                     new_name = io.join_annotation(export_names.get(base_name, base_name), new_name)
                 export_names[name] = new_name
         else:
-            export_names = {annotation.name: (new_name if new_name else annotation.attribute_name or annotation.name)
+            export_names = {annotation.name: (new_name or annotation.attribute_name or annotation.name)
                             for annotation, new_name in annotations}
 
     export_names = _add_global_namespaces(export_names, annotations, source_annotations, sparv_namespace,
@@ -467,7 +466,7 @@ def _get_xml_tagname(tag, xml_namespaces, xml_mode=False):
             return re.sub(fr"(.*){sep}(.+)", fr"{{{uri}}}\2", tag)
         elif m.group(1):
             # Replace "prefix+tag" with "prefix.tag", skip this for default namespaces
-            return re.sub(fr"(.*){sep}(.+)", fr"\1.\2", tag)
+            return re.sub(fr"(.*){sep}(.+)", r"\1.\2", tag)
     return tag
 
 
@@ -508,7 +507,7 @@ def _check_name_collision(export_names, source_annotations):
         for v in values:
             attr_dict[v.annotation_name].append(v)
         attr_collisions = {k: v for k, v in attr_dict.items() if len(v) > 1}
-        for _elem, annots in attr_collisions.items():
+        for annots in attr_collisions.values():
             # If there are two colliding attributes and one is an automatic one, prefix it with SPARV_DEFAULT_NAMESPACE
             if len(annots) == 2 and len([a for a in annots if a.name not in source_names]) == 1:
                 sparv_annot = annots[0] if annots[0].name not in source_names else annots[1]

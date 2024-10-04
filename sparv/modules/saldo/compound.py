@@ -348,7 +348,7 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
             abort = False
             for ii, s in enumerate(spans):
                 if s in invalid_spans:
-                    if not s[1] is None:
+                    if s[1] is not None:
                         # Skip any combination of spans following the invalid span
                         for j in range(ii + 1, n):
                             indices[j] = j + nn - n
@@ -634,7 +634,7 @@ def read_lmf(xml: pathlib.Path, tagset: str = "SUC"):
                     word = form.findtext("wf")
                     param = form.findtext("param")
 
-                    if not param[-1].isdigit() and not param == "frag":  # and (param in ("c", "ci") or (pos in ("nn", "vb", "av", "ab") or pos[-1] == "h")):
+                    if not param[-1].isdigit() and param != "frag":  # and (param in ("c", "ci") or (pos in ("nn", "vb", "av", "ab") or pos[-1] == "h")):
                         saldotag = " ".join([pos] + inhs + [param])
                         tags = tagmap.get(saldotag)
 

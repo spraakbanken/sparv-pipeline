@@ -267,7 +267,7 @@ class BetterWordTokenizer:
     """
 
     # Format for the complete regular expression to be used for tokenization
-    _word_tokenize_fmt = r'''(
+    _word_tokenize_fmt = r"""(
         %(misc)s
         |
         %(multi)s
@@ -284,7 +284,7 @@ class BetterWordTokenizer:
         )
         |
         \S
-    )'''
+    )"""
 
     # Used to realign punctuation that should be included in a sentence although it follows the period (or ?, !).
     re_boundary_realignment = re.compile(r'[“”"\')\]}]+?(?:\s+|(?=--)|$)', re.MULTILINE)
@@ -437,6 +437,7 @@ class FSVParagraphSplitter:
         spans.append(tuple(temp))
 
         return spans
+
 
 SEGMENTERS = {
     "whitespace": nltk.WhitespaceTokenizer,

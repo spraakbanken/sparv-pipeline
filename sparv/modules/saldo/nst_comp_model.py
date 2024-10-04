@@ -36,9 +36,9 @@ def make_model(nst_infile, picklefile, protocol=-1):
 
     # Collect all compounds from nst data
     nst_full_compounds = set()
-    with open(nst_infile, encoding='UTF-8') as f:
+    with open(nst_infile, encoding="UTF-8") as f:
         for line in f:
-            fields = line[:-1].split('\t')
+            fields = line[:-1].split("\t")
             word = fields[0]
             comp = fields[3].replace("!", "")
             pos = fields[4]
@@ -48,7 +48,7 @@ def make_model(nst_infile, picklefile, protocol=-1):
     # Build POS probability model
     pos_fdist = FreqDist()
     for _w, _c, pos in nst_full_compounds:
-        if '+' in pos:
+        if "+" in pos:
             pos = re.sub(r"\+LN", "", pos)
             pos_fdist[pos] += 1
 
