@@ -78,7 +78,7 @@ def paragraph(text: Text = Text(),
                     model=model)
 
 
-def do_segmentation(text: Text, out: Output, segmenter, chunk: Optional[Annotation] = None,
+def do_segmentation(text: Text, out: Output, segmenter: str, chunk: Optional[Annotation] = None,
                     existing_segments: Optional[Annotation] = None, model: Optional[Model] = None,
                     token_list: Optional[Model] = None) -> None:
     """Segment all chunks (e.g. sentences) into smaller "tokens" (e.g. words), and annotate them as "element" (e.g. w).
@@ -86,14 +86,14 @@ def do_segmentation(text: Text, out: Output, segmenter, chunk: Optional[Annotati
     Segmentation is done by the given "segmenter"; some segmenters take
     an extra argument which is a pickled "model" object.
     """
-    assert segmenter in SEGMENTERS, "Available segmenters: %s" % ", ".join(sorted(SEGMENTERS))
+    assert segmenter in SEGMENTERS, f"Available segmenters: {', '.join(sorted(SEGMENTERS))}"
     segmenter = SEGMENTERS[segmenter]
 
     segmenter_args = {}
     if model and "model" in inspect.getfullargspec(segmenter).args:
         if model.path.suffix in {".pickle", ".pkl"}:
-            with open(model.path, "rb") as M:
-                model_arg = pickle.load(M, encoding="UTF-8")
+            with open(model.path, "rb") as m:
+                model_arg = pickle.load(m, encoding="UTF-8")
         else:
             model_arg = str(model.path)
         segmenter_args["model"] = model_arg
@@ -101,7 +101,7 @@ def do_segmentation(text: Text, out: Output, segmenter, chunk: Optional[Annotati
         segmenter_args["token_list"] = str(token_list.path)
 
     segmenter = segmenter(**segmenter_args)
-    assert hasattr(segmenter, "span_tokenize"), "Segmenter needs a 'span_tokenize' method: %r" % segmenter
+    assert hasattr(segmenter, "span_tokenize"), f"Segmenter needs a 'span_tokenize' method: {segmenter!r}"
 
     corpus_text = text.read()
 
@@ -112,7 +112,7 @@ def do_segmentation(text: Text, out: Output, segmenter, chunk: Optional[Annotati
 
     positions = set()
     chunk_spans = chunk.read_spans() if chunk else []
-    positions = positions.union(set(pos for span in chunk_spans for pos in span))
+    positions = positions.union({pos for span in chunk_spans for pos in span})
     positions = sorted({0, len(corpus_text)} | positions)
     chunk_spans = list(zip(positions, positions[1:]))
 
@@ -129,7 +129,7 @@ def do_segmentation(text: Text, out: Output, segmenter, chunk: Optional[Annotati
                 chunk_start = segment_end
                 chunk_spans[n] = (chunk_start, chunk_end)
         chunk_spans.sort()
-        logger.info("Reorganized into %d chunks" % len(chunk_spans))
+        logger.info("Reorganized into %d chunks", len(chunk_spans))
     else:
         segments = []
 
@@ -179,21 +179,21 @@ def build_tokenlist(saldo_model: Model = Model("saldo/saldo.pickle"),
         else:
             model_arg = model.path
         segmenter_args.append(model_arg)
-    assert segmenter in SEGMENTERS, "Available segmenters: %s" % ", ".join(sorted(SEGMENTERS))
+    assert segmenter in SEGMENTERS, f"Available segmenters: {', '.join(sorted(SEGMENTERS))}"
     segmenter = SEGMENTERS[segmenter]
     segmenter = segmenter(*segmenter_args)
-    assert hasattr(segmenter, "span_tokenize"), "Segmenter needs a 'span_tokenize' method: %r" % segmenter
+    assert hasattr(segmenter, "span_tokenize"), f"Segmenter needs a 'span_tokenize' method: {segmenter!r}"
 
     wordforms = set()
 
     # Skip strings already handled by the tokenizer.
     # Also skip words ending in comma (used by some multi-word expressions in SALDO).
-    with open(saldo_model.path, "rb") as F:
-        lexicon = pickle.load(F)
+    with open(saldo_model.path, "rb") as f:
+        lexicon = pickle.load(f)
         for w in lexicon:
             w2 = list(map(split_triple, lexicon[w]))
             mwu_extras = [contw for w3 in w2 for cont in w3[2] for contw in cont if contw not in lexicon]
-            for wf in mwu_extras + [w]:
+            for wf in [*mwu_extras, w]:
                 spans = list(segmenter.span_tokenize(wf))
                 if len(spans) > 1 and not wf.endswith(","):
                     wordforms.add(wf)
@@ -330,7 +330,7 @@ class BetterWordTokenizer:
                         elif key == "token_list":
                             pass
                         else:
-                            raise ValueError("Unknown option: %s" % key)
+                            raise ValueError(f"Unknown option: {key}")
                 else:
                     self.abbreviations.add(line.strip())
 

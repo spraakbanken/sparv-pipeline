@@ -72,13 +72,13 @@ def main(out, word, sentence, binary, model, morphtable=None, patterns=None, tag
             for line in pat:
                 if line.strip() and not line.startswith("#"):
                     name, pattern, tags = line.strip().split("\t", 2)
-                    pattern_list.append((name, re.compile("^%s$" % pattern), tags))
+                    pattern_list.append((name, re.compile(f"^{pattern}$"), tags))
 
     def replace_word(w):
         """Replace word with alias if word matches a regex pattern."""
         for p in pattern_list:
             if re.match(p[1], w):
-                return "[[%s]]" % p[0]
+                return f"[[{p[0]}]]"
         return w
 
     sentences, _orphans = sentence.get_children(word)

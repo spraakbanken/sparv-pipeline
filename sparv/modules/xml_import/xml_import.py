@@ -211,7 +211,7 @@ class SparvXMLParser:
         for header in header_data:
             header_source, _, header_target = header.partition(" as ")
             if not header_target:
-                raise SparvErrorMessage("The header '{}' needs to be bound to a target element.".format(header))
+                raise SparvErrorMessage(f"The header '{header}' needs to be bound to a target element.")
             header_source, _, header_source_attrib = header_source.partition(":")
             header_source_root, _, header_source_rest = header_source.partition("/")
             self.header_data.setdefault(header_source_root, {})
@@ -317,7 +317,7 @@ class SparvXMLParser:
                             header_data.setdefault(header_source["target"][0], {})
                             header_data[header_source["target"][0]][header_source["target"][1]] = header_value
                 else:
-                    logger.warning(f"Header data '{tag_name}/{header_path}' was not found in source data.")
+                    logger.warning("Header data '%s/%s' was not found in source data.", tag_name, header_path)
 
         def iter_ns_declarations():
             """Iterate over namespace declarations in the source file."""
@@ -438,7 +438,6 @@ class SparvXMLParser:
         header_elements = []
 
         for element in self.data:
-            is_header = False
             spans = []
             attributes = {attr: [] for attr in self.data[element]["attrs"]}
             for instance in self.data[element]["elements"]:
@@ -447,10 +446,9 @@ class SparvXMLParser:
                 for attr in attributes:
                     attributes[attr].append(attrs.get(attr, ""))
 
-            full_element = "{}.{}".format(self.prefix, element) if self.prefix else element
+            full_element = f"{self.prefix}.{element}" if self.prefix else element
 
             if element in self.header_elements:
-                is_header = True
                 header_elements.append(full_element)
             else:
                 structure.append(full_element)
@@ -466,10 +464,10 @@ class SparvXMLParser:
             Output(full_element, source_file=self.file).write(spans)
 
             for attr in attributes:
-                full_attr = "{}.{}".format(self.prefix, attr) if self.prefix else attr
-                Output("{}:{}".format(full_element, full_attr), source_file=self.file).write(attributes[attr])
+                full_attr = f"{self.prefix}.{attr}" if self.prefix else attr
+                Output(f"{full_element}:{full_attr}", source_file=self.file).write(attributes[attr])
                 if element not in self.header_elements:
-                    structure.append("{}:{}".format(full_element, full_attr))
+                    structure.append(f"{full_element}:{full_attr}")
 
         # Save list of all elements and attributes to a file (needed for export)
         SourceStructure(self.file).write(structure)
@@ -508,8 +506,7 @@ def analyze_xml(source_file):
                 prefix = namespace_map[uri]
                 tagname = f"{prefix}{util.constants.XML_NAMESPACE_SEP}{tag}"
             elements.add(tagname)
-            for attr in element.attrib:
-                elements.add(f"{tagname}:{attr}")
+            elements.update(f"{tagname}:{attr}" for attr in element.attrib)
             root.clear()
 
     return elements

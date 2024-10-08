@@ -507,7 +507,7 @@ def _add_to_registry(annotator: dict, skip_language_check: bool = False):
                 elif ":" not in cls:
                     cls_target = ann_name
                 else:
-                    print("Malformed class name: '{}'".format(cls))
+                    print(f"Malformed class name: '{cls}'")
 
                 if cls_target:
                     if not annotator["language"]:
@@ -551,8 +551,7 @@ def _add_to_registry(annotator: dict, skip_language_check: bool = False):
                                 "uninstallers.")
 
     if f_name in modules[module_name].functions:
-        print("Annotator function '{}' collides with other function with same name in module '{}'.".format(f_name,
-                                                                                                           module_name))
+        print(f"Annotator function '{f_name}' collides with other function with same name in module '{module_name}'.")
     else:
         del annotator["module_name"]
         del annotator["name"]

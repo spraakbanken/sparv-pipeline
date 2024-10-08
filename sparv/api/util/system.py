@@ -94,7 +94,7 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
         use_shell = True
         command = raw_command % binary
         if arguments:
-            command = " ".join([command] + arguments)
+            command = " ".join([command, *arguments])
     else:
         command = [binary] + [str(a) for a in arguments]
     if isinstance(stdin, (list, tuple)):
@@ -115,7 +115,7 @@ def call_binary(name, arguments=(), stdin="", raw_command=None, search_paths=(),
                 logger.info(stdout.decode())
             if stderr:
                 logger.warning(stderr.decode())
-            raise OSError("%s returned error code %d" % (binary, command.returncode))
+            raise OSError(f"{binary} returned error code {command.returncode:d}")
         if encoding:
             stdout = stdout.decode(encoding)
             if stderr:
@@ -197,10 +197,10 @@ def rsync(local: Union[str, Path], host: Optional[str], remote: Union[str, Path]
 
     if host:
         subprocess.check_call(["ssh", host, f"mkdir -p {shlex.quote(remote_dir)}"])
-        subprocess.check_call(["rsync"] + args + [f"{host}:{remote}"])
+        subprocess.check_call(["rsync", *args, f"{host}:{remote}"])
     else:
         subprocess.check_call(["mkdir", "-p", remote_dir])
-        subprocess.check_call(["rsync"] + args + [remote])
+        subprocess.check_call(["rsync", *args, remote])
 
 
 def remove_path(path: Union[str, Path], host: Optional[str] = None):

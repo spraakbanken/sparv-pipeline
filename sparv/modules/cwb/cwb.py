@@ -120,7 +120,8 @@ def vrt_scrambled(source_file: SourceFilename = SourceFilename(),
                        "the source text. Make sure to add <token> to the list of export annotations.")
     if chunk not in annotation_list:
         raise SparvErrorMessage(
-            "The annotation used for scrambling ({}) needs to be included in the output.".format(chunk))
+            f"The annotation used for scrambling ({chunk}) needs to be included in the output."
+        )
     xml_utils.replace_invalid_chars_in_names(export_names)
     span_positions, annotation_dict = util.export.gather_annotations(annotation_list, export_names,
                                                                      source_file=source_file, split_overlaps=True)
@@ -223,7 +224,7 @@ def cwb_encode(corpus, annotations, source_annotations, source_files, words, vrt
     vrtfiles.sort()
 
     # Word annotation should always be included in CWB export
-    annotations = [(words, None)] + list(annotations)
+    annotations = [(words, None), *list(annotations)]
 
     # Get annotation names
     annotation_list, token_attributes, export_names = util.export.get_annotation_names(
@@ -277,7 +278,7 @@ def cwb_encode(corpus, annotations, source_annotations, source_files, words, vrt
         if attrs2:
             attrs2 = "+" + attrs2
         # ":0" is added to the s-attribute name to enable nesting support in cwb-encode
-        encode_args += ["-S", "%s:0%s" % (struct, attrs2)]
+        encode_args += ["-S", f"{struct}:0{attrs2}"]
 
     _, stderr = util.system.call_binary(os.path.join(bin_path, "cwb-encode"), encode_args)
     if stderr:
@@ -332,8 +333,8 @@ def cwb_align(corpus, other, link, aligndir="annotations/align", bin_path="",
     # Align linked chunks
     args = ["-v", "-o", alignfile, "-V", link_attr, corpus, other, link_name]
     result, _ = util.system.call_binary(os.path.join(bin_path, "cwb-align"), args, encoding=encoding)
-    with open(alignfile + ".result", "w", encoding="utf-8") as F:
-        print(result, file=F)
+    with open(alignfile + ".result", "w", encoding="utf-8") as f:
+        print(result, file=f)
     _, lastline = result.rsplit("Alignment complete.", 1)
     logger.info("%s", lastline.strip())
     if " 0 alignment" in lastline.strip():
@@ -343,14 +344,14 @@ def cwb_align(corpus, other, link, aligndir="annotations/align", bin_path="",
     # Add alignment parameter to registry
     # cwb-regedit is not installed by default, so we skip it and modify the regfile directly instead:
     regfile = os.path.join(os.environ["CORPUS_REGISTRY"], corpus)
-    with open(regfile, encoding="utf-8") as F:
-        skip_align = ("ALIGNED %s" % other) in F.read()
+    with open(regfile, encoding="utf-8") as f:
+        skip_align = (f"ALIGNED {other}") in f.read()
 
     if not skip_align:
-        with open(regfile, "a", encoding="utf-8") as F:
-            print(file=F)
-            print("# Added by cwb.py", file=F)
-            print("ALIGNED", other, file=F)
+        with open(regfile, "a", encoding="utf-8") as f:
+            print(file=f)
+            print("# Added by cwb.py", file=f)
+            print("ALIGNED", other, file=f)
         logger.info("Added alignment to registry: %s", regfile)
     # args = [corpus, ":add", ":a", other]
     # result, _ = util.system.call_binary(os.path.join(bin_path, "cwb-regedit"), args)
@@ -383,12 +384,12 @@ def create_vrt(span_positions, token_name: str, word_annotation, token_attribute
             if instruction == "open":
                 attrs = make_attr_str(span.name, annotation_dict, export_names, span.index)
                 if attrs:
-                    vrt_lines.append("<%s %s>" % (cwb_span_name, attrs))
+                    vrt_lines.append(f"<{cwb_span_name} {attrs}>")
                 else:
-                    vrt_lines.append("<%s>" % cwb_span_name)
+                    vrt_lines.append(f"<{cwb_span_name}>")
             # Close element
             else:
-                vrt_lines.append("</%s>" % cwb_span_name)
+                vrt_lines.append(f"</{cwb_span_name}>")
 
     return "\n".join(vrt_lines)
 
@@ -397,11 +398,11 @@ def make_attr_str(annotation, annotation_dict, export_names, index):
     """Create a string with attributes and values for a struct element."""
     attrs = []
     for name, annot in annotation_dict[annotation].items():
-        export_name = export_names.get(":".join([annotation, name]), name)
+        export_name = export_names.get(f"{annotation}:{name}", name)
         export_name = cwb_escape(export_name)
         # Escape special characters in value
         value = annot[index].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
-        attrs.append('%s="%s"' % (export_name, value))
+        attrs.append(f'{export_name}="{value}"')
     return " ".join(attrs)
 
 
@@ -423,12 +424,17 @@ def make_token_line(word, token, token_attributes, annotation_dict, index):
     # Send warning if line exceeds the max line length in CWB
     if len(line) > CWB_MAX_LINE_LEN:
         if "misc.head" in token_attributes or "misc.tail" in token_attributes:
-            logger.warning(f"Found a line that exceeds the max line length in CWB ({CWB_MAX_LINE_LEN}). "
+            logger.warning(
+                "Found a line that exceeds the max line length in CWB (%d). "
                 "If this leads to a crash in CWB encode you could try setting the 'misc.head_tail_max_length' config "
-                "variable to a lower value. In that case you will need to re-run the misc.head and misc.tail analyses.")
+                "variable to a lower value. In that case you will need to re-run the misc.head and misc.tail analyses.",
+                CWB_MAX_LINE_LEN
+            )
         else:
-            logger.warning(f"Found a line that exceeds the max line length in CWB ({CWB_MAX_LINE_LEN}). "
-                           "This may lead to a crash in CWB encode.")
+            logger.warning(
+                "Found a line that exceeds the max line length in CWB (%d). This may lead to a crash in CWB encode.",
+                CWB_MAX_LINE_LEN
+            )
 
     return line
 

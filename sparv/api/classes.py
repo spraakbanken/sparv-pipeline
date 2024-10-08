@@ -45,7 +45,7 @@ class Base(ABC):
         return self.__repr__()
 
     def __repr__(self):
-        return "<{} {!r}>".format(self.__class__.__name__, self.name)
+        return f"<{self.__class__.__name__} {self.name!r}>"
 
     def __format__(self, format_spec):
         return self.name.__format__(format_spec)

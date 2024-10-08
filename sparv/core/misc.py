@@ -23,8 +23,7 @@ class SparvErrorMessage(Exception):
         """
         self.message = message
         # Alter message before calling base class
-        super().__init__("{}{}\n{}\n{}{}".format(SparvErrorMessage.start_marker, module, function, message,
-                                                 SparvErrorMessage.end_marker))
+        super().__init__(f"{SparvErrorMessage.start_marker}{module}\n{function}\n{message}{SparvErrorMessage.end_marker}")
 
 
 def get_logger(name):

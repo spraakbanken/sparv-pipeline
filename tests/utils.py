@@ -1,4 +1,5 @@
 """Utility functions for testing Sparv with pytest."""
+# ruff: noqa: T201
 
 import difflib
 import filecmp
@@ -43,7 +44,7 @@ def run_sparv(gold_corpus_dir: pathlib.Path,
 
 def cmp_workdir(gold_corpus_dir: pathlib.Path,
                 test_corpus_dir: pathlib.Path,
-                ignore: list = None):
+                ignore: Optional[list] = None):
     """Recursively compare the workdir directories of gold_corpus and test_corpus."""
     if ignore is None:
         ignore = []
@@ -56,7 +57,7 @@ def cmp_workdir(gold_corpus_dir: pathlib.Path,
 
 def cmp_export(gold_corpus_dir: pathlib.Path,
                test_corpus_dir: pathlib.Path,
-               ignore: list = None):
+               ignore: Optional[list] = None):
     """Recursively compare the export directories of gold_corpus and test_corpus."""
     if ignore is None:
         ignore = []
@@ -79,8 +80,8 @@ def print_error(msg: str):
 
 def _cmp_dirs(a: pathlib.Path,
               b: pathlib.Path,
-              ignore: list = None,
-              ok: bool = True):
+              ignore: Optional[list] = None,
+              ok: bool = True) -> bool:
     """Recursively compare directories a and b."""
     if ignore is None:
         ignore = [".log"]
@@ -121,9 +122,7 @@ def _cmp_dirs(a: pathlib.Path,
         if not _cmp_dirs(new_a, new_b, ignore=ignore, ok=ok):
             ok = False
 
-    if ok:
-        return True
-    return False
+    return ok
 
 
 def _filediff(a: pathlib.Path, b: pathlib.Path):

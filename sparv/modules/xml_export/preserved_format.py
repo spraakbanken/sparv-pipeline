@@ -151,7 +151,7 @@ def preserved_format(source_file: SourceFilename = SourceFilename(),
                 last_pos = span.end
 
             # Make sure closing node == top stack node
-            assert span == node_stack[-1], "Overlapping elements found: {}".format(node_stack[-2:])
+            assert span == node_stack[-1], f"Overlapping elements found: {node_stack[-2:]}"
             # Pop stack and move on to next span
             node_stack.pop()
 

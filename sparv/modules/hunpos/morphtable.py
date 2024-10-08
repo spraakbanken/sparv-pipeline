@@ -85,7 +85,7 @@ def saldo_morphtable(out: ModelOutput = ModelOutput("hunpos/saldo_suc-tags.morph
             for line in pat:
                 if line.strip() and not line.startswith("#"):
                     pattern_name, _, pattern_tags = line.strip().split("\t", 2)
-                    pattern_list.append("[[%s]]\t%s\n" % (pattern_name, pattern_tags))
+                    pattern_list.append(f"[[{pattern_name}]]\t{pattern_tags}\n")
 
     with open(out.path, encoding="UTF-8", mode="w") as out:
         if morphtable_base:
@@ -97,4 +97,4 @@ def saldo_morphtable(out: ModelOutput = ModelOutput("hunpos/saldo_suc-tags.morph
             out.write(pattern)
 
         for word in sorted(tags):
-            out.write("%s\t%s\n" % (word, "\t".join(tags[word])))
+            out.write("{}\n".format("\t".join([word, *tags[word]])))

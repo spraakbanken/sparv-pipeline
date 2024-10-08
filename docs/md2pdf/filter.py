@@ -1,5 +1,4 @@
-"""
-Pandoc filter for removing links that won't work in PDF and reformatting docsify block quotes.
+"""Pandoc filter for removing links that won't work in PDF and reformatting docsify block quotes.
 
 https://pandoc.org/filters.html
 """

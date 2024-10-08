@@ -58,7 +58,7 @@ def create_info_file(sentences: AnnotationCommonData, firstdate: AnnotationCommo
         else:
             value = value_obj
 
-        content.append("%s: %s\n" % (key, value))
+        content.append(f"{key}: {value}\n")
 
     # Write .info file
     with open(out, "w", encoding="utf-8") as o:

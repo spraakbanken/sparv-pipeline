@@ -90,10 +90,12 @@ class SnakeStorage:
                 file_extension = "." + registry.modules[importer_module].functions[importer_function]["file_extension"]
             except KeyError:
                 raise SparvErrorMessage(
-                    "Could not find the importer '{}'. Make sure the 'import.importer' config value refers to an "
-                    "existing importer.".format(sparv_config.get("import.importer")), "sparv")
+                    f"Could not find the importer '{sparv_config.get('import.importer')}'. Make sure the "
+                    "'import.importer' config value refers to an existing importer.",
+                    "sparv"
+                )
             # Collect files in source dir
-            sf = [f for f in snakemake.utils.listfiles(Path(get_source_path(), "{file}"))]
+            sf = list(snakemake.utils.listfiles(Path(get_source_path(), "{file}")))
             self._source_files = [f[1][0][:-len(file_extension)] for f in sf if f[1][0].endswith(file_extension)]
             # Collect files that don't match the file extension provided by the corpus config
             wrong_ext = [f[1][0] for f in sf if not f[1][0].endswith(file_extension) and not Path(f[0]).is_dir()]
@@ -152,8 +154,7 @@ class RuleStorage:
 
 def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_missing: bool = False,
                 custom_rule_obj: Optional[dict] = None) -> bool:
-    """
-    Populate rule with Snakemake input, output and parameter list.
+    """Populate rule with Snakemake input, output and parameter list.
 
     Return True if a Snakemake rule should be created.
 
@@ -252,8 +253,10 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             try:
                 custom_suffix = custom_rule_obj["suffix"]
             except KeyError:
-                raise SparvErrorMessage("The custom annotation for annotator '{}' is missing the required key "
-                                        "'suffix'.".format(custom_rule_obj["annotator"]))
+                raise SparvErrorMessage(
+                    f"The custom annotation for annotator '{custom_rule_obj['annotator']}' is missing the required "
+                    "key 'suffix'."
+                )
             sparv_config.config = sparv_config._merge_dicts(copy.deepcopy(custom_rule_obj["config"]),
                                                             sparv_config.config)
         else:
@@ -564,7 +567,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
     # Add exporter dirs (used for informing user)
     if rule.exporter:
         if rule.abstract:
-            output_dirs = set([p.parent for p in rule.inputs])
+            output_dirs = {p.parent for p in rule.inputs}
         rule.export_dirs = [str(p / "_")[:-1] for p in output_dirs]
 
     if rule.missing_config:
@@ -585,19 +588,19 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
 
     if config.get("debug"):
         print()
-        console.print("[b]{}:[/b] {}".format(rule.module_name.upper(), rule.f_name))
+        console.print(f"[b]{rule.module_name.upper()}:[/b] {rule.f_name}")
         print()
         console.print("    [b]INPUTS[/b]")
         for i in rule.inputs:
-            print("        {}".format(i))
+            print(f"        {i}")
         print()
         console.print("    [b]OUTPUTS[/b]")
         for o in rule.outputs:
-            print("        {}".format(o))
+            print(f"        {o}")
         print()
         console.print("    [b]PARAMETERS[/b]")
         for p in rule.parameters:
-            print("        {} = {!r}".format(p, rule.parameters[p]))
+            print(f"        {p} = {rule.parameters[p]!r}")
         print()
         print()
 

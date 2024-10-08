@@ -194,8 +194,8 @@ class SaldoCompLexicon:
         """Load lexicon."""
         if verbose:
             logger.info("Reading Saldo lexicon: %s", saldofile)
-        with open(saldofile, "rb") as F:
-            self.lexicon = pickle.load(F)
+        with open(saldofile, "rb") as f:
+            self.lexicon = pickle.load(f)
         if verbose:
             logger.info("OK, read %d words", len(self.lexicon))
 
@@ -229,7 +229,7 @@ class SaldoCompLexicon:
         lemgram, msds, pos, tags = annotation_tag_words.split(PART_DELIM1)
         msds = msds.split(PART_DELIM2)
         tags = tags.split(PART_DELIM2)
-        tags = list(set([t[:t.find(".")] if t.find(".") != -1 else t for t in tags]))
+        tags = list({t[:t.find(".")] if t.find(".") != -1 else t for t in tags})
         return lemgram, msds, pos, tags
 
 
@@ -422,7 +422,7 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
                 counter += 1
                 if counter > SPLIT_LIMIT:
                     giveup = True
-                    logger.info("Too many possible compounds for word '%s'" % w)
+                    logger.info("Too many possible compounds for word '%s'", w)
                     break
                 yield comp
 
@@ -671,7 +671,7 @@ def save_to_picklefile(saldofile, lexicon, protocol=-1, verbose=True):
 
         picklex[word] = sorted(lemgrams)
 
-    with open(saldofile, "wb") as F:
-        pickle.dump(picklex, F, protocol=protocol)
+    with open(saldofile, "wb") as f:
+        pickle.dump(picklex, f, protocol=protocol)
     if verbose:
         logger.info("OK, saved")

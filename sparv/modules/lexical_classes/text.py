@@ -55,8 +55,7 @@ def swefn_text(out: Output = Output("<text>:lexical_classes.swefn",
 
 def annotate_text(out: Output, lexical_classes_token: Annotation, text: Annotation, token: Annotation,
                   saldoids, cutoff, types, delimiter, affix, freq_model, decimals):
-    """
-    Annotate text chuncs with lexical classes.
+    """Annotate text chunks with lexical classes.
 
     - out: resulting annotation file
     - lexical_classes_token: existing annotation with lexical classes on token level.
@@ -105,7 +104,7 @@ def annotate_text(out: Output, lexical_classes_token: Annotation, text: Annotati
                 # Calculate class dominance
                 ref_freq = freq_model.lookup(c.replace("_", " "), 0)
                 if not ref_freq:
-                    logger.error("Class '%s' is missing" % ref_freq)
+                    logger.error("Class '%s' is missing", ref_freq)
                 class_freqs[c] = (rel / ref_freq)
 
         # Sort words according to frequency/dominance

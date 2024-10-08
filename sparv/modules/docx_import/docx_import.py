@@ -58,6 +58,6 @@ def parse(source_file: SourceFilename = SourceFilename(),
     Text(source_file).write(text)
 
     # Make up a text annotation surrounding the whole file
-    text_annotation = "{}.text".format(prefix) if prefix else "text"
+    text_annotation = f"{prefix}.text" if prefix else "text"
     Output(text_annotation, source_file=source_file).write([(0, len(text))])
     SourceStructure(source_file).write([text_annotation])

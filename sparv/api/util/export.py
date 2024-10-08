@@ -82,8 +82,8 @@ def gather_annotations(annotations: list[Annotation],
         def __repr__(self):
             """Stringify the most interesting span info (for debugging mostly)."""
             if self.export != self.name:
-                return "<%s/%s %s %s-%s>" % (self.name, self.export, self.index, self.start, self.end)
-            return "<%s %s %s-%s>" % (self.name, self.index, self.start, self.end)
+                return f"<{self.name}/{self.export} {self.index} {self.start}-{self.end}>"
+            return f"<{self.name} {self.index} {self.start}-{self.end}>"
 
         def __lt__(self, other_span):
             """Return True if other_span comes after this span.

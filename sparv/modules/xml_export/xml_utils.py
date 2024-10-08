@@ -102,7 +102,7 @@ def make_pretty_xml(span_positions, annotation_dict, export_names, token_name: s
                 inside_token = False
 
             # Make sure closing node == top stack node
-            assert span == node_stack[-1], "Overlapping elements found. Expected {} but found {}".format(span, node_stack[-1])
+            assert span == node_stack[-1], f"Overlapping elements found. Expected {span} but found {node_stack[-1]}"
             # Pop stack and move on to next span
             node_stack.pop()
 
@@ -133,7 +133,7 @@ def register_namespaces(xml_namespaces: dict):
 def add_attrs(node, annotation, annotation_dict, export_names, index, include_empty_attributes: bool):
     """Add attributes from annotation_dict to node."""
     for attrib_name, attrib_values in annotation_dict[annotation].items():
-        export_name = export_names.get(":".join([annotation, attrib_name]), attrib_name)
+        export_name = export_names.get(f"{annotation}:{attrib_name}", attrib_name)
         if attrib_values[index] or include_empty_attributes:
             node.set(export_name, attrib_values[index])
 
@@ -169,8 +169,8 @@ def replace_invalid_chars_in_names(export_names: dict) -> None:
     name_char = re.compile(r"[^{}{}]".format("".join(chars), "".join(start_chars)))
     namespace_split = re.compile(r"^({[^}]+})?(.+)")
 
-    for n in export_names:
-        namespace, name = namespace_split.match(export_names[n]).groups()
+    for n, n2 in export_names.items():
+        namespace, name = namespace_split.match(n2).groups()
         original_name = name
 
         if name_start_char.match(name[0]):
@@ -180,7 +180,9 @@ def replace_invalid_chars_in_names(export_names: dict) -> None:
             name = name[0] + name_char.sub("_", name[1:])
 
         if name != original_name:
-            logger.warning(f"The name {original_name!r} contains invalid characters and will be renamed to {name!r}.")
+            logger.warning(
+                "The name '%s' contains invalid characters and will be renamed to '%s'.", original_name, name
+            )
             export_names[n] = (namespace or "") + name
 
 
@@ -205,7 +207,7 @@ def combine(
                 for line in vi:
                     print(line.strip(), file=outf)
             print("-->", file=outf)
-        print('<corpus id="%s">' % corpus.replace("&", "&amp;").replace('"', "&quot;"), file=outf)
+        print('<corpus id="{}">'.format(corpus.replace("&", "&amp;").replace('"', "&quot;")), file=outf)
         for infile in xml_files:
             logger.info("Read: %s", infile)
             with open(infile, encoding="utf-8") as inf:
@@ -227,9 +229,8 @@ def compress(xmlfile, out):
         xmlfile: Path to source file.
         out: Path to target bz2 file.
     """
-    with open(xmlfile, "rb") as infile:
-        with bz2.BZ2File(out, "wb") as outfile:
-            copyfileobj(infile, outfile)
+    with open(xmlfile, "rb") as infile, bz2.BZ2File(out, "wb") as outfile:
+        copyfileobj(infile, outfile)
 
 
 def install_compressed_xml(corpus, bz2file, marker, export_path, host):

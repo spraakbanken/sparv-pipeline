@@ -69,7 +69,7 @@ def conllu(source_file: SourceFilename = SourceFilename(),
     # TODO: Add structural annotations from 'annotations'? This is a bit annoying though because then we'd have to
     # take annotations as a requirement which results in Sparv having to run all annotations, even the ones we don't
     # want to use here.
-    annotations = [sentence, sentence_id, token] + conll_fields
+    annotations = [sentence, sentence_id, token, *conll_fields]
     annotations = [(annot, None) for annot in annotations]
     annotation_list, _, export_names = util.export.get_annotation_names(annotations, source_annotations,
                                                                         remove_namespaces=True,
@@ -131,9 +131,9 @@ def _make_attrs(annotation, annotation_dict, export_names, index):
     """Create a list with attribute-value strings for a structural element."""
     attrs = []
     for name, annot in annotation_dict[annotation].items():
-        export_name = export_names.get(":".join([annotation, name]), name)
+        export_name = export_names.get(f"{annotation}:{name}", name)
         annotation_name = export_names.get(annotation, annotation)
         if annotation_name == "sentence":
             annotation_name = "sent"
-        attrs.append("%s_%s = %s" % (annotation_name, export_name, annot[index]))
+        attrs.append(f"{annotation_name}_{export_name} = {annot[index]}")
     return attrs

@@ -61,5 +61,4 @@ def install_mysql_dump(host, db_name, tables):
     if isinstance(tables, str):
         tables = tables.split()
     logger.info("Copying MySQL database: %s, tables: %s", db_name, ", ".join(tables))
-    subprocess.check_call('mysqldump %s %s | ssh %s "mysql %s"' %
-                          (db_name, " ".join(tables), host, db_name), shell=True)
+    subprocess.check_call(f'mysqldump {db_name} {" ".join(tables)} | ssh {host} "mysql {db_name}"', shell=True)

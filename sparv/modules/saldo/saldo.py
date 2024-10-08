@@ -153,7 +153,7 @@ def main(token, word, sentence, reference, out_sense, out_lemgram, out_baseform,
     else:
         lexicon_list = []
         for name, _lex in models_list:
-            assert models_preloaded.get(name, None) is not None, "Lexicon %s not found!" % name
+            assert models_preloaded.get(name, None) is not None, f"Lexicon {name} not found!"
             lexicon_list.append((name, models_preloaded[name]))
 
     # Combine annotation names in SALDO lexicon without annotations
@@ -185,7 +185,7 @@ def main(token, word, sentence, reference, out_sense, out_lemgram, out_baseform,
     sentences.append(orphans)
 
     if orphans:
-        logger.warning(f"Found {len(orphans)} tokens not belonging to any sentence. These will not be annotated.")
+        logger.warning("Found %d tokens not belonging to any sentence. These will not be annotated.", len(orphans))
 
     out_annotation = word.create_empty_attribute()
     logger.progress(total=len(sentences) + 1)
@@ -288,7 +288,7 @@ def _find_single_word(thewords, lexicon_list, msdtag, precision, min_precision, 
                         annotation_entry.append(item)
                 annotation_info.setdefault(key, []).extend([a + precision % prec for a in annotation_entry])
     else:
-        for (prec, annotation, prefix) in annotation_precisions:
+        for (_prec, annotation, prefix) in annotation_precisions:
             for key in annotation:
                 annotation_entry = []
                 for item in annotation[key]:
@@ -419,13 +419,14 @@ def _save_multiwords(complete_multis, sentence_tokens):
 
 def _join_annotation(annotation, delimiter, affix):
     """Convert annotations into cwb sets with unique values."""
-    return dict([(a, util.misc.cwbset(list(dict.fromkeys(annotation[a])), delimiter=delimiter, affix=affix))
-                 for a in annotation])
+    return {
+        a: util.misc.cwbset(list(dict.fromkeys(annotation[a])), delimiter=delimiter, affix=affix)
+        for a in annotation
+    }
 
 
 def get_precision(msd, msdtags):
-    """
-    Calculate the precision of a Saldo annotation.
+    """Calculate the precision of a Saldo annotation.
 
     If the word's msdtag is among the annotation's possible msdtags,
     we return a high value (0.75), a partial match returns 0.66, missing MSD returns 0.5,

@@ -29,9 +29,8 @@ class MySQL:
         self.encoding = encoding
         self.output = output
         self.first_output = True
-        if self.output and not append:
-            if os.path.exists(self.output):
-                os.remove(self.output)
+        if self.output and not append and os.path.exists(self.output):
+            os.remove(self.output)
 
     def execute(self, sql, *args):
         if self.first_output:
@@ -60,41 +59,40 @@ class MySQL:
         # return out
 
     def create_table(self, table, drop, columns, primary=None, indexes=None, constraints=None, **kwargs):
-        sqlcolumns = ["  %s %s %s DEFAULT %s" %
-                      (_atom(name), _type(typ), extra or "", _value(default))
+        sqlcolumns = [f"  {_atom(name)} {_type(typ)} {extra or ''} DEFAULT {_value(default)}"
                       for name, typ, default, extra in columns]
         if primary:
             if isinstance(primary, str):
                 primary = primary.split()
-            sqlcolumns += ["PRIMARY KEY (%s)" % _atomseq(primary)]
+            sqlcolumns += [f"PRIMARY KEY ({_atomseq(primary)})"]
         if indexes:
             for index in indexes:
                 if isinstance(index, str):
                     index = index.split()
-                sqlcolumns += ["INDEX %s (%s)" % (_atom("-".join(index)), _atomseq(index))]
+                sqlcolumns += [f"INDEX {_atom('-'.join(index))} ({_atomseq(index)})"]
         if constraints:
             for constraint in constraints:
-                sqlcolumns += ["CONSTRAINT %s %s (%s)" % (constraint[0], _atom(constraint[1]), _atomseq(constraint[2]))]
+                sqlcolumns += [f"CONSTRAINT {constraint[0]} {_atom(constraint[1])} ({_atomseq(constraint[2])})"]
         if drop:
-            sql = ("DROP TABLE IF EXISTS %s;\n" % _atom(table) +
-                   "CREATE TABLE %s (\n " % _atom(table))
+            sql = (f"DROP TABLE IF EXISTS {_atom(table)};\n"
+                   f"CREATE TABLE {_atom(table)} (\n ")
         else:
-            sql = "CREATE TABLE IF NOT EXISTS %s (\n " % _atom(table)
+            sql = f"CREATE TABLE IF NOT EXISTS {_atom(table)} (\n "
 
         sql += ",\n ".join(sqlcolumns) + ") "
 
         for key, value in kwargs.items():
-            sql += " %s = %s " % (key, value)
+            sql += f" {key} = {value} "
         sql += ";"
         self.execute(sql)
 
     def disable_keys(self, *tables):
         for table in tables:
-            self.execute("ALTER TABLE %s DISABLE KEYS;" % _atom(table))
+            self.execute(f"ALTER TABLE {_atom(table)} DISABLE KEYS;")
 
     def enable_keys(self, *tables):
         for table in tables:
-            self.execute("ALTER TABLE %s ENABLE KEYS;" % _atom(table))
+            self.execute(f"ALTER TABLE {_atom(table)} ENABLE KEYS;")
 
     def disable_checks(self):
         self.execute("SET FOREIGN_KEY_CHECKS = 0;")
@@ -108,24 +106,24 @@ class MySQL:
 
     def lock(self, *tables):
         t = ", ".join([_atom(table) + " WRITE" for table in tables])
-        self.execute("LOCK TABLES %s;" % t)
+        self.execute(f"LOCK TABLES {t};")
 
     def unlock(self):
         self.execute("UNLOCK TABLES;")
 
     def set_names(self, encoding="utf8mb4"):
-        self.execute("SET NAMES %s;" % encoding)
+        self.execute(f"SET NAMES {encoding};")
 
     def delete_rows(self, table, conditions):
-        conditions = " AND ".join(["%s = %s" % (_atom(k), _value(v)) for (k, v) in conditions.items()])
-        self.execute("DELETE FROM %s WHERE %s;" % (_atom(table), conditions))
+        conditions = " AND ".join([f"{_atom(k)} = {_value(v)}" for (k, v) in conditions.items()])
+        self.execute(f"DELETE FROM {_atom(table)} WHERE {conditions};")
 
     def drop_table(self, *tables):
-        self.execute("DROP TABLE IF EXISTS %s;" % _atomseq(tables))
+        self.execute(f"DROP TABLE IF EXISTS {_atomseq(tables)};")
 
     def rename_table(self, tables):
-        renames = ["%s TO %s" % (_atom(old), _atom(new)) for old, new in tables.items()]
-        self.execute("RENAME TABLE %s;" % ", ".join(renames))
+        renames = [f"{_atom(old)} TO {_atom(new)}" for old, new in tables.items()]
+        self.execute(f"RENAME TABLE {', '.join(renames)};")
 
     def add_row(self, table, rows, extra=""):
         if isinstance(rows, dict):
@@ -138,13 +136,13 @@ class MySQL:
         def insert(_values, _extra=""):
             if _extra:
                 _extra = "\n" + _extra
-            return "INSERT INTO %s (%s) VALUES\n" % (table, ", ".join(sorted(rows[0].keys()))) + ",\n".join(
-                _values) + "%s;" % _extra
+            return f"INSERT INTO {table} ({', '.join(sorted(rows[0].keys()))}) VALUES\n" + ",\n".join(
+                _values) + f"{_extra};"
 
         for row in rows:
             if isinstance(row, dict):
                 rowlist = sorted(row.items(), key=lambda x: x[0])
-                valueline = "(%s)" % (_valueseq([x[1] for x in rowlist]))
+                valueline = f"({_valueseq([x[1] for x in rowlist])})"
                 input_length += len(valueline)
                 if input_length > MAX_ALLOWED_PACKET:
                     sql.append(insert(values, extra))
@@ -171,7 +169,7 @@ _TYPE_CONVERSIONS = {
 
 def _atom(atom):
     assert isinstance(atom, str)
-    return "`%s`" % (atom,)
+    return f"`{atom}`"
 
 
 def _atomseq(atoms):
@@ -184,9 +182,9 @@ def _value(val):
     if val is None:
         return "NULL"
     if isinstance(val, str):
-        return "'%s'" % (_escape(val),)
+        return f"'{_escape(val)}'"
     else:
-        return "%s" % (val,)
+        return f"{val}"
 
 
 def _valueseq(vals):
@@ -196,7 +194,7 @@ def _valueseq(vals):
 
 def _dict(dct, filter_null=False):
     assert isinstance(dct, dict)
-    return ", ".join("%s = %s" % (_atom(k), _value(v)) for (k, v) in dct.items()
+    return ", ".join(f"{_atom(k)} = {_value(v)}" for (k, v) in dct.items()
                      if not (filter_null and v is None))
 
 

@@ -173,7 +173,7 @@ def wordpicture(
         assert not incomplete, "incomplete is not empty"
 
         def _match(pattern, value):
-            return bool(re.match(r"^%s$" % pattern, value))
+            return bool(re.match(fr"^{pattern}$", value))
 
         def _findrel(head, rel, dep):
             result = []
@@ -236,8 +236,14 @@ def wordpicture(
                     missing_rels = [x for x in nrel[1] if x not in token_rels]
                     for mrel in missing_rels:
                         triple = (
-                            (v["lemgram"], v["word"], v["pos"], v["ref"]), mrel, ("", "", "", v["ref"]), ("", None), sentid,
-                            v["ref"], v["ref"])
+                            (v["lemgram"], v["word"], v["pos"], v["ref"]),
+                            mrel,
+                            ("", "", "", v["ref"]),
+                            ("", None),
+                            sentid,
+                            v["ref"],
+                            v["ref"]
+                        )
                         triples.extend(_mutate_triple(triple))
         logger.progress()
 
@@ -312,7 +318,7 @@ def _mutate_triple(triple):
                     pass
 
     if extra[0].startswith("|") and extra[0].endswith("|"):
-        extra = [e for e in sorted([x for x in extra[0].split("|") if x], key=len)]
+        extra = sorted([x for x in extra[0].split("|") if x], key=len)
         extra = extra[0] if extra else ""
     else:
         extra = extra[0]
@@ -418,11 +424,11 @@ def wordpicture_sql(
             head, headpos, rel, dep, deppos, extra, sid, refh, refd, bfhead, bfdep, wfhead, wfdep = triple.split("\t")
             bfhead, bfdep, wfhead, wfdep = int(bfhead), int(bfdep), int(wfhead), int(wfdep)
 
-            if not (head, headpos) in strings:
+            if (head, headpos) not in strings:
                 string_index += 1
             head = strings.setdefault((head, headpos), string_index)
 
-            if not (dep, deppos, extra) in strings:
+            if (dep, deppos, extra) not in strings:
                 string_index += 1
             dep = strings.setdefault((dep, deppos, extra), string_index)
 
@@ -601,7 +607,7 @@ def _write_sql(strings, sentences, freq, rel_count, head_rel_count, dep_rel_coun
 
 # Names of every possible relation in the resulting database
 RELNAMES = ["SS", "OBJ", "ADV", "AA", "AT", "ET", "PA"]
-rel_enum = "ENUM(%s)" % ", ".join("'%s'" % r for r in RELNAMES)
+rel_enum = "ENUM({})".format(", ".join(f"'{r}'" for r in RELNAMES))
 
 MYSQL_RELATIONS = {"columns": [("id", int, 0, "NOT NULL"),
                                ("head", int, 0, "NOT NULL"),
@@ -623,9 +629,9 @@ MYSQL_RELATIONS = {"columns": [("id", int, 0, "NOT NULL"),
                    }
 
 MYSQL_STRINGS = {"columns": [("id", int, 0, "NOT NULL"),
-                             ("string", "varchar(%d)" % MAX_STRING_LENGTH, "", "NOT NULL"),
-                             ("stringextra", "varchar(%d)" % MAX_STRINGEXTRA_LENGTH, "", "NOT NULL"),
-                             ("pos", "varchar(%d)" % MAX_POS_LENGTH, "", "NOT NULL")],
+                             ("string", f"varchar({MAX_STRING_LENGTH:d})", "", "NOT NULL"),
+                             ("stringextra", f"varchar({MAX_STRINGEXTRA_LENGTH:d})", "", "NOT NULL"),
+                             ("pos", f"varchar({MAX_POS_LENGTH:d})", "", "NOT NULL")],
                  "primary": "string id pos stringextra",
                  "indexes": ["id string pos stringextra"],
                  "default charset": "utf8mb4",

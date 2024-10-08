@@ -90,7 +90,7 @@ def _make_header(token, token_attributes, export_names, delimiter):
     """Create a csv header containing the names of the token annotations."""
     line = [export_names.get(token, token)]
     for annot in token_attributes:
-        line.append(export_names.get(":".join([token, annot]), annot))
+        line.append(export_names.get(f"{token}:{annot}", annot))
     return delimiter.join(line)
 
 
@@ -110,8 +110,8 @@ def _make_attrs(annotation, annotation_dict, export_names, index):
     """Create a list with attribute-value strings for a structural element."""
     attrs = []
     for name, annot in annotation_dict[annotation].items():
-        export_name = export_names.get(":".join([annotation, name]), name)
+        export_name = export_names.get(f"{annotation}:{name}", name)
         annotation_name = export_names.get(annotation, annotation)
         if annot[index]:
-            attrs.append("%s.%s = %s" % (annotation_name, export_name, annot[index]))
+            attrs.append(f"{annotation_name}.{export_name} = {annot[index]}")
     return attrs

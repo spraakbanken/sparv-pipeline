@@ -303,7 +303,7 @@ def _annotate_fallback(out, word, msd, main_annotation, key, models, delimiter, 
     else:
         lexicon_list = []
         for name, _lex in models_list:
-            assert models_preloaded.get(name, None) is not None, "Lexicon %s not found!" % name
+            assert models_preloaded.get(name, None) is not None, f"Lexicon {name} not found!"
             lexicon_list.append((name, models_preloaded[name]))
 
     word_annotation = list(word.read())

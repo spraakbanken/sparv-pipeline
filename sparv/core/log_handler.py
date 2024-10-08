@@ -573,12 +573,11 @@ class LogHandler:
                 # SparvErrorMessage exception from pipeline core
                 # Parse error message
                 message = re.search(
-                    r"{}([^\n]*)\n([^\n]*)\n(.*?){}".format(SparvErrorMessage.start_marker,
-                                                            SparvErrorMessage.end_marker),
+                    rf"{SparvErrorMessage.start_marker}([^\n]*)\n([^\n]*)\n(.*?){SparvErrorMessage.end_marker}",
                     msg["msg"], flags=re.DOTALL)
                 if message:
                     module, function, error_message = message.groups()
-                    error_source = ":".join((module, function)) if module and function else None
+                    error_source = f"{module}:{function}" if module and function else None
                     self.messages["error"].append((error_source, error_message))
                     self.handled_error = True
             elif "exit status 123" in msg["msg"]:
@@ -711,8 +710,8 @@ class LogHandler:
                     # Errors from modules have already been logged, so notify user
                     if self.log_filename:
                         self.error(
-                            "Job execution failed. See log messages above or {} for details.".format(
-                                os.path.join(paths.log_dir, self.log_filename)))
+                            "Job execution failed. See log messages above or "
+                            f"{os.path.join(paths.log_dir, self.log_filename)} for details.")
                     else:
                         self.error("Job execution failed. See log messages above for details.")
             # Unhandled errors
@@ -753,7 +752,7 @@ class LogHandler:
                     total_time = sum(self.stats_data.values())
                     for task, elapsed in sorted(self.stats_data.items(), key=lambda x: -x[1]):
                         table.add_row(task, str(timedelta(seconds=round(elapsed))),
-                                      "{:.1f}%".format(100 * elapsed / total_time))
+                                      f"{100 * elapsed / total_time:.1f}%")
                     console.print(table)
 
                 if self.log_levelcount:

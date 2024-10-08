@@ -5,7 +5,7 @@ import pytest
 from sparv.core.registry import LanguageRegistry
 
 
-@pytest.fixture()
+@pytest.fixture
 def language_registry() -> LanguageRegistry:
     return LanguageRegistry()
 

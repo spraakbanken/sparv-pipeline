@@ -74,13 +74,13 @@ def parse(source_file: SourceFilename = SourceFilename(),
                                 "text.")
 
     # Write page spans
-    Output("{}.page".format(prefix) if prefix else "page", source_file=source_file).write(pages)
-    Output("{}.page:number".format(prefix) if prefix else "page:number", source_file=source_file).write(list(str(i) for i in range(1, len(pages) + 1)))
+    Output(f"{prefix}.page" if prefix else "page", source_file=source_file).write(pages)
+    Output(f"{prefix}.page:number" if prefix else "page:number", source_file=source_file).write([str(i) for i in range(1, len(pages) + 1)])
 
     text = "\n".join(texts)
     Text(source_file).write(text)
 
     # Make up a text annotation surrounding the whole file
-    text_annotation = "{}.text".format(prefix) if prefix else "text"
+    text_annotation = f"{prefix}.text" if prefix else "text"
     Output(text_annotation, source_file=source_file).write([(0, len(text))])
     SourceStructure(source_file).write([text_annotation, "page", "page:number"])

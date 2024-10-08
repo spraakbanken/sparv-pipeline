@@ -54,7 +54,7 @@ if snakemake.params.compression:
     io.compression = snakemake.params.compression
 
 # Import module
-modules_path = ".".join(("sparv", paths.modules_dir))
+modules_path = f"sparv.{paths.modules_dir}"
 module_name = snakemake.params.module_name
 
 use_preloader = snakemake.params.use_preloader
@@ -93,10 +93,10 @@ if not use_preloader:
     else:
         try:
             # Try to import standard Sparv module
-            module = importlib.import_module(".".join((modules_path, module_name)))
+            module = importlib.import_module(f"{modules_path}.{module_name}")
         except ModuleNotFoundError:
             # Try to find plugin module
-            entry_points = dict((e.name, e) for e in entry_points(group=f"sparv.{plugin_name}"))
+            entry_points = {e.name: e for e in entry_points(group=f"sparv.{plugin_name}")}
             entry_point = entry_points.get(module_name)
             if entry_point:
                 module = entry_point.load()
@@ -115,7 +115,7 @@ log_handler.setup_logging(snakemake.config["log_server"],
                           file=snakemake.params.source_file,
                           job=f"{module_name}:{f_name}")
 logger = logging.getLogger("sparv")
-logger.info("RUN: %s:%s(%s)", module_name, f_name, ", ".join("%s=%s" % (i[0], repr(i[1])) for i in
+logger.info("RUN: %s:%s(%s)", module_name, f_name, ", ".join(f"{i[0]}={i[1]!r}" for i in
                                                              list(parameters.items())))
 
 # Redirect any prints to logging module
