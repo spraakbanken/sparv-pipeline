@@ -91,7 +91,7 @@ def scrambled(source_file: SourceFilename = SourceFilename(),
 
     # Write XML to file
     with open(out, mode="w", encoding="utf-8") as outfile:
-        outfile.write(xmlstr)
+        print(xmlstr, file=outfile)  # Use print() to get a newline at the end of the file
     logger.info("Exported: %s", out)
 
 
