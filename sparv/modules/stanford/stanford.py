@@ -54,12 +54,12 @@ def annotate(corpus_text: Text = Text(),
 
         # Write all texts to temporary files
         filelist = tmpdir / "filelist.txt"
-        with open(filelist, "w", encoding="utf-8") as LIST:
+        with open(filelist, "w", encoding="utf-8") as f:
             for nr, (start, end) in enumerate(text_spans):
                 filename = tmpdir / f"text-{nr}.txt"
-                print(filename, file=LIST)
-                with open(filename, "w", encoding="utf-8") as F:
-                    print(text_data[start:end], file=F)
+                print(filename, file=f)
+                with open(filename, "w", encoding="utf-8") as f2:
+                    print(text_data[start:end], file=f2)
                 logger.debug("Writing text %d (%d-%d): %r...%r --> %s", nr, start, end,
                              text_data[start:start + 20], text_data[end - 20:end], filename.name)
 
@@ -71,8 +71,7 @@ def annotate(corpus_text: Text = Text(),
         # Read and parse each of the output files
         for nr, (start, end) in enumerate(text_spans):
             filename = tmpdir / f"text-{nr}.txt.conll"
-            with open(filename, encoding="utf-8") as F:
-                output = F.read()
+            output = filename.read_text(encoding="utf-8")
             logger.debug("Reading text %d (%d-%d): %s --> %r...%r", nr, start, end,
                          filename.name, output[:20], output[-20:])
             processed_sentences = _parse_output(output, lang, start)

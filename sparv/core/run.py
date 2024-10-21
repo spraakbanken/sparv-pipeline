@@ -12,12 +12,11 @@ from sparv.core import log_handler, paths, registry
 
 def main(argv=None, log_level: str = "info"):
     """Parse command line arguments and execute the requested Sparv module."""
-
     # Set up logging
     logging.basicConfig(format=log_handler.LOG_FORMAT, datefmt=log_handler.DATE_FORMAT, level=log_level.upper(),
                         stream=sys.stdout)
 
-    modules_path = ".".join(("sparv", paths.modules_dir))
+    modules_path = f"sparv.{paths.modules_dir}"
 
     if argv is None:
         argv = sys.argv[1:]
@@ -35,7 +34,7 @@ def main(argv=None, log_level: str = "info"):
     module_name = module_args.module
 
     # Import module, which will add available functions to annotators registry
-    importlib.import_module(".".join((modules_path, module_name)))
+    importlib.import_module(f"{modules_path}.{module_name}")
 
     parser = argparse.ArgumentParser(prog="sparv run-module " + module_name,
                                      epilog="note: Annotation classes and configuration variables are not available "
@@ -74,10 +73,10 @@ def main(argv=None, log_level: str = "info"):
                 if (arg_type in {str, int, bool} and not isinstance(param_default, Config)) or param_default is None:
                     # We can handle this
                     f_args["default"] = param_default
-                    if arg_type == bool and param_default is False:
+                    if arg_type is bool and param_default is False:
                         f_args["action"] = "store_true"
                         del f_args["type"]
-                else:
+                else:  # noqa: PLR5501
                     # We can't handle this type of default value
                     # If the type hint is Optional, set default to None, otherwise make required
                     if is_optional:

@@ -1,6 +1,7 @@
 """Compound analysis."""
 
 import itertools
+import operator
 import pathlib
 import pickle
 import re
@@ -18,6 +19,8 @@ SPLIT_LIMIT = 200
 COMP_LIMIT = 100
 INVALID_PREFIXES = ("http:", "https:", "www.")
 INVALID_REGEX = re.compile(r"(..?)\1{3}")
+MAX_ITERATIONS = 250000  # Max iterations per word when performing compound analysis
+MAX_TIME = 20  # Max time in seconds per word when performing compound analysis
 
 # SALDO: Delimiters that hopefully are never found in an annotation or in a POS tag:
 PART_DELIM = "^"
@@ -225,7 +228,8 @@ class SaldoCompLexicon:
                 and (msd in s[3] or not msd or [partial for partial in s[3] if partial.startswith(msd[:msd.find(".")])])
                 ]
 
-    def _split_triple(self, annotation_tag_words):
+    @staticmethod
+    def _split_triple(annotation_tag_words):
         lemgram, msds, pos, tags = annotation_tag_words.split(PART_DELIM1)
         msds = msds.split(PART_DELIM2)
         tags = tags.split(PART_DELIM2)
@@ -299,8 +303,6 @@ class InFileLexicon:
 
 def split_word(saldo_lexicon, altlexicon, w, msd):
     """Split word w into every possible combination of substrings."""
-    MAX_ITERATIONS = 250000
-    MAX_TIME = 20  # Seconds
     invalid_spans = set()
     valid_spans = set()
     # Create list of possible splitpoint indices for w
@@ -342,7 +344,7 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
             splitpoint = tuple(i + 1 for i in indices)
 
             # Create list of affix spans
-            spans = list(zip((0,) + splitpoint, splitpoint + (None,)))
+            spans = list(zip((0, *splitpoint), (*splitpoint, None)))
 
             # Abort if current compound contains an affix known to be invalid
             abort = False
@@ -366,32 +368,28 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
                 if this_span not in valid_spans:
                     if this_span in invalid_spans:
                         continue
+                    elif not (saldo_lexicon.get_prefixes(comp[0]) or altlexicon.get_prefixes(comp[0])):
+                        invalid_spans.add(this_span)
+                        if multicomp and all((spans[0], i) in invalid_spans for i in range(len(comps))):
+                            invalid_spans.add(spans[0])
+                        continue
                     else:
-                        if not (saldo_lexicon.get_prefixes(comp[0]) or altlexicon.get_prefixes(comp[0])):
-                            invalid_spans.add(this_span)
-                            if multicomp:
-                                if all((spans[0], i) in invalid_spans for i in range(len(comps))):
-                                    invalid_spans.add(spans[0])
-                            continue
-                        else:
-                            valid_spans.add(this_span)
+                        valid_spans.add(this_span)
 
                 # Check if suffix is valid
                 this_span = (spans[-1], comp_i) if multicomp else spans[-1]
                 if this_span not in valid_spans:
                     if this_span in invalid_spans:
                         continue
+                    # Is there a possible suffix analysis?
+                    elif exception(comp[-1]) or not (saldo_lexicon.get_suffixes(comp[-1], msd)
+                                                   or altlexicon.get_suffixes(comp[-1], msd)):
+                        invalid_spans.add(this_span)
+                        if multicomp and all((spans[-1], i) in invalid_spans for i in range(len(comps))):
+                            invalid_spans.add(spans[-1])
+                        continue
                     else:
-                        # Is there a possible suffix analysis?
-                        if exception(comp[-1]) or not (saldo_lexicon.get_suffixes(comp[-1], msd)
-                                                       or altlexicon.get_suffixes(comp[-1], msd)):
-                            invalid_spans.add(this_span)
-                            if multicomp:
-                                if all((spans[-1], i) in invalid_spans for i in range(len(comps))):
-                                    invalid_spans.add(spans[-1])
-                            continue
-                        else:
-                            valid_spans.add(this_span)
+                        valid_spans.add(this_span)
 
                 # Check if other spans are valid
                 abort = False
@@ -401,20 +399,18 @@ def split_word(saldo_lexicon, altlexicon, w, msd):
                         if this_span in invalid_spans:
                             abort = True
                             break
+                        elif exception(infix) or not (saldo_lexicon.get_infixes(infix)
+                                                    or altlexicon.get_prefixes(infix)):
+                            invalid_spans.add(this_span)
+                            if multicomp and all((spans[k], i) in invalid_spans for i in range(len(comps))):
+                                invalid_spans.add(spans[k])
+                            abort = True
+                            # Skip any combination of spans following the invalid span
+                            for j in range(k + 1, n):
+                                indices[j] = j + nn - n
+                            break
                         else:
-                            if exception(infix) or not (saldo_lexicon.get_infixes(infix)
-                                                        or altlexicon.get_prefixes(infix)):
-                                invalid_spans.add(this_span)
-                                if multicomp:
-                                    if all((spans[k], i) in invalid_spans for i in range(len(comps))):
-                                        invalid_spans.add(spans[k])
-                                abort = True
-                                # Skip any combination of spans following the invalid span
-                                for j in range(k + 1, n):
-                                    indices[j] = j + nn - n
-                                break
-                            else:
-                                valid_spans.add(this_span)
+                            valid_spans.add(this_span)
 
                 if abort:
                     continue
@@ -478,7 +474,7 @@ def rank_compounds(compounds, nst_model, stats_lexicon):
             tags = list(itertools.product(*[affix[2] for affix in c]))
             # Calculate probability score
             word_probs = max(
-                reduce(lambda x, y: x * y, [(stats_lexicon.lookup_prob(i)) for i in zip(affixes, t)]) for t in tags)
+                reduce(operator.mul, [(stats_lexicon.lookup_prob(i)) for i in zip(affixes, t)]) for t in tags)
             tag_prob = max(nst_model.prob("+".join(t)) for t in tags)
             score = word_probs * tag_prob
             ranklist.append((score, c))
@@ -585,10 +581,7 @@ def make_new_baseforms(out_baseform, msd_tag, compounds, stats_lexicon, altlexic
     for comp in compounds:
         comp = comp[1]
 
-        if comp[-1][1] == "0":
-            base_suffix = comp[-1][0]
-        else:
-            base_suffix = comp[-1][1][:comp[-1][1].find(".")]
+        base_suffix = comp[-1][0] if comp[-1][1] == "0" else comp[-1][1][:comp[-1][1].find(".")]
         prefix = comp[0][0]
         # If first letter has upper case, check if one of the affixes is a name:
         if prefix[0] == prefix[0].upper():
@@ -600,9 +593,9 @@ def make_new_baseforms(out_baseform, msd_tag, compounds, stats_lexicon, altlexic
             baseform = "".join(affix[0] for affix in comp[:-1]) + base_suffix
 
         # Check if this baseform with the MSD tag occurs in stats_lexicon
-        if baseform not in baseform_list:
-            if stats_lexicon.lookup_word_tag_freq(baseform, msd_tag) > 0 or altlexicon.lookup(baseform.lower()) != []:
-                baseform_list.append(baseform)
+        if baseform not in baseform_list and (
+            stats_lexicon.lookup_word_tag_freq(baseform, msd_tag) > 0 or altlexicon.lookup(baseform.lower()) != []):
+            baseform_list.append(baseform)
 
     # Add to annotation
     out_baseform.append(util.misc.cwbset(baseform_list, delimiter, affix) if (compounds and baseform_list) else affix)
@@ -635,7 +628,7 @@ def read_lmf(xml: pathlib.Path, tagset: str = "SUC"):
                     param = form.findtext("param")
 
                     if not param[-1].isdigit() and param != "frag":  # and (param in ("c", "ci") or (pos in ("nn", "vb", "av", "ab") or pos[-1] == "h")):
-                        saldotag = " ".join([pos] + inhs + [param])
+                        saldotag = " ".join([pos, *inhs, param])
                         tags = tagmap.get(saldotag)
 
                         lexicon.setdefault(word, {}).setdefault(lem, {"msd": set()})["msd"].add(param)

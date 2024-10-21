@@ -99,7 +99,7 @@ class BaseAnnotation(Base):
         return self.split()[1] or None
 
     def __eq__(self, other):
-        return type(self) == type(other) and self.name == other.name and self.source_file == other.source_file
+        return type(self) is type(other) and self.name == other.name and self.source_file == other.source_file
 
     def __hash__(self):
         return hash(repr(self) + repr(self.source_file))
@@ -406,8 +406,6 @@ class AnnotationCommonData(CommonMixin, BaseAnnotation):
 class Marker(AnnotationCommonData):
     """A marker indicating that something has run."""
 
-    pass
-
 
 class MarkerOptional(Marker):
     """Same as regular Marker, except if it doesn't exist, it won't be created."""
@@ -671,7 +669,7 @@ class Model(Base):
         super().__init__(name)
 
     def __eq__(self, other):
-        return type(self) == type(other) and self.name == other.name and self.path == other.path
+        return type(self) is type(other) and self.name == other.name and self.path == other.path
 
     @property
     def path(self) -> pathlib.Path:
@@ -685,36 +683,31 @@ class Model(Base):
 
     def write(self, data):
         """Write arbitrary string data to models directory."""
-        file_path = self.path
-        os.makedirs(file_path.parent, exist_ok=True)
-        with open(file_path, "w", encoding="utf-8") as f:
-            f.write(data)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.path.write_text(data, encoding="utf-8")
+
         # Update file modification time even if nothing was written
-        os.utime(file_path, None)
+        os.utime(self.path, None)
         logger.info("Wrote %d bytes: %s", len(data), self.name)
 
     def read(self):
         """Read arbitrary string data from file in models directory."""
-        file_path = self.path
-        with open(file_path, encoding="utf-8") as f:
-            data = f.read()
+        data = self.path.read_text(encoding="utf-8")
         logger.debug("Read %d bytes: %s", len(data), self.name)
         return data
 
     def write_pickle(self, data, protocol=-1):
         """Dump data to pickle file in models directory."""
-        file_path = self.path
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        with open(file_path, "wb") as f:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        with self.path.open("wb") as f:
             pickle.dump(data, f, protocol=protocol)
         # Update file modification time even if nothing was written
-        os.utime(file_path, None)
+        os.utime(self.path, None)
         logger.info("Wrote %d bytes: %s", len(data), self.name)
 
     def read_pickle(self):
         """Read pickled data from file in models directory."""
-        file_path = self.path
-        with open(file_path, "rb") as f:
+        with self.path.open("rb") as f:
             data = pickle.load(f)
         logger.debug("Read %d bytes: %s", len(data), self.name)
         return data
@@ -750,11 +743,7 @@ class Model(Base):
 
     def remove(self, raise_errors: bool = False):
         """Remove model file from disk."""
-        try:
-            os.remove(self.path)
-        except FileNotFoundError as e:
-            if raise_errors:
-                raise e
+        self.path.unlink(missing_ok=not raise_errors)
 
 
 class ModelOutput(Model):
@@ -798,8 +787,8 @@ class Export(str):
 class ExportInput(str):
     """Export directory and filename pattern, used as input."""
 
-    def __new__(_cls, val: str, *args, **kwargs):
-        return super().__new__(_cls, val)
+    def __new__(cls, val: str, *args, **kwargs):
+        return super().__new__(cls, val)
 
     def __init__(self, val: str, all_files: bool = False):
         self.all_files = all_files
@@ -906,7 +895,7 @@ class HeaderAnnotations(SourceAnnotations):
 class SourceAnnotationsAllSourceFiles(Sequence[tuple[AnnotationAllSourceFiles, Optional[str]]]):
     """Iterable with source annotations to include in export."""
 
-    def __init__(self, config_name: str, source_files: Iterable[str]=(), headers: bool = False):
+    def __init__(self, config_name: str, source_files: Iterable[str] = (), headers: bool = False):
         self.config_name = config_name
         self.raw_list = None
         self.annotations: Sequence[tuple[AnnotationAllSourceFiles, Optional[str]]] = []
@@ -952,7 +941,7 @@ class SourceAnnotationsAllSourceFiles(Sequence[tuple[AnnotationAllSourceFiles, O
 class HeaderAnnotationsAllSourceFiles(SourceAnnotationsAllSourceFiles):
     """Iterable with header annotations to include in export."""
 
-    def __init__(self, config_name: str, source_files: Iterable[str]=()):
+    def __init__(self, config_name: str, source_files: Iterable[str] = ()):
         super().__init__(config_name, source_files, headers=True)
 
 
@@ -976,7 +965,8 @@ class SourceStructureParser(ABC):
         # on subsequent calls to the get_annotations() and get_plain_annotations() methods.
         self.annotations = None
 
-    def setup(self):
+    @staticmethod
+    def setup():
         """Return a list of wizard dictionaries with questions needed for setting up the class.
 
         Answers to the questions will automatically be saved to self.answers.
@@ -990,7 +980,6 @@ class SourceStructureParser(ABC):
         Each value has the format 'annotation:attribute' or 'annotation'.
         Plain versions of each annotation ('annotation' without attribute) must be included as well.
         """
-        pass
 
     def get_plain_annotations(self, corpus_config: dict) -> list[str]:
         """Return a list of plain annotations without attributes.

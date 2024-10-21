@@ -50,9 +50,8 @@ def suc_to_feats(pos, msd, delim="."):
         for i in msd:
             if MSD_TO_FEATS.get(i):
                 feats.append(MSD_TO_FEATS[i])
-            else:
-                if i not in non_mapping_msds_for_debug:
-                    non_mapping_msds_for_debug.append(i)
+            elif i not in non_mapping_msds_for_debug:
+                non_mapping_msds_for_debug.append(i)
         if pos == "PC":
             feats.append("VerbForm=Part")
         if pos == "VB" and "Abbr=Yes" not in feats and "Compound=Yes" not in feats and not _findfeat(feats, "VerbForm"):
@@ -65,7 +64,4 @@ def suc_to_feats(pos, msd, delim="."):
 
 def _findfeat(feats, to_find):
     """Check if 'to_find' is a feature (key) in 'feats'."""
-    for feat in feats:
-        if f"{to_find}=" in feat:
-            return True
-    return False
+    return any(f"{to_find}=" in feat for feat in feats)

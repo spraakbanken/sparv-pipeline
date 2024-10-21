@@ -123,13 +123,7 @@ def run(sparv_datadir: Optional[str] = None):
             except KeyboardInterrupt:
                 console.print("\nSetup interrupted.")
                 sys.exit()
-            if path_str:
-                path = pathlib.Path(path_str)
-            else:
-                if current_dir:
-                    path = current_dir
-                else:
-                    path = default_dir
+            path = pathlib.Path(path_str) if path_str else current_dir or default_dir
 
     try:
         # Expand any "~"

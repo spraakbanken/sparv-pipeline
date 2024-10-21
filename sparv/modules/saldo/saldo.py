@@ -1,6 +1,7 @@
 """Create annotations from SALDO."""
 
 import itertools
+import operator
 import re
 from typing import Optional
 
@@ -176,10 +177,7 @@ def main(token, word, sentence, reference, out_sense, out_lemgram, out_baseform,
 
     word_annotation = list(word.read())
     ref_annotation = list(reference.read())
-    if msd:
-        msd_annotation = list(msd.read())
-    else:
-        msd_annotation = word.create_empty_attribute()
+    msd_annotation = list(msd.read()) if msd else word.create_empty_attribute()
 
     sentences, orphans = sentence.get_children(token)
     sentences.append(orphans)
@@ -204,10 +202,7 @@ def main(token, word, sentence, reference, out_sense, out_lemgram, out_baseform,
             sentence_tokens[ref] = {"token_index": token_index, "annotations": annotation_info}
 
             # Support for multiple values of word
-            if word_separator:
-                thewords = [w for w in theword.split(word_separator) if w]
-            else:
-                thewords = [theword]
+            thewords = [w for w in theword.split(word_separator) if w] if word_separator else [theword]
 
             # First use MSD tags to find the most probable single word annotations
             ann_tags_words = _find_single_word(thewords, lexicon_list, msdtag, precision, min_precision,
@@ -247,13 +242,8 @@ def _find_single_word(thewords, lexicon_list, msdtag, precision, min_precision, 
 
     for w in thewords:
         for name, lexicon in lexicon_list:
-            if name == "saldo" or len(lexicon_list) == 1:
-                prefix = ""
-            else:
-                prefix = name + "m--"
-            annotation = []
-            for a in lexicon.lookup(w):
-                annotation.append(a + (prefix,))
+            prefix = "" if name == "saldo" or len(lexicon_list) == 1 else name + "m--"
+            annotation = [(*a, prefix) for a in lexicon.lookup(w)]
             ann_tags_words += annotation
             # # Set break if each word only gets annotations from first lexicon that has entry for word
             # break
@@ -264,7 +254,7 @@ def _find_single_word(thewords, lexicon_list, msdtag, precision, min_precision, 
     if min_precision > 0:
         annotation_precisions = [x for x in annotation_precisions if x[0] >= min_precision]
     annotation_precisions = _normalize_precision(annotation_precisions)
-    annotation_precisions.sort(reverse=True, key=lambda x: x[0])
+    annotation_precisions.sort(reverse=True, key=operator.itemgetter(0))
 
     if precision_filter and annotation_precisions:
         if precision_filter == "first":
@@ -310,10 +300,9 @@ def _find_multiword_expressions(incomplete_multis, complete_multis, thewords, re
         seeking_word = x[1][0]  # The next word we are looking for in this multi-word expression
 
         # Is a gap necessary in this position for this expression?
-        if seeking_word == "*":
-            if x[1][1].lower() in (w.lower() for w in thewords):
-                seeking_word = x[1][1]
-                del x[1][0]
+        if seeking_word == "*" and x[1][1].lower() in (w.lower() for w in thewords):
+            seeking_word = x[1][1]
+            del x[1][0]
 
         # If current gap is greater than max_gaps, stop searching
         if x[5][1] > max_gaps:

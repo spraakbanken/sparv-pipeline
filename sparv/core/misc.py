@@ -7,7 +7,7 @@ from collections.abc import Iterable
 from typing import Optional
 
 
-class SparvErrorMessage(Exception):
+class SparvErrorMessage(Exception):  # noqa: N818
     """Exception used to notify users of errors in a friendly way without displaying traceback."""
 
     start_marker = "<<<START>>>"

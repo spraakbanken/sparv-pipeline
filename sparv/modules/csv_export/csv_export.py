@@ -72,7 +72,7 @@ def csv(source_file: SourceFilename = SourceFilename(),
             else:
                 attrs = _make_attrs(span.name, annotation_dict, export_names, span.index)
                 for attr in attrs:
-                    csv_data.append(f"# {attr}")
+                    csv_data.append(f"# {attr}")  # noqa: PERF401
                 if not attrs:
                     csv_data.append(f"# {span.export}")
 
@@ -88,9 +88,9 @@ def csv(source_file: SourceFilename = SourceFilename(),
 
 def _make_header(token, token_attributes, export_names, delimiter):
     """Create a csv header containing the names of the token annotations."""
-    line = [export_names.get(token, token)]
-    for annot in token_attributes:
-        line.append(export_names.get(f"{token}:{annot}", annot))
+    line = [export_names.get(token, token)] + [
+        export_names.get(f"{token}:{annot}", annot) for annot in token_attributes
+    ]
     return delimiter.join(line)
 
 

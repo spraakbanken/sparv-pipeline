@@ -126,7 +126,8 @@ class OdtParser:
             buffer += element.tail
         return buffer
 
-    def ns(self, tag):
+    @staticmethod
+    def ns(tag):
         """Get the name for 'tag' including its namespace."""
         nsmap = {
             "text": "urn:oasis:names:tc:opendocument:xmlns:text:1.0",

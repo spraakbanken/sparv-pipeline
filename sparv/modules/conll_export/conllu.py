@@ -89,7 +89,7 @@ def conllu(source_file: SourceFilename = SourceFilename(),
             else:
                 attrs = _make_attrs(span.name, annotation_dict, export_names, span.index)
                 for attr in attrs:
-                    csv_data.append(f"# {attr}")
+                    csv_data.append(f"# {attr}")  # noqa: PERF401
                 if not attrs:
                     csv_data.append(f"# {span.export}")
 

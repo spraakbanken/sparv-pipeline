@@ -112,7 +112,7 @@ def read_lmf(xml, annotation_elements=("writtenForm", "lemgram"), verbose=True, 
                         key = "gf"
                     elif a == "lemgram":
                         key = "lem"
-                    annotations[key] = tuple([_findval(lem, a)])
+                    annotations[key] = (_findval(lem, a),)
 
                 pos = _findval(lem, "partOfSpeech")
                 inhs = _findval(lem, "inherent")
@@ -153,8 +153,8 @@ def read_lmf(xml, annotation_elements=("writtenForm", "lemgram"), verbose=True, 
                                 if tags:
                                     lexicon.setdefault(word, {}).setdefault(annotations, (set(), set(), False, False))[0].update(tags)
                             else:
-                                saldotag = " ".join([pos, param])  # this tag is rather useless, but at least gives some information
-                                tags = tuple([saldotag])
+                                saldotag = f"{pos} {param}"  # this tag is rather useless, but at least gives some information
+                                tags = (saldotag,)
                                 lexicon.setdefault(word, {}).setdefault(annotations, (set(), set(), False, False))[0].update(tags)
 
             # Done parsing section. Clear tree to save memory
@@ -189,7 +189,7 @@ def _findval(elems, key):
 def _convert_default(pos, inhs, param):
     """Try to convert SALDO tags into SUC tags."""
     tagmap = tagmappings.mappings["saldo_to_suc"]
-    saldotag = " ".join(([pos] + inhs + [param]))
+    saldotag = " ".join([pos, *inhs, param])
     tags = tagmap.get(saldotag)
     if tags:
         return tags
@@ -227,7 +227,7 @@ def _try_translate(params):
                 break
         if m is not None:
             sucfilter = m.expand(post).replace(" ", r"\.").replace("+", r"\+")
-            return set(suctag for suctag in tagmappings.tags["suc_tags"] if re.match(sucfilter, suctag))
+            return {suctag for suctag in tagmappings.tags["suc_tags"] if re.match(sucfilter, suctag)}
     return []
 
 

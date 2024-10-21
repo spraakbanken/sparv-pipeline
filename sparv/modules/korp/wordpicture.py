@@ -28,9 +28,10 @@ from sparv.api.util.mysql_wrapper import MySQL
 logger = get_logger(__name__)
 
 
-MAX_STRING_LENGTH = 100
-MAX_STRINGEXTRA_LENGTH = 32
-MAX_POS_LENGTH = 5
+MAX_STRING_LENGTH = 100  # Truncate all strings to this length
+MAX_STRINGEXTRA_LENGTH = 32  # Truncate all stringextra values to this length
+MAX_POS_LENGTH = 5  # Max length of part-of-speech value in database
+MAX_SENTENCES = 5000  # Max number of sentences to include in SQL
 
 
 @installer("Install Korp's Word Picture SQL on remote host", language=["swe"], uninstaller="korp:uninstall_wordpicture")
@@ -180,7 +181,7 @@ def wordpicture(
             if isinstance(head, dict):
                 for d in head["dep"]:
                     if _match(rel, d[0]) and _match(dep, d[1]["pos"]):
-                        result.append(d[1])
+                        result.append(d[1])  # noqa: PERF401
             if isinstance(dep, dict):
                 h = dep["head"]
                 if h and _match(rel, h[0]) and _match(head, h[1]["pos"]):
@@ -325,12 +326,14 @@ def _mutate_triple(triple):
 
     for new_head in parts["head"]:
         for new_dep in parts["dep"]:
-            # head: lemgram, dep: lemgram
-            triples.append((new_head, head[2], rel, new_dep, dep[2], extra, sentid, refhead, refdep, 1, 1, 0, 0))
-            # head: wordform, dep: lemgram
-            triples.append((head[1], head[2], rel, new_dep, dep[2], extra, sentid, refhead, refdep, 0, 1, 1, 0))
-            # head: lemgram, dep: wordform
-            triples.append((new_head, head[2], rel, dep[1], dep[2], extra, sentid, refhead, refdep, 1, 0, 0, 1))
+            triples.extend((
+                # head: lemgram, dep: lemgram
+                (new_head, head[2], rel, new_dep, dep[2], extra, sentid, refhead, refdep, 1, 1, 0, 0),
+                # head: wordform, dep: lemgram
+                (head[1], head[2], rel, new_dep, dep[2], extra, sentid, refhead, refdep, 0, 1, 1, 0),
+                # head: lemgram, dep: wordform
+                (new_head, head[2], rel, dep[1], dep[2], extra, sentid, refhead, refdep, 1, 0, 0, 1)
+            ))
 
     return triples
 
@@ -388,8 +391,6 @@ def wordpicture_sql(
         "TA": "ADV",
         "OA": "ADV"
     }
-
-    MAX_SENTENCES = 5000
 
     index = 0
     string_index = -1

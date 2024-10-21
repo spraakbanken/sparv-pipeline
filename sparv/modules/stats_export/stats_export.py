@@ -57,7 +57,7 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
     """
     logger.progress(total=len(source_files) + 1)
     # Add "word" to annotations
-    annotations = [(word, None)] + list(annotations)
+    annotations = [(word, None), *list(annotations)]
 
     # Get annotations list and export names
     annotation_list, token_attributes, export_names = util.export.get_annotation_names(
@@ -85,7 +85,7 @@ def freq_list(source_files: AllSourceFilenames = AllSourceFilenames(),
         # Create tuples with annotations for each token and count frequencies
         tokens = word.read_attributes(source_file, token_annotations)
         for n, token_annotations_tuple in enumerate(tokens):
-            structs_tuple = tuple([struct[n] for struct in struct_values])
+            structs_tuple = tuple(struct[n] for struct in struct_values)
             freq_dict[token_annotations_tuple + structs_tuple] += 1
         logger.progress()
 
@@ -141,5 +141,5 @@ def write_csv(out, column_names, freq_dict, delimiter, cutoff):
         for annotations, freq in sorted(freq_dict.items(), key=lambda x: (-x[1], x[0])):
             if cutoff and cutoff > freq:
                 break
-            csv_writer.writerow(list(annotations) + [freq])
+            csv_writer.writerow([*list(annotations), freq])
     logger.info("Exported: %s", out)

@@ -96,7 +96,7 @@ def _write_single_annotation(
         for i in range(len(values) - 1):
             if values[i] > values[i + 1]:
                 raise SparvErrorMessage(
-                    f"Annotation spans must be sorted. values[{i}]={values[i]} > values[{i+1}]={values[i+1]}",
+                    f"Annotation spans must be sorted. values[{i}]={values[i]} > values[{i + 1}]={values[i + 1]}",
                     module="core.io",
                     function="_write_single_annotation",
                 )
@@ -147,10 +147,7 @@ def read_annotation(
     spans: bool = False
 ) -> Iterator:
     """Yield each line from an annotation file."""
-    if spans:
-        annotations = [split_annotation(ann)[0] for ann in annotation.name.split()]
-    else:
-        annotations = annotation.name.split()
+    annotations = [split_annotation(ann)[0] for ann in annotation.name.split()] if spans else annotation.name.split()
     root = annotation.root
     if len(annotations) == 1:
         # Handle single annotation
@@ -259,10 +256,7 @@ def get_annotation_path(source_file: Optional[str], annotation: Union[BaseAnnota
     elem, attr = split_annotation(annotation)
 
     if data:
-        if source_file:
-            path = paths.work_dir / source_file / chunk / elem
-        else:
-            path = paths.work_dir / elem
+        path = paths.work_dir / source_file / chunk / elem if source_file else paths.work_dir / elem
     else:
         if not attr:
             attr = SPAN_ANNOTATION

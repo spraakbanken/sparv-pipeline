@@ -84,7 +84,7 @@ def annotate(lang: Language = Language(),
             if len(cols) >= TAG_COLUMN + 1:
                 tag = cols[TAG_COLUMN]
             else:
-                logger.warning(f"TreeTagger failed to produce a POS tag for token '{cols[0]}'!")
+                logger.warning("TreeTagger failed to produce a POS tag for token '%s'!", cols[0])
                 tag = ""
             out_pos_annotation[token_id] = tag
             out_upos_annotation[token_id] = pos_to_upos(tag, lang, TAG_SETS.get(lang))
@@ -99,8 +99,10 @@ def annotate(lang: Language = Language(),
             if len(cols) >= LEM_COLUMN + 1:
                 lem = cols[LEM_COLUMN]
             else:
-                logger.warning(f"TreeTagger failed to produce a baseform for token '{cols[0]}'! "
-                               "Using the wordform as baseform.")
+                logger.warning(
+                    "TreeTagger failed to produce a baseform for token '%s'! "
+                    "Using the wordform as baseform.", cols[0]
+                )
                 lem = cols[0]
             out_lemma_annotation[token_id] = lem
     out_baseform.write(out_lemma_annotation)
@@ -108,7 +110,7 @@ def annotate(lang: Language = Language(),
 
 @modelbuilder("TreeTagger model for Bulgarian", language=["bul"])
 def get_bul_model(out: ModelOutput = ModelOutput("treetagger/bul.par"),
-                  tt_binary: Binary = Binary("[treetagger.binary]")):
+                  _tt_binary: Binary = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/bulgarian.par.gz"
     url = "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/bulgarian.par.gz"
@@ -117,7 +119,7 @@ def get_bul_model(out: ModelOutput = ModelOutput("treetagger/bul.par"),
 
 @modelbuilder("TreeTagger model for Estonian", language=["est"])
 def get_est_model(out: ModelOutput = ModelOutput("treetagger/est.par"),
-                  tt_binary: Binary = Binary("[treetagger.binary]")):
+                  _tt_binary: Binary = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/estonian.par.gz"
     url = "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/estonian.par.gz"
@@ -126,7 +128,7 @@ def get_est_model(out: ModelOutput = ModelOutput("treetagger/est.par"),
 
 @modelbuilder("TreeTagger model for Finnish", language=["fin"])
 def get_fin_model(out: ModelOutput = ModelOutput("treetagger/fin.par"),
-                  tt_binary: Binary = Binary("[treetagger.binary]")):
+                  _tt_binary: Binary = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/finnish.par.gz"
     url = "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/finnish.par.gz"
@@ -135,7 +137,7 @@ def get_fin_model(out: ModelOutput = ModelOutput("treetagger/fin.par"),
 
 @modelbuilder("TreeTagger model for Latin", language=["lat"])
 def get_lat_model(out: ModelOutput = ModelOutput("treetagger/lat.par"),
-                  tt_binary: Binary = Binary("[treetagger.binary]")):
+                  _tt_binary: Binary = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/latin.par.gz"
     url = "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/latin.par.gz"
@@ -144,7 +146,7 @@ def get_lat_model(out: ModelOutput = ModelOutput("treetagger/lat.par"),
 
 @modelbuilder("TreeTagger model for Dutch", language=["nld"])
 def get_nld_model(out: ModelOutput = ModelOutput("treetagger/nld.par"),
-                  tt_binary: Binary = Binary("[treetagger.binary]")):
+                  _tt_binary: Binary = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/dutch.par.gz"
     url = "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/dutch.par.gz"
@@ -153,7 +155,7 @@ def get_nld_model(out: ModelOutput = ModelOutput("treetagger/nld.par"),
 
 @modelbuilder("TreeTagger model for Polish", language=["pol"])
 def get_pol_model(out: ModelOutput = ModelOutput("treetagger/pol.par"),
-                  tt_binary: Binary = Binary("[treetagger.binary]")):
+                  _tt_binary: Binary = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/polish.par.gz"
     url = "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/polish.par.gz"
@@ -162,7 +164,7 @@ def get_pol_model(out: ModelOutput = ModelOutput("treetagger/pol.par"),
 
 @modelbuilder("TreeTagger model for Romanian", language=["ron"])
 def get_ron_model(out: ModelOutput = ModelOutput("treetagger/ron.par"),
-                  tt_binary: Binary = Binary("[treetagger.binary]")):
+                  _tt_binary: Binary = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/romanian.par.gz"
     url = "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/romanian.par.gz"
@@ -171,7 +173,7 @@ def get_ron_model(out: ModelOutput = ModelOutput("treetagger/ron.par"),
 
 @modelbuilder("TreeTagger model for Slovak", language=["slk"])
 def get_slk_model(out: ModelOutput = ModelOutput("treetagger/slk.par"),
-                  tt_binary: Binary = Binary("[treetagger.binary]")):
+                  _tt_binary: Binary = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/slovak.par.gz"
     url = "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/slovak.par.gz"
@@ -183,7 +185,7 @@ def get_slk_model(out: ModelOutput = ModelOutput("treetagger/slk.par"),
 
 @modelbuilder("TreeTagger model for Spanish", language=["spa"])
 def get_spa_model(out: ModelOutput = ModelOutput("treetagger/spa.par"),
-                  tt_binary: Binary = Binary("[treetagger.binary]")):
+                  _tt_binary: Binary = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/spanish.par.gz"
     url = "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/spanish.par.gz"
@@ -192,7 +194,7 @@ def get_spa_model(out: ModelOutput = ModelOutput("treetagger/spa.par"),
 
 @modelbuilder("TreeTagger model for German", language=["deu"])
 def get_deu_model(out: ModelOutput = ModelOutput("treetagger/deu.par"),
-                  tt_binary: Binary = Binary("[treetagger.binary]")):
+                  _tt_binary: Binary = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/german.par.gz"
     url = "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/german.par.gz"
@@ -201,7 +203,7 @@ def get_deu_model(out: ModelOutput = ModelOutput("treetagger/deu.par"),
 
 @modelbuilder("TreeTagger model for English", language=["eng"])
 def get_eng_model(out: ModelOutput = ModelOutput("treetagger/eng.par"),
-                  tt_binary: Binary = Binary("[treetagger.binary]")):
+                  _tt_binary: Binary = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/english.par.gz"
     url = "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/english.par.gz"
@@ -210,7 +212,7 @@ def get_eng_model(out: ModelOutput = ModelOutput("treetagger/eng.par"),
 
 @modelbuilder("TreeTagger model for French", language=["fra"])
 def get_fra_model(out: ModelOutput = ModelOutput("treetagger/fra.par"),
-                  tt_binary: Binary = Binary("[treetagger.binary]")):
+                  _tt_binary: Binary = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/french.par.gz"
     url = "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/french.par.gz"
@@ -219,7 +221,7 @@ def get_fra_model(out: ModelOutput = ModelOutput("treetagger/fra.par"),
 
 @modelbuilder("TreeTagger model for Italian", language=["ita"])
 def get_ita_model(out: ModelOutput = ModelOutput("treetagger/ita.par"),
-                  tt_binary: Binary = Binary("[treetagger.binary]")):
+                  _tt_binary: Binary = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/italian.par.gz"
     url = "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/italian.par.gz"
@@ -228,7 +230,7 @@ def get_ita_model(out: ModelOutput = ModelOutput("treetagger/ita.par"),
 
 @modelbuilder("TreeTagger model for Russian", language=["rus"])
 def get_rus_model(out: ModelOutput = ModelOutput("treetagger/rus.par"),
-                  tt_binary: Binary = Binary("[treetagger.binary]")):
+                  _tt_binary: Binary = Binary("[treetagger.binary]")):
     """Download TreeTagger language model."""
     gzip = "treetagger/russian.par.gz"
     url = "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/russian.par.gz"

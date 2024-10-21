@@ -214,8 +214,9 @@ def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Outpu
     informat = informat.split("|")
     outformat = outformat.split("|")
 
-    assert len(outformat) == 1 or (len(outformat) == len(informat)), "The number of out-formats must be equal to one " \
-                                                                     "or the number of in-formats."
+    assert len(outformat) == 1 or (
+        len(outformat) == len(informat)
+    ), "The number of out-formats must be equal to one or the number of in-formats."
 
     ifrom = list(in_from.read())
     ofrom = in_from.create_empty_attribute()
@@ -230,7 +231,7 @@ def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Outpu
             matches = re.match(pre_regex, val)
             if not matches:
                 raise SparvErrorMessage(f"dateformat.pre_regex did not match the value {val!r}")
-            val = [v for v in matches.groups() if v][0]
+            val = next(v for v in matches.groups() if v)
             if not val:
                 # If the regex doesn't match, treat as no date
                 ofrom[index] = None
@@ -252,7 +253,7 @@ def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Outpu
                 for v in vals:
                     matches = re.search(regex, v)
                     if matches:
-                        temp.append([x for x in matches.groups() if x][0])
+                        temp.append(next(x for x in matches.groups() if x))
                 if not temp:
                     # If the regex doesn't match, treat as no date
                     ofrom[index] = None
@@ -302,7 +303,7 @@ def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Outpu
 
             if pre_regex:
                 matches = re.match(pre_regex, val)
-                val = [v for v in matches.groups() if v][0]
+                val = next(v for v in matches.groups() if v)
                 if not val:
                     # If the regex doesn't match, treat as no date
                     oto[index] = None
@@ -324,7 +325,7 @@ def _formatter(in_from: Annotation, in_to: Optional[Annotation], out_from: Outpu
                     for v in vals:
                         matches = re.search(regex, v)
                         if matches:
-                            temp.append([x for x in matches.groups() if x][0])
+                            temp.append(next(x for x in matches.groups() if x))
                     if not temp:
                         # If the regex doesn't match, treat as no date
                         oto[index] = None

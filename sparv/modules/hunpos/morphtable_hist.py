@@ -55,8 +55,8 @@ def hist_morphtable(out: ModelOutput = ModelOutput("hunpos/hist/dalinm-swedberg_
 
         # try adding case info: av pos def pl => av pos def pl nom/gen
         if params[0] == "av":
-            new_suc = saldo_to_suc.get(" ".join(params + ["nom"]), set())
-            new_suc.update(saldo_to_suc.get(" ".join(params + ["gen"]), set()))
+            new_suc = saldo_to_suc.get(" ".join([*params, "nom"]), set())
+            new_suc.update(saldo_to_suc.get(" ".join([*params, "gen"]), set()))
 
         if new_suc:
             # print "Add translation", msd,new_suc
@@ -71,7 +71,7 @@ def hist_morphtable(out: ModelOutput = ModelOutput("hunpos/hist/dalinm-swedberg_
         if m is None:
             return set()
         sucfilter = m.expand(post).replace(" ", r"\.").replace("+", r"\+")
-        new_suc = set(suctag for suctag in tagmappings.tags["suc_tags"] if re.match(sucfilter, suctag))
+        new_suc = {suctag for suctag in tagmappings.tags["suc_tags"] if re.match(sucfilter, suctag)}
         saldo_to_suc[msd] = new_suc
         return new_suc
 
@@ -99,7 +99,7 @@ def hist_morphtable(out: ModelOutput = ModelOutput("hunpos/hist/dalinm-swedberg_
                     words.setdefault(word.title(), set()).update(suc)
     with out.path.open(encoding="UTF-8", mode="w") as out:
         for w, ts in words.items():
-            line = ("\t".join([w] + list(ts)) + "\n")
+            line = ("\t".join([w, *list(ts)]) + "\n")
             out.write(line)
 
 

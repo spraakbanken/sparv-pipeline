@@ -37,7 +37,7 @@ __config__ = [
 @wizard(["export.source_annotations"], source_structure=True)
 def import_wizard(answers, structure: SourceStructureParser):
     """Return wizard for selecting what source annotations to keep."""
-    questions = [
+    return [
         {
             "type": "select",
             "name": "_keep_source",
@@ -69,4 +69,3 @@ def import_wizard(answers, structure: SourceStructureParser):
             } for annotation in structure.get_annotations(answers)]
         }
     ]
-    return questions

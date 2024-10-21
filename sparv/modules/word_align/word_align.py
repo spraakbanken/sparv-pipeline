@@ -1,4 +1,5 @@
 """NB: Not adapted to Sparv v4 yet!"""
+# ruff: noqa
 
 from sparv.api import util
 

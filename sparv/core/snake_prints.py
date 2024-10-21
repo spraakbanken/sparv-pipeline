@@ -1,5 +1,6 @@
 """Printing functions for Snakefile."""
 import json
+import operator
 
 import typing_inspect
 import yaml
@@ -119,7 +120,7 @@ def print_modules_info(
         # Filter modules
         if module_names:
             modules = {k: v for k, v in modules.items() if k in selected_modules}
-            invalid_modules = invalid_modules - modules.keys()
+            invalid_modules -= modules.keys()
 
         if not modules:
             continue
@@ -441,7 +442,7 @@ def _print_modules(modules_data: dict) -> None:
 
 def print_annotation_classes():
     """Print info about annotation classes."""
-    print()
+    console.print()
     table = Table(box=box.SIMPLE, show_header=False, title_justify="left")
     table.add_column(no_wrap=True)
     table.add_column()
@@ -470,19 +471,19 @@ def print_annotation_classes():
 
 def print_languages():
     """Print all supported languages."""
-    print()
+    console.print()
     table = Table(title="Supported languages", box=box.SIMPLE, show_header=False, title_justify="left")
-    full_langs = dict((k, v) for k, v in registry.languages.items() if "-" not in k)
-    for language, name in sorted(full_langs.items(), key=lambda x: x[1]):
+    full_langs = {k: v for k, v in registry.languages.items() if "-" not in k}
+    for language, name in sorted(full_langs.items(), key=operator.itemgetter(1)):
         table.add_row(name, language)
     console.print(table)
 
-    sub_langs = dict((k, v) for k, v in registry.languages.items() if "-" in k)
+    sub_langs = {k: v for k, v in registry.languages.items() if "-" in k}
     if sub_langs:
-        print()
+        console.print()
         table = Table(title="Supported language varieties", box=box.SIMPLE, show_header=False, title_justify="left")
         table.add_row("[b]Name[/b]", "[b]Language[/b]", "[b]Variety[/b]")
-        for language, name in sorted(sub_langs.items(), key=lambda x: x[1]):
+        for language, name in sorted(sub_langs.items(), key=operator.itemgetter(1)):
             lang, _, sublang = language.partition("-")
             table.add_row(name, lang, sublang)
         console.print(table)
@@ -511,7 +512,7 @@ def print_installers(snake_storage, uninstall: bool = False):
     other_installations = [(t, d) for t, d, *_ in targets if t not in config_list]
 
     if selected_installations:
-        print()
+        console.print()
         table = Table(title=f"Selected {prefix}installations", box=box.SIMPLE, show_header=False, title_justify="left")
         table.add_column(no_wrap=True)
         table.add_column()
@@ -520,7 +521,7 @@ def print_installers(snake_storage, uninstall: bool = False):
         console.print(table)
 
     if other_installations:
-        print()
+        console.print()
         if selected_installations:
             title = f"Other available {prefix}installations"
         else:
@@ -532,8 +533,8 @@ def print_installers(snake_storage, uninstall: bool = False):
             table.add_row(target, desc)
         console.print(table)
 
-    extra = "If the 'uninstall' setting is not set, any uninstallers connected to the installers in the 'install' " \
-            "section will be used instead." if uninstall else ""
+    extra = ("If the 'uninstall' setting is not set, any uninstallers connected to the installers in the 'install' "
+             "section will be used instead.") if uninstall else ""
 
     console.print(f"[i]Note:[/i] Use the '{prefix}install' section in your corpus configuration to select what "
                   f"{prefix}installations should be performed when running 'sparv {prefix}install' without arguments. "

@@ -34,7 +34,6 @@ def install_mysql(host: Optional[str], db_name: str, sqlfile: Union[str, list[st
         db_name: Name of the database.
         sqlfile: Path to a SQL file, or list of paths.
     """
-
     if isinstance(sqlfile, str):
         sqlfile = [sqlfile]
     file_total = len(sqlfile)

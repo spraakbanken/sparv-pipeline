@@ -1,4 +1,5 @@
 """NB: Not adapted to Sparv v4 yet!"""
+# ruff: noqa
 
 import math
 
@@ -32,9 +33,9 @@ def align_texts(sentence1, sentence2, link1, link2, sent_parents1, sent_parents2
             linkedsents1 = []
             linkedsents2 = []
             for sentid in SENTPARENTS1[linkkey1].split():
-                linkedsents1.append((sentid, [w for w in SENT1[sentid].split()]))
+                linkedsents1.append((sentid, list(SENT1[sentid].split())))
             for sentid in SENTPARENTS2[linkkey2].split():
-                linkedsents2.append((sentid, [w for w in SENT2[sentid].split()]))
+                linkedsents2.append((sentid, list(SENT2[sentid].split())))
 
             for s1, s2 in gachalign(linkedsents1, linkedsents2, mean="gacha"):
                 linkcounter += 1
@@ -80,9 +81,7 @@ def gachalign(text1, text2, mean=1.0, variance=6.8, bc=BEAD_COSTS):
 
 
 def align(t1, t2, mean_xy, variance_xy, bead_costs):
-    """ The minimization function to choose the sentence pair with
-    cheapest alignment cost.
-    """
+    """The minimization function to choose the sentence pair with the cheapest alignment cost."""
     m = {}
     for i in range(len(t1) + 1):
         for j in range(len(t2) + 1):
@@ -96,7 +95,7 @@ def align(t1, t2, mean_xy, variance_xy, bead_costs):
                               if i - di >= 0 and j - dj >= 0)
     i, j = len(t1), len(t2)
     while True:
-        (c, di, dj) = m[i, j]
+        (_c, di, dj) = m[i, j]
         if di == dj == 0:
             break
         yield (i - di, i), (j - dj, j)
@@ -105,7 +104,7 @@ def align(t1, t2, mean_xy, variance_xy, bead_costs):
 
 
 def length_cost(sx, sy, mean_xy, variance_xy):
-    """ Calculate length cost given 2 sentence. Lower cost = higher prob.
+    """Calculate length cost given 2 sentence. Lower cost = higher prob.
     The original Gale-Church (1993:pp. 81) paper considers l2/l1 = 1 hence:
     delta = (l2-l1*c)/math.sqrt(l1*s2)
     If l2/l1 != 1 then the following should be considered:
@@ -122,7 +121,7 @@ def length_cost(sx, sy, mean_xy, variance_xy):
 
 
 def norm_cdf(z):
-    """ Scipy's norm distribution function as of Gale-Church'srcfile (1993). """
+    """Scipy's norm distribution function as of Gale-Church'srcfile (1993)."""
     # Equation 26.2.17 from Abramowitz and Stegun (1964:p.932)
     t = 1 / float(1 + 0.2316419 * z)  # t = 1/(1+pz) , z=0.2316419
     probdist = 1 - 0.3989423 * math.exp(-z * z / 2) * ((0.319381530 * t) +
@@ -134,7 +133,7 @@ def norm_cdf(z):
 
 
 def norm_logsf(z):
-    """ Take log of the survival function for normal distribution. """
+    """Take log of the survival function for normal distribution."""
     try:
         return math.log(1 - norm_cdf(z))
     except ValueError:

@@ -1,3 +1,4 @@
+# ruff: noqa: N999
 import os
 
 from sparv.api import Config, wizard

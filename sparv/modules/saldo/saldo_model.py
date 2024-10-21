@@ -113,9 +113,9 @@ class SaldoLexicon:
             logger.info("Saving LMF lexicon in text format")
         with open(saldofile, "w", encoding="UTF-8") as f:
             for word in sorted(lexicon):
-                annotations = [PART_DELIM.join([annotation] + sorted(postags))
+                annotations = [PART_DELIM.join([annotation, *sorted(postags)])
                                for annotation, postags in lexicon[word].items()]
-                print(" ".join([word] + annotations).encode(util.constants.UTF8), file=f)
+                print(" ".join([word, *annotations]).encode(util.constants.UTF8), file=f)
         if verbose:
             logger.info("OK, saved")
 
@@ -215,7 +215,7 @@ def read_lmf(xml, tagmap, annotation_elements=("gf", "lem", "saldo"), verbose=Tr
                             param = param.rsplit(" ", 1)[0]
                             if pos == "vbm":
                                 pos = "vb"
-                        saldotag = " ".join([pos] + inhs + [param])
+                        saldotag = " ".join([pos, *inhs, param])
                         tags = tagmap.get(saldotag)
                         if tags:
                             lexicon.setdefault(word, {}).setdefault(annotations, (set(), set(), False, False))[0].update(tags)

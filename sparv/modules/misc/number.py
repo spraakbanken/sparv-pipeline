@@ -156,7 +156,7 @@ def count_chunks(out: OutputCommonData = OutputCommonData("misc.{annotation}_cou
     for file in files:
         try:
             chunk_count += chunk.get_size(file)
-        except FileNotFoundError:
+        except FileNotFoundError:  # noqa: PERF203
             pass
 
     if chunk_count == 0:

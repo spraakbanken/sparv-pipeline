@@ -134,7 +134,7 @@ def process_tokens(sentences, token_spans, text_data, nlp_args, stanza_args):
     token_dephead_count = 0
     token_positions = []
 
-    stanza_utils.check_sentence_respect(len(list(s for s in sentences if s)), len(doc.sentences))
+    stanza_utils.check_sentence_respect(len([s for s in sentences if s]), len(doc.sentences))
     for sent_span, tagged_sent in zip(sentences, doc.sentences):
         current_sentence_len = 0
         for w_index, tagged_w in zip(sent_span, tagged_sent.words):
@@ -260,10 +260,7 @@ class Token:
         self.baseform = stanza_w.lemma
         # Format feats
         feats_list = util.misc.set_to_list(stanza_w.feats or "")
-        if not feats_list:
-            feats_str = "_"
-        else:
-            feats_str = "|".join(feats_list)
+        feats_str = "_" if not feats_list else "|".join(feats_list)
         self.feats = feats_str
         self.dephead_ref = str(stanza_w.head) if stanza_w.head > 0 else ""
         self.deprel = stanza_w.deprel

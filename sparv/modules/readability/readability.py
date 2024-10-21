@@ -156,8 +156,7 @@ def nominal_ratio_calc(pos: list[str], noun_pos: list[str], verb_pos: list[str])
     # pronouns adverbs verbs
     verbs = sum(1 for p in pos if p in verb_pos)
     try:
-        nk = float(nouns) / float(verbs)
-        return nk
+        return float(nouns) / float(verbs)
     except ZeroDivisionError:
         return float("inf")
 

@@ -13,12 +13,8 @@ from sparv.core.misc import SparvErrorMessage
 custom_name = "custom"
 plugin_name = "plugin"
 
-# The snakemake variable is provided automatically by Snakemake; the below is just to please the IDE
-try:
-    snakemake  # noqa
-except NameError:
-    from snakemake.script import Snakemake
-    snakemake: Snakemake
+# The snakemake variable is provided automatically by Snakemake; the below is just to please linters
+snakemake = snakemake  # noqa
 
 
 def exit_with_error_message(message, logger_name):
@@ -133,7 +129,7 @@ if not use_preloader:
         registry.modules[module_name].functions[f_name]["function"](**parameters)
         if snakemake.params.export_dirs:
             logger.export_dirs(snakemake.params.export_dirs)
-    except KeyboardInterrupt as e:
+    except KeyboardInterrupt:
         exit_with_error_message("Execution was terminated by an interrupt signal", "sparv.modules." + module_name)
     except SparvErrorMessage as e:
         # Any exception raised here would be printed directly to the terminal, due to how Snakemake runs the script.
@@ -142,11 +138,12 @@ if not use_preloader:
         exit_with_error_message(e.message, "sparv.modules." + module_name)
     except Exception as e:
         current_file = f" for the file {snakemake.params.source_file!r}" if snakemake.params.source_file else ""
-        errmsg = f"An error occurred while executing {module_name}:{f_name}{current_file}:" \
-                 f"\n\n  {type(e).__name__}: {e}"
+        errmsg = f"An error occurred while executing {module_name}:{f_name}{current_file}:\n\n  {type(e).__name__}: {e}"
         if logger.level > logging.DEBUG:
-            errmsg += "\n\nTo display further details when errors occur, run Sparv with the '--log debug' or " \
-                      "'--log-to-file debug' arguments."
+            errmsg += (
+                "\n\nTo display further details when errors occur, run Sparv with the '--log debug' or "
+                "'--log-to-file debug' arguments."
+            )
         logger.error(errmsg)
         logger.debug(traceback.format_exc())
         sys.exit(123)

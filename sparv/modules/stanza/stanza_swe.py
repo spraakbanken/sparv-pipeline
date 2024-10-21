@@ -151,7 +151,7 @@ def annotate_swe(
         document = [[word_list[i] for i in s] for s in sentences]
 
         doc = stanza_utils.run_stanza(nlp, document, batch_size, max_sentence_length)
-        stanza_utils.check_sentence_respect(len(list(s for s in sentences if s)), len(doc.sentences))
+        stanza_utils.check_sentence_respect(len([s for s in sentences if s]), len(doc.sentences))
         word_count_real = sum(len(s) for s in sentences)
         word_count = 0
         for sent, tagged_sent in zip(sentences, doc.sentences):
@@ -218,7 +218,7 @@ def msdtag(out_msd: Output = Output("<token>:stanza.msd", cls="token:msd",
     })
 
     doc = stanza_utils.run_stanza(nlp, document, batch_size)
-    stanza_utils.check_sentence_respect(len(list(s for s in sentences if s)), len(doc.sentences))
+    stanza_utils.check_sentence_respect(len([s for s in sentences if s]), len(doc.sentences))
     word_count = 0
     for sent, tagged_sent in zip(sentences, doc.sentences):
         for w_index, w in zip(sent, tagged_sent.words):
@@ -375,16 +375,10 @@ def _build_doc(sentences, word, baseform, msd, feats, ref):
         for i in sent:
             # Format feats
             feats_list = util.misc.set_to_list(feats[i])
-            if not feats_list:
-                feats_str = "_"
-            else:
-                feats_str = "|".join(feats_list)
+            feats_str = "_" if not feats_list else "|".join(feats_list)
             # Format baseform
             baseform_list = util.misc.set_to_list(baseform[i])
-            if not baseform_list:
-                baseform_str = word[i]
-            else:
-                baseform_str = baseform_list[0]
+            baseform_str = word[i] if not baseform_list else baseform_list[0]
 
             token_dict = {"id": int(ref[i]), "text": word[i], "lemma": baseform_str,
                           "xpos": msd[i], "feats": feats_str}

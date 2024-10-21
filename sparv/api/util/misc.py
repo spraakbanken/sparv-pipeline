@@ -28,7 +28,7 @@ def dump_yaml(data: dict, resolve_alias: bool = False, sort_keys: bool = False, 
 
         def increase_indent(self, flow=False, indentless=False):
             """Force indentation."""
-            return super(IndentDumper, self).increase_indent(flow)
+            return super().increase_indent(flow)
 
     def str_representer(dumper, data):
         """Custom string representer for prettier multiline strings."""
@@ -45,7 +45,7 @@ def dump_yaml(data: dict, resolve_alias: bool = False, sort_keys: bool = False, 
 
     if resolve_alias:
         # Resolve aliases and replace them with their anchors' contents
-        yaml.SafeDumper.ignore_aliases = lambda *args: True
+        yaml.SafeDumper.ignore_aliases = lambda *_args: True
 
     return yaml.dump(
         data, sort_keys=sort_keys, allow_unicode=True, Dumper=IndentDumper, indent=indent, default_flow_style=False
@@ -119,7 +119,7 @@ def chain(annotations, default=None):
         for annot in annotations:
             try:
                 key = annot[key]
-            except KeyError:
+            except KeyError:  # noqa: PERF203
                 return default
         return key
     return ((key, follow(key)) for key in annotations[0])
@@ -145,8 +145,8 @@ class PickledLexicon:
         picklefile_path: pathlib.Path = picklefile.path if isinstance(picklefile, Model) else picklefile
         if verbose:
             logger.info("Reading lexicon: %s", picklefile)
-        with open(picklefile_path, "rb") as F:
-            self.lexicon = pickle.load(F)
+        with open(picklefile_path, "rb") as f:
+            self.lexicon = pickle.load(f)
         if verbose:
             logger.info("OK, read %d words", len(self.lexicon))
 

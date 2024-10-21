@@ -221,7 +221,6 @@ def gpus() -> Optional[list[int]]:
 
     Returns None on failure.
     """
-
     try:
         cmd = ["nvidia-smi", "--query-gpu=memory.free", "--format=csv"]
         memory_info = subprocess.check_output(cmd).decode().splitlines()[1:]

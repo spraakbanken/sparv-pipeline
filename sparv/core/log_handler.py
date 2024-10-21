@@ -77,9 +77,11 @@ messages = {
     "missing_classes": defaultdict(set)
 }
 
-missing_annotations_msg = "There can be many reasons for this. Please make sure that there are no problems with the " \
-                          "corpus configuration file, like misspelled annotation names (including unintentional " \
-                          "whitespace characters) or references to non-existent or implicit source annotations."
+missing_annotations_msg = (
+    "There can be many reasons for this. Please make sure that there are no problems with the "
+    "corpus configuration file, like misspelled annotation names (including unintentional "
+    "whitespace characters) or references to non-existent or implicit source annotations."
+)
 
 
 class LogRecordStreamHandler(socketserver.StreamRequestHandler):
@@ -94,7 +96,7 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
             slen = struct.unpack(">L", chunk)[0]
             chunk = self.connection.recv(slen)
             while len(chunk) < slen:
-                chunk = chunk + self.connection.recv(slen - len(chunk))
+                chunk += self.connection.recv(slen - len(chunk))
             obj = pickle.loads(chunk)
             record = logging.makeLogRecord(obj)
             self.handle_log_record(record)
@@ -132,7 +134,8 @@ class FileHandlerWithDirCreation(logging.FileHandler):
 class InternalFilter(logging.Filter):
     """Filter out internal log messages."""
 
-    def filter(self, record):
+    @staticmethod
+    def filter(record):
         """Filter out internal records."""
         return record.levelno < INTERNAL
 
@@ -140,7 +143,8 @@ class InternalFilter(logging.Filter):
 class ProgressInternalFilter(logging.Filter):
     """Filter out progress and internal log messages."""
 
-    def filter(self, record):
+    @staticmethod
+    def filter(record):
         """Filter out progress and internal records."""
         return record.levelno < PROGRESS
 
@@ -213,8 +217,7 @@ class ProgressWithTable(progress.Progress):
             bar_col = progress.BarColumn(bar_width=20)
             for task in list(self.current_tasks.values()):  # Make a copy to avoid mutations while iterating
                 elapsed = str(timedelta(seconds=round(time.time() - task["starttime"])))
-                if len(elapsed) > elapsed_max_len:
-                    elapsed_max_len = len(elapsed)
+                elapsed_max_len = max(len(elapsed), elapsed_max_len)
                 try:
                     rows.append((
                         task["name"],
@@ -371,7 +374,7 @@ class LogHandler:
 
     def setup_bar(self):
         """Initialize the progress bar but don't start it yet."""
-        print()
+        console.print()
         progress_layout = [
             progress.SpinnerColumn("dots2"),
             progress.BarColumn(bar_width=None if not self.simple else 40),
@@ -446,9 +449,11 @@ class LogHandler:
                 "\n • ".join(_variables))
 
             if "text" in _variables:
-                _message += "\n\nNote: The 'text' class can also be set using the configuration variable " \
-                            "'import.text_annotation', but only if it refers to an annotation from the " \
-                            "source files."
+                _message += (
+                    "\n\nNote: The 'text' class can also be set using the configuration variable "
+                    "'import.text_annotation', but only if it refers to an annotation from the "
+                    "source files."
+                )
 
             self.messages["error"].append((source, _message))
 
@@ -501,8 +506,8 @@ class LogHandler:
             total_jobs = lines[-1].split()[1]
             for j in lines[:-1]:
                 job, count = j.split()
-                if ":" in job and not "::" in job:
-                    job = job + "*"  # Differentiate entrypoints from actual rules in the list
+                if ":" in job and "::" not in job:
+                    job += "*"  # Differentiate entrypoints from actual rules in the list
                 self.jobs[job.replace("::", ":")] = int(count)
             self.jobs_max_len = max(map(len, self.jobs))
 
@@ -563,10 +568,9 @@ class LogHandler:
                 self.info(msg["msg"])
             elif msg["msg"].startswith("Nothing to be done"):
                 self.info("Nothing to be done.")
-            elif msg["msg"].startswith("Will exit after finishing currently running jobs"):
-                if not self.terminated:
-                    self.logger.log(logging.INFO, "Will exit after finishing currently running jobs")
-                    self.terminated = True
+            elif msg["msg"].startswith("Will exit after finishing currently running jobs") and not self.terminated:
+                self.logger.log(logging.INFO, "Will exit after finishing currently running jobs")
+                self.terminated = True
 
         elif level == "debug":
             if "SparvErrorMessage" in msg["msg"]:
@@ -620,8 +624,10 @@ class LogHandler:
             elif "MissingOutputException" in msg["msg"]:
                 msg_contents = re.search(r"Missing files after .*?:\n(.+)", msg["msg"], flags=re.DOTALL)
                 missing_files = "\n • ".join(msg_contents.group(1).strip().splitlines())
-                message = f"The following output files were expected but are missing:\n" \
-                          f" • {missing_files}\n" + missing_annotations_msg
+                message = (
+                    "The following output files were expected but are missing:\n"
+                    f" • {missing_files}\n{missing_annotations_msg}"
+                )
                 self.messages["error"].append((None, message))
                 handled = True
             elif "Exiting because a job execution failed." in msg["msg"]:
@@ -629,9 +635,11 @@ class LogHandler:
             elif "run_snake.py' returned non-zero exit status 1." in msg["msg"]:
                 handled = True
             elif "Error: Directory cannot be locked." in msg["msg"]:
-                message = "Directory cannot be locked. Please make sure that no other Sparv instance is currently " \
-                          "processing this corpus. If you are sure that no other Sparv instance is using this " \
-                          "directory, run 'sparv run --unlock' to remove the lock."
+                message = (
+                    "Directory cannot be locked. Please make sure that no other Sparv instance is currently "
+                    "processing this corpus. If you are sure that no other Sparv instance is using this "
+                    "directory, run 'sparv run --unlock' to remove the lock."
+                )
                 self.messages["error"].append((None, message))
                 handled = True
 
@@ -649,15 +657,15 @@ class LogHandler:
         elif level == "dag_debug" and "job" in msg:
             # Create regular expressions for searching for missing config variables or binaries
             if self.missing_configs_re is None:
-                all_configs = set([v for varlist in messages["missing_configs"].values() for v in varlist])
+                all_configs = {v for varlist in messages["missing_configs"].values() for v in varlist}
                 self.missing_configs_re = re.compile(r"\[({})]".format("|".join(all_configs)))
 
             if self.missing_binaries_re is None:
-                all_binaries = set([b for binlist in messages["missing_binaries"].values() for b in binlist])
+                all_binaries = {b for binlist in messages["missing_binaries"].values() for b in binlist}
                 self.missing_binaries_re = re.compile(r"^({})$".format("|".join(all_binaries)), flags=re.MULTILINE)
 
             if self.missing_classes_re is None:
-                all_classes = set([v for varlist in messages["missing_classes"].values() for v in varlist])
+                all_classes = {v for varlist in messages["missing_classes"].values() for v in varlist}
                 self.missing_classes_re = re.compile(r"<({})>".format("|".join(all_classes)))
 
             # Check the rules selected for the current operation, and see if any is unusable due to missing configs
@@ -719,8 +727,10 @@ class LogHandler:
                 for error in self.messages["unhandled_error"]:
                     errmsg = ["An unexpected error occurred."]
                     if self.log_level and logging._nameToLevel[self.log_level.upper()] > logging.DEBUG:
-                        errmsg[0] += " To display further details about this error, rerun Sparv with the " \
-                                     "'--log debug' argument.\n"
+                        errmsg[0] += (
+                            " To display further details about this error, rerun Sparv with the "
+                            "'--log debug' argument.\n"
+                        )
                         if error.get("msg"):
                             # Show only a summary of the error
                             # Parsing is based on the format in format_error() in snakemake/exceptions.py

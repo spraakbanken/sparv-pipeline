@@ -8,7 +8,6 @@ from sparv.api import Annotation, Output, annotator, get_logger
 logger = get_logger(__name__)
 
 
-
 @annotator("Convert Mamba-Dep dependencies into phrase structure", language=["swe"])
 def annotate(out_phrase: Output = Output("phrase_structure.phrase", description="Phrase segments"),
              out_phrase_name: Output = Output("phrase_structure.phrase:phrase_structure.name",
@@ -53,7 +52,7 @@ def annotate(out_phrase: Output = Output("phrase_structure.phrase", description=
             for child in children:
                 if not child[0].startswith("WORD:"):
                     start_pos = get_token_span(s[position])[0]
-                    open_elem_stack.append(child + (start_pos,))
+                    open_elem_stack.append((*child, start_pos))
                     logger.debug(
                         "<phrase name=%s func=%s> %s",
                         child[0],
@@ -100,8 +99,7 @@ def annotate(out_phrase: Output = Output("phrase_structure.phrase", description=
 
 
 def log_output(f):
-    """
-    Make a function write its input when called and output when finished.
+    """Make a function write its input when called and output when finished.
 
     >>> @log_output
     ... def test(x, *ys, **kws):
@@ -112,10 +110,10 @@ def log_output(f):
     True
     """
     def g(*args, **kws):
-        call = f.__name__ + pprint.pformat(args + (kws, ))
-        print(call)
+        call = f.__name__ + pprint.pformat((*args, kws))
+        print(call)  # noqa: T201
         res = f(*args, **kws)
-        print(call + " = " + pprint.pformat(res))
+        print(call + " = " + pprint.pformat(res))  # noqa: T201
         return res
     return g
 
@@ -133,11 +131,11 @@ def flatten_tree(tree, children=[]):
 
 def has_children(elem):
     """Check if elem has any child elements."""
-    if type(elem) == list:
+    if type(elem) is list:
         return True
     try:
         for child in elem:
-            if type(child) == list:
+            if type(child) is list:
                 return True
     except TypeError:
         return False
@@ -172,10 +170,7 @@ class Token:
         self.deps = []
 
     def get_deps_by_rel(self, r):
-        out = []
-        for n in self.deps:
-            if n.deprel == r:
-                out.append(n)
+        out = [n for n in self.deps if n.deprel == r]
         return out
 
     def __str__(self):
@@ -257,7 +252,8 @@ class Terminal:
         else:
             return self.t.word.lower()
 
-    def length(self):
+    @staticmethod
+    def length():
         return 1
 
     def is_punctuation(self):
@@ -290,15 +286,11 @@ class Nonterminal:
 
     def to_tree_str(self, n=0):
         parent = (str(self.label), str(self.fun), n)
-        children = [parent]
-        for c in self.children:
-            children.append((c.to_tree_str(n + 2)))
+        children = [parent] + [c.to_tree_str(n + 2) for c in self.children]
         return children
 
     def to_word_str(self):
-        wordlist = []
-        for c in self.children:
-            wordlist.append(c.to_word_str())
+        wordlist = [c.to_word_str() for c in self.children]
         return " ".join(wordlist)
 
     def length(self):
@@ -312,7 +304,8 @@ class Nonterminal:
             return False
         return self.children[0].is_punctuation()
 
-    def is_name(self):
+    @staticmethod
+    def is_name():
         return False
 
     def add_starts(self, starts):
@@ -343,8 +336,7 @@ class PSTree:
 
 
 def convert_sentence(sen):
-    """
-    Do a recursive analysis of sen.
+    """Do a recursive analysis of sen.
 
     Return a PSTree object (phrase structure tree) if the analysis was successful.
     """
@@ -363,13 +355,13 @@ def convert(token):
         return Nonterminal("ROOT", "ROOT", token, children)
     elif token.deprel == "HD":
         return Terminal(token.deprel, token)
-    elif token.pos == "KN" or token.pos == "MID":
+    elif token.pos in {"KN", "MID"}:
         if children:
             lbl = _get_coord_label(children)
             return nonterminal(lbl)
         else:
             return Terminal(token.deprel, token)
-    elif token.pos == "NN" or token.pos == "PN" or token.pos == "PM":
+    elif token.pos in {"NN", "PN", "PM"}:
         if _starts_with_wh(token):
             # "vars mamma" etc
             return nonterminal("NP-wh")
@@ -428,7 +420,7 @@ def convert(token):
             return nonterminal("XX")
         else:
             return Terminal(token.deprel, token)
-    elif token.pos == "JJ" or token.pos == "PC":
+    elif token.pos in {"JJ", "PC"}:
         return nonterminal("ADJP")
     elif token.pos == "AB":
         return nonterminal("ADVP")
@@ -468,10 +460,7 @@ def _get_coord_label(in_list):
 
 
 def _has_subject(token):
-    for c in token.deps:
-        if c.deprel in {"SS", "ES", "FS"} and c.pos != "IE":
-            return True
-    return False
+    return any(c.deprel in {"SS", "ES", "FS"} and c.pos != "IE" for c in token.deps)
 
 
 # def _is_finite(token):
@@ -499,17 +488,11 @@ def _is_attributive_subclause(token):
     # they are often inconsistently handled by MaltParser...
     if token.deprel == "ET":
         return True
-    for c in token.deps:
-        if c.pos[0] == "H" and c.word.lower() == "som":
-            return True
-    return False
+    return any(c.pos[0] == "H" and c.word.lower() == "som" for c in token.deps)
 
 
 def _wh_after_prep(token):
-    for c in token.deps:
-        if c.pos == "HP" and c.position > token.position and len(c.deps) == 0:
-            return True
-    return False
+    return any(c.pos == "HP" and c.position > token.position and len(c.deps) == 0 for c in token.deps)
 
 
 def _sort_by_head_pos(in_list):

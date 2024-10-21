@@ -1,6 +1,7 @@
 """Parse XML source files."""
 
 import copy
+import operator
 import re
 import unicodedata
 import xml.etree.ElementTree as etree
@@ -29,7 +30,8 @@ logger = get_logger(__name__)
 class XMLStructure(SourceStructureParser):
     """Class to get and store XML structure."""
 
-    def setup(self):
+    @staticmethod
+    def setup():
         """Return setup wizard."""
         return {
             "type": "select",
@@ -222,7 +224,7 @@ class SparvXMLParser:
             })
             self.unprocessed_header_data_elems.add(header_source_root)
 
-        self.skipped_elems = set(elsplit(elem) for elem in skip)
+        self.skipped_elems = {elsplit(elem) for elem in skip}
         assert self.skipped_elems.isdisjoint(all_elems), "skip and elements must be disjoint"
 
     def parse(self, file):
@@ -288,7 +290,7 @@ class SparvXMLParser:
             )
             handle_header_data(element, tag_name)
 
-        def handle_header_data(element: etree.Element, tag_name: str = None):
+        def handle_header_data(element: etree.Element, tag_name: Optional[str] = None):
             """Extract header metadata."""
             if tag_name in self.unprocessed_header_data_elems:
                 self.unprocessed_header_data_elems.remove(tag_name)
@@ -384,10 +386,7 @@ class SparvXMLParser:
                 self.text.append(element.text)
             child_tail = None
             for child in element:
-                if not element_length:
-                    child_start_subpos = start_subpos + 1
-                else:
-                    child_start_subpos = 0
+                child_start_subpos = start_subpos + 1 if not element_length else 0
                 child_length, child_tail, end_subpos = iter_tree(child, start_pos + element_length, child_start_subpos)
                 element_length += child_length + child_tail
             end_pos = start_pos + element_length
@@ -404,7 +403,7 @@ class SparvXMLParser:
             try:
                 tree = etree.parse(source_file)
             except Exception as e:
-                raise SparvErrorMessage(f"The XML input file could not be parsed. Error: {e!s}")
+                raise SparvErrorMessage(f"The XML input file could not be parsed. Error: {e!s}") from None
             root = tree.getroot()
         else:
             text = source_file.read_text(encoding="utf-8")
@@ -415,7 +414,7 @@ class SparvXMLParser:
             try:
                 root = etree.fromstring(text)
             except Exception as e:
-                raise SparvErrorMessage(f"The XML input file could not be parsed. Error: {e!s}")
+                raise SparvErrorMessage(f"The XML input file could not be parsed. Error: {e!s}") from None
 
         iter_tree(root)
 
@@ -423,12 +422,13 @@ class SparvXMLParser:
             logger.warning("Some header data could not be bound to target elements.")
 
         if self.unprocessed_header_data_elems:
-            logger.warning("{} header data element{} {} not found in source data: '{}'.".format(
+            logger.warning(
+                "%s header data element%s %s not found in source data: '%s'.",
                 "Some" if len(self.unprocessed_header_data_elems) > 1 else "One",
                 "s" if len(self.unprocessed_header_data_elems) > 1 else "",
                 "were" if len(self.unprocessed_header_data_elems) > 1 else "was",
                 "', '".join(self.unprocessed_header_data_elems)
-            ))
+            )
 
     def save(self):
         """Save text data and annotation files to disk."""
@@ -456,7 +456,7 @@ class SparvXMLParser:
             # Sort spans and annotations by span position (required by Sparv)
             if attributes and spans:
                 attr_names, attr_values = list(zip(*attributes.items()))
-                spans, *attr_values = list(zip(*sorted(zip(spans, *attr_values), key=lambda x: x[0])))
+                spans, *attr_values = list(zip(*sorted(zip(spans, *attr_values), key=operator.itemgetter(0))))
                 attributes = dict(zip(attr_names, attr_values))
             else:
                 spans.sort()

@@ -30,7 +30,7 @@ def diapivot_annotate(out: Output = Output("<token>:hist.diapivot", cls="token:l
     for lemgrams in lemgram_annotation:
         saldo_ids = []
         for lemgram in lemgrams.split(util.constants.DELIM):
-            s_i = lexicon.get_exactMatch(lemgram)
+            s_i = lexicon.get_exact_match(lemgram)
             if s_i:
                 saldo_ids += [s_i]
 
@@ -87,8 +87,8 @@ class PivotLexicon:
         """Read pickled lexicon."""
         if verbose:
             logger.info("Reading cross lexicon: %s", crossfile)
-        with open(crossfile, "rb") as F:
-            self.lexicon = pickle.load(F)
+        with open(crossfile, "rb") as f:
+            self.lexicon = pickle.load(f)
         if verbose:
             logger.info("OK, read %d words", len(self.lexicon))
 
@@ -100,7 +100,7 @@ class PivotLexicon:
             annotation_tag_pairs = self.lexicon.get(lem, []) + self.lexicon.get(lem.lower(), [])
         return list(map(_split_val, annotation_tag_pairs))
 
-    def get_exactMatch(self, word):
+    def get_exact_match(self, word):
         """Get only exact matches from lexicon."""
         s = self.lookup(word)
         if s and s[0] == "exactMatch":

@@ -27,8 +27,8 @@ from sparv.core import paths
 from sparv.core.console import console
 from sparv.core.misc import SparvErrorMessage
 
-modules_path = ".".join(("sparv", paths.modules_dir))
-core_modules_path = ".".join(("sparv", paths.core_modules_dir))
+modules_path = f"sparv.{paths.modules_dir}"
+core_modules_path = f"sparv.{paths.core_modules_dir}"
 custom_name = "custom"
 
 
@@ -132,7 +132,7 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
         for module in found_modules:
             module_names.append(module.name)
             if not no_import:
-                m = importlib.import_module(".".join((path, module.name)))
+                m = importlib.import_module(f"{path}.{module.name}")
                 add_module_to_registry(m, module.name)
 
     if find_custom:
@@ -300,7 +300,6 @@ def _annotator(
     return decorator
 
 
-
 def annotator(
     description: str,
     name: Optional[str] = None,
@@ -331,7 +330,6 @@ def annotator(
         preloader_cleanup=preloader_cleanup,
         preloader_shared=preloader_shared,
     )
-
 
 
 def importer(description: str, file_extension: str, name: Optional[str] = None, outputs=None,
@@ -507,7 +505,7 @@ def _add_to_registry(annotator: dict, skip_language_check: bool = False):
                 elif ":" not in cls:
                     cls_target = ann_name
                 else:
-                    print(f"Malformed class name: '{cls}'")
+                    console.print(f"Malformed class name: '{cls}'")
 
                 if cls_target:
                     if not annotator["language"]:
@@ -551,7 +549,7 @@ def _add_to_registry(annotator: dict, skip_language_check: bool = False):
                                 "uninstallers.")
 
     if f_name in modules[module_name].functions:
-        print(f"Annotator function '{f_name}' collides with other function with same name in module '{module_name}'.")
+        console.print(f"Annotator function '{f_name}' collides with other function with same name in module '{module_name}'.")
     else:
         del annotator["module_name"]
         del annotator["name"]
@@ -662,11 +660,8 @@ def expand_variables(string, rule_name: Optional[str] = None, is_annotation: boo
     """
     rest = []
 
-    if is_annotation:
-        # Split if list of alternatives
-        strings = string.split(", ")
-    else:
-        strings = [string]
+    # Split if list of alternatives
+    strings = string.split(", ") if is_annotation else [string]
 
     for i, string in enumerate(strings):
         # Convert config keys to config values
@@ -743,10 +738,7 @@ def get_type_hint_type(type_hint):
     if origin in {list, list, tuple, tuple}:
         is_list = True
         args = typing_inspect.get_args(type_hint)
-        if args and type(args[0]) != TypeVar:
-            type_ = args[0]
-        else:
-            type_ = origin
+        type_ = args[0] if args and type(args[0]) is not TypeVar else origin
     else:
         type_ = type_hint
 

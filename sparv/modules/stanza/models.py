@@ -28,7 +28,7 @@ def stanza_resources_file(resources_file: ModelOutput = ModelOutput("stanza/swe/
 
 
 @modelbuilder("Stanza pretrain (embeddings) model for Swedish", language=["swe"])
-def stanza_pretrain_model(model: ModelOutput = ModelOutput("stanza/swe/sv_talbanken.pretrain.pt")):
+def stanza_pretrain_model(_model: ModelOutput = ModelOutput("stanza/swe/sv_talbanken.pretrain.pt")):
     """Download and unzip the Stanza pretrain (embeddings) model."""
     zip_model = Model("stanza/swe/stanza_pretrain.zip")
     zip_model.download("https://svn.spraakdata.gu.se/sb-arkiv/!svn/bc/230835/pub/stanza/stanza_pretrain.zip")
@@ -37,7 +37,7 @@ def stanza_pretrain_model(model: ModelOutput = ModelOutput("stanza/swe/sv_talban
 
 
 @modelbuilder("Stanza POS-tagging model for Swedish", language=["swe"])
-def stanza_pos_model(model: ModelOutput = ModelOutput("stanza/swe/pos/sv_talbanken_tagger.pt")):
+def stanza_pos_model(_model: ModelOutput = ModelOutput("stanza/swe/pos/sv_talbanken_tagger.pt")):
     """Download and unzip the Stanza POS-tagging model."""
     zip_model = Model("stanza/swe/pos/synt_stanza_full2.zip")
     zip_model.download("https://svn.spraakdata.gu.se/sb-arkiv/!svn/bc/230835/pub/stanza/morph_stanza_full2.zip")
@@ -46,7 +46,7 @@ def stanza_pos_model(model: ModelOutput = ModelOutput("stanza/swe/pos/sv_talbank
 
 
 @modelbuilder("Stanza lemmatisation model for Swedish", language=["swe"])
-def stanza_lem_model(model: ModelOutput = ModelOutput("stanza/swe/lem/sv_suc_lemmatizer.pt")):
+def stanza_lem_model(_model: ModelOutput = ModelOutput("stanza/swe/lem/sv_suc_lemmatizer.pt")):
     """Download and unzip the Stanza POS-tagging model."""
     zip_model = Model("stanza/swe/lem/lem_stanza.zip")
     zip_model.download("https://svn.spraakdata.gu.se/sb-arkiv/!svn/bc/230835/pub/stanza/lem_stanza.zip")
@@ -55,7 +55,7 @@ def stanza_lem_model(model: ModelOutput = ModelOutput("stanza/swe/lem/sv_suc_lem
 
 
 @modelbuilder("Stanza dependency model for Swedish", language=["swe"])
-def stanza_dep_model(model: ModelOutput = ModelOutput("stanza/swe/dep/sv_talbanken_parser.pt")):
+def stanza_dep_model(_model: ModelOutput = ModelOutput("stanza/swe/dep/sv_talbanken_parser.pt")):
     """Download and unzip the Stanza dependency model."""
     zip_model = Model("stanza/swe/dep/synt_stanza_full2.zip")
     zip_model.download("https://svn.spraakdata.gu.se/sb-arkiv/!svn/bc/230835/pub/stanza/synt_stanza_full2.zip")

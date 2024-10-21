@@ -73,7 +73,6 @@ def uninstall_timespan(
 @exporter("Timespan SQL data for use in Korp", abstract=True)
 def timespan_sql(_sql: ExportInput = ExportInput("korp.timespan/timespan.sql")):
     """Create timespan SQL data for use in Korp."""
-    pass
 
 
 @annotator("Timespan SQL data for use in Korp", order=1)
@@ -101,24 +100,24 @@ def timespan_sql_with_dateinfo(corpus: Corpus = Corpus(),
             datespans[(d[0].zfill(8), d[1].zfill(8))] += len(text)
             datetimespans[(d[0].zfill(8) + d[2].zfill(6), d[1].zfill(8) + d[3].zfill(6))] += len(text)
 
-    rows_date = []
-    rows_datetime = []
-
-    for span in datespans:
-        rows_date.append({
+    rows_date = [
+        {
             "corpus": corpus_name,
             "datefrom": span[0],
             "dateto": span[1],
             "tokens": datespans[span]
-        })
-
-    for span in datetimespans:
-        rows_datetime.append({
+        }
+        for span in datespans
+    ]
+    rows_datetime = [
+        {
             "corpus": corpus_name,
             "datefrom": span[0],
             "dateto": span[1],
             "tokens": datetimespans[span]
-        })
+        }
+        for span in datetimespans
+    ]
 
     create_sql(corpus_name, out, rows_date, rows_datetime)
 

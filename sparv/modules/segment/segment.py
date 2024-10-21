@@ -300,7 +300,7 @@ class BetterWordTokenizer:
 
         if token_list:
             with open(token_list, encoding="UTF-8") as saldotokens:
-                self.patterns["tokens"] = [re.escape(t.strip()) for t in saldotokens.readlines()]
+                self.patterns["tokens"] = [re.escape(t.strip()) for t in saldotokens]
 
         with open(model, encoding="UTF-8") as conf:
             for line in conf:
@@ -415,9 +415,9 @@ class FSVParagraphSplitter:
 
     def __init__(self):
         """Initialize class."""
-        pass
 
-    def span_tokenize(self, s):
+    @staticmethod
+    def span_tokenize(s):
         """Tokenize s and return list with tokens."""
         spans = []
         temp = [0, 0]

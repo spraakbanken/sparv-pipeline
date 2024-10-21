@@ -36,7 +36,7 @@ def blingbring_words(out: Output = Output("<token>:lexical_classes.blingbring",
         if saldo_ids:
             for sid in saldo_ids:
                 if connect_IDs:
-                    rogetid = rogetid.union(set(i + scoresep + sid for i in lexicon.lookup(sid, default=set())))
+                    rogetid = rogetid.union({i + scoresep + sid for i in lexicon.lookup(sid, default=set())})
                 else:
                     rogetid = rogetid.union(lexicon.lookup(sid, default={}).get(class_set, set()))
         return sorted(rogetid)
@@ -70,7 +70,7 @@ def swefn_words(out: Output = Output("<token>:lexical_classes.swefn",
         if saldo_ids:
             for sid in saldo_ids:
                 if connect_IDs:
-                    swefnid = swefnid.union(set(i + scoresep + sid for i in lexicon.lookup(sid, default=set())))
+                    swefnid = swefnid.union({i + scoresep + sid for i in lexicon.lookup(sid, default=set())})
                 else:
                     swefnid = swefnid.union(lexicon.lookup(sid, default=set()))
         return sorted(swefnid)
@@ -82,8 +82,7 @@ def swefn_words(out: Output = Output("<token>:lexical_classes.swefn",
 def annotate_words(out: Output, model: Model, saldoids: Annotation, pos: Annotation, annotate, pos_limit: list[str],
                    class_set=None, disambiguate=True, connect_ids=False, delimiter=DELIM, affix=AFFIX,
                    scoresep=SCORESEP, lexicon=None):
-    """
-    Annotate words with blingbring classes (rogetID).
+    """Annotate words with blingbring classes (rogetID).
 
     - out_sent: resulting annotation file.
     - model: pickled lexicon with saldoIDs as keys.

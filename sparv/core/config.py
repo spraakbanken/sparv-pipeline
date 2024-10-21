@@ -50,8 +50,6 @@ config_usage = defaultdict(set)  # For each config key, a list of annotators usi
 class Unset:
     """Class used to represent a config value that isn't set."""
 
-    pass
-
 
 def read_yaml(yaml_file: Union[str, Path]) -> dict:
     """Read YAML file and handle errors."""
@@ -223,17 +221,16 @@ def validate_module_config():
     for config_key in config_usage:
         try:
             _get(config_key, config_structure)
-        except KeyError:
+        except KeyError:  # noqa: PERF203
             annotators = config_usage[config_key]
             raise SparvErrorMessage(
                 "The annotator{} {} {} trying to access the config key '{}' which isn't declared anywhere.".format(
                     "s" if len(annotators) > 1 else "", ", ".join(annotators),
-                    "are" if len(annotators) > 1 else "is", config_key), "sparv", "config")
+                    "are" if len(annotators) > 1 else "is", config_key), "sparv", "config") from None
 
 
 def load_presets(lang, lang_variety):
     """Read presets files and return dictionaries with all available presets annotations and preset classes."""
-    global presets
     class_dict = {}
     full_lang = lang
     if lang_variety:
@@ -268,7 +265,6 @@ def load_presets(lang, lang_variety):
 
 def resolve_presets(annotations, class_dict, preset_classes):
     """Resolve annotation presets into actual annotations."""
-    global presets
     result_annotations = []
     for annotation in annotations:
         if annotation in presets:

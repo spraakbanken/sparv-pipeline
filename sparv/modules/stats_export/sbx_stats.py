@@ -66,7 +66,7 @@ def first_lemgram(
 def conditional_best_complemgram(
     out_complemgrams: Output = Output("<token>:stats_export.complemgram_best_cond",
                                       description="Compound analysis using lemgrams"),
-    complemgrams: Annotation= Annotation("<token>:stats_export.complemgram_best"),
+    complemgrams: Annotation = Annotation("<token>:stats_export.complemgram_best"),
     sense: Annotation = Annotation("<token:sense>")):
     """Get the best complemgram if the token is lacking a sense annotation."""
     all_annotations = list(complemgrams.read_attributes((complemgrams, sense)))
@@ -201,7 +201,6 @@ def sbx_freq_list_1800(
     delimiter: str = Config("stats_export.delimiter"),
     cutoff: int = Config("stats_export.cutoff")):
     """Create a word frequency list for the entire corpus."""
-
     annotations = [(word, "token"), (msd, "POS"), (baseform, "lemma"), (sense, "SALDO sense"), (lemgram, "lemgram"),
                    (complemgram, "compound")]
 

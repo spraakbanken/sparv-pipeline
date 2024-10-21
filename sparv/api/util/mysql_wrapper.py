@@ -1,5 +1,6 @@
 """Util function for creating mysql files."""
 
+import operator
 import os
 
 from sparv.api import get_logger
@@ -141,7 +142,7 @@ class MySQL:
 
         for row in rows:
             if isinstance(row, dict):
-                rowlist = sorted(row.items(), key=lambda x: x[0])
+                rowlist = sorted(row.items(), key=operator.itemgetter(0))
                 valueline = f"({_valueseq([x[1] for x in rowlist])})"
                 input_length += len(valueline)
                 if input_length > MAX_ALLOWED_PACKET:

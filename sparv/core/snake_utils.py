@@ -93,7 +93,7 @@ class SnakeStorage:
                     f"Could not find the importer '{sparv_config.get('import.importer')}'. Make sure the "
                     "'import.importer' config value refers to an existing importer.",
                     "sparv"
-                )
+                ) from None
             # Collect files in source dir
             sf = list(snakemake.utils.listfiles(Path(get_source_path(), "{file}")))
             self._source_files = [f[1][0][:-len(file_extension)] for f in sf if f[1][0].endswith(file_extension)]
@@ -256,7 +256,7 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                 raise SparvErrorMessage(
                     f"The custom annotation for annotator '{custom_rule_obj['annotator']}' is missing the required "
                     "key 'suffix'."
-                )
+                ) from None
             sparv_config.config = sparv_config._merge_dicts(copy.deepcopy(custom_rule_obj["config"]),
                                                             sparv_config.config)
         else:
@@ -278,18 +278,17 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
             else:
                 raise SparvErrorMessage(
                     f"Parameter '{param_name}' in custom rule '{rule.full_name}' has no value!", "sparv", "config")
+        elif param_default_empty:
+            # This is a custom annotator, either unused or it will be handled separately later.
+            # Don't process it any further, but save it in all_custom_annotators and all_annotators.
+            storage.all_custom_annotators.setdefault(rule.module_name, {}).setdefault(rule.f_name, {
+                "description": rule.description, "params": param_dict})
+            storage.custom_targets.append((rule.target_name, rule.description))
+            storage.all_annotators.setdefault(rule.module_name, {}).setdefault(rule.f_name, {
+                "description": rule.description, "annotations": [], "params": param_dict})
+            return False
         else:
-            if param_default_empty:
-                # This is a custom annotator, either unused or it will be handled separately later.
-                # Don't process it any further, but save it in all_custom_annotators and all_annotators.
-                storage.all_custom_annotators.setdefault(rule.module_name, {}).setdefault(rule.f_name, {
-                    "description": rule.description, "params": param_dict})
-                storage.custom_targets.append((rule.target_name, rule.description))
-                storage.all_annotators.setdefault(rule.module_name, {}).setdefault(rule.f_name, {
-                    "description": rule.description, "annotations": [], "params": param_dict})
-                return False
-            else:
-                param_value = copy.deepcopy(param.default)
+            param_value = copy.deepcopy(param.default)
 
         param_type, param_list, param_optional = registry.get_type_hint_type(param.annotation)
 
@@ -587,22 +586,22 @@ def rule_helper(rule: RuleStorage, config: dict, storage: SnakeStorage, config_m
                                                                           storage.preloader_info[rule.target_name]}
 
     if config.get("debug"):
-        print()
+        console.print()
         console.print(f"[b]{rule.module_name.upper()}:[/b] {rule.f_name}")
-        print()
+        console.print()
         console.print("    [b]INPUTS[/b]")
         for i in rule.inputs:
-            print(f"        {i}")
-        print()
+            console.print(f"        {i}")
+        console.print()
         console.print("    [b]OUTPUTS[/b]")
         for o in rule.outputs:
-            print(f"        {o}")
-        print()
+            console.print(f"        {o}")
+        console.print()
         console.print("    [b]PARAMETERS[/b]")
         for p in rule.parameters:
-            print(f"        {p} = {rule.parameters[p]!r}")
-        print()
-        print()
+            console.print(f"        {p} = {rule.parameters[p]!r}")
+        console.print()
+        console.print()
 
     return True
 
@@ -738,7 +737,7 @@ def get_annotation_path(annotation, data=False, common=False):
     if not (data or common):
         if not attr:
             attr = io.SPAN_ANNOTATION
-        path = path / attr
+        path /= attr
 
     if not common:
         path = "{file}" / path

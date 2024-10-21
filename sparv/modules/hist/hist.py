@@ -1,5 +1,6 @@
 """Annotators for historical Swedish."""
 
+import operator
 import re
 from typing import Optional
 
@@ -99,7 +100,7 @@ def extract_pos(out: Output = Output("<token>:hist.homograph_set", description="
         pos = [re.search(r"\.\.(.*?)\.", lem) for lem in thelems]
         mapping = tagmappings.mappings["saldo_pos_to_suc"]
         pos_lists = [mapping.get(p.group(1), []) for p in pos if oktag(p)]
-        return sorted(set([y for x in pos_lists for y in x]))
+        return sorted({y for x in pos_lists for y in x})
 
     _annotate_standard(out, lemgrams, mkpos, extralemgrams, delimiter=delimiter, affix=affix)
 
@@ -240,7 +241,7 @@ def spelling_variants(word: Annotation = Annotation("<token:word>"),
 
     def findvariants(_, theword):
         variants = [x_d for x_d in variations.get(theword.lower(), []) if x_d[0] != theword]
-        return sorted(set([v for v, d in variants]))
+        return sorted({v for v, d in variants})
         # variants_lists = [_get_single_annotation([lexicon], v, "lem", "") for v, _d in variants]
         # return set([y for x in variants_lists for y in x])
 
@@ -261,8 +262,8 @@ def all_spelling_variants(
 # Auxiliaries
 ################################################################################
 
-def _annotate_standard(out, input_annotation, annotator, extra_input:str = "", delimiter: str = util.constants.DELIM,
-                       affix: str = util.constants.AFFIX, split:bool = True):
+def _annotate_standard(out, input_annotation, annotator, extra_input: str = "", delimiter: str = util.constants.DELIM,
+                       affix: str = util.constants.AFFIX, split: bool = True):
     """Apply the 'annotator' function to the annotations in 'input_annotation' and write the new output to 'out'.
 
     Args:
@@ -330,5 +331,5 @@ def _get_single_annotation(lexicons, word, key, msdtag):
         if annotation:
             break
     # Sort by precision (descending) and remove precision values
-    annotation_lists = [a.get(key, []) for _, a in sorted(annotation, reverse=True, key=lambda x: x[0])]
+    annotation_lists = [a.get(key, []) for _, a in sorted(annotation, reverse=True, key=operator.itemgetter(0))]
     return [y for x in annotation_lists for y in x]

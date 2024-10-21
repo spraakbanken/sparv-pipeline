@@ -100,7 +100,7 @@ def gather_annotations(annotations: list[Annotation],
                         return (span.start, span.start_sub), hierarchy, (span.end, span.end_sub)
                     else:
                         return span.start, hierarchy, span.end
-                else:
+                else:  # noqa: PLR5501
                     if sub_positions:
                         return (span.start, span.start_sub), (-span.end, -span.end_sub), hierarchy
                     else:
@@ -251,20 +251,18 @@ def calculate_element_hierarchy(source_file, spans_list):
         else:
             startend_positions[span.start].add(span.name)
             startend_positions[span.end].add(span.name)
-    span_duplicates = set(tuple(sorted(v)) for v in span_duplicates.values() if len(v) > 1)
+    span_duplicates = {tuple(sorted(v)) for v in span_duplicates.values() if len(v) > 1}
 
     # Add empty spans and spans with identical start positions
     empty_spans = set()
     for empty_span, span_starts in empty_span_starts.items():
         for span_start in span_starts:
-            for a in startend_positions[span_start]:
-                empty_spans.add(tuple(sorted((empty_span, a))))
+            empty_spans.update(tuple(sorted((empty_span, a))) for a in startend_positions[span_start])
 
     # Get pairs of relations that need to be ordered
     relation_pairs = set()
     for collisions in span_duplicates:
-        for combination in combinations(collisions, r=2):
-            relation_pairs.add(combination)
+        relation_pairs.update(combinations(collisions, r=2))
     relation_pairs.update(empty_spans)
 
     hierarchy = defaultdict(dict)
@@ -343,7 +341,6 @@ def get_header_names(
     xml_namespaces: dict[str, str]
 ):
     """Get a list of header annotations and a dictionary for renamed annotations."""
-
     export_names = _create_export_names(list(header_annotations), None, False, keep_struct_names=False,
                                         xml_namespaces=xml_namespaces, xml_mode=True)
 
@@ -449,7 +446,7 @@ def _create_export_names(annotations: list[tuple[Union[Annotation, AnnotationAll
     # Take care of XML namespaces
     export_names = {k: _get_xml_tagname(v, xml_namespaces, xml_mode) for k, v in export_names.items()}
 
-    return export_names
+    return export_names  # noqa: RET504
 
 
 def _get_xml_tagname(tag, xml_namespaces, xml_mode=False):
@@ -548,7 +545,7 @@ def scramble_spans(span_positions, chunk_name: str, chunk_order):
     new_span_positions = [t for s in new_span_positions for t in s]  # Unpack chunks
     new_span_positions = [(0, instruction, span) for instruction, span in new_span_positions]  # Add fake position (0)
 
-    return new_span_positions
+    return new_span_positions  # noqa: RET504
 
 
 def _reorder_spans(span_positions, chunk_name: str, chunk_order):

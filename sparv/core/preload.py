@@ -81,10 +81,8 @@ def receive_data(sock):
     # Get data
     data = recvall(sock, length)
 
-    # Unpickle data
-    data = pickle.loads(data)
-
-    return data
+    # Unpickle data and return
+    return pickle.loads(data)
 
 
 def send_data(sock, data):
@@ -98,16 +96,14 @@ def get_preloader_info(socket_path):
     """Get information about preloaded modules."""
     with socketcontext(socket_path) as sock:
         send_data(sock, INFO)
-        response = receive_data(sock)
-    return response
+        return receive_data(sock)
 
 
 def get_preloader_status(socket_path):
     """Get preloader status."""
     with socketcontext(socket_path) as sock:
         send_data(sock, STATUS)
-        response = receive_data(sock)
-    return response
+        return receive_data(sock)
 
 
 def stop(socket_path):
@@ -191,12 +187,12 @@ def handle(client_sock, annotators: dict[str, Preloader]):
 
     # Run cleanup if available
     if annotator.cleanup:
-        annotator.preloaded = annotator.cleanup(**{**annotator.params, **{annotator.target: annotator.preloaded}})
+        annotator.preloaded = annotator.cleanup(**{**annotator.params, annotator.target: annotator.preloaded})
 
 
 def worker(worker_no: int, server_socket, annotators: dict[str, Preloader], stop_event):
     """Listen to the socket server and handle incoming requests."""
-    log.info(f"Worker {worker_no} started")
+    log.info("Worker %d started", worker_no)
 
     # Load any non-shared preloaders
     for annotator in annotators.values():
@@ -243,7 +239,7 @@ def serve(socket_path: str, processes: int, storage: SnakeStorage, stop_signal: 
         if rule.has_preloader:
             rules[rule.target_name] = rule
 
-    log.info("Loading annotators: " + ", ".join(preload_config))
+    log.info("Loading annotators: %s", ", ".join(preload_config))
 
     for annotator in preload_config:
         if annotator not in rules:
@@ -284,10 +280,14 @@ def serve(socket_path: str, processes: int, storage: SnakeStorage, stop_signal: 
     del annotators
     del annotator_obj
 
-    log.info(f"The Sparv preloader is ready and waiting for connections using the socket at {socket_file.absolute()}. "
-             "Run Sparv with the command 'sparv run --socket /path/to/socket' to use the preloader. "
-             "Press Ctrl-C to exit, or run 'sparv preload stop --socket /path/to/socket'. You can also stop the "
-             f"preloader by sending an interrupt signal to the process with id {os.getpid()}.")
+    log.info(
+        "The Sparv preloader is ready and waiting for connections using the socket at %s. "
+        "Run Sparv with the command 'sparv run --socket /path/to/socket' to use the preloader. "
+        "Press Ctrl-C to exit, or run 'sparv preload stop --socket /path/to/socket'. You can also stop the "
+        "preloader by sending an interrupt signal to the process with id %d.",
+        socket_file.absolute(),
+        os.getpid()
+    )
 
     # Periodically check whether stop_event is set or not and stop all processes when set
     while True:

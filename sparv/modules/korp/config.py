@@ -200,7 +200,7 @@ def config(
         annotation_definitions = {}
 
     # Get annotation names
-    annotation_list, token_attributes, export_names = util.export.get_annotation_names(
+    annotation_list, _token_attributes, export_names = util.export.get_annotation_names(
         annotations,
         source_annotations,
         token_name=token.name,
@@ -217,7 +217,7 @@ def config(
         # Figure out based on available annotations and scrambling
         within = []
 
-        anns = set([a[0].split()[0] for a in itertools.chain(annotations, source_annotations or [])])
+        anns = {a[0].split()[0] for a in itertools.chain(annotations, source_annotations or [])}
 
         if sentence and sentence.name in anns:
             within.append(export_names[sentence.name])
@@ -340,7 +340,7 @@ def build_annotations(
                 or export_name.split(":", 1)[-1].startswith("_")
             )
             and annotation.name not in annotation_definitions
-            and not export_name in include
+            and export_name not in include
         ):
             logger.debug("Skipping annotation '%s'", annotation.name)
             continue

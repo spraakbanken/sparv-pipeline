@@ -69,8 +69,8 @@ def parse(source_file: SourceFilename = SourceFilename(),
 
     # Check if any text was found in the PDF
     if not "".join(text.strip() for text in texts):
-        raise SparvErrorMessage(f"No text was found in the file '{source_file}.pdf'! This file cannot be processed " \
-                                "with Sparv. Please make sure that every PDF input file contains machine readable " \
+        raise SparvErrorMessage(f"No text was found in the file '{source_file}.pdf'! This file cannot be processed "
+                                "with Sparv. Please make sure that every PDF input file contains machine readable "
                                 "text.")
 
     # Write page spans

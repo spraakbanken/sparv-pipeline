@@ -1,4 +1,5 @@
 """General metadata about corpus."""
+import operator
 import re
 from typing import Union
 
@@ -12,13 +13,13 @@ __config__ = [
         "metadata.language",
         description="Language of source files (ISO 639-3)",
         datatype=Union[str, None],
-        choices=lambda: sorted(set(l.split("-")[0] for l in registry.languages)) + [None]
+        choices=lambda: [*sorted({l.split("-")[0] for l in registry.languages}), None]
     ),
     Config(
         "metadata.variety",
         description="Language variety of source files (if applicable)",
         datatype=str,
-        choices=lambda: sorted(set(l.split("-")[1] for l in registry.languages if "-" in l))
+        choices=lambda: sorted({l.split("-")[1] for l in registry.languages if "-" in l})
     ),
     Config("metadata.description", description="Description of corpus", datatype=dict[str, str]),
     Config("metadata.short_description", description="Short description of corpus (one line)", datatype=dict[str, str])
@@ -36,10 +37,10 @@ __config__ = [
 def setup_wizard(_: dict):
     """Return wizard steps for setting metadata variables."""
     language_list = [{"value": lang, "name": name} for lang, name in registry.languages.items()]
-    language_list.sort(key=lambda x: x["name"])
+    language_list.sort(key=operator.itemgetter("name"))
     language_default = {"value": "swe", "name": registry.languages.get("swe", "Swedish")}
 
-    questions = [
+    return [
         {
             "type": "text",
             "name": "metadata.id",
@@ -76,4 +77,3 @@ def setup_wizard(_: dict):
             "multiline": True
         },
     ]
-    return questions

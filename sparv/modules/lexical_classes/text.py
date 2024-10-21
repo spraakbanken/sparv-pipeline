@@ -1,5 +1,6 @@
 """Annotate text chunks with lexical classes from Blingbring or SweFN."""
 
+import operator
 from collections import defaultdict
 from typing import Optional
 
@@ -108,7 +109,7 @@ def annotate_text(out: Output, lexical_classes_token: Annotation, text: Annotati
                 class_freqs[c] = (rel / ref_freq)
 
         # Sort words according to frequency/dominance
-        ordered_words = sorted(class_freqs.items(), key=lambda x: x[1], reverse=True)
+        ordered_words = sorted(class_freqs.items(), key=operator.itemgetter(1), reverse=True)
         if freq_model:
             # Remove words with dominance < 1
             ordered_words = [w for w in ordered_words if w[1] >= 1]

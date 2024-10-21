@@ -1,4 +1,6 @@
 """Main Sparv executable."""
+# ruff: noqa: PLC0415, T201
+
 import argparse
 import sys
 from pathlib import Path
@@ -27,7 +29,8 @@ class CustomArgumentParser(argparse.ArgumentParser):
         if not no_help:
             self.add_argument("-h", "--help", action="help", help="Show this help message and exit")
 
-    def _check_value(self, action, value):
+    @staticmethod
+    def _check_value(action, value):
         """Check if command is valid, and if not, try to guess what the user meant."""
         if action.choices is not None and value not in action.choices:
             # Check for possible misspelling
@@ -108,7 +111,6 @@ class SortedCompletionFinder(argcomplete.CompletionFinder):
 
 def main():
     """Run Sparv Pipeline (main entry point for Sparv)."""
-
     # Set up command line arguments
     parser = CustomArgumentParser(prog="sparv",
                                   description="Sparv Pipeline",
@@ -303,7 +305,6 @@ def main():
     schema_parser = subparsers.add_parser("schema", help=help["schema"], description=help["schema"])
     schema_parser.add_argument("--compact", action="store_true", help="Don't indent output")
 
-
     # Add common arguments
     for subparser in [run_parser, runrule_parser]:
         subparser.add_argument("-f", "--file", nargs="+", default=[], help="Only annotate specified input file(s)")
@@ -430,11 +431,10 @@ def main():
             print(f"No config file ({paths.config_file}) found in working directory.")
             sys.exit(1)
     # For the 'build-models' command there needs to be a config file or a language parameter
-    elif args.command == "build-models":
-        if not config_exists and not args.language:
-            print("Models are built for a specific language. Please provide one with the --language param or run this "
-                  f"from a directory that has a config file ({paths.config_file}).")
-            sys.exit(1)
+    elif args.command == "build-models" and not config_exists and not args.language:
+        print("Models are built for a specific language. Please provide one with the --language param or run this "
+              f"from a directory that has a config file ({paths.config_file}).")
+        sys.exit(1)
 
     snakemake_args = {
         "workdir": args.dir,
