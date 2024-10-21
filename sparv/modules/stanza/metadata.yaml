@@ -1,0 +1,54 @@
+id: swe-pos-stanza-stanzamorph
+name:
+  swe: SUC-ordklasstaggning med Stanza
+  eng: SUC part-of-speech tagging with Stanza
+short_description:
+  swe: Annotering av SUC-ordklasser med Stanza för svenska
+  eng: Swedish part-of-speech annotation with SUC tags by Stanza
+task: part-of-speech tagging
+in_collections:
+  - pos
+keywords:
+  - pos-tagging
+  - stanza
+annotations:
+  - <token>:stanza.pos
+exmaple-output: |-
+  ```xml
+  <token pos="PN">Det</token>
+  <token pos="AB">här</token>
+  <token pos="VB">är</token>
+  <token pos="DT">en</token>
+  <token pos="NN">korpus</token>
+  <token pos="MAD">.</token>
+  ```
+caveats:
+  swe: ''
+  eng: ''
+standard_reference: 'https://aclanthology.org/2021.nodalida-main.20/'
+other_references:
+  - "Stanza: Peng Qi, Yuhao Zhang, Yuhui Zhang, Jason Bolton and Christopher D. Manning. 2020"
+  - "Stanza: A Python Natural Language Processing Toolkit for Many Human Languages. In Association for Computational Linguistics (ACL) System Demonstrations. 2020"
+  - "SUC3: https://spraakbanken.gu.se/en/resources/suc3"
+  - "TalbankenSBX: https://spraakbanken.gu.se/en/blog/20200609-the-five-lives-of-talbanken"
+  - "SIC2: https://spraakbanken.gu.se/en/resources/sic2"
+tool: "Stanza"
+model: "[Stanzamorph](https://spraakbanken.gu.se/resurser/stanzamorph)"
+trained_on: "[SUC3](https://spraakbanken.gu.se/resurser/suc3), [TalbankenSBX](https://spraakbanken.gu.se/resurser/talbanken), [SIC2](https://spraakbanken.gu.se/resurser/sic2)"
+tagset: "[SUC3](https://spraakbanken.gu.se/korp/markup/msdtags.html)"
+evaluation_results: |-
+  For a model trained on SUC3 and validated on a part of TalbankenSBX_dev the results are as follows:  
+  tested on Talbanken SBX_test: exact match = 0.97; POS = 0.98; msd = 0.99  
+  tested on SIC2: exact match = 0.92; POS = 0.93; msd = 0.96  
+  More info: https://spraakbanken.gu.se/en/resources/flair/evaluating-pos-tagging
+intended_uses:
+  swe: ''
+  eng: ''
+description:
+  eng: |-
+    In 2020, the Stanza tool was trained and tested on a set of gold-standard
+    Swedish corpora (following SUC3-style annotation) in order to create a high-quality analysis.
+    Currently (in 2024), this is the default analysis for Swedish in Språkbanken's analysis platform
+    [Sparv](https://spraakbanken.gu.se/sparv).
+created: 2020-12-07
+updated: 2022-08-10
