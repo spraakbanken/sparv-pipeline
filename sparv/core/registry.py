@@ -126,11 +126,14 @@ def find_modules(no_import: bool = False, find_custom: bool = False) -> list:
     modules_full_path = paths.sparv_path / paths.modules_dir
     core_modules_full_path = paths.sparv_path / paths.core_modules_dir
 
-    for full_path, path in ((core_modules_full_path, core_modules_path), (modules_full_path, modules_path)):
+    module_names = []
+
+    for full_path, path, include in ((core_modules_full_path, core_modules_path, False), (modules_full_path, modules_path, True)):
         found_modules = pkgutil.iter_modules([str(full_path)])
-        module_names = []
         for module in found_modules:
-            module_names.append(module.name)
+            if include:
+                # Don't include core modules in the returned list of modules, as they are only used for configuration
+                module_names.append(module.name)
             if not no_import:
                 m = importlib.import_module(f"{path}.{module.name}")
                 add_module_to_registry(m, module.name)
