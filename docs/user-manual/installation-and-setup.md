@@ -255,11 +255,6 @@ pip install [pointer-to-sparv-plugin]
 The `pointer-to-sparv-plugin` can be a package available on the [Python Package Index (PyPI)](https://pypi.org/), a
 remote public repository, or a local directory on your machine.
 
-For now there are two plugins available for Sparv:
-[sparv-sbx-freeling](https://github.com/spraakbanken/sparv-sbx-freeling) and
-[sparv-sbx-metadata](https://github.com/spraakbanken/sparv-sbx-metadata). Please refer to their GitHub pages for more
-information.
-
 Plugins can be uninstalled using one of the following commands:
 ```
 pipx runpip sparv-pipeline uninstall [name-of-sparv-plugin]
