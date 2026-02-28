@@ -871,6 +871,10 @@ def main(argv: list[str] | None = None) -> bool:
                         use_threads=simple_target,
                     ),
                 )
+        except KeyboardInterrupt:
+            if not progress.abort_event.is_set():
+                raise  # Re-raise if not triggered by our missing-config abort
+            success = False
         except Exception as e:
             # Any exceptions (including SparvErrorMessage) in the Sparv core are caught here
             progress.handle_exception(e)

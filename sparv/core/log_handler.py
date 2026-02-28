@@ -28,20 +28,27 @@ Any exceptions (including `SparvErrorMessage`) raised in Sparv modules are first
 to error log messages. The execution of the module process is then interrupted, which leads to Snakemake throwing a
 WorkflowError exception. This is caught by the `__main__` module and forwarded to the `handle_exception()` which
 ignores the error message (as the error has already been logged).
+
+Finally, the log handler itself may raise a `KeyboardInterrupt` in the main thread to abort the workflow when critical
+errors are detected in the initial job planning phase, such as missing config variables. This leads to a shutdown of the
+workflow, and the error message is printed by the `__main__` module as part of the exception handling.
 """
 
 from __future__ import annotations
 
 import datetime
+import _thread  # noqa: PLC2701
 import logging
 import logging.handlers
 import pickle
 import re
 import socketserver
 import struct
+import sys
 import threading
 import time
 import traceback
+import warnings
 from collections import OrderedDict, defaultdict
 from collections.abc import Iterable
 from datetime import timedelta
@@ -341,6 +348,7 @@ class SparvLogHandler:
         self.root_dir = root_dir
         self.finished = False
         self.handled_error = False  # Set to True if an error has been handled, i.e. not unexpected errors
+        self.abort_event = threading.Event()  # Set when the workflow should be aborted before execution
         self.messages = {
             "error": [],
             "unhandled_error": [],
@@ -656,6 +664,25 @@ class SparvLogHandler:
                     job += "*"  # Differentiate entrypoints from actual rules in the list
                 self.jobs[job.replace("::", ":")] = int(count)
             self.jobs_max_len = max(map(len, self.jobs))
+
+            # Check the rules selected for the current operation, and see if any is unusable due to missing configs
+            for job_name in self.jobs:
+                if job_name in messages["missing_configs"]:
+                    self.missing_config_message(job_name)
+                    self.handled_error = True
+
+            if self.handled_error:
+                # Abort by raising KeyboardInterrupt in the main thread. We can't raise an exception directly here
+                # because this handler runs on the QueueListener thread (not the main thread). _thread.interrupt_main()
+                # reliably interrupts the main thread, and asyncio handles KeyboardInterrupt cleanly (unlike SIGTERM
+                # which can hang the async scheduler).
+                #
+                # Silence asyncio cleanup tracebacks and unawaited coroutine warnings that occur when Snakemake's
+                # scheduler event loop is garbage-collected in a dirty state after the interrupt.
+                sys.unraisablehook = lambda _: None
+                warnings.filterwarnings("ignore", message=r"coroutine.*was never awaited")
+                self.abort_event.set()
+                _thread.interrupt_main()
 
             # Get number of jobs and start progress bar
             if self.use_progressbar and not self.bar_started and total_jobs.isdigit():
