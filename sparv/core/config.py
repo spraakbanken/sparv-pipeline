@@ -67,6 +67,9 @@ config_usage = defaultdict(set)  # For each config key, a list of annotators usi
 
 class Unset:
     """Class used to represent a config value that is not set."""
+    def __bool__(self) -> bool:
+        """Return False."""
+        return False
 
 
 def read_yaml(yaml_file: str | Path) -> dict:
