@@ -3,7 +3,6 @@
 from pathlib import Path
 
 import pytest
-
 from sparv.api.util.system import find_binary
 
 from . import utils

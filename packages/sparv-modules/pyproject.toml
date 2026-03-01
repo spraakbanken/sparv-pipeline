@@ -1,0 +1,69 @@
+[project]
+name = "sparv-modules"
+version = "5.4.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11.9"
+authors = [{ name = "Kristoffer Andersson", email = "kod.kristoff@gmail.com" }]
+dependencies = [
+  # "PyYAML==6.0.2",
+  # "appdirs==1.4.4",
+  # "argcomplete==3.6.2",
+  "docx2python==1.27.1",
+  # "jsonschema==4.23.0",
+  # "markdown>=3.9",
+  "nltk==3.9.1",
+  # "packaging>=21.0",
+  # "pycountry==24.6.1",
+  "pypdfium2==4.30.0",
+  # "python-dateutil==2.9.0",
+  # "python-json-logger==3.3.0",
+  # "questionary==1.10.0",
+  # "requests>=2.32.3",
+  # "rich==14.0.0",
+  # "rich-argparse==1.7.0",
+  # "snakemake==9.11.4",
+  # "sparv-api>=5.4.0",
+  # "typing-inspect==0.9.0"
+]
+
+# [project.entry-points."sparv.plugin"]
+# segment = "sparv.modules.segment"
+
+[build-system]
+requires = ["uv_build>=0.10.4,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = [
+  "sparv.modules.conll_export",
+  "sparv.modules.csv_export",
+  "sparv.modules.cwb",
+  "sparv.modules.dateformat",
+  "sparv.modules.docx_import",
+  "sparv.modules.geo",
+  "sparv.modules.hist",
+  "sparv.modules.hunpos",
+  "sparv.modules.korp",
+  "sparv.modules.lexical_classes",
+  "sparv.modules.malt",
+  "sparv.modules.misc",
+  "sparv.modules.odt_import",
+  "sparv.modules.pdf_import",
+  "sparv.modules.phrase_structure",
+  "sparv.modules.readability",
+  "sparv.modules.saldo",
+  "sparv.modules.segment",
+  "sparv.modules.sensaldo",
+  "sparv.modules.sent_align",
+  "sparv.modules.stanford",
+  "sparv.modules.stats_export",
+  "sparv.modules.swener",
+  "sparv.modules.text_import",
+  "sparv.modules.treetagger",
+  "sparv.modules.version_info",
+  "sparv.modules.word_align",
+  "sparv.modules.wsd",
+  "sparv.modules.xml_export",
+  "sparv.modules.xml_import",
+]

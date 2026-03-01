@@ -1,0 +1,36 @@
+[project]
+name = "sparv-api"
+version = "5.4.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11.9"
+authors = [{ name = "Kristoffer Andersson", email = "kod.kristoff@gmail.com" }]
+dependencies = [
+  "PyYAML==6.0.2",
+  "appdirs==1.4.4",
+  # "jsonschema==4.23.0",
+  # "markdown>=3.9",
+  # "packaging>=21.0",
+  "pycountry==24.6.1",
+  # "python-dateutil==2.9.0",
+  "python-json-logger==3.3.0",
+  "questionary==1.10.0",
+  "requests>=2.32.3",
+  "rich==14.0.0",
+  "snakemake==9.11.4",
+  "typing-inspect==0.9.0"
+]
+
+[build-system]
+requires = ["uv_build>=0.10.4,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = [
+  "sparv.api",
+  "sparv.core",
+  "sparv.core_modules.export",
+  "sparv.core_modules.import",
+  "sparv.core_modules.metadata",
+  "sparv.core_modules.sparv",
+]
