@@ -109,6 +109,63 @@ function create_markdown {
             echo -e "\n" >> "${OUTPUT_DIR}/${output}"
         done
 
+        # Convert content tabs
+        awk '
+        function trim4(s) { sub(/^    /, "", s); return s }
+        
+        BEGIN { in_top = in_nested = 0 }
+        
+        # Top-level tabs: === "uv" -> **uv**
+        /^=== "[^"]+"/ {
+            name = $0
+            sub(/^=== "/, "", name); sub(/"$/, "", name)
+            print "**" name "**"
+            in_top = 1
+            in_nested = 0
+            next
+        }
+        
+        # Outside top block: print as-is
+        !in_top { print; next }
+        
+        # Inside top block -------------------------------------------------------
+        
+        # Keep whitespace-only lines (do not end blocks)
+        /^[[:space:]]*$/ { print ""; next }
+        
+        # End top block only on a non-blank line with no leading space
+        $0 !~ /^ / {
+            in_top = in_nested = 0
+            print
+            next
+        }
+        
+        {
+            # Strip the top-level 4-space indent once
+            t = trim4($0)
+        
+            # Nested heading: === "Linux" -> *Linux*
+            if (t ~ /^=== "[^"]+"/) {
+                name = t
+                sub(/^=== "/, "", name); sub(/"$/, "", name)
+                print "*" name "*"
+                in_nested = 1
+                next
+            }
+        
+            # Nested content: while t has another 4-space indent, strip and print
+            if (in_nested && t ~ /^    /) {
+                print trim4(t)
+                next
+            }
+        
+            # Anything else ends nested mode (if it was on) and prints at top level
+            in_nested = 0
+            print t
+        }
+        ' "${OUTPUT_DIR}/${output}" > "${OUTPUT_DIR}/${output}.tmp"
+        mv "${OUTPUT_DIR}/${output}.tmp" "${OUTPUT_DIR}/${output}"
+
         # Remove double dashes at the end of a line from markdown files
         perl -i -pe 's/--$//g' "${OUTPUT_DIR}/${output}"
         # Remove titles (filenames) from code blocks, e.g. ```python title="__init__.py" --> ```python
