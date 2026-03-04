@@ -1,0 +1,136 @@
+[project]
+site_name = "Sparv"
+site_description = "Språkbanken's analysis platform"
+site_url = "https://spraakbanken.gu.se/sparv/"
+repo_url = "https://github.com/spraakbanken/sparv"
+version = "5.4.0.dev0 (development version)"
+docs_dir = "site"
+site_dir = "build"
+nav = [
+    { "User Manual" = [
+        { "Introduction" = "user-manual/intro.md" },
+        { "Quick Start" = "user-manual/quick-start.md" },
+        { "Installation and Setup" = "user-manual/installation-and-setup.md" },
+        { "Sparv Concepts" = "user-manual/concepts.md" },
+        { "Preparing Your Corpus" = "user-manual/preparing-your-corpus.md" },
+        { "Corpus Configuration" = "user-manual/corpus-configuration.md" },
+        { "Running Sparv" = "user-manual/running-sparv.md" },
+        { "Command Line Interface" = "user-manual/cli.md" },
+        { "Available Analyses" = "user-manual/available-analyses.md" },
+        { "Using Sparv as a Library" = "user-manual/using-sparv-as-a-library.md" },
+    ] },
+    { "Developer's Guide" = [
+        { "Introduction" = "developers-guide/intro.md" },
+        { "General Concepts" = "developers-guide/general-concepts.md" },
+        { "Writing Sparv Plugins" = "developers-guide/writing-sparv-plugins.md" },
+        { "Reference" = [
+            { "Sparv Decorators" = "developers-guide/sparv-decorators.md" },
+            { "Sparv Classes" = "developers-guide/sparv-classes.md" },
+            { "Utilities" = "developers-guide/utilities.md" },
+        ] },
+    ] },
+    { "Changelog" = "changelog.md" },
+]
+extra_css = ["stylesheets/extra.css"]
+
+[project.theme]
+font.text = "Inter"
+font.code = "Jetbrains Mono"
+logo = "images/sparv_detailed_orange.png"
+favicon = "images/sparv_detailed.png"
+custom_dir = "site/overrides"
+language = "en"
+features = [
+    "navigation.tabs",
+    # "navigation.tabs.sticky",
+    "navigation.instant",
+    "navigation.instant.progress",
+    "navigation.sections",  # Display sections as headers in the navigation sidebar
+    "navigation.tracking",
+    "navigation.top",  # Go to top button
+    "toc.integrate",       # Integrate the table of contents into the navigation sidebar
+    "search.highlight",
+    "content.code.copy",
+    # "content.code.select"
+    "content.tabs.link",  # Linked content tabs
+    "content.tooltips",  # Nicer tooltips
+]
+
+# Palette toggle for automatic mode
+[[project.theme.palette]]
+media = "(prefers-color-scheme)"
+toggle.icon = "lucide/sun-moon"
+toggle.name = "Switch to light mode"
+
+# Palette toggle for light mode
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "green"
+accent = "deep orange"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+# Palette toggle for dark mode
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "green"
+accent = "deep orange"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to system preference"
+
+[project.extra]
+version = "5.4.0.dev0 (development version)"  # Sparv version, shown on landing page
+
+# Enable footer with SBX logo (overrides/social.html)
+[[project.extra.social]]
+
+# Add anchors to headers
+[project.markdown_extensions.toc]
+permalink = "⚓︎"
+
+# Needed for image alignment
+[project.markdown_extensions.attr_list]
+
+# !!!-style admonitions
+[project.markdown_extensions.admonition]
+
+# Collapsible admonitions
+[project.markdown_extensions.pymdownx.details]
+
+# Support for GitHub-flavored admonitions
+[project.markdown_extensions.gfm_admonition]
+
+# Needed by content tabs and syntax highlighting
+[project.markdown_extensions.pymdownx.superfences]
+
+# Tabbed content
+[project.markdown_extensions.pymdownx.tabbed]
+alternate_style = true
+
+# Syntax highlighting
+[project.markdown_extensions.pymdownx.highlight]
+anchor_linenums = true
+
+# Automatic documentation from docstrings (https://mkdocstrings.github.io/)
+[project.plugins.mkdocstrings]
+default_handler = "python"
+
+[project.plugins.mkdocstrings.handlers.python]
+inventories = ["https://docs.python.org/3/objects.inv"]
+paths = [".."]
+
+[project.plugins.mkdocstrings.handlers.python.options]
+docstring_style = "google"
+inherited_members = true
+show_source = false
+members_order = "source"
+show_signature = true
+separate_signature = true
+merge_init_into_class = true
+docstring_section_style = "spacy"
+
+[plugins.mkdocstrings.handlers.python.options.docstring_options]
+returns_multiple_items = false
+returns_named_value = false

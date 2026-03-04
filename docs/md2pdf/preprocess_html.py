@@ -1,4 +1,4 @@
-"""Preprocess html (created by MkDocs) to serve as input for Pandoc.
+"""Preprocess html (created by Zensical) to serve as input for Pandoc.
 
 Remove headers, footers, styles, scripts, and other unwanted elements.
 Convert admonitions to a more suitable format.
@@ -50,7 +50,7 @@ def preprocess_html(input_file: str, output_file: str, hide_docstring: bool) -> 
     for a_tag in html_tag.find_all("a"):
         a_tag.unwrap()
 
-    # Convert admonitions created by MKDocs
+    # Convert admonitions created by Zensical
     for div in html_tag.find_all("div", class_=lambda c: c and "admonition" in c):
         class_name = "note"  # Default class name if no p tag is found
         p_tag = div.find("p", class_="admonition-title")

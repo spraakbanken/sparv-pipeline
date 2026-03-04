@@ -10,8 +10,8 @@
 
 <style>
   .md-header {
-    background-color: #ffffff;
-    color: black;
+    background-color: var(--md-default-bg-color);
+    color: var(--md-typeset-color);
   }
 
   /* Hide logo and title */
@@ -19,17 +19,17 @@
     display: none !important;
   }
 
-  /* Hide main content */
-  .md-content {
+  /* Hide main content and tabs */
+  .md-content, .md-tabs {
     display: none;
   }
 
   .md-container {
-    background-image: url("images/background.png");
+    /* background-image: url("images/background.png"); */
     background-repeat: no-repeat;
     background-size: cover;
     background-position: bottom right;
-    background-color: #ffffff;
+    background-color: var(--md-default-bg-color);
   }
 
   .mdx-hero {
@@ -55,19 +55,17 @@
 
   .mdx-hero__content {
     text-align: center;
-    background-color: rgba(255, 255, 255, 0.75);
-    border-radius: 25px;
   }
 
   .mdx-hero .md-button {
     margin-top: .5rem;
     margin-right: .5rem;
-    color: black;
+    color: var(--md-default-fg-color);
   }
 
   .mdx-hero .md-button--primary {
-    background-color: black;
-    color: white;
+    background-color: var(--md-default-fg-color);
+    color: var(--md-default-bg-color);
     border-color: black;
   }
 
@@ -128,7 +126,8 @@
 
         <div class="sbx-logo">
           <a target="_blank" href="https://spraakbanken.gu.se/">
-            <img src="images/sprakbanken_text.svg" alt="Språkbanken Text" draggable="false">
+            <img src="images/sprakbanken_text.svg#only-light" alt="Språkbanken Text" draggable="false">
+            <img src="images/sprakbanken_text_white.svg#only-dark" alt="Språkbanken Text" draggable="false">
           </a>
         </div>
       </div>

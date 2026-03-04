@@ -1,18 +1,24 @@
 <!--
-Slightly modified version of https://github.com/squidfunk/mkdocs-material/blob/master/material/templates/partials/toc-item.html
+Slightly modified version of the default toc-item.html template from Zensical, with added conditions
 to enable limiting the depth of the table of contents using the toc_depth meta variable.
-For the changelog, this is hardcoded to avoid having frontmatter in the changelog file.
+For the changelog, this is hardcoded based on the title, to avoid having frontmatter in the changelog file.
 -->
 
 {% if not page.meta.toc_depth or toc_item.level <= page.meta.toc_depth %} <!-- Added line -->
 <li class="md-nav__item">
   <a href="{{ toc_item.url }}" class="md-nav__link">
     <span class="md-ellipsis">
-      {{ toc_item.title }}
+      {% if toc_item.typeset %}
+        <span class="md-typeset">
+          {{ toc_item.typeset.title }}
+        </span>
+      {% else %}
+        {{ toc_item.title }}
+      {% endif %}
     </span>
   </a>
-  {% if toc_item.children %}
-    <nav class="md-nav" aria-label="{{ toc_item.title | striptags }}">
+  {% if toc_item.children and (not page.meta.toc_depth or toc_item.level < page.meta.toc_depth) %} <!-- Changed line -->
+    <nav class="md-nav" aria-label="{{ toc_item.title | striptags | e }}">
       <ul class="md-nav__list">
         {% for toc_item in toc_item.children %}
           {% if not nav_item.title == 'Changelog' %} <!-- Added line -->

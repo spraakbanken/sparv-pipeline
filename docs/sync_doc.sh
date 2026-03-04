@@ -31,8 +31,8 @@ if [[ -z "$user" || -z "$host" || -z "$path" ]]; then
 fi
 
 
-# Extract version number from mkdocs.yml, ignore comments and trailing spaces
-version=$(grep -oP 'version:\s*\K[^#]+' mkdocs.yml | sed 's/[[:space:]]*$//')
+# Extract version number from zensical.toml, ignore comments and trailing spaces
+version=$(grep -oP -m 1 '^version =\s*\K[^#]+' zensical.toml | sed 's/[[:space:]]*$//')
 echo -e "\nReleasing documentation for Sparv version: $version\n"
 
 # Prompt user to continue
@@ -44,12 +44,14 @@ esac
 
 
 # Build docs
-echo -e "\nBuilding documentation with mkdocs ..."
-mkdocs build
+echo -e "\nBuilding documentation with Zensical ..."
+cp ../CHANGELOG.md site/changelog.md
+zensical build
+rm site/changelog.md
 
 # Sync files or do dry run
 if [[ -n "$DRYRUN" ]]; then
     echo -e "\nPerforming a dry run for rsync operations. No files will be transferred.\n"
 fi
 echo -e "\nSyncing files to $user@$host:$path ..."
-rsync $DRYRUN -rcLv --delete site/* $user@$host:${path:?}
+rsync $DRYRUN -rcLv --delete build/* $user@$host:${path:?}

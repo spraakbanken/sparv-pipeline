@@ -42,7 +42,7 @@ def fix_document(key: str, value: str | list | dict | None, _format: str, _meta:
 
     elif key == "Image":
         # Remove images containing the "intro-logo" class and the watch release screenshot
-        if ["intro-logo"] in value[0] or "../images/watch-releases.png" in value[2]:
+        if ["intro-logo"] in value[0] or "../site/images/watch-releases.png" in value[2]:
             return []
 
     # Convert <br /> tags to LaTeX line breaks
@@ -77,6 +77,8 @@ def fix_document(key: str, value: str | list | dict | None, _format: str, _meta:
             value = value[2:]
             admonition_title = Str(value[0]["c"].capitalize() + ": ")
             value[0] = Strong([admonition_title])
+            # Add a linebreak after the title
+            value.insert(1, RawInline("latex", "\\newline{}"))
 
             # Admonition with title: search for (Quoted), remove quotes and make it bold
             for item in value:

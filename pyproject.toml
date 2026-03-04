@@ -52,10 +52,10 @@ test = [
 ]
 docs = [
     "bs4",
-    "mkdocs-material==9.6.11",
-    "mkdocs-github-admonitions-plugin==0.0.3",
-    "mkdocstrings-python==1.16.10",
+    "markdown-gfm-admonition>=0.3.0",
+    "mkdocstrings-python==2.0.3",
     "pandocfilters==1.5.1",
+    "zensical>=0.0.24",
 ]
 
 [project.urls]

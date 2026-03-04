@@ -113,6 +113,7 @@ The `import` section of your corpus config provides Sparv with details about you
   automatically, so no further configuration is needed.
 
     !!! note
+
         This setting automatically sets the `text` [class](#annotation-classes). If you want to use an automatic
         annotation as the text annotation, you should not use this setting, and instead set the `text` class directly.
 
@@ -405,7 +406,7 @@ xml_import:
 This works because annotators requiring sentence annotations as input rely on the `<sentence>` class, rather than being
 tied to a specific module's sentence annotation.
 
-> [!ATTENTION]
+> [!NOTE]
 >
 > To be able to use annotations from your source data as input for annotators, Sparv first needs to be informed about
 > their existence. For XML data, this is achieved by listing the relevant elements in the `xml_import.elements` section

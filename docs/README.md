@@ -2,19 +2,18 @@
 
 Sparv's documentation is written in markdown and can be rendered as HTML or PDF.
 
-
 ## Generate HTML documentation
 
-To build the HTML version of the documentation we are using `mkdocs`. Install the optional `dev` dependencies to get
-the necessary tools, i.e. by running `pip install . --group dev` in the Sparv root directory.
+To build the HTML version of the documentation we are using [Zensical](https://zensical.org/). Install the optional
+`dev` dependencies to get the necessary tools, i.e. by running `pip install . --group dev` in the Sparv root directory.
 
-### Serve documentation with mkdocs
+### Serve documentation with Zensical
 
 ```sh
-mkdocs serve
+zensical serve
 ```
 
-The documentation should now be available under http://localhost:8000/.
+The documentation should now be available at <http://localhost:8000>.
 
 ### Update Sparv version number in the documentation
 
@@ -25,7 +24,7 @@ The documentation should now be available under http://localhost:8000/.
 ### Build HTML documentation
 
 ```sh
-mkdocs build
+zensical build
 ```
 
 ### Sync HTML documentation to server
@@ -38,18 +37,14 @@ mkdocs build
 ## Render documentation as PDF
 
 Install requirements (markdown and latex):
+
 ```sh
 sudo apt-get install markdown pandoc texlive-latex-base texlive-fonts-recommended texlive-fonts-extra texlive-latex-extra
 ```
 
 Convert User Manual and Developer's Guide from markdown to PDF:
+
 ```sh
 cd md2pdf
 ./make_pdf.sh
 ```
-
-<!--
-## MISC
-
-### URLs that may have to be updated regularly
--->

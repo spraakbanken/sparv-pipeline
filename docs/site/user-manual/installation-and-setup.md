@@ -25,15 +25,17 @@ while allowing it to be run from any location.
 
     Begin by [installing uv](https://docs.astral.sh/uv/getting-started/installation/):
 
-    On Linux and macOS:
-    ```sh
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    ```
+    === "Linux or macOS"
 
-    On Windows:
-    ```powershell
-    powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-    ```
+        ```sh
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        ```
+
+    === "Windows"
+
+        ```powershell
+        powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+        ```
 
     Refer to the [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/) for more details and
     alternative installation methods.
@@ -65,7 +67,7 @@ while allowing it to be run from any location.
     To verify that Sparv was installed successfully, run the command `sparv`. You should see the Sparv help information
     displayed.
 
-    !!! Note
+    !!! note
     
         If pipx stops working after a Python upgrade, try running `pipx reinstall-all`. If that fails, you may need to
         manually delete pipx's local environment directory (usually `~/.local/pipx`) and reinstall Sparv.
