@@ -2,16 +2,21 @@
 # Script for syncing documentation to server
 
 DRYRUN=""
-while getopts "m:hcn" opt; do
+SUBDIR=""
+while getopts "hnd" opt; do
     case $opt in
         h)
             echo "Usage: $0 [-n]"
             echo "  -n        Perform a dry run for rsync operations."
+            echo "  -d        Sync to 'dev' subdirectory."
             echo "  -h        Display this help message."
             exit 0
             ;;
         n)
             DRYRUN="--dry-run"
+            ;;
+        d)
+            SUBDIR="/dev"
             ;;
         *)
             echo "Invalid option. Use -h for help."
@@ -53,5 +58,5 @@ rm site/changelog.md
 if [[ -n "$DRYRUN" ]]; then
     echo -e "\nPerforming a dry run for rsync operations. No files will be transferred.\n"
 fi
-echo -e "\nSyncing files to $user@$host:$path ..."
-rsync $DRYRUN -rcLv --delete build/* $user@$host:${path:?}
+echo -e "\nSyncing files to $user@$host:$path$SUBDIR ..."
+rsync $DRYRUN -rcLv --delete build/* $user@$host:${path:?}$SUBDIR
