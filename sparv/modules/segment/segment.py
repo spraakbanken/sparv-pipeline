@@ -1,11 +1,13 @@
 """Segmentation mostly based on NLTK."""
 
+import functools
 import inspect
 import itertools
 import pickle
 import re
 from collections.abc import Generator
 from pathlib import Path
+from typing import Any
 
 import nltk
 
@@ -18,6 +20,21 @@ except ImportError:
     pass
 
 logger = get_logger(__name__)
+
+
+def _load_model(model: Model) -> Path | object:
+    """Load a model, unpickling it if necessary.
+
+    Args:
+        model: The model to load.
+
+    Returns:
+        The unpickled model object or the model path.
+    """
+    if model.path.suffix in {".pickle", ".pkl"}:
+        with model.path.open("rb") as m:
+            return pickle.load(m, encoding="UTF-8")
+    return model.path
 
 
 @annotator(
@@ -65,7 +82,7 @@ def tokenize(
         text=text,
         out=out,
         chunk=chunk,
-        segmenter=segmenter,
+        segmenter_name=segmenter,
         existing_segments=existing_segments,
         model=model,
         token_list=token_list,
@@ -107,7 +124,7 @@ def sentence(
 ) -> None:
     """Split text into sentences."""
     do_segmentation(
-        text=text, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments, model=model
+        text=text, out=out, chunk=chunk, segmenter_name=segmenter, existing_segments=existing_segments, model=model
     )
 
 
@@ -140,14 +157,14 @@ def paragraph(
 ) -> None:
     """Split text into paragraphs."""
     do_segmentation(
-        text=text, out=out, chunk=chunk, segmenter=segmenter, existing_segments=existing_segments, model=model
+        text=text, out=out, chunk=chunk, segmenter_name=segmenter, existing_segments=existing_segments, model=model
     )
 
 
 def do_segmentation(
     text: Text,
     out: Output,
-    segmenter: str,
+    segmenter_name: str,
     chunk: Annotation | None = None,
     existing_segments: Annotation | None = None,
     model: Model | None = None,
@@ -158,21 +175,17 @@ def do_segmentation(
     Segmentation is done by the given "segmenter"; some segmenters take
     an extra argument which is a pickled "model" object.
     """
-    assert segmenter in SEGMENTERS, f"Available segmenters: {', '.join(sorted(SEGMENTERS))}"
-    segmenter = SEGMENTERS[segmenter]
+    assert segmenter_name in SEGMENTERS, f"Available segmenters: {', '.join(sorted(SEGMENTERS))}"
+    segmenter_cls = SEGMENTERS[segmenter_name]
 
     segmenter_args = {}
-    if model and "model" in inspect.getfullargspec(segmenter).args:
-        if model.path.suffix in {".pickle", ".pkl"}:
-            with model.path.open("rb") as m:
-                model_arg = pickle.load(m, encoding="UTF-8")
-        else:
-            model_arg = model.path
-        segmenter_args["model"] = model_arg
-    if token_list and "token_list" in inspect.getfullargspec(segmenter).args:
+    argspec = inspect.getfullargspec(segmenter_cls).args
+    if model and "model" in argspec:
+        segmenter_args["model"] = _load_model(model)
+    if token_list and "token_list" in argspec:
         segmenter_args["token_list"] = token_list.path
 
-    segmenter = segmenter(**segmenter_args)
+    segmenter = segmenter_cls(**segmenter_args)
     assert hasattr(segmenter, "span_tokenize"), f"Segmenter needs a 'span_tokenize' method: {segmenter!r}"
 
     corpus_text = text.read()
@@ -182,9 +195,8 @@ def do_segmentation(
     #   ==> ["one two ", "three four", " five ", "six"]
     #   (but using spans (pairs of anchors) instead of strings)
 
-    positions = set()
     chunk_spans = chunk.read_spans() if chunk else []
-    positions = positions.union({pos for span in chunk_spans for pos in span})
+    positions = {pos for span in chunk_spans for pos in span}
     positions = sorted({0, len(corpus_text)} | positions)
     chunk_spans = list(itertools.pairwise(positions))
 
@@ -272,18 +284,15 @@ def build_tokenlist(
         segmenter: The segmenter to use.
         model: BetterWordTokenizer config file.
     """
-    segmenter_args = []
+    segmenter_args = {}
     if model:
-        if model.path.suffix in {".pickle", ".pkl"}:
-            with model.path.open("rb") as m:
-                model_arg = pickle.load(m)
-        else:
-            model_arg = model.path
-        segmenter_args.append(model_arg)
+        segmenter_args["model"] = _load_model(model)
     assert segmenter in SEGMENTERS, f"Available segmenters: {', '.join(sorted(SEGMENTERS))}"
-    segmenter = SEGMENTERS[segmenter]
-    segmenter = segmenter(*segmenter_args)
-    assert hasattr(segmenter, "span_tokenize"), f"Segmenter needs a 'span_tokenize' method: {segmenter!r}"
+    segmenter_cls = SEGMENTERS[segmenter]
+    segmenter_instance = segmenter_cls(**segmenter_args)
+    assert hasattr(segmenter_instance, "span_tokenize"), (
+        f"Segmenter needs a 'span_tokenize' method: {segmenter_instance!r}"
+    )
 
     wordforms = set()
 
@@ -295,7 +304,7 @@ def build_tokenlist(
             w2 = list(map(split_triple, lexicon[w]))
             mwu_extras = [contw for w3 in w2 for cont in w3[2] for contw in cont if contw not in lexicon]
             for wf in [*mwu_extras, w]:
-                spans = list(segmenter.span_tokenize(wf))
+                spans = list(segmenter_instance.span_tokenize(wf))
                 if len(spans) > 1 and not wf.endswith(","):
                     wordforms.add(wf)
 
@@ -320,10 +329,11 @@ def train_punkt_segmenter(
         textfiles = textfiles.split()
 
     logger.info("Reading files")
-    text = ""
+    parts = []
     for filename in textfiles:
         with Path(filename).open(encoding=encoding) as stream:
-            text += stream.read()
+            parts.append(stream.read())
+    text = "".join(parts)
     logger.info("Training model")
     trainer = nltk.tokenize.PunktTrainer(text, verbose=True)
     logger.info("Saving pickled model")
@@ -341,7 +351,7 @@ class LinebreakTokenizer(nltk.RegexpTokenizer):
 
     def __init__(self) -> None:
         """Initialize class."""
-        nltk.RegexpTokenizer.__init__(self, r"\s*\n\s*", gaps=True)
+        super().__init__(r"\s*\n\s*", gaps=True)
 
 
 class PunctuationTokenizer(nltk.RegexpTokenizer):
@@ -352,9 +362,9 @@ class PunctuationTokenizer(nltk.RegexpTokenizer):
 
     def __init__(self) -> None:
         """Initialize class."""
-        nltk.RegexpTokenizer.__init__(self, r"[\.!\?]\s*", gaps=True)
+        super().__init__(r"[\.!\?]\s*", gaps=True)
 
-    def span_tokenize(self, s: str) -> list:
+    def span_tokenize(self, s: str) -> list[tuple[int, int]]:
         """Tokenize s and return list with tokens.
 
         Args:
@@ -421,7 +431,7 @@ class BetterWordTokenizer:
             ValueError: If the configuration file is not valid.
         """
         self.case_sensitive = False
-        self.patterns = {"misc": [], "tokens": []}
+        self.patterns: dict[str, Any] = {"misc": [], "tokens": []}
         self.abbreviations = set()
         in_abbr = False
 
@@ -434,7 +444,7 @@ class BetterWordTokenizer:
                 if line.startswith("#") or not line.strip():
                     continue
                 if not in_abbr:
-                    if not in_abbr and line.strip() == "abbreviations:":
+                    if line.strip() == "abbreviations:":
                         in_abbr = True
                         continue
                     try:
@@ -460,33 +470,30 @@ class BetterWordTokenizer:
                 else:
                     self.abbreviations.add(line.strip())
 
+    @functools.cached_property
     def _word_tokenizer_re(self) -> re.Pattern:
         """Compile and return a regular expression for word tokenization.
 
         Returns:
             The compiled regular expression.
         """
-        try:
-            return self._re_word_tokenizer
-        except AttributeError:
-            modifiers = (re.UNICODE | re.VERBOSE) if self.case_sensitive else (re.UNICODE | re.VERBOSE | re.IGNORECASE)
-            self._re_word_tokenizer = re.compile(
-                self._word_tokenize_fmt
-                % {
-                    "tokens": ("(?:" + "|".join(self.patterns["tokens"]) + ")|") if self.patterns["tokens"] else "",
-                    "abbrevs": ("(?:" + "|".join(re.escape(a + ".") for a in self.abbreviations) + ")|")
-                    if self.abbreviations
-                    else "",
-                    "misc": "|".join(self.patterns["misc"]),
-                    "number": self.patterns["number"],
-                    "within": self.patterns["within"],
-                    "multi": self.patterns["multi"],
-                    "start": self.patterns["start"],
-                    "end": self.patterns["end"],
-                },
-                modifiers,
-            )
-            return self._re_word_tokenizer
+        modifiers = (re.UNICODE | re.VERBOSE) if self.case_sensitive else (re.UNICODE | re.VERBOSE | re.IGNORECASE)
+        return re.compile(
+            self._word_tokenize_fmt
+            % {
+                "tokens": ("(?:" + "|".join(self.patterns["tokens"]) + ")|") if self.patterns["tokens"] else "",
+                "abbrevs": ("(?:" + "|".join(re.escape(a + ".") for a in self.abbreviations) + ")|")
+                if self.abbreviations
+                else "",
+                "misc": "|".join(self.patterns["misc"]),
+                "number": self.patterns["number"],
+                "within": self.patterns["within"],
+                "multi": self.patterns["multi"],
+                "start": self.patterns["start"],
+                "end": self.patterns["end"],
+            },
+            modifiers,
+        )
 
     def word_tokenize(self, s: str) -> list[str]:
         """Tokenize a string to split off punctuation other than periods.
@@ -497,7 +504,7 @@ class BetterWordTokenizer:
         Returns:
             List of tokens.
         """
-        words = self._word_tokenizer_re().findall(s)
+        words = self._word_tokenizer_re.findall(s)
         if not words:
             return words
         pos = len(words) - 1
@@ -550,7 +557,7 @@ class CRFTokenizer:
         """Initialize class."""
         self.model = str(model)
 
-    def span_tokenize(self, s: str) -> list:
+    def span_tokenize(self, s: str) -> list[tuple[int, int]]:
         """Tokenize s and return list with tokens.
 
         Args:
@@ -565,8 +572,10 @@ class CRFTokenizer:
 class FSVParagraphSplitter:
     """A paragraph splitter for old Swedish."""
 
-    @staticmethod
-    def span_tokenize(s: str) -> list:
+    _re_paragraph = re.compile(r"\.*§")
+
+    @classmethod
+    def span_tokenize(cls, s: str) -> list[tuple[int, int]]:
         """Tokenize s and return list with tokens.
 
         Args:
@@ -576,22 +585,11 @@ class FSVParagraphSplitter:
             List of tuples with start and end positions of tokens.
         """
         spans = []
-        temp = [0, 0]
-        first = True
-        for i in range(len(s)):
-            if not first:
-                new_para = re.search(r"^\.*§", s[i:])
-                if new_para:
-                    spans.append((temp[0], i))
-                    temp[0] = i
-                    first = True
-            else:
-                first = False
-            temp[1] = i
-
-        temp[1] = len(s)
-        spans.append(tuple(temp))
-
+        start = 0
+        for match in cls._re_paragraph.finditer(s, 1):
+            spans.append((start, match.start()))
+            start = match.start()
+        spans.append((start, len(s)))
         return spans
 
 
