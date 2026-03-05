@@ -167,11 +167,14 @@ def read_annotation_spans(
         The annotation spans. If with_annotation_name is True, yields a tuple with the value and the annotation name.
     """
     # Strip any annotation attributes
-    for span in read_annotation(source_file, annotation, with_annotation_name, spans=True):
-        if not decimals:
-            yield tuple(v[0] for v in span)
+    for item in read_annotation(source_file, annotation, with_annotation_name, spans=True):
+        if decimals:
+            yield item
+        elif with_annotation_name:
+            span, ann_name = item
+            yield tuple(v[0] for v in span), ann_name
         else:
-            yield span
+            yield tuple(v[0] for v in item)
 
 
 def read_annotation(
