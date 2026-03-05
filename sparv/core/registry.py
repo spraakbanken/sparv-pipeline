@@ -4,17 +4,17 @@
 from __future__ import annotations
 
 import importlib
+import importlib.util
 import inspect
 import pkgutil
 import re
 import types
 import typing
 from collections import UserDict, defaultdict
-from collections.abc import Container, Iterable
-from collections.abc import Iterable as TypingIterable
+from collections.abc import Callable, Container, Iterable
 from enum import Enum
 from types import ModuleType
-from typing import Any, Callable, List, Tuple, TypeVar  # noqa: UP035
+from typing import Any, Literal, TypeVar, Union, overload
 
 from sparv.api.classes import (
     BaseOutput,
@@ -56,8 +56,8 @@ class Module:
         """Initialize module."""
         self.name = name
         self.functions: dict[str, dict] = {}
-        self.description = None
-        self.language = None
+        self.description: str | None = None
+        self.language: str | None = None
 
 
 class LanguageRegistry(UserDict):
@@ -117,6 +117,10 @@ explicit_annotations = set()
 # All explicitly used annotations (without class-expansion)
 explicit_annotations_raw = set()
 
+# Pre-compiled regex patterns
+_CONFIG_VAR_RE = re.compile(r"\[([^\]=[]+)(?:=([^\][]+))?\]")
+_CLASS_REF_RE = re.compile(r"<([^>]+)>")
+
 
 def find_modules(no_import: bool = False, find_custom: bool = False, skip_language_check: bool = False) -> list:
     """Find Sparv modules and optionally import them.
@@ -172,6 +176,11 @@ def find_modules(no_import: bool = False, find_custom: bool = False, skip_langua
             if not no_import:
                 module_path = paths.corpus_dir.resolve() / f"{module.name}.py"
                 spec = importlib.util.spec_from_file_location(module_name, module_path)
+                if spec is None or spec.loader is None:
+                    raise SparvErrorMessage(
+                        f"Module '{module_name}' cannot be imported due to an error locating the module "
+                        f"or its loader for file '{module_path}'"
+                    )
                 m = importlib.util.module_from_spec(spec)
                 try:
                     spec.loader.exec_module(m)
@@ -201,15 +210,16 @@ def find_modules(no_import: bool = False, find_custom: bool = False, skip_langua
             continue
 
         # Check compatibility with Sparv version
-        for requirement in entry_point.dist.requires:
+        dist = getattr(entry_point, "dist", None)
+        for requirement in (dist.requires or []) if dist else []:
             req = Requirement(requirement)
             if req.name in {"sparv", "sparv-pipeline"}:
                 req.specifier.prereleases = True  # Accept pre-release versions of Sparv
                 if sparv_version not in req.specifier:
                     console.print(
-                        f"[red]:warning-emoji:  The plugin {entry_point.name} ({entry_point.dist.name}) could not "
-                        f"be loaded. It requires Sparv version {req.specifier}, but the currently running Sparv "
-                        f"version is {sparv_version}.\n"
+                        f"[red]:warning-emoji:  The plugin {entry_point.name} ({getattr(dist, 'name', '<unknown>')}) "
+                        f"could not be loaded. It requires Sparv version {req.specifier}, but the currently running "
+                        f"Sparv version is {sparv_version}.\n"
                     )
                     skip = True
                 break
@@ -222,8 +232,8 @@ def find_modules(no_import: bool = False, find_custom: bool = False, skip_langua
                 m = entry_point.load()
             except Exception as e:
                 console.print(
-                    f"[red]:warning-emoji:  The plugin {entry_point.name} ({entry_point.dist.name}) could not be "
-                    f"loaded:\n\n    {e}"
+                    f"[red]:warning-emoji:  The plugin {entry_point.name} ({getattr(dist, 'name', '<unknown>')}) could "
+                    f"not be loaded:\n\n    {e}"
                 )
                 continue
             add_module_to_registry(m, entry_point.name, skip_language_check=skip_language_check)
@@ -289,7 +299,7 @@ def wizard(config_keys: list[str], source_structure: bool = False) -> Callable:
     Args:
         config_keys: A list of config keys to be set or changed by the decorated function.
         source_structure: Set to `True` if the decorated function needs access to a `SourceStructureParser` instance
-          (holding information on the structure of the source files).
+            (holding information on the structure of the source files).
     """  # noqa: DOC201
 
     def decorator(f: Callable) -> Callable:
@@ -926,7 +936,15 @@ def _expand_class(cls: str) -> str | None:
     return annotation
 
 
-def find_config_variables(string: str, match_objects: bool = False) -> list[str] | list[re.Match]:
+@overload
+def find_config_variables(string: str, match_objects: Literal[False] = ...) -> list[str]: ...
+
+
+@overload
+def find_config_variables(string: str, match_objects: Literal[True]) -> list[re.Match[str]]: ...
+
+
+def find_config_variables(string: str, match_objects: bool = False) -> list[str] | list[re.Match[str]]:
     """Find all config variables in a string and return a list of strings or match objects.
 
     Args:
@@ -936,11 +954,19 @@ def find_config_variables(string: str, match_objects: bool = False) -> list[str]
     Returns:
         A list of strings or match objects.
     """
-    pattern = re.finditer(r"\[([^\]=[]+)(?:=([^\][]+))?\]", string)
-    return list(pattern) if match_objects else [c.group()[1:-1] for c in pattern]
+    matches = _CONFIG_VAR_RE.finditer(string)
+    return list(matches) if match_objects else [c.group()[1:-1] for c in matches]
 
 
-def find_classes(string: str, match_objects: bool = False) -> list[str] | list[re.Match]:
+@overload
+def find_classes(string: str, match_objects: Literal[False] = ...) -> list[str]: ...
+
+
+@overload
+def find_classes(string: str, match_objects: Literal[True]) -> list[re.Match[str]]: ...
+
+
+def find_classes(string: str, match_objects: bool = False) -> list[str] | list[re.Match[str]]:
     """Find all class references in a string and return a list of strings or match objects.
 
     Args:
@@ -950,8 +976,8 @@ def find_classes(string: str, match_objects: bool = False) -> list[str] | list[r
     Returns:
         A list of strings or match objects.
     """
-    pattern = re.finditer(r"<([^>]+)>", string)
-    return list(pattern) if match_objects else [c.group(1) for c in pattern]
+    matches = _CLASS_REF_RE.finditer(string)
+    return list(matches) if match_objects else [c.group(1) for c in matches]
 
 
 def expand_variables(string: str, rule_name: str | None = None, is_annotation: bool = False) -> tuple[str, list[str]]:
@@ -998,7 +1024,7 @@ def expand_variables(string: str, rule_name: str | None = None, is_annotation: b
         # Split if list of alternatives (again, since config variables may have been expanded into lists)
         strings = [s2 for s in strings for s2 in s.split(", ")]
 
-    def expand_classes(s: str, parents: set[str]) -> tuple[str | None, str | None]:
+    def expand_classes(s: str, parents: set[str]) -> tuple[str, str | None]:
         classes = find_classes(s, True)
         if not classes:
             return s, None
@@ -1030,7 +1056,7 @@ def expand_variables(string: str, rule_name: str | None = None, is_annotation: b
         # or referred to by a class in the config. As a fallback use the last annotation.
         if (
             is_annotation
-            and len(s) > 1
+            and len(strings) > 1
             and (s in explicit_annotations or s in annotation_classes["config_classes"].values())
         ):
             break
