@@ -4,6 +4,7 @@ import itertools
 import operator
 import re
 from collections.abc import Iterable
+from dataclasses import dataclass
 
 from sparv.api import Annotation, Config, Model, Output, annotator, get_logger, util
 
@@ -231,12 +232,12 @@ def main(
     logger.progress(total=len(sentences) + 1)
 
     for sent in sentences:
-        incomplete_multis = []  # [{annotation, words, [ref], is_particle, lastwordWasGap, numberofgaps}]
+        incomplete_multis: list[_IncompleteMulti] = []
         complete_multis = []  # ([ref], annotation)
         sentence_tokens = {}
 
         for token_index in sent:
-            theword = word_annotation[token_index]
+            the_word = word_annotation[token_index]
             ref = ref_annotation[token_index]
             msdtag = msd_annotation[token_index] if msd else ""
 
@@ -244,11 +245,11 @@ def main(
             sentence_tokens[ref] = {"token_index": token_index, "annotations": annotation_info}
 
             # Support for multiple values of word
-            thewords = [w for w in theword.split(word_separator) if w] if word_separator else [theword]
+            words = [w for w in the_word.split(word_separator) if w] if word_separator else [the_word]
 
             # First use MSD tags to find the most probable single word annotations
             ann_tags_words = _find_single_word(
-                thewords, lexicon_list, msdtag, precision, min_precision, precision_filter, annotation_info
+                words, lexicon_list, msdtag, precision, min_precision, precision_filter, annotation_info
             )
 
             # Find multi-word expressions
@@ -256,7 +257,7 @@ def main(
                 _find_multiword_expressions(
                     incomplete_multis,
                     complete_multis,
-                    thewords,
+                    words,
                     ref,
                     msdtag,
                     max_gaps,
@@ -291,8 +292,21 @@ def main(
 ################################################################################
 
 
+@dataclass(slots=True)
+class _IncompleteMulti:
+    """Tracks an in-progress multiword expression match."""
+
+    annotation: dict
+    remaining_words: list[str]
+    refs: list[str]
+    gap_allowed: bool
+    is_particle: bool
+    last_word_was_gap: bool = False
+    gap_count: int = 0
+
+
 def _find_single_word(
-    thewords: list,
+    words: list,
     lexicon_list: list,
     msdtag: str,
     precision: str | None,
@@ -303,7 +317,7 @@ def _find_single_word(
     """Find the most probable single word annotations using MSD tags.
 
     Args:
-        thewords: List of words to annotate (usually a single word).
+        words: List of words to annotate (usually a single word).
         lexicon_list: List of lexicons to use for annotation.
         msdtag: The MSD tag of the word.
         precision: Optional format string for appending precision to each value.
@@ -316,7 +330,7 @@ def _find_single_word(
     """
     ann_tags_words = []
 
-    for w in thewords:
+    for w in words:
         for name, lexicon in lexicon_list:
             prefix = "" if name == "saldo" or len(lexicon_list) == 1 else name + "m--"
             annotation = [(*a, prefix) for a in lexicon.lookup(w)]
@@ -346,36 +360,22 @@ def _find_single_word(
 
             annotation_precisions = itertools.takewhile(ismax, annotation_precisions)
 
-    if precision:
-        for prec, annotation, prefix in annotation_precisions:
-            for key in annotation:
-                annotation_entry = []
-                for item in annotation[key]:
-                    if not item.startswith(prefix):
-                        annotation_entry.append(prefix + item)
-                    else:
-                        annotation_entry.append(item)
-                annotation_info.setdefault(key, []).extend([a + precision % prec for a in annotation_entry])
-    else:
-        for _prec, annotation, prefix in annotation_precisions:
-            for key in annotation:
-                annotation_entry = []
-                for item in annotation[key]:
-                    if not item.startswith(prefix):
-                        annotation_entry.append(prefix + item)
-                    else:
-                        annotation_entry.append(item)
-                annotation_info.setdefault(key, []).extend(annotation_entry)
+    for prec, annotation, prefix in annotation_precisions:
+        for key in annotation:
+            entries = [prefix + item if not item.startswith(prefix) else item for item in annotation[key]]
+            if precision:
+                entries = [entry + precision % prec for entry in entries]
+            annotation_info.setdefault(key, []).extend(entries)
 
     return ann_tags_words
 
 
 def _find_multiword_expressions(
-    incomplete_multis: list,
+    incomplete_multis: list[_IncompleteMulti],
     complete_multis: list,
-    thewords: list,
+    words: list,
     ref: str,
-    msdtag: str,
+    msd_tag: str,
     max_gaps: int,
     ann_tags_words: list,
     msd_annotation: list,
@@ -387,97 +387,102 @@ def _find_multiword_expressions(
     Args:
         incomplete_multis: List of incomplete multiword expressions.
         complete_multis: List of completed multiword expressions.
-        thewords: List of words to check for multiword expressions (usually a single word).
+        words: List of words to check for multiword expressions (usually a single word).
         ref: Reference ID of the current word.
-        msdtag: The MSD tag of the current word.
+        msd_tag: The MSD tag of the current word.
         max_gaps: Maximum number of gaps allowed in a multiword expression.
         ann_tags_words: List of possible annotations for the words.
         msd_annotation: MSD annotation for whole source file.
         sent: Token indices for the current sentence.
         skip_pos_check: Whether to skip part-of-speech checking.
     """
-    todelfromincomplete = []  # list to keep track of which expressions that have been completed
+    words_lower = {w.lower() for w in words}
+    to_remove: list[int] = []
 
-    for i, x in enumerate(incomplete_multis):
-        # x = (annotations, following_words, [ref], gap_allowed, is_particle, [part-of-gap-boolean, gap_count])
-        seeking_word = x[1][0]  # The next word we are looking for in this multi-word expression
+    for i, multi in enumerate(incomplete_multis):
+        seeking_word = multi.remaining_words[0]
 
         # Is a gap necessary in this position for this expression?
-        if seeking_word == "*" and x[1][1].lower() in (w.lower() for w in thewords):
-            seeking_word = x[1][1]
-            del x[1][0]
+        if seeking_word == "*" and multi.remaining_words[1].lower() in words_lower:
+            seeking_word = multi.remaining_words[1]
+            del multi.remaining_words[0]
 
-        # If current gap is greater than max_gaps, stop searching
-        if x[5][1] > max_gaps:
-            todelfromincomplete.append(i)
-        elif seeking_word.lower() in (w.lower() for w in thewords) and (
+        # If current gap count exceeds max_gaps, stop searching
+        if multi.gap_count > max_gaps:
+            to_remove.append(i)
+        elif seeking_word.lower() in words_lower and (
             # Last word may not be PP if this is a particle-multi-word
-            skip_pos_check or not (len(x[1]) == 1 and x[4] and msdtag.startswith("PP"))
+            skip_pos_check
+            or not (len(multi.remaining_words) == 1 and multi.is_particle and msd_tag.startswith("PP"))
         ):
-            x[5][0] = False  # last word was not a gap
-            del x[1][0]
-            x[2].append(ref)
+            multi.last_word_was_gap = False
+            del multi.remaining_words[0]
+            multi.refs.append(ref)
 
             # Is current word the last word we are looking for?
-            if len(x[1]) == 0:
-                todelfromincomplete.append(i)
+            if not multi.remaining_words:
+                to_remove.append(i)
 
                 # Create a list of msdtags of words belonging to the completed multi-word expr.
-                msdtag_list = [msd_annotation[sent[int(ref) - 1]] for ref in x[2]]
+                msdtag_list = [msd_annotation[sent[int(r) - 1]] for r in multi.refs]
 
-                # For completed verb multis, check that at least one of the words is a verb:
-                if not skip_pos_check and "..vbm." in x[0]["lem"][0]:
-                    for tag in msdtag_list:
-                        if tag.startswith("VB"):
-                            complete_multis.append((x[2], x[0]))
-                            break
+                # For completed verb multis, check that at least one of the words is a verb
+                if not skip_pos_check and "..vbm." in multi.annotation["lem"][0]:
+                    if any(tag.startswith("VB") for tag in msdtag_list):
+                        complete_multis.append((multi.refs, multi.annotation))
 
                 # For completed noun multis, check that at least one of the words is a noun:
-                elif not skip_pos_check and "..nnm." in x[0]["lem"][0]:
-                    for tag in msdtag_list:
-                        if tag[:2] in {"NN", "PM", "UO"}:
-                            complete_multis.append((x[2], x[0]))
-                            break
+                elif not skip_pos_check and "..nnm." in multi.annotation["lem"][0]:
+                    if any(tag[:2] in {"NN", "PM", "UO"} for tag in msdtag_list):
+                        complete_multis.append((multi.refs, multi.annotation))
 
                 else:
-                    complete_multis.append((x[2], x[0]))
+                    complete_multis.append((multi.refs, multi.annotation))
 
-        else:  # noqa: PLR5501
+        elif multi.gap_allowed:
             # We've reached a gap
-            # Are gaps allowed?
-            if x[3]:
-                # If previous word was NOT part of a gap, this is a new gap, so increment gap counter
-                if not x[5][0]:
-                    x[5][1] += 1
-                x[5][0] = True  # Mark that this word was part of a gap
+            # If previous word was NOT part of a gap, this is a new gap, so increment gap counter
+            if not multi.last_word_was_gap:
+                multi.gap_count += 1
+            multi.last_word_was_gap = True
 
-                # Avoid having another verb within a verb multi-word expression:
-                # delete current incomplete multi-word expr. if it starts with a verb and if current word has POS tag VB
-                if "..vbm." in x[0]["lem"][0] and msdtag.startswith("VB"):
-                    todelfromincomplete.append(i)
+            # Avoid having another verb within a verb multi-word expression:
+            # delete current incomplete multi-word expr. if it starts with a verb and current word has POS tag VB
+            if "..vbm." in multi.annotation["lem"][0] and msd_tag.startswith("VB"):
+                to_remove.append(i)
 
-            else:
-                # Gaps are not allowed for this multi-word expression
-                todelfromincomplete.append(i)
+        else:
+            # Gaps are not allowed for this multi-word expression
+            to_remove.append(i)
 
-    # Delete seeking words from incomplete_multis
-    for x in todelfromincomplete[::-1]:
-        del incomplete_multis[x]
+    # Remove completed/invalid expressions from incomplete_multis
+    for i in reversed(to_remove):
+        del incomplete_multis[i]
 
     # Collect possible multiword expressions:
     # Is this word a possible beginning of a multi-word expression?
-    looking_for = [
-        (annotation, words, [ref], gap_allowed, is_particle, [False, 0])
-        for (annotation, _, wordslist, gap_allowed, is_particle, _) in ann_tags_words
-        if wordslist
-        for words in wordslist
-    ]
-    if len(looking_for) > 0:
-        incomplete_multis.extend(looking_for)
+    incomplete_multis.extend(
+        _IncompleteMulti(
+            annotation=annotation,
+            remaining_words=list(w),
+            refs=[ref],
+            gap_allowed=gap_allowed,
+            is_particle=is_particle,
+        )
+        for annotation, _, words_list, gap_allowed, is_particle, _ in ann_tags_words
+        if words_list
+        for w in words_list
+    )
 
 
 def _remove_unwanted_overlaps(complete_multis: list) -> None:
     """Remove certain overlapping MWEs if they have identical POS (remove 'a' if 'b1 a1 b2 a2' or 'a1 b1 ab2')."""
+    # Pre-extract POS tags to avoid repeated regex searches in the loop below
+    pos_tags = []
+    for multi in complete_multis:
+        match = re.search(r"\.(\w\w?)m?\.", multi[1]["lem"][0])
+        pos_tags.append(match.group(1) if match else "")
+
     remove = set()
     for ai, a in enumerate(complete_multis):
         # For historical texts: Since we allow many words for one token (spelling variations) we must make sure that
@@ -486,13 +491,8 @@ def _remove_unwanted_overlaps(complete_multis: list) -> None:
         if len(set(a[0])) != len(a[0]):
             remove.add(ai)
             continue
-        for b in complete_multis:
-            # Check if both are of same POS
-            if (
-                a != b
-                and re.search(r"\.(\w\w?)m?\.", a[1]["lem"][0]).groups()[0]
-                == re.search(r"\.(\w\w?)m?\.", b[1]["lem"][0]).groups()[0]
-            ):
+        for bi, b in enumerate(complete_multis):
+            if ai != bi and pos_tags[ai] == pos_tags[bi]:
                 if b[0][0] < a[0][0] < b[0][-1] < a[0][-1]:
                     # A case of b1 a1 b2 a2. Remove a.
                     remove.add(ai)
@@ -506,17 +506,13 @@ def _remove_unwanted_overlaps(complete_multis: list) -> None:
 
 def _save_multiwords(complete_multis: list, sentence_tokens: dict) -> None:
     """Save multiword expressions to the sentence tokens."""
-    for c in complete_multis:
-        first = True
-        first_ref = ""
-        for tok_ref in c[0]:
-            if first:
-                first_ref = tok_ref
-            for ann, val in c[1].items():
-                if not first:
+    for refs, annotation in complete_multis:
+        first_ref = refs[0]
+        for i, tok_ref in enumerate(refs):
+            for ann, val in annotation.items():
+                if i > 0:
                     val = [x + ":" + first_ref for x in val]  # noqa: PLW2901
                 sentence_tokens[tok_ref]["annotations"].setdefault(ann, []).extend(val)
-            first = False
 
 
 def _join_annotation(annotation: dict, delimiter: str, affix: str) -> dict:
@@ -549,15 +545,15 @@ def get_precision(msd: str, msdtags: list) -> float:
     Returns:
         The precision of the annotation.
     """
-    return (
-        0.5
-        if msd is None
-        else 0.75
-        if msd in msdtags
-        else 0.66
-        if "." in msd and [partial for partial in msdtags if partial.startswith(msd[: msd.find(".")])]
-        else 0.25
-    )
+    if msd is None:
+        return 0.5
+    if msd in msdtags:
+        return 0.75
+    if "." in msd:
+        msd_prefix = msd[: msd.find(".")]
+        if any(tag.startswith(msd_prefix) for tag in msdtags):
+            return 0.66
+    return 0.25
 
 
 def _normalize_precision(annotations: list) -> list:
