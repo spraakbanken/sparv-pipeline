@@ -5,11 +5,10 @@ from __future__ import annotations
 import itertools
 import json
 import re
+import typing
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Sequence
 from typing import Any as AnyType
-
-import typing_inspect
 
 from sparv.api import Config, SparvErrorMessage
 from sparv.core import registry
@@ -450,10 +449,7 @@ def build_json_schema(config_structure: dict) -> dict:
             kwargs["const"] = cfg.const
 
         # Datatype is either a single type or a union of types
-        if typing_inspect.is_union_type(cfg.datatype):
-            cfg_datatypes = typing_inspect.get_args(cfg.datatype)
-        else:
-            cfg_datatypes = [cfg.datatype]
+        cfg_datatypes = typing.get_args(cfg.datatype) if registry.is_union_type(cfg.datatype) else [cfg.datatype]
 
         datatypes = []
 
@@ -470,16 +466,16 @@ def build_json_schema(config_structure: dict) -> dict:
                 datatype = Boolean(**kwargs)
             elif cfg_datatype is type(None):
                 datatype = Null(**kwargs)
-            elif cfg_datatype is list or typing_inspect.get_origin(cfg_datatype) is list:
-                args = typing_inspect.get_args(cfg_datatype)
+            elif cfg_datatype is list or typing.get_origin(cfg_datatype) is list:
+                args = typing.get_args(cfg_datatype)
                 if args:
-                    if typing_inspect.is_union_type(args[0]):
-                        kwargs["items"] = [get_class_from_type(a) for a in typing_inspect.get_args(args[0])]
+                    if registry.is_union_type(args[0]):
+                        kwargs["items"] = [get_class_from_type(a) for a in typing.get_args(args[0])]
                     else:
                         kwargs["items"] = get_class_from_type(args[0])
                 datatype = Array(**kwargs)
-            elif cfg_datatype is dict or typing_inspect.get_origin(cfg_datatype) is dict:
-                args = typing_inspect.get_args(cfg_datatype)
+            elif cfg_datatype is dict or typing.get_origin(cfg_datatype) is dict:
+                args = typing.get_args(cfg_datatype)
                 if args:
                     kwargs["additionalProperties"] = get_class_from_type(args[1])().schema
                 datatype = Object(**kwargs)

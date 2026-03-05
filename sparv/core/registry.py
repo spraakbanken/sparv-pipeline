@@ -7,14 +7,14 @@ import importlib
 import inspect
 import pkgutil
 import re
+import types
+import typing
 from collections import UserDict, defaultdict
 from collections.abc import Container, Iterable
 from collections.abc import Iterable as TypingIterable
 from enum import Enum
 from types import ModuleType
 from typing import Any, Callable, List, Tuple, TypeVar  # noqa: UP035
-
-import typing_inspect
 
 from sparv.api.classes import (
     BaseOutput,
@@ -1038,6 +1038,31 @@ def expand_variables(string: str, rule_name: str | None = None, is_annotation: b
     return s, rest
 
 
+def is_optional_type(tp: Any) -> bool:
+    """Check if a type is Optional (i.e. Union[X, None] or X | None).
+
+    Args:
+        tp: The type to check.
+
+    Returns:
+        `True` if the type is Optional, otherwise `False`.
+    """
+    origin = typing.get_origin(tp)
+    return (origin is Union or origin is types.UnionType) and type(None) in typing.get_args(tp)
+
+
+def is_union_type(tp: Any) -> bool:
+    """Check if a type is a Union type (i.e. Union[X, Y] or X | Y).
+
+    Args:
+        tp: The type to check.
+
+    Returns:
+        `True` if the type is a Union type, otherwise `False`.
+    """
+    return typing.get_origin(tp) is typing.Union or isinstance(tp, types.UnionType)
+
+
 def get_type_hint_type(type_hint: Any) -> tuple[type, bool, bool]:
     """Given a type hint, return the type, whether it's contained in a List and whether it's Optional.
 
@@ -1047,16 +1072,16 @@ def get_type_hint_type(type_hint: Any) -> tuple[type, bool, bool]:
     Returns:
         A tuple with the type, a boolean indicating whether it's a list and a boolean indicating whether it's optional.
     """
-    optional = typing_inspect.is_optional_type(type_hint)
+    optional = is_optional_type(type_hint)
     if optional:
-        type_hint = typing_inspect.get_args(type_hint)[0]
-    origin = typing_inspect.get_origin(type_hint)
+        type_hint = typing.get_args(type_hint)[0]
+    origin = typing.get_origin(type_hint)
 
     is_list = False
 
-    if origin in {list, List, tuple, Tuple, Container, Iterable, TypingIterable}:  # noqa: UP006
+    if origin in {list, tuple, Container, Iterable}:
         is_list = True
-        args = typing_inspect.get_args(type_hint)
+        args = typing.get_args(type_hint)
         type_ = args[0] if args and type(args[0]) is not TypeVar else origin
     else:
         type_ = type_hint

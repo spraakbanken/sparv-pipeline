@@ -2,9 +2,9 @@
 
 import json
 import operator
+import typing
 from typing import Any
 
-import typing_inspect
 import yaml
 from rich import box
 from rich.markup import escape
@@ -206,8 +206,8 @@ def print_modules_info(
 
                             if config_object.datatype is not None:
                                 # Datatype is either a single type or a union of types
-                                if typing_inspect.is_union_type(config_object.datatype):
-                                    cfg_datatypes = typing_inspect.get_args(config_object.datatype)
+                                if registry.is_union_type(config_object.datatype):
+                                    cfg_datatypes = typing.get_args(config_object.datatype)
                                 else:
                                     cfg_datatypes = [config_object.datatype]
 
@@ -228,11 +228,11 @@ def print_modules_info(
                                             config_info["min_value"] = config_object.min_value
                                         if config_object.max_value is not None:
                                             config_info["max_value"] = config_object.max_value
-                                    elif cfg_datatype is list or typing_inspect.get_origin(cfg_datatype) is list:
-                                        args = typing_inspect.get_args(cfg_datatype)
+                                    elif cfg_datatype is list or typing.get_origin(cfg_datatype) is list:
+                                        args = typing.get_args(cfg_datatype)
                                         if args:
-                                            if typing_inspect.is_union_type(args[0]):
-                                                args_inner = typing_inspect.get_args(args[0])
+                                            if registry.is_union_type(args[0]):
+                                                args_inner = typing.get_args(args[0])
                                                 datatypes.append(f"list[{' | '.join(get_name(a) for a in args_inner)}]")
                                             else:
                                                 datatypes.append(f"list[{get_name(args[0])}]")
