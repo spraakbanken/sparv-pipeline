@@ -503,17 +503,39 @@ def importer(
 ) -> Callable:
     """Decorate a function to register it as an importer.
 
-    An importer is a function that is responsible for importing corpus files of a specific file format. Its task is to
-    read a corpus file, extract the corpus text and any existing markup (if applicable), and write annotation files for
-    the corpus text and markup.
+    An importer reads corpus source files of a specific format and converts them into Sparv's internal representation.
+    Its job is to extract the corpus text and any existing markup from the input file(s) and write those to Sparv's
+    storage.
 
-    Importers do not use the `Output` class to specify their outputs. Instead, outputs are listed using the `outputs`
-    argument of the decorator. Any output that needs to be used as explicit input by another part of the pipeline must
-    be listed here, although additional unlisted outputs may also be created.
+    Importers do not use the `Output` class to declare their outputs, as the set of outputs can vary with the input.
+    Instead, use the decorator's `outputs` parameter to list what the importer will produce. `outputs` may be:
 
-    Two outputs are implicit (and thus not listed in `outputs`) but required for every importer: the corpus text, saved
-    using the `Text` class, and a list of the annotations created from existing markup, saved using the
-    `SourceStructure` class.
+    - a list of annotation names (strings),
+    - a single `Config` instance referring to a config key that holds an annotation or list of annotations,
+    - or a list mixing annotation names and `Config` instances.
+
+    You do not have to enumerate every possible annotation an importer can create, but any annotation that other
+    annotators will use as input must be listed (or referenced via `Config`) so Sparv can plan correctly. If the
+    importer consistently produces a fixed set of annotations, provide them as a simple list of names. If outputs vary
+    by input, reference them via `Config` so the corpus config can declare which annotations are present.
+
+    !!! Example
+
+        The `dateformat.dateformat` annotator has a config parameter naming an annotation to use as input. That
+        annotation usually comes from the source document, i.e. from the importer. When the user sets that config
+        parameter, they also need to make sure the annotation is listed in the importer's `outputs`. Since the XML
+        importer exposes its outputs via `Config("xml_import.elements")`, the user can simply add the relevant
+        annotation to the list in `xml_import.elements` in the corpus config, and Sparv will know the importer produces
+        it and the annotator can use it.
+
+    Note that exporters, in contrast to annotators, always have access to all annotations created by the importer,
+    regardless of what is listed in `outputs`.
+
+    If `text_annotation` is given, it names which output should be used as the imported corpus text; this will set the
+    `import.text_annotation` config variable unless `classes.text` is already set.
+
+    Two outputs are implicit and need not be listed in `outputs`: the corpus text (written using the `Text` class) and
+    the list of annotations created from existing markup (written using the `SourceStructure` class).
 
     Args:
         description: A description of the importer, used for displaying help texts in the CLI. The first line should be
