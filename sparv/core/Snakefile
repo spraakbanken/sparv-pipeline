@@ -45,7 +45,7 @@ def make_rules(config_missing: bool) -> None:
         try:
             snake_storage.preloader_info = preload.get_preloader_info(config["socket"])
         except ConnectionRefusedError:
-            raise SparvErrorMessage("Could not connect to the socket '{}'".format(config["socket"]))
+            raise SparvErrorMessage(f"Could not connect to the socket '{config['socket']}'")
 
     # Create rules for all available annotation functions
     for module_name in registry.modules:
@@ -77,7 +77,7 @@ def make_rules(config_missing: bool) -> None:
         if config.get("debug") and ordered_rules:
             console.print("\n\n\n[b]ORDERED RULES:[/b]")
             for rule1, rule2 in ordered_rules:
-                print("    • {} > {}".format(rule1.rule_name, rule2.rule_name))
+                print(f"    • {rule1.rule_name} > {rule2.rule_name}")
             print()
 
 
@@ -206,7 +206,6 @@ def update_autocompletion_cache() -> None:
                     if not t[0].startswith("custom.")
                 }
             )
-            new_cache["annotate"]
 
         # Create or update cache file if needed
         cache_file = paths.autocomplete_cache
@@ -215,7 +214,7 @@ def update_autocompletion_cache() -> None:
         try:
             with cache_file.open("rb") as cache_in:
                 current_cache = pickle.load(cache_in)
-        except:
+        except Exception:
             current_cache = {}
 
         default_language = sparv_config._config_default.get("metadata", {}).get("language")
@@ -226,7 +225,7 @@ def update_autocompletion_cache() -> None:
             try:
                 with cache_file.open("wb") as cache_out:
                     pickle.dump(current_cache, cache_out)
-            except:
+            except Exception:
                 pass
 
 
@@ -479,7 +478,7 @@ rule clean:
             full_path = Path.cwd() / d
             if full_path.is_dir():
                 shutil.rmtree(full_path)
-                snake_utils.print_sparv_info("'{}' directory removed".format(d))
+                snake_utils.print_sparv_info(f"'{d}' directory removed")
                 something_removed = True
         if not something_removed:
             snake_utils.print_sparv_info("Nothing to remove")
@@ -553,15 +552,15 @@ if "uninstall_corpus" in selected_targets:
 rule list_models:
     run:
         print()
-        if sparv_config.get("metadata.language"):
-            if sparv_config.get("metadata.language") not in registry.languages:
-                console.print("Unsupported language: " + sparv_config.get("metadata.language"))
+        lang = sparv_config.get("metadata.language")
+        variety = sparv_config.get("metadata.variety")
+        if lang:
+            if lang not in registry.languages:
+                console.print(f"Unsupported language: {lang}")
                 return
+            variety_str = f" ({variety})" if variety else ""
             table = Table(
-                title="Models for {}{}".format(
-                    registry.languages[sparv_config.get("metadata.language")],
-                    " ({})".format(sparv_config.get("metadata.variety")) if sparv_config.get("metadata.variety") else ""
-                ),
+                title=f"Models for {registry.languages[lang]}{variety_str}",
                 box=box.SIMPLE,
                 show_header=False,
                 title_justify="left",
@@ -569,11 +568,7 @@ rule list_models:
             table.add_column(no_wrap=True)
             table.add_column()
             for target, desc, language in sorted(snake_storage.model_targets):
-                if language and registry.check_language(
-                    sparv_config.get("metadata.language"),
-                    language,
-                    sparv_config.get("metadata.variety")
-                ):
+                if language and registry.check_language(lang, language, variety):
                     table.add_row(target, desc.splitlines()[0])
             console.print(table)
 
@@ -585,7 +580,7 @@ rule list_models:
                 table.add_row(target, desc.splitlines()[0])
         console.print(table)
 
-        if sparv_config.get("metadata.language") not in registry.languages:
+        if lang not in registry.languages:
             console.print(
                 "To list or build models for a specific language, use the '--language' argument together "
                 "with the language code of one of the supported languages below:"
@@ -619,19 +614,19 @@ rule list_files:
         print()
         console.print("[i]Annotation files[/i]\n")
         for i in sorted(o for t, o in outputs if t in {"annotator", "importer"}):
-            print("    {}".format(i))
+            print(f"    {i}")
         print()
         console.print("[i]Export files[/i]\n")
         for i in sorted(o for t, o in outputs if t == "exporter"):
-            print("    {}".format(i))
+            print(f"    {i}")
         print()
         console.print("[i]Model files[/i]\n")
         for i in sorted(o for t, o in outputs if t == "modelbuilder"):
-            print("    {}".format(i))
+            print(f"    {i}")
         print()
         console.print("[i]Installation files[/i]\n")
         for i in sorted(o for t, o in outputs if t == "installer"):
-            print("    {}".format(i))
+            print(f"    {i}")
 
 
 # Build all models
@@ -651,9 +646,9 @@ if "preload" in selected_targets:
                 preload.serve(config["socket"], config["processes"], snake_storage, stop_signal)
             elif config["preload_command"] == "stop":
                 if not Path(config["socket"]).is_socket():
-                    raise SparvErrorMessage("Socket file '{}' doesn't exist or isn't a socket.".format(config["socket"]))
+                    raise SparvErrorMessage(f"Socket file '{config['socket']}' doesn't exist or isn't a socket.")
                 elif not preload.stop(config.get("socket")):
-                    raise SparvErrorMessage("Could not connect to socket '{}'.".format(config.get("socket")))
+                    raise SparvErrorMessage(f"Could not connect to socket '{config.get('socket')}'.")
 
 
 rule preload_list:
@@ -670,7 +665,7 @@ rule preload_list:
 
         for module, annotators in sorted(snake_storage.all_preloaders.items()):
             for a in sorted(annotators):
-                table.add_row("{}:{}".format(module, a), registry.modules[module].functions[a]["description"])
+                table.add_row(f"{module}:{a}", registry.modules[module].functions[a]["description"])
 
         console.print(table)
 
