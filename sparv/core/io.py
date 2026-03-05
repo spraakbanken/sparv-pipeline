@@ -9,7 +9,8 @@ import logging
 import lzma
 import os
 import pickle
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
+from itertools import pairwise
 from pathlib import Path
 from typing import Any
 
@@ -112,10 +113,10 @@ def _write_single_annotation(source_file: str, annotation: str, values: list, ro
         if not isinstance(values, list):
             values = list(values)
         # Validate that spans are sorted
-        for i in range(len(values) - 1):
-            if values[i] > values[i + 1]:
+        for i, (prev, curr) in enumerate(pairwise(values)):
+            if prev > curr:
                 raise SparvErrorMessage(
-                    f"Annotation spans must be sorted. values[{i}]={values[i]} > values[{i + 1}]={values[i + 1]}",
+                    f"Annotation spans must be sorted. values[{i}]={prev} > values[{i + 1}]={curr}",
                     module="core.io",
                     function="_write_single_annotation",
                 )
@@ -147,7 +148,7 @@ def get_annotation_size(source_file: str, annotation: BaseAnnotation) -> int:
 
     for ann in annotation.name.split():
         ann_file = get_annotation_path(source_file, ann, annotation.root)
-        count += len(list(read_annotation_file(ann_file)))
+        count += sum(1 for _ in read_annotation_file(ann_file))
 
     return count
 
@@ -223,19 +224,21 @@ def read_annotation(
 
 
 def read_annotation_attributes(
-    source_file: str, annotations: list[BaseAnnotation] | tuple[BaseAnnotation, ...], with_annotation_name: bool = False
+    source_file: str, annotations: Iterable[BaseAnnotation], with_annotation_name: bool = False
 ) -> Iterator[tuple]:
     """Yield tuples of multiple attributes on the same annotation.
 
     Args:
         source_file: Source filename.
-        annotations: List of annotation objects.
+        annotations: An iterable of annotation objects.
         with_annotation_name: Whether to yield the annotation name along with the value.
 
     Returns:
         An iterator of tuples with the values of the attributes.
     """
-    assert isinstance(annotations, (tuple, list)), "'annotations' argument must be tuple or list"
+    assert isinstance(annotations, Iterable), "'annotations' argument must be an iterable of annotation objects."
+    assert not isinstance(annotations, (str, bytes)), "'annotations' argument must not be a string or bytes."
+    annotations = list(annotations)
     assert len({split_annotation(annotation)[0] for annotation in annotations}) == 1, (
         "All attributes need to be for the same annotation"
     )
@@ -262,7 +265,7 @@ def _read_single_annotation(
     ann_file = get_annotation_path(source_file, annotation, root)
 
     span_text = not spans and not split_annotation(annotation)[1]
-    text_data = read_data(source_file, TEXT_FILE) if span_text else None
+    text_data = read_data(source_file, TEXT_FILE) if span_text else ""
     ctr = 0
     for value in read_annotation_file(ann_file):
         if span_text:
@@ -335,9 +338,8 @@ def split_annotation(annotation: BaseAnnotation | str) -> tuple[str, str]:
     Returns:
         Tuple with annotation name and attribute.
     """
-    if isinstance(annotation, BaseAnnotation):
-        annotation = annotation.name
-    elem, _, attr = annotation.partition(ELEM_ATTR_DELIM)
+    annotation_name = annotation.name if isinstance(annotation, BaseAnnotation) else annotation
+    elem, _, attr = annotation_name.partition(ELEM_ATTR_DELIM)
     return elem, attr
 
 
@@ -360,7 +362,7 @@ def get_annotation_path(
     """Construct a path to an annotation file given a source filename and annotation.
 
     Args:
-        source_file: Source filename.
+        source_file: Source filename. May be `None` if `data` is `True`.
         annotation: Annotation object or name.
         root: Root path.
         data: Whether the annotation is of the type data or not.
@@ -376,6 +378,7 @@ def get_annotation_path(
     if data:
         path = paths.work_dir / source_file / chunk / elem if source_file else paths.work_dir / elem
     else:
+        assert source_file is not None, "source_file cannot be None when data is False"
         if not attr:
             attr = SPAN_ANNOTATION
         path = paths.work_dir / source_file / chunk / elem / attr
@@ -418,7 +421,7 @@ def read_annotation_file(file_path: Path, is_data: bool = False) -> Iterator:
 
     Raises:
         SparvErrorMessage: If the file is not in the correct format.
-    """
+    """  # noqa: DOC501
     opener = _compressed_open.get(compression, open)
     with opener(file_path, mode="rb") as f:
         try:
