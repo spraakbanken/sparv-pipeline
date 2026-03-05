@@ -17,7 +17,7 @@ dependencies = [
     "appdirs==1.4.4",
     "argcomplete==3.6.2",
     "docx2python==1.27.1",
-    "jsonschema==4.23.0",
+    "jsonschema-rs~=0.44",
     "markdown>=3.9",
     "nltk==3.9.1",
     "packaging>=21.0",

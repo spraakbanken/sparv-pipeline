@@ -523,7 +523,7 @@ def validate(cfg: dict, schema: dict) -> None:
     Raises:
         SparvErrorMessage: If the config is invalid.
     """
-    import jsonschema  # noqa: PLC0415
+    import jsonschema_rs  # noqa: PLC0415
 
     def build_path_string(path: Sequence) -> str:
         parts = []
@@ -535,20 +535,20 @@ def validate(cfg: dict, schema: dict) -> None:
         return ".".join(parts)
 
     try:
-        jsonschema.validate(cfg, schema)
-    except jsonschema.ValidationError as e:
+        jsonschema_rs.validate(schema, cfg)
+    except jsonschema_rs.ValidationError as e:
         msg = ["There was a problem trying to parse the corpus config file.\n"]
 
         # Rephrase messages about unexpected keys
-        unknown_key = re.search(r"properties are not allowed \('(.+)' was unexpected", e.message)
+        unknown_key = re.search(
+            r"(?:Unevaluated|Additional) properties are not allowed \('(.+)' was unexpected", e.message
+        )
         if unknown_key:
-            full_path = ".".join([*list(e.absolute_path), unknown_key[1]])
+            full_path = build_path_string([*e.instance_path, unknown_key[1]])
             msg.append(f"Unexpected key in config file: {full_path!r}")
         else:
             msg.append(e.message)
-            if e.absolute_path:
-                msg.append(f"Offending config path: {build_path_string(e.absolute_path)}")
-                if "description" in e.schema:
-                    msg.append(f"Description of config key: {e.schema['description']}")
+            if e.instance_path:
+                msg.append(f"Offending config path: {build_path_string(e.instance_path)}")
 
         raise SparvErrorMessage("\n".join(msg)) from None
