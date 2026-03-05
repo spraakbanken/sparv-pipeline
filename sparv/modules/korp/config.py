@@ -346,6 +346,7 @@ def build_annotations(
     text_annotation: str | None = None,
     cwb_annotations: bool = True,
     keep_undefined_annotations: bool = False,
+    log_label: str = "Korp",
 ) -> tuple[list[dict], list[dict], list[dict]]:
     """Build Korp annotations from annotation definitions and annotation list.
 
@@ -361,6 +362,7 @@ def build_annotations(
         cwb_annotations: Whether to use CWB annotations.
         keep_undefined_annotations: Whether to include all annotations in config, even those without an annotation
             definition/preset.
+        log_label: Label to use in log messages.
 
     Returns:
         tuple: A tuple containing three lists of dictionaries: token annotations, struct annotations, and text
@@ -398,9 +400,10 @@ def build_annotations(
                 else:
                     logger.warning(
                         "%r is missing a definition, and %r is not available as a "
-                        "preset. Annotation will not be included.",
+                        "preset. Annotation will not be included in %s config.",
                         annotation.name,
                         definition,
+                        log_label,
                     )
                     continue
             elif not is_token and presets[definition] == "positional":
@@ -408,7 +411,11 @@ def build_annotations(
                 is_token = True
         elif "preset" in definition:  # Extending a preset
             if definition["preset"] not in presets:
-                logger.warning("%r refers to a non-existent preset. Annotation will not be included.", annotation.name)
+                logger.warning(
+                    "%r refers to a non-existent preset. Annotation will not be included in %s config.",
+                    annotation.name,
+                    log_label,
+                )
                 continue
             # Check if non-token annotation should be used as a token-annotation in Korp
             if not is_token and (definition.get("use_as_positional") or presets[definition["preset"]] == "positional"):
