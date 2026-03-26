@@ -38,7 +38,7 @@ class LogHandler(LogHandlerBase):
         Args:
             record: The log record to handle.
         """
-        sparv_log_handler_instance.snakemake_log_handler(record)
+        sparv_log_handler_instance.snakemake_log_handler(record)  # pyright: ignore[reportOptionalMemberAccess]
 
     @property
     def writes_to_stream(self) -> bool:

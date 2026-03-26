@@ -36,7 +36,6 @@ workflow, and the error message is printed by the `__main__` module as part of t
 
 from __future__ import annotations
 
-import datetime
 import _thread  # noqa: PLC2701
 import logging
 import logging.handlers
@@ -50,16 +49,17 @@ import time
 import traceback
 import warnings
 from collections import OrderedDict, defaultdict
-from collections.abc import Iterable
-from datetime import timedelta
+from collections.abc import Collection, Iterable
+from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 import snakemake
-from pythonjsonlogger import jsonlogger
+from pythonjsonlogger import json as jsonlogger
 from rich import box, progress
-from rich.control import Control, ControlType
+from rich.control import Control
 from rich.logging import RichHandler
+from rich.segment import ControlType
 from rich.table import Table
 from rich.text import Text
 from rich.traceback import Traceback
@@ -67,6 +67,9 @@ from snakemake.common import NOTHING_TO_BE_DONE_MSG
 from snakemake.exceptions import MissingInputException, WorkflowError
 from snakemake.logging import get_event_level, logger_manager
 from snakemake_interface_logger_plugins.common import LogEvent
+
+if TYPE_CHECKING:
+    from rich.console import RenderableType
 
 from sparv.core import io
 from sparv.core.console import console
@@ -76,7 +79,6 @@ from sparv.core.paths import paths
 
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 LOG_FORMAT_DEBUG = "%(asctime)s - %(name)s (%(process)d) - %(levelname)s - %(message)s"
-DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 TIME_FORMAT = "%H:%M:%S"
 
 ensure_logger_class()
@@ -191,7 +193,9 @@ class InternalLogHandler(logging.Handler):
     Used to update the progress bar and collect export directories.
     """
 
-    def __init__(self, export_dirs_list: set, progress_: progress.Progress, jobs: OrderedDict, job_ids: dict) -> None:
+    def __init__(
+        self, export_dirs_list: set, progress_: progress.Progress | None, jobs: OrderedDict, job_ids: dict
+    ) -> None:
         """Initialize handler.
 
         Args:
@@ -201,34 +205,39 @@ class InternalLogHandler(logging.Handler):
             job_ids: Translation from (Sparv task name, source file) to Snakemake job ID.
         """
         self.export_dirs_list = export_dirs_list
-        self.progress: progress.Progress = progress_
+        self.progress: progress.Progress | None = progress_
         self.jobs = jobs
-        self.job_ids = job_ids
+        self.job_ids = job_ids  # Reference to the job ID translation dictionary in the main log handler
         super().__init__()
 
     def emit(self, record: logging.LogRecord) -> None:
         """Handle log record."""
+        record = cast(_SparvLogRecord, record)
         if record.msg == "export_dirs":
             self.export_dirs_list.update(record.export_dirs)
         elif record.msg == "progress":
             job_id = self.job_ids.get((record.job, record.file or ""))
             if job_id is not None:
+                progr = cast(progress.Progress, self.progress)  # For type checker; if progress is None, so is job_id
+                record_total = record.total
+                record_progress = record.progress
+                record_advance = record.advance
                 try:
                     if not self.jobs[job_id]["task"]:
-                        self.jobs[job_id]["task"] = self.progress.add_task(
+                        self.jobs[job_id]["task"] = progr.add_task(
                             "",
-                            start=bool(record.total),
-                            completed=record.progress or record.advance or 0,
-                            total=record.total or 100.0,
+                            start=bool(record_total),
+                            completed=record_progress or record_advance or 0,
+                            total=record_total or 100.0,
                         )
                     else:
-                        if record.total:
-                            self.progress.start_task(self.jobs[job_id]["task"])
-                            self.progress.update(self.jobs[job_id]["task"], total=record.total)
-                        if record.progress:
-                            self.progress.update(self.jobs[job_id]["task"], completed=record.progress)
-                        elif record.advance or not record.total:
-                            self.progress.advance(self.jobs[job_id]["task"], advance=record.advance or 1)
+                        if record_total:
+                            progr.start_task(self.jobs[job_id]["task"])
+                            progr.update(self.jobs[job_id]["task"], total=record_total)
+                        if record_progress is not None:
+                            progr.update(self.jobs[job_id]["task"], completed=record_progress)
+                        elif record_advance or not record_total:
+                            progr.advance(self.jobs[job_id]["task"], advance=record_advance or 1)
                 except KeyError:
                     pass
 
@@ -261,7 +270,7 @@ class ProgressWithTable(progress.Progress):
         self.task_max_len = max_len
         super().__init__(*args, **kwargs)
 
-    def get_renderables(self) -> Iterable[progress.RenderableType]:
+    def get_renderables(self) -> Iterable[RenderableType]:
         """Get a number of renderables for the progress display.
 
         Yields:
@@ -301,6 +310,29 @@ class ProgressWithTable(progress.Progress):
             for row in rows:
                 table.add_row(*row)
             yield table
+
+
+class _SnakemakeLogRecord(logging.LogRecord):
+    """Type stub for LogRecord with extra fields set by Snakemake."""
+
+    done: int
+    total: int
+    rule_msg: str
+    wildcards: dict[str, str]
+    jobid: int
+    job_id: int
+    msg: str
+
+
+class _SparvLogRecord(logging.LogRecord):
+    """Type stub for LogRecord with extra fields set by Sparv."""
+
+    progress: int | None
+    advance: int | None
+    total: int | None
+    job: str | None
+    file: str | None
+    export_dirs: list[str]
 
 
 class SparvLogHandler:
@@ -353,16 +385,16 @@ class SparvLogHandler:
             "error": [],
             "unhandled_error": [],
         }
-        self.missing_configs_re = None
-        self.missing_binaries_re = None
-        self.missing_classes_re = None
+        self.missing_configs_re: re.Pattern | None = None
+        self.missing_binaries_re: re.Pattern | None = None
+        self.missing_classes_re: re.Pattern | None = None
         self.export_dirs = set()
         self.start_time = time.time()
         self.jobs = {}
         self.jobs_max_len = 0
         self.stats = stats
         self.stats_data = defaultdict(float)
-        self.logger = None
+        self.logger: logging.Logger | None = None
         self.terminated = False
         self.reasons = ""
 
@@ -429,7 +461,7 @@ class SparvLogHandler:
         self.logger.addHandler(stream_handler)
 
         # File logger
-        self.log_filename = f"{datetime.datetime.now().strftime('%Y-%m-%d_%H.%M.%S.%f')}.log"
+        self.log_filename = f"{datetime.now().strftime('%Y-%m-%d_%H.%M.%S.%f')}.log"
         file_handler = FileHandlerWithDirCreation(
             Path(self.root_dir or Path().cwd()) / paths.log_dir / self.log_filename,
             mode="w",
@@ -481,14 +513,22 @@ class SparvLogHandler:
         # Logging needs to be set up after the bar, to make use of its print hook
         self.setup_loggers()
 
+    @property
+    def _progress(self) -> progress.Progress:
+        return cast(progress.Progress, self.progress)
+
+    @property
+    def _bar(self) -> progress.TaskID:
+        return cast(progress.TaskID, self.bar)
+
     def start_bar(self, total: int) -> None:
         """Start progress bar.
 
         Args:
             total: Total number of tasks.
         """
-        self.progress.update(self.bar, total=total)
-        self.progress.start_task(self.bar)
+        self._progress.update(self._bar, total=total)
+        self._progress.start_task(self._bar)
         self.bar_started = True
 
     def info(self, msg: str) -> None:
@@ -497,7 +537,7 @@ class SparvLogHandler:
         Args:
             msg: Message to print.
         """
-        if self.json:
+        if self.json and self.logger:
             self.logger.log(SparvLogger.FINAL, msg)
         else:
             console.print(Text(msg, style="green"))
@@ -508,7 +548,7 @@ class SparvLogHandler:
         Args:
             msg: Message to print.
         """
-        if self.json:
+        if self.json and self.logger:
             self.logger.log(SparvLogger.FINAL, msg)
         else:
             console.print(Text(msg, style="yellow"))
@@ -519,7 +559,7 @@ class SparvLogHandler:
         Args:
             msg: Message to print.
         """
-        if self.json:
+        if self.json and self.logger:
             self.logger.log(SparvLogger.FINAL, msg)
         else:
             console.print(Text(msg, style="red"))
@@ -540,7 +580,7 @@ class SparvLogHandler:
         )
         self.messages["error"].append((source, message))
 
-    def missing_class_message(self, source: str, classes: list[str] | None = None) -> None:
+    def missing_class_message(self, source: str, classes: Collection[str] = ()) -> None:
         """Create error message when class variables are missing."""
         variables = messages["missing_classes"][source] or classes
         message = "The following class{} need{} to be set:\n • {}".format(
@@ -624,14 +664,18 @@ class SparvLogHandler:
         elif isinstance(exception, MissingInputException):
             # Errors due to missing config variables or binaries leading to missing input files
             msg_contents = re.search(r" for rule (\S+):\n.*affected files:\n(.+)", str(exception), flags=re.DOTALL)
+            if not msg_contents:
+                # If the error message doesn't match the expected format, log it as an unhandled error
+                self.messages["unhandled_error"].append((f"{type(exception).__name__}: {exception}", exception))
+                return
             rule_name, filelist = msg_contents.groups()
             filelist = "\n".join(f.strip() for f in filelist.splitlines())
             rule_name = rule_name.replace("::", ":")
-            if self.missing_configs_re.search(filelist):
+            if self.missing_configs_re and self.missing_configs_re.search(filelist):
                 self.missing_config_message(rule_name)
-            elif self.missing_binaries_re.search(filelist):
+            elif self.missing_binaries_re and self.missing_binaries_re.search(filelist):
                 self.missing_binary_message(rule_name)
-            elif self.missing_classes_re.search(filelist):
+            elif self.missing_classes_re and self.missing_classes_re.search(filelist):
                 self.missing_class_message(rule_name, self.missing_classes_re.findall(filelist))
             else:
                 self.missing_annotations_or_files(rule_name, filelist)
@@ -652,6 +696,7 @@ class SparvLogHandler:
         Args:
             record: Log record to handle.
         """
+        record = cast(_SnakemakeLogRecord, record)
         snake_level, record_level = get_event_level(record)
 
         if snake_level == LogEvent.RUN_INFO:  # Log message with a list of jobs to do and total job count
@@ -691,7 +736,7 @@ class SparvLogHandler:
         elif snake_level == LogEvent.PROGRESS:  # Progress update for the main progress
             if self.use_progressbar:
                 # Advance progress
-                self.progress.advance(self.bar)
+                self._progress.advance(self._bar)
 
             # Print regular progress updates if output is not a terminal (i.e. doesn't support the progress bar) or
             # output format is JSON
@@ -707,7 +752,7 @@ class SparvLogHandler:
         elif snake_level == LogEvent.JOB_INFO and self.use_progressbar:  # Info about a job starting
             if record.msg and self.bar is not None:
                 # Update progress status message
-                self.progress.update(self.bar, text=record.rule_msg if self.simple else "")
+                self._progress.update(self.bar, text=record.rule_msg if self.simple else "")
 
                 if not self.simple:
                     file = record.wildcards.get("file", "")
@@ -736,7 +781,7 @@ class SparvLogHandler:
             if self.stats:
                 self.stats_data[this_job["name"]] += time.time() - this_job["starttime"]
             if this_job["task"]:  # Job has a progress bar
-                self.progress.remove_task(this_job["task"])
+                self._progress.remove_task(this_job["task"])
             self.job_ids.pop((this_job["name"], this_job["file"]), None)
             self.current_jobs.pop(job_id, None)
             if snake_level == LogEvent.JOB_ERROR and record.msg:
@@ -748,7 +793,7 @@ class SparvLogHandler:
             elif NOTHING_TO_BE_DONE_MSG in record.msg:
                 self.info("Nothing to be done.")
             elif record.msg.startswith("Will exit after finishing currently running jobs") and not self.terminated:
-                self.logger.log(logging.INFO, "Will exit after finishing currently running jobs")
+                self.logger.log(logging.INFO, "Will exit after finishing currently running jobs")  # type: ignore
                 self.terminated = True
             if self.dry_run and "Reasons:" in record.msg:
                 # Save reasons for tasks being scheduled
@@ -769,6 +814,9 @@ class SparvLogHandler:
             # Missing output files
             elif "MissingOutputException" in record.message:
                 msg_contents = re.search(r"Missing files after .*?:\n(.+)", record.message, flags=re.DOTALL)
+                if not msg_contents:
+                    self.messages["unhandled_error"].append((record.getMessage(), None))
+                    return
                 missing_files = "\n • ".join(
                     line.split(" (missing locally", 1)[0] for line in msg_contents[1].strip().splitlines()
                 )
@@ -795,6 +843,9 @@ class SparvLogHandler:
             elif "died with <Signals." in record.message:
                 # The run_snake.py subprocess was killed
                 signal_match = re.search(r"died with <Signals.([A-Z]+)", record.message)
+                if not signal_match:
+                    self.messages["unhandled_error"].append((record.getMessage(), None))
+                    return
                 self.messages["error"].append(
                     (
                         None,
@@ -817,13 +868,15 @@ class SparvLogHandler:
         elif snake_level == LogEvent.WORKFLOW_STARTED:
             # Create regular expressions for searching for missing config variables or binaries
             all_configs = {v for varlist in messages["missing_configs"].values() for v in varlist}
-            self.missing_configs_re = re.compile(r"\[({})]".format("|".join(all_configs)))
+            self.missing_configs_re = re.compile(r"\[({})]".format("|".join(re.escape(c) for c in all_configs)))
 
             all_binaries = {b for binlist in messages["missing_binaries"].values() for b in binlist}
-            self.missing_binaries_re = re.compile(r"^({})$".format("|".join(all_binaries)), flags=re.MULTILINE)
+            self.missing_binaries_re = re.compile(
+                r"^({})$".format("|".join(re.escape(b) for b in all_binaries)), flags=re.MULTILINE
+            )
 
             all_classes = {v for varlist in messages["missing_classes"].values() for v in varlist}
-            self.missing_classes_re = re.compile(r"<({})>".format("|".join(all_classes)))
+            self.missing_classes_re = re.compile(r"<({})>".format("|".join(re.escape(c) for c in all_classes)))
 
     def stop(self) -> None:
         """Stop the progress bar and output any messages."""
@@ -836,13 +889,13 @@ class SparvLogHandler:
             if self.bar_started:
                 # Add message about elapsed time
                 elapsed = round(time.time() - self.start_time)
-                self.progress.update(self.bar, text=f"Total time: {timedelta(seconds=elapsed)}")
+                self._progress.update(self._bar, text=f"Total time: {timedelta(seconds=elapsed)}")
             else:
                 # Hide bar if it was never started
-                self.progress.update(self.bar, visible=False)
+                self._progress.update(self._bar, visible=False)
 
             # Stop bar
-            self.progress.stop()
+            self._progress.stop()
             if not self.simple and self.bar_started:
                 # Clear table header from screen
                 console.control(
@@ -857,7 +910,8 @@ class SparvLogHandler:
         if self.handled_error:
             # Print any collected core error messages
             if self.messages["error"]:
-                errmsg = [f"Sparv exited with the following error message{'s' if len(self.messages) > 1 else ''}:"]
+                plural = "s" if len(self.messages["error"]) > 1 else ""
+                errmsg = [f"Sparv exited with the following error message{plural}:"]
                 for message in self.messages["error"]:
                     error_source, msg = message
                     error_source = f"[{error_source}]\n" if error_source else ""
@@ -877,7 +931,11 @@ class SparvLogHandler:
             # The log file always contains the full error message.
             for error_message, exception in self.messages["unhandled_error"]:
                 errmsg = ["An unexpected error occurred."]
-                if self.log_level and logging._nameToLevel[self.log_level.upper()] > logging.DEBUG:
+                if (
+                    self.log_level
+                    and logging._nameToLevel[self.log_level.upper()] > logging.DEBUG
+                    and self.log_filename
+                ):
                     errmsg[0] += (
                         f" For more details, please check '{paths.log_dir / self.log_filename}', or rerun Sparv "
                         "with the '--log debug' argument.\n"
@@ -898,14 +956,15 @@ class SparvLogHandler:
                     self.error("\n".join(errmsg))
 
                 # Always log full error message to file, no matter the log level
-                if exception:
-                    # Get traceback from the exception
-                    full_message = "".join(
-                        traceback.format_exception(type(exception), exception, exception.__traceback__)
-                    )
-                else:
-                    full_message = error_message
-                self.logger.error(full_message or "An unknown error occurred.", extra={"to_file": True})
+                if self.logger:
+                    if exception:
+                        # Get traceback from the exception
+                        full_message = "".join(
+                            traceback.format_exception(type(exception), exception, exception.__traceback__)
+                        )
+                    else:
+                        full_message = error_message
+                    self.logger.error(full_message or "An unknown error occurred.", extra={"to_file": True})
         else:
             spacer = ""
             if self.export_dirs:
@@ -941,7 +1000,7 @@ class SparvLogHandler:
                     )
                 self.warning(
                     f"{spacer}Job execution finished but {' and '.join(problems)} occurred. See log messages "
-                    f"above or {paths.log_dir / self.log_filename} for details."
+                    f"above or {paths.log_dir / self.log_filename} for details."  # type: ignore
                 )
             elif self.dry_run:
                 console.print("The following tasks were scheduled but not run:")
@@ -974,7 +1033,7 @@ class SparvLogHandler:
 
 
 def setup_logging(
-    log_server: tuple[str | bytes | bytearray, int],
+    log_server: tuple[str, int],
     log_level: str = "warning",
     log_file_level: str = "warning",
     file: str | None = None,
@@ -992,10 +1051,12 @@ def setup_logging(
         job: Current task name.
     """
     # Set logger to use the lowest selected log level, but never higher than warning (we still want to count warnings)
-    log_level = min(logging.WARNING, getattr(logging, log_level.upper()), getattr(logging, log_file_level.upper()))
+    effective_level = min(
+        logging.WARNING, getattr(logging, log_level.upper()), getattr(logging, log_file_level.upper())
+    )
     socket_logger = logging.getLogger("sparv")
     socket_logger.propagate = False  # Prevent propagation to root logger
-    socket_logger.setLevel(log_level)
+    socket_logger.setLevel(effective_level)
     socket_handler = logging.handlers.SocketHandler(*log_server)
     socket_logger.addHandler(socket_handler)
     CurrentProgress.current_file = file

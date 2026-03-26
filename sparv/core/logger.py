@@ -8,8 +8,8 @@ import logging
 class CurrentProgress:
     """Class to store current file and job for logging progress."""
 
-    current_file = None
-    current_job = None
+    current_file: str | None = None
+    current_job: str | None = None
 
 
 class SparvLogger(logging.Logger):
