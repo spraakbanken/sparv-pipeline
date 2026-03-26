@@ -45,7 +45,7 @@ def install_timespan(
     marker.write()
 
 
-@uninstaller("Uninstall timespan data from database", language=["swe"])
+@uninstaller("Uninstall timespan data from database")
 def uninstall_timespan(
     corpus: Corpus = Corpus(),
     marker: OutputMarker = OutputMarker("korp.uninstall_timespan_marker"),
