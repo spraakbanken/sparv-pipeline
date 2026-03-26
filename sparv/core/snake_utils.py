@@ -586,10 +586,20 @@ def rule_helper(
                 rule.parameters[param_name].source_files = storage.source_files
         # Corpus
         elif param_type == Corpus:
-            rule.parameters[param_name] = Corpus(sparv_config.get("metadata.id"))
+            if sparv_config.get("metadata.id"):
+                rule.parameters[param_name] = Corpus(sparv_config.get("metadata.id"))
+            elif param_optional:
+                rule.parameters[param_name] = None
+            else:
+                rule.missing_config.add("metadata.id")
         # Language
         elif param_type == Language:
-            rule.parameters[param_name] = Language(sparv_config.get("metadata.language"))
+            if sparv_config.get("metadata.language"):
+                rule.parameters[param_name] = Language(sparv_config.get("metadata.language"))
+            elif param_optional:
+                rule.parameters[param_name] = None
+            else:
+                rule.missing_config.add("metadata.language")
         # SourceFilename
         elif param_type == SourceFilename:
             rule.file_parameters.append(param_name)
