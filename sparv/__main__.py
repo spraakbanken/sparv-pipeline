@@ -742,7 +742,7 @@ def main(argv: list[str] | None = None) -> bool:
             if args.wildcards:
                 config["wildcards"] = args.wildcards
             if args.list or targets == ["list"]:
-                targets = ["list_targets"]
+                targets = ["list_rules"]
                 simple_target = True
             elif args.force:
                 # Rename all-files-rule to the related regular rule

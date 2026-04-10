@@ -43,7 +43,7 @@ def inspect_workdir_file(filename: str, compression: str | None = None) -> bool:
             return False
 
         # Try to load config and get compression setting
-        config_missing = snake_utils.load_config({})
+        config_missing = snake_utils.load_corpus_config({})
         compression = config.get("sparv.compression")
 
         if config_missing or not compression:

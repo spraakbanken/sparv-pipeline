@@ -30,19 +30,19 @@ def prettyprint_yaml(in_dict: dict) -> None:
     console.print(Syntax(yaml_str, "yaml", background_color="default"))
 
 
-def print_modules_summary(snake_storage: snake_utils.SnakeStorage, json_output: bool = False) -> None:
+def print_modules_summary(pipeline_data: snake_utils.PipelineData, json_output: bool = False) -> None:
     """Print a summary of all annotation modules.
 
     Args:
-        snake_storage: SnakeStorage object.
+        pipeline_data: PipelineData object.
         json_output: Print output as JSON.
     """
     all_module_types = {
-        "annotators": snake_storage.all_annotators,
-        "importers": snake_storage.all_importers,
-        "exporters": snake_storage.all_exporters,
-        "installers": snake_storage.all_installers,
-        "uninstallers": snake_storage.all_uninstallers,
+        "annotators": pipeline_data.all_annotators,
+        "importers": pipeline_data.all_importers,
+        "exporters": pipeline_data.all_exporters,
+        "installers": pipeline_data.all_installers,
+        "uninstallers": pipeline_data.all_uninstallers,
     }
 
     modules_data = {k: {} for k in all_module_types}
@@ -82,7 +82,7 @@ def print_modules_summary(snake_storage: snake_utils.SnakeStorage, json_output: 
 def print_modules_info(
     module_types: list[str],
     module_names: list[str],
-    snake_storage: snake_utils.SnakeStorage,
+    pipeline_data: snake_utils.PipelineData,
     reverse_config_usage: dict,
     json_output: bool = False,
     include_params: bool = False,
@@ -92,17 +92,17 @@ def print_modules_info(
     Args:
         module_types: List of module types to print.
         module_names: List of module names to print.
-        snake_storage: SnakeStorage object.
+        pipeline_data: PipelineData object.
         reverse_config_usage: Dictionary with config usage.
         json_output: Print output as JSON.
         include_params: Include parameters in output.
     """
     all_module_types = {
-        "annotators": snake_storage.all_annotators,
-        "importers": snake_storage.all_importers,
-        "exporters": snake_storage.all_exporters,
-        "installers": snake_storage.all_installers,
-        "uninstallers": snake_storage.all_uninstallers,
+        "annotators": pipeline_data.all_annotators,
+        "importers": pipeline_data.all_importers,
+        "exporters": pipeline_data.all_exporters,
+        "installers": pipeline_data.all_installers,
+        "uninstallers": pipeline_data.all_uninstallers,
     }
 
     def quoted_representer(dumper: yaml.Dumper, data: str) -> yaml.ScalarNode:
@@ -179,9 +179,9 @@ def print_modules_info(
                 f_data = {"description": modules[module_name][f_name]["description"]}
 
                 # Get parameters
-                if snake_storage.all_custom_annotators.get(module_name, {}).get(f_name):
+                if pipeline_data.all_custom_annotators.get(module_name, {}).get(f_name):
                     f_data["custom_annotator"] = True
-                    params = snake_storage.all_custom_annotators[module_name][f_name].get("params", {})
+                    params = pipeline_data.all_custom_annotators[module_name][f_name].get("params", {})
                 else:
                     params = modules[module_name][f_name].get("params", {})
 
@@ -535,27 +535,27 @@ def get_custom_module_description(name: str) -> str:
     return f"Custom module from the corpus directory ({name.split('.')[1]}.py)."
 
 
-def print_installers(snake_storage: snake_utils.SnakeStorage, uninstall: bool = False) -> None:
+def print_installers(pipeline_data: snake_utils.PipelineData, uninstall: bool = False) -> None:
     """Print a list of installers or uninstallers.
 
     Args:
-        snake_storage: SnakeStorage object.
+        pipeline_data: PipelineData object.
         uninstall: Print uninstallers instead of installers.
     """
     if uninstall:
-        targets = snake_storage.uninstall_targets
+        rules_list = pipeline_data.uninstall_rules
         prefix = "un"
         config_list = config.get("uninstall")
         if config_list is None:
             config_install = config.get("install", [])
-            config_list = [u for t, _, u in snake_storage.install_targets if t in config_install and u]
+            config_list = [u for t, _, u in pipeline_data.install_rules if t in config_install and u]
     else:
-        targets = snake_storage.install_targets
+        rules_list = pipeline_data.install_rules
         prefix = ""
         config_list = config.get("install", [])
 
-    selected_installations = [(t, d) for t, d, *_ in targets if t in config_list]
-    other_installations = [(t, d) for t, d, *_ in targets if t not in config_list]
+    selected_installations = [(t, d) for t, d, *_ in rules_list if t in config_list]
+    other_installations = [(t, d) for t, d, *_ in rules_list if t not in config_list]
 
     if selected_installations:
         console.print()

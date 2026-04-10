@@ -19,19 +19,19 @@ GOLD_PREFIX = "gold_"
 MAX_DIFF_LINES = 25
 
 
-def run_sparv(gold_corpus_dir: Path, tmp_path: Path, targets: list | None = None) -> Path:
+def run_sparv(gold_corpus_dir: Path, tmp_path: Path, rules: list | None = None) -> Path:
     """Run Sparv on corpus in gold_corpus_dir and return the directory of the test corpus.
 
     Args:
         gold_corpus_dir: Path to the directory of the gold corpus.
         tmp_path: Path to the temporary directory to use for the test corpus.
-        targets: List of targets to run. If None, default targets will be used.
+        rules: List of rules to run. If None, default rules will be used.
 
     Returns:
         Path to the directory of the test corpus.
     """
-    if targets is None:
-        targets = []
+    if rules is None:
+        rules = []
     corpus_name = gold_corpus_dir.name
     new_corpus_dir = tmp_path / Path(corpus_name)
 
@@ -47,7 +47,7 @@ def run_sparv(gold_corpus_dir: Path, tmp_path: Path, targets: list | None = None
         ),
     )
 
-    args = ["sparv", "-d", str(new_corpus_dir), "run", *targets]
+    args = ["sparv", "-d", str(new_corpus_dir), "run", *rules]
     process = subprocess.run(args, capture_output=True, check=False)
     stdout = _remove_progress_info(process.stdout.strip().decode())
     if stdout and process.returncode != 0:

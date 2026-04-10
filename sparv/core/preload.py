@@ -20,7 +20,7 @@ from rich.logging import RichHandler
 from sparv.core import config, io, log_handler
 from sparv.core.console import console
 from sparv.core.misc import SparvErrorMessage
-from sparv.core.snake_utils import SnakeStorage
+from sparv.core.snake_utils import PipelineData, RuleInfo
 
 INFO = "INFO"
 STATUS = "STATUS"
@@ -306,14 +306,14 @@ def worker(
 
 
 def serve(
-    socket_path: str, processes: int, storage: SnakeStorage, stop_signal: multiprocessing.synchronize.Event
+    socket_path: str, processes: int, pipeline_data: PipelineData, stop_signal: multiprocessing.synchronize.Event
 ) -> None:
     """Start the Sparv preloader socket server.
 
     Args:
         socket_path: Path to the socket file.
         processes: Number of processes to start.
-        storage: SnakeStorage object.
+        pipeline_data: PipelineData object.
         stop_signal: Event to signal when stopping.
 
     Raises:
@@ -336,10 +336,10 @@ def serve(
         raise SparvErrorMessage(
             "Preloader config is missing. Use the 'preload' section in your config file to list annotators to preload."
         )
-    rules = {}
-    for rule in storage.all_rules:
+    rules: dict[str, RuleInfo] = {}
+    for rule in pipeline_data.all_rules:
         if rule.has_preloader:
-            rules[rule.target_name] = rule
+            rules[rule.name] = rule
 
     log.info("Loading annotators: %s", ", ".join(preload_config))
 

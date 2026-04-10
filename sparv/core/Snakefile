@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import multiprocessing
 import os
 import signal
@@ -23,7 +24,7 @@ from sparv.core.paths import paths
 rule do_nothing:
     input: []
 
-selected_targets = config.get("targets", [])  # Explicitly selected rule names
+selected_rules = config.get("targets", [])  # Rule names explicitly selected by the user
 
 # ==============================================================================
 # Dynamic Creation of Snakemake Rules
@@ -43,7 +44,7 @@ def make_rules(config_missing: bool) -> None:
     if config.get("socket") and not config.get("preloader"):
         from sparv.core import preload  # noqa: PLC0415
         try:
-            snake_storage.preloader_info = preload.get_preloader_info(config["socket"])
+            pipeline_data.preloader_info = preload.get_preloader_info(config["socket"])
         except ConnectionRefusedError:
             raise SparvErrorMessage(f"Could not connect to the socket '{config['socket']}'")
 
@@ -69,15 +70,15 @@ def make_rules(config_missing: bool) -> None:
 
     # Check and set rule orders (but not when language is set to __all__ for schema purposes)
     if config.get("language") != "__all__":
-        ordered_rules = snake_utils.check_ruleorder(snake_storage)
+        ordered_rules = snake_utils.resolve_rule_ordering(pipeline_data)
         for rule1, rule2 in ordered_rules:
-            # ruleorder:  rule1.rule_name > rule2.rule_name
-            workflow.ruleorder(rule1.rule_name, rule2.rule_name)
+            # ruleorder:  rule1.internal_name > rule2.internal_name
+            workflow.ruleorder(rule1.internal_name, rule2.internal_name)
         # Print ordered rules when in debug mode
         if config.get("debug") and ordered_rules:
             console.print("\n\n\n[b]ORDERED RULES:[/b]")
             for rule1, rule2 in ordered_rules:
-                print(f"    • {rule1.rule_name} > {rule2.rule_name}")
+                print(f"    • {rule1.internal_name} > {rule2.internal_name}")
             print()
 
 
@@ -97,63 +98,68 @@ def make_rule(
         config_missing: Whether the config file is missing.
         custom_rule_obj: Custom rule object.
     """
-    # Init rule storage
-    rule_storage = snake_utils.RuleStorage(module_name, f_name, annotator_info)
+    # Init rule info object
+    rule_info = snake_utils.RuleInfo(module_name, f_name, annotator_info)
 
-    # Process rule parameters and update rule storage
-    # Save original config and restore afterwards, as custom rules may replace the config
-    original_config = sparv_config.config
-    create_rule = snake_utils.rule_helper(rule_storage, config, snake_storage, config_missing, custom_rule_obj)
-    sparv_config.config = original_config
+    # Save a copy of the config if this is a custom rule with custom config, which will modify the config when processed
+    has_custom_config = bool(custom_rule_obj and custom_rule_obj.get("config"))
+    original_config = copy.deepcopy(sparv_config.config) if has_custom_config else None
+
+    # Process rule parameters and update rule info object
+    create_rule = snake_utils.RuleBuilder(rule_info, config, pipeline_data, config_missing, custom_rule_obj).build()
+
+    if original_config is not None:
+        # Restore original config after processing custom config
+        sparv_config.config = original_config
 
     # Limit number of parallel threads for this rule if requested in config
     resources = {}
     if "threads" in config:
-        thread_limit = sparv_config.get(sparv_config.MAX_THREADS, {}).get(rule_storage.target_name)
+        thread_limit = sparv_config.get(sparv_config.MAX_THREADS, {}).get(rule_info.name)
         if thread_limit:
             resources["threads"] = config["threads"] // thread_limit
 
     if create_rule:
         # Create a Snakemake rule for annotator
         rule:
-            name: rule_storage.rule_name
-            message: rule_storage.target_name
-            input: rule_storage.inputs
-            output: rule_storage.outputs
+            name: rule_info.internal_name
+            message: rule_info.name
+            input: rule_info.inputs
+            output: rule_info.outputs
             params:
-                module_name=rule_storage.module_name,
-                f_name=rule_storage.f_name,
-                parameters=snake_utils.get_parameters(rule_storage),
-                export_dirs=rule_storage.export_dirs,
-                source_file=snake_utils.file_value(rule_storage),
-                use_preloader=rule_storage.use_preloader,
+                module_name=rule_info.module_name,
+                f_name=rule_info.f_name,
+                parameters=snake_utils.make_parameter_resolver(rule_info),
+                export_dirs=rule_info.export_dirs,
+                source_file=snake_utils.make_file_getter(rule_info),
+                use_preloader=rule_info.use_preloader,
                 socket=config.get("socket"),
                 force_preloader=config.get("force_preloader", False),
                 compression=sparv_config.get("sparv.compression")
             resources: **resources
-            priority: rule_storage.priority
+            priority: rule_info.priority
             # We use "script" instead of "run" since with "run" the whole Snakefile would have to be reloaded for every
             # single job, due to how Snakemake creates processes for run-jobs.
             script: "run_snake.py"
 
         # Create rule to run this annotation on all source files
-        make_all_files_rule(rule_storage)
+        make_all_files_rule(rule_info)
 
 
-def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
+def make_all_files_rule(rule_info: snake_utils.RuleInfo) -> None:
     """Create named rule to run an annotation on all source files.
 
     Args:
-        rule_storage: Rule storage object.
+        rule_info: Rule info object.
     """
     # Only create rule when explicitly called
-    if config.get("run_by_sparv") and rule_storage.target_name not in selected_targets:
+    if config.get("run_by_sparv") and rule_info.name not in selected_rules:
         return
 
     # Get Snakemake rule object
-    sm_rule = workflow.get_rule(rule_storage.rule_name)
+    sm_rule = workflow.get_rule(rule_info.internal_name)
 
-    dependencies = rule_storage.outputs if not rule_storage.abstract else rule_storage.inputs
+    dependencies = rule_info.outputs if not rule_info.abstract else rule_info.inputs
 
     # Prepend work dir to paths if needed (usually included in the {file} wildcard but here it needs to be explicit)
     rule_outputs = [
@@ -164,45 +170,45 @@ def make_all_files_rule(rule_storage: snake_utils.RuleStorage) -> None:
     # Expand {file} wildcard to every corpus file
     rule_outputs = expand(
         rule_outputs,
-        file=snake_utils.get_file_values(config, snake_storage),
+        file=snake_utils.resolve_source_files(config, pipeline_data),
         **snake_utils.get_wildcard_values(config),
         allow_missing=True,
     )
 
     rule:
-        name: rule_storage.target_name
+        name: rule_info.name
         input: rule_outputs
 
-    if not rule_storage.abstract:
+    if not rule_info.abstract:
         # Set rule dependencies for every file, so Snakemake knows which rule to use in case of ambiguity.
         # Converting the values of rule_outputs to snakemake.io.IOFile objects is not enough, since file paths must
         # match for that to work (which they don't do once we've expanded the {file} wildcard).
-        this_sm_rule = workflow.get_rule(rule_storage.target_name)
+        this_sm_rule = workflow.get_rule(rule_info.name)
         for f in this_sm_rule.input:
             this_sm_rule.dependencies[f] = sm_rule.name
 
 
 def update_autocompletion_cache() -> None:
-    """If needed, update the cache of available targets (exporters/installers/rules etc.) used by tab autocompletion."""
+    """If needed, update the cache of available processors (exporters, installers, etc.) used by tab autocompletion."""
     # Only update cache if it exists
     if paths.autocomplete_cache.is_file():
         import pickle  # noqa: PLC0415
 
         # Collect data for cache
         new_cache = dict.fromkeys(("export", "install", "uninstall", "model"))
-        for target_type in new_cache:
-            new_cache[target_type] = {
+        for rule_type in new_cache:
+            new_cache[rule_type] = {
                 t[0]: t[1].split("\n", 1)[0]
-                for t in getattr(snake_storage, f"{target_type}_targets")
+                for t in getattr(pipeline_data, f"{rule_type}_rules")
                 if not t[0].startswith("custom.")
             }
 
         new_cache["annotate"] = {}
-        for target_type in ("named", "custom", "import"):
+        for rule_type in ("annotation", "custom", "import"):
             new_cache["annotate"].update(
                 {
                     t[0]: t[1].split("\n", 1)[0]
-                    for t in getattr(snake_storage, f"{target_type}_targets")
+                    for t in getattr(pipeline_data, f"{rule_type}_rules")
                     if not t[0].startswith("custom.")
                 }
             )
@@ -229,11 +235,11 @@ def update_autocompletion_cache() -> None:
                 pass
 
 
-# Init the storage for some essential variables involving all rules
-snake_storage = snake_utils.SnakeStorage()
+# Initialize pipeline data object, used to store information involving all rules
+pipeline_data = snake_utils.PipelineData()
 
 # Find and load corpus config
-config_missing = snake_utils.load_config(config)
+config_missing = snake_utils.load_corpus_config(config)
 
 # Find and load Sparv modules
 registry.find_modules(find_custom=bool(sparv_config.get("custom_annotations")))
@@ -279,20 +285,20 @@ update_autocompletion_cache()
 sparv_config.validate_module_config()
 
 # Validate config
-if "schema" not in selected_targets:
+if "schema" not in selected_rules:
     from sparv.core import schema
 
     json_schema = schema.build_json_schema(sparv_config.config_structure)
     schema.validate(sparv_config.config, json_schema)
 
 # Get reverse_config_usage dict for look-ups
-reverse_config_usage = snake_utils.get_reverse_config_usage()
+reverse_config_usage = snake_utils.config_usage_by_annotator()
 
-# Abort if all selected targets require source files but no files are available
-if not config_missing and selected_targets and not snake_storage.source_files:
-    named_targets = {i for i, _ in snake_storage.named_targets}
-    named_targets.update(("export_corpus", "install_corpus"))
-    if set(selected_targets).issubset(named_targets):
+# Abort if all selected rules require source files but no files are available
+if not config_missing and selected_rules and not pipeline_data.source_files:
+    annotation_rules = {i for i, _ in pipeline_data.annotation_rules}
+    annotation_rules.update(("export_corpus", "install_corpus"))
+    if set(selected_rules).issubset(annotation_rules):
         raise SparvErrorMessage("No source files available!")
 
 # Sort GPUs visible to modules by available memory
@@ -323,12 +329,12 @@ rule modules:
             snake_prints.print_modules_info(
                 config.get("types", []),
                 config.get("names", []),
-                snake_storage,
+                pipeline_data,
                 reverse_config_usage,
                 config["json"]
             )
         else:
-            snake_prints.print_modules_summary(snake_storage, config["json"])
+            snake_prints.print_modules_summary(pipeline_data, config["json"])
 
 
 # Rule to list all annotation classes
@@ -353,8 +359,8 @@ rule presets:
         snake_prints.prettyprint_yaml(resolved_presets)
 
 
-# Rule to list all targets
-rule list_targets:
+# Rule to list all rules
+rule list_rules:
     run:
         print()
         table = Table(title="Available rules", box=box.SIMPLE, show_header=False, title_justify="left")
@@ -362,35 +368,35 @@ rule list_targets:
         table.add_column()
 
         table.add_row("[b]Exporters[/b]")
-        for target, desc, _lang in sorted(snake_storage.export_targets):
+        for target, desc, _lang in sorted(pipeline_data.export_rules):
             table.add_row("  " + target, desc.splitlines()[0])
         table.add_row()
         table.add_row("[b]Installers[/b]")
-        for target, desc, _ in sorted(snake_storage.install_targets):
+        for target, desc, _ in sorted(pipeline_data.install_rules):
             table.add_row("  " + target, desc.splitlines()[0])
         table.add_row()
         table.add_row("[b]Uninstallers[/b]")
-        for target, desc in sorted(snake_storage.uninstall_targets):
+        for target, desc in sorted(pipeline_data.uninstall_rules):
             table.add_row("  " + target, desc.splitlines()[0])
         table.add_row()
         table.add_row("[b]Importers[/b]")
-        for target, desc in sorted(snake_storage.import_targets):
+        for target, desc in sorted(pipeline_data.import_rules):
             table.add_row("  " + target, desc.splitlines()[0])
         table.add_row()
         table.add_row("[b]Annotators[/b]")
-        for target, desc in sorted(snake_storage.named_targets):
+        for target, desc in sorted(pipeline_data.annotation_rules):
             table.add_row("  " + target, desc.splitlines()[0])
         table.add_row()
         table.add_row("[b]Model Builders[/b]")
-        for target, desc, _lang in sorted(snake_storage.model_targets):
+        for target, desc, _lang in sorted(pipeline_data.model_rules):
             table.add_row("  " + target, desc.splitlines()[0])
         table.add_row()
-        table.add_row("[b]Custom Rules[/b]")
-        for target, desc in sorted(snake_storage.custom_targets):
+        table.add_row("[b]Custom Processors[/b]")
+        for target, desc in sorted(pipeline_data.custom_rules):
             table.add_row("  " + target, desc.splitlines()[0])
         console.print(table)
         note = Text.from_markup(
-            "[i]Note:[/i] Custom rules need to be declared in the 'custom_annotations' section "
+            "[i]Note:[/i] Custom processors need to be declared in the 'custom_annotations' section "
             "of your corpus configuration before they can be used."
         )
         ReprHighlighter().highlight(note)
@@ -401,8 +407,8 @@ rule list_targets:
 rule list_exports:
     run:
         selected_export_names = sparv_config.get("export.default", [])
-        selected_exports = [(t, d, l) for t, d, l in sorted(snake_storage.export_targets) if t in selected_export_names]
-        other_exports = [(t, d, l) for t, d, l in sorted(snake_storage.export_targets) if t not in selected_export_names]
+        selected_exports = [(t, d, l) for t, d, l in sorted(pipeline_data.export_rules) if t in selected_export_names]
+        other_exports = [(t, d, l) for t, d, l in sorted(pipeline_data.export_rules) if t not in selected_export_names]
 
         if selected_exports:
             print()
@@ -453,7 +459,7 @@ rule files:
         print("Available source files:\n")
         # Convert to Text to get rid of syntax highlighting
         console.print(
-            Columns([Text(f) for f in sorted(snake_storage.source_files)], column_first=True, padding=(0, 3))
+            Columns([Text(f) for f in sorted(pipeline_data.source_files)], column_first=True, padding=(0, 3))
         )
 
 
@@ -478,46 +484,46 @@ rule clean:
             full_path = Path.cwd() / d
             if full_path.is_dir():
                 shutil.rmtree(full_path)
-                snake_utils.print_sparv_info(f"'{d}' directory removed")
+                snake_utils.info(f"'{d}' directory removed")
                 something_removed = True
         if not something_removed:
-            snake_utils.print_sparv_info("Nothing to remove")
+            snake_utils.info("Nothing to remove")
 
 
 # Rule to list all available installers
 rule list_installs:
     run:
-        snake_prints.print_installers(snake_storage)
+        snake_prints.print_installers(pipeline_data)
 
 
 # Rule to list all available uninstallers
 rule list_uninstalls:
     run:
-        snake_prints.print_installers(snake_storage, uninstall=True)
+        snake_prints.print_installers(pipeline_data, uninstall=True)
 
 
 # Rule for making exports defined in corpus config
-if "export_corpus" in selected_targets:
-    export_targets = snake_utils.get_export_targets(
-        snake_storage,
+if "export_corpus" in selected_rules:
+    export_rule_outputs = snake_utils.resolve_export_rules(
+        pipeline_data,
         workflow,
-        file=snake_utils.get_file_values(config, snake_storage),
+        file=snake_utils.resolve_source_files(config, pipeline_data),
         wildcards=snake_utils.get_wildcard_values(config)
     )
 
     rule export_corpus:
-        input: [f for r in export_targets for f in r[1]]
+        input: [f for r in export_rule_outputs for f in r[1]]
 
     # Set rule dependencies for every file, so Snakemake knows which rule to use in case of ambiguity
-    for r, ff in export_targets:
+    for r, ff in export_rule_outputs:
         if r is None:
             continue
         for f in ff:
             rules.export_corpus.rule.dependencies[f] = r.name
 
 # Rule for making installations
-if "install_corpus" in selected_targets:
-    install_inputs = snake_utils.get_install_outputs(snake_storage, config.get("install_types"))
+if "install_corpus" in selected_rules:
+    install_inputs = snake_utils.collect_install_files(pipeline_data, config.get("install_types"))
     if not install_inputs:
         raise SparvErrorMessage(
             "Please specify what you would like to install, either by supplying arguments "
@@ -532,8 +538,8 @@ if "install_corpus" in selected_targets:
 
 
 # Rule for making uninstallations
-if "uninstall_corpus" in selected_targets:
-    uninstall_inputs = snake_utils.get_install_outputs(snake_storage, config.get("uninstall_types"), uninstall=True)
+if "uninstall_corpus" in selected_rules:
+    uninstall_inputs = snake_utils.collect_install_files(pipeline_data, config.get("uninstall_types"), uninstall=True)
     if not uninstall_inputs:
         raise SparvErrorMessage(
             "Please specify what you would like to uninstall, either by supplying arguments "
@@ -567,7 +573,7 @@ rule list_models:
             )
             table.add_column(no_wrap=True)
             table.add_column()
-            for target, desc, language in sorted(snake_storage.model_targets):
+            for target, desc, language in sorted(pipeline_data.model_rules):
                 if language and registry.check_language(lang, language, variety):
                     table.add_row(target, desc.splitlines()[0])
             console.print(table)
@@ -575,7 +581,7 @@ rule list_models:
         table = Table(title="Language-independent models", box=box.SIMPLE, show_header=False, title_justify="left")
         table.add_column(no_wrap=True)
         table.add_column()
-        for target, desc, language in sorted(snake_storage.model_targets):
+        for target, desc, language in sorted(pipeline_data.model_rules):
             if not language:
                 table.add_row(target, desc.splitlines()[0])
         console.print(table)
@@ -602,7 +608,7 @@ rule list_files:
     run:
         outputs = {
             (rule.type, o)
-            for rule in snake_storage.all_rules
+            for rule in pipeline_data.all_rules
             for o in (rule.outputs if not rule.abstract else rule.inputs)
         }
 
@@ -632,9 +638,9 @@ rule list_files:
 # Build all models
 rule build_models:
     input:
-        snake_storage.model_outputs
+        pipeline_data.model_outputs
 
-if "preload" in selected_targets:
+if "preload" in selected_rules:
     stop_signal = multiprocessing.Event()
     signal.signal(signal.SIGINT, lambda _sig_no, _frame: stop_signal.set())
 
@@ -643,7 +649,7 @@ if "preload" in selected_targets:
             from sparv.core import preload
 
             if config["preload_command"] == "start":
-                preload.serve(config["socket"], config["processes"], snake_storage, stop_signal)
+                preload.serve(config["socket"], config["processes"], pipeline_data, stop_signal)
             elif config["preload_command"] == "stop":
                 if not Path(config["socket"]).is_socket():
                     raise SparvErrorMessage(f"Socket file '{config['socket']}' doesn't exist or isn't a socket.")
@@ -663,7 +669,7 @@ rule preload_list:
         table.add_column(no_wrap=True)
         table.add_column()
 
-        for module, annotators in sorted(snake_storage.all_preloaders.items()):
+        for module, annotators in sorted(pipeline_data.all_preloaders.items()):
             for a in sorted(annotators):
                 table.add_row(f"{module}:{a}", registry.modules[module].functions[a]["description"])
 
