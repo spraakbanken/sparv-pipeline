@@ -15,7 +15,7 @@ from rich.syntax import Syntax
 from rich.table import Table
 
 from sparv.api.util.misc import dump_yaml
-from sparv.core import config, registry, snake_utils
+from sparv.core import config, pipeline, registry
 from sparv.core.console import console
 
 
@@ -30,7 +30,7 @@ def prettyprint_yaml(in_dict: dict) -> None:
     console.print(Syntax(yaml_str, "yaml", background_color="default"))
 
 
-def print_modules_summary(pipeline_data: snake_utils.PipelineData, json_output: bool = False) -> None:
+def print_modules_summary(pipeline_data: pipeline.PipelineData, json_output: bool = False) -> None:
     """Print a summary of all annotation modules.
 
     Args:
@@ -82,7 +82,7 @@ def print_modules_summary(pipeline_data: snake_utils.PipelineData, json_output: 
 def print_modules_info(
     module_types: list[str],
     module_names: list[str],
-    pipeline_data: snake_utils.PipelineData,
+    pipeline_data: pipeline.PipelineData,
     reverse_config_usage: dict,
     json_output: bool = False,
     include_params: bool = False,
@@ -535,7 +535,7 @@ def get_custom_module_description(name: str) -> str:
     return f"Custom module from the corpus directory ({name.split('.')[1]}.py)."
 
 
-def print_installers(pipeline_data: snake_utils.PipelineData, uninstall: bool = False) -> None:
+def print_installers(pipeline_data: pipeline.PipelineData, uninstall: bool = False) -> None:
     """Print a list of installers or uninstallers.
 
     Args:

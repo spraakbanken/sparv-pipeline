@@ -15,7 +15,7 @@ from questionary import prompt
 
 from sparv.api import SourceStructureParser, Wildcard
 from sparv.api.util.misc import dump_yaml
-from sparv.core import config, registry, snake_utils
+from sparv.core import config, registry, pipeline
 from sparv.core.console import console
 from sparv.core.paths import paths
 
@@ -71,15 +71,15 @@ class Wizard:
         self.annotation_description = {}
         registry.annotation_classes["config_classes"] = config.config.get("classes", {})
 
-        self.pipeline_data = snake_utils.PipelineData()
+        self.pipeline_data = pipeline.PipelineData()
 
         for module_name in registry.modules:
             for f_name, annotator in registry.modules[module_name].functions.items():
                 # Init rule storage
-                rule_info = snake_utils.RuleInfo(module_name, f_name, annotator)
+                rule_info = pipeline.RuleInfo(module_name, f_name, annotator)
 
                 # Process rule parameters and update rule storage
-                rule_created = snake_utils.RuleBuilder(rule_info, config.config, self.pipeline_data).build()
+                rule_created = pipeline.RuleBuilder(rule_info, config.config, self.pipeline_data).build()
                 if rule_info.is_annotator and self.pipeline_data.all_annotators.get(module_name, {}).get(f_name):
                     self.pipeline_data.all_annotators[module_name][f_name]["rule"] = rule_info
                     for output in rule_info.outputs:

@@ -20,7 +20,7 @@ from rich.logging import RichHandler
 from sparv.core import config, io, log_handler
 from sparv.core.console import console
 from sparv.core.misc import SparvErrorMessage
-from sparv.core.snake_utils import PipelineData, RuleInfo
+from sparv.core.pipeline import PipelineData, RuleInfo
 
 INFO = "INFO"
 STATUS = "STATUS"

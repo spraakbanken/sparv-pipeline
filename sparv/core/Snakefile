@@ -16,7 +16,7 @@ from rich.text import Text
 
 from sparv.api import SparvErrorMessage, util
 from sparv.core import config as sparv_config
-from sparv.core import registry, snake_prints, snake_utils
+from sparv.core import registry, cli_output, pipeline
 from sparv.core.console import console
 from sparv.core.paths import paths
 
@@ -70,7 +70,7 @@ def make_rules(config_missing: bool) -> None:
 
     # Check and set rule orders (but not when language is set to __all__ for schema purposes)
     if config.get("language") != "__all__":
-        ordered_rules = snake_utils.resolve_rule_ordering(pipeline_data)
+        ordered_rules = pipeline.resolve_rule_ordering(pipeline_data)
         for rule1, rule2 in ordered_rules:
             # ruleorder:  rule1.internal_name > rule2.internal_name
             workflow.ruleorder(rule1.internal_name, rule2.internal_name)
@@ -99,14 +99,14 @@ def make_rule(
         custom_rule_obj: Custom rule object.
     """
     # Init rule info object
-    rule_info = snake_utils.RuleInfo(module_name, f_name, annotator_info)
+    rule_info = pipeline.RuleInfo(module_name, f_name, annotator_info)
 
     # Save a copy of the config if this is a custom rule with custom config, which will modify the config when processed
     has_custom_config = bool(custom_rule_obj and custom_rule_obj.get("config"))
     original_config = copy.deepcopy(sparv_config.config) if has_custom_config else None
 
     # Process rule parameters and update rule info object
-    create_rule = snake_utils.RuleBuilder(rule_info, config, pipeline_data, config_missing, custom_rule_obj).build()
+    create_rule = pipeline.RuleBuilder(rule_info, config, pipeline_data, config_missing, custom_rule_obj).build()
 
     if original_config is not None:
         # Restore original config after processing custom config
@@ -129,9 +129,9 @@ def make_rule(
             params:
                 module_name=rule_info.module_name,
                 f_name=rule_info.f_name,
-                parameters=snake_utils.make_parameter_resolver(rule_info),
+                parameters=pipeline.make_parameter_resolver(rule_info),
                 export_dirs=rule_info.export_dirs,
-                source_file=snake_utils.make_file_getter(rule_info),
+                source_file=pipeline.make_file_getter(rule_info),
                 use_preloader=rule_info.use_preloader,
                 socket=config.get("socket"),
                 force_preloader=config.get("force_preloader", False),
@@ -146,7 +146,7 @@ def make_rule(
         make_all_files_rule(rule_info)
 
 
-def make_all_files_rule(rule_info: snake_utils.RuleInfo) -> None:
+def make_all_files_rule(rule_info: pipeline.RuleInfo) -> None:
     """Create named rule to run an annotation on all source files.
 
     Args:
@@ -170,8 +170,8 @@ def make_all_files_rule(rule_info: snake_utils.RuleInfo) -> None:
     # Expand {file} wildcard to every corpus file
     rule_outputs = expand(
         rule_outputs,
-        file=snake_utils.resolve_source_files(config, pipeline_data),
-        **snake_utils.get_wildcard_values(config),
+        file=pipeline.resolve_source_files(config, pipeline_data),
+        **pipeline.get_wildcard_values(config),
         allow_missing=True,
     )
 
@@ -236,10 +236,10 @@ def update_autocompletion_cache() -> None:
 
 
 # Initialize pipeline data object, used to store information involving all rules
-pipeline_data = snake_utils.PipelineData()
+pipeline_data = pipeline.PipelineData()
 
 # Find and load corpus config
-config_missing = snake_utils.load_corpus_config(config)
+config_missing = pipeline.load_corpus_config(config)
 
 # Find and load Sparv modules
 registry.find_modules(find_custom=bool(sparv_config.get("custom_annotations")))
@@ -292,7 +292,7 @@ if "schema" not in selected_rules:
     schema.validate(sparv_config.config, json_schema)
 
 # Get reverse_config_usage dict for look-ups
-reverse_config_usage = snake_utils.config_usage_by_annotator()
+reverse_config_usage = pipeline.config_usage_by_annotator()
 
 # Abort if all selected rules require source files but no files are available
 if not config_missing and selected_rules and not pipeline_data.source_files:
@@ -319,14 +319,14 @@ rule config:
                 out_conf[k] = sparv_config.get(k)
         else:
             out_conf = sparv_config.config
-        snake_prints.prettyprint_yaml(out_conf)
+        cli_output.prettyprint_yaml(out_conf)
 
 
 # Rule to list all modules and annotations
 rule modules:
     run:
         if config.get("types") or config.get("names"):
-            snake_prints.print_modules_info(
+            cli_output.print_modules_info(
                 config.get("types", []),
                 config.get("names", []),
                 pipeline_data,
@@ -334,19 +334,19 @@ rule modules:
                 config["json"]
             )
         else:
-            snake_prints.print_modules_summary(pipeline_data, config["json"])
+            cli_output.print_modules_summary(pipeline_data, config["json"])
 
 
 # Rule to list all annotation classes
 rule classes:
     run:
-        snake_prints.print_annotation_classes()
+        cli_output.print_annotation_classes()
 
 
 # Rule to list all supported languages
 rule languages:
     run:
-        snake_prints.print_languages()
+        cli_output.print_languages()
 
 
 # Rule to list all annotation presets
@@ -356,7 +356,7 @@ rule presets:
         for preset, annots in sparv_config.presets.items():
             preset_annotations, _ = sparv_config.resolve_presets(annots, {})
             resolved_presets[preset] = preset_annotations
-        snake_prints.prettyprint_yaml(resolved_presets)
+        cli_output.prettyprint_yaml(resolved_presets)
 
 
 # Rule to list all rules
@@ -484,31 +484,31 @@ rule clean:
             full_path = Path.cwd() / d
             if full_path.is_dir():
                 shutil.rmtree(full_path)
-                snake_utils.info(f"'{d}' directory removed")
+                pipeline.info(f"'{d}' directory removed")
                 something_removed = True
         if not something_removed:
-            snake_utils.info("Nothing to remove")
+            pipeline.info("Nothing to remove")
 
 
 # Rule to list all available installers
 rule list_installs:
     run:
-        snake_prints.print_installers(pipeline_data)
+        cli_output.print_installers(pipeline_data)
 
 
 # Rule to list all available uninstallers
 rule list_uninstalls:
     run:
-        snake_prints.print_installers(pipeline_data, uninstall=True)
+        cli_output.print_installers(pipeline_data, uninstall=True)
 
 
 # Rule for making exports defined in corpus config
 if "export_corpus" in selected_rules:
-    export_rule_outputs = snake_utils.resolve_export_rules(
+    export_rule_outputs = pipeline.resolve_export_rules(
         pipeline_data,
         workflow,
-        file=snake_utils.resolve_source_files(config, pipeline_data),
-        wildcards=snake_utils.get_wildcard_values(config)
+        file=pipeline.resolve_source_files(config, pipeline_data),
+        wildcards=pipeline.get_wildcard_values(config)
     )
 
     rule export_corpus:
@@ -523,7 +523,7 @@ if "export_corpus" in selected_rules:
 
 # Rule for making installations
 if "install_corpus" in selected_rules:
-    install_inputs = snake_utils.collect_install_files(pipeline_data, config.get("install_types"))
+    install_inputs = pipeline.collect_install_files(pipeline_data, config.get("install_types"))
     if not install_inputs:
         raise SparvErrorMessage(
             "Please specify what you would like to install, either by supplying arguments "
@@ -539,7 +539,7 @@ if "install_corpus" in selected_rules:
 
 # Rule for making uninstallations
 if "uninstall_corpus" in selected_rules:
-    uninstall_inputs = snake_utils.collect_install_files(pipeline_data, config.get("uninstall_types"), uninstall=True)
+    uninstall_inputs = pipeline.collect_install_files(pipeline_data, config.get("uninstall_types"), uninstall=True)
     if not uninstall_inputs:
         raise SparvErrorMessage(
             "Please specify what you would like to uninstall, either by supplying arguments "

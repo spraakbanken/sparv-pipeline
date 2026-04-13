@@ -4,7 +4,7 @@ from pathlib import Path
 
 from rich.pretty import pprint
 
-from sparv.core import config, io, snake_utils
+from sparv.core import config, io, pipeline
 from sparv.core.console import console
 
 
@@ -43,7 +43,7 @@ def inspect_workdir_file(filename: str, compression: str | None = None) -> bool:
             return False
 
         # Try to load config and get compression setting
-        config_missing = snake_utils.load_corpus_config({})
+        config_missing = pipeline.load_corpus_config({})
         compression = config.get("sparv.compression")
 
         if config_missing or not compression:
