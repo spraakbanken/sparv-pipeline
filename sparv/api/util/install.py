@@ -44,25 +44,43 @@ def install_mysql(host: str | None, db_name: str, sqlfile: Path | str | list[Pat
         host: The remote host to install to. Set to `None` to install locally.
         db_name: The name of the database.
         sqlfile: The path to a SQL file, or a list of paths to multiple SQL files.
+
+    Raises:
+        subprocess.CalledProcessError: If the mysql process exits with a non-zero return code.
     """
     if isinstance(sqlfile, (str, Path)):
         sqlfile = [sqlfile]
-    sqlfile = [Path(f) for f in sqlfile]
     file_total = len(sqlfile)
 
-    for file_count, f in enumerate(sqlfile):
+    chunk_size = 128 * 1024  # 128 KB
+
+    for file_count, f in enumerate(Path(f) for f in sqlfile):
         if not f.exists():
             logger.error("Missing SQL file: %s", f)
         elif f.stat().st_size < EMPTY_FILE_LIMIT:
             logger.info("Skipping empty file: %s (%d/%d)", f, file_count + 1, file_total)
         else:
+            file_size = f.stat().st_size
             logger.info("Installing MySQL database: %s, source: %s (%d/%d)", db_name, f, file_count + 1, file_total)
-            if not host:
-                subprocess.check_call(f"cat {shlex.quote(str(f))} | mysql {shlex.quote(db_name)}", shell=True)
-            else:
-                subprocess.check_call(
-                    f"cat {shlex.quote(str(f))} | ssh {shlex.quote(host)} {shlex.quote(f'mysql {db_name}')}", shell=True
-                )
+            cmd = ["mysql", db_name] if not host else ["ssh", host, f"mysql {shlex.quote(db_name)}"]
+
+            process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+            assert process.stdin is not None
+            try:
+                logger.progress(total=file_size)
+                with f.open("rb") as fh:
+                    while chunk := fh.read(chunk_size):
+                        process.stdin.write(chunk)
+                        logger.progress(progress=fh.tell())
+                process.stdin.close()
+            except BrokenPipeError:
+                process.kill()
+                process.wait()
+                raise subprocess.CalledProcessError(1, cmd) from None
+
+            returncode = process.wait()
+            if returncode != 0:
+                raise subprocess.CalledProcessError(returncode, cmd)
 
 
 def install_mysql_dump(host: str, db_name: str, tables: str | Iterable[str]) -> None:
