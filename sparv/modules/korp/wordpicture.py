@@ -1,19 +1,26 @@
 """Create files needed for the word picture in Korp."""
 
+import pickle
 import re
 from collections import defaultdict
+from dataclasses import dataclass
 
 from sparv.api import (
     AllSourceFilenames,
     Annotation,
+    AnnotationAllSourceFiles,
+    AnnotationCommonData,
     AnnotationDataAllSourceFiles,
     Config,
     Corpus,
     Export,
     ExportInput,
+    Marker,
     MarkerOptional,
+    OutputCommonData,
     OutputData,
     OutputMarker,
+    SparvErrorMessage,
     annotator,
     exporter,
     get_logger,
@@ -29,61 +36,143 @@ logger = get_logger(__name__)
 MAX_STRING_LENGTH = 100  # Truncate all strings to this length
 MAX_STRINGEXTRA_LENGTH = 32  # Truncate all stringextra values to this length
 MAX_POS_LENGTH = 5  # Max length of part-of-speech value in database
-MAX_SENTENCES = 5000  # Max number of sentences to include in SQL
+MAX_SENTENCES = 5000  # Max number of source sentences to include in SQL export per relation
+
+# Patterns for relations to capture. See docstring of wordpicture() for explanation.
+REL_PATTERNS: list[tuple[dict[int, str]] | tuple[dict[int, str], dict[int, str], tuple[int, int, int, str]]] = [
+    ({1: "VB", 2: "SS", 3: "NN"}, {1: "VB", 4: "VG", 5: "VB"}, (5, 2, 3, "")),  # "han har sprungit"
+    ({1: "VB", 2: "(SS|OO|IO|OA)", 3: "NN"},),
+    ({1: "VB", 2: "(RA|TA)", 3: "(AB|NN)"},),
+    ({1: "VB", 2: "(RA|TA)", 3: "PP"}, {3: "PP", 4: "(PA|HD)", 5: "NN"}, (1, 2, 5, "%(3)s")),  # "ges vid behov"
+    ({1: "NN", 2: "(AT|ET)", 3: "JJ"},),  # "stor hund"
+    ({1: "NN", 2: "ET", 3: "VB"}, {3: "VB", 4: "SS", 5: "HP"}, (1, 2, 3, "%(5)s")),  # "brödet som bakats"
+    (
+        {1: "NN", 2: "ET", 3: "PP"},
+        {3: "PP", 4: "PA", 5: "(NN|PM)"},
+        (1, 2, 5, "%(3)s"),
+    ),  # "barnen i skolan", "hundarna i Sverige"
+    ({1: "PP", 2: "PA", 3: "NN"},),  # "på bordet"
+    ({1: "JJ", 2: "AA", 3: "AB"},),  # "fullständigt galen"
+]
+
+NULL_RELS = [
+    ("VB", ["OO"]),  # Verbs missing objects
+]
+
+# Relations that will be grouped together and treated as the same relation
+REL_GROUPING = {
+    "OO": "OBJ",
+    "IO": "OBJ",
+    "RA": "ADV",
+    "TA": "ADV",
+    "OA": "ADV",
+}
+
+# All possible relation names allowed in the database
+REL_NAMES = ["SS", "OBJ", "ADV", "AA", "AT", "ET", "PA"]
+
+# Suffix for yearly word picture exports
+YEARLY_SUFFIX = "_yearly"
 
 
-@installer("Install Korp's Word Picture SQL on remote host", language=["swe"], uninstaller="korp:uninstall_wordpicture")
-def install_wordpicture(
-    sqlfile: ExportInput = ExportInput("korp.wordpicture/wordpicture.sql"),
-    marker: OutputMarker = OutputMarker("korp.install_wordpicture_marker"),
-    uninstall_marker: MarkerOptional = MarkerOptional("korp.uninstall_wordpicture_marker"),
-    db_name: str = Config("korp.mysql_dbname"),
-    host: str | None = Config("korp.remote_host"),
-) -> None:
-    """Install Korp's Word Picture SQL on remote host.
+@dataclass(frozen=True, slots=True)
+class SimpleRelPattern:
+    """Container for simple relation patterns."""
+
+    primary_re: re.Pattern[str]
+    primary_sorted_keys: tuple[str, ...]
+    primary_dict: dict[int, str]
+
+
+@dataclass(frozen=True, slots=True)
+class ComplexRelPattern(SimpleRelPattern):
+    """Container for complex relation patterns."""
+
+    secondary_dict: dict[int, str]
+    secondary_sorted_keys: tuple[str, ...]
+    secondary_values_sorted: tuple[str, ...]
+    secondary_rel_re: re.Pattern[str]
+    secondary_dep_re: re.Pattern[str]
+    shared_key: int
+    index1: int
+    index2: int
+    extra: tuple
+
+
+RelPattern = SimpleRelPattern | ComplexRelPattern
+
+
+def _compile_rel_patterns() -> list[RelPattern]:
+    """Compile the relation patterns defined in REL_PATTERNS.
+
+    Returns:
+        A list of precompiled relation patterns.
+    """
+
+    def _compile(pattern: str) -> re.Pattern[str]:
+        return re.compile(rf"^{pattern}$")
+
+    compiled_relations = []
+    for rel in REL_PATTERNS:
+        primary = rel[0]
+        primary_re = _compile(";".join(value for _, value in sorted(primary.items())))
+        primary_sorted_keys = tuple(str(key) for key in sorted(primary))
+
+        if len(rel) == 1:
+            compiled_relations.append(
+                SimpleRelPattern(
+                    primary_re=primary_re,
+                    primary_sorted_keys=primary_sorted_keys,
+                    primary_dict=primary,
+                )
+            )
+            continue
+
+        assert len(rel) == 3, "Invalid relation pattern definition"  # noqa: PLR2004
+
+        secondary = rel[1]
+        secondary_sorted_keys = tuple(str(key) for key in sorted(secondary))
+        secondary_values_sorted = tuple(value for _, value in sorted(secondary.items()))
+        shared_key = (set(primary) & set(secondary)).pop()
+
+        compiled_relations.append(
+            ComplexRelPattern(
+                primary_re=primary_re,
+                primary_sorted_keys=primary_sorted_keys,
+                primary_dict=primary,
+                secondary_dict=secondary,
+                secondary_sorted_keys=secondary_sorted_keys,
+                secondary_values_sorted=secondary_values_sorted,
+                secondary_rel_re=_compile(secondary_values_sorted[1]),
+                secondary_dep_re=_compile(secondary_values_sorted[2]),
+                shared_key=shared_key,
+                index1=list(primary).index(shared_key),
+                index2=list(secondary).index(shared_key),
+                extra=rel[-1],
+            )
+        )
+
+    return compiled_relations
+
+
+COMPILED_REL_PATTERNS = _compile_rel_patterns()
+
+
+def _year_sort_value(year: int | None) -> tuple[int, int]:
+    """Return a sortable representation of a year value, placing missing years first.
 
     Args:
-        sqlfile: SQL file to be installed.
-        marker: Marker file to be written.
-        uninstall_marker: Uninstall marker to remove.
-        db_name: Name of the database.
-        host: Remote host to install to.
+        year: Year value, or None.
+
+    Returns:
+        A tuple that can be used as a sort key.
     """
-    util.install.install_mysql(host, db_name, sqlfile)
-    uninstall_marker.remove()
-    marker.write()
+    if year is None:
+        return (0, -1)
+    return (1, year)
 
 
-@uninstaller("Uninstall Korp's Word Picture from database", language=["swe"])
-def uninstall_wordpicture(
-    corpus: Corpus = Corpus(),
-    marker: OutputMarker = OutputMarker("korp.uninstall_wordpicture_marker"),
-    install_marker: MarkerOptional = MarkerOptional("korp.install_wordpicture_marker"),
-    db_name: str = Config("korp.mysql_dbname"),
-    table_name: str = Config("korp.wordpicture_table"),
-    host: str | None = Config("korp.remote_host"),
-) -> None:
-    """Remove Korp's Word Picture data from database.
-
-    Args:
-        corpus: Corpus ID.
-        marker: Uninstall marker to write.
-        install_marker: Install marker to remove.
-        db_name: Name of the database.
-        table_name: Name of database table.
-        host: Remote host.
-    """
-    db_table = table_name + "_" + corpus.upper()
-    tables = ["", "_strings", "_rel", "_head_rel", "_dep_rel", "_sentences"]
-
-    sql = MySQL(database=db_name, host=host)
-    sql.drop_table(*[db_table + t for t in tables], *["temp_" + db_table + t for t in tables])
-
-    install_marker.remove()
-    marker.write()
-
-
-@annotator("Find dependencies for Korp's Word Picture", language=["swe"])
+@annotator("Generate dependency relation data for Korp's Word Picture", language=["swe"])
 def wordpicture(
     out: OutputData = OutputData("korp.wordpicture", description="Wordpicture data"),
     word: Annotation = Annotation("<token:word>"),
@@ -92,13 +181,15 @@ def wordpicture(
     dephead: Annotation = Annotation("<token:dephead>"),
     deprel: Annotation = Annotation("<token:deprel>"),
     sentence_id: Annotation = Annotation("<sentence>:misc.id"),
+    text: Annotation = Annotation("<text>"),
     ref: Annotation = Annotation("<token:ref>"),
     baseform: Annotation = Annotation("<token>:saldo.baseform"),
+    sort: Config = Config("korp.wordpicture_sorted"),
 ) -> None:
-    """Find certain syntactic dependencies between words to generate data for the Word Picture feature in Korp.
+    """Find syntactic dependencies for Korp's Word Picture.
 
     This function processes sentences and their tokens to identify specific syntactic relations (dependencies) between
-    words based on predefined patterns. These patterns are defined in the `rel_patterns` variable. In its simplest form,
+    words based on predefined patterns. These patterns are defined in the `REL_PATTERNS` variable. In its simplest form,
     a pattern consists of a dictionary with three keys. The keys are numeric, and in this simple form only used for
     sorting the values. The first value is the POS of the head token, the second value is the dependency relation, and
     the third value is the POS of the dependent token. These values can be either strings or regex patterns.
@@ -110,237 +201,200 @@ def wordpicture(
     the indices using string formatting.
 
     Args:
-        out: Output annotation for the word picture data.
+        out: Output annotation for word picture data.
         word: Word annotation.
         pos: Part-of-speech annotation.
         lemgram: Lemgram annotation.
         dephead: Dependency head annotation.
         deprel: Dependency relation annotation.
-        sentence_id: Annotation for the sentence ID.
-        ref: Sentence-relative position of the tokens.
+        sentence_id: Sentence ID annotation.
+        text: Text annotation.
+        ref: Sentence relative token position annotation.
         baseform: Baseform annotation.
+        sort: Whether to sort the output for easier diffing.
     """
-    sentence_ids = sentence_id.read()
+    text_sentences, _ = text.get_children(sentence_id)
+    text_sentences = list(text_sentences)
+
     sentence_tokens, _ = sentence_id.get_children(word)
+    sentence_tokens = list(sentence_tokens)
+    sentence_ids = list(sentence_id.read())
 
     logger.progress(total=len(sentence_tokens) + 1)
 
     annotations = list(word.read_attributes((word, pos, lemgram, dephead, deprel, ref, baseform)))
 
-    # Patterns for relations. See docstring for explanation.
-    rel_patterns = [
-        ({1: "VB", 2: "SS", 3: "NN"}, {1: "VB", 4: "VG", 5: "VB"}, (5, 2, 3, "")),  # "han har sprungit"
-        ({1: "VB", 2: "(SS|OO|IO|OA)", 3: "NN"},),
-        ({1: "VB", 2: "(RA|TA)", 3: "(AB|NN)"},),
-        ({1: "VB", 2: "(RA|TA)", 3: "PP"}, {3: "PP", 4: "(PA|HD)", 5: "NN"}, (1, 2, 5, "%(3)s")),  # "ges vid behov"
-        ({1: "NN", 2: "(AT|ET)", 3: "JJ"},),  # "stor hund"
-        ({1: "NN", 2: "ET", 3: "VB"}, {3: "VB", 4: "SS", 5: "HP"}, (1, 2, 3, "%(5)s")),  # "brödet som bakats"
-        (
-            {1: "NN", 2: "ET", 3: "PP"},
-            {3: "PP", 4: "PA", 5: "(NN|PM)"},
-            (1, 2, 5, "%(3)s"),
-        ),  # "barnen i skolan", "hundarna i Sverige"
-        ({1: "PP", 2: "PA", 3: "NN"},),  # "på bordet"
-        ({1: "JJ", 2: "AA", 3: "AB"},),  # "fullständigt galen"
-    ]
+    triples = set()
 
-    null_rels = [
-        ("VB", ["OO"]),  # Verb som saknar objekt
-    ]
+    for text_index, sentence_batch in enumerate(text_sentences):
+        for sentence_index in sentence_batch:
+            sent_id = sentence_ids[sentence_index]
+            sent: list[int] = sentence_tokens[sentence_index]
+            incomplete: dict[int, list[tuple[int, tuple[str, dict]]]] = {}  # Tokens looking for heads, with head as key
+            tokens: dict[int, dict] = {}  # Tokens in same sentence, with token_index as key
+            skip_sentence = False
 
-    triples = []
+            # Link the tokens together
+            for token_index in sent:
+                token_word, token_pos, token_lem, token_dh, token_dr, token_ref, token_bf = annotations[token_index]
+                if not token_dr:
+                    skip_sentence = True
+                    break
+                token_word = token_word.lower()
 
-    for sentid, sent in zip(sentence_ids, sentence_tokens, strict=True):
-        incomplete = {}  # Tokens looking for heads, with head as key
-        tokens = {}  # Tokens in same sentence, with token_index as key
-        skip_sentence = False
+                if token_lem == "|":
+                    token_lem = token_word
 
-        # Link the tokens together
-        for token_index in sent:
-            token_word, token_pos, token_lem, token_dh, token_dr, token_ref, token_bf = annotations[token_index]
-            if not token_dr:
-                skip_sentence = True
-                break
-            token_word = token_word.lower()
+                this = {
+                    "pos": token_pos,
+                    "lemgram": token_lem,
+                    "word": token_word,
+                    "head": None,
+                    "dep": [],
+                    "ref": token_ref,
+                    "bf": token_bf,
+                }
 
-            if token_lem == "|":
-                token_lem = token_word
+                tokens[token_index] = this
 
-            this = {
-                "pos": token_pos,
-                "lemgram": token_lem,
-                "word": token_word,
-                "head": None,
-                "dep": [],
-                "ref": token_ref,
-                "bf": token_bf,
-            }
+                if token_dh != "-":
+                    token_dh = int(token_dh)
+                    # This token is looking for a head (token is not root)
+                    dep_triple = (token_dr, this)
+                    if token_dh in tokens:
+                        # Found head. Link them together both ways
+                        this["head"] = (token_dr, tokens[token_dh])
+                        tokens[token_dh]["dep"].append(dep_triple)
+                    else:
+                        incomplete.setdefault(token_dh, []).append((token_index, dep_triple))
 
-            tokens[token_index] = this
+                # Is someone else looking for the current token as head?
+                if token_index in incomplete:
+                    for t in incomplete[token_index]:
+                        tokens[t[0]]["head"] = this
+                        this["dep"].append(t[1])
+                    del incomplete[token_index]
 
-            if token_dh != "-":
-                token_dh = int(token_dh)
-                # This token is looking for a head (token is not root)
-                dep_triple = (token_dr, this)
-                if token_dh in tokens:
-                    # Found head. Link them together both ways
-                    this["head"] = (token_dr, tokens[token_dh])
-                    tokens[token_dh]["dep"].append(dep_triple)
-                else:
-                    incomplete.setdefault(token_dh, []).append((token_index, dep_triple))
+            if skip_sentence:
+                continue
 
-            # Is someone else looking for the current token as head?
-            if token_index in incomplete:
-                for t in incomplete[token_index]:
-                    tokens[t[0]]["head"] = this
-                    this["dep"].append(t[1])
-                del incomplete[token_index]
+            assert not incomplete, "incomplete is not empty"
 
-        if skip_sentence:
-            continue
+            def _match(pattern: re.Pattern[str] | str, value: str) -> bool:
+                if isinstance(pattern, re.Pattern):
+                    return bool(pattern.match(value))
+                return bool(re.match(rf"^{pattern}$", value))
 
-        assert not incomplete, "incomplete is not empty"
-
-        def _match(pattern: str, value: str) -> bool:
-            return bool(re.match(rf"^{pattern}$", value))
-
-        def _findrel(head: dict | str, rel: str, dep: dict | str) -> list:
-            result = []
-            if isinstance(head, dict):
+            def _findrel(head: dict, rel: re.Pattern[str] | str, dep: re.Pattern[str]) -> dict:
+                """Return a dependent of a head matching the given relation and dependent POS."""
                 for d in head["dep"]:
                     if _match(rel, d[0]) and _match(dep, d[1]["pos"]):
-                        result.append(d[1])  # noqa: PERF401
-            if isinstance(dep, dict):
-                h = dep["head"]
-                if h and _match(rel, h[0]) and _match(head, h[1]["pos"]):
-                    result.append(h[1])
-            return result
+                        return d[1]
+                return {}
 
-        # Look for relations
-        for v in tokens.values():
-            for d in v["dep"]:
-                for rel in rel_patterns:
-                    r = rel[0]
-                    if _match(";".join([x[1] for x in sorted(r.items())]), ";".join([v["pos"], d[0], d[1]["pos"]])):
-                        triple = None
-                        if len(rel) == 1:
-                            # This pattern is a simple relation
-                            triple = (
-                                (v["lemgram"], v["word"], v["pos"], v["ref"]),
-                                d[0],
-                                (d[1]["lemgram"], d[1]["word"], d[1]["pos"], d[1]["ref"]),
-                                ("", None),
-                                sentid,
-                                v["ref"],
-                                d[1]["ref"],
-                            )
-                        else:
-                            # This pattern is a complex relation with intermediate tokens
-                            # Map keys from relation pattern to corresponding token objects
-                            lookup = dict(zip(map(str, sorted(r)), (v, d[0], d[1]), strict=True))
-                            i = set(rel[0]).intersection(set(rel[1])).pop()
-                            rel2 = [x[1] for x in sorted(rel[1].items())]
-                            # Find the shared token (i.e. the one with the same index in both dictionaries)
-                            index1 = list(rel[0]).index(i)
-                            index2 = list(rel[1]).index(i)
-                            # The shared token is the dependent in the first relation and the head in the second
-                            if index1 == 2 and index2 == 0:  # noqa: PLR2004
-                                result = _findrel(d[1], rel2[1], rel2[2])
-                                if result:
-                                    lookup.update(
-                                        dict(zip(map(str, sorted(rel[1])), (d[1], rel2[1], result[0]), strict=True))
-                                    )
-                            # The shared token is the head in both relations
-                            elif index1 == 0 and index2 == 0:
-                                result = _findrel(v, rel2[1], rel2[2])
-                                if result:
-                                    lookup.update(
-                                        dict(zip(map(str, sorted(rel[1])), (v, rel2[1], result[0]), strict=False))
-                                    )
-
-                            pp = rel[-1]
-                            # More than 3 indices means that we successfully resolved additional intermediate tokens
-                            if len(list(lookup)) > 3:  # noqa: PLR2004
-                                lookup_bf = {key: val["bf"] for key, val in lookup.items() if isinstance(val, dict)}
-                                lookup_ref = {key: val["ref"] for key, val in lookup.items() if isinstance(val, dict)}
+            # Look for relations matching the patterns
+            for token_data in tokens.values():
+                for d in token_data["dep"]:
+                    for rel in COMPILED_REL_PATTERNS:
+                        if rel.primary_re.match(";".join((token_data["pos"], d[0], d[1]["pos"]))):
+                            triple = None
+                            if type(rel) is SimpleRelPattern:  # Don't use isinstance here since it matches subclasses
+                                # This pattern is a simple relation
                                 triple = (
-                                    (
-                                        lookup[str(pp[0])]["lemgram"],
-                                        lookup[str(pp[0])]["word"],
-                                        lookup[str(pp[0])]["pos"],
-                                        lookup[str(pp[0])]["ref"],
-                                    ),
-                                    lookup[str(pp[1])],
-                                    (
-                                        lookup[str(pp[2])]["lemgram"],
-                                        lookup[str(pp[2])]["word"],
-                                        lookup[str(pp[2])]["pos"],
-                                        lookup[str(pp[2])]["ref"],
-                                    ),
-                                    (pp[3] % lookup_bf, pp[3] % lookup_ref),
-                                    sentid,
-                                    lookup[str(pp[0])]["ref"],
-                                    lookup[str(pp[2])]["ref"],
+                                    (token_data["lemgram"], token_data["word"], token_data["pos"], token_data["ref"]),
+                                    d[0],
+                                    (d[1]["lemgram"], d[1]["word"], d[1]["pos"], d[1]["ref"]),
+                                    ("", None),
+                                    sent_id,
+                                    token_data["ref"],
+                                    d[1]["ref"],
                                 )
-                        if triple:
-                            triples.extend(_mutate_triple(triple))
-                            break
-            token_rels = [d[0] for d in v["dep"]]
-            for nrel in null_rels:
-                if nrel[0] == v["pos"]:
-                    missing_rels = [x for x in nrel[1] if x not in token_rels]
-                    for mrel in missing_rels:
-                        triple = (
-                            (v["lemgram"], v["word"], v["pos"], v["ref"]),
-                            mrel,
-                            ("", "", "", v["ref"]),
-                            ("", None),
-                            sentid,
-                            v["ref"],
-                            v["ref"],
-                        )
-                        triples.extend(_mutate_triple(triple))
-        logger.progress()
+                            else:
+                                # This pattern is a complex relation with intermediate tokens
+                                # Map keys from relation pattern to corresponding token objects
+                                lookup = dict(zip(rel.primary_sorted_keys, (token_data, d[0], d[1]), strict=True))
+                                # The shared token is the dependent in the first relation and the head in the second
+                                if rel.index1 == 2 and rel.index2 == 0:  # noqa: PLR2004
+                                    result = _findrel(d[1], rel.secondary_rel_re, rel.secondary_dep_re)
+                                    if result:
+                                        lookup.update(
+                                            dict(
+                                                zip(
+                                                    rel.secondary_sorted_keys,
+                                                    (d[1], rel.secondary_values_sorted[1], result),
+                                                    strict=True,
+                                                )
+                                            )
+                                        )
+                                # The shared token is the head in both relations
+                                elif rel.index1 == 0 and rel.index2 == 0:
+                                    result = _findrel(token_data, rel.secondary_rel_re, rel.secondary_dep_re)
+                                    if result:
+                                        lookup.update(
+                                            dict(
+                                                zip(
+                                                    rel.secondary_sorted_keys,
+                                                    (token_data, rel.secondary_values_sorted[1], result),
+                                                    strict=False,
+                                                )
+                                            )
+                                        )
 
-    triples = sorted(set(triples))
+                                pp = rel.extra
+                                # More than 3 indices means that we successfully resolved additional intermediate tokens
+                                if len(list(lookup)) > 3:  # noqa: PLR2004
+                                    lookup_bf = {key: val["bf"] for key, val in lookup.items() if isinstance(val, dict)}
+                                    lookup_ref = {
+                                        key: val["ref"] for key, val in lookup.items() if isinstance(val, dict)
+                                    }
+                                    triple = (
+                                        (
+                                            lookup[str(pp[0])]["lemgram"],
+                                            lookup[str(pp[0])]["word"],
+                                            lookup[str(pp[0])]["pos"],
+                                            lookup[str(pp[0])]["ref"],
+                                        ),
+                                        lookup[str(pp[1])],
+                                        (
+                                            lookup[str(pp[2])]["lemgram"],
+                                            lookup[str(pp[2])]["word"],
+                                            lookup[str(pp[2])]["pos"],
+                                            lookup[str(pp[2])]["ref"],
+                                        ),
+                                        (pp[3] % lookup_bf, pp[3] % lookup_ref),
+                                        sent_id,
+                                        lookup[str(pp[0])]["ref"],
+                                        lookup[str(pp[2])]["ref"],
+                                    )
+                            if triple:
+                                triples.update({(*t, text_index) for t in _mutate_triple(triple)})
+                                break
+                token_rels = [d[0] for d in token_data["dep"]]
+                for nrel in NULL_RELS:
+                    if nrel[0] == token_data["pos"]:
+                        missing_rels = [x for x in nrel[1] if x not in token_rels]
+                        for mrel in missing_rels:
+                            triple = (
+                                (token_data["lemgram"], token_data["word"], token_data["pos"], token_data["ref"]),
+                                mrel,
+                                ("", "", "", token_data["ref"]),
+                                ("", None),
+                                sent_id,
+                                token_data["ref"],
+                                token_data["ref"],
+                            )
+                            triples.update({(*t, text_index) for t in _mutate_triple(triple)})
+            logger.progress()
 
-    out_data = "\n".join(
-        [
-            "\t".join(
-                (
-                    head.replace("\t", " "),
-                    headpos,
-                    rel,
-                    dep.replace("\t", " "),
-                    deppos,
-                    extra.replace("\t", " "),
-                    sentid,
-                    refhead,
-                    refdep,
-                    str(bfhead),
-                    str(bfdep),
-                    str(wfhead),
-                    str(wfdep),
-                )
-            )
-            for (
-                head,
-                headpos,
-                rel,
-                dep,
-                deppos,
-                extra,
-                sentid,
-                refhead,
-                refdep,
-                bfhead,
-                bfdep,
-                wfhead,
-                wfdep,
-            ) in triples
-        ]
-    )
-    out.write(out_data)
+    def _wordpicture_sort_key(triple: tuple) -> tuple:
+        # Replace yearfrom and yearto with their sortable representations
+        return (
+            *triple[:-2],
+            _year_sort_value(triple[-2]),
+            _year_sort_value(triple[-1]),
+        )
+
+    out.write(sorted(triples, key=_wordpicture_sort_key) if sort else triples)
     logger.progress()
 
 
@@ -355,7 +409,7 @@ def _mutate_triple(triple: tuple) -> list:
     Returns:
         A list of tuples with new relations based on the original one.
     """
-    head, rel, dep, extra, sentid, refhead, refdep = triple
+    head, rel, dep, extra, sent_id, refhead, refdep = triple
 
     triples = []
     is_lemgrams = {}
@@ -388,7 +442,7 @@ def _mutate_triple(triple: tuple) -> list:
             if int(r) <= int(extra[1]) <= int(dep[3]):
                 try:
                     parts["dep"].remove(w)
-                except Exception:
+                except ValueError:
                     pass
 
     if extra[0].startswith("|") and extra[0].endswith("|"):
@@ -402,19 +456,86 @@ def _mutate_triple(triple: tuple) -> list:
             triples.extend(
                 (
                     # head: lemgram, dep: lemgram
-                    (new_head, head[2], rel, new_dep, dep[2], extra, sentid, refhead, refdep, 1, 1, 0, 0),
+                    (new_head, head[2], rel, new_dep, dep[2], extra, sent_id, refhead, refdep, 1, 1, 0, 0),
                     # head: wordform, dep: lemgram
-                    (head[1], head[2], rel, new_dep, dep[2], extra, sentid, refhead, refdep, 0, 1, 1, 0),
+                    (head[1], head[2], rel, new_dep, dep[2], extra, sent_id, refhead, refdep, 0, 1, 1, 0),
                     # head: lemgram, dep: wordform
-                    (new_head, head[2], rel, dep[1], dep[2], extra, sentid, refhead, refdep, 1, 0, 0, 1),
+                    (new_head, head[2], rel, dep[1], dep[2], extra, sent_id, refhead, refdep, 1, 0, 0, 1),
                 )
             )
 
     return triples
 
 
+@annotator("Generate shared strings data for Word Picture exports", language=["swe"])
+def wordpicture_strings(
+    out: OutputCommonData = OutputCommonData("korp.wordpicture_strings", description="Wordpicture strings table"),
+    wordpicture: AnnotationDataAllSourceFiles = AnnotationDataAllSourceFiles("korp.wordpicture"),
+    source_files: AllSourceFilenames = AllSourceFilenames(),
+) -> None:
+    """Generate the shared strings data for Word Picture exports.
+
+    This data annotation contains all unique strings used in the Word Picture data, mapped to unique integer IDs, which
+    are then referenced in the main Word Picture data. This is done as a separate step to allow both the aggregated and
+    yearly exports to share the same string data, saving space in the database.
+
+    Raises:
+        SparvErrorMessage: If the Word Picture data cannot be read (likely due to format changes).
+    """
+    strings = {}
+    string_index = -1
+
+    for file in source_files:
+        for row in wordpicture(file).read():
+            try:
+                head, headpos, _, dep, deppos, extra, *_ = row
+            except ValueError:
+                raise SparvErrorMessage(
+                    "Error reading Word Picture data. The data may have been generated with an older version of Sparv. "
+                    "Run 'sparv clean' and try again."
+                ) from None
+            head_tuple = (head, headpos, "")
+            if head_tuple not in strings:
+                string_index += 1
+                strings[head_tuple] = string_index
+            dep_tuple = (dep, deppos, extra)
+            if dep_tuple not in strings:
+                string_index += 1
+                strings[dep_tuple] = string_index
+    out.write(pickle.dumps(strings, protocol=pickle.HIGHEST_PROTOCOL))
+
+
+@exporter("Word Picture strings SQL", language=["swe"])
+def wordpicture_strings_sql(
+    corpus: Corpus = Corpus(),
+    out: Export = Export("korp.wordpicture/wordpicture_strings.sql"),
+    wordpicture_strings: AnnotationCommonData = AnnotationCommonData("korp.wordpicture_strings"),
+    table_name: str = Config("korp.wordpicture_table"),
+    sorted_sql: bool = Config("korp.wordpicture_sorted"),
+) -> None:
+    """Write the Word Picture strings data to an SQL file.
+
+    This exporter creates only the strings table needed for the Word Picture data, shared by both the aggregated and
+    yearly exports.
+
+    Args:
+        corpus: Corpus ID.
+        out: Export file for the SQL data.
+        wordpicture_strings: Word picture strings data.
+        table_name: Name of the database table.
+        sorted_sql: Whether to sort SQL output for easier diffing.
+    """
+    db_table = table_name + "_" + corpus.upper()
+    _write_strings_sql(
+        strings=pickle.loads(wordpicture_strings.read()),
+        sql_file=out,
+        db_table=db_table,
+        sort=sorted_sql,
+    )
+
+
 @exporter(
-    "Word Picture SQL for use in Korp",
+    "Word Picture SQL with aggregated data",
     language=["swe"],
     config=[
         Config(
@@ -422,44 +543,157 @@ def _mutate_triple(triple: tuple) -> list:
             default=False,
             description="Set to 'true' to skip generating sentences table.",
             datatype=bool,
-        )
+        ),
+        Config(
+            "korp.wordpicture_sorted",
+            default=False,
+            description="Set to 'true' to sort output for easier diffing (mainly for testing purposes).",
+            datatype=bool,
+        ),
     ],
 )
 def wordpicture_sql(
     corpus: Corpus = Corpus(),
     out: Export = Export("korp.wordpicture/wordpicture.sql"),
     wordpicture: AnnotationDataAllSourceFiles = AnnotationDataAllSourceFiles("korp.wordpicture"),
+    wordpicture_strings: AnnotationCommonData = AnnotationCommonData("korp.wordpicture_strings"),
     no_sentences: bool = Config("korp.wordpicture_no_sentences"),
-    source_files: AllSourceFilenames | None = AllSourceFilenames(),
+    sorted_sql: bool = Config("korp.wordpicture_sorted"),
+    source_files: AllSourceFilenames = AllSourceFilenames(),
     table_name: str = Config("korp.wordpicture_table"),
     split: bool = False,
 ) -> None:
-    """Calculate statistics of the dependencies and saves to SQL files.
+    """Calculate statistics for the aggregated Word Picture data only and save to SQL.
 
     Args:
-        corpus: The corpus name.
-        out: The name for the SQL file which will contain the resulting SQL statements.
-        wordpicture: The name of the wordpicture annotation.
-        no_sentences: Set to True to skip generating sentences table.
-        source_files: A list of source filenames.
-        table_name: Name of database table.
-        split: When set to true leads to SQL commands being split into several parts, requiring less memory during
-            creation, but installing the data will take much longer.
+        corpus: Corpus ID.
+        out: Export file for the SQL data.
+        wordpicture: Word picture annotation data.
+        wordpicture_strings: Word picture strings data.
+        no_sentences: Whether to skip generating sentences table.
+        sorted_sql: Whether to sort SQL output for easier diffing.
+        source_files: List of source files to process.
+        table_name: Name of the database table.
+        split: Whether to split the data per source file.
     """
-    db_table = table_name + "_" + corpus.upper()
+    _wordpicture_sql(
+        corpus=corpus,
+        out=out,
+        wordpicture_data=wordpicture,
+        wordpicture_strings=wordpicture_strings,
+        no_sentences=no_sentences,
+        source_files=source_files,
+        table_name=table_name,
+        split=split,
+        log_label="korp:wordpicture_sql",
+        sort=sorted_sql,
+    )
 
-    # Relations that will be grouped together
-    rel_grouping = {
-        "OO": "OBJ",
-        "IO": "OBJ",
-        "RA": "ADV",
-        "TA": "ADV",
-        "OA": "ADV",
-    }
+
+@exporter("Word Picture SQL with yearly data", language=["swe"])
+def wordpicture_yearly_sql(
+    corpus: Corpus = Corpus(),
+    out: Export = Export(f"korp.wordpicture/wordpicture{YEARLY_SUFFIX}.sql"),
+    wordpicture: AnnotationDataAllSourceFiles = AnnotationDataAllSourceFiles("korp.wordpicture"),
+    wordpicture_strings: AnnotationCommonData = AnnotationCommonData("korp.wordpicture_strings"),
+    no_sentences: bool = Config("korp.wordpicture_no_sentences"),
+    sorted_sql: bool = Config("korp.wordpicture_sorted"),
+    source_files: AllSourceFilenames = AllSourceFilenames(),
+    table_name: str = Config("korp.wordpicture_table"),
+    split: bool = False,
+    datefrom: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<text>:dateformat.datefrom"),
+    dateto: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<text>:dateformat.dateto"),
+) -> None:
+    """Calculate yearly statistics of the dependencies and save to SQL.
+
+    Args:
+        corpus: Corpus ID.
+        out: Export file for the SQL data.
+        wordpicture: Word picture annotation data.
+        wordpicture_strings: Word picture strings data.
+        no_sentences: Whether to skip generating sentences table.
+        sorted_sql: Whether to sort SQL output for easier diffing.
+        source_files: List of source files to process.
+        table_name: Name of the database table.
+        split: Whether to split the data per source file.
+        datefrom: Annotation with the starting year of each text.
+        dateto: Annotation with the ending year of each text.
+    """
+    _wordpicture_sql(
+        corpus=corpus,
+        out=out,
+        wordpicture_data=wordpicture,
+        wordpicture_strings=wordpicture_strings,
+        no_sentences=no_sentences,
+        source_files=source_files,
+        table_name=table_name,
+        split=split,
+        log_label="korp:wordpicture_yearly_sql",
+        datefrom=datefrom,
+        dateto=dateto,
+        sort=sorted_sql,
+    )
+
+
+@exporter(
+    (
+        "Word Picture SQL shared with yearly data\n\n"
+        "This exporter creates SQL views that make the aggregated Word Picture tables reference the yearly Word "
+        "Picture tables. This is useful for corpora that only contain data from a single year, to avoid redundant "
+        "storage of identical data. In those cases, use this instead of the regular aggregated Word Picture SQL "
+        "exporter."
+    ),
+    language=["swe"],
+)
+def wordpicture_sql_shared_with_yearly(
+    corpus: Corpus = Corpus(),
+    out: Export = Export(f"korp.wordpicture/wordpicture_shared_with{YEARLY_SUFFIX}.sql"),
+    table_name: str = Config("korp.wordpicture_table"),
+) -> None:
+    """Create SQL views making the aggregated Word Picture tables share data with the yearly Word Picture tables.
+
+    This exporter creates SQL views that make the aggregated Word Picture tables reference the yearly Word Picture
+    tables. This is useful for corpora that only contain data from a single year, as it avoids redundant storage of
+    identical data.
+
+    Any existing aggregated Word Picture tables and views will be dropped.
+
+    Args:
+        corpus: Corpus ID.
+        out: Export file for the SQL data.
+        table_name: Name of the database table.
+    """
+    db_table_yearly = table_name + "_" + corpus.upper() + YEARLY_SUFFIX
+    db_table = table_name + "_" + corpus.upper()
+    with MySQL(output=out) as db:
+        for suffix in ["", "_rel", "_head_rel", "_dep_rel", "_sentences"]:
+            db.drop_table(f"{db_table}{suffix}")
+            db.drop_view(f"{db_table}{suffix}")
+            db.execute(f"CREATE ALGORITHM=MERGE VIEW {db_table}{suffix} AS SELECT * FROM {db_table_yearly}{suffix};")
+
+
+def _wordpicture_sql(
+    *,
+    corpus: Corpus,
+    out: Export,
+    wordpicture_data: AnnotationDataAllSourceFiles,
+    wordpicture_strings: AnnotationCommonData,
+    no_sentences: bool,
+    source_files: AllSourceFilenames,
+    table_name: str,
+    split: bool,
+    log_label: str,
+    datefrom: AnnotationAllSourceFiles | None = None,
+    dateto: AnnotationAllSourceFiles | None = None,
+    sort: bool = False,
+) -> None:
+    """Shared implementation for Word Picture SQL exporters."""
+    db_table = (
+        table_name + "_" + corpus.upper() + (YEARLY_SUFFIX if datefrom is not None and dateto is not None else "")
+    )
 
     index = 0
-    string_index = -1
-    strings = {}  # ID -> string table
+    strings = pickle.loads(wordpicture_strings.read())
     freq_index = {}
     sentence_count = defaultdict(int)
     file_count = 0
@@ -468,6 +702,13 @@ def wordpicture_sql(
         split = False
 
     logger.progress(total=len(source_files) + 1)
+
+    def _parse_year(value: str | None) -> int | None:
+        if not value:
+            return None
+        return int(value[:4])
+
+    datefrom_data = dateto_data = None
 
     for file in source_files:
         file_count += 1
@@ -478,55 +719,52 @@ def wordpicture_sql(
             head_rel_count = defaultdict(int)  # Frequency of (head, rel)
             dep_rel_count = defaultdict(int)  # Frequency of (rel, dep)
 
-        wordpicture_data = wordpicture(file).read()
+        file_data = wordpicture_data(file).read()
+        if datefrom is not None and dateto is not None:
+            datefrom_data = [_parse_year(year) for year in datefrom(file).read()]
+            dateto_data = [_parse_year(year) for year in dateto(file).read()]
 
-        for triple in wordpicture_data.splitlines():
-            head, headpos, rel, dep, deppos, extra, sid, refh, refd, bfhead, bfdep, wfhead, wfdep = triple.split("\t")
-            bfhead, bfdep, wfhead, wfdep = int(bfhead), int(bfdep), int(wfhead), int(wfdep)
+        for triple in file_data:
+            head, headpos, rel, dep, deppos, extra, sid, refh, refd, bfhead, bfdep, wfhead, wfdep, text_index = triple
+            yearfrom = datefrom_data[text_index] if datefrom_data else None
+            yearto = dateto_data[text_index] if dateto_data else None
 
-            if (head, headpos) not in strings:
-                string_index += 1
-            head = strings.setdefault((head, headpos), string_index)
+            # Get string IDs
+            head = strings[head, headpos, ""]
+            dep = strings[dep, deppos, extra]
 
-            if (dep, deppos, extra) not in strings:
-                string_index += 1
-            dep = strings.setdefault((dep, deppos, extra), string_index)
+            rel = REL_GROUPING.get(rel, rel)
 
-            rel = rel_grouping.get(rel, rel)
-
-            if (head, rel, dep) in freq_index:
-                this_index = freq_index[head, rel, dep]
+            if (head, rel, dep, yearfrom, yearto) in freq_index:
+                this_index = freq_index[head, rel, dep, yearfrom, yearto]
             else:
                 this_index = index
-                freq_index[head, rel, dep] = this_index
+                freq_index[head, rel, dep, yearfrom, yearto] = this_index
                 index += 1
-            #                                                                         freq    bf/wf
-            freq.setdefault(head, {}).setdefault(rel, {}).setdefault(dep, [this_index, 0, [0, 0, 0, 0]])
-            freq[head][rel][dep][1] += 1  # Frequency
+            freq.setdefault((head, rel, dep, yearfrom, yearto), [this_index, 0, [0, 0, 0, 0]])
+            freq[head, rel, dep, yearfrom, yearto][1] += 1  # Frequency
 
             if not no_sentences and sentence_count[this_index] < MAX_SENTENCES:
                 sentences.setdefault(this_index, set())
                 sentences[this_index].add((sid, refh, refd))  # Sentence ID and "ref" for both head and dep
                 sentence_count[this_index] += 1
 
-            freq[head][rel][dep][2][0] = freq[head][rel][dep][2][0] or bfhead
-            freq[head][rel][dep][2][1] = freq[head][rel][dep][2][1] or bfdep
-            freq[head][rel][dep][2][2] = freq[head][rel][dep][2][2] or wfhead
-            freq[head][rel][dep][2][3] = freq[head][rel][dep][2][3] or wfdep
+            freq[head, rel, dep, yearfrom, yearto][2][0] = freq[head, rel, dep, yearfrom, yearto][2][0] or bfhead
+            freq[head, rel, dep, yearfrom, yearto][2][1] = freq[head, rel, dep, yearfrom, yearto][2][1] or bfdep
+            freq[head, rel, dep, yearfrom, yearto][2][2] = freq[head, rel, dep, yearfrom, yearto][2][2] or wfhead
+            freq[head, rel, dep, yearfrom, yearto][2][3] = freq[head, rel, dep, yearfrom, yearto][2][3] or wfdep
 
             if bfhead and bfdep:
-                rel_count[rel] += 1
+                rel_count[rel, yearfrom, yearto] += 1
             if (bfhead and bfdep) or wfhead:
-                head_rel_count[head, rel] += 1
+                head_rel_count[head, rel, yearfrom, yearto] += 1
             if (bfhead and bfdep) or wfdep:
-                dep_rel_count[dep, rel] += 1
+                dep_rel_count[dep, rel, yearfrom, yearto] += 1
 
         # If not the last file
         if file_count != len(source_files):
             if split:
-                # Don't print string table until the last file
                 _write_sql(
-                    {},
                     sentences,
                     freq,
                     rel_count,
@@ -537,11 +775,11 @@ def wordpicture_sql(
                     split,
                     first=(file_count == 1),
                     no_sentences=no_sentences,
+                    sort=sort,
                 )
             else:
                 # Only save sentences data, save the rest for the last file
                 _write_sql(
-                    {},
                     sentences,
                     {},
                     {},
@@ -552,13 +790,13 @@ def wordpicture_sql(
                     split,
                     first=(file_count == 1),
                     no_sentences=no_sentences,
+                    sort=sort,
                 )
 
         logger.progress()
 
-    # Create the final file, including the string table
+    # Create the final file with all data
     _write_sql(
-        strings,
         sentences,
         freq,
         rel_count,
@@ -570,14 +808,58 @@ def wordpicture_sql(
         first=(file_count == 1),
         last=True,
         no_sentences=no_sentences,
+        include_years=datefrom is not None and dateto is not None,
+        sort=sort,
     )
 
     logger.progress()
-    logger.info("Done creating SQL files")
+    logger.info("Done creating SQL files for %s", log_label)
+
+
+def _write_strings_sql(
+    strings: dict,
+    sql_file: str,
+    db_table: str,
+    sort: bool = False,
+) -> None:
+    """Write the Word Picture string data to an SQL file."""
+    temp_table = f"temp_{db_table}_strings"
+    final_table = f"{db_table}_strings"
+
+    mysql = MySQL(output=sql_file)
+
+    mysql.create_table(temp_table, drop=True, **MYSQL_STRINGS)
+    mysql.disable_keys(temp_table)
+    mysql.disable_checks()
+    mysql.set_names()
+
+    rows = []
+
+    string_items = strings.items()
+    if sort:  # For deterministic output
+        string_items = sorted(strings.items())
+
+    for string_tuple, index in string_items:
+        string, pos, stringextra = string_tuple
+        row = {
+            "id": index,
+            "string": string[:MAX_STRING_LENGTH],
+            "stringextra": stringextra[:MAX_STRINGEXTRA_LENGTH],
+            "pos": pos,
+        }
+        rows.append(row)
+
+    mysql.add_row(temp_table, rows)
+
+    mysql.enable_keys(temp_table)
+    mysql.drop_table(final_table)
+    mysql.rename_table({temp_table: final_table})
+    mysql.enable_checks()
+
+    logger.info("%s written", sql_file)
 
 
 def _write_sql(
-    strings: dict,
     sentences: dict,
     freq: dict,
     rel_count: dict,
@@ -589,9 +871,12 @@ def _write_sql(
     first: bool = False,
     last: bool = False,
     no_sentences: bool = False,
+    include_years: bool = True,
+    sort: bool = False,
 ) -> None:
+    """Write the Word Picture data (excluding strings) to an SQL file."""
     temp_db_table = "temp_" + db_table
-    tables = ["", "_strings", "_rel", "_head_rel", "_dep_rel"]
+    tables = ["", "_rel", "_head_rel", "_dep_rel"]
     if not no_sentences:
         tables.append("_sentences")
     update_freq = "ON DUPLICATE KEY UPDATE freq = freq + VALUES(freq)" if split else ""
@@ -599,16 +884,19 @@ def _write_sql(
     mysql = MySQL(output=sql_file, append=True)
 
     if first:
+        mysql_relations = get_mysql_main(include_year=include_years)
+        mysql_rel = get_mysql_rel(include_year=include_years)
+        mysql_head_rel = get_mysql_head_rel(include_year=include_years)
+        mysql_dep_rel = get_mysql_dep_rel(include_year=include_years)
         if not split:
-            del MYSQL_RELATIONS["constraints"]
-            del MYSQL_REL["constraints"]
-            del MYSQL_HEAD_REL["constraints"]
-            del MYSQL_DEP_REL["constraints"]
-        mysql.create_table(temp_db_table, drop=True, **MYSQL_RELATIONS)
-        mysql.create_table(temp_db_table + "_strings", drop=True, **MYSQL_STRINGS)
-        mysql.create_table(temp_db_table + "_rel", drop=True, **MYSQL_REL)
-        mysql.create_table(temp_db_table + "_head_rel", drop=True, **MYSQL_HEAD_REL)
-        mysql.create_table(temp_db_table + "_dep_rel", drop=True, **MYSQL_DEP_REL)
+            del mysql_relations["constraints"]
+            del mysql_rel["constraints"]
+            del mysql_head_rel["constraints"]
+            del mysql_dep_rel["constraints"]
+        mysql.create_table(temp_db_table, drop=True, **mysql_relations)
+        mysql.create_table(temp_db_table + "_rel", drop=True, **mysql_rel)
+        mysql.create_table(temp_db_table + "_head_rel", drop=True, **mysql_head_rel)
+        mysql.create_table(temp_db_table + "_dep_rel", drop=True, **mysql_dep_rel)
         if not no_sentences:
             mysql.create_table(temp_db_table + "_sentences", drop=True, **MYSQL_SENTENCES)
 
@@ -617,71 +905,103 @@ def _write_sql(
         mysql.set_names()
 
     rows = []
+    freq_items = freq.items()
+    if sort:
 
-    for string_tuple, index in sorted(strings.items()):
-        if len(string_tuple) == 3:  # noqa: PLR2004
-            string, pos, stringextra = string_tuple
-        else:
-            string, pos = string_tuple
-            stringextra = ""
+        def _freq_sort_key(item: tuple) -> tuple:
+            (head, rel, dep, yearfrom, yearto), _ = item
+            return (head, rel, dep, _year_sort_value(yearfrom), _year_sort_value(yearto))
+
+        freq_items = sorted(freq.items(), key=_freq_sort_key)
+
+    for (head, rel, dep, yearfrom, yearto), dep2 in freq_items:
+        index, count, bfwf = dep2
+
         row = {
             "id": index,
-            "string": string[:MAX_STRING_LENGTH],
-            "stringextra": stringextra[:MAX_STRINGEXTRA_LENGTH],
-            "pos": pos,
+            "head": head,
+            "rel": rel,
+            "dep": dep,
+            "freq": count,
+            "bfhead": bfwf[0],
+            "bfdep": bfwf[1],
+            "wfhead": bfwf[2],
+            "wfdep": bfwf[3],
+            **({"yearfrom": yearfrom, "yearto": yearto} if include_years else {}),
         }
         rows.append(row)
-
-    mysql.add_row(temp_db_table + "_strings", rows, "")
-
-    sentence_rows = []
-    rows = []
-    for head, rels in sorted(freq.items()):
-        for rel, deps in sorted(rels.items()):
-            for dep, dep2 in sorted(deps.items()):
-                index, count, bfwf = dep2
-
-                row = {
-                    "id": index,
-                    "head": head,
-                    "rel": rel,
-                    "dep": dep,
-                    "freq": count,
-                    "bfhead": bfwf[0],
-                    "bfdep": bfwf[1],
-                    "wfhead": bfwf[2],
-                    "wfdep": bfwf[3],
-                }
-                rows.append(row)
 
     mysql.add_row(temp_db_table, rows, update_freq)
 
     rows = []
-    for rel, f in sorted(rel_count.items()):
-        row = {"rel": rel, "freq": f}
+    rel_items = rel_count.items()
+    if sort:
+
+        def _rel_sort_key(item: tuple) -> tuple:
+            (rel, yearfrom, yearto), _ = item
+            return (rel, _year_sort_value(yearfrom), _year_sort_value(yearto))
+
+        rel_items = sorted(rel_count.items(), key=_rel_sort_key)
+
+    for (rel, yearfrom, yearto), f in rel_items:
+        row = {"rel": rel, "freq": f, **({"yearfrom": yearfrom, "yearto": yearto} if include_years else {})}
         rows.append(row)
 
     mysql.add_row(temp_db_table + "_rel", rows, update_freq)
 
     rows = []
-    for head_rel, f in sorted(head_rel_count.items()):
-        head, rel = head_rel
-        row = {"head": head, "rel": rel, "freq": f}
+    head_items = head_rel_count.items()
+    if sort:
+
+        def _head_rel_sort_key(item: tuple) -> tuple:
+            (head, rel, yearfrom, yearto), _ = item
+            return (head, rel, _year_sort_value(yearfrom), _year_sort_value(yearto))
+
+        head_items = sorted(head_rel_count.items(), key=_head_rel_sort_key)
+
+    for (head, rel, yearfrom, yearto), f in head_items:
+        row = {
+            "head": head,
+            "rel": rel,
+            "freq": f,
+            **({"yearfrom": yearfrom, "yearto": yearto} if include_years else {}),
+        }
         rows.append(row)
 
     mysql.add_row(temp_db_table + "_head_rel", rows, update_freq)
 
     rows = []
-    for dep_rel, f in sorted(dep_rel_count.items()):
-        dep, rel = dep_rel
-        row = {"dep": dep, "rel": rel, "freq": f}
+    dep_items = dep_rel_count.items()
+    if sort:
+
+        def _dep_rel_sort_key(item: tuple) -> tuple:
+            (dep, rel, yearfrom, yearto), _ = item
+            return (dep, rel, _year_sort_value(yearfrom), _year_sort_value(yearto))
+
+        dep_items = sorted(dep_rel_count.items(), key=_dep_rel_sort_key)
+
+    for (dep, rel, yearfrom, yearto), f in dep_items:
+        row = {
+            "dep": dep,
+            "rel": rel,
+            "freq": f,
+            **({"yearfrom": yearfrom, "yearto": yearto} if include_years else {}),
+        }
         rows.append(row)
 
     mysql.add_row(temp_db_table + "_dep_rel", rows, update_freq)
 
     if not no_sentences:
-        for index, sentenceset in sorted(sentences.items()):
-            for sentence in sorted(sentenceset):
+        sentence_rows = []
+        sentences_items = sentences.items()
+        if sort:
+            sentences_items = sorted(sentences.items())
+
+        for index, sentenceset in sentences_items:
+            if sort:
+                sentenceset = sorted(sentenceset)  # noqa: PLW2901
+
+            for sentence in sentenceset:
                 srow = {"id": index, "sentence": sentence[0], "start": int(sentence[1]), "end": int(sentence[2])}
                 sentence_rows.append(srow)
 
@@ -696,35 +1016,309 @@ def _write_sql(
     logger.info("%s written", sql_file)
 
 
+@installer(
+    "Install Korp's Word Picture strings SQL on remote host",
+    language=["swe"],
+    uninstaller="korp:uninstall_wordpicture_strings",
+)
+def install_wordpicture_strings(
+    sqlfile: ExportInput = ExportInput("korp.wordpicture/wordpicture_strings.sql"),
+    marker: OutputMarker = OutputMarker("korp.install_wordpicture_strings_marker"),
+    uninstall_marker: MarkerOptional = MarkerOptional("korp.uninstall_wordpicture_strings_marker"),
+    db_name: str = Config("korp.mysql_dbname"),
+    host: str | None = Config("korp.remote_host"),
+) -> None:
+    """Install Korp's Word Picture strings SQL on remote host.
+
+    Args:
+        sqlfile: SQL file to be installed.
+        marker: Marker file to be written.
+        uninstall_marker: Uninstall marker to remove.
+        db_name: Name of the database.
+        host: Remote host to install to.
+    """
+    util.install.install_mysql(host, db_name, sqlfile)
+    uninstall_marker.remove()
+    marker.write()
+
+
+@uninstaller(
+    "Uninstall Korp's Word Picture strings from database", name="uninstall_wordpicture_strings", language=["swe"]
+)
+def uninstall_wordpicture_strings(
+    corpus: Corpus = Corpus(),
+    marker: OutputMarker = OutputMarker("korp.uninstall_wordpicture_strings_marker"),
+    install_marker: MarkerOptional = MarkerOptional("korp.install_wordpicture_strings_marker"),
+    db_name: str = Config("korp.mysql_dbname"),
+    table_name: str = Config("korp.wordpicture_table"),
+    host: str | None = Config("korp.remote_host"),
+) -> None:
+    """Remove Korp's Word Picture strings data from database.
+
+    Args:
+        corpus: Corpus ID.
+        marker: Uninstall marker to write.
+        install_marker: Install marker to remove.
+        db_name: Name of the database.
+        table_name: Name of database table.
+        host: Remote host.
+    """
+    db_table = table_name + "_" + corpus.upper()
+    sql = MySQL(database=db_name, host=host)
+    sql.drop_table(db_table + "_strings")
+
+    install_marker.remove()
+    marker.write()
+
+
+# Create installers and uninstallers for both variants of Word Picture SQL
+for installation in (
+    {
+        "description": "Install Korp's aggregated Word Picture SQL on remote host",
+        "uninstall_description": "Uninstall Korp's aggregated Word Picture from database",
+        "suffix": "",
+    },
+    {
+        "description": "Install Korp's yearly Word Picture SQL on remote host",
+        "uninstall_description": "Uninstall Korp's yearly Word Picture data from database",
+        "suffix": YEARLY_SUFFIX,
+    },
+):
+
+    @installer(
+        installation["description"],
+        name=f"install_wordpicture{installation['suffix']}",
+        language=["swe"],
+        uninstaller=f"korp:uninstall_wordpicture{installation['suffix']}",
+    )
+    def install_wordpicture(
+        sqlfile: ExportInput = ExportInput(f"korp.wordpicture/wordpicture{installation['suffix']}.sql"),
+        marker: OutputMarker = OutputMarker(f"korp.install_wordpicture{installation['suffix']}_marker"),
+        uninstall_marker: MarkerOptional = MarkerOptional(f"korp.uninstall_wordpicture{installation['suffix']}_marker"),
+        _strings_marker: Marker = Marker("korp.install_wordpicture_strings_marker"),
+        db_name: str = Config("korp.mysql_dbname"),
+        host: str | None = Config("korp.remote_host"),
+    ) -> None:
+        """Install Korp's Word Picture SQL on remote host.
+
+        Args:
+            sqlfile: SQL file to be installed.
+            marker: Marker file to be written.
+            uninstall_marker: Uninstall marker to remove.
+            _strings_marker: Marker ensuring that strings are installed first.
+            db_name: Name of the database.
+            host: Remote host to install to.
+        """
+        util.install.install_mysql(host, db_name, sqlfile)
+        uninstall_marker.remove()
+        marker.write()
+
+    @uninstaller(
+        installation["uninstall_description"], name=f"uninstall_wordpicture{installation['suffix']}", language=["swe"]
+    )
+    def uninstall_wordpicture(
+        corpus: Corpus = Corpus(),
+        marker: OutputMarker = OutputMarker(f"korp.uninstall_wordpicture{installation['suffix']}_marker"),
+        install_marker: MarkerOptional = MarkerOptional(f"korp.install_wordpicture{installation['suffix']}_marker"),
+        db_name: str = Config("korp.mysql_dbname"),
+        table_name: str = Config("korp.wordpicture_table"),
+        host: str | None = Config("korp.remote_host"),
+    ) -> None:
+        """Remove Korp's Word Picture data from database.
+
+        Args:
+            corpus: Corpus ID.
+            marker: Uninstall marker to write.
+            install_marker: Install marker to remove.
+            db_name: Name of the database.
+            table_name: Name of database table.
+            host: Remote host.
+        """
+        db_table = table_name + "_" + corpus.upper()
+        tables = ["", "_strings", "_rel", "_head_rel", "_dep_rel", "_sentences"]
+
+        sql = MySQL(database=db_name, host=host)
+        sql.drop_table(*[db_table + t for t in tables], *["temp_" + db_table + t for t in tables])
+
+        install_marker.remove()
+        marker.write()
+
+
+@installer(
+    (
+        "Install database views for shared Word Picture data (requires yearly data)\n\n"
+        "This installer sets up database views that make the aggregated Word Picture tables reference the yearly Word "
+        "Picture tables. Use this instead of the regular Word Picture installer for corpora that only contain data "
+        "from a single year. This will automatically install the yearly Word Picture data if it is not already "
+        "installed."
+    ),
+    language=["swe"],
+    uninstaller="korp:uninstall_wordpicture_shared",
+)
+def install_wordpicture_shared(
+    sql_file: ExportInput = ExportInput("korp.wordpicture/wordpicture_shared_with_yearly.sql"),
+    marker: OutputMarker = OutputMarker("korp.install_wordpicture_shared_marker"),
+    uninstall_marker: MarkerOptional = MarkerOptional("korp.uninstall_wordpicture_shared_marker"),
+    _yearly_marker: Marker = Marker(f"korp.install_wordpicture{YEARLY_SUFFIX}_marker"),
+    db_name: str = Config("korp.mysql_dbname"),
+    host: str | None = Config("korp.remote_host"),
+) -> None:
+    """Install database view for shared Word Picture data.
+
+    Args:
+        sql_file: SQL file to be installed.
+        marker: Marker file to be written.
+        uninstall_marker: Uninstall marker to remove.
+        db_name: Name of the database.
+        host: Remote host.
+    """
+    util.install.install_mysql(host, db_name, sql_file)
+    uninstall_marker.remove()
+    marker.write()
+
+
+@uninstaller(
+    "Uninstall database views for shared Word Picture data",
+    language=["swe"],
+)
+def uninstall_wordpicture_shared(
+    corpus: Corpus = Corpus(),
+    marker: OutputMarker = OutputMarker("korp.uninstall_wordpicture_shared_marker"),
+    install_marker: MarkerOptional = MarkerOptional("korp.install_wordpicture_shared_marker"),
+    db_name: str = Config("korp.mysql_dbname"),
+    table_name: str = Config("korp.wordpicture_table"),
+    host: str | None = Config("korp.remote_host"),
+) -> None:
+    """Uninstall database views for shared Word Picture data.
+
+    Args:
+        corpus: Corpus ID.
+        marker: Uninstall marker to write.
+        install_marker: Install marker to remove.
+        db_name: Name of the database.
+        table_name: Base name of database table.
+        host: Remote host.
+    """
+    db_table = table_name + "_" + corpus.upper()
+    tables = ["", "_rel", "_head_rel", "_dep_rel", "_sentences"]
+
+    sql = MySQL(database=db_name, host=host)
+    sql.drop_view(*[db_table + t for t in tables])
+
+    install_marker.remove()
+    marker.write()
+
+
 ################################################################################
 
-# Names of every possible relation in the resulting database
-RELNAMES = ["SS", "OBJ", "ADV", "AA", "AT", "ET", "PA"]
-rel_enum = "ENUM({})".format(", ".join(f"'{r}'" for r in RELNAMES))
+rel_enum = "ENUM({})".format(", ".join(f"'{r}'" for r in REL_NAMES))
 
-MYSQL_RELATIONS = {
-    "columns": [
+
+def get_mysql_main(include_year: bool = True) -> dict:
+    """Return MySQL table definition for main relation data, optionally including year columns."""
+    columns = [
         ("id", int, 0, "NOT NULL"),
         ("head", int, 0, "NOT NULL"),
-        ("rel", rel_enum, RELNAMES[0], "NOT NULL"),
+        ("rel", rel_enum, REL_NAMES[0], "NOT NULL"),
         ("dep", int, 0, "NOT NULL"),
         ("freq", int, 0, "NOT NULL"),
         ("bfhead", "BOOL", None, ""),
         ("bfdep", "BOOL", None, ""),
         ("wfhead", "BOOL", None, ""),
         ("wfdep", "BOOL", None, ""),
-    ],
-    "primary": "head wfhead dep rel freq id",
-    "indexes": [
-        "dep wfdep head rel freq id",
-        "head dep bfhead bfdep rel freq id",
-        "dep head bfhead bfdep rel freq id",
-    ],
-    "constraints": [("UNIQUE INDEX", "relation", ("head", "rel", "dep"))],
-    "default charset": "utf8mb4",
-    "row_format": "compressed",
-    # "collate": "utf8mb4_bin"
-}
+    ]
+    if include_year:
+        columns += [
+            ("yearfrom", int, None, ""),
+            ("yearto", int, None, ""),
+        ]
+    return {
+        "columns": columns,
+        "primary": "id",
+        "indexes": [
+            "head bfhead bfdep" + (" yearfrom yearto" if include_year else "") + " rel freq",
+            "dep bfhead bfdep" + (" yearfrom yearto" if include_year else "") + " rel freq",
+            "head wfhead" + (" yearfrom yearto" if include_year else "") + " rel freq",
+            "dep wfdep" + (" yearfrom yearto" if include_year else "") + " rel freq",
+        ],
+        "constraints": [("UNIQUE INDEX", "relation", ("head", "rel", "dep"))],
+        "default charset": "utf8mb4",
+        "row_format": "compressed",
+        # "collate": "utf8mb4_bin"
+    }
+
+
+def get_mysql_rel(include_year: bool = True) -> dict:
+    """Return MySQL table definition for relations, optionally including year columns."""
+    columns = [
+        ("rel", rel_enum, REL_NAMES[0], "NOT NULL"),
+        ("freq", int, 0, "NOT NULL"),
+    ]
+    if include_year:
+        columns += [
+            ("yearfrom", int, None, ""),
+            ("yearto", int, None, ""),
+        ]
+    return {
+        "columns": columns,
+        "primary": None,
+        "indexes": ["rel" + (" yearfrom yearto" if include_year else "")],
+        "constraints": [("UNIQUE INDEX", "relation", ("rel",) + (("yearfrom", "yearto") if include_year else ()))],
+        "default charset": "utf8mb4",
+        "collate": "utf8mb4_bin",
+        "row_format": "compressed",
+    }
+
+
+def get_mysql_head_rel(include_year: bool = True) -> dict:
+    """Return MySQL table definition for head relations, optionally including year columns."""
+    columns = [
+        ("head", int, 0, "NOT NULL"),
+        ("rel", rel_enum, REL_NAMES[0], "NOT NULL"),
+        ("freq", int, 0, "NOT NULL"),
+    ]
+    if include_year:
+        columns += [
+            ("yearfrom", int, None, ""),
+            ("yearto", int, None, ""),
+        ]
+    return {
+        "columns": columns,
+        "primary": None,
+        "indexes": ["head rel" + (" yearfrom yearto" if include_year else "")],
+        "constraints": [
+            ("UNIQUE INDEX", "relation", ("head", "rel") + (("yearfrom", "yearto") if include_year else ()))
+        ],
+        "default charset": "utf8mb4",
+        "collate": "utf8mb4_bin",
+        "row_format": "compressed",
+    }
+
+
+def get_mysql_dep_rel(include_year: bool = True) -> dict:
+    """Return MySQL table definition for dependent relations, optionally including year columns."""
+    columns = [
+        ("dep", int, 0, "NOT NULL"),
+        ("rel", rel_enum, REL_NAMES[0], "NOT NULL"),
+        ("freq", int, 0, "NOT NULL"),
+    ]
+    if include_year:
+        columns += [
+            ("yearfrom", int, None, ""),
+            ("yearto", int, None, ""),
+        ]
+    return {
+        "columns": columns,
+        "primary": None,
+        "indexes": ["dep rel" + (" yearfrom yearto" if include_year else "")],
+        "constraints": [
+            ("UNIQUE INDEX", "relation", ("dep", "rel") + (("yearfrom", "yearto") if include_year else ()))
+        ],
+        "default charset": "utf8mb4",
+        "collate": "utf8mb4_bin",
+        "row_format": "compressed",
+    }
+
 
 MYSQL_STRINGS = {
     "columns": [
@@ -733,38 +1327,8 @@ MYSQL_STRINGS = {
         ("stringextra", f"varchar({MAX_STRINGEXTRA_LENGTH:d})", "", "NOT NULL"),
         ("pos", f"varchar({MAX_POS_LENGTH:d})", "", "NOT NULL"),
     ],
-    "primary": "string id pos stringextra",
-    "indexes": ["id string pos stringextra"],
-    "default charset": "utf8mb4",
-    "collate": "utf8mb4_bin",
-    "row_format": "compressed",
-}
-
-MYSQL_REL = {
-    "columns": [("rel", rel_enum, RELNAMES[0], "NOT NULL"), ("freq", int, 0, "NOT NULL")],
-    "primary": "rel freq",
-    "indexes": [],
-    "constraints": [("UNIQUE INDEX", "relation", ("rel",))],
-    "default charset": "utf8mb4",
-    "collate": "utf8mb4_bin",
-    "row_format": "compressed",
-}
-
-MYSQL_HEAD_REL = {
-    "columns": [("head", int, 0, "NOT NULL"), ("rel", rel_enum, RELNAMES[0], "NOT NULL"), ("freq", int, 0, "NOT NULL")],
-    "primary": "head rel freq",
-    "indexes": [],
-    "constraints": [("UNIQUE INDEX", "relation", ("head", "rel"))],
-    "default charset": "utf8mb4",
-    "collate": "utf8mb4_bin",
-    "row_format": "compressed",
-}
-
-MYSQL_DEP_REL = {
-    "columns": [("dep", int, 0, "NOT NULL"), ("rel", rel_enum, RELNAMES[0], "NOT NULL"), ("freq", int, 0, "NOT NULL")],
-    "primary": "dep rel freq",
-    "indexes": [],
-    "constraints": [("UNIQUE INDEX", "relation", ("dep", "rel"))],
+    "primary": "id",
+    "indexes": ["string pos stringextra"],
     "default charset": "utf8mb4",
     "collate": "utf8mb4_bin",
     "row_format": "compressed",
