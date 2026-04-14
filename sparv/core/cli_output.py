@@ -3,6 +3,7 @@
 import json
 import operator
 import typing
+from collections.abc import Iterable
 from typing import Any
 
 import yaml
@@ -80,8 +81,8 @@ def print_modules_summary(pipeline_data: pipeline.PipelineData, json_output: boo
 
 
 def print_modules_info(
-    module_types: list[str],
-    module_names: list[str],
+    module_types: Iterable[str],
+    module_names: Iterable[str],
     pipeline_data: pipeline.PipelineData,
     reverse_config_usage: dict,
     json_output: bool = False,
@@ -145,7 +146,7 @@ def print_modules_info(
         invalid_functions = {k: set(v) for k, v in selected_modules.items()}
 
     for module_type in module_types:
-        modules = all_module_types.get(module_type)
+        modules = all_module_types[module_type]
 
         # Filter modules
         if module_names:
@@ -158,7 +159,7 @@ def print_modules_info(
         module_type_data = {}
 
         for module_name in sorted(modules):
-            module_data = {"functions": {}}
+            module_data: dict[str, Any] = {"functions": {}}
 
             # Module description
             description = None
@@ -223,7 +224,7 @@ def print_modules_info(
                                         if config_object.pattern:
                                             config_info["pattern"] = config_object.pattern
                                     elif cfg_datatype in {int, float}:
-                                        datatypes.append(cfg_datatype.__name__)
+                                        datatypes.append(cfg_datatype.__name__)  # type: ignore
                                         if config_object.min_value is not None:
                                             config_info["min_value"] = config_object.min_value
                                         if config_object.max_value is not None:
