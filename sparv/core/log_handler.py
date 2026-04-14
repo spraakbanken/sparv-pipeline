@@ -80,6 +80,7 @@ from sparv.core.paths import paths
 LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 LOG_FORMAT_DEBUG = "%(asctime)s - %(name)s (%(process)d) - %(levelname)s - %(message)s"
 TIME_FORMAT = "%H:%M:%S"
+DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 ensure_logger_class()
 
