@@ -2,6 +2,7 @@
 
 import re
 import unicodedata
+from typing import Literal
 
 import pypdfium2 as pdfium
 
@@ -9,7 +10,7 @@ from sparv.api import Config, Output, Source, SourceFilename, SourceStructure, S
 
 
 @importer(
-    "PDF Import",
+    "PDF import",
     file_extension="pdf",
     outputs=["text", "page:number"],
     text_annotation="text",
@@ -50,7 +51,7 @@ def parse(
     keep_hyphenation: bool = Config("pdf_import.keep_hyphenation"),
     line_break_after_hyphenation: bool = Config("pdf_import.line_break_after_hyphenation"),
     keep_control_chars: bool = Config("pdf_import.keep_control_chars"),
-    normalize: str = Config("pdf_import.normalize"),
+    normalize: Literal["NFC", "NFKC", "NFD", "NFKD"] = Config("pdf_import.normalize"),
 ) -> None:
     """Parse a PDF file as input to Sparv and retain page information.
 
@@ -125,14 +126,15 @@ def parse(
 
 
 def find_minimum_indentation(text: str) -> int:
-    """Find the minimum indentation of a text.
+    """Return the smallest number of leading spaces among non-blank lines."""
+    min_indent: int | None = None
 
-    Args:
-        text: The text to analyze.
+    for line in text.splitlines():
+        if not line.strip():
+            continue
 
-    Returns:
-        int: The minimum indentation of the text.
-    """
-    lines = [line for line in text.splitlines() if line.strip()]
-    indents = [len(re.match(r"^ *", line).group(0)) for line in lines]
-    return min(indents) if indents else 0
+        indent = len(line) - len(line.lstrip(" "))
+        if min_indent is None or indent < min_indent:
+            min_indent = indent
+
+    return min_indent or 0

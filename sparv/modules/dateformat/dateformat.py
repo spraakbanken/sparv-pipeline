@@ -283,7 +283,7 @@ def _formatter(
         }
 
         for part in parts[1:]:
-            add = lengths.get(part[0], None)
+            add = lengths.get(part[0])
             if add:
                 length += add + len(part[1:])
             else:
@@ -381,7 +381,7 @@ def _formatter(
                 break
             except ValueError:
                 if tries == len(in_format):
-                    logger.error("Could not parse: %s", str(vals))
+                    logger.error("Could not parse: %s", vals)
                     raise
                 continue
 
@@ -453,7 +453,7 @@ def _formatter(
                     break
                 except ValueError:
                     if tries == len(in_format):
-                        logger.error("Could not parse: %s", str(vals))
+                        logger.error("Could not parse: %s", vals)
                         raise
                     continue
 

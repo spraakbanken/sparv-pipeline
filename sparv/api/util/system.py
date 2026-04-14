@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import errno
+import locale
 import os
 import shlex
 import shutil
 import subprocess
 from collections.abc import Iterable
 from pathlib import Path
+from typing import Literal, overload
 
 from sparv.api import SparvErrorMessage, get_logger
 from sparv.core.paths import paths
@@ -46,20 +48,20 @@ def clear_directory(path: str | Path) -> None:
 
 def call_java(
     jar: str,
-    arguments: list | tuple,
-    options: list | tuple = (),
+    arguments: Iterable[str | tuple],
+    options: Iterable = (),
     stdin: str = "",
-    search_paths: list | tuple = (),
+    search_paths: Iterable = (),
     encoding: str | None = None,
     verbose: bool = False,
     return_command: bool = False,
-) -> tuple[str, str] | subprocess.Popen:
+) -> tuple[str | bytes, str | bytes] | subprocess.Popen:
     """Execute a Java program using a specified jar file, command line arguments, and `stdin` input.
 
     Args:
         jar: The name of the jar file to execute.
-        arguments: A list of arguments to pass to the Java program.
-        options: A list of Java options to include in the call.
+        arguments: An iterable of arguments to pass to the Java program.
+        options: An iterable of Java options to include in the call.
         stdin: Input to pass to the program's `stdin`.
         search_paths: Additional paths to search for the Java binary, in addition to the environment variable PATH.
         encoding: The encoding to use for `stdin` and `stdout`.
@@ -70,8 +72,9 @@ def call_java(
         A tuple with `stdout` and `stderr`, or the process if `return_command` is `True`.
             If `verbose` is `True`, `stderr` is an empty string.
     """
-    assert isinstance(arguments, (list, tuple))
-    assert isinstance(options, (list, tuple))
+    assert isinstance(arguments, Iterable), "'arguments' must be an iterable"
+    assert not isinstance(arguments, (str, bytes)), "'arguments' must not be a string or bytes"
+    assert isinstance(options, Iterable), "'options' must be an iterable"
     jarfile = find_binary(jar, search_paths, executable=False)
     java_executable = "java"
     # If JAVA_HOME is set, try to find java there
@@ -94,24 +97,57 @@ def call_java(
     )
 
 
+@overload
 def call_binary(
     name: str | Path | Iterable[str | Path],
-    arguments: list | tuple = (),
-    stdin: str | list | tuple = "",
+    arguments: Iterable = (),
+    stdin: str | bytes | list | tuple = "",
     raw_command: str | None = None,
-    search_paths: list | tuple = (),
+    search_paths: Iterable = (),
     encoding: str | None = None,
     verbose: bool = False,
     use_shell: bool = False,
     allow_error: bool = False,
+    *,
+    return_command: Literal[False] = False,
+) -> tuple[str | bytes, str | bytes]: ...
+
+
+@overload
+def call_binary(
+    name: str | Path | Iterable[str | Path],
+    arguments: Iterable = (),
+    stdin: str | bytes | list | tuple = "",
+    raw_command: str | None = None,
+    search_paths: Iterable = (),
+    encoding: str | None = None,
+    verbose: bool = False,
+    use_shell: bool = False,
+    allow_error: bool = False,
+    *,
+    return_command: Literal[True],
+) -> subprocess.Popen: ...
+
+
+def call_binary(
+    name: str | Path | Iterable[str | Path],
+    arguments: Iterable = (),
+    stdin: str | bytes | list | tuple = "",
+    raw_command: str | None = None,
+    search_paths: Iterable = (),
+    encoding: str | None = None,
+    verbose: bool = False,
+    use_shell: bool = False,
+    allow_error: bool = False,
+    *,
     return_command: bool = False,
-) -> tuple[str, str] | subprocess.Popen:
+) -> tuple[str | bytes, str | bytes] | subprocess.Popen:
     """Call a binary with specified arguments and `stdin`.
 
     Args:
         name: The binary to execute (can include absolute or relative path). Accepts a string, a Path, or an iterable
             of strings or Paths, using the first found binary.
-        arguments: List of arguments to pass to the binary.
+        arguments: An iterable of arguments to pass to the binary.
         stdin: Input to pass to the process's `stdin`.
         raw_command: A raw command to execute through the shell (implies `use_shell=True`).
         search_paths: Additional paths to search for the binary, besides the environment variable `PATH`.
@@ -130,24 +166,40 @@ def call_binary(
     Raises:
         OSError: If an error occurs while calling the binary.
     """
-    assert isinstance(arguments, (list, tuple))
-    assert isinstance(stdin, (str, list, tuple))
+    assert isinstance(arguments, Iterable), "'arguments' must be an iterable"
+    assert not isinstance(arguments, (str, bytes)), "'arguments' must not be a string or bytes"
+    assert isinstance(stdin, (str, bytes, list, tuple))
 
     binary = find_binary(name, search_paths, raise_error=True)
+
+    # Build command (string when using shell, list otherwise)
     if raw_command:
         use_shell = True
-        command = raw_command % binary
+        cmd_str = raw_command % binary
         if arguments:
-            command = " ".join([command, *arguments])
+            cmd_str = " ".join([cmd_str, *map(str, arguments)])
+        popen_cmd = cmd_str
     else:
-        command = [binary] + [str(a) for a in arguments]
+        arg_list = [str(a) for a in arguments]
+        cmd_list = [binary, *arg_list]
+        popen_cmd = " ".join(cmd_list) if use_shell else cmd_list
+
+    # Prepare stdin bytes
     if isinstance(stdin, (list, tuple)):
         stdin = "\n".join(stdin)
-    if encoding is not None and isinstance(stdin, str):
-        stdin = stdin.encode(encoding)
-    logger.info("CALL: %s", " ".join(str(c) for c in command) if not raw_command else command)
-    command = subprocess.Popen(
-        command,
+    if isinstance(stdin, str):
+        enc = encoding or locale.getpreferredencoding(False) or "utf-8"
+        stdin_bytes = stdin.encode(enc)
+    elif isinstance(stdin, (bytes, bytearray)):
+        stdin_bytes = bytes(stdin)
+    else:
+        stdin_bytes = None
+
+    log_cmd = popen_cmd if isinstance(popen_cmd, str) else " ".join(map(str, popen_cmd))
+    logger.info("CALL: %s", log_cmd)
+
+    proc = subprocess.Popen(
+        popen_cmd,
         shell=use_shell,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
@@ -155,16 +207,19 @@ def call_binary(
         close_fds=False,
     )
     if return_command:
-        return command
-    stdout, stderr = command.communicate(stdin)
-    if not allow_error and command.returncode:
+        return proc
+
+    stdout, stderr = proc.communicate(stdin_bytes)
+
+    if not allow_error and proc.returncode:
         if stdout:
-            logger.info(stdout.decode())
+            logger.info(stdout.decode(encoding or locale.getpreferredencoding(False) or "utf-8", errors="ignore"))
         if stderr:
-            logger.warning(stderr.decode())
-        raise OSError(f"{binary} returned error code {command.returncode:d}")
+            logger.warning(stderr.decode(encoding or locale.getpreferredencoding(False) or "utf-8", errors="ignore"))
+        raise OSError(f"{binary} returned error code {proc.returncode:d}")
+
     if encoding:
-        stdout = stdout.decode(encoding)
+        stdout = stdout.decode(encoding) if stdout else ""
         if stderr:
             stderr = stderr.decode(encoding)
     return stdout, stderr
@@ -172,7 +227,7 @@ def call_binary(
 
 def find_binary(
     name: str | Path | Iterable[str | Path],
-    search_paths: list | tuple = (),
+    search_paths: Iterable = (),
     executable: bool = True,
     allow_dir: bool = False,
     raise_error: bool = False,
@@ -182,7 +237,7 @@ def find_binary(
     Args:
         name: The name of the binary, either as a string or Path, or an iterable of strings or Paths with alternative
             names.
-        search_paths: A list of additional paths to search, besides those in the environment variable `PATH`.
+        search_paths: An iterable of additional paths to search, besides those in the environment variable `PATH`.
         executable: If `False`, does not fail when the binary is not executable.
         allow_dir: If `True`, allows the target to be a directory instead of a file.
         raise_error: If `True`, raises an error if the binary could not be found.
@@ -195,9 +250,11 @@ def find_binary(
     """
     if isinstance(name, (str, Path)):
         name = [name]
-    name = list(map(os.path.expanduser, name))
-    search_paths = [*list(search_paths), ".", paths.bin_dir, *os.getenv("PATH").split(":")]
-    search_paths = list(map(os.path.expanduser, search_paths))
+    name = [Path(n).expanduser() for n in name]
+    path_env = os.getenv("PATH")
+    path_dirs = path_env.split(os.pathsep) if path_env else []
+    search_paths = [*list(search_paths), ".", paths.bin_dir, *path_dirs]
+    search_paths = [Path(p).expanduser() for p in search_paths]
 
     # Use absolute paths or 'which' first
     for binary in name:
@@ -217,16 +274,16 @@ def find_binary(
     # Look for file in paths
     for directory in search_paths:
         for binary in name:
-            path_to_bin = Path(directory) / binary
+            path_to_bin = directory / binary
             if path_to_bin.is_file() or (allow_dir and path_to_bin.is_dir()):
                 if executable and not allow_dir:
                     assert os.access(path_to_bin, os.X_OK), f"Binary is not executable: {path_to_bin}"
-                return path_to_bin
+                return str(path_to_bin)
 
     if raise_error:
-        err_msg = f"Couldn't find binary: {name[0]}\nSearched in: {', '.join(search_paths)}\n"
+        err_msg = f"Couldn't find binary: {name[0]}\nSearched in: {', '.join(map(str, search_paths))}\n"
         if len(name) > 1:
-            err_msg += f"for binary names: {', '.join(name)}"
+            err_msg += f"for binary names: {', '.join(map(str, name))}"
         raise SparvErrorMessage(err_msg)
     return None
 
@@ -349,10 +406,10 @@ def call_svn(command: str, *args: str) -> int:
         cmd.extend(["-m", message])
 
     # Remove password from cmd before logging
+    log_cmd = cmd.copy()
     if "--password" in cmd:
-        cmd_no_password = cmd.copy()
-        cmd_no_password[cmd_no_password.index("--password") + 1] = "********"
-    logger.info("Running SVN command: %s", " ".join(cmd_no_password))
+        log_cmd[log_cmd.index("--password") + 1] = "********"
+    logger.info("Running SVN command: %s", " ".join(log_cmd))
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, check=True)

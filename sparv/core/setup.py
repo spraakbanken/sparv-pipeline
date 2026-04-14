@@ -26,8 +26,7 @@ def check_sparv_version() -> bool | None:
     Returns:
         True if up to date, False if outdated, None if the version file is missing.
     """
-    data_dir = paths.get_data_path()
-    version_file = data_dir / VERSION_FILE  # type: ignore
+    version_file = paths.get_data_path(VERSION_FILE)
     if version_file.is_file():
         return version_file.read_text(encoding="utf-8") == __version__
     return None
@@ -166,7 +165,7 @@ def run(sparv_datadir: str | None = None) -> bool:
         # Expand any "~" and make the path absolute
         path = path.expanduser().resolve()
         # Create directories
-        dirs = [paths.bin_dir.name, paths.config_dir.name, paths.models_dir.name]  # type: ignore
+        dirs = [paths.bin_dir.name, paths.config_dir.name, paths.models_dir.name]
         path.mkdir(parents=True, exist_ok=True)
         for d in dirs:
             (path / d).mkdir(exist_ok=True)

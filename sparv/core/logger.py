@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from typing import cast
 
 
 class CurrentProgress:
@@ -51,3 +52,16 @@ def ensure_logger_class() -> None:
     logging.addLevelName(SparvLogger.INTERNAL, "INTERNAL")
     logging.addLevelName(SparvLogger.PROGRESS, "PROGRESS")
     logging.addLevelName(SparvLogger.FINAL, "FINAL")
+
+
+def get_sparv_logger(name: str) -> SparvLogger:
+    """Get a logger typed as `SparvLogger`.
+
+    Args:
+        name: Logger name.
+
+    Returns:
+        Logger object.
+    """
+    ensure_logger_class()
+    return cast(SparvLogger, logging.getLogger(name))

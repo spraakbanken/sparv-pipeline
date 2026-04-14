@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import queue
 import sys
 from pathlib import Path
 from typing import Any
@@ -115,7 +114,7 @@ class Completer:
         return cache_data.get(self.type, [])
 
 
-class SortedCompletionFinder(argcomplete.CompletionFinder):
+class SortedCompletionFinder(argcomplete.CompletionFinder):  # type: ignore
     """Custom CompletionFinder that sorts the completions.
 
     We use this instead of letting bash sort the completions, to sort flags separately.
@@ -157,6 +156,9 @@ def main(argv: list[str] | None = None) -> bool:
 
     Returns:
         True if the command was successful, False otherwise.
+
+    Raises:
+        KeyboardInterrupt: If the command was interrupted by the user.
     """
     if argv:
         sys.argv = ["sparv", *argv]
@@ -415,7 +417,7 @@ def main(argv: list[str] | None = None) -> bool:
         "plugins", help=help["plugins"], description=help["plugins"], formatter_class=RichHelpFormatter
     )
     plugins_subparsers = plugins_parser.add_subparsers(
-        dest="plugins_command", title="plugin commands", metavar="<plugin_command>"
+        dest="plugins_command", title="plugin commands", metavar="<command>"
     )
 
     # Sub-command: install

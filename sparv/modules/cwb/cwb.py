@@ -539,8 +539,7 @@ def cwb_align(
     # Add alignment parameter to registry
     # cwb-regedit is not installed by default, so we skip it and modify the regfile directly instead:
     regfile = Path(registry_dir, corpus)
-    with regfile.open(encoding="utf-8") as f:
-        skip_align = (f"ALIGNED {other}") in f.read()
+    skip_align = f"ALIGNED {other}" in regfile.read_text(encoding="utf-8")
 
     if not skip_align:
         with regfile.open("a", encoding="utf-8") as f:

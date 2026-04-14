@@ -5,16 +5,17 @@ from __future__ import annotations
 import pathlib
 import pickle
 import unicodedata
-from collections.abc import Generator, Iterable
+from collections.abc import Generator, Iterable, Sequence
 from typing import Any
 
 import yaml
 
 from sparv.api import get_logger
 from sparv.api.classes import Model
-from sparv.core.misc import parse_annotation_list  # noqa: F401 - Imported to make available through the API
+from sparv.core.misc import parse_annotation_list as _parse_annotation_list
 
 logger = get_logger(__name__)
+parse_annotation_list = _parse_annotation_list  # Expose parse_annotation_list at the API level
 
 
 def dump_yaml(data: dict, resolve_alias: bool = False, sort_keys: bool = False, indent: int = 2) -> str:
@@ -37,13 +38,13 @@ def dump_yaml(data: dict, resolve_alias: bool = False, sort_keys: bool = False, 
             """Force indentation."""
             return super().increase_indent(flow)
 
-    def str_representer(dumper: yaml.Dumper, data: str) -> yaml.ScalarNode:
+    def str_representer(dumper: yaml.representer.SafeRepresenter, data: str) -> yaml.ScalarNode:
         """Custom string representer for prettier multiline strings."""  # noqa: DOC201
         if "\n" in data:  # Check for multiline string
             return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
         return dumper.represent_scalar("tag:yaml.org,2002:str", data)
 
-    def obj_representer(dumper: yaml.Dumper, data: str) -> yaml.ScalarNode:
+    def obj_representer(dumper: yaml.representer.SafeRepresenter, data: str) -> yaml.ScalarNode:
         """Custom representer to cast subclasses of str to strings."""  # noqa: DOC201
         return dumper.represent_scalar("tag:yaml.org,2002:str", str(data))
 
@@ -52,7 +53,10 @@ def dump_yaml(data: dict, resolve_alias: bool = False, sort_keys: bool = False, 
 
     if resolve_alias:
         # Resolve aliases and replace them with their anchors' contents
-        yaml.SafeDumper.ignore_aliases = lambda *_args: True
+        def _ignore_aliases(self: yaml.SafeDumper, data: object) -> bool:  # noqa: ARG001
+            return True
+
+        yaml.SafeDumper.ignore_aliases = _ignore_aliases
 
     return yaml.dump(
         data, sort_keys=sort_keys, allow_unicode=True, Dumper=IndentDumper, indent=indent, default_flow_style=False
@@ -184,7 +188,7 @@ def remove_unassigned_characters(text: str, keep: Iterable[str] = ()) -> str:
     return "".join(c for c in text if c in keep or unicodedata.category(c) != "Cn")
 
 
-def chain(annotations: Iterable[dict], default: Any = None) -> Generator[tuple]:
+def chain(annotations: Sequence[dict], default: Any = None) -> Generator[tuple]:
     """Create a functional composition of a list of annotations.
 
     Args:

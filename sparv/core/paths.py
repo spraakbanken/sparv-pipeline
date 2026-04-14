@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import overload
 
 import appdirs
 import yaml
@@ -65,6 +66,12 @@ class SparvPaths:
                 data = {}
         return data
 
+    @overload
+    def get_data_path(self) -> Path | None: ...
+
+    @overload
+    def get_data_path(self, subpath: str | Path) -> Path: ...
+
     def get_data_path(self, subpath: str | Path = "") -> Path | None:
         """Get the location of the directory containing Sparv models, binaries, and other files.
 
@@ -72,7 +79,7 @@ class SparvPaths:
             subpath: Optional subpath to append to the data directory.
 
         Returns:
-            Path to the data directory or data directory subpath.
+            Path to the data directory or data directory subpath. Returns None if data directory is not set.
         """
         # Environment variable overrides config
         if not self.data_dir and (

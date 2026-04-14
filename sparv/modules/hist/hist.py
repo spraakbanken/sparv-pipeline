@@ -316,7 +316,7 @@ def spelling_variants(
         delimiter: Character to put between ambiguous results.
         affix: Character to put before and after sets of results.
         model_preloaded: Preloaded morphology model.
-    """
+    """  # noqa: DOC102
     # # Load model
     # model_name = model.path.stem
     # if not model_preloaded:

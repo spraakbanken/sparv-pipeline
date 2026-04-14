@@ -8,7 +8,6 @@ import sys
 from importlib.metadata import Distribution, entry_points
 from pathlib import Path
 
-import rich
 import rich.box
 from rich.table import Table
 

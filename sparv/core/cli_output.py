@@ -1,4 +1,4 @@
-"""Printing functions for Snakefile."""
+"""Functions for printing info to the command line."""
 
 import json
 import operator

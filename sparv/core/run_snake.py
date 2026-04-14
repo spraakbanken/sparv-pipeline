@@ -7,6 +7,7 @@ import traceback
 from importlib.metadata import entry_points
 
 from sparv.core import io, log_handler, registry
+from sparv.core.logger import get_sparv_logger
 from sparv.core.misc import SparvErrorMessage
 from sparv.core.paths import paths
 
@@ -99,6 +100,11 @@ if not use_preloader:
         name = module_name[len(custom_name) + 1 :]
         module_path = paths.corpus_dir.resolve() / f"{name}.py"
         spec = importlib.util.spec_from_file_location(module_name, module_path)
+        if spec is None or spec.loader is None:
+            raise SparvErrorMessage(
+                f"Module '{module_name}' cannot be imported due to an error locating the module "
+                f"or its loader for file '{module_path}'"
+            )
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
     else:
@@ -127,7 +133,7 @@ log_handler.setup_logging(
     file=snakemake.params.source_file,
     job=f"{module_name}:{f_name}",
 )
-logger = logging.getLogger("sparv")
+logger = get_sparv_logger("sparv")
 logger.info("RUN: %s:%s(%s)", module_name, f_name, ", ".join(f"{i[0]}={i[1]!r}" for i in list(parameters.items())))
 
 # Redirect any prints to logging module
@@ -137,7 +143,7 @@ module_logger = logging.getLogger(f"sparv.modules.{module_name}")
 sys.stdout = StreamToLogger(module_logger)
 sys.stderr = StreamToLogger(module_logger, logging.WARNING)
 
-if not use_preloader:
+if not use_preloader or sock is None:
     if preloader_busy:
         logger.info("Preloader is busy; executing without preloader.")
     # Execute function

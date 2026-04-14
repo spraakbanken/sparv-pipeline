@@ -111,6 +111,8 @@ def receive_data(sock: socket.socket) -> Any:
 
     # Get data
     data = recvall(sock, length)
+    if not data:
+        return None
 
     # Unpickle data and return
     return pickle.loads(data)

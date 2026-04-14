@@ -44,8 +44,7 @@ def file_id(
     assert source_files or source_files_list, "source_files or source_files_list must be specified"
 
     if source_files_list:
-        with Path(source_files_list).open(encoding="utf-8") as f:
-            source_files = f.read().strip().splitlines()
+        source_files = Path(source_files_list).read_text(encoding="utf-8").strip().splitlines()
 
     source_files = sorted(source_files)
     logger.progress(total=len(source_files))
@@ -129,7 +128,6 @@ def _reset_id(seed: str) -> None:
 
     Args:
         seed: Seed for the random number generator.
-        max_ids: Maximum number of IDs to generate. If provided, this will determine the length of the IDs.
     """
     seed_int = int(hexlify(seed.encode()), 16)  # For random.seed to work consistently regardless of platform
     random.seed(seed_int)

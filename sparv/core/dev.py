@@ -13,6 +13,7 @@ def inspect_workdir_file(filename: str, compression: str | None = None) -> bool:
 
     Args:
         filename: The name of the file to inspect.
+        compression: Optional compression type to use when reading the file.
 
     Returns:
         Whether the inspection was successful.
