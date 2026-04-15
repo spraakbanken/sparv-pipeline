@@ -3,7 +3,17 @@
 # ruff: noqa: PLR2004
 from pathlib import Path
 
-from sparv.api import Annotation, Config, Export, SourceAnnotations, SourceFilename, exporter, get_logger, util
+from sparv.api import (
+    Annotation,
+    AnnotationAllSourceFiles,
+    Config,
+    Export,
+    SourceAnnotations,
+    SourceFilename,
+    exporter,
+    get_logger,
+    util,
+)
 
 logger = get_logger(__name__)
 
@@ -105,7 +115,6 @@ def conllu(
     # DEPS: Enhanced dependency graph in the form of a list of head-deprel pairs.
     # MISC: Any other annotation.
     conll_fields = [id_ref, form, lemma, upos, xpos, feats, head, deprel, deps, misc]
-    conll_fields = [f if isinstance(f, Annotation) else Annotation() for f in conll_fields]
 
     # Create export dir
     out_path = Path(out)
@@ -117,8 +126,10 @@ def conllu(
     # TODO: Add structural annotations from 'annotations'? This is a bit annoying though because then we'd have to
     # take annotations as a requirement which results in Sparv having to run all annotations, even the ones we don't
     # want to use here.
-    annotations = [sentence, sentence_id, token, *conll_fields]
-    annotations = [(annot, None) for annot in annotations]
+    raw_annotations = [sentence, sentence_id, token, *conll_fields]
+    annotations: list[tuple[Annotation | AnnotationAllSourceFiles, str | None]] = [
+        (annot, None) for annot in raw_annotations if annot is not None
+    ]
     annotation_list, _, export_names = util.export.get_annotation_names(
         annotations, source_annotations, remove_namespaces=True, source_file=source_file, token_name=token_name
     )
@@ -155,7 +166,11 @@ def conllu(
 
 
 def _make_conll_token_line(
-    conll_fields: list[Annotation], token: str, annotation_dict: dict[str, dict], index: int, delimiter: str = "\t"
+    conll_fields: list[Annotation | None],
+    token: str,
+    annotation_dict: dict[str, dict],
+    index: int,
+    delimiter: str = "\t",
 ) -> str:
     """Create a line in CoNLL-format with the token and its annotations.
 
@@ -171,7 +186,7 @@ def _make_conll_token_line(
     """
     line = []
     for i, annot in enumerate(conll_fields):
-        if annot.attribute_name not in annotation_dict[token]:
+        if annot is None or annot.attribute_name not in annotation_dict[token]:
             attr_str = "_"
         else:
             attr_str = annotation_dict[token][annot.attribute_name][index].strip("|") or "_"
