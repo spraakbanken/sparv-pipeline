@@ -223,7 +223,8 @@ def update_autocompletion_cache() -> None:
         except Exception:
             current_cache = {}
 
-        default_language = sparv_config._config_default.get("metadata", {}).get("language")
+        # Get default language from default config, or use Swedish as a fallback
+        default_language = sparv_config._config_default.get("metadata", {}).get("language", "swe")
 
         if not (current_cache.get(language) == new_cache and current_cache.get("default_language") == default_language):
             current_cache[language] = new_cache
