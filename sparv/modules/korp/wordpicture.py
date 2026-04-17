@@ -35,32 +35,54 @@ logger = get_logger(__name__)
 
 MAX_STRING_LENGTH = 100  # Truncate all strings to this length
 MAX_STRINGEXTRA_LENGTH = 32  # Truncate all stringextra values to this length
-MAX_POS_LENGTH = 5  # Max length of part-of-speech value in database
 MAX_SENTENCES = 5000  # Max number of source sentences to include in SQL export per relation
 
-# Patterns for relations to capture. See docstring of wordpicture() for explanation.
-REL_PATTERNS: list[tuple[dict[int, str]] | tuple[dict[int, str], dict[int, str], tuple[int, int, int, str]]] = [
-    ({1: "VB", 2: "SS", 3: "NN"}, {1: "VB", 4: "VG", 5: "VB"}, (5, 2, 3, "")),  # "han har sprungit"
-    ({1: "VB", 2: "(SS|OO|IO|OA)", 3: "NN"},),
-    ({1: "VB", 2: "(RA|TA)", 3: "(AB|NN)"},),
-    ({1: "VB", 2: "(RA|TA)", 3: "PP"}, {3: "PP", 4: "(PA|HD)", 5: "NN"}, (1, 2, 5, "%(3)s")),  # "ges vid behov"
-    ({1: "NN", 2: "(AT|ET)", 3: "JJ"},),  # "stor hund"
-    ({1: "NN", 2: "ET", 3: "VB"}, {3: "VB", 4: "SS", 5: "HP"}, (1, 2, 3, "%(5)s")),  # "brödet som bakats"
-    (
-        {1: "NN", 2: "ET", 3: "PP"},
-        {3: "PP", 4: "PA", 5: "(NN|PM)"},
-        (1, 2, 5, "%(3)s"),
-    ),  # "barnen i skolan", "hundarna i Sverige"
-    ({1: "PP", 2: "PA", 3: "NN"},),  # "på bordet"
-    ({1: "JJ", 2: "AA", 3: "AB"},),  # "fullständigt galen"
+# Default relation patterns for Swedish. See the documentation of `korp.wordpicture_rel_patterns` for details.
+DEFAULT_REL_PATTERNS: list[dict] = [
+    {
+        "head": "VB",
+        "rel": "SS",
+        "dep": "NN",
+        "secondary": {"shared": "head", "rel": "VG", "dep": "VB"},
+        "output_head": "secondary_dep",
+    },  # "han har sprungit"
+    {"head": "VB", "rel": "(SS|OO|IO|OA)", "dep": "NN"},
+    {"head": "VB", "rel": "(RA|TA)", "dep": "(AB|NN)"},
+    {
+        "head": "VB",
+        "rel": "(RA|TA)",
+        "dep": "PP",
+        "secondary": {"rel": "(PA|HD)", "dep": "NN"},
+        "output_dep": "secondary_dep",
+        "extra": "{dep}",
+    },  # "ges vid behov"
+    {"head": "NN", "rel": "(AT|ET)", "dep": "JJ"},  # "stor hund"
+    {
+        "head": "NN",
+        "rel": "ET",
+        "dep": "VB",
+        "secondary": {"rel": "SS", "dep": "HP"},
+        "extra": "{secondary_dep}",
+    },  # "brödet som bakats"
+    {
+        "head": "NN",
+        "rel": "ET",
+        "dep": "PP",
+        "secondary": {"rel": "PA", "dep": "(NN|PM)"},
+        "output_dep": "secondary_dep",
+        "extra": "{dep}",
+    },  # "barnen i skolan", "hundarna i Sverige"
+    {"head": "PP", "rel": "PA", "dep": "NN"},  # "på bordet"
+    {"head": "JJ", "rel": "AA", "dep": "AB"},  # "fullständigt galen"
 ]
 
-NULL_RELS = [
-    ("VB", ["OO"]),  # Verbs missing objects
-]
+# Default null relations for Swedish: POS tags mapped to lists of dependency relations that the POS should *not* have
+DEFAULT_NULL_RELS: dict[str, list[str]] = {
+    "VB": ["OO"],  # Verbs missing objects
+}
 
-# Relations that will be grouped together and treated as the same relation
-REL_GROUPING = {
+# Default relation grouping for Swedish (will be treated as the same relation in the database)
+DEFAULT_REL_GROUPING: dict[str, str] = {
     "OO": "OBJ",
     "IO": "OBJ",
     "RA": "ADV",
@@ -68,8 +90,11 @@ REL_GROUPING = {
     "OA": "ADV",
 }
 
-# All possible relation names allowed in the database
-REL_NAMES = ["SS", "OBJ", "ADV", "AA", "AT", "ET", "PA"]
+# Default relation names for Swedish (all possible relation names allowed in the database)
+DEFAULT_REL_NAMES: list[str] = ["SS", "OBJ", "ADV", "AA", "AT", "ET", "PA"]
+
+# Default regex pattern to identify multi-word expressions in baseform values (matches Swedish lemgram suffixes)
+DEFAULT_MULTIWORD_PATTERN = r"\.\.\w\wm\."
 
 # Suffix for yearly word picture exports
 YEARLY_SUFFIX = "_yearly"
@@ -80,82 +105,60 @@ class SimpleRelPattern:
     """Container for simple relation patterns."""
 
     primary_re: re.Pattern[str]
-    primary_sorted_keys: tuple[str, ...]
-    primary_dict: dict[int, str]
 
 
 @dataclass(frozen=True, slots=True)
 class ComplexRelPattern(SimpleRelPattern):
     """Container for complex relation patterns."""
 
-    secondary_dict: dict[int, str]
-    secondary_sorted_keys: tuple[str, ...]
-    secondary_values_sorted: tuple[str, ...]
+    shared: str
     secondary_rel_re: re.Pattern[str]
     secondary_dep_re: re.Pattern[str]
-    shared_key: int
-    index1: int
-    index2: int
-    extra: tuple
+    output_head: str
+    output_dep: str
+    extra: str
 
 
 RelPattern = SimpleRelPattern | ComplexRelPattern
 
 
-def _compile_rel_patterns() -> list[RelPattern]:
-    """Compile the relation patterns defined in REL_PATTERNS.
+def _compile_rel_patterns(rel_patterns: list[dict]) -> list[RelPattern]:
+    """Compile the relation patterns from configuration.
+
+    Each pattern dict must have 'head', 'rel', and 'dep' keys for the primary relation. For complex patterns, a
+    'secondary' dict with 'rel' and 'dep' keys specifies a chained relation. The secondary's 'shared' key (default:
+    "dep") indicates which primary token is the secondary head. 'output_head' and 'output_dep' (default: "head" and
+    "dep") control which tokens appear in the output. An 'extra' format string (e.g. "{dep}") can reference display
+    forms of tokens.
+
+    Args:
+        rel_patterns: List of relation pattern dicts.
 
     Returns:
         A list of precompiled relation patterns.
     """
-
-    def _compile(pattern: str) -> re.Pattern[str]:
-        return re.compile(rf"^{pattern}$")
-
     compiled_relations = []
-    for rel in REL_PATTERNS:
-        primary = rel[0]
-        primary_re = _compile(";".join(value for _, value in sorted(primary.items())))
-        primary_sorted_keys = tuple(str(key) for key in sorted(primary))
+    for rel in rel_patterns:
+        primary_re = re.compile(rf"^{rel['head']};{rel['rel']};{rel['dep']}$")
 
-        if len(rel) == 1:
-            compiled_relations.append(
-                SimpleRelPattern(
-                    primary_re=primary_re,
-                    primary_sorted_keys=primary_sorted_keys,
-                    primary_dict=primary,
-                )
-            )
+        if "secondary" not in rel:
+            compiled_relations.append(SimpleRelPattern(primary_re=primary_re))
             continue
 
-        assert len(rel) == 3, "Invalid relation pattern definition"  # noqa: PLR2004
-
-        secondary = rel[1]
-        secondary_sorted_keys = tuple(str(key) for key in sorted(secondary))
-        secondary_values_sorted = tuple(value for _, value in sorted(secondary.items()))
-        shared_key = (set(primary) & set(secondary)).pop()
-
+        sec = rel["secondary"]
         compiled_relations.append(
             ComplexRelPattern(
                 primary_re=primary_re,
-                primary_sorted_keys=primary_sorted_keys,
-                primary_dict=primary,
-                secondary_dict=secondary,
-                secondary_sorted_keys=secondary_sorted_keys,
-                secondary_values_sorted=secondary_values_sorted,
-                secondary_rel_re=_compile(secondary_values_sorted[1]),
-                secondary_dep_re=_compile(secondary_values_sorted[2]),
-                shared_key=shared_key,
-                index1=list(primary).index(shared_key),
-                index2=list(secondary).index(shared_key),
-                extra=rel[-1],
+                shared=sec.get("shared", "dep"),
+                secondary_rel_re=re.compile(rf"^{sec['rel']}$"),
+                secondary_dep_re=re.compile(rf"^{sec['dep']}$"),
+                output_head=rel.get("output_head", "head"),
+                output_dep=rel.get("output_dep", "dep"),
+                extra=rel.get("extra", ""),
             )
         )
 
     return compiled_relations
-
-
-COMPILED_REL_PATTERNS = _compile_rel_patterns()
 
 
 def _year_sort_value(year: int | None) -> tuple[int, int]:
@@ -172,47 +175,48 @@ def _year_sort_value(year: int | None) -> tuple[int, int]:
     return (1, year)
 
 
-@annotator("Generate dependency relation data for Korp's Word Picture", language=["swe"])
+@annotator(
+    "Generate dependency relation data for Korp's Word Picture\n\n"
+    "This annotator processes sentences and their tokens to identify specific syntactic relations (dependencies) "
+    "between words based on predefined patterns. These patterns are configured through `korp.wordpicture_rel_patterns`."
+)
 def wordpicture(
     out: OutputData = OutputData("korp.wordpicture", description="Wordpicture data"),
     word: Annotation = Annotation("<token:word>"),
-    pos: Annotation = Annotation("<token:pos>"),
-    lemgram: Annotation = Annotation("<token:lemgram>"),
+    pos: Annotation = Annotation("[korp.wordpicture_pos]"),
+    baseform: Annotation = Annotation("[korp.wordpicture_baseform]"),
     dephead: Annotation = Annotation("<token:dephead>"),
     deprel: Annotation = Annotation("<token:deprel>"),
     sentence_id: Annotation = Annotation("<sentence>:misc.id"),
     text: Annotation = Annotation("<text>"),
     ref: Annotation = Annotation("<token:ref>"),
-    baseform: Annotation = Annotation("<token>:saldo.baseform"),
+    display_form: Annotation = Annotation("[korp.wordpicture_display_form]"),
     sort: Config = Config("korp.wordpicture_sorted"),
+    rel_patterns: list[dict] = Config("korp.wordpicture_rel_patterns"),
+    null_rels: dict[str, list[str]] = Config("korp.wordpicture_null_rels"),
+    multiword_pattern: str = Config("korp.wordpicture_multiword_pattern"),
 ) -> None:
     """Find syntactic dependencies for Korp's Word Picture.
-
-    This function processes sentences and their tokens to identify specific syntactic relations (dependencies) between
-    words based on predefined patterns. These patterns are defined in the `REL_PATTERNS` variable. In its simplest form,
-    a pattern consists of a dictionary with three keys. The keys are numeric, and in this simple form only used for
-    sorting the values. The first value is the POS of the head token, the second value is the dependency relation, and
-    the third value is the POS of the dependent token. These values can be either strings or regex patterns.
-
-    To capture more complex relations that involve intermediate tokens, a second dictionary can be used to represent
-    another relation. By sharing a key between the two dictionaries, you specify that the two tokens with that key are
-    the same. A tuple with three indices is then used to define which values from the dictionaries should be combined to
-    create the final relation. The tuple's last value is a string that can store an "extra" value, which may reference
-    the indices using string formatting.
 
     Args:
         out: Output annotation for word picture data.
         word: Word annotation.
         pos: Part-of-speech annotation.
-        lemgram: Lemgram annotation.
+        baseform: Baseform annotation (or similar, e.g. lemgrams for Swedish).
         dephead: Dependency head annotation.
         deprel: Dependency relation annotation.
         sentence_id: Sentence ID annotation.
         text: Text annotation.
         ref: Sentence relative token position annotation.
-        baseform: Baseform annotation.
+        display_form: Display form annotation, used for labeling intermediate tokens in complex relations. Usually
+            this should be a baseform annotation.
         sort: Whether to sort the output for easier diffing.
+        rel_patterns: Relation patterns configuration.
+        null_rels: POS tags mapped to missing dependency relations.
+        multiword_pattern: Regex pattern for identifying multi-word expressions in baseform values.
     """
+    compiled_rel_patterns = _compile_rel_patterns(rel_patterns)
+
     text_sentences, _ = text.get_children(sentence_id)
     text_sentences = list(text_sentences)
 
@@ -222,7 +226,7 @@ def wordpicture(
 
     logger.progress(total=len(sentence_tokens) + 1)
 
-    annotations = list(word.read_attributes((word, pos, lemgram, dephead, deprel, ref, baseform)))
+    annotations = list(word.read_attributes((word, pos, baseform, dephead, deprel, ref, display_form)))
 
     triples = set()
 
@@ -236,23 +240,23 @@ def wordpicture(
 
             # Link the tokens together
             for token_index in sent:
-                token_word, token_pos, token_lem, token_dh, token_dr, token_ref, token_bf = annotations[token_index]
+                token_word, token_pos, token_bf, token_dh, token_dr, token_ref, token_df = annotations[token_index]
                 if not token_dr:
                     skip_sentence = True
                     break
                 token_word = token_word.lower()
 
-                if token_lem == "|":
-                    token_lem = token_word
+                if token_bf == "|":
+                    token_bf = token_word
 
                 this = {
                     "pos": token_pos,
-                    "lemgram": token_lem,
+                    "baseform": token_bf,
                     "word": token_word,
                     "head": None,
                     "dep": [],
                     "ref": token_ref,
-                    "bf": token_bf,
+                    "display_form": token_df,
                 }
 
                 tokens[token_index] = this
@@ -295,87 +299,65 @@ def wordpicture(
             # Look for relations matching the patterns
             for token_data in tokens.values():
                 for d in token_data["dep"]:
-                    for rel in COMPILED_REL_PATTERNS:
+                    for rel in compiled_rel_patterns:
                         if rel.primary_re.match(";".join((token_data["pos"], d[0], d[1]["pos"]))):
                             triple = None
-                            if type(rel) is SimpleRelPattern:  # Don't use isinstance here since it matches subclasses
+                            if type(rel) is ComplexRelPattern:
+                                # This pattern is a complex relation with intermediate tokens
+                                tokens_map = {"head": token_data, "dep": d[1]}
+                                shared_token = tokens_map[rel.shared]
+                                result = _findrel(shared_token, rel.secondary_rel_re, rel.secondary_dep_re)
+                                if result:
+                                    tokens_map["secondary_dep"] = result
+
+                                    out_head = tokens_map[rel.output_head]
+                                    out_dep = tokens_map[rel.output_dep]
+
+                                    if rel.extra:
+                                        df_map = {k: v["display_form"] for k, v in tokens_map.items()}
+                                        ref_map = {k: v["ref"] for k, v in tokens_map.items()}
+                                        extra_val = (
+                                            rel.extra.format_map(df_map),
+                                            rel.extra.format_map(ref_map),
+                                        )
+                                    else:
+                                        extra_val = ("", None)
+
+                                    triple = (
+                                        (
+                                            out_head["baseform"],
+                                            out_head["word"],
+                                            out_head["pos"],
+                                            out_head["ref"],
+                                        ),
+                                        d[0],
+                                        (out_dep["baseform"], out_dep["word"], out_dep["pos"], out_dep["ref"]),
+                                        extra_val,
+                                        sent_id,
+                                        out_head["ref"],
+                                        out_dep["ref"],
+                                    )
+                            else:
                                 # This pattern is a simple relation
                                 triple = (
-                                    (token_data["lemgram"], token_data["word"], token_data["pos"], token_data["ref"]),
+                                    (token_data["baseform"], token_data["word"], token_data["pos"], token_data["ref"]),
                                     d[0],
-                                    (d[1]["lemgram"], d[1]["word"], d[1]["pos"], d[1]["ref"]),
+                                    (d[1]["baseform"], d[1]["word"], d[1]["pos"], d[1]["ref"]),
                                     ("", None),
                                     sent_id,
                                     token_data["ref"],
                                     d[1]["ref"],
                                 )
-                            else:
-                                # This pattern is a complex relation with intermediate tokens
-                                # Map keys from relation pattern to corresponding token objects
-                                lookup = dict(zip(rel.primary_sorted_keys, (token_data, d[0], d[1]), strict=True))
-                                # The shared token is the dependent in the first relation and the head in the second
-                                if rel.index1 == 2 and rel.index2 == 0:  # noqa: PLR2004
-                                    result = _findrel(d[1], rel.secondary_rel_re, rel.secondary_dep_re)
-                                    if result:
-                                        lookup.update(
-                                            dict(
-                                                zip(
-                                                    rel.secondary_sorted_keys,
-                                                    (d[1], rel.secondary_values_sorted[1], result),
-                                                    strict=True,
-                                                )
-                                            )
-                                        )
-                                # The shared token is the head in both relations
-                                elif rel.index1 == 0 and rel.index2 == 0:
-                                    result = _findrel(token_data, rel.secondary_rel_re, rel.secondary_dep_re)
-                                    if result:
-                                        lookup.update(
-                                            dict(
-                                                zip(
-                                                    rel.secondary_sorted_keys,
-                                                    (token_data, rel.secondary_values_sorted[1], result),
-                                                    strict=False,
-                                                )
-                                            )
-                                        )
-
-                                pp = rel.extra
-                                # More than 3 indices means that we successfully resolved additional intermediate tokens
-                                if len(list(lookup)) > 3:  # noqa: PLR2004
-                                    lookup_bf = {key: val["bf"] for key, val in lookup.items() if isinstance(val, dict)}
-                                    lookup_ref = {
-                                        key: val["ref"] for key, val in lookup.items() if isinstance(val, dict)
-                                    }
-                                    triple = (
-                                        (
-                                            lookup[str(pp[0])]["lemgram"],
-                                            lookup[str(pp[0])]["word"],
-                                            lookup[str(pp[0])]["pos"],
-                                            lookup[str(pp[0])]["ref"],
-                                        ),
-                                        lookup[str(pp[1])],
-                                        (
-                                            lookup[str(pp[2])]["lemgram"],
-                                            lookup[str(pp[2])]["word"],
-                                            lookup[str(pp[2])]["pos"],
-                                            lookup[str(pp[2])]["ref"],
-                                        ),
-                                        (pp[3] % lookup_bf, pp[3] % lookup_ref),
-                                        sent_id,
-                                        lookup[str(pp[0])]["ref"],
-                                        lookup[str(pp[2])]["ref"],
-                                    )
                             if triple:
-                                triples.update({(*t, text_index) for t in _mutate_triple(triple)})
+                                triples.update({(*t, text_index) for t in _mutate_triple(triple, multiword_pattern)})
                                 break
                 token_rels = [d[0] for d in token_data["dep"]]
-                for nrel in NULL_RELS:
-                    if nrel[0] == token_data["pos"]:
-                        missing_rels = [x for x in nrel[1] if x not in token_rels]
+                for nrel_pos, nrel_deps in null_rels.items():
+                    if nrel_pos == token_data["pos"]:
+                        missing_rels = [x for x in nrel_deps if x not in token_rels]
                         for mrel in missing_rels:
                             triple = (
-                                (token_data["lemgram"], token_data["word"], token_data["pos"], token_data["ref"]),
+                                (token_data["baseform"], token_data["word"], token_data["pos"], token_data["ref"]),
                                 mrel,
                                 ("", "", "", token_data["ref"]),
                                 ("", None),
@@ -383,7 +365,7 @@ def wordpicture(
                                 token_data["ref"],
                                 token_data["ref"],
                             )
-                            triples.update({(*t, text_index) for t in _mutate_triple(triple)})
+                            triples.update({(*t, text_index) for t in _mutate_triple(triple, multiword_pattern)})
             logger.progress()
 
     def _wordpicture_sort_key(triple: tuple) -> tuple:
@@ -398,13 +380,15 @@ def wordpicture(
     logger.progress()
 
 
-def _mutate_triple(triple: tuple) -> list:
+def _mutate_triple(triple: tuple, multiword_pattern: str = "") -> list:
     """Split |head1|head2|...| REL |dep1|dep2|...| into several separate relations.
 
     Also remove multi-words which are in both head and dep, and remove the :nn part from words.
 
     Args:
         triple: A tuple with a relation, where head and dep can have several values separated by |.
+        multiword_pattern: Regex pattern for identifying multi-word expressions. If empty, no multi-word filtering is
+            done.
 
     Returns:
         A list of tuples with new relations based on the original one.
@@ -412,20 +396,21 @@ def _mutate_triple(triple: tuple) -> list:
     head, rel, dep, extra, sent_id, refhead, refdep = triple
 
     triples = []
-    is_lemgrams = {}
+    is_multi_value = {}
     parts = {"head": head, "dep": dep}
 
     for part, val in parts.items():
         if val[0].startswith("|") and val[0].endswith("|"):
+            # This is a set of multiple values. Split it and remove ':' delimited suffix if present.
             parts[part] = [w[: w.find(":")] if ":" in w else w for w in val[0].split("|") if w]
-            is_lemgrams[part] = True
+            is_multi_value[part] = True
         else:
             parts[part] = [val[0]]
 
     def _remove_doubles(a: str, b: str) -> None:
         """Remove multi-words which are in both."""
-        if a in is_lemgrams and b in is_lemgrams:
-            doubles = [d for d in set(parts[a]).intersection(set(parts[b])) if re.search(r"\.\.\w\wm\.", d)]
+        if multiword_pattern and a in is_multi_value and b in is_multi_value:
+            doubles = [d for d in set(parts[a]).intersection(set(parts[b])) if re.search(multiword_pattern, d)]
             for double in doubles:
                 parts[a].remove(double)
                 parts[b].remove(double)
@@ -455,11 +440,11 @@ def _mutate_triple(triple: tuple) -> list:
         for new_dep in parts["dep"]:
             triples.extend(
                 (
-                    # head: lemgram, dep: lemgram
+                    # head: baseform, dep: baseform
                     (new_head, head[2], rel, new_dep, dep[2], extra, sent_id, refhead, refdep, 1, 1, 0, 0),
-                    # head: wordform, dep: lemgram
+                    # head: wordform, dep: baseform
                     (head[1], head[2], rel, new_dep, dep[2], extra, sent_id, refhead, refdep, 0, 1, 1, 0),
-                    # head: lemgram, dep: wordform
+                    # head: baseform, dep: wordform
                     (new_head, head[2], rel, dep[1], dep[2], extra, sent_id, refhead, refdep, 1, 0, 0, 1),
                 )
             )
@@ -467,7 +452,7 @@ def _mutate_triple(triple: tuple) -> list:
     return triples
 
 
-@annotator("Generate shared strings data for Word Picture exports", language=["swe"])
+@annotator("Generate shared strings data for Word Picture exports")
 def wordpicture_strings(
     out: OutputCommonData = OutputCommonData("korp.wordpicture_strings", description="Wordpicture strings table"),
     wordpicture: AnnotationDataAllSourceFiles = AnnotationDataAllSourceFiles("korp.wordpicture"),
@@ -505,7 +490,7 @@ def wordpicture_strings(
     out.write(pickle.dumps(strings, protocol=pickle.HIGHEST_PROTOCOL))
 
 
-@exporter("Word Picture strings SQL", language=["swe"])
+@exporter("Word Picture strings SQL")
 def wordpicture_strings_sql(
     corpus: Corpus = Corpus(),
     out: Export = Export("korp.wordpicture/wordpicture_strings.sql"),
@@ -536,7 +521,6 @@ def wordpicture_strings_sql(
 
 @exporter(
     "Word Picture SQL with aggregated data",
-    language=["swe"],
     config=[
         Config(
             "korp.wordpicture_no_sentences",
@@ -561,6 +545,8 @@ def wordpicture_sql(
     sorted_sql: bool = Config("korp.wordpicture_sorted"),
     source_files: AllSourceFilenames = AllSourceFilenames(),
     table_name: str = Config("korp.wordpicture_table"),
+    rel_grouping: dict[str, str] = Config("korp.wordpicture_rel_grouping"),
+    rel_names: list[str] = Config("korp.wordpicture_rel_names"),
     split: bool = False,
 ) -> None:
     """Calculate statistics for the aggregated Word Picture data only and save to SQL.
@@ -574,6 +560,8 @@ def wordpicture_sql(
         sorted_sql: Whether to sort SQL output for easier diffing.
         source_files: List of source files to process.
         table_name: Name of the database table.
+        rel_grouping: Mapping of raw relation names to grouped relation names.
+        rel_names: All possible relation names allowed in the database.
         split: Whether to split the data per source file.
     """
     _wordpicture_sql(
@@ -584,13 +572,15 @@ def wordpicture_sql(
         no_sentences=no_sentences,
         source_files=source_files,
         table_name=table_name,
+        rel_grouping=rel_grouping,
+        rel_names=rel_names,
         split=split,
         log_label="korp:wordpicture_sql",
         sort=sorted_sql,
     )
 
 
-@exporter("Word Picture SQL with yearly data", language=["swe"])
+@exporter("Word Picture SQL with yearly data")
 def wordpicture_yearly_sql(
     corpus: Corpus = Corpus(),
     out: Export = Export(f"korp.wordpicture/wordpicture{YEARLY_SUFFIX}.sql"),
@@ -603,6 +593,8 @@ def wordpicture_yearly_sql(
     split: bool = False,
     datefrom: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<text>:dateformat.datefrom"),
     dateto: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<text>:dateformat.dateto"),
+    rel_grouping: dict[str, str] = Config("korp.wordpicture_rel_grouping"),
+    rel_names: list[str] = Config("korp.wordpicture_rel_names"),
 ) -> None:
     """Calculate yearly statistics of the dependencies and save to SQL.
 
@@ -618,6 +610,8 @@ def wordpicture_yearly_sql(
         split: Whether to split the data per source file.
         datefrom: Annotation with the starting year of each text.
         dateto: Annotation with the ending year of each text.
+        rel_grouping: Mapping of raw relation names to grouped relation names.
+        rel_names: All possible relation names allowed in the database.
     """
     _wordpicture_sql(
         corpus=corpus,
@@ -627,6 +621,8 @@ def wordpicture_yearly_sql(
         no_sentences=no_sentences,
         source_files=source_files,
         table_name=table_name,
+        rel_grouping=rel_grouping,
+        rel_names=rel_names,
         split=split,
         log_label="korp:wordpicture_yearly_sql",
         datefrom=datefrom,
@@ -643,7 +639,6 @@ def wordpicture_yearly_sql(
         "storage of identical data. In those cases, use this instead of the regular aggregated Word Picture SQL "
         "exporter."
     ),
-    language=["swe"],
 )
 def wordpicture_sql_shared_with_yearly(
     corpus: Corpus = Corpus(),
@@ -681,6 +676,8 @@ def _wordpicture_sql(
     no_sentences: bool,
     source_files: AllSourceFilenames,
     table_name: str,
+    rel_grouping: dict[str, str],
+    rel_names: list[str],
     split: bool,
     log_label: str,
     datefrom: AnnotationAllSourceFiles | None = None,
@@ -733,7 +730,7 @@ def _wordpicture_sql(
             head = strings[head, headpos, ""]
             dep = strings[dep, deppos, extra]
 
-            rel = REL_GROUPING.get(rel, rel)
+            rel = rel_grouping.get(rel, rel)
 
             if (head, rel, dep, yearfrom, yearto) in freq_index:
                 this_index = freq_index[head, rel, dep, yearfrom, yearto]
@@ -772,6 +769,7 @@ def _wordpicture_sql(
                     dep_rel_count,
                     out,
                     db_table,
+                    rel_names,
                     split,
                     first=(file_count == 1),
                     no_sentences=no_sentences,
@@ -787,6 +785,7 @@ def _wordpicture_sql(
                     {},
                     out,
                     db_table,
+                    rel_names,
                     split,
                     first=(file_count == 1),
                     no_sentences=no_sentences,
@@ -804,6 +803,7 @@ def _wordpicture_sql(
         dep_rel_count,
         out,
         db_table,
+        rel_names,
         split,
         first=(file_count == 1),
         last=True,
@@ -825,10 +825,11 @@ def _write_strings_sql(
     """Write the Word Picture string data to an SQL file."""
     temp_table = f"temp_{db_table}_strings"
     final_table = f"{db_table}_strings"
+    max_pos_length = max((len(pos) for _, pos, _ in strings), default=1)
 
     mysql = MySQL(output=sql_file)
 
-    mysql.create_table(temp_table, drop=True, **MYSQL_STRINGS)
+    mysql.create_table(temp_table, drop=True, **get_mysql_strings(max_pos_length))
     mysql.disable_keys(temp_table)
     mysql.disable_checks()
     mysql.set_names()
@@ -867,6 +868,7 @@ def _write_sql(
     dep_rel_count: dict,
     sql_file: str,
     db_table: str,
+    rel_names: list[str],
     split: bool = False,
     first: bool = False,
     last: bool = False,
@@ -884,10 +886,10 @@ def _write_sql(
     mysql = MySQL(output=sql_file, append=True)
 
     if first:
-        mysql_relations = get_mysql_main(include_year=include_years)
-        mysql_rel = get_mysql_rel(include_year=include_years)
-        mysql_head_rel = get_mysql_head_rel(include_year=include_years)
-        mysql_dep_rel = get_mysql_dep_rel(include_year=include_years)
+        mysql_relations = get_mysql_main(rel_names, include_year=include_years)
+        mysql_rel = get_mysql_rel(rel_names, include_year=include_years)
+        mysql_head_rel = get_mysql_head_rel(rel_names, include_year=include_years)
+        mysql_dep_rel = get_mysql_dep_rel(rel_names, include_year=include_years)
         if not split:
             del mysql_relations["constraints"]
             del mysql_rel["constraints"]
@@ -1018,7 +1020,6 @@ def _write_sql(
 
 @installer(
     "Install Korp's Word Picture strings SQL on remote host",
-    language=["swe"],
     uninstaller="korp:uninstall_wordpicture_strings",
 )
 def install_wordpicture_strings(
@@ -1042,9 +1043,7 @@ def install_wordpicture_strings(
     marker.write()
 
 
-@uninstaller(
-    "Uninstall Korp's Word Picture strings from database", name="uninstall_wordpicture_strings", language=["swe"]
-)
+@uninstaller("Uninstall Korp's Word Picture strings from database", name="uninstall_wordpicture_strings")
 def uninstall_wordpicture_strings(
     corpus: Corpus = Corpus(),
     marker: OutputMarker = OutputMarker("korp.uninstall_wordpicture_strings_marker"),
@@ -1088,7 +1087,6 @@ for installation in (
     @installer(
         installation["description"],
         name=f"install_wordpicture{installation['suffix']}",
-        language=["swe"],
         uninstaller=f"korp:uninstall_wordpicture{installation['suffix']}",
     )
     def install_wordpicture(
@@ -1113,9 +1111,7 @@ for installation in (
         uninstall_marker.remove()
         marker.write()
 
-    @uninstaller(
-        installation["uninstall_description"], name=f"uninstall_wordpicture{installation['suffix']}", language=["swe"]
-    )
+    @uninstaller(installation["uninstall_description"], name=f"uninstall_wordpicture{installation['suffix']}")
     def uninstall_wordpicture(
         corpus: Corpus = Corpus(),
         marker: OutputMarker = OutputMarker(f"korp.uninstall_wordpicture{installation['suffix']}_marker"),
@@ -1152,7 +1148,6 @@ for installation in (
         "from a single year. This will automatically install the yearly Word Picture data if it is not already "
         "installed."
     ),
-    language=["swe"],
     uninstaller="korp:uninstall_wordpicture_shared",
 )
 def install_wordpicture_shared(
@@ -1179,7 +1174,6 @@ def install_wordpicture_shared(
 
 @uninstaller(
     "Uninstall database views for shared Word Picture data",
-    language=["swe"],
 )
 def uninstall_wordpicture_shared(
     corpus: Corpus = Corpus(),
@@ -1211,15 +1205,23 @@ def uninstall_wordpicture_shared(
 
 ################################################################################
 
-rel_enum = "ENUM({})".format(", ".join(f"'{r}'" for r in REL_NAMES))
+
+def _make_rel_enum(rel_names: list[str]) -> str:
+    """Build the MySQL ENUM type string from a list of relation names.
+
+    Returns:
+        A MySQL ENUM type definition string.
+    """
+    return "ENUM({})".format(", ".join(f"'{r}'" for r in rel_names))
 
 
-def get_mysql_main(include_year: bool = True) -> dict:
+def get_mysql_main(rel_names: list[str], include_year: bool = True) -> dict:
     """Return MySQL table definition for main relation data, optionally including year columns."""
+    rel_enum = _make_rel_enum(rel_names)
     columns = [
         ("id", int, 0, "NOT NULL"),
         ("head", int, 0, "NOT NULL"),
-        ("rel", rel_enum, REL_NAMES[0], "NOT NULL"),
+        ("rel", rel_enum, rel_names[0], "NOT NULL"),
         ("dep", int, 0, "NOT NULL"),
         ("freq", int, 0, "NOT NULL"),
         ("bfhead", "BOOL", None, ""),
@@ -1248,10 +1250,11 @@ def get_mysql_main(include_year: bool = True) -> dict:
     }
 
 
-def get_mysql_rel(include_year: bool = True) -> dict:
+def get_mysql_rel(rel_names: list[str], include_year: bool = True) -> dict:
     """Return MySQL table definition for relations, optionally including year columns."""
+    rel_enum = _make_rel_enum(rel_names)
     columns = [
-        ("rel", rel_enum, REL_NAMES[0], "NOT NULL"),
+        ("rel", rel_enum, rel_names[0], "NOT NULL"),
         ("freq", int, 0, "NOT NULL"),
     ]
     if include_year:
@@ -1270,11 +1273,12 @@ def get_mysql_rel(include_year: bool = True) -> dict:
     }
 
 
-def get_mysql_head_rel(include_year: bool = True) -> dict:
+def get_mysql_head_rel(rel_names: list[str], include_year: bool = True) -> dict:
     """Return MySQL table definition for head relations, optionally including year columns."""
+    rel_enum = _make_rel_enum(rel_names)
     columns = [
         ("head", int, 0, "NOT NULL"),
-        ("rel", rel_enum, REL_NAMES[0], "NOT NULL"),
+        ("rel", rel_enum, rel_names[0], "NOT NULL"),
         ("freq", int, 0, "NOT NULL"),
     ]
     if include_year:
@@ -1295,11 +1299,12 @@ def get_mysql_head_rel(include_year: bool = True) -> dict:
     }
 
 
-def get_mysql_dep_rel(include_year: bool = True) -> dict:
+def get_mysql_dep_rel(rel_names: list[str], include_year: bool = True) -> dict:
     """Return MySQL table definition for dependent relations, optionally including year columns."""
+    rel_enum = _make_rel_enum(rel_names)
     columns = [
         ("dep", int, 0, "NOT NULL"),
-        ("rel", rel_enum, REL_NAMES[0], "NOT NULL"),
+        ("rel", rel_enum, rel_names[0], "NOT NULL"),
         ("freq", int, 0, "NOT NULL"),
     ]
     if include_year:
@@ -1320,19 +1325,22 @@ def get_mysql_dep_rel(include_year: bool = True) -> dict:
     }
 
 
-MYSQL_STRINGS = {
-    "columns": [
-        ("id", int, 0, "NOT NULL"),
-        ("string", f"varchar({MAX_STRING_LENGTH:d})", "", "NOT NULL"),
-        ("stringextra", f"varchar({MAX_STRINGEXTRA_LENGTH:d})", "", "NOT NULL"),
-        ("pos", f"varchar({MAX_POS_LENGTH:d})", "", "NOT NULL"),
-    ],
-    "primary": "id",
-    "indexes": ["string pos stringextra"],
-    "default charset": "utf8mb4",
-    "collate": "utf8mb4_bin",
-    "row_format": "compressed",
-}
+def get_mysql_strings(max_pos_length: int) -> dict:
+    """Return MySQL table definition for Word Picture strings."""
+    return {
+        "columns": [
+            ("id", int, 0, "NOT NULL"),
+            ("string", f"varchar({MAX_STRING_LENGTH:d})", "", "NOT NULL"),
+            ("stringextra", f"varchar({MAX_STRINGEXTRA_LENGTH:d})", "", "NOT NULL"),
+            ("pos", f"varchar({max_pos_length:d})", "", "NOT NULL"),
+        ],
+        "primary": "id",
+        "indexes": ["string pos stringextra"],
+        "default charset": "utf8mb4",
+        "collate": "utf8mb4_bin",
+        "row_format": "compressed",
+    }
+
 
 MYSQL_SENTENCES = {
     "columns": [
