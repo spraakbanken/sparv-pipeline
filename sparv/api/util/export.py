@@ -5,10 +5,10 @@ from __future__ import annotations
 import re
 import xml.etree.ElementTree as etree  # noqa: N813
 from collections import OrderedDict, defaultdict
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from copy import deepcopy
 from itertools import combinations
-from typing import Any
+from typing import Any, ClassVar, Literal, TypeVar, cast, overload
 
 from sparv.api import (
     Annotation,
@@ -29,144 +29,210 @@ from .constants import SPARV_DEFAULT_NAMESPACE, XML_NAMESPACE_SEP
 
 logger = get_logger(__name__)
 
+AnnotationType = TypeVar("AnnotationType", bound=Annotation | AnnotationAllSourceFiles)
+
+
+class Span:
+    """Object to store span information."""
+
+    elem_hierarchy: ClassVar[dict[str, dict[str, int]]] = {}  # Set before sorting
+
+    __slots__ = (
+        "end",
+        "end_sub",
+        "export",
+        "index",
+        "is_header",
+        "name",
+        "node",
+        "overlap_id",
+        "start",
+        "start_sub",
+    )
+
+    def __init__(
+        self,
+        name: str,
+        index: int,
+        start: tuple[int, ...],
+        end: tuple[int, ...],
+        export_names: dict[str, str],
+        is_header: bool,
+    ) -> None:
+        """Set attributes."""
+        self.name = name
+        self.index = index
+        self.start = start[0]
+        self.end = end[0]
+        self.start_sub = start[1] if len(start) > 1 else False
+        self.end_sub = end[1] if len(end) > 1 else False
+        self.export = export_names.get(self.name, self.name)
+        self.is_header = is_header
+        self.node = None
+        self.overlap_id = None
+
+    def set_node(self, parent_node: etree.Element | None = None) -> None:
+        """Create an XML node under parent_node.
+
+        Args:
+            parent_node: The parent node to create the XML node under. If None, create a root node.
+        """
+        if parent_node is not None:
+            self.node = etree.SubElement(parent_node, self.export)
+        else:
+            self.node = etree.Element(self.export)
+
+    def require_node(self) -> etree.Element:
+        """Return the XML node for this span, asserting that it has been created."""
+        assert self.node is not None
+        return self.node
+
+    def __repr__(self) -> str:
+        """Stringify the most interesting span info (for debugging mostly).
+
+        Returns:
+            A string representation of the span.
+        """
+        if self.export != self.name:
+            return f"<{self.name}/{self.export} {self.index} {self.start}-{self.end}>"
+        return f"<{self.name} {self.index} {self.start}-{self.end}>"
+
+    def __lt__(self, other_span: Span) -> bool:
+        """Return True if other_span comes after this span.
+
+        Sort spans according to their position and hierarchy. Sort by:
+        1. start position (smaller indices first)
+        2. end position (larger indices first)
+        3. the calculated element hierarchy
+        """
+
+        def get_sort_key(span: Span, hierarchy: int, sub_positions: bool = False, empty_span: bool = False) -> tuple:
+            """Return a sort key for span which makes span comparison possible."""
+            if empty_span:
+                if sub_positions:
+                    return (span.start, span.start_sub), hierarchy, (span.end, span.end_sub)
+                return span.start, hierarchy, span.end
+            else:  # noqa: RET505
+                if sub_positions:
+                    return (span.start, span.start_sub), (-span.end, -span.end_sub), hierarchy
+                return span.start, -span.end, hierarchy
+
+        if self.name in Span.elem_hierarchy and other_span.name in Span.elem_hierarchy[self.name]:
+            self_hierarchy = Span.elem_hierarchy[self.name][other_span.name]
+            other_hierarchy = 0 if self_hierarchy == 1 else 1
+        else:
+            self_hierarchy = other_hierarchy = -1
+
+        # Sort empty spans according to hierarchy or put them first
+        if (self.start, self.start_sub) == (self.end, self.end_sub) or (other_span.start, other_span.start_sub) == (
+            other_span.end,
+            other_span.end_sub,
+        ):
+            sort_key1 = get_sort_key(self, self_hierarchy, empty_span=True)
+            sort_key2 = get_sort_key(other_span, other_hierarchy, empty_span=True)
+        # Both spans have sub positions
+        elif self.start_sub is not False and other_span.start_sub is not False:
+            sort_key1 = get_sort_key(self, self_hierarchy, sub_positions=True)
+            sort_key2 = get_sort_key(other_span, other_hierarchy, sub_positions=True)
+        # At least one of the spans does not have sub positions
+        else:
+            sort_key1 = get_sort_key(self, self_hierarchy)
+            sort_key2 = get_sort_key(other_span, other_hierarchy)
+
+        return sort_key1 < sort_key2
+
+
+@overload
+def gather_annotations(
+    annotations: list[Annotation | AnnotationAllSourceFiles],
+    export_names: dict[str, str],
+    header_annotations: list[Annotation] | None = None,
+    source_file: str | None = None,
+    flatten: Literal[True] = True,
+    split_overlaps: bool = False,
+) -> tuple[list[tuple[int, str, Span]], dict[str, dict[str, list[str]]]]: ...
+
+
+@overload
+def gather_annotations(
+    annotations: list[Annotation | AnnotationAllSourceFiles],
+    export_names: dict[str, str],
+    header_annotations: list[Annotation] | None = None,
+    source_file: str | None = None,
+    *,
+    flatten: Literal[False],
+    split_overlaps: bool = False,
+) -> tuple[dict[int, list[tuple[str, Span]]], dict[str, dict[str, list[str]]]]: ...
+
 
 def gather_annotations(
-    annotations: list[Annotation],
+    annotations: list[Annotation | AnnotationAllSourceFiles],
     export_names: dict[str, str],
     header_annotations: list[Annotation] | None = None,
     source_file: str | None = None,
     flatten: bool = True,
     split_overlaps: bool = False,
-) -> tuple[list[tuple], dict[str, dict]]:
+) -> (
+    tuple[list[tuple[int, str, Span]], dict[str, dict[str, list[str]]]]
+    | tuple[dict[int, list[tuple[str, Span]]], dict[str, dict[str, list[str]]]]
+):
     """Calculate the span hierarchy and the `annotation_dict` containing all annotation elements and attributes.
 
     Args:
         annotations: List of annotations to include.
         export_names: Dictionary that maps from annotation names to export names.
         header_annotations: List of header annotations.
-        source_file: The source filename.
+        source_file: The source filename. Omitting this is deprecated and will stop being supported in a future major
+            version.
         flatten: Whether to return the spans as a flat list.
         split_overlaps: Whether to split up overlapping spans.
 
     Returns:
-        A `spans_dict` and an `annotation_dict` if `flatten` is `True`, otherwise returns `span_positions` and
-            `annotation_dict`.
+        If `flatten` is `True`, a list of tuples with span positions and the `annotation_dict`. If `flatten` is
+            `False`, a dictionary mapping span positions to lists of spans and the `annotation_dict`.
 
     Raises:
         SparvErrorMessage: If the source file is not found for header annotations.
     """
-
-    class Span:
-        """Object to store span information."""
-
-        __slots__ = (
-            "end",
-            "end_sub",
-            "export",
-            "index",
-            "is_header",
-            "name",
-            "node",
-            "overlap_id",
-            "start",
-            "start_sub",
-        )
-
-        def __init__(
-            self,
-            name: str,
-            index: int,
-            start: tuple[int, ...],
-            end: tuple[int, ...],
-            export_names: dict[str, str],
-            is_header: bool,
-        ) -> None:
-            """Set attributes."""
-            self.name = name
-            self.index = index
-            self.start = start[0]
-            self.end = end[0]
-            self.start_sub = start[1] if len(start) > 1 else False
-            self.end_sub = end[1] if len(end) > 1 else False
-            self.export = export_names.get(self.name, self.name)
-            self.is_header = is_header
-            self.node = None
-            self.overlap_id = None
-
-        def set_node(self, parent_node: etree.Element | None = None) -> None:
-            """Create an XML node under parent_node.
-
-            Args:
-                parent_node: The parent node to create the XML node under. If None, create a root node.
-            """
-            if parent_node is not None:
-                self.node = etree.SubElement(parent_node, self.export)
-            else:
-                self.node = etree.Element(self.export)
-
-        def __repr__(self) -> str:
-            """Stringify the most interesting span info (for debugging mostly).
-
-            Returns:
-                A string representation of the span.
-            """
-            if self.export != self.name:
-                return f"<{self.name}/{self.export} {self.index} {self.start}-{self.end}>"
-            return f"<{self.name} {self.index} {self.start}-{self.end}>"
-
-        def __lt__(self, other_span: Span) -> bool:
-            """Return True if other_span comes after this span.
-
-            Sort spans according to their position and hierarchy. Sort by:
-            1. start position (smaller indices first)
-            2. end position (larger indices first)
-            3. the calculated element hierarchy
-            """
-
-            def get_sort_key(
-                span: Span, hierarchy: int, sub_positions: bool = False, empty_span: bool = False
-            ) -> tuple:
-                """Return a sort key for span which makes span comparison possible."""
-                if empty_span:
-                    if sub_positions:
-                        return (span.start, span.start_sub), hierarchy, (span.end, span.end_sub)
-                    return span.start, hierarchy, span.end
-                else:  # noqa: RET505
-                    if sub_positions:
-                        return (span.start, span.start_sub), (-span.end, -span.end_sub), hierarchy
-                    return span.start, -span.end, hierarchy
-
-            if self.name in elem_hierarchy and other_span.name in elem_hierarchy[self.name]:
-                self_hierarchy = elem_hierarchy[self.name][other_span.name]
-                other_hierarchy = 0 if self_hierarchy == 1 else 1
-            else:
-                self_hierarchy = other_hierarchy = -1
-
-            # Sort empty spans according to hierarchy or put them first
-            if (self.start, self.start_sub) == (self.end, self.end_sub) or (other_span.start, other_span.start_sub) == (
-                other_span.end,
-                other_span.end_sub,
-            ):
-                sort_key1 = get_sort_key(self, self_hierarchy, empty_span=True)
-                sort_key2 = get_sort_key(other_span, other_hierarchy, empty_span=True)
-            # Both spans have sub positions
-            elif self.start_sub is not False and other_span.start_sub is not False:
-                sort_key1 = get_sort_key(self, self_hierarchy, sub_positions=True)
-                sort_key2 = get_sort_key(other_span, other_hierarchy, sub_positions=True)
-            # At least one of the spans does not have sub positions
-            else:
-                sort_key1 = get_sort_key(self, self_hierarchy)
-                sort_key2 = get_sort_key(other_span, other_hierarchy)
-
-            return sort_key1 < sort_key2
-
     if header_annotations is None:
         header_annotations = []
 
+    if source_file is None:
+        if any(isinstance(annotation, AnnotationAllSourceFiles) for annotation in annotations):
+            raise SparvErrorMessage(
+                "source_file must be set when using AnnotationAllSourceFiles in gather_annotations()."
+            )
+        logger.warning(
+            "Calling gather_annotations() without source_file is deprecated and will stop being supported in a "
+            "future major release.",
+        )
+        inferred_source_files = {
+            annotation.source_file
+            for annotation in [*annotations, *header_annotations]
+            if isinstance(annotation, Annotation) and annotation.source_file is not None
+        }
+        if len(inferred_source_files) > 1:
+            raise SparvErrorMessage(
+                "gather_annotations() got annotations from multiple source files while source_file was omitted."
+            )
+        if len(inferred_source_files) == 1:
+            source_file = inferred_source_files.pop()
+
+    resolved_annotations: list[Annotation] = []
+    for annotation in annotations:
+        if isinstance(annotation, AnnotationAllSourceFiles):
+            if source_file is None:
+                raise SparvErrorMessage(
+                    "source_file must be set when using AnnotationAllSourceFiles in gather_annotations()."
+                )
+            resolved_annotations.append(annotation(source_file))
+        else:
+            resolved_annotations.append(annotation)
+
     # Collect annotation information and list of all annotation spans
     annotation_dict = defaultdict(dict)
-    spans_list = []
-    for annots, is_header in ((annotations, False), (header_annotations, True)):
+    spans_list: list[Span] = []
+    for annots, is_header in ((resolved_annotations, False), (header_annotations, True)):
         for annotation in sorted(annots):
             base_name, attr = annotation.split()
             if not attr:
@@ -188,21 +254,21 @@ def gather_annotations(
                     ) from None
 
     # Calculate hierarchy (if needed) and sort the span objects
-    elem_hierarchy = calculate_element_hierarchy(source_file, spans_list)
+    Span.elem_hierarchy = calculate_element_hierarchy(source_file, spans_list)
     sorted_spans = sorted(spans_list)
 
     # Add position information to sorted_spans
-    spans_dict = defaultdict(list)
+    spans_dict: defaultdict[int, list[tuple[str, Span]]] = defaultdict(list)
     for span in sorted_spans:
         # Treat empty spans differently
         if span.start == span.end:
             insert_index = len(spans_dict[span.start])
-            if span.name in elem_hierarchy:
+            if span.name in Span.elem_hierarchy:
                 for i, (instruction, s) in enumerate(spans_dict[span.start]):
                     if (
                         instruction == "close"
-                        and s.name in elem_hierarchy[span.name]
-                        and elem_hierarchy[span.name][s.name] == 1
+                        and s.name in Span.elem_hierarchy[span.name]
+                        and Span.elem_hierarchy[span.name][s.name] == 1
                     ):
                         insert_index = i
                         break
@@ -226,7 +292,7 @@ def gather_annotations(
     return span_positions, annotation_dict
 
 
-def _handle_overlaps(spans_dict: dict[int, list[tuple]]) -> None:
+def _handle_overlaps(spans_dict: dict[int, list[tuple[str, Span]]]) -> None:
     """Handle overlapping spans by splitting them and assigning unique IDs to maintain their original relationships.
 
     Overlapping spans, such as <aaa> ... <b> ... </aaa> ... </b>, need to be split for certain export formats,
@@ -278,7 +344,7 @@ def _handle_overlaps(spans_dict: dict[int, list[tuple]]) -> None:
                         subposition_shift += 1
 
 
-def calculate_element_hierarchy(source_file: str, spans_list: list) -> dict[str, dict[str, int]]:
+def calculate_element_hierarchy(source_file: str | None, spans_list: list[Span]) -> dict[str, dict[str, int]]:
     """Calculate the hierarchy for spans with identical start and end positions.
 
     If two spans A and B have identical start and end positions, go through all occurrences of A and B
@@ -290,6 +356,9 @@ def calculate_element_hierarchy(source_file: str, spans_list: list) -> dict[str,
 
     Returns:
         A dictionary with the hierarchy of spans.
+
+    Raises:
+        SparvErrorMessage: If span collisions require hierarchy resolution and `source_file` is missing.
     """
     # Find elements with identical spans
     span_duplicates = defaultdict(set)
@@ -319,6 +388,11 @@ def calculate_element_hierarchy(source_file: str, spans_list: list) -> dict[str,
 
     hierarchy = defaultdict(dict)
 
+    if relation_pairs and source_file is None:
+        raise SparvErrorMessage(
+            "source_file must be set to resolve element hierarchy for annotations with colliding spans."
+        )
+
     # Calculate parent-child relation for every pair
     for a, b in relation_pairs:
         a_annot = Annotation(a, source_file=source_file)
@@ -336,18 +410,18 @@ def calculate_element_hierarchy(source_file: str, spans_list: list) -> dict[str,
 
 
 def get_annotation_names(
-    annotations: ExportAnnotations
-    | ExportAnnotationsAllSourceFiles
-    | list[tuple[Annotation | AnnotationAllSourceFiles, str | None]],
-    source_annotations: SourceAnnotations | SourceAnnotationsAllSourceFiles = None,
+    annotations: ExportAnnotations | ExportAnnotationsAllSourceFiles | Sequence[tuple[AnnotationType, str | None]],
+    source_annotations: (
+        SourceAnnotations | SourceAnnotationsAllSourceFiles | Sequence[tuple[AnnotationType, str | None]] | None
+    ) = None,
     source_file: str | None = None,
     token_name: str | None = None,
     remove_namespaces: bool = False,
     keep_struct_names: bool = False,
     sparv_namespace: str | None = None,
     source_namespace: str | None = None,
-    xml_mode: bool | None = False,
-) -> tuple[list[Annotation | AnnotationAllSourceFiles], list[str], dict[str, str]]:
+    xml_mode: bool = False,
+) -> tuple[list[AnnotationType], list[str], dict[str, str]]:
     """Get a list of annotations, token attributes, and a dictionary translating annotation names to export names.
 
     Args:
@@ -367,39 +441,40 @@ def get_annotation_names(
         A list of annotations, a list of token attribute names, a dictionary with translation from annotation names to
             export names.
     """
+    annotation_items = cast(list[tuple[AnnotationType, str | None]], list(annotations))
+    source_annotation_items = cast(list[tuple[AnnotationType, str | None]], list(source_annotations or []))
+
     # Combine all annotations
-    all_annotations = _remove_duplicates(list(annotations) + list(source_annotations or []))
+    all_annotations = _remove_duplicates(annotation_items + source_annotation_items)
 
     if token_name:
         # Get the names of all token attributes
         token_attributes = [
-            a[0].attribute_name
-            for a in all_annotations
-            if a[0].annotation_name == token_name and a[0].name != token_name
+            a[0].attribute_name for a in all_annotations if a[0].annotation_name == token_name and a[0].attribute_name
         ]
     else:
         token_attributes = []
 
     # Get XML namespaces
-    xml_namespaces = Namespaces(source_file).read()
+    xml_namespaces = Namespaces(source_file).read() if source_file else {}
 
     export_names = _create_export_names(
         all_annotations,
         token_name,
         remove_namespaces,
         keep_struct_names,
-        list(source_annotations or []),
+        source_annotation_items,
         sparv_namespace,
         source_namespace,
         xml_namespaces,
         xml_mode=xml_mode,
     )
 
-    return [i[0] for i in all_annotations], token_attributes, export_names
+    return [cast(AnnotationType, i[0]) for i in all_annotations], token_attributes, export_names
 
 
 def get_header_names(
-    header_annotations: HeaderAnnotations | None,
+    header_annotations: HeaderAnnotations,
     xml_namespaces: dict[str, str],
 ) -> tuple[list[Annotation], dict[str, str]]:
     """Get a list of header annotations and a dictionary for renamed annotations.
@@ -420,12 +495,12 @@ def get_header_names(
 
 
 def _remove_duplicates(
-    annotation_tuples: list[tuple[Annotation | AnnotationAllSourceFiles, str | None]],
-) -> list[tuple]:
+    annotation_tuples: Sequence[tuple[AnnotationType, str | None]],
+) -> list[tuple[AnnotationType, str | None]]:
     """Remove duplicates from annotation_tuples without changing the order.
 
     Args:
-        annotation_tuples: List of tuples containing annotations and their export names.
+        annotation_tuples: Sequence of tuples containing annotations and their export names.
 
     Returns:
         A list of tuples with unique annotations and their export names.
@@ -438,7 +513,7 @@ def _remove_duplicates(
 
 
 def _create_export_names(
-    annotations: list[tuple[Annotation | AnnotationAllSourceFiles, str | None]],
+    annotations: Sequence[tuple[Annotation | AnnotationAllSourceFiles, str | None]],
     token_name: str | None,
     remove_namespaces: bool,
     keep_struct_names: bool,
@@ -446,13 +521,13 @@ def _create_export_names(
     sparv_namespace: str | None = None,
     source_namespace: str | None = None,
     xml_namespaces: dict | None = None,
-    xml_mode: bool | None = False,
+    xml_mode: bool = False,
 ) -> dict[str, str]:
     """Create dictionary with translation from annotation names to export names.
 
     Args:
         annotations: List of tuples containing annotations and their export names.
-        token_name: Name of the token annotation.
+        token_name: Name of the token annotation. Required if `remove_namespaces` or `keep_struct_names` is `True`.
         remove_namespaces: Set to `True` to remove all namespaces from the export names unless names are ambiguous.
         keep_struct_names: Set to `True` to include the annotation base name (everything before ":") in the export names
             for annotations that are not token attributes.
@@ -464,7 +539,19 @@ def _create_export_names(
 
     Returns:
         A dictionary with translation from annotation names to export names.
+
+    Raises:
+        ValueError: If `token_name` is missing when `keep_struct_names` is `True`.
     """
+    if xml_namespaces is None:
+        xml_namespaces = {}
+    if keep_struct_names:
+        if token_name is None:
+            raise ValueError("token_name must be set if keep_struct_names is True")
+        token_name_str = token_name
+    else:
+        token_name_str = ""
+
     if remove_namespaces:
 
         def shorten(annotation: Annotation | AnnotationAllSourceFiles) -> str:
@@ -521,7 +608,7 @@ def _create_export_names(
                     new_name = annotation.attribute_name or annotation.annotation_name  # noqa: PLW2901
 
             # Keep annotation base name (the part before ":") if this is not a token attribute
-            if keep_struct_names and ":" in name and not name.startswith(token_name):
+            if keep_struct_names and ":" in name and not name.startswith(token_name_str):
                 base_name = annotation.annotation_name
                 new_name = io.join_annotation(export_names.get(base_name, base_name), new_name)  # noqa: PLW2901
             export_names[name] = new_name
@@ -532,7 +619,7 @@ def _create_export_names(
                 name = annotation.name
                 if not new_name:
                     new_name = annotation.attribute_name or annotation.annotation_name  # noqa: PLW2901
-                if ":" in name and not name.startswith(token_name):
+                if ":" in name and not name.startswith(token_name_str):
                     base_name = annotation.annotation_name
                     new_name = io.join_annotation(export_names.get(base_name, base_name), new_name)  # noqa: PLW2901
                 export_names[name] = new_name
@@ -587,7 +674,7 @@ def _get_xml_tagname(tag: str, xml_namespaces: dict, xml_mode: bool = False) -> 
 
 def _add_global_namespaces(
     export_names: dict,
-    annotations: list[tuple[Annotation | AnnotationAllSourceFiles, Any]],
+    annotations: Sequence[tuple[Annotation | AnnotationAllSourceFiles, Any]],
     source_annotations: Iterable,
     sparv_namespace: str | None = None,
     source_namespace: str | None = None,
@@ -676,13 +763,14 @@ def _check_name_collision(export_names: dict, source_annotations: Iterable) -> d
 ################################################################################
 
 
-def scramble_spans(span_positions: list[tuple], chunk_name: str, chunk_order: Annotation) -> list[tuple]:
+def scramble_spans(span_positions: list[tuple], chunk_name: str, chunk_order: Sequence[str | int]) -> list[tuple]:
     """Reorder spans based on `chunk_order` and ensure tags are opened and closed correctly.
 
     Args:
         span_positions: Original span positions, typically obtained from `gather_annotations()`.
         chunk_name: Name of the annotation to reorder.
-        chunk_order: Annotation specifying the new order of the chunks.
+        chunk_order: Sequence of numbers (as strings or integers) specifying the new order of the chunks. The numbers
+            should correspond to the indices of the chunks in the original order.
 
     Returns:
         List of tuples with the new span positions and instructions.
@@ -698,13 +786,14 @@ def scramble_spans(span_positions: list[tuple], chunk_name: str, chunk_order: An
     return new_span_positions  # noqa: RET504
 
 
-def _reorder_spans(span_positions: list[tuple], chunk_name: str, chunk_order: Annotation) -> dict:
+def _reorder_spans(span_positions: list[tuple], chunk_name: str, chunk_order: Sequence[str | int]) -> dict:
     """Scramble chunks according to the chunk_order.
 
     Args:
         span_positions: Original span positions, typically obtained from `gather_annotations()`.
         chunk_name: Name of the annotation to reorder.
-        chunk_order: Annotation specifying the new order of the chunks.
+        chunk_order: Sequence of numbers (as strings or integers) specifying the new order of the chunks. The numbers
+            should correspond to the indices of the chunks in the original order.
 
     Returns:
         Dictionary with the new span positions and instructions.
