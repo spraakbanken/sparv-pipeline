@@ -65,7 +65,6 @@ from rich.text import Text
 from rich.traceback import Traceback
 from snakemake.common import NOTHING_TO_BE_DONE_MSG
 from snakemake.exceptions import MissingInputException, WorkflowError
-from snakemake.logging import get_event_level, logger_manager
 from snakemake_interface_logger_plugins.common import LogEvent
 
 if TYPE_CHECKING:
@@ -722,7 +721,8 @@ class SparvLogHandler:
             record: Log record to handle.
         """
         record = cast(_SnakemakeLogRecord, record)
-        snake_level, record_level = get_event_level(record)
+        snake_level = getattr(record, "event", None)
+        record_level = record.levelname
 
         if snake_level == LogEvent.RUN_INFO:  # Log message with a list of jobs to do and total job count
             # Parse list of planned jobs and total job count
@@ -1048,9 +1048,20 @@ class SparvLogHandler:
                 self.info(f"{spacer}Sparv was stopped by a TERM signal")
 
     @staticmethod
-    def cleanup() -> None:
-        """Remove Snakemake log files."""
-        snakemake_log_files = logger_manager.get_logfile()
+    def cleanup(snakemake_logger_manager: Any | None = None) -> None:
+        """Remove Snakemake log files.
+
+        Args:
+            snakemake_logger_manager: Snakemake's logger manager from the active SnakemakeApi instance.
+        """
+        if snakemake_logger_manager is None:
+            return
+
+        try:
+            snakemake_log_files = snakemake_logger_manager.get_logfile()
+        except AttributeError:
+            return
+
         for snakemake_log_file in snakemake_log_files:
             log_file = Path(snakemake_log_file)
             if log_file.is_file():

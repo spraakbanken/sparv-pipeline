@@ -31,9 +31,9 @@ dependencies = [
     "requests>=2.32.3",
     "rich==14.0.0",
     "rich-argparse==1.7.0",
-    "snakemake==9.11.4",
     "stanza==1.10.1",
     "torch>=1.9.1",              # Used by Stanza; see https://github.com/spraakbanken/sparv/issues/82
+    "snakemake==9.19.0",
 ]
 
 [dependency-groups]

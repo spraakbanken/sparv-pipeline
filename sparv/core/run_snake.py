@@ -5,24 +5,27 @@ import logging
 import sys
 import traceback
 from importlib.metadata import entry_points
+from typing import TYPE_CHECKING, Any
 
 from sparv.core import io, log_handler, registry
 from sparv.core.logger import get_sparv_logger
 from sparv.core.misc import SparvErrorMessage
 from sparv.core.paths import paths
 
+if TYPE_CHECKING:
+    from snakemake.iocontainers import snakemake
+
 custom_name = "custom"
 plugin_name = "plugin"
 
-# The snakemake variable is provided automatically by Snakemake; the below is just to please linters
-snakemake = snakemake  # noqa
+snakemake_params: Any = snakemake.params
 
 
 def exit_with_error_message(message: str, logger_name: str) -> None:
     """Log an error message and exit with a non-zero status."""
     error_logger = logging.getLogger(logger_name)
-    if snakemake.params.source_file:
-        message += f"\n\n(file: {snakemake.params.source_file})"
+    if snakemake_params.source_file:
+        message += f"\n\n(file: {snakemake_params.source_file})"
     error_logger.error(message)
     sys.exit(123)
 
@@ -63,14 +66,14 @@ class StreamToLogger:
 
 
 # Set compression
-if snakemake.params.compression:
-    io.compression = snakemake.params.compression
+if snakemake_params.compression:
+    io.compression = snakemake_params.compression
 
 # Import module
 modules_path = f"sparv.{paths.modules_dir}"
-module_name = snakemake.params.module_name
+module_name = snakemake_params.module_name
 
-use_preloader = snakemake.params.use_preloader
+use_preloader = snakemake_params.use_preloader
 preloader_busy = False
 
 if use_preloader:
@@ -78,11 +81,11 @@ if use_preloader:
 
     sock = None
     try:
-        if snakemake.params.force_preloader:
-            sock = preload.connect_to_socket(snakemake.params.socket)
+        if snakemake_params.force_preloader:
+            sock = preload.connect_to_socket(snakemake_params.socket)
         else:
             # Try to connect to the preloader and fall back to running without it if it's unavailable
-            sock = preload.connect_to_socket(snakemake.params.socket, timeout=True)
+            sock = preload.connect_to_socket(snakemake_params.socket, timeout=True)
             sock.settimeout(0.5)
             # Ping preloader to verify that it's free
             preload.send_data(sock, preload.PING)
@@ -123,14 +126,14 @@ if not use_preloader:
     registry.add_module_to_registry(module, module_name, skip_language_check=True)
 
 # Get function name and parameters
-f_name = snakemake.params.f_name
-parameters = snakemake.params.parameters
+f_name = snakemake_params.f_name
+parameters = snakemake_params.parameters
 
 log_handler.setup_logging(
     snakemake.config["log_server"],
     log_level=snakemake.config["log_level"],
     log_file_level=snakemake.config["log_file_level"],
-    file=snakemake.params.source_file,
+    file=snakemake_params.source_file,
     job=f"{module_name}:{f_name}",
 )
 logger = get_sparv_logger("sparv")
@@ -149,8 +152,8 @@ if not use_preloader or sock is None:
     # Execute function
     try:
         registry.modules[module_name].functions[f_name]["function"](**parameters)
-        if snakemake.params.export_dirs:
-            logger.export_dirs(snakemake.params.export_dirs)
+        if snakemake_params.export_dirs:
+            logger.export_dirs(snakemake_params.export_dirs)
     except KeyboardInterrupt:
         exit_with_error_message("Execution was terminated by an interrupt signal", f"sparv.modules.{module_name}")
     except SparvErrorMessage as e:
@@ -159,7 +162,7 @@ if not use_preloader or sock is None:
         # something went wrong.
         exit_with_error_message(e.message, f"sparv.modules.{module_name}")
     except Exception as e:
-        current_file = f" for the file {snakemake.params.source_file!r}" if snakemake.params.source_file else ""
+        current_file = f" for the file {snakemake_params.source_file!r}" if snakemake_params.source_file else ""
         errmsg = f"An error occurred while executing {module_name}:{f_name}{current_file}:\n\n"
         errmsg_stdout = errmsg + f"  {type(e).__name__}: {e}"
         if logger.level > logging.DEBUG:
@@ -177,7 +180,7 @@ if not use_preloader or sock is None:
         sys.stderr = old_stderr
 else:
     try:
-        preload.send_data(sock, (f"{module_name}:{f_name}", parameters, snakemake.config, snakemake.params.source_file))
+        preload.send_data(sock, (f"{module_name}:{f_name}", parameters, snakemake.config, snakemake_params.source_file))
         response = preload.receive_data(sock)
         if isinstance(response, SparvErrorMessage):
             exit_with_error_message(response.message, f"sparv.modules.{module_name}")

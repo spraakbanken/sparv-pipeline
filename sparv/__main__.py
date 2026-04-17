@@ -883,7 +883,7 @@ def main(argv: list[str] | None = None) -> bool:
             success = False
         finally:
             progress.stop()
-            progress.cleanup()
+            progress.cleanup(snakemake_api.logger_manager)
 
     return success
 
