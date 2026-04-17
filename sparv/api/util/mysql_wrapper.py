@@ -154,7 +154,7 @@ class MySQL:
         sql += ";"
         self.execute(sql)
 
-    def disable_keys(self, *tables: Iterable[str]) -> None:
+    def disable_keys(self, *tables: str) -> None:
         """Disable keys for the specified tables.
 
         Args:
@@ -163,7 +163,7 @@ class MySQL:
         for table in tables:
             self.execute(f"ALTER TABLE {_atom(table)} DISABLE KEYS;")
 
-    def enable_keys(self, *tables: Iterable[str]) -> None:
+    def enable_keys(self, *tables: str) -> None:
         """Enable keys for the specified tables.
 
         Args:
@@ -178,13 +178,23 @@ class MySQL:
         self.execute("SET UNIQUE_CHECKS = 0;")
         self.execute("SET AUTOCOMMIT = 0;")
 
-    def enable_checks(self) -> None:
-        """Enable checks."""
+    def enable_checks(self, commit: bool = True) -> None:
+        """Enable checks and optionally commit the transaction.
+
+        Args:
+            commit: Whether to commit the transaction before enabling checks.
+        """
+        if commit:
+            self.execute("COMMIT;")
         self.execute("SET UNIQUE_CHECKS = 1;")
         self.execute("SET FOREIGN_KEY_CHECKS = 1;")
+        self.execute("SET AUTOCOMMIT = 1;")
+
+    def commit(self) -> None:
+        """Commit the current transaction."""
         self.execute("COMMIT;")
 
-    def lock(self, *tables: Iterable[str]) -> None:
+    def lock(self, *tables: str) -> None:
         """Lock tables.
 
         Args:
@@ -212,8 +222,8 @@ class MySQL:
             table: The name of the table.
             conditions: A dictionary of conditions to match rows for deletion.
         """
-        conditions = " AND ".join([f"{_atom(k)} = {_value(v)}" for (k, v) in conditions.items()])
-        self.execute(f"DELETE FROM {_atom(table)} WHERE {conditions};")
+        conditions_str = " AND ".join([f"{_atom(k)} = {_value(v)}" for (k, v) in conditions.items()])
+        self.execute(f"DELETE FROM {_atom(table)} WHERE {conditions_str};")
 
     def drop_table(self, *tables: str) -> None:
         """Drop the specified tables if they exist.
@@ -289,7 +299,11 @@ def _type(typ: type | str) -> str:
     Returns:
         The corresponding MySQL type.
     """
-    return _TYPE_CONVERSIONS.get(typ, typ)
+    if isinstance(typ, str):
+        return _TYPE_CONVERSIONS.get(typ, typ)
+    # If a Python type was passed, return mapped SQL type if available,
+    # otherwise fall back to the type's `__name__`.
+    return _TYPE_CONVERSIONS.get(typ, getattr(typ, "__name__", str(typ)))
 
 
 _TYPE_CONVERSIONS = {
