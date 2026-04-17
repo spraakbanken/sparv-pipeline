@@ -68,6 +68,7 @@ export:
         - cwb:vrt
         - cwb:vrt_scrambled
         - korp:wordpicture_sql
+        - korp:wordpicture_strings_sql
         - korp:timespan_sql
         - stats_export:freq_list
         - xml_export:pretty
@@ -105,3 +106,6 @@ custom_annotations:
 
 sparv:
     compression: none
+
+korp:
+    wordpicture_sorted: true
