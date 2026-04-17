@@ -52,7 +52,7 @@ from collections import OrderedDict, defaultdict
 from collections.abc import Collection, Iterable
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 import snakemake
 from pythonjsonlogger import json as jsonlogger
@@ -510,6 +510,7 @@ class SparvLogHandler:
             )
         self.progress.start()
         self.bar = self.progress.add_task(self.icon, start=False, total=0, text="[dim]Preparing...[/dim]")
+        self.set_osc_progress(0, 0, "indeterminate")
 
         # Logging needs to be set up after the bar, to make use of its print hook
         self.setup_loggers()
@@ -669,17 +670,17 @@ class SparvLogHandler:
                 # If the error message doesn't match the expected format, log it as an unhandled error
                 self.messages["unhandled_error"].append((f"{type(exception).__name__}: {exception}", exception))
                 return
-            rule_name, filelist = msg_contents.groups()
+            display_name, filelist = msg_contents.groups()
             filelist = "\n".join(f.strip() for f in filelist.splitlines())
-            rule_name = rule_name.replace("::", ":")
+            display_name = display_name.replace("::", ":")
             if self.missing_configs_re and self.missing_configs_re.search(filelist):
-                self.missing_config_message(rule_name)
+                self.missing_config_message(display_name)
             elif self.missing_binaries_re and self.missing_binaries_re.search(filelist):
-                self.missing_binary_message(rule_name)
+                self.missing_binary_message(display_name)
             elif self.missing_classes_re and self.missing_classes_re.search(filelist):
-                self.missing_class_message(rule_name, self.missing_classes_re.findall(filelist))
+                self.missing_class_message(display_name, self.missing_classes_re.findall(filelist))
             else:
-                self.missing_annotations_or_files(rule_name, filelist)
+                self.missing_annotations_or_files(display_name, filelist)
             self.handled_error = True
         elif (
             isinstance(exception, WorkflowError) and str(exception) == "At least one job did not complete successfully."
@@ -690,6 +691,29 @@ class SparvLogHandler:
         else:
             # Any other exception from the Sparv core
             self.messages["unhandled_error"].append((f"{type(exception).__name__}: {exception}", exception))
+
+    @staticmethod
+    def set_osc_progress(
+        completed: float,
+        total: float,
+        state: Literal["clear", "normal", "error", "indeterminate", "warning"] = "normal",
+    ) -> None:
+        """Set progress using OSC 9;4."""
+        total = max(total, 1)
+        percent = round((completed / total) * 100)
+        states = {
+            "clear": 0,
+            "normal": 1,
+            "error": 2,
+            "indeterminate": 3,
+            "warning": 4,
+        }
+        state_int = states[state]
+        seq = f"\x1b]9;4;{state_int};{percent}\x1b\\"
+        # Write to the real terminal stream behind Rich's console
+        file = console.file
+        file.write(seq)
+        file.flush()
 
     def snakemake_log_handler(self, record: logging.LogRecord) -> None:
         """Handle log records from Snakemake's own logging system.
@@ -738,6 +762,7 @@ class SparvLogHandler:
             if self.use_progressbar:
                 # Advance progress
                 self._progress.advance(self._bar)
+                self.set_osc_progress(record.done, record.total)
 
             # Print regular progress updates if output is not a terminal (i.e. doesn't support the progress bar) or
             # output format is JSON
@@ -904,6 +929,8 @@ class SparvLogHandler:
                         ControlType.CARRIAGE_RETURN, *((ControlType.CURSOR_UP, 1), (ControlType.ERASE_IN_LINE, 2)) * 2
                     )
                 )
+
+            self.set_osc_progress(0, 0, "clear")
 
         self.finished = True
 
