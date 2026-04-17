@@ -20,7 +20,7 @@ INDENTATION = "  "
 
 def make_pretty_xml(
     span_positions: list[tuple],
-    annotation_dict: dict[str, dict],
+    annotation_dict: dict[str, dict[str, list[str]]],
     export_names: dict[str, str],
     token_name: str,
     word_annotation: list[str],
@@ -64,13 +64,14 @@ def make_pretty_xml(
     add_attrs(root_span.node, root_span.name, annotation_dict, export_names, 0, include_empty_attributes)
     node_stack = [root_span]
 
-    last_start_pos = None
+    last_start_pos = -1
     last_end_pos = -1
     current_token_text = None
     last_node = None
     inside_token = False
 
-    register_namespaces(xml_namespaces)
+    if xml_namespaces:
+        register_namespaces(xml_namespaces)
 
     def handle_subtoken_text(
         position: int, last_start_position: int, last_end_position: int, node: etree.Element, token_text: str
@@ -130,18 +131,20 @@ def make_pretty_xml(
                 current_token_text = word_annotation[span.index]
 
             if inside_token and current_token_text:
-                current_token_text = handle_subtoken_text(
-                    span.start, last_start_pos, last_end_pos, last_node, current_token_text
-                )
+                if last_node is not None:
+                    current_token_text = handle_subtoken_text(
+                        span.start, last_start_pos, last_end_pos, last_node, current_token_text
+                    )
                 last_start_pos = span.start
                 last_node = span.node
 
         # Close node
         else:
             if inside_token and current_token_text:
-                current_token_text = handle_subtoken_text(
-                    span.end, last_start_pos, last_end_pos, last_node, current_token_text
-                )
+                if last_node is not None:
+                    current_token_text = handle_subtoken_text(
+                        span.end, last_start_pos, last_end_pos, last_node, current_token_text
+                    )
                 last_end_pos = span.end
                 last_node = span.node
             if span.name == token_name:
@@ -193,7 +196,7 @@ def register_namespaces(xml_namespaces: dict) -> None:
 def add_attrs(
     node: etree.Element,
     annotation: str,
-    annotation_dict: dict[str, dict],
+    annotation_dict: dict[str, dict[str, list[str]]],
     export_names: dict[str, str],
     index: int,
     include_empty_attributes: bool,
@@ -214,7 +217,7 @@ def add_attrs(
             node.set(export_name, attrib_values[index])
 
 
-def replace_invalid_chars_in_names(export_names: dict) -> None:
+def replace_invalid_chars_in_names(export_names: dict[str, str]) -> None:
     """Replace invalid characters with underscore in export names.
 
     Args:
@@ -246,7 +249,8 @@ def replace_invalid_chars_in_names(export_names: dict) -> None:
     namespace_split = re.compile(r"^({[^}]+})?(.+)")
 
     for n, n2 in export_names.items():
-        namespace, name = namespace_split.match(n2).groups()
+        assert n and n2, f"Annotation and export name must be non-empty strings. Found '{n}' and '{n2}'."  # noqa: PT018
+        namespace, name = namespace_split.match(n2).groups()  # type: ignore
         original_name = name
 
         if name_start_char.match(name[0]):

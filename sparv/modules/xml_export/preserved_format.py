@@ -121,7 +121,7 @@ def preserved_format(
             if last_pos < span.start:
                 # Get last closing node in this position
                 _, tail_span = [i for i in span_positions[last_pos] if i[0] == "close"][-1]
-                tail_span.node.tail = corpus_text[last_pos : span.start]
+                tail_span.require_node().tail = corpus_text[last_pos : span.start]
                 last_pos = span.start
 
             # Handle headers
@@ -134,15 +134,16 @@ def preserved_format(
             else:
                 if node_stack:  # Don't create root node, it already exists
                     span.set_node(parent_node=node_stack[-1].node)
+                node = span.require_node()
 
                 xml_utils.add_attrs(
-                    span.node, span.name, annotation_dict, export_names, span.index, include_empty_attributes
+                    node, span.name, annotation_dict, export_names, span.index, include_empty_attributes
                 )
                 if span.overlap_id:
                     if sparv_namespace:
-                        span.node.set(f"{sparv_namespace}.{util.constants.OVERLAP_ATTR}", f"{fileid}-{span.overlap_id}")
+                        node.set(f"{sparv_namespace}.{util.constants.OVERLAP_ATTR}", f"{fileid}-{span.overlap_id}")
                     else:
-                        span.node.set(
+                        node.set(
                             f"{util.constants.SPARV_DEFAULT_NAMESPACE}.{util.constants.OVERLAP_ATTR}",
                             f"{fileid}-{span.overlap_id}",
                         )
@@ -151,7 +152,7 @@ def preserved_format(
                 # Set text if there should be any between this node and the next one
                 next_item = sorted_positions[x + 1]
                 if next_item[1] == "open" and next_item[2].start > span.start:
-                    span.node.text = corpus_text[last_pos : next_item[2].start]
+                    node.text = corpus_text[last_pos : next_item[2].start]
                     last_pos = next_item[2].start
 
         # Close node
@@ -161,12 +162,12 @@ def preserved_format(
             if last_pos < span.end:
                 # Set node text if necessary
                 if span.start == last_pos:
-                    span.node.text = corpus_text[last_pos : span.end]
+                    span.require_node().text = corpus_text[last_pos : span.end]
                 # Set tail for previous node if necessary
                 else:
                     # Get last closing node in this position
                     _, tail_span = [i for i in span_positions[last_pos] if i[0] == "close"][-1]
-                    tail_span.node.tail = corpus_text[last_pos : span.end]
+                    tail_span.require_node().tail = corpus_text[last_pos : span.end]
                 last_pos = span.end
 
             # Make sure closing node == top stack node

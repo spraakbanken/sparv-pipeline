@@ -70,7 +70,7 @@ def scrambled(
     """
     # Read words, file ID and XML namespaces
     word_annotation = list(word.read())
-    chunk_order = list(chunk_order.read())
+    chunk_order_annotation = list(chunk_order.read())
     fileid_annotation = fileid.read()
     xml_namespaces = Namespaces(source_file).read()
 
@@ -98,7 +98,7 @@ def scrambled(
     )
 
     # Reorder chunks
-    new_span_positions = util.export.scramble_spans(span_positions, chunk.name, chunk_order)
+    new_span_positions = util.export.scramble_spans(span_positions, chunk.name, chunk_order_annotation)
 
     # If the scrambled document contains no text, export a document containing just the root node and nothing else (we
     # need to produce a file, and an empty file would be invalid XML).
