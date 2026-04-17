@@ -14,26 +14,26 @@ authors = [
     { name = "Språkbanken Text", email = "sb-info@svenska.gu.se" }
 ]
 dependencies = [
-    "appdirs==1.4.4",
-    "argcomplete==3.6.2",
+    "appdirs~=1.4",
+    "argcomplete~=3.6",
     "docx2python==1.27.1",
-    "jsonschema-rs~=0.44",
-    "markdown>=3.9",
-    "nltk==3.9.1",
-    "packaging>=21.0",
-    "protobuf>=3.19.0,<4.0.0",   # Used by Stanza; see https://github.com/spraakbanken/sparv/issues/161
-    "pycountry==24.6.1",
-    "pypdfium2==4.30.0",
-    "python-dateutil==2.9.0",
-    "python-json-logger==3.3.0",
-    "PyYAML==6.0.2",
+    "jsonschema-rs==0.46.0",
+    "markdown~=3.10",
+    "nltk~=3.9",
+    "packaging>=24.0",
+    "protobuf>=3.19.0",   # Used by Stanza; see https://github.com/spraakbanken/sparv/issues/161
+    "pycountry~=26.2",
+    "pypdfium2~=5.6",
+    "python-dateutil~=2.9",
+    "python-json-logger~=4.0",
+    "PyYAML~=6.0",
     "questionary==1.10.0",
     "requests>=2.32.3",
-    "rich==14.0.0",
-    "rich-argparse==1.7.0",
-    "stanza==1.10.1",
-    "torch>=1.9.1",              # Used by Stanza; see https://github.com/spraakbanken/sparv/issues/82
+    "rich~=15.0",
+    "rich-argparse~=1.7",
     "snakemake==9.19.0",
+    "stanza==1.10.1",
+    "torch",
 ]
 
 [dependency-groups]
@@ -43,18 +43,18 @@ dev = [
     {include-group = "docs"},
 ]
 lint = [
-    "ruff"
+    "ruff~=0.15"
 ]
 test = [
-    "pytest>=8.0.0",
-    "pytest-sugar>=1.0.0"
+    "pytest~=9.0",
+    "pytest-sugar~=1.0"
 ]
 docs = [
     "bs4",
-    "markdown-gfm-admonition>=0.3.0",
-    "mkdocstrings-python==2.0.3",
-    "pandocfilters==1.5.1",
-    "zensical>=0.0.24",
+    "markdown-gfm-admonition~=0.3",
+    "mkdocstrings-python~=2.0",
+    "pandocfilters~=1.5",
+    "zensical>=0.0.33",
 ]
 
 [project.urls]
@@ -65,7 +65,7 @@ Documentation = "https://spraakbanken.gu.se/sparv/"
 sparv = "sparv.__main__:cli"
 
 [tool.uv]
-required-version = ">=0.10"
+required-version = ">=0.11"
 
 [tool.uv.build-backend]
 module-name = "sparv"
