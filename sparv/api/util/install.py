@@ -230,11 +230,15 @@ def uninstall_git(file_path: str | Path, commit_message: str | None = None) -> N
     # Remove file from Git and commit
     try:
         logger.info("Removing file from local Git repository: %s", file_path)
-        rm = subprocess.check_call(["git", "-C", str(file_path.parent), "rm", str(file_path.name)])
+        rm = subprocess.run(
+            ["git", "-C", str(file_path.parent), "rm", str(file_path.name)], check=True, capture_output=True
+        )
         if rm.stderr:
             logger.warning("Command 'git rm' generated the following output on stderr: %s", rm.stderr.decode())
-        message = commit_message or "Remove {source_file.name!r} with Sparv"
-        commit = subprocess.check_call(["git", "-C", str(file_path.parent), "commit", "-m", message])
+        message = commit_message or f"Remove {file_path.name!r} with Sparv"
+        commit = subprocess.run(
+            ["git", "-C", str(file_path.parent), "commit", "-m", message], check=True, capture_output=True
+        )
         if commit.stderr:
             logger.warning("Command 'git commit' generated the following output on stderr: %s", commit.stderr.decode())
     except subprocess.CalledProcessError as e:
