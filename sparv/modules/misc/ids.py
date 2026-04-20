@@ -4,7 +4,6 @@ import math
 import random
 from binascii import hexlify
 from collections.abc import Collection
-from pathlib import Path
 
 from sparv.api import (
     AllSourceFilenames,
@@ -27,42 +26,24 @@ def file_id(
     out: OutputDataAllSourceFiles = OutputDataAllSourceFiles(
         "misc.fileid", cls="fileid", description="Unique IDs for every source file"
     ),
-    source_files: AllSourceFilenames | None = AllSourceFilenames(),
-    source_files_list: str | None = None,
+    source_files: AllSourceFilenames = AllSourceFilenames(),
     prefix: str = "",
-    add: bool = False,
 ) -> None:
     """Create unique IDs for every source file in a list, using the source filenames as seed.
 
     Args:
         out: Output annotation for the unique IDs.
         source_files: List of source files to process.
-        source_files_list: Path to a file containing a list of source files to process.
         prefix: Prefix for the unique IDs.
-        add: If `True`, existing IDs will not be overwritten.
     """
-    assert source_files or source_files_list, "source_files or source_files_list must be specified"
+    source_files_list = sorted(source_files)
+    logger.progress(total=len(source_files_list))
 
-    if source_files_list:
-        source_files = Path(source_files_list).read_text(encoding="utf-8").strip().splitlines()
-
-    source_files = sorted(source_files)
-    logger.progress(total=len(source_files))
-
-    numfiles = len(source_files) * 2
+    numfiles = len(source_files_list) * 2
     used_ids = set()
-    files_with_ids = set()
-
-    if add:
-        for file in source_files:
-            if outdata := out(file).exists():
-                used_ids.add(outdata.read())
-                files_with_ids.add(file)
 
     id_length = _get_id_length(numfiles)
-    for file in source_files:
-        if add and file in files_with_ids:
-            continue
+    for file in source_files_list:
         _reset_id(file)
         new_id = _make_id(id_length, prefix, used_ids)
         used_ids.add(new_id)
@@ -90,8 +71,8 @@ def ids(
         prefix: Prefix for the unique IDs.
     """
     logger.progress()
-    fileid = fileid.read()
-    prefix += fileid
+    fileid_str: str = fileid.read()
+    prefix += fileid_str
 
     ann = list(annotation.read())
     out_annotation = []
