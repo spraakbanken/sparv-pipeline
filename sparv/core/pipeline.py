@@ -16,7 +16,7 @@ import snakemake.utils
 from snakemake.io import expand
 
 if TYPE_CHECKING:
-    import snakemake.io
+    import snakemake.iocontainers
     import snakemake.workflow
 
 from sparv.api import SparvErrorMessage, util
@@ -1018,7 +1018,7 @@ def make_file_getter(rule: RuleInfo) -> Callable:
         Function that returns the source filename.
     """
 
-    def _get_file(wildcards: snakemake.io.Wildcards) -> str | None:
+    def _get_file(wildcards: snakemake.iocontainers.Wildcards) -> str | None:
         return extract_file_wildcard(wildcards, rule.is_annotator)
 
     return _get_file
@@ -1034,7 +1034,7 @@ def make_parameter_resolver(rule: RuleInfo) -> Callable:
         Function that returns the parameters for the rule.
     """
 
-    def _resolve(wildcards: snakemake.io.Wildcards) -> dict:
+    def _resolve(wildcards: snakemake.iocontainers.Wildcards) -> dict:
         file = extract_file_wildcard(wildcards, rule.is_annotator)
         # We need to make a copy of the parameters, since the rule might be used for multiple source files
         parameters = copy.deepcopy(rule.parameters)
@@ -1172,7 +1172,7 @@ def escape_non_file_wildcards(s: Path | str) -> str:
     return _WILDCARD_NAME_RE.sub(r"{{\1}}", str(s))
 
 
-def extract_file_wildcard(wildcards: snakemake.io.Wildcards, annotator: bool) -> str | None:
+def extract_file_wildcard(wildcards: snakemake.iocontainers.Wildcards, annotator: bool) -> str | None:
     """Extract the {file} part from the full annotation path.
 
     Args:

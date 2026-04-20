@@ -29,8 +29,7 @@ class LogHandler(LogHandlerBase):
         self.console = Console()
         self.messages = defaultdict(list)
 
-    @staticmethod
-    def emit(record: logging.LogRecord) -> None:
+    def emit(self, record: logging.LogRecord) -> None:  # noqa: PLR6301
         """Handle log records from Snakemake.
 
         This method simply forwards the log record to Sparv's main log handler.

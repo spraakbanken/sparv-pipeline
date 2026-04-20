@@ -5,6 +5,7 @@ import logging
 import sys
 import traceback
 from importlib.metadata import entry_points
+from types import ModuleType
 from typing import TYPE_CHECKING, Any
 
 from sparv.core import io, log_handler, registry
@@ -75,11 +76,12 @@ module_name = snakemake_params.module_name
 
 use_preloader = snakemake_params.use_preloader
 preloader_busy = False
+sock = None
+preload: Any | None = None
 
 if use_preloader:
     from sparv.core import preload
 
-    sock = None
     try:
         if snakemake_params.force_preloader:
             sock = preload.connect_to_socket(snakemake_params.socket)
@@ -99,6 +101,7 @@ if use_preloader:
 
 if not use_preloader:
     # Import custom module
+    module: ModuleType | None = None
     if module_name.startswith(custom_name):
         name = module_name[len(custom_name) + 1 :]
         module_path = paths.corpus_dir.resolve() / f"{name}.py"
@@ -123,6 +126,7 @@ if not use_preloader:
                 exit_with_error_message(
                     f"Couldn't load plugin '{module_name}'. Please make sure it was installed correctly.", "sparv"
                 )
+    assert module is not None
     registry.add_module_to_registry(module, module_name, skip_language_check=True)
 
 # Get function name and parameters
@@ -180,6 +184,7 @@ if not use_preloader or sock is None:
         sys.stderr = old_stderr
 else:
     try:
+        assert preload is not None
         preload.send_data(sock, (f"{module_name}:{f_name}", parameters, snakemake.config, snakemake_params.source_file))
         response = preload.receive_data(sock)
         if isinstance(response, SparvErrorMessage):

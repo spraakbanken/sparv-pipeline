@@ -50,12 +50,12 @@ def suc_to_feats(pos: str, msd: str, delim: str = ".") -> list[str]:
     """
     non_mapping_msds_for_debug = []
     feats = []
-    msd = [i for i in msd.split(delim) if i != "-"]
+    msd_list = [i for i in msd.split(delim) if i != "-"]
 
     # If it's not punctuation and if there are MSDs apart from POS
-    if pos not in {"MAD", "MID", "PAD"} and len(msd) > 1:
+    if pos not in {"MAD", "MID", "PAD"} and len(msd_list) > 1:
         feats = []
-        for i in msd:
+        for i in msd_list:
             if MSD_TO_FEATS.get(i):
                 feats.append(MSD_TO_FEATS[i])
             elif i not in non_mapping_msds_for_debug:

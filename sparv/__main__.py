@@ -5,8 +5,9 @@ from __future__ import annotations
 
 import argparse
 import sys
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 # PYTHON_ARGCOMPLETE_OK
 import argcomplete
@@ -15,6 +16,9 @@ from rich_argparse import RawDescriptionRichHelpFormatter, RichHelpFormatter
 from sparv import __version__
 from sparv.core.console import console
 from sparv.core.health_check import HealthCheck
+
+if TYPE_CHECKING:
+    from rich.text import Text
 
 
 class CustomArgumentParser(argparse.ArgumentParser):
@@ -30,8 +34,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
         if not no_help:
             self.add_argument("-h", "--help", action="help", help="Show this help message and exit")
 
-    @staticmethod
-    def _check_value(action: argparse.Action, value: Any) -> None:
+    def _check_value(self, action: argparse.Action, value: Any) -> None:  # noqa: PLR6301
         """Check if command is valid, and if not, try to guess what the user meant."""  # noqa: DOC501
         if action.choices is not None and value not in action.choices:
             # Check for possible misspelling
@@ -56,10 +59,10 @@ class CustomHelpFormatter(RawDescriptionRichHelpFormatter):
     We have our own hardcoded list of subparsers in the description, so we don't want argparse to list them again.
     """
 
-    def _rich_format_action(self, action: argparse.Action) -> str:
+    def _rich_format_action(self, action: argparse.Action) -> Iterator[tuple[Text, Text | None]]:
         """Format action for help message, skipping subparser actions."""  # noqa: DOC201
         if isinstance(action, argparse._SubParsersAction):
-            return ""
+            return iter(())
         return super()._rich_format_action(action)
 
 
@@ -105,7 +108,7 @@ class Completer:
                     language = cache_data.get("default_language")
                 cache_data = cache_data.get(language, {})
         except EOFError:  # Cache placeholder created but not yet populated
-            pass
+            cache_data = {}
 
         # run-rule includes everything
         if self.type == "annotate":
@@ -270,7 +273,7 @@ def main(argv: list[str] | None = None) -> bool:
         nargs="*",
         default=[],
         help="The type of output format to generate",
-    ).completer = Completer("export")
+    ).completer = Completer("export")  # type: ignore
     run_parser.add_argument("-l", "--list", action="store_true", help="List available output formats")
 
     install_parser = subparsers.add_parser(
@@ -278,7 +281,7 @@ def main(argv: list[str] | None = None) -> bool:
     )
     install_parser.add_argument(
         "type", nargs="*", default=[], help="The type of installation to perform"
-    ).completer = Completer("install")
+    ).completer = Completer("install")  # type: ignore
     install_parser.add_argument("-l", "--list", action="store_true", help="List installations to be made")
 
     uninstall_parser = subparsers.add_parser(
@@ -286,7 +289,7 @@ def main(argv: list[str] | None = None) -> bool:
     )
     uninstall_parser.add_argument(
         "type", nargs="*", default=[], help="The type of uninstallation to perform"
-    ).completer = Completer("uninstall")
+    ).completer = Completer("uninstall")  # type: ignore
     uninstall_parser.add_argument("-l", "--list", action="store_true", help="List uninstallations to be made")
 
     clean_parser = subparsers.add_parser(
@@ -340,7 +343,7 @@ def main(argv: list[str] | None = None) -> bool:
         description=help["build-models"]["long"],
         formatter_class=RichHelpFormatter,
     )
-    models_parser.add_argument("model", nargs="*", default=[], help="The model(s) to be built").completer = Completer(
+    models_parser.add_argument("model", nargs="*", default=[], help="The model(s) to be built").completer = Completer(  # type: ignore
         "model"
     )
     models_parser.add_argument("-l", "--list", action="store_true", help="List available models")
@@ -370,7 +373,7 @@ def main(argv: list[str] | None = None) -> bool:
     )
     runrule_parser.add_argument(
         "targets", nargs="*", default=["list"], help="Annotation(s) to create"
-    ).completer = Completer("annotate")
+    ).completer = Completer("annotate")  # type: ignore
     runrule_parser.add_argument("-l", "--list", action="store_true", help="List available rules")
     runrule_parser.add_argument(
         "-w",
@@ -458,9 +461,7 @@ def main(argv: list[str] | None = None) -> bool:
         "dev", help=help["dev"], description=help["dev"], formatter_class=RichHelpFormatter
     )
 
-    dev_subparsers = dev_parser.add_subparsers(
-        dest="dev_command", title="development commands", metavar="<command>"
-    )
+    dev_subparsers = dev_parser.add_subparsers(dest="dev_command", title="development commands", metavar="<command>")
 
     inspect_parser = dev_subparsers.add_parser(
         "inspect", help="Inspect the contents of a file in the sparv-workdir", formatter_class=RichHelpFormatter
@@ -550,7 +551,7 @@ def main(argv: list[str] | None = None) -> bool:
             complete_arguments = ["-o nospace", "-o default", "-o bashdefault"]
             if args.enable:
                 complete_arguments.append("-o nosort")
-            print(argcomplete.shellcode(["sparv"], complete_arguments=complete_arguments))
+            print(argcomplete.shellcode(["sparv"], complete_arguments=complete_arguments))  # type: ignore
         else:
             print(
                 "To enable tab autocompletion for Sparv in bash or zsh, source the output of the 'sparv autocomplete "
@@ -668,8 +669,8 @@ def main(argv: list[str] | None = None) -> bool:
         )
         return False
 
-    targets = []
-    config = {"run_by_sparv": True}  # Config structure accessible in our Snakefile code
+    targets = set()
+    config: dict[str, Any] = {"run_by_sparv": True}  # Config structure accessible in our Snakefile code
     simple_target = False
     log_level = ""
     log_file_level = ""
@@ -683,7 +684,7 @@ def main(argv: list[str] | None = None) -> bool:
     force_run = set()
 
     if args.command in {"modules", "config", "files", "clean", "presets", "classes", "languages", "preload", "schema"}:
-        targets = [args.command]
+        targets = {args.command}
         simple_target = True
         if args.command == "clean":
             config["export"] = args.export
@@ -706,7 +707,7 @@ def main(argv: list[str] | None = None) -> bool:
             config["preload_command"] = args.preload_command
             config["targets"] = ["preload"]
             if args.list:
-                targets = ["preload_list"]
+                targets = {"preload_list"}
         elif args.command == "schema":
             config["targets"] = ["schema"]
             config["compact"] = args.compact
@@ -733,53 +734,53 @@ def main(argv: list[str] | None = None) -> bool:
                 simple_target = True
                 pass_through = True
             if args.list:
-                targets = ["list_exports"]
+                targets = {"list_exports"}
             elif args.output:
-                targets = args.output
+                targets = set(args.output)
             else:
-                targets = ["export_corpus"]
+                targets = {"export_corpus"}
         # Command: run-rule
         elif args.command == "run-rule":
-            targets = args.targets
+            targets = set(args.targets)
             if args.wildcards:
                 config["wildcards"] = args.wildcards
-            if args.list or targets == ["list"]:
-                targets = ["list_rules"]
+            if args.list or targets == {"list"}:
+                targets = {"list_rules"}
                 simple_target = True
             elif args.force:
                 # Rename all-files-rule to the related regular rule
-                force_run = [t.replace(":", "::") for t in args.targets]
+                force_run = {t.replace(":", "::") for t in args.targets}
         # Command: create-file
         elif args.command == "create-file":
-            targets = args.targets
-            if args.list or targets == ["list"]:
-                targets = ["list_files"]
+            targets = set(args.targets)
+            if args.list or targets == {"list"}:
+                targets = {"list_files"}
                 simple_target = True
             elif args.force:
-                force_run = args.targets
+                force_run = set(args.targets)
         # Command: install
         elif args.command == "install":
             if args.list:
-                targets = ["list_installs"]
+                targets = {"list_installs"}
             else:
                 config["install_types"] = args.type
-                targets = ["install_corpus"]
+                targets = {"install_corpus"}
         # Command: uninstall
         elif args.command == "uninstall":
             if args.list:
-                targets = ["list_uninstalls"]
+                targets = {"list_uninstalls"}
             else:
                 config["uninstall_types"] = args.type
-                targets = ["uninstall_corpus"]
+                targets = {"uninstall_corpus"}
         # Command: build-models
         elif args.command == "build-models":
             config["language"] = args.language
             if args.model:
-                targets = args.model
+                targets = set(args.model)
             elif args.all:
-                targets = ["build_models"]
+                targets = {"build_models"}
             else:
-                targets = ["list_models"]
+                targets = {"list_models"}
                 simple_target = True
 
         log_level = args.log or "warning"
@@ -828,7 +829,7 @@ def main(argv: list[str] | None = None) -> bool:
     log_plugin.set_sparv_log_handler(progress)
     logger_plugin_registry = LoggerPluginRegistry()
     logger_plugin_registry.register_plugin("log_plugin", log_plugin)
-    log_handler_settings = {"log-plugin": logger_plugin_registry.get_plugin("log-plugin").get_settings(args)}
+    log_handler_settings = cast(Any, {"log-plugin": logger_plugin_registry.get_plugin("log-plugin").get_settings(args)})
 
     config["log_server"] = progress.log_server
     success = True

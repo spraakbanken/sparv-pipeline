@@ -201,7 +201,7 @@ class Object:
         """
         return hash(json.dumps(self.schema, sort_keys=True))
 
-    def __eq__(self, other: Object) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Compare two objects based on their schema.
 
         Args:
@@ -211,6 +211,8 @@ class Object:
             True if the schema of the current object is equal to the schema of the other object.
         """
         if other is None:
+            return False
+        if not isinstance(other, Object):
             return False
         return json.dumps(self.schema, sort_keys=True) == json.dumps(other.schema, sort_keys=True)
 

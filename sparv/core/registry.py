@@ -1068,6 +1068,7 @@ def expand_variables(string: str, rule_name: str | None = None, is_annotation: b
                 return s, cls.group()
         return s, None
 
+    s = ""
     for s in strings:
         # Convert class names to real annotations
         s, unknown = expand_classes(s, set())  # noqa: PLW2901

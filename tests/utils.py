@@ -164,10 +164,10 @@ def _filediff(a: Path, b: Path) -> None:
     try:
         # Try opening as pickle files first
         a_contents = pickle.load(a.open("rb"))
-        a_contents = a_contents.splitlines() if isinstance(a_contents, str) else map(str, a_contents)
+        a_contents = a_contents.splitlines() if isinstance(a_contents, str) else list(map(str, a_contents))
 
         b_contents = pickle.load(b.open("rb"))
-        b_contents = b_contents.splitlines() if isinstance(b_contents, str) else map(str, b_contents)
+        b_contents = b_contents.splitlines() if isinstance(b_contents, str) else list(map(str, b_contents))
     except pickle.UnpicklingError:
         # Compare as text files
         a_contents = a.read_text(encoding="utf-8").splitlines()

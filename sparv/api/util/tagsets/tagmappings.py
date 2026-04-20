@@ -1371,6 +1371,7 @@ def _make_saldo_to_suc(compound: bool = False) -> dict[str, set[str]]:
                 break
         if replacement is None:
             raise Exception(paramstr)
+        assert m is not None
         suc_filter = m.expand(replacement).replace(" ", r"\.").replace("+", r"\+")
         tagmap[saldo_tag] = {suc_tag for suc_tag in tags.suc_tags if re.match(suc_filter, suc_tag)}
     return tagmap
@@ -1411,7 +1412,7 @@ class Mappings:
         return self.mappings["granska_to_suc"]
 
     @property
-    def parole_to_granska(self) -> dict[str, str]:
+    def parole_to_granska(self) -> dict[str, set[str]]:
         """Return Parole to Granska tag mapping."""
         if "parole_to_granska" not in self.mappings:
             self.mappings["parole_to_granska"] = {}
@@ -1427,7 +1428,7 @@ class Mappings:
         return self.mappings["parole_to_suc"]
 
     @property
-    def saldo_to_granska(self) -> dict[str, str]:
+    def saldo_to_granska(self) -> dict[str, set[str]]:
         """Return SALDO to Granska tag mapping."""
         if "saldo_to_granska" not in self.mappings:
             self.mappings["saldo_to_granska"] = {
@@ -1437,7 +1438,7 @@ class Mappings:
         return self.mappings["saldo_to_granska"]
 
     @property
-    def saldo_to_parole(self) -> dict[str, str]:
+    def saldo_to_parole(self) -> dict[str, set[str]]:
         """Return SALDO to Parole tag mapping."""
         if "saldo_to_parole" not in self.mappings:
             self.mappings["saldo_to_parole"] = {
@@ -1447,28 +1448,28 @@ class Mappings:
         return self.mappings["saldo_to_parole"]
 
     @property
-    def saldo_to_saldo(self) -> dict[str, str]:
+    def saldo_to_saldo(self) -> dict[str, set[str]]:
         """Return SALDO to SALDO tag mapping."""
         if "saldo_to_saldo" not in self.mappings:
             self.mappings["saldo_to_saldo"] = {saldo_tag: {saldo_tag} for saldo_tag in _saldo_tags}
         return self.mappings["saldo_to_saldo"]
 
     @property
-    def saldo_to_suc_compound(self) -> dict[str, str]:
+    def saldo_to_suc_compound(self) -> dict[str, set[str]]:
         """Return SALDO to SUC compund tag mapping."""
         if "saldo_to_suc_compound" not in self.mappings:
             self.mappings["saldo_to_suc_compound"] = _make_saldo_to_suc(compound=True)
         return self.mappings["saldo_to_suc_compound"]
 
     @property
-    def saldo_to_suc(self) -> dict[str, str]:
+    def saldo_to_suc(self) -> dict[str, set[str]]:
         """Return SALDO to SUC tag mapping."""
         if "saldo_to_suc" not in self.mappings:
             self.mappings["saldo_to_suc"] = _make_saldo_to_suc()
         return self.mappings["saldo_to_suc"]
 
     @property
-    def saldo_pos_to_suc(self) -> dict[str, str]:
+    def saldo_pos_to_suc(self) -> dict[str, list[str]]:
         """Return SALDO pos to SUC tag mapping."""
         return _saldo_pos_to_suc
 
@@ -1478,7 +1479,7 @@ class Mappings:
         return _suc_descriptions
 
     @property
-    def suc_to_granska(self) -> dict[str, str]:
+    def suc_to_granska(self) -> dict[str, set[str]]:
         """Return SUC to Granska tag mapping."""
         if "suc_to_granska" not in self.mappings:
             self.mappings["suc_to_granska"] = {
@@ -1517,7 +1518,7 @@ class Tags:
             "saldo_tags": _saldo_tags,
         }
 
-    def __getitem__(self, item: str) -> dict:
+    def __getitem__(self, item: str) -> set[str]:
         """Get a tag set through subscripting for backward compatibility.
 
         Args:

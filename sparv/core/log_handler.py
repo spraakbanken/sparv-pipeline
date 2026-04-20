@@ -158,8 +158,7 @@ class FileHandlerWithDirCreation(logging.FileHandler):
 class InternalFilter(logging.Filter):
     """Filter out internal log messages."""
 
-    @staticmethod
-    def filter(record: logging.LogRecord) -> bool:
+    def filter(self, record: logging.LogRecord) -> bool:  # noqa: PLR6301
         """Filter out internal records.
 
         Args:
@@ -174,8 +173,7 @@ class InternalFilter(logging.Filter):
 class ProgressInternalFilter(logging.Filter):
     """Filter out progress and internal log messages."""
 
-    @staticmethod
-    def filter(record: logging.LogRecord) -> bool:
+    def filter(self, record: logging.LogRecord) -> bool:  # noqa: PLR6301
         """Filter out progress and internal records.
 
         Args:
@@ -447,6 +445,8 @@ class SparvLogHandler:
         stream_handler.addFilter(internal_filter)
         stream_handler.addFilter(lambda record: not getattr(record, "to_file", False))
 
+        json_formatter: jsonlogger.JsonFormatter | None = None
+
         if self.json:
             stream_formatter = json_formatter = jsonlogger.JsonFormatter(
                 LOG_FORMAT_DEBUG, rename_fields={"asctime": "time", "levelname": "level"}
@@ -473,6 +473,7 @@ class SparvLogHandler:
         file_handler.addFilter(lambda record: not getattr(record, "to_stdout", False))
 
         if self.json:
+            assert json_formatter is not None
             file_formatter = json_formatter
         else:
             file_formatter = logging.Formatter(LOG_FORMAT if file_handler.level > logging.DEBUG else LOG_FORMAT_DEBUG)

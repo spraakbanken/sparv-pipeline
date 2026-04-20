@@ -38,6 +38,7 @@ class SparvCall:
             text=True,
             bufsize=1,
         )
+        assert self._process.stdout is not None
         self._stdout_iter = iter(self._process.stdout)
         self._started = True
 
@@ -57,7 +58,8 @@ class SparvCall:
         if self._process:
             self._process.wait()
             self._return_code = self._process.returncode
-            self._process.stdout.close()
+            if self._process.stdout is not None:
+                self._process.stdout.close()
 
     def _create_log_generator(self) -> Generator[str, None, None]:
         """Create a generator that yields log messages and stdout from the subprocess.
@@ -66,6 +68,7 @@ class SparvCall:
             Log messages and stdout lines from the subprocess.
         """
         self._start()
+        assert self._stdout_iter is not None
         for line in self._stdout_iter:
             yield line.rstrip("\n")
         if self._process:

@@ -226,6 +226,9 @@ def handle(client_sock: socket.socket, annotators: dict[str, Preloader]) -> bool
                 return None
             data = receive_data(client_sock)
 
+    # At this point, we should have annotator info in 'data', sent by the preloader client (run_snake.py)
+    assert isinstance(data, tuple)
+
     log.info("Running %s...", data[0])
 
     annotator = annotators[data[0]]
@@ -332,6 +335,7 @@ def serve(
 
     # Dictionary of preloaded models, indexed by module and annotator name
     annotators = {}
+    annotator_obj = None
 
     preload_config = config.get("preload")
     if not preload_config:
