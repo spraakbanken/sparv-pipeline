@@ -663,7 +663,9 @@ class SparvLogHandler:
                 error_source = f"{module}:{function}" if module and function else None
                 self.messages["error"].append((error_source, error_message))
                 self.handled_error = True
-        elif isinstance(exception, MissingInputException):
+        elif isinstance(exception, MissingInputException) or (
+            isinstance(exception, WorkflowError) and str(exception).startswith("MissingInputException")
+        ):
             # Errors due to missing config variables or binaries leading to missing input files
             msg_contents = re.search(r" for rule (\S+):\n.*affected files:\n(.+)", str(exception), flags=re.DOTALL)
             if not msg_contents:
@@ -741,6 +743,11 @@ class SparvLogHandler:
                 if job_name in messages["missing_configs"]:
                     self.missing_config_message(job_name)
                     self.handled_error = True
+                if job_name in messages["missing_classes"]:
+                    self.missing_class_message(job_name, messages["missing_classes"][job_name])
+                    self.handled_error = True
+                # Binaries are always added as input files, so they will trigger the MissingInputException and be
+                # handled in handle_exception(), so we don't need to check for them here
 
             if self.handled_error:
                 # Abort by raising KeyboardInterrupt in the main thread. We can't raise an exception directly here
