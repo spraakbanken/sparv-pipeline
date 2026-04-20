@@ -291,10 +291,8 @@ def _est_treetagger_convert(pos: str) -> str:
         "T": "X",  # foreign
     }
     if "." in pos:
-        pos = pos.split(".", maxsplit=1)[0]
-        if pos == "J":
-            return pos_dict.get(pos, FALLBACK)
-        return pos_dict.get(pos.split(".", maxsplit=1)[0])
+        # Try exact tag (e.g. "J. crd"), then prefix, then fallback
+        return pos_dict.get(pos, pos_dict.get(pos.split(".", 1)[0], FALLBACK))
     else:  # noqa: RET505
         return pos_dict.get(pos, FALLBACK)
 
