@@ -551,7 +551,7 @@ for inst in (
             f"stats_export.uninstall_sbx_freq_list{inst['suffix']}_marker"
         ),
         host: str | None = Config("stats_export.remote_host"),
-        target_dir: str = Config("stats_export.remote_dir"),
+        target_dir: str | None = Config("stats_export.remote_dir"),
     ) -> None:
         """Install frequency list on server by rsyncing, or install to an SVN repository.
 
@@ -565,11 +565,12 @@ for inst in (
         Raises:
             SparvErrorMessage: If neither host nor target directory is specified.
         """
-        if not target_dir:
-            raise SparvErrorMessage("Target directory must be specified.")
         if host and host.startswith("svn+"):
             url = host.rstrip("/") + "/" + Path(freq_list).name
             util.install.install_svn(freq_list, url, remove_existing=True)
+        elif not target_dir:
+            # Target directory is required for all non-SVN installations
+            raise SparvErrorMessage("Target directory must be specified.")
         else:
             util.install.install_path(freq_list, host, target_dir)
         uninstall_marker.remove()
@@ -601,7 +602,7 @@ for uninst in (
         marker: OutputMarker = OutputMarker(f"stats_export.uninstall_sbx_freq_list{uninst['suffix']}_marker"),
         install_marker: MarkerOptional = MarkerOptional(f"stats_export.install_sbx_freq_list{uninst['suffix']}_marker"),
         host: str | None = Config("stats_export.remote_host"),
-        remote_dir: str = Config("stats_export.remote_dir"),
+        remote_dir: str | None = Config("stats_export.remote_dir"),
         compression: str = Config("stats_export.compression"),
         use_compression: bool = uninst["compressed"],
     ) -> None:
@@ -619,15 +620,13 @@ for uninst in (
         Raises:
             SparvErrorMessage: If neither host nor remote directory is specified.
         """
-        if not remote_dir:
-            raise SparvErrorMessage("Remote directory must be specified.")
-
         uninstall_file = f"stats_{corpus_id}.csv" + (f".{compression}" if use_compression else "")
         if host and host.startswith("svn+"):
             url = host.rstrip("/") + "/" + uninstall_file
             util.install.uninstall_svn(url)
+        elif not remote_dir:
+            raise SparvErrorMessage("Remote directory must be specified.")
         else:
-            remote_dir = remote_dir or ""
             remote_file = Path(remote_dir) / uninstall_file
             logger.info("Removing SBX word frequency file %s%s", host + ":" if host else "", remote_file)
             util.install.uninstall_path(remote_file, host)
