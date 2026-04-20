@@ -43,6 +43,7 @@ dev = [
     {include-group = "docs"},
 ]
 lint = [
+    "pyright~=1.1",
     "ruff~=0.15"
 ]
 test = [
@@ -141,3 +142,7 @@ markers = [
     "noexternal: tests that don't rely on external tools",
     "unit: unit tests",
 ]
+
+[tool.pyright]
+typeCheckingMode = "standard"
+include = ["sparv", "tests"]
