@@ -1404,7 +1404,7 @@ class AllSourceFilenames(Sequence[str]):
 
 
 class Config(Any):
-    """Class holding configuration key names.
+    """Class representing a configuration key.
 
     This class represents a configuration key and optionally its default value. You can specify the datatype and allowed
     values, which will be used for validating the config and generating the Sparv config JSON schema.

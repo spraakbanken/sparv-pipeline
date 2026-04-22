@@ -33,8 +33,8 @@ MAX_THREADS = "threads"
 
 config = {}  # Full configuration
 presets = {}  # Annotation presets, needs to be global (accessed by Snakefile)
-_config_user = {}  # Local corpus config
-_config_default = {}  # Default config
+_config_user = {}  # Local corpus config (config.yaml)
+_config_default = {}  # Default config (config_default.yaml)
 
 # Dict with info about config structure, prepopulated with some module-independent keys
 config_structure = {

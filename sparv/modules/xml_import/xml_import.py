@@ -312,7 +312,7 @@ class SparvXMLParser:
         for header in header_data:
             header_source, _, header_target = header.partition(" as ")
             if not header_target:
-                raise SparvErrorMessage(f"The header '{header}' needs to be bound to a target element.")
+                raise SparvErrorMessage(f"The header '{header}' needs to be bound to a target annotation.")
             header_source, _, header_source_attrib = header_source.partition(":")
             header_source_root, _, header_source_rest = header_source.partition("/")
             self.header_data.setdefault(header_source_root, {})
