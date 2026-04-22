@@ -1770,6 +1770,17 @@ class ExportInput(str):
         """
         self.all_files = all_files
 
+    def file(self, source_file: str) -> str:
+        """Get the export filename for a specific source file.
+
+        Args:
+            source_file: The name of the source file.
+
+        Returns:
+            The export filename with the `{file}` wildcard replaced by the source file name.
+        """
+        return self.replace("{file}", source_file)
+
 
 class ExportAnnotations(Sequence[tuple[Annotation, str | None]]):
     """Iterable with annotations to include in export.

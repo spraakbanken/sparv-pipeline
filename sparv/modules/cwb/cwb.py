@@ -388,7 +388,7 @@ def cwb_encode(
         raise SparvErrorMessage("metadata.id needs to be set.")
 
     # Get vrt files
-    vrt_files_list = [vrt_files.replace("{file}", file) for file in source_files]
+    vrt_files_list = [vrt_files.file(file) for file in source_files]
     vrt_files_list.sort()
 
     # Word annotation should always be included in CWB export

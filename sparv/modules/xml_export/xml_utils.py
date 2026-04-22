@@ -270,12 +270,12 @@ def combine(
     corpus: str,
     out: str,
     source_files: Sequence[str],
-    xml_input: str,
+    xml_input: ExportInput,
     version_info_file: str | None = None,
     compress: bool = False,
 ) -> None:
     """Combine XML files into one single XML file, optionally compressing it."""
-    xml_files = [xml_input.replace("{file}", file) for file in source_files]
+    xml_files = [xml_input.file(file) for file in source_files]
     xml_files.sort()
     logger.progress(total=len(xml_files))
     opener = bz2.open if compress else open
