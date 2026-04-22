@@ -70,7 +70,8 @@ def lix_calc(sentences: list[list[str]]) -> float:
         sentence_counter += 1
         for word in words:
             word_counter += 1
-            length_counter += int(len(word) > long_word_limit)
+            if len(word) > long_word_limit:
+                length_counter += 1
     if word_counter == 0 and sentence_counter == 0:
         return float("NaN")
     if word_counter == 0 or sentence_counter == 0:
