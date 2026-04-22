@@ -15,11 +15,6 @@ from nltk.tokenize import punkt
 from sparv.api import Annotation, Config, Model, ModelOutput, Output, Text, annotator, get_logger, modelbuilder, util
 from sparv.modules.saldo.saldo_model import split_triple
 
-try:
-    from . import crf  # for CRF++ models
-except ImportError:
-    pass
-
 logger = get_logger(__name__)
 
 
@@ -539,28 +534,6 @@ class PunktSentenceTokenizer(nltk.PunktSentenceTokenizer):
         super().__init__(str(model))
 
 
-class CRFTokenizer:
-    """Tokenization based on Conditional Random Fields.
-
-    Implemented for Old Swedish, see crf.py for more details.
-    """
-
-    def __init__(self, model: Path) -> None:
-        """Initialize class."""
-        self.model = str(model)
-
-    def span_tokenize(self, s: str) -> list[tuple[int, int]]:
-        """Tokenize s and return list with tokens.
-
-        Args:
-            s: The string to tokenize.
-
-        Returns:
-            List of tuples with start and end positions of tokens.
-        """
-        return crf.segment(s, self.model)
-
-
 class FSVParagraphSplitter:
     """A paragraph splitter for old Swedish."""
 
@@ -592,7 +565,6 @@ SEGMENTERS = {
     "punkt_sentence": PunktSentenceTokenizer,
     "punctuation": PunctuationTokenizer,
     "better_word": BetterWordTokenizer,
-    "crf_tokenizer": CRFTokenizer,
     "simple_word_punkt": nltk.WordPunctTokenizer,
     "fsv_paragraph": FSVParagraphSplitter,
 }
