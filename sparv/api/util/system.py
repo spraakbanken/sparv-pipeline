@@ -46,11 +46,54 @@ def clear_directory(path: str | Path) -> None:
     Path(path).mkdir(parents=True, exist_ok=True)
 
 
+@overload
+def call_java(
+    jar: str,
+    arguments: Iterable[str | tuple],
+    options: Iterable = ...,
+    stdin: str = ...,
+    *,
+    search_paths: Iterable = ...,
+    encoding: str | None = ...,
+    verbose: bool = ...,
+    return_command: Literal[True],
+) -> subprocess.Popen: ...
+
+
+@overload
+def call_java(
+    jar: str,
+    arguments: Iterable[str | tuple],
+    options: Iterable = ...,
+    stdin: str = ...,
+    *,
+    search_paths: Iterable = ...,
+    encoding: None = ...,
+    verbose: bool = ...,
+    return_command: Literal[False],
+) -> tuple[bytes, bytes]: ...
+
+
+@overload
+def call_java(
+    jar: str,
+    arguments: Iterable[str | tuple],
+    options: Iterable = ...,
+    stdin: str = ...,
+    *,
+    search_paths: Iterable = ...,
+    encoding: str,
+    verbose: bool = ...,
+    return_command: Literal[False],
+) -> tuple[str, str]: ...
+
+
 def call_java(
     jar: str,
     arguments: Iterable[str | tuple],
     options: Iterable = (),
     stdin: str = "",
+    *,
     search_paths: Iterable = (),
     encoding: str | None = None,
     verbose: bool = False,
@@ -100,46 +143,62 @@ def call_java(
 @overload
 def call_binary(
     name: str | Path | Iterable[str | Path],
-    arguments: Iterable = (),
-    stdin: str | bytes | list | tuple = "",
-    raw_command: str | None = None,
-    search_paths: Iterable = (),
-    encoding: str | None = None,
-    verbose: bool = False,
-    use_shell: bool = False,
-    allow_error: bool = False,
+    arguments: Iterable = ...,
+    stdin: str | bytes | list | tuple = ...,
     *,
-    return_command: Literal[False] = False,
-) -> tuple[str | bytes, str | bytes]: ...
+    raw_command: str | None = ...,
+    search_paths: Iterable = ...,
+    encoding: str | None = ...,
+    verbose: bool = ...,
+    use_shell: bool = ...,
+    allow_error: bool = ...,
+    return_command: Literal[True],
+) -> subprocess.Popen: ...
 
 
 @overload
 def call_binary(
     name: str | Path | Iterable[str | Path],
-    arguments: Iterable = (),
-    stdin: str | bytes | list | tuple = "",
-    raw_command: str | None = None,
-    search_paths: Iterable = (),
-    encoding: str | None = None,
-    verbose: bool = False,
-    use_shell: bool = False,
-    allow_error: bool = False,
+    arguments: Iterable = ...,
+    stdin: str | bytes | list | tuple = ...,
     *,
-    return_command: Literal[True],
-) -> subprocess.Popen: ...
+    raw_command: str | None = ...,
+    search_paths: Iterable = ...,
+    encoding: None = ...,
+    verbose: bool = ...,
+    use_shell: bool = ...,
+    allow_error: bool = ...,
+    return_command: Literal[False] = ...,
+) -> tuple[bytes, bytes]: ...
+
+
+@overload
+def call_binary(
+    name: str | Path | Iterable[str | Path],
+    arguments: Iterable = ...,
+    stdin: str | bytes | list | tuple = ...,
+    *,
+    raw_command: str | None = ...,
+    search_paths: Iterable = ...,
+    encoding: str,
+    verbose: bool = ...,
+    use_shell: bool = ...,
+    allow_error: bool = ...,
+    return_command: Literal[False] = ...,
+) -> tuple[str, str]: ...
 
 
 def call_binary(
     name: str | Path | Iterable[str | Path],
     arguments: Iterable = (),
     stdin: str | bytes | list | tuple = "",
+    *,
     raw_command: str | None = None,
     search_paths: Iterable = (),
     encoding: str | None = None,
     verbose: bool = False,
     use_shell: bool = False,
     allow_error: bool = False,
-    *,
     return_command: bool = False,
 ) -> tuple[str | bytes, str | bytes] | subprocess.Popen:
     """Call a binary with specified arguments and `stdin`.
@@ -220,8 +279,9 @@ def call_binary(
 
     if encoding:
         stdout = stdout.decode(encoding) if stdout else ""
-        if stderr:
-            stderr = stderr.decode(encoding)
+        stderr = stderr.decode(encoding) if stderr else ""
+    else:
+        stderr = stderr or b""
     return stdout, stderr
 
 

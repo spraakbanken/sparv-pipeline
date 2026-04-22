@@ -1,5 +1,7 @@
 """POS tagging, lemmatization and dependency parsing with Stanza."""
 
+from collections.abc import Iterable
+
 from sparv.api import Annotation, Config, Language, Model, Output, Text, annotator, get_logger, util
 from sparv.core.misc import SparvErrorMessage
 
@@ -15,7 +17,7 @@ def annotate(
     sentence_chunk: Annotation | None = Annotation("[stanza.sentence_chunk]"),
     sentence_annotation: Annotation | None = Annotation("[stanza.sentence_annotation]"),
     token_annotation: Annotation | None = Annotation("[stanza.token_annotation]"),
-    out_sentence: Output | None = Output("stanza.sentence", cls="sentence", description="Sentence segments"),
+    out_sentence: Output = Output("stanza.sentence", cls="sentence", description="Sentence segments"),
     out_token: Output = Output("stanza.token", cls="token", description="Token segments"),
     out_upos: Output = Output("<token>:stanza.upos", cls="token:upos", description="Part-of-speeches in UD"),
     out_pos: Output = Output("<token>:stanza.pos", cls="token:pos", description="Part-of-speeches from Stanza"),
@@ -128,6 +130,10 @@ def annotate(
             sentence_spans, text_data, nlp_args, stanza_args
         )
     else:
+        if not sentence_chunk:
+            raise SparvErrorMessage(
+                "Either stanza.sentence_annotation, stanza.token_annotation or stanza.sentence_chunk is required."
+            )
         text_spans = sentence_chunk.read_spans()
         sentence_segments, all_tokens, ne_segments, ne_types = process_text(
             text_spans, text_data, nlp_args, stanza_args
@@ -146,7 +152,7 @@ def annotate(
         out_deprel.write([t.deprel for t in all_tokens])
         out_dephead_ref.write([t.dephead_ref for t in all_tokens])
         out_dephead.write([t.dephead for t in all_tokens])
-    # TODO: Sparv does not support optional outputs yet, so always write these, even if they're empty
+    # TODO: Sparv currently does not support optional outputs, so always write these, even if they're empty
     out_sentence.write(sentence_segments)
     out_ne.write(ne_segments)
     out_ne_type.write(ne_types)
@@ -196,6 +202,7 @@ def process_tokens(sentences: list, token_spans: list, text_data: str, nlp_args:
     # Get named entities
     token_positions = iter(token_positions)
     stanza_end = -1
+    sparv_start = sparv_end = None
     for entity in doc.entities:
         # Get positions for NE spans
         if entity.start_char > stanza_end:
@@ -205,6 +212,7 @@ def process_tokens(sentences: list, token_spans: list, text_data: str, nlp_args:
                 if stanza_start < entity.end_char <= stanza_end:
                     sparv_end = end
                     break
+        assert sparv_start is not None and sparv_end is not None, "Could not find token positions for NE spans."  # noqa: PT018
         ne_segments.append((sparv_start, sparv_end))
         ne_types.append(entity.type)
 
@@ -248,10 +256,12 @@ def process_sentences(sentence_spans: list, text_data: str, nlp_args: dict, stan
         # -2 is to compensate for two line breaks between sentences in the Stanza input
         offset += sent_span[0] - previous_sentence_end_position - 2
         current_sentence_len = 0
+        token = None
         for w in tagged_sent.words:
             token = Token(w, offset=offset, token_dephead_count=token_dephead_count)
             current_sentence_len += 1
             all_tokens.append(token)
+        assert token is not None
         sentence_offsets.append((previous_sentence_end_position, token.end - offset, offset))
         previous_sentence_end_position = token.end
         token_dephead_count += current_sentence_len
@@ -260,18 +270,20 @@ def process_sentences(sentence_spans: list, text_data: str, nlp_args: dict, stan
     sentence_offsets = iter(sentence_offsets)
     end = -1
     for entity in doc.entities:
+        offs = None
         # Calculate positions for NE spans
         if entity.start_char > end:
             for start, end, offs in sentence_offsets:  # noqa: B007
                 if start <= entity.start_char < end:
                     break
+        assert offs is not None, "Could not find sentence offsets for NE spans."
         ne_segments.append((entity.start_char + offs, entity.end_char + offs))
         ne_types.append(entity.type)
 
     return [], all_tokens, ne_segments, ne_types
 
 
-def process_text(text_spans: list, text_data: str, nlp_args: dict, stanza_args: dict) -> tuple:
+def process_text(text_spans: Iterable[tuple], text_data: str, nlp_args: dict, stanza_args: dict) -> tuple:
     """Process text with Stanza (including sentence segmentation).
 
     Args:

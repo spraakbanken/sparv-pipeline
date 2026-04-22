@@ -1,5 +1,10 @@
 """Util functions used in stanza."""
 
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    import stanza
+
 from sparv.api import Annotation, Output, SparvErrorMessage, annotator
 
 
@@ -21,12 +26,19 @@ def make_ref(
     number.number_relative(out, sentence, token)
 
 
-def run_stanza(nlp, document: list, batch_size: int, max_sentence_length: int = 0, max_token_length: int = 0):  # noqa: ANN001, ANN201
+def run_stanza(
+    nlp: stanza.Pipeline,
+    document: list[list[str]] | str | stanza.Document,
+    batch_size: int,
+    max_sentence_length: int = 0,
+    max_token_length: int = 0,
+) -> stanza.Document:
     """Run Stanza and handle possible errors.
 
     Args:
         nlp: Stanza pipeline.
-        document: Document to process.
+        document: Document to process, either as a list of sentences (where each sentence is a list of tokens), a raw
+            text string, or a Stanza Document.
         batch_size: Stanza batch size.
         max_sentence_length: Maximum sentence length to parse.
         max_token_length: Maximum token length to parse.
@@ -38,7 +50,7 @@ def run_stanza(nlp, document: list, batch_size: int, max_sentence_length: int = 
         SparvErrorMessage: If Stanza encounters a recursion error or runs out of memory.
     """
     try:
-        doc = nlp(document)
+        doc: Any = nlp(document)
     except RecursionError:
         msg = (
             "Stanza encountered a recursion error. To prevent this from happening you can try to limit "

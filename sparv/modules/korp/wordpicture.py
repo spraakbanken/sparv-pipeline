@@ -707,14 +707,20 @@ def _wordpicture_sql(
 
     datefrom_data = dateto_data = None
 
+    sentences: dict = {}
+    freq = {}  # Frequency of (head, rel, dep)
+    rel_count = defaultdict(int)  # Frequency of (rel)
+    head_rel_count = defaultdict(int)  # Frequency of (head, rel)
+    dep_rel_count = defaultdict(int)  # Frequency of (rel, dep)
+
     for file in source_files:
         file_count += 1
         sentences = {}
-        if file_count == 1 or split:
-            freq = {}  # Frequency of (head, rel, dep)
-            rel_count = defaultdict(int)  # Frequency of (rel)
-            head_rel_count = defaultdict(int)  # Frequency of (head, rel)
-            dep_rel_count = defaultdict(int)  # Frequency of (rel, dep)
+        if split:
+            freq = {}
+            rel_count = defaultdict(int)
+            head_rel_count = defaultdict(int)
+            dep_rel_count = defaultdict(int)
 
         file_data = wordpicture_data(file).read()
         if datefrom is not None and dateto is not None:

@@ -35,10 +35,9 @@ def text_spans(
         keep_formatting_chars: If True, keep formatting characters (e.g. soft hyphens) in the output.
     """
     corpus_text = text.read()
-    if isinstance(chunk, (str, Annotation)):
-        chunk = chunk.read_spans()
+    chunk_spans = chunk.read_spans()
     out_annotation = []
-    for span in chunk:
+    for span in chunk_spans:
         token = corpus_text[span[0] : span[1]]
         if not keep_formatting_chars:
             new_token = util.misc.remove_formatting_characters(token)
@@ -46,11 +45,7 @@ def text_spans(
             if new_token:
                 token = new_token
         out_annotation.append(token)
-    if out:
-        out.write(out_annotation)
-    else:
-        return out_annotation
-    return None
+    out.write(out_annotation)
 
 
 @annotator(
@@ -96,9 +91,9 @@ def text_headtail(
     head_text = None
 
     corpus_text = text.read()
-    chunk = list(chunk.read_spans())
+    chunk_spans = list(chunk.read_spans())
 
-    for i, span in enumerate(chunk):
+    for i, span in enumerate(chunk_spans):
         if head_text:
             if truncate_after:
                 out_head_annotation[i] = escape(head_text)[:truncate_after]
@@ -106,9 +101,9 @@ def text_headtail(
                 out_head_annotation[i] = escape(head_text)
             head_text = None
 
-        if i < len(chunk) - 1:
+        if i < len(chunk_spans) - 1:
             tail_start = span[1]
-            tail_end = chunk[i + 1][0]
+            tail_end = chunk_spans[i + 1][0]
             tail_text = corpus_text[tail_start:tail_end]
 
             try:
@@ -273,15 +268,15 @@ def inherit(
 
 
 # TODO: Do we still need this? struct_to_token probably mostly replaces it
-def chain(out, annotations, default=None):  # noqa
-    """Create a functional composition of a list of annotations.
+# def chain(out, annotations, default=None):
+#     """Create a functional composition of a list of annotations.
 
-    E.g., token.sentence + sentence.id -> token.sentence-id
-    """
-    if isinstance(annotations, str):
-        annotations = annotations.split()
-    annotations = [a.read() for a in annotations]
-    out.write(util.misc.chain(annotations, default))
+#     E.g., token.sentence + sentence.id -> token.sentence-id
+#     """
+#     if isinstance(annotations, str):
+#         annotations = annotations.split()
+#     annotations = [a.read() for a in annotations]
+#     out.write(util.misc.chain(annotations, default))
 
 
 @annotator("Create new annotation, with spans as values")
@@ -378,11 +373,11 @@ def replace_list(chunk: Annotation, out: Output, find: str = "", sub: str = "") 
     Raises:
         SparvErrorMessage: If the number of words in `find` and `sub` do not match.
     """
-    find = find.split()
-    sub = sub.split()
-    if len(find) != len(sub):
+    finds = find.split()
+    subs = sub.split()
+    if len(finds) != len(subs):
         raise SparvErrorMessage("Find and sub must have the same number of words.")
-    translate = dict(zip(find, sub, strict=True))
+    translate = dict(zip(finds, subs, strict=True))
     out.write(translate.get(val, val) for val in chunk.read())
 
 
@@ -441,8 +436,8 @@ def concat2(out: Output, annotations: list[Annotation], separator: str = "") -> 
         annotations: List of annotations to concatenate.
         separator: Separator to use between the values of the annotations.
     """
-    annotations = [list(a.read()) for a in annotations]
-    out.write([separator.join([a[n] for a in annotations]) for (n, _) in enumerate(annotations[0])])
+    annotations_values = [list(a.read()) for a in annotations]
+    out.write([separator.join([a[n] for a in annotations_values]) for (n, _) in enumerate(annotations_values[0])])
 
 
 @annotator("Replace empty values in 'chunk' with values from 'backoff'")
@@ -454,8 +449,8 @@ def backoff(chunk: Annotation, backoff: Annotation, out: Output) -> None:
         backoff: Annotation with values to use as backoff.
         out: Output annotation.
     """
-    backoff = list(backoff.read())
-    out.write(val or backoff[n] for (n, val) in enumerate(chunk.read()))
+    backoff_values = list(backoff.read())
+    out.write(val or backoff_values[n] for (n, val) in enumerate(chunk.read()))
 
 
 @annotator(
@@ -509,8 +504,8 @@ def override(chunk: Annotation, repl: Annotation, out: Output) -> None:
             return True
         return val == "|"
 
-    repl = list(repl.read())
-    out.write(repl[n] if not empty(repl[n]) else val for (n, val) in enumerate(chunk.read()))
+    repl_values = list(repl.read())
+    out.write(repl_values[n] if not empty(repl_values[n]) else val for (n, val) in enumerate(chunk.read()))
 
 
 @annotator("Round floats to the given number of decimals")

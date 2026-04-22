@@ -1,5 +1,6 @@
-"""NB: Not adapted to Sparv v4 yet!"""
+# type: ignore
 # ruff: noqa
+"""NB: Not adapted to Sparv v4 yet!"""
 
 from sparv.api import util
 

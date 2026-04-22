@@ -8,6 +8,7 @@ import xml.etree.ElementTree as etree  # noqa: N813
 from collections.abc import Iterator
 from itertools import chain
 from pathlib import Path
+from typing import Literal
 
 from sparv.api import (
     Config,
@@ -172,7 +173,7 @@ def parse(
     encoding: str = Config("xml_import.encoding"),
     keep_control_chars: bool = Config("xml_import.keep_control_chars"),
     keep_unassigned_chars: bool = Config("xml_import.keep_unassigned_chars"),
-    normalize: str = Config("xml_import.normalize"),
+    normalize: Literal["NFC", "NFKC", "NFD", "NFKD"] = Config("xml_import.normalize"),
 ) -> None:
     """Parse XML source file and create annotation files.
 
@@ -224,7 +225,7 @@ class SparvXMLParser:
         remove_namespaces: bool = False,
         keep_control_chars: bool = False,
         keep_unassigned_chars: bool = False,
-        normalize: str = "NFC",
+        normalize: Literal["NFC", "NFKC", "NFD", "NFKD"] = "NFC",
     ) -> None:
         """Initialize XML parser.
 
@@ -250,7 +251,7 @@ class SparvXMLParser:
         self.encoding = encoding
         self.keep_control_chars = keep_control_chars
         self.keep_unassigned_chars = keep_unassigned_chars
-        self.normalize = normalize
+        self.normalize: Literal["NFC", "NFKC", "NFD", "NFKD"] = normalize
         self.file = None
         self.prefix = prefix
         self.remove_namespaces = remove_namespaces
@@ -425,7 +426,7 @@ class SparvXMLParser:
                             source_name = annotation_to_xpath(header_source["source"])
                             header_value = header_element.attrib.get(source_name)
                         else:
-                            header_value = header_element.text.strip()
+                            header_value = header_element.text.strip() if header_element.text else ""
 
                         if header_value:
                             header_data.setdefault(header_source["target"][0], {})
@@ -433,7 +434,7 @@ class SparvXMLParser:
                 else:
                     logger.warning("Header data '%s/%s' was not found in source data.", tag_name, header_path)
 
-        def iter_ns_declarations() -> Iterator[tuple[str, str]]:
+        def iter_ns_declarations() -> Iterator[tuple[etree.Element[str], etree.Element[str]]]:
             """Iterate over namespace declarations in the source file.
 
             Yields:
@@ -487,8 +488,18 @@ class SparvXMLParser:
                     element.set(k[len("{" + uri + "}") :], element.attrib[k])
                     element.attrib.pop(k)
 
-        def iter_tree(element: etree.Element, start_pos: int = 0, start_subpos: int = 0) -> None:
-            """Walk through whole XML and handle elements and text data."""
+        def iter_tree(element: etree.Element, start_pos: int = 0, start_subpos: int = 0) -> tuple[int, int, int]:
+            """Walk through whole XML and handle elements and text data.
+
+            Args:
+                element: The XML element to process.
+                start_pos: The position of the start of the element in the text.
+                start_subpos: The subposition of the start of the element in the text, used to distinguish between
+                    multiple annotations starting at the same position.
+
+            Returns:
+                A tuple containing the length of the element text, the length of the tail text, and the end subposition.
+            """
             tag_name = get_sparv_name(element.tag)
 
             if (tag_name, "@contents") in self.skipped_elems:
@@ -508,6 +519,7 @@ class SparvXMLParser:
                 element_length = len(element.text)
                 self.text.append(element.text)
             child_tail = None
+            end_subpos = 0
             for child in element:
                 child_start_subpos = start_subpos + 1 if not element_length else 0
                 child_length, child_tail, end_subpos = iter_tree(child, start_pos + element_length, child_start_subpos)
@@ -557,6 +569,7 @@ class SparvXMLParser:
 
     def save(self) -> None:
         """Save text data and annotation files to disk."""
+        assert self.file is not None, "No file has been parsed, cannot save data."
         text = "".join(self.text)
         Text(self.file).write(text)
         structure = []

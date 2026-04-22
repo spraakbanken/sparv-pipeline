@@ -984,13 +984,13 @@ class Output(CommonMixin, BaseOutput):
         """
         super().__init__(name, cls, description=description, source_file=source_file)
 
-    def write(self, values: list) -> None:
+    def write(self, values: Iterable) -> None:
         """Write the annotation to a file, overwriting any existing annotation.
 
         All values will be converted to strings.
 
         Args:
-            values: A list of values.
+            values: An iterable of values.
         """
         io.write_annotation(self._source_file, self, values)
 
@@ -1030,11 +1030,11 @@ class OutputAllSourceFiles(CommonAllSourceFilesMixin, BaseOutput):
         """
         return Output(self.name, source_file=source_file)
 
-    def write(self, values: list, source_file: str) -> None:
+    def write(self, values: Iterable, source_file: str) -> None:
         """Write an annotation to file. Existing annotation will be overwritten.
 
         Args:
-            values: A list of values.
+            values: An iterable of values.
             source_file: Source file for the annotation.
         """
         io.write_annotation(source_file, self, values)

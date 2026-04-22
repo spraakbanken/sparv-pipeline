@@ -99,7 +99,7 @@ def annotate(
                 logger.warning("TreeTagger failed to produce a POS tag for token '%s'!", cols[0])
                 tag = ""
             out_pos_annotation[token_id] = tag
-            out_upos_annotation[token_id] = pos_to_upos(tag, lang, TAG_SETS.get(lang))
+            out_upos_annotation[token_id] = pos_to_upos(tag, lang, TAG_SETS[lang])
     out_pos.write(out_pos_annotation)
     out_upos.write(out_upos_annotation)
 
@@ -266,5 +266,5 @@ def _download(url: str, gzip: str, out: ModelOutput) -> None:
     """Download and unzip the TreeTagger model."""
     gzip_model = Model(gzip)
     gzip_model.download(url)
-    gzip_model.ungzip(out.path)
+    gzip_model.ungzip(str(out.path))
     gzip_model.remove()

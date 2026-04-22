@@ -143,12 +143,17 @@ def read_lmf(
             if elem.tag == "LexicalEntry":
                 annotations = HashableDict()
 
-                lem = elem.find("Lemma").find("FormRepresentation")
+                lem = elem.find("Lemma")
+                assert lem is not None, "Lemma element not found in LexicalEntry"
+                lem = lem.find("FormRepresentation")
+                assert lem is not None, "FormRepresentation element not found in Lemma"
                 for a in annotation_elements:
+                    key = None
                     if a == "writtenForm":
                         key = "gf"
                     elif a == "lemgram":
                         key = "lem"
+                    assert key is not None, f"Unsupported annotation element: {a}"
                     annotations[key] = (_findval(lem, a),)
 
                 pos = _findval(lem, "partOfSpeech")
@@ -214,7 +219,7 @@ def read_lmf(
 ################################################################################
 
 
-def _convert_default(pos: str, inhs: list[str], param: str) -> set[str]:
+def _convert_default(pos: str, inhs: list[str], param: str) -> Iterable[str]:
     """Try to convert SALDO tags into SUC tags.
 
     Args:
@@ -237,7 +242,7 @@ def _convert_default(pos: str, inhs: list[str], param: str) -> set[str]:
     tags = []
     for t in tagmap:
         if t.split()[0] == pos:
-            tags.extend(tagmap.get(t))
+            tags.extend(tagmap[t])
     return tags
 
 
@@ -258,18 +263,21 @@ def _try_translate(params: str) -> set[str]:
         # Feminine is translated into utrum
         params_list.append(params.replace(" f ", " u "))
     for p in params_list:
-        params = p.split()
+        params_ = p.split()
         # Copied from tagmappings._make_saldo_to_suc(), try to convert the tag
         # but allow m (the match) to be None if the tag still can't be translated
-        paramstr = " ".join(tagmappings.mappings["saldo_params_to_suc"].get(param, param.upper()) for param in params)
+        paramstr = " ".join(tagmappings.mappings["saldo_params_to_suc"].get(param, param.upper()) for param in params_)
+        m = None
         for pre, post in tagmappings._suc_tag_replacements:  # noqa: B007
             m = re.match(pre, paramstr)
             if m:
                 break
+        else:  # No match
+            continue
         if m is not None:
             sucfilter = m.expand(post).replace(" ", r"\.").replace("+", r"\+")
             return {suctag for suctag in tagmappings.tags["suc_tags"] if re.match(sucfilter, suctag)}
-    return []
+    return set()
 
 
 def _pos_from_lemgram(lemgram: str) -> list[str]:

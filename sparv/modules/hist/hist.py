@@ -2,7 +2,7 @@
 
 import operator
 import re
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from pathlib import Path
 
 from sparv.api import Annotation, Config, Model, Output, annotator, get_logger, util
@@ -121,7 +121,7 @@ def annotate_saldo_fsv(
         out_lemgram=out_lemgram,
         out_baseform=out_baseform,
         models=models,
-        msd="",
+        msd=None,
         delimiter=delimiter,
         affix=affix,
         precision=precision,
@@ -159,7 +159,7 @@ def extract_pos(
     def mkpos(_: int, thelems: list[str]) -> list[str]:
         pos = [re.search(r"\.\.(.*?)\.", lem) for lem in thelems]
         mapping = tagmappings.mappings["saldo_pos_to_suc"]
-        pos_lists = [mapping.get(p.group(1), []) for p in pos if oktag(p)]
+        pos_lists = [mapping.get(p.group(1), []) for p in pos if p and oktag(p)]
         return sorted({y for x in pos_lists for y in x})
 
     _annotate_standard(out, lemgrams, mkpos, extralemgrams, delimiter=delimiter, affix=affix)
@@ -373,8 +373,8 @@ def all_spelling_variants(
 def _annotate_standard(
     out: Output,
     input_annotation: Annotation,
-    annotator: callable,
-    extra_input: str = "",
+    annotator: Callable,
+    extra_input: Annotation | None = None,
     delimiter: str = util.constants.DELIM,
     affix: str = util.constants.AFFIX,
     split: bool = True,

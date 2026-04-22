@@ -112,17 +112,17 @@ class PivotLexicon:
         if verbose:
             logger.info("OK, read %d words", len(self.lexicon))
 
-    def lookup(self, lem: str) -> list[list[str]]:
+    def lookup(self, lem: str) -> list[str]:
         """Lookup a word in the lexicon.
 
         Args:
             lem: The word to look up.
 
         Returns:
-            A list of lists containing the lemma and its corresponding tags.
+            A list of strings containing the lemma and its corresponding tags.
         """
         if lem.lower() == lem:
-            annotation_tag_pairs = self.lexicon.get(lem, [])
+            annotation_tag_pairs: list[str] = self.lexicon.get(lem, [])
         else:
             annotation_tag_pairs = self.lexicon.get(lem, []) + self.lexicon.get(lem.lower(), [])
         return list(map(_split_val, annotation_tag_pairs))
@@ -142,14 +142,14 @@ class PivotLexicon:
         return None
 
 
-def _split_val(key_val: str) -> list[str]:
-    """Split the key-value pair into a list.
+def _split_val(key_val: str) -> str:
+    """Split the key-value pair and return only the value.
 
     Args:
         key_val: The key-value pair to split.
 
     Returns:
-        A list containing the key and value.
+        The value part of the key-value pair.
     """
     return key_val.rsplit(PART_DELIM1)[1]
 
@@ -174,6 +174,7 @@ def read_xml(xml: Path) -> dict[str, dict[str, str]]:
         if event == "end":
             if elem.tag == "LexicalEntry":
                 lemma = elem.find("Lemma")
+                assert lemma is not None, "Lemma element is missing in LexicalEntry."
                 dalin, saldo = [], ""
                 for form in lemma.findall("FormRepresentation"):
                     cat = _findval(form, "category")
@@ -209,5 +210,7 @@ def _findval(elems: etree.Element, key: str) -> str:
     """
     for form in elems:
         if form.get("att", "") == key:
-            return form.get("val")
+            val = form.get("val")
+            assert val is not None, f"Value for key '{key}' is missing in XML element."
+            return val
     return ""

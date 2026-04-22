@@ -289,7 +289,7 @@ def make_lemgram(lemgram: str, word: str, pos: str) -> tuple[str, str]:
 
 
 def remove_mwe(annotation: str) -> str:
-    """Strip unnecessary information from multi word expressions.
+    """Remove multiword expressions from a list of annotations.
 
     Args:
         annotation: Annotation string.
@@ -297,6 +297,6 @@ def remove_mwe(annotation: str) -> str:
     Returns:
         A cleaned annotation string.
     """
-    annotation = annotation.split(util.constants.DELIM)
-    annotation = [i for i in annotation if "_" not in i]
-    return util.constants.DELIM.join(annotation) if annotation else "_"
+    annotation_list = annotation.split(util.constants.DELIM)
+    annotation_list = [i for i in annotation_list if "_" not in i]
+    return util.constants.DELIM.join(annotation_list) if annotation_list else "_"

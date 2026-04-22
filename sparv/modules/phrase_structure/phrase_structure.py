@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from typing import cast
 
 from sparv.api import Annotation, Output, annotator, get_logger
 
@@ -49,9 +50,7 @@ def annotate(
             # Skip single token sentences
             continue
         tokenlist = [Token(None)]
-        for token_index in s:
-            token = token_annotations[token_index]
-            tokenlist.append(Token(token))
+        tokenlist.extend(Token(token_annotations[token_index]) for token_index in s)
 
         # Get PS tree
         sen = Sentence(tokenlist)
@@ -195,7 +194,7 @@ class Sentence:
     def __init__(self, token_list: list[Token]) -> None:
         """Initialize a sentence with a list of tokens."""
         self.tokens = token_list
-        table = {}
+        table: dict[str, Token] = {}
         for t in token_list:
             table[t.ref] = t
         for n in token_list:
@@ -294,7 +293,7 @@ class Nonterminal:
         self,
         label: str,
         fun: str,
-        headchild: Nonterminal | Terminal,
+        headchild: Nonterminal | Terminal | None,
         children: list[Nonterminal | Terminal],
     ) -> None:
         """Initialize a non-terminal node."""
@@ -307,7 +306,13 @@ class Nonterminal:
         self.parent: Nonterminal | Terminal | None = None
 
     def head_position(self) -> int:
-        """Return the position of the head child."""
+        """Return the position of the head child.
+
+        Raises:
+            ValueError: If the head child is not set.
+        """
+        if self.headchild is None:
+            raise ValueError("Head child is not set")
         return self.headchild.head_position()
 
     def to_tree_str(self, n: int = 0) -> list:
@@ -379,7 +384,7 @@ def convert_sentence(sentence: Sentence) -> PSTree:
     Returns:
         A phrase structure tree object representing the sentence.
     """
-    return PSTree(convert(sentence.tokens[0]))
+    return PSTree(cast(Nonterminal, convert(sentence.tokens[0])))
 
 
 def convert(token: Token) -> Nonterminal | Terminal:

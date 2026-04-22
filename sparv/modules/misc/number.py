@@ -4,6 +4,7 @@ import random
 import re
 from binascii import hexlify
 from collections import defaultdict
+from collections.abc import Callable
 
 from sparv.api import (
     AllSourceFilenames,
@@ -173,7 +174,7 @@ def number_by_parent(
 
     def _order(index: int, _value: tuple) -> tuple:
         """Return the order based on the parent order and child position."""
-        return child_order.get(index)
+        return child_order[index]
 
     _read_chunks_and_write_new_ordering(out, chunk, _order, prefix, zfill, start)
 
@@ -285,7 +286,7 @@ def count_zero_chunks(
 
 
 def _read_chunks_and_write_new_ordering(
-    out: Output, chunk: Annotation, order: callable, prefix: str = "", zfill: bool = False, start: int = START_DEFAULT
+    out: Output, chunk: Annotation, order: Callable, prefix: str = "", zfill: bool = False, start: int = START_DEFAULT
 ) -> None:
     """Common function called by other numbering functions.
 

@@ -1,6 +1,6 @@
 """Annotate words with lexical classes from Blingbring or SweFN."""
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 
 from sparv.api import Annotation, Config, Model, Output, annotator, get_logger, util
 from sparv.api.util.constants import AFFIX, DELIM, SCORESEP
@@ -131,7 +131,7 @@ def annotate_words(
     model: Model,
     saldoids: Annotation,
     pos: Annotation,
-    annotate: callable,
+    annotate: Callable,
     pos_limit: Iterable[str],
     disambiguate: bool = True,
     connect_ids: bool = False,
@@ -178,7 +178,7 @@ def annotate_words(
 
         if wsd and SCORESEP in token_sense:
             ranked_saldo = token_sense.strip(AFFIX).split(DELIM) if token_sense != AFFIX else None
-            saldo_tuples = [(i.split(SCORESEP)[0], i.split(SCORESEP)[1]) for i in ranked_saldo]
+            saldo_tuples = [(i.split(SCORESEP)[0], i.split(SCORESEP)[1]) for i in ranked_saldo or []]
 
             if not disambiguate:
                 saldo_ids = [i[0] for i in saldo_tuples]

@@ -1,3 +1,4 @@
+# type: ignore
 """NB: Not adapted to Sparv v4 yet!"""
 # ruff: noqa
 

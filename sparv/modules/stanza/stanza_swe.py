@@ -1,11 +1,16 @@
 """POS tagging, lemmatization and dependency parsing with Stanza."""
 
 import warnings
+from types import ModuleType
+from typing import TYPE_CHECKING
 
 from sparv.api import Annotation, Config, Model, Output, annotator, get_logger, util
 from sparv.core.misc import SparvErrorMessage
 
 from . import stanza_utils
+
+if TYPE_CHECKING:
+    import stanza
 
 logger = get_logger(__name__)
 
@@ -495,7 +500,7 @@ def pos_backoff_hunpos(
 
 def _build_doc(
     sentences: list, word: list[str], baseform: list[str], msd: list[str], feats: list[str], ref: list[str]
-) -> list:
+) -> list[list[dict]]:
     """Build stanza input for dependency parsing.
 
     Args:
@@ -507,7 +512,8 @@ def _build_doc(
         ref: List of sentence-relative positions of the tokens.
 
     Returns:
-        List of lists of dictionaries representing the document.
+        List of lists of dictionaries representing the document, where the inner lists represent sentences and the
+            dictionaries represent tokens with their attributes.
     """
     document = []
     for sent in sentences:
@@ -528,7 +534,7 @@ def _build_doc(
     return document
 
 
-def _create_pipeline(stanza, nlp_args: dict, resources_file: str):  # noqa: ANN001, ANN202
+def _create_pipeline(stanza: ModuleType, nlp_args: dict, resources_file: Model) -> stanza.Pipeline:
     """Create and return Stanza pipeline.
 
     Args:
@@ -541,6 +547,7 @@ def _create_pipeline(stanza, nlp_args: dict, resources_file: str):  # noqa: ANN0
 
     Raises:
         SparvErrorMessage: If the resources file is missing or invalid.
+        KeyError: If the Stanza pipeline cannot be created due to other errors.
     """
     # Silence warning about Stanza using torch.load with weights_only=False
     # https://github.com/stanfordnlp/stanza/issues/1429

@@ -81,7 +81,7 @@ def vrt(
     all_token_attributes = [
         a[0].attribute_name
         for a in set(annotations).union(all_source_annotations)
-        if a[0].annotation_name == token.annotation_name and a[0].has_attribute()
+        if a[0].annotation_name == token.annotation_name and a[0].attribute_name is not None
     ]
     all_token_attributes.sort()
 
@@ -186,7 +186,7 @@ def vrt_scrambled(
     all_token_attributes = [
         a[0].attribute_name
         for a in set(annotations).union(all_source_annotations)
-        if a[0].annotation_name == token.annotation_name and a[0].has_attribute()
+        if a[0].annotation_name == token.annotation_name and a[0].attribute_name is not None
     ]
     all_token_attributes.sort()
 
@@ -241,8 +241,8 @@ def encode(
     remove_namespaces: bool = Config("export.remove_module_namespaces", False),
     sparv_namespace: str = Config("export.sparv_namespace"),
     source_namespace: str = Config("export.source_namespace"),
-    skip_compression: bool | None = Config("cwb.skip_compression"),
-    skip_validation: bool | None = Config("cwb.skip_validation"),
+    skip_compression: bool = Config("cwb.skip_compression"),
+    skip_validation: bool = Config("cwb.skip_validation"),
 ) -> None:
     """Encode CWB corpus from VRT files.
 
@@ -300,8 +300,8 @@ def encode_scrambled(
     remove_namespaces: bool = Config("export.remove_module_namespaces", False),
     sparv_namespace: str = Config("export.sparv_namespace"),
     source_namespace: str = Config("export.source_namespace"),
-    skip_compression: bool | None = Config("cwb.skip_compression"),
-    skip_validation: bool | None = Config("cwb.skip_validation"),
+    skip_compression: bool = Config("cwb.skip_compression"),
+    skip_validation: bool = Config("cwb.skip_validation"),
 ) -> None:
     """Encode CWB corpus from scrambled VRT files.
 
@@ -353,7 +353,7 @@ def cwb_encode(
     out_registry: Export,
     out_marker: Export,
     token_name: str,
-    bin_path: str,
+    bin_path_str: str,
     encoding: str,
     remove_namespaces: bool,
     sparv_namespace: str,
@@ -373,7 +373,7 @@ def cwb_encode(
         out_registry: The output registry file path.
         out_marker: The output marker file path.
         token_name: The name of the token annotation.
-        bin_path: The path to the directory containing the CWB executables.
+        bin_path_str: The path to the directory containing the CWB executables.
         encoding: The encoding to use for the export.
         remove_namespaces: Whether to remove namespaces from annotation names.
         sparv_namespace: The namespace for Sparv annotations.
@@ -388,15 +388,18 @@ def cwb_encode(
         raise SparvErrorMessage("metadata.id needs to be set.")
 
     # Get vrt files
-    vrt_files = [vrt_files.replace("{file}", file) for file in source_files]
-    vrt_files.sort()
+    vrt_files_list = [vrt_files.replace("{file}", file) for file in source_files]
+    vrt_files_list.sort()
 
     # Word annotation should always be included in CWB export
-    annotations = [(words, None), *list(annotations)]
+    annotations_list: list[tuple[Annotation | AnnotationAllSourceFiles, str | None]] = [
+        (words, None),
+        *list(annotations),
+    ]
 
     # Get annotation names
     annotation_list, token_attributes, export_names = util.export.get_annotation_names(
-        annotations,
+        annotations_list,
         source_annotations,
         token_name=token_name,
         remove_namespaces=remove_namespaces,
@@ -436,7 +439,7 @@ def cwb_encode(
 
     encode_args = ["-s", "-p", "-", "-d", data_dir, "-R", registry_file, "-c", encoding, "-x"]
 
-    for vrtfile in vrt_files:
+    for vrtfile in vrt_files_list:
         encode_args += ["-f", vrtfile]
 
     for col in columns:
@@ -449,7 +452,7 @@ def cwb_encode(
         # ":0" is added to the s-attribute name to enable nesting support in cwb-encode
         encode_args += ["-S", f"{struct}:0{attrs2}"]
 
-    bin_path = Path(bin_path)
+    bin_path = Path(bin_path_str)
 
     _, stderr = util.system.call_binary(bin_path / "cwb-encode", encode_args)
     if stderr:
@@ -488,73 +491,73 @@ def cwb_encode(
 
 
 # TODO: Add snake-support!
-def cwb_align(
-    corpus: str,
-    other: str,
-    link: str,
-    align_dir: str = "annotations/align",
-    bin_dir: str = "",
-    registry_dir: str = "",
-    encoding: str = Config("cwb.encoding", "utf8"),
-) -> None:
-    """Align 'corpus' with 'other' corpus, using the 'link' annotation for alignment.
+# def cwb_align(
+#     corpus: str,
+#     other: str,
+#     link: str,
+#     align_dir: str = "annotations/align",
+#     bin_dir: str = "",
+#     registry_dir: str = "",
+#     encoding: str = Config("cwb.encoding", "utf8"),
+# ) -> None:
+#     """Align 'corpus' with 'other' corpus, using the 'link' annotation for alignment.
 
-    Args:
-        corpus: The name of the first corpus to align.
-        other: The name of the second corpus to align.
-        link: The name of the annotation to use for alignment.
-        align_dir: The directory to store the alignment files.
-        bin_dir: The path to the directory containing the CWB executables.
-        registry_dir: The path to the directory containing the CWB registry files.
-        encoding: The encoding to use for the alignment files.
+#     Args:
+#         corpus: The name of the first corpus to align.
+#         other: The name of the second corpus to align.
+#         link: The name of the annotation to use for alignment.
+#         align_dir: The directory to store the alignment files.
+#         bin_dir: The path to the directory containing the CWB executables.
+#         registry_dir: The path to the directory containing the CWB registry files.
+#         encoding: The encoding to use for the alignment files.
 
-    Raises:
-        ValueError: If the link annotation is not specified correctly.
-    """
-    aligndir_path = Path(align_dir)
-    aligndir_path.mkdir(parents=True, exist_ok=True)
-    alignfile = aligndir_path / f"{corpus}.align"
-    logger.info("Aligning %s <-> %s", corpus, other)
+#     Raises:
+#         ValueError: If the link annotation is not specified correctly.
+#     """
+#     aligndir_path = Path(align_dir)
+#     aligndir_path.mkdir(parents=True, exist_ok=True)
+#     alignfile = aligndir_path / f"{corpus}.align"
+#     logger.info("Aligning %s <-> %s", corpus, other)
 
-    try:
-        [(link_name, [(link_attr, _path)])] = parse_structural_attributes(link)
-    except ValueError:
-        raise ValueError("You have to specify exactly one alignment link.") from None
-    link_attr = link_name + "_" + link_attr
+#     try:
+#         [(link_name, [(link_attr, _path)])] = parse_structural_attributes(link)
+#     except ValueError:
+#         raise ValueError("You have to specify exactly one alignment link.") from None
+#     link_attr = link_name + "_" + link_attr
 
-    bin_path = Path(bin_dir)
+#     bin_path = Path(bin_dir)
 
-    # Align linked chunks
-    args = ["-v", "-o", alignfile, "-V", link_attr, corpus, other, link_name]
-    result, _ = util.system.call_binary(bin_path / "cwb-align", args, encoding=encoding)
-    alignfile_result = alignfile.with_suffix(".result")
-    with alignfile_result.open("w", encoding="utf-8") as f:
-        print(result, file=f)
-    _, lastline = result.rsplit("Alignment complete.", 1)
-    logger.info("%s", lastline.strip())
-    if " 0 alignment" in lastline.strip():
-        logger.warning("No alignment regions created")
-    logger.info("Alignment file/result: %s/.result", alignfile)
+#     # Align linked chunks
+#     args = ["-v", "-o", alignfile, "-V", link_attr, corpus, other, link_name]
+#     result, _ = util.system.call_binary(bin_path / "cwb-align", args, encoding=encoding)
+#     alignfile_result = alignfile.with_suffix(".result")
+#     with alignfile_result.open("w", encoding="utf-8") as f:
+#         print(result, file=f)
+#     _, lastline = result.rsplit("Alignment complete.", 1)
+#     logger.info("%s", lastline.strip())
+#     if " 0 alignment" in lastline.strip():
+#         logger.warning("No alignment regions created")
+#     logger.info("Alignment file/result: %s/.result", alignfile)
 
-    # Add alignment parameter to registry
-    # cwb-regedit is not installed by default, so we skip it and modify the regfile directly instead:
-    regfile = Path(registry_dir, corpus)
-    skip_align = f"ALIGNED {other}" in regfile.read_text(encoding="utf-8")
+#     # Add alignment parameter to registry
+#     # cwb-regedit is not installed by default, so we skip it and modify the regfile directly instead:
+#     regfile = Path(registry_dir, corpus)
+#     skip_align = f"ALIGNED {other}" in regfile.read_text(encoding="utf-8")
 
-    if not skip_align:
-        with regfile.open("a", encoding="utf-8") as f:
-            print(file=f)
-            print("# Added by cwb.py", file=f)
-            print("ALIGNED", other, file=f)
-        logger.info("Added alignment to registry: %s", regfile)
-    # args = [corpus, ":add", ":a", other]
-    # result, _ = util.system.call_binary(bin_path / "cwb-regedit", args)
-    # logger.info("%s", result.strip())
+#     if not skip_align:
+#         with regfile.open("a", encoding="utf-8") as f:
+#             print(file=f)
+#             print("# Added by cwb.py", file=f)
+#             print("ALIGNED", other, file=f)
+#         logger.info("Added alignment to registry: %s", regfile)
+#     # args = [corpus, ":add", ":a", other]
+#     # result, _ = util.system.call_binary(bin_path / "cwb-regedit", args)
+#     # logger.info("%s", result.strip())
 
-    # Encode the alignments into CWB
-    args = ["-v", "-D", alignfile]
-    result, _ = util.system.call_binary(bin_path / "cwb-align-encode", args, encoding=encoding)
-    logger.info("%s", result.strip())
+#     # Encode the alignments into CWB
+#     args = ["-v", "-D", alignfile]
+#     result, _ = util.system.call_binary(bin_path / "cwb-align-encode", args, encoding=encoding)
+#     logger.info("%s", result.strip())
 
 
 ################################################################################
@@ -566,8 +569,8 @@ def create_vrt(
     span_positions: list[tuple],
     token_name: str,
     word_annotation: list[str],
-    token_attributes: list[str | None],
-    annotation_dict: dict[str, dict],
+    token_attributes: list[str],
+    annotation_dict: dict[str, dict[str, list[str]]],
     export_names: dict[str, str],
     source_file: SourceFilename,
 ) -> str:
@@ -612,7 +615,9 @@ def create_vrt(
     return "\n".join(vrt_lines)
 
 
-def make_attr_str(annotation: str, annotation_dict: dict[str, dict], export_names: dict[str, str], index: int) -> str:
+def make_attr_str(
+    annotation: str, annotation_dict: dict[str, dict[str, list[str]]], export_names: dict[str, str], index: int
+) -> str:
     """Create a string with attributes and values for a struct element.
 
     Args:
@@ -637,8 +642,8 @@ def make_attr_str(annotation: str, annotation_dict: dict[str, dict], export_name
 def make_token_line(
     word: str,
     token: str,
-    token_attributes: list[str | None],
-    annotation_dict: dict[str, dict],
+    token_attributes: list[str],
+    annotation_dict: dict[str, dict[str, list[str]]],
     index: int,
     source_file: str,
 ) -> str:

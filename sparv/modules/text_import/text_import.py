@@ -1,6 +1,7 @@
 """Import module for plain text source files."""
 
 import unicodedata
+from typing import Literal
 
 from sparv.api import Config, Output, Source, SourceFilename, SourceStructure, Text, importer, util
 
@@ -45,7 +46,7 @@ def parse(
     prefix: str | None = Config("text_import.prefix"),
     encoding: str = Config("text_import.encoding"),
     keep_control_chars: bool = Config("text_import.keep_control_chars"),
-    normalize: str = Config("text_import.normalize"),
+    normalize: Literal["NFC", "NFKC", "NFD", "NFKD"] = Config("text_import.normalize"),
 ) -> None:
     """Parse plain text file as input to Sparv.
 

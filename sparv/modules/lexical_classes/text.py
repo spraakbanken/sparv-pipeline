@@ -129,11 +129,11 @@ def annotate_text(
         lexical_classes_token: Existing annotation with lexical classes on token level.
         text: Existing text span annotation.
         token: Existing token span annotation.
-        saldoids: Existing annotation with saldoIDs, needed when types=True.
+        saldoids: Existing annotation with SALDO IDs, needed when types=True.
         cutoff: Value for limiting the resulting bring classes.
                 The result will contain all words with the top x frequencies.
                 Words with frequency = 1 will be removed from the result.
-        types: If True, count every class only once per saldo ID occurrence.
+        types: If True, count every class only once per SALDO ID occurrence.
         delimiter: Delimiter character to put between ambiguous results.
         affix: Optional character to put before and after results to mark a set.
         freq_model: Pickled file with reference frequencies.
@@ -142,10 +142,15 @@ def annotate_text(
     cutoff = int(cutoff)
     text_children, _orphans = text.get_children(token)
     classes = list(lexical_classes_token.read())
-    sense = list(saldoids.read()) if types else None
+    if types:
+        assert saldoids is not None, "Annotation with SALDO IDs is required when types=True."
+        sense = list(saldoids.read())
+    else:
+        sense = None
 
+    freqs = None
     if freq_model:
-        freq_model = util.misc.PickledLexicon(freq_model.path)
+        freqs = util.misc.PickledLexicon(freq_model.path)
 
     out_annotation = text.create_empty_attribute()
 
@@ -155,7 +160,7 @@ def annotate_text(
 
         for token_index in words:
             # Count only sense types
-            if types:
+            if types and sense is not None:
                 senses = str(sorted([s.split(SCORESEP)[0] for s in sense[token_index].strip(AFFIX).split(DELIM)]))
                 if senses in seen_types:
                     continue
@@ -165,19 +170,19 @@ def annotate_text(
             for w in rogwords:
                 class_freqs[w] += 1
 
-        if freq_model:
+        if freqs:
             for c in class_freqs:
                 # Relative frequency
                 rel = class_freqs[c] / len(words)
                 # Calculate class dominance
-                ref_freq = freq_model.lookup(c.replace("_", " "), 0)
+                ref_freq = freqs.lookup(c.replace("_", " "), 0)
                 if not ref_freq:
                     logger.error("Class '%s' is missing", ref_freq)
                 class_freqs[c] = rel / ref_freq
 
         # Sort words according to frequency/dominance
         ordered_words = sorted(class_freqs.items(), key=operator.itemgetter(1), reverse=True)
-        if freq_model:
+        if freqs:  # noqa: SIM108
             # Remove words with dominance < 1
             ordered_words = [w for w in ordered_words if w[1] >= 1]
         else:

@@ -36,42 +36,40 @@ def hist_morphtable(
         # This is a modification of _make_saldo_to_suc in utils.tagsets.py
         params = msd.split()
 
-        # try ignoring gender, m/f => u
+        # Try ignoring gender, m/f => u
         for i, param in enumerate(params):
             if param.strip() in {"m", "f"}:
                 params[i] = "u"
-        new_suc = saldo_to_suc.get(" ".join(params), "")
+        new_suc = saldo_to_suc.get(" ".join(params))
 
         if new_suc:
-            # print "Add translation", msd,new_suc
             saldo_to_suc[msd] = new_suc
             return new_suc
 
-        # try changing place: nn sg n indef nom => nn n sg indef nom
+        # Try changing place: nn sg n indef nom => nn n sg indef nom
         if params[0] == "nn":
-            new_suc = saldo_to_suc.get(" ".join([params[0], params[2], params[1], params[3], params[4]]), "")
+            new_suc = saldo_to_suc.get(" ".join([params[0], params[2], params[1], params[3], params[4]]))
 
         if new_suc:
-            # print "Add translation", msd,new_suc
             saldo_to_suc[msd] = new_suc
             return new_suc
 
-        # try adding case info: av pos def pl => av pos def pl nom/gen
+        # Try adding case info: av pos def pl => av pos def pl nom/gen
         if params[0] == "av":
             new_suc = saldo_to_suc.get(" ".join([*params, "nom"]), set())
             new_suc.update(saldo_to_suc.get(" ".join([*params, "gen"]), set()))
 
         if new_suc:
-            # print "Add translation", msd,new_suc
             saldo_to_suc[msd] = new_suc
             return new_suc
 
         paramstr = " ".join(tagmappings.mappings["saldo_params_to_suc"].get(prm, prm.upper()) for prm in params)
+        m = post = None
         for pre, post in tagmappings._suc_tag_replacements:  # noqa: B007
             m = re.match(pre, paramstr)
             if m:
                 break
-        if m is None:
+        else:  # No match
             return set()
         sucfilter = m.expand(post).replace(" ", r"\.").replace("+", r"\+")
         new_suc = {suctag for suctag in tagmappings.tags["suc_tags"] if re.match(sucfilter, suctag)}

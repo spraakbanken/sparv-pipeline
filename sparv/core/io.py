@@ -59,7 +59,7 @@ def remove_annotation(annotation: BaseAnnotation, source_file: str | None = None
     annotation_path.unlink(missing_ok=True)
 
 
-def write_annotation(source_file: str, annotation: BaseOutput, values: list) -> None:
+def write_annotation(source_file: str, annotation: BaseOutput, values: Iterable) -> None:
     """Write an annotation to one or more files. The file is overwritten if it exists.
 
     Args:
@@ -95,7 +95,7 @@ def write_annotation(source_file: str, annotation: BaseOutput, values: list) -> 
             )
 
 
-def _write_single_annotation(source_file: str, annotation: str, values: list, root: Path) -> None:
+def _write_single_annotation(source_file: str, annotation: str, values: Iterable, root: Path) -> None:
     """Write an annotation to a file.
 
     Args:

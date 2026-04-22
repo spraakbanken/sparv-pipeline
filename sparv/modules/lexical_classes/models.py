@@ -155,6 +155,7 @@ def read_rogetmap(xml: Path, verbose: bool = True) -> dict:
     lexicon = {}
     context = etree.iterparse(xml, events=("start", "end"))
     context = iter(context)
+    l1 = l2 = l3 = None
 
     for _event, elem in context:
         if elem.tag == "class":
@@ -165,6 +166,9 @@ def read_rogetmap(xml: Path, verbose: bool = True) -> dict:
             l3 = elem.get("name")
         elif elem.tag == "headword":
             head = elem.get("name")
+            assert l1 is not None and l2 is not None and l3 is not None, (  # noqa: PT018
+                f"Head word found before section/subsection/class for head '{head}'."
+            )
             lexicon[head] = (l3, l2, l1)
 
     testwords = ["Existence", "Health", "Amusement", "Marriage"]
@@ -198,7 +202,10 @@ def read_swefn(xml: Path, verbose: bool = True) -> dict:
         if event == "end":
             if elem.tag == "LexicalEntry":
                 sense = elem.find("Sense")
-                sid = sense.get("id").removeprefix("swefn--")
+                assert sense is not None, f"No Sense found for LexicalEntry with id {elem.get('id')}"
+                sid = sense.get("id")
+                assert sid is not None, f"No id found for Sense in LexicalEntry with id {elem.get('id')}"
+                sid = sid.removeprefix("swefn--")
                 for lu in sense.findall("feat[@att='LU']"):
                     saldosense = lu.get("val")
                     lexicon.setdefault(saldosense, set()).add(sid)
@@ -218,7 +225,7 @@ def read_swefn(xml: Path, verbose: bool = True) -> dict:
 def create_freq_pickle(
     corpus: str | list,
     annotation: str,
-    model: str,
+    model: Model,
     cwb_bin_dir: str,
     cwb_registry: str,
     class_set: set | None = None,
@@ -240,7 +247,7 @@ def create_freq_pickle(
     Raises:
         SparvErrorMessage: If the annotation is not found in the corpus.
     """
-    lexicon = util.misc.PickledLexicon(model)
+    lexicon = util.misc.PickledLexicon(model.path)
     # Create a set of all possible classes
     if class_set:
         all_classes = {cc for c in lexicon.lexicon.values() for cc in c[class_set]}
@@ -249,7 +256,7 @@ def create_freq_pickle(
     lexicon_size = len(all_classes)
     smoothing = 0.1
 
-    corpus_stats = defaultdict(int)
+    corpus_stats: defaultdict[str, float] = defaultdict(float)
     corpus_size = 0
 
     if isinstance(corpus, str):
@@ -290,17 +297,24 @@ def create_freq_pickle(
         for line in reply.splitlines():
             if not line.strip():
                 continue
-            freq, classes = line.split("\t")
+
+            freq_str, classes = line.split("\t")
+            base_freq = float(freq_str)
+
             for cl in classes.split("|"):
-                if cl:
-                    freq = int(freq)
-                    if score_separator:
-                        cl, score = cl.rsplit(score_separator, 1)  # noqa: PLW2901
-                        score = float(score)
-                        if score <= 0:
-                            continue
-                        freq *= score
-                    corpus_stats[cl.replace("_", " ")] += freq
+                if not cl:
+                    continue
+
+                if score_separator:
+                    cl, score_str = cl.rsplit(score_separator, 1)  # noqa: PLW2901
+                    score = float(score_str)
+                    if score <= 0:
+                        continue
+                    add_freq = base_freq * score
+                else:
+                    add_freq = base_freq
+
+                corpus_stats[cl.replace("_", " ")] += add_freq
 
     rel_freq = defaultdict(float)
 

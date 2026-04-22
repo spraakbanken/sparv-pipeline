@@ -22,7 +22,7 @@ from sparv.api import (
     util,
 )
 
-from .stats_export import freq_list
+from .stats_export import generate_frequency_statistics
 from .utils import compress
 
 logger = get_logger(__name__)
@@ -156,12 +156,13 @@ def sbx_freq_list(
         (complemgram, "compound"),
     ]
 
-    freq_list(
+    generate_frequency_statistics(
         source_files=source_files,
         word=word,
         token=token,
         annotations=annotations,
         source_annotations=[],
+        remove_namespaces=True,
         out=out,
         sparv_namespace="",
         source_namespace="",
@@ -227,12 +228,13 @@ def sbx_freq_list_date(
         (date, "date"),
     ]
 
-    freq_list(
+    generate_frequency_statistics(
         source_files=source_files,
         word=word,
         token=token,
         annotations=annotations,
         source_annotations=[],
+        remove_namespaces=True,
         out=out,
         sparv_namespace="",
         source_namespace="",
@@ -284,12 +286,13 @@ def sbx_freq_list_simple_swe(
     """
     annotations = [(word, "token"), (pos, "POS"), (baseform, "lemma")]
 
-    freq_list(
+    generate_frequency_statistics(
         source_files=source_files,
         word=word,
         token=token,
         annotations=annotations,
         source_annotations=[],
+        remove_namespaces=True,
         out=out,
         sparv_namespace="",
         source_namespace="",
@@ -341,12 +344,13 @@ def sbx_freq_list_simple(
     """
     annotations = [(word, "token"), (pos, "POS"), (baseform, "lemma")]
 
-    freq_list(
+    generate_frequency_statistics(
         source_files=source_files,
         word=word,
         token=token,
         annotations=annotations,
         source_annotations=[],
+        remove_namespaces=True,
         out=out,
         sparv_namespace="",
         source_namespace="",
@@ -411,12 +415,13 @@ def sbx_freq_list_1800(
         (complemgram, "compound"),
     ]
 
-    freq_list(
+    generate_frequency_statistics(
         source_files=source_files,
         word=word,
         token=token,
         annotations=annotations,
         source_annotations=[],
+        remove_namespaces=True,
         out=out,
         sparv_namespace="",
         source_namespace="",
@@ -468,12 +473,13 @@ def sbx_freq_list_fsv(
     """
     annotations = [(word, "token"), (baseform, "lemma"), (lemgram, "lemgram")]
 
-    freq_list(
+    generate_frequency_statistics(
         source_files=source_files,
         word=word,
         token=token,
         annotations=annotations,
         source_annotations=[],
+        remove_namespaces=True,
         out=out,
         sparv_namespace="",
         source_namespace="",

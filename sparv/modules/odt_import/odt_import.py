@@ -4,6 +4,7 @@ import unicodedata
 import xml.etree.ElementTree as etree  # noqa: N813
 import zipfile
 from pathlib import Path
+from typing import Literal
 
 from sparv.api import (
     Config,
@@ -48,7 +49,7 @@ def parse(
     source_dir: Source = Source(),
     prefix: str | None = Config("odt_import.prefix"),
     keep_control_chars: bool = Config("odt_import.keep_control_chars"),
-    normalize: str = Config("odt_import.normalize"),
+    normalize: Literal["NFC", "NFKC", "NFD", "NFKD"] = Config("odt_import.normalize"),
 ) -> None:
     """Parse odt file as input to Sparv.
 
@@ -130,8 +131,9 @@ class OdtParser:
                     buffer += child.tail
             elif child.tag == self.ns("text:s"):
                 buffer += " "
-                if child.get(self.ns("text:c")) is not None:
-                    buffer += " " * (int(child.get(self.ns("text:c"))) - 1)
+                repeat_count = child.get(self.ns("text:c"))
+                if repeat_count is not None:
+                    buffer += " " * (int(repeat_count) - 1)
                 if child.tail is not None:
                     buffer += child.tail
             # Add placeholders for images

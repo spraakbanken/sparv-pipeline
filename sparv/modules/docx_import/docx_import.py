@@ -1,6 +1,7 @@
 """Import module for docx source files."""
 
 import unicodedata
+from typing import Literal
 
 from docx2python import docx2python
 from docx2python.iterators import iter_at_depth
@@ -35,7 +36,7 @@ def parse(
     source_dir: Source = Source(),
     prefix: str | None = Config("docx_import.prefix"),
     keep_control_chars: bool = Config("docx_import.keep_control_chars"),
-    normalize: str = Config("docx_import.normalize"),
+    normalize: Literal["NFC", "NFKC", "NFD", "NFKD"] = Config("docx_import.normalize"),
 ) -> None:
     """Parse docx file as input to Sparv.
 
@@ -52,7 +53,7 @@ def parse(
     """
     source_file_path = source_dir.get_path(source_file, ".docx")
     try:
-        d = docx2python(source_file_path)
+        d = docx2python(str(source_file_path))
     except Exception as e:
         raise SparvErrorMessage(f"Failed to parse docx file '{source_file}'. {type(e).__name__}: {e}") from None
 

@@ -45,7 +45,7 @@ def contextual(
         model: Path to the geographical model.
         language: List of languages to use for the model.
     """
-    model = load_model(model, language=language)
+    geo_model = load_model(model, language=language)
 
     ne_type_annotation = list(ne_type.read())
     ne_subtype_annotation = list(ne_subtype.read())
@@ -59,7 +59,7 @@ def contextual(
         for n in chunk_nes:
             if ne_type_annotation[n] == "LOC" and "PPL" in ne_subtype_annotation[n]:
                 location_text = ne_name_annotation[n].replace("\n", " ").replace("  ", " ")
-                location_data = model.get(location_text.lower())
+                location_data = geo_model.get(location_text.lower())
                 if location_data:
                     chunk_locations.append((location_text, list(location_data)))
                 else:
@@ -96,34 +96,41 @@ def metadata(
         model: Path to the geographical model.
         language: List of languages to use for the model.
     """
-    geomodel = load_model(model, language=language)
+    geo_model = load_model(model, language=language)
 
     same_target_source = chunk.split()[0] == source.split()[0]
     chunk_annotation = list(chunk.read())
     source_annotation = list(source.read())
     out_annotation = chunk.create_empty_attribute()
 
-    # If location source and target chunk are not the same, we need
-    # to find the parent/child relations between them.
-    if not same_target_source:
+    if same_target_source:
+        for i in range(len(chunk_annotation)):
+            chunk_locations = []
+            location_source = source_annotation[i]
+
+            if location_source:
+                location_data = geo_model.get(location_source.strip().lower())
+                if location_data:
+                    chunk_locations = [(location_source, list(location_data))]
+
+            chunk_locations = most_populous(chunk_locations)
+            out_annotation[i] = _format_location(chunk_locations)
+    else:
+        # If location source and target chunk are not the same, we need to find the parent/child relations between them
         target_source_parents = list(source.get_parents(chunk))
 
-    for i in range(len(chunk_annotation)):
-        chunk_locations = []
-        if same_target_source:
-            location_source = source_annotation[i]
-        else:
-            location_source = (
-                source_annotation[target_source_parents[i]] if target_source_parents[i] is not None else None
-            )
+        for i in range(len(chunk_annotation)):
+            chunk_locations = []
+            parent = target_source_parents[i]
+            location_source = source_annotation[parent] if parent is not None else None
 
-        if location_source:
-            location_data = geomodel.get(location_source.strip().lower())
-            if location_data:
-                chunk_locations = [(location_source, list(location_data))]
+            if location_source:
+                location_data = geo_model.get(location_source.strip().lower())
+                if location_data:
+                    chunk_locations = [(location_source, list(location_data))]
 
-        chunk_locations = most_populous(chunk_locations)
-        out_annotation[i] = _format_location(chunk_locations)
+            chunk_locations = most_populous(chunk_locations)
+            out_annotation[i] = _format_location(chunk_locations)
 
     out.write(out_annotation)
 

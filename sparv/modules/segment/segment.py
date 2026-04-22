@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import nltk
+from nltk.tokenize import punkt
 
 from sparv.api import Annotation, Config, Model, ModelOutput, Output, Text, annotator, get_logger, modelbuilder, util
 from sparv.modules.saldo.saldo_model import split_triple
@@ -329,13 +330,10 @@ def train_punkt_segmenter(
         textfiles = textfiles.split()
 
     logger.info("Reading files")
-    parts = []
-    for filename in textfiles:
-        with Path(filename).open(encoding=encoding) as stream:
-            parts.append(stream.read())
+    parts = [Path(filename).read_text(encoding=encoding) for filename in textfiles]
     text = "".join(parts)
     logger.info("Training model")
-    trainer = nltk.tokenize.PunktTrainer(text, verbose=True)
+    trainer = punkt.PunktTrainer(text, verbose=True)
     logger.info("Saving pickled model")
     params = trainer.get_params()
     with Path(modelfile).open("wb") as stream:
@@ -355,7 +353,7 @@ class LinebreakTokenizer(nltk.RegexpTokenizer):
 
 
 class PunctuationTokenizer(nltk.RegexpTokenizer):
-    """A very simple sentence tokenizer, separating sentences on every .!? no matter the context.
+    """A very simple sentence segmenter, separating sentences on every .!? no matter the context.
 
     Use only when PunktSentenceTokenizer does not work, for example when there's no whitespace after punctuation.
     """
@@ -364,28 +362,22 @@ class PunctuationTokenizer(nltk.RegexpTokenizer):
         """Initialize class."""
         super().__init__(r"[\.!\?]\s*", gaps=True)
 
-    def span_tokenize(self, s: str) -> list[tuple[int, int]]:
-        """Tokenize s and return list with tokens.
+    def span_tokenize(self, text: str) -> Generator[tuple[int, int]]:
+        """Segment text and yield spans.
 
         Args:
-            s: The string to tokenize.
+            text: The string to segment.
 
-        Returns:
-            List of tuples with start and end positions of tokens.
+        Yields:
+            Tuples with start and end positions of sentences.
         """
-        result = []
-        spans = nltk.RegexpTokenizer.span_tokenize(self, s)
-        temp = [0, 0]
+        split_start = 0
+        for token_start, _ in super().span_tokenize(text):
+            if token_start > split_start:
+                yield split_start, token_start
+            split_start = token_start
 
-        for start, _ in spans:
-            temp[1] = start
-            result.append(tuple(temp))
-            temp[0] = start
-
-        temp[1] = len(s)
-        result.append(tuple(temp))
-
-        return result
+        yield split_start, len(text)
 
 
 class BetterWordTokenizer:

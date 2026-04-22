@@ -1,6 +1,7 @@
 """Part of Speech annotation using Hunpos."""
 
 import re
+from typing import Any
 
 from sparv.api import (
     Annotation,
@@ -128,9 +129,11 @@ def main(
         encoding: Encoding to use when communicating with the Hunpos binary.
     """
     if isinstance(tag_mapping, str) and tag_mapping:
-        tag_mapping = tagmappings.mappings[tag_mapping]
-    elif not tag_mapping:
-        tag_mapping = {}
+        tag_mapping_dict = tagmappings.mappings[tag_mapping]
+    elif isinstance(tag_mapping, dict):
+        tag_mapping_dict = tag_mapping
+    else:
+        tag_mapping_dict = {}
 
     pattern_list = []
 
@@ -160,7 +163,7 @@ def main(
     stdin = SENT_SEP.join(
         TOK_SEP.join(replace_word(token_word[token_index]) for token_index in sent) for sent in sentences
     )
-    args = [model.path]
+    args: list[Any] = [model.path]
     if morphtable:
         args.extend(["-m", morphtable.path])
     stdout, _ = util.system.call_binary(binary, args, stdin, encoding=encoding)
@@ -169,7 +172,7 @@ def main(
     for sent, tagged_sent in zip(sentences, stdout.strip().split(SENT_SEP), strict=True):
         for token_index, tagged_token in zip(sent, tagged_sent.strip().split(TOK_SEP), strict=True):
             tag = tagged_token.strip().split(TAG_SEP)[TAG_COLUMN]
-            tag = tag_mapping.get(tag, tag)
+            tag = tag_mapping_dict.get(tag, tag)
             out_annotation[token_index] = tag
 
     out.write(out_annotation)

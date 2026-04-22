@@ -56,13 +56,43 @@ def freq_list(
         delimiter: Column delimiter to use in the csv.
         cutoff: The minimum frequency a word must have in order to be included in the result.
     """
+    generate_frequency_statistics(
+        source_files,
+        word,
+        token,
+        annotations,
+        source_annotations,
+        remove_namespaces,
+        sparv_namespace,
+        source_namespace,
+        out,
+        delimiter,
+        cutoff,
+    )
+
+
+def generate_frequency_statistics(
+    source_files: AllSourceFilenames,
+    word: AnnotationAllSourceFiles,
+    token: AnnotationAllSourceFiles,
+    annotations: ExportAnnotationsAllSourceFiles | list[tuple[AnnotationAllSourceFiles, str]],
+    source_annotations: SourceAnnotationsAllSourceFiles | list[tuple[AnnotationAllSourceFiles, str]],
+    remove_namespaces: bool,
+    sparv_namespace: str,
+    source_namespace: str,
+    out: Export,
+    delimiter: str,
+    cutoff: int,
+) -> None:
+    """Generate word frequency statistics for the entire corpus."""
     logger.progress(total=len(source_files) + 1)
+
     # Add "word" to annotations
-    annotations = [(word, None), *list(annotations)]
+    annotations_with_word = [(word, None), *list(annotations)]
 
     # Get annotations list and export names
     annotation_list, token_attributes, export_names = util.export.get_annotation_names(
-        annotations,
+        annotations_with_word,
         source_annotations,
         token_name=token.name,
         remove_namespaces=remove_namespaces,
