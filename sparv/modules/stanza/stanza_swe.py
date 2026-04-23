@@ -1,5 +1,7 @@
 """POS tagging, lemmatization and dependency parsing with Stanza."""
 
+from __future__ import annotations
+
 import warnings
 from types import ModuleType
 from typing import TYPE_CHECKING

@@ -434,7 +434,7 @@ class SparvXMLParser:
                 else:
                     logger.warning("Header data '%s/%s' was not found in source data.", tag_name, header_path)
 
-        def iter_ns_declarations() -> Iterator[tuple[etree.Element[str], etree.Element[str]]]:
+        def iter_ns_declarations() -> Iterator[tuple[etree.Element, etree.Element]]:
             """Iterate over namespace declarations in the source file.
 
             Yields:
