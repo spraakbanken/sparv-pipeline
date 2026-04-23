@@ -47,7 +47,7 @@ def run_sparv(gold_corpus_dir: Path, tmp_path: Path, rules: list | None = None) 
         ),
     )
 
-    args = ["sparv", "-d", str(new_corpus_dir), "run", *rules]
+    args = ["sparv", "-d", str(new_corpus_dir), "run", *rules, "--log", "debug"]
     process = subprocess.run(args, capture_output=True, check=False)
     stdout = _remove_progress_info(process.stdout.strip().decode())
     if stdout and process.returncode != 0:
