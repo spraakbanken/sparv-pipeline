@@ -104,16 +104,26 @@ class BaseAnnotation(Base):
     common = False
     is_input = True
 
-    def __init__(self, name: str = "", source_file: str | None = None, is_input: bool | None = None) -> None:
+    def __init__(
+        self,
+        name: str = "",
+        source_file: str | None = None,
+        is_input: bool | None = None,
+        tagset: str | None = None,
+    ) -> None:
         """Initialize class.
 
         Args:
             name: The name of the annotation.
             source_file: The name of the source file.
             is_input: Deprecated, use AnnotationName instead of setting this to False.
+            tagset: Optional tagset identifier for this annotation. When used on an input annotation, declares the
+                required tagset. When used on an output annotation, declares the tagset produced. Accepts config
+                variable references in bracket notation.
         """
         super().__init__(name)
         self.source_file = source_file
+        self.tagset = tagset
         if is_input is not None:
             self.is_input = is_input
 
@@ -219,14 +229,15 @@ class CommonAllSourceFilesMixin(BaseAnnotation):
 class CommonAnnotationMixin(BaseAnnotation):
     """Methods common to Annotation and AnnotationAllSourceFiles."""
 
-    def __init__(self, name: str = "", source_file: str | None = None) -> None:
+    def __init__(self, name: str = "", source_file: str | None = None, tagset: str | None = None) -> None:
         """Initialize class.
 
         Args:
             name: Name of the annotation.
             source_file: Source file for the annotation.
+            tagset: Optional tagset identifier (see `BaseAnnotation`).
         """
-        super().__init__(name, source_file)
+        super().__init__(name, source_file, tagset=tagset)
         self._size = {}
         self._corpus_text = {}
         self._data = None
@@ -660,13 +671,14 @@ class AnnotationAllSourceFiles(CommonAnnotationMixin, CommonAllSourceFilesMixin,
 
     all_files = True
 
-    def __init__(self, name: str = "") -> None:
+    def __init__(self, name: str = "", tagset: str | None = None) -> None:
         """Initialize class.
 
         Args:
             name: The name of the annotation.
+            tagset: Optional tagset identifier (see `BaseAnnotation`).
         """
-        super().__init__(name)
+        super().__init__(name, tagset=tagset)
         self._size = {}
 
     def __call__(self, source_file: str) -> Annotation:
@@ -953,7 +965,12 @@ class BaseOutput(BaseAnnotation):
     common = False
 
     def __init__(
-        self, name: str = "", cls: str | None = None, description: str | None = None, source_file: str | None = None
+        self,
+        name: str = "",
+        cls: str | None = None,
+        description: str | None = None,
+        source_file: str | None = None,
+        tagset: str | None = None,
     ) -> None:
         """Initialize class.
 
@@ -962,8 +979,10 @@ class BaseOutput(BaseAnnotation):
             cls: Class of the annotation.
             description: Description of the annotation.
             source_file: Source file for the annotation.
+            tagset: Optional tagset identifier for this output annotation.
+                Declares the tagset produced by this annotator. Accepts config variable references in bracket notation.
         """
-        super().__init__(name, source_file)
+        super().__init__(name, source_file, tagset=tagset)
         self.cls = cls
         self.description = description
 
@@ -972,7 +991,12 @@ class Output(CommonMixin, BaseOutput):
     """Regular annotation or attribute used as output from an annotator function."""
 
     def __init__(
-        self, name: str = "", cls: str | None = None, description: str | None = None, source_file: str | None = None
+        self,
+        name: str = "",
+        cls: str | None = None,
+        description: str | None = None,
+        source_file: str | None = None,
+        tagset: str | None = None,
     ) -> None:
         """Initialize class.
 
@@ -981,8 +1005,9 @@ class Output(CommonMixin, BaseOutput):
             cls: Optional annotation class of the output.
             description: Description of the annotation.
             source_file: The name of the source file.
+            tagset: Optional tagset identifier (see `BaseOutput`).
         """
-        super().__init__(name, cls, description=description, source_file=source_file)
+        super().__init__(name, cls, description=description, source_file=source_file, tagset=tagset)
 
     def write(self, values: Iterable) -> None:
         """Write the annotation to a file, overwriting any existing annotation.
@@ -1009,15 +1034,18 @@ class OutputAllSourceFiles(CommonAllSourceFilesMixin, BaseOutput):
 
     all_files = True
 
-    def __init__(self, name: str = "", cls: str | None = None, description: str | None = None) -> None:
+    def __init__(
+        self, name: str = "", cls: str | None = None, description: str | None = None, tagset: str | None = None
+    ) -> None:
         """Initialize class.
 
         Args:
             name: The name of the annotation.
             cls: Optional annotation class of the output.
             description: Description of the annotation.
+            tagset: Optional tagset identifier (see `BaseOutput`).
         """
-        super().__init__(name, cls, description=description)
+        super().__init__(name, cls, description=description, tagset=tagset)
 
     def __call__(self, source_file: str) -> Output:
         """Get an AnnotationData instance for the specified source file.
@@ -1049,7 +1077,12 @@ class OutputData(CommonMixin, BaseOutput):
     data = True
 
     def __init__(
-        self, name: str = "", cls: str | None = None, description: str | None = None, source_file: str | None = None
+        self,
+        name: str = "",
+        cls: str | None = None,
+        description: str | None = None,
+        source_file: str | None = None,
+        tagset: str | None = None,
     ) -> None:
         """Initialize class.
 
@@ -1058,8 +1091,9 @@ class OutputData(CommonMixin, BaseOutput):
             cls: Optional annotation class of the output.
             description: Description of the annotation.
             source_file: The name of the source file.
+            tagset: Optional tagset identifier (see `BaseOutput`).
         """
-        super().__init__(name, cls, description=description, source_file=source_file)
+        super().__init__(name, cls, description=description, source_file=source_file, tagset=tagset)
 
     def write(self, value: Any) -> None:
         """Write arbitrary corpus-level string data to the annotation file.
@@ -1098,15 +1132,18 @@ class OutputDataAllSourceFiles(CommonAllSourceFilesMixin, BaseOutput):
     all_files = True
     data = True
 
-    def __init__(self, name: str = "", cls: str | None = None, description: str | None = None) -> None:
+    def __init__(
+        self, name: str = "", cls: str | None = None, description: str | None = None, tagset: str | None = None
+    ) -> None:
         """Initialize class.
 
         Args:
             name: The name of the annotation.
             cls: Optional annotation class of the output.
             description: Description of the annotation.
+            tagset: Optional tagset identifier (see `BaseOutput`).
         """
-        super().__init__(name, cls, description=description)
+        super().__init__(name, cls, description=description, tagset=tagset)
 
     def __call__(self, source_file: str) -> OutputData:
         """Get an OutputData instance for the specified source file.
@@ -1162,15 +1199,18 @@ class OutputCommonData(CommonMixin, BaseOutput):
     common = True
     data = True
 
-    def __init__(self, name: str = "", cls: str | None = None, description: str | None = None) -> None:
+    def __init__(
+        self, name: str = "", cls: str | None = None, description: str | None = None, tagset: str | None = None
+    ) -> None:
         """Initialize class.
 
         Args:
             name: The name of the annotation.
             cls: Optional annotation class of the output.
             description: Description of the annotation.
+            tagset: Optional tagset identifier (see `BaseOutput`).
         """
-        super().__init__(name, cls, description=description)
+        super().__init__(name, cls, description=description, tagset=tagset)
 
     def write(self, value: Any) -> None:
         """Write arbitrary corpus-level data to the annotation file.
@@ -1201,15 +1241,18 @@ class OutputMarker(OutputCommonData):
     as installers and uninstallers.
     """
 
-    def __init__(self, name: str = "", cls: str | None = None, description: str | None = None) -> None:
+    def __init__(
+        self, name: str = "", cls: str | None = None, description: str | None = None, tagset: str | None = None
+    ) -> None:
         """Initialize class.
 
         Args:
             name: The name of the marker.
             cls: Optional annotation class of the output.
             description: Description of the annotation.
+            tagset: Optional tagset identifier (see `BaseOutput`).
         """
-        super().__init__(name, cls, description)
+        super().__init__(name, cls, description, tagset=tagset)
 
     def write(self, value: str = "") -> None:
         """Create a marker, indicating that something has run.
@@ -1517,13 +1560,16 @@ class Model(Base):
     the Sparv model directory. Typically used as input to annotator functions.
     """
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, tagset: str | None = None) -> None:
         """Initialize class.
 
         Args:
             name: The path of the model file.
+            tagset: Optional tagset identifier for the annotations this model produces.
+                Accepts config variable references in bracket notation.
         """
         super().__init__(name)
+        self.tagset = tagset
 
     def __eq__(self, other: object) -> bool:
         """Check if two Model instances are equal.
@@ -1665,14 +1711,15 @@ class Model(Base):
 class ModelOutput(Model):
     """Same as [`Model`][sparv.api.classes.Model], but used as the output of a model builder."""
 
-    def __init__(self, name: str, description: str | None = None) -> None:
+    def __init__(self, name: str, description: str | None = None, tagset: str | None = None) -> None:
         """Initialize class.
 
         Args:
             name: The name of the model file.
             description: Description of the model.
+            tagset: Optional tagset identifier (see `Model`).
         """
-        super().__init__(name)
+        super().__init__(name, tagset=tagset)
         self.description = description
 
 

@@ -81,6 +81,9 @@ def make_rules(config_missing: bool) -> None:
                 print(f"    • {rule1.internal_name} > {rule2.internal_name}")
             print()
 
+        # Validate annotation tagset compatibility across all rules
+        pipeline.validate_annotation_tagsets()
+
 
 def make_rule(
     module_name: str,

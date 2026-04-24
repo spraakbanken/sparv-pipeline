@@ -83,11 +83,13 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 ensure_logger_class()
 
-# Messages from the Sparv core
+# Messages from the Sparv core, populated during the building of the Snakemake rules.
+# Only problems related to rules that are actually scheduled (checked in RUN_INFO) will surface as errors.
 messages = {
     "missing_configs": defaultdict(set),
     "missing_binaries": defaultdict(set),
     "missing_classes": defaultdict(set),
+    "tagset_mismatches": defaultdict(list),
 }
 
 missing_annotations_msg = (
@@ -598,6 +600,13 @@ class SparvLogHandler:
 
         self.messages["error"].append((source, message))
 
+    def tagset_mismatch_message(self, source: str) -> None:
+        """Create error message when tagset mismatches are detected for scheduled processors."""
+        mismatches = messages["tagset_mismatches"][source]
+        plural = "s" if len(mismatches) > 1 else ""
+        message = f"Tagset mismatch{plural} detected:\n • " + "\n • ".join(mismatches)
+        self.messages["error"].append((source, message))
+
     def missing_annotations_or_files(self, source: str, files: str) -> None:
         """Create error message when annotations or other files are missing."""
         errmsg = []
@@ -745,6 +754,9 @@ class SparvLogHandler:
                     self.handled_error = True
                 if job_name in messages["missing_classes"]:
                     self.missing_class_message(job_name, messages["missing_classes"][job_name])
+                    self.handled_error = True
+                if job_name in messages["tagset_mismatches"]:
+                    self.tagset_mismatch_message(job_name)
                     self.handled_error = True
                 # Binaries are always added as input files, so they will trigger the MissingInputException and be
                 # handled in handle_exception(), so we don't need to check for them here

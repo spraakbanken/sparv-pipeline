@@ -117,6 +117,20 @@ explicit_annotations = set()
 # All explicitly used annotations (without class-expansion)
 explicit_annotations_raw = set()
 
+# Maps resolved annotation name to its declared output tagset. Populated during pipeline build.
+annotation_tagsets: dict[str, str] = {}
+
+# Pending tagset compatibility requirements collected during pipeline build.
+# Each entry is (resolved_annotation_name, required_tagset, consumer_rule_name).
+annotation_tagset_requirements: list[tuple[str, str, str]] = []
+
+# Maps resolved model path (str) to its declared output tagset. Populated during pipeline build.
+model_tagsets: dict[str, str] = {}
+
+# Pending model tagset compatibility requirements collected during pipeline build.
+# Each entry is (resolved_model_path, required_tagset, consumer_rule_name).
+model_tagset_requirements: list[tuple[str, str, str]] = []
+
 # Pre-compiled regex patterns
 _CONFIG_VAR_RE = re.compile(r"\[([^\]=[]+)(?:=([^\][]+))?\]")
 _CLASS_REF_RE = re.compile(r"<([^>]+)>")

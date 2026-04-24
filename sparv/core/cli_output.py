@@ -193,6 +193,8 @@ def print_modules_info(
                         f_data["annotations"][f_ann[0].original_name] = {"description": f_ann[1]}
                         if f_ann[0].cls:
                             f_data["annotations"][f_ann[0].original_name]["class"] = f_ann[0].cls
+                        if f_ann[0].tagset:
+                            f_data["annotations"][f_ann[0].original_name]["tagset"] = f_ann[0].tagset
                         if f_ann[0].name != f_ann[0].original_name:
                             f_data["annotations"][f_ann[0].original_name]["resolved_name"] = f_ann[0].name
 
@@ -361,13 +363,15 @@ def _print_modules(modules_data: dict) -> None:
                     table.add_column()
                     for f_ann, ann_data in f_data["annotations"].items():
                         table.add_row(f"• {escape(f_ann)}", escape(ann_data["description"] or ""))
-                        if "resolved_name" in ann_data or "class" in ann_data:
+                        if "resolved_name" in ann_data or "class" in ann_data or "tagset" in ann_data:
                             inner_table = Table(show_header=False, padding=(0, 1, 0, 0), box=None)
                             inner_table.add_column(justify="left", style="i dim")
                             if "resolved_name" in ann_data:
                                 inner_table.add_row("resolved name:", ann_data["resolved_name"])
                             if "class" in ann_data:
                                 inner_table.add_row("class:", f"<{ann_data['class']}>")
+                            if "tagset" in ann_data:
+                                inner_table.add_row("tagset:", ann_data["tagset"])
                             table.add_row("", Padding(inner_table, (0, 0, 0, 2)))
                     console.print(Padding(table, (0, 0, 0, 4)))
                 elif "custom_annotator" in f_data:

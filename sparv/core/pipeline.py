@@ -638,6 +638,10 @@ class RuleBuilder:
                 rule.parameters[param_name] = None
                 return _ParamResult.SKIP
             rule.missing_config.update(missing_configs)
+            # Register output tagset so consumers can validate compatibility
+            if output.tagset:
+                tagset_value, _ = registry.expand_variables(output.tagset, rule.name)
+                registry.annotation_tagsets[output.name] = tagset_value
             ann_path = annotation_path(output, data=param_type.data, common=param_type.common)
             if param_type.all_files:
                 rule.outputs.extend(self._expand_for_all_files(paths.work_dir / ann_path))
@@ -670,6 +674,10 @@ class RuleBuilder:
         self.rule.outputs.append(model_path)
         self.rule.parameters[param_name] = ModelOutput(str(model_path))
         self.pipeline.model_outputs.append(model_path)
+        # Register model output tagset so consumers can validate compatibility
+        if param_value.tagset:
+            tagset_value, _ = registry.expand_variables(param_value.tagset, self.rule.name)
+            registry.model_tagsets[str(model_path)] = tagset_value
 
     def _handle_annotation(
         self, param_name: str, param_value: Any, param_type: type, param_list: bool, param_optional: bool
@@ -693,6 +701,10 @@ class RuleBuilder:
                 rule.parameters[param_name] = None
                 return _ParamResult.SKIP
             rule.missing_config.update(missing_configs)
+            # Collect tagset requirements for post-build validation
+            if annotation.tagset:
+                required_tagset, _ = registry.expand_variables(annotation.tagset, rule.name)
+                registry.annotation_tagset_requirements.append((annotation.name, required_tagset, rule.name))
             ann_path = annotation_path(annotation, data=param_type.data, common=param_type.common)
             if annotation.is_input:
                 if param_type.all_files:
@@ -817,6 +829,10 @@ class RuleBuilder:
             self.rule.missing_config.update(model.expand_variables(self.rule.name))
             self.rule.inputs.append(model.path)
             model_param.append(Model(str(model.path)))
+            # Collect tagset requirements for post-build validation
+            if model.tagset:
+                required_tagset, _ = registry.expand_variables(model.tagset, self.rule.name)
+                registry.model_tagset_requirements.append((str(model.path), required_tagset, self.rule.name))
         self.rule.parameters[param_name] = model_param if param_list else model_param[0]
 
     def _handle_binary(self, param_name: str, param: inspect.Parameter, param_type: type) -> None:
@@ -1338,6 +1354,37 @@ def warn(msg: str) -> None:
         msg: Warning message.
     """
     console.print(f"[red]WARNING:[/] {msg}")
+
+
+def validate_annotation_tagsets() -> None:
+    """Check tagset compatibility between annotator outputs and inputs after all rules are built.
+
+    Mismatches are stored in `log_handler.messages["tagset_mismatches"]` keyed by consumer rule name. The log handler
+    will abort the pipeline run if any mismatches are found among the rules selected for execution.
+
+    The same check is applied to Model/ModelOutput pairs.
+    """
+    for ann_name, required_tagset, consumer_rule in registry.annotation_tagset_requirements:
+        provider_tagset = registry.annotation_tagsets.get(ann_name)
+        if provider_tagset is None:
+            # Provider did not declare a tagset, so nothing to validate
+            continue
+        if provider_tagset != required_tagset:
+            log_handler.messages["tagset_mismatches"][consumer_rule].append(
+                f"annotation '{ann_name}': consumer requires '{required_tagset}', "
+                f"provider declares '{provider_tagset}'"
+            )
+
+    for model_path, required_tagset, consumer_rule in registry.model_tagset_requirements:
+        provider_tagset = registry.model_tagsets.get(model_path)
+        if provider_tagset is None:
+            # Model builder did not declare a tagset, so nothing to validate
+            continue
+        if provider_tagset != required_tagset:
+            log_handler.messages["tagset_mismatches"][consumer_rule].append(
+                f"model '{model_path}': consumer requires '{required_tagset}', "
+                f"model builder declares '{provider_tagset}'"
+            )
 
 
 def info(msg: str) -> None:
