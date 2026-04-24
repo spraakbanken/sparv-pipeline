@@ -883,7 +883,13 @@ def main(argv: list[str] | None = None) -> bool:
             progress.handle_exception(e)
             success = False
         finally:
+            if dry_run:
+                # Drain Snakemake's queued log records before progress.stop() decides whether to print a dry-run
+                # summary or a handled planning error.
+                snakemake_api.logger_manager.stop()
             progress.stop()
+            if progress.handled_error:
+                success = False
             progress.cleanup(snakemake_api.logger_manager)
 
     return success

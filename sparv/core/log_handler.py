@@ -568,13 +568,19 @@ class SparvLogHandler:
         else:
             console.print(Text(msg, style="red"))
 
+    def _add_error_message(self, source: str | None, message: str) -> None:
+        """Add a collected error message unless it has already been recorded."""
+        entry = (source, message)
+        if entry not in self.messages["error"]:
+            self.messages["error"].append(entry)
+
     def missing_config_message(self, source: str) -> None:
         """Create error message when config variables are missing."""
         variables = messages["missing_configs"][source]
         message = "The following config variable{} need{} to be set:\n • {}".format(
             *("s", "") if len(variables) > 1 else ("", "s"), "\n • ".join(variables)
         )
-        self.messages["error"].append((source, message))
+        self._add_error_message(source, message)
 
     def missing_binary_message(self, source: str) -> None:
         """Create error message when binaries are missing."""
@@ -582,7 +588,7 @@ class SparvLogHandler:
         message = "The following executable{} {} needed but could not be found:\n • {}".format(
             *("s", "are") if len(binaries) > 1 else ("", "is"), "\n • ".join(binaries)
         )
-        self.messages["error"].append((source, message))
+        self._add_error_message(source, message)
 
     def missing_class_message(self, source: str, classes: Collection[str] = ()) -> None:
         """Create error message when class variables are missing."""
@@ -598,14 +604,14 @@ class SparvLogHandler:
                 "source files."
             )
 
-        self.messages["error"].append((source, message))
+        self._add_error_message(source, message)
 
     def tagset_mismatch_message(self, source: str) -> None:
         """Create error message when tagset mismatches are detected for scheduled processors."""
         mismatches = messages["tagset_mismatches"][source]
         plural = "s" if len(mismatches) > 1 else ""
         message = f"Tagset mismatch{plural} detected:\n • " + "\n • ".join(mismatches)
-        self.messages["error"].append((source, message))
+        self._add_error_message(source, message)
 
     def missing_annotations_or_files(self, source: str, files: str) -> None:
         """Create error message when annotations or other files are missing."""
@@ -646,7 +652,7 @@ class SparvLogHandler:
             )
         if errmsg:
             errmsg.append("\n" + missing_annotations_msg)
-        self.messages["error"].append((source, "".join(errmsg)))
+        self._add_error_message(source, "".join(errmsg))
 
     def handle_exception(self, exception: Exception) -> None:
         """Handle exceptions from the Sparv core.
@@ -767,12 +773,17 @@ class SparvLogHandler:
                 # reliably interrupts the main thread, and asyncio handles KeyboardInterrupt cleanly (unlike SIGTERM
                 # which can hang the async scheduler).
                 #
+                # Dry-runs finish immediately after planning, so there is no running workflow to interrupt. The queued
+                # log records are drained before final messages are printed, which lets the normal shutdown path report
+                # the handled error without an asynchronous KeyboardInterrupt landing in progress.stop().
+                #
                 # Silence asyncio cleanup tracebacks and unawaited coroutine warnings that occur when Snakemake's
                 # scheduler event loop is garbage-collected in a dirty state after the interrupt.
                 sys.unraisablehook = lambda _: None
                 warnings.filterwarnings("ignore", message=r"coroutine.*was never awaited")
                 self.abort_event.set()
-                _thread.interrupt_main()
+                if not self.dry_run:
+                    _thread.interrupt_main()
 
             # Get number of jobs and start progress bar
             if self.use_progressbar and not self.bar_started and total_jobs.isdigit():
