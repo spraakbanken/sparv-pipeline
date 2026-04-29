@@ -187,6 +187,7 @@ class RuleInfo:
         self.export_dirs: list[str] | None = None
         self.has_preloader = bool(annotator_info["preloader"])
         self.use_preloader = False
+        self.preloader_socket: str | None = None
 
         self.type: str = annotator_info["type"].name
         self.is_annotator: bool = annotator_info["type"] is registry.Annotator.annotator
@@ -909,9 +910,11 @@ class RuleBuilder:
         # Check if currently running preloader can be used for this rule, by comparing the preloader's parameters with
         # the rule's parameters. We don't want to use a preloader that has been set up using different parameters.
         if pipeline.preloader_info and rule.name in pipeline.preloader_info:
-            rule.use_preloader = pipeline.preloader_info[rule.name] == {
-                k: rule.parameters[k] for k in pipeline.preloader_info[rule.name]
-            }
+            preloader_info = pipeline.preloader_info[rule.name]
+            preloader_params = preloader_info["params"]
+            rule.preloader_socket = preloader_info["socket"]
+
+            rule.use_preloader = preloader_params == {k: rule.parameters[k] for k in preloader_params}
 
         if self.config.get("debug"):
             self._print_debug_info()

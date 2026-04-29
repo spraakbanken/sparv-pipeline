@@ -9,6 +9,7 @@ import os
 import pickle
 import socket
 import struct
+import threading
 import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
@@ -27,6 +28,9 @@ STATUS = "STATUS"
 STOP = "STOP"
 PING = "PING"
 PONG = "PONG"
+PARAMS = "params"
+SOCKET = "socket"
+PROCESSES = "processes"
 
 # Set up logging
 log = logging.getLogger("sparv_preloader")
@@ -233,7 +237,7 @@ def handle(client_sock: socket.socket, annotators: dict[str, Preloader]) -> bool
 
     annotator = annotators[data[0]]
 
-    # Set target parameter to preloaded data
+    # Set target parameter to preloaded data or process
     data[1][annotator.target] = annotator.preloaded
 
     # Set up logging over socket
@@ -269,6 +273,55 @@ def handle(client_sock: socket.socket, annotators: dict[str, Preloader]) -> bool
         annotator.preloaded = annotator.cleanup(**{**annotator.params, annotator.target: annotator.preloaded})
 
     return None
+
+
+def handle_control(
+    client_sock: socket.socket,
+    annotator_info: dict[str, dict[str, Any]],
+    stop_event: multiprocessing.synchronize.Event,
+) -> None:
+    """Handle a control socket request.
+
+    Args:
+        client_sock: Client socket.
+        annotator_info: Information about preloaded annotators.
+        stop_event: Event to signal when stopping.
+    """
+    data = receive_data(client_sock)
+    if data is None:
+        return
+
+    if data == STOP:
+        stop_event.set()
+    elif data in {INFO, STATUS}:
+        send_data(client_sock, annotator_info)
+    elif data == PING:
+        send_data(client_sock, PONG)
+
+
+def control_worker(
+    server_socket: socket.socket,
+    annotator_info: dict[str, dict[str, Any]],
+    stop_event: multiprocessing.synchronize.Event,
+) -> None:
+    """Listen to the control socket and handle info and stop requests.
+
+    Args:
+        server_socket: Server socket.
+        annotator_info: Information about preloaded annotators.
+        stop_event: Event to signal when stopping.
+    """
+    while not stop_event.is_set():
+        try:
+            client_sock, _address = server_socket.accept()
+        except OSError:
+            return
+
+        try:
+            handle_control(client_sock, annotator_info, stop_event)
+        except:  # noqa: E722
+            log.exception("Error during control handling")
+        client_sock.close()
 
 
 def worker(
@@ -310,6 +363,22 @@ def worker(
         client_sock.close()
 
 
+def get_process_count(annotator: str, processes: int) -> int:
+    """Get the number of preloader processes to start for an annotator.
+
+    Args:
+        annotator: Annotator name.
+        processes: Maximum number of preloader processes.
+
+    Returns:
+        Number of preloader processes for the annotator.
+    """
+    process_limit = (config.get(config.MAX_THREADS, {}) or {}).get(annotator)
+    if process_limit:
+        return max(1, min(processes, process_limit))
+    return processes
+
+
 def serve(
     socket_path: str, processes: int, pipeline_data: PipelineData, stop_signal: multiprocessing.synchronize.Event
 ) -> None:
@@ -333,10 +402,6 @@ def serve(
     if not processes:
         processes = multiprocessing.cpu_count()
 
-    # Dictionary of preloaded models, indexed by module and annotator name
-    annotators = {}
-    annotator_obj = None
-
     preload_config = config.get("preload")
     if not preload_config:
         raise SparvErrorMessage(
@@ -349,12 +414,28 @@ def serve(
 
     log.info("Loading annotators: %s", ", ".join(preload_config))
 
+    annotator_processes = {}  # Annotator name to process count mapping
     for annotator in preload_config:
         if annotator not in rules:
             raise SparvErrorMessage(
                 f"Unknown annotator '{annotator}' in preloader config. Either it doesn't exist "
                 "or it doesn't support preloading."
             )
+        annotator_processes[annotator] = get_process_count(annotator, processes)
+
+    socket_paths = {
+        process_count: f"{socket_path}.{process_count}" for process_count in set(annotator_processes.values())
+    }
+    for worker_socket_path in socket_paths.values():
+        if Path(worker_socket_path).exists():
+            raise SparvErrorMessage(f"Socket {worker_socket_path} already exists.")
+
+    # Dictionaries of preloaded resources, grouped by their number of worker processes
+    annotator_groups = {process_count: {} for process_count in socket_paths}
+    annotator_info = {}
+    annotator_obj = None
+
+    for annotator in preload_config:
         rule = rules[annotator]
         preloader_params = {}
         for param in rule.annotator_info["preloader_params"]:
@@ -370,24 +451,45 @@ def serve(
         )
         if annotator_obj.shared:
             annotator_obj.preloaded = annotator_obj.preloader(**annotator_obj.params)
-        annotators[annotator] = annotator_obj
+        process_count = annotator_processes[annotator]
+        annotator_groups[process_count][annotator] = annotator_obj
+        annotator_info[annotator] = {
+            PARAMS: annotator_obj.params,
+            SOCKET: socket_paths[process_count],
+            PROCESSES: process_count,
+        }
 
-    # Start the socket (AF_UNIX should be supported in Windows 10 since 2018)
-    server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    server_socket.bind(socket_path)
-    server_socket.listen(processes)
+    # Start the sockets (AF_UNIX is also supported on Windows 10 and later)
+    worker_sockets = []
+    for process_count in annotator_groups:
+        server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        server_socket.bind(socket_paths[process_count])
+        server_socket.listen(process_count)
+        worker_sockets.append((process_count, server_socket))
+
+    control_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    control_socket.bind(socket_path)
+    control_socket.listen(processes)
 
     stop_event = multiprocessing.Event()
 
     workers = []
 
-    for i in range(processes):
-        p = multiprocessing.Process(target=worker, args=(i + 1, server_socket, annotators, stop_event))
-        p.start()
-        workers.append(p)
+    for process_count, server_socket in worker_sockets:
+        annotators = annotator_groups[process_count]
+        for i in range(process_count):
+            p = multiprocessing.Process(target=worker, args=(i + 1, server_socket, annotators, stop_event))
+            p.start()
+            workers.append((p, socket_paths[process_count]))
+
+    control_thread = threading.Thread(
+        target=control_worker, args=(control_socket, annotator_info, stop_event), daemon=True
+    )
+    control_thread.start()
 
     # Free up memory
-    del annotators
+    del annotator_groups
+    del annotator_info
     del annotator_obj
 
     log.info(
@@ -403,13 +505,14 @@ def serve(
     while True:
         if stop_event.is_set() or stop_signal.is_set():
             log.info("Stopping all workers...")
-            for p in workers:
+            for p, worker_socket_path in workers:
                 if p.is_alive():
                     # Send stop signal to worker
-                    stop(socket_path)
+                    stop(worker_socket_path)
             break
         time.sleep(2)
 
-    # Remove socket file
-    if socket_file.exists():
-        socket_file.unlink()
+    # Remove socket files
+    for path in [socket_file, *(Path(worker_socket_path) for worker_socket_path in socket_paths.values())]:
+        if path.exists():
+            path.unlink()

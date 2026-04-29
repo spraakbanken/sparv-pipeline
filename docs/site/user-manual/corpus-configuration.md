@@ -683,3 +683,18 @@ For more information on writing an annotator function, refer to the [developer's
 guide](../developers-guide/writing-sparv-plugins.md#module-code). If you have written a general annotator module,
 consider making it into a Sparv plugin so others can use it. Read more about writing plugins in the [developer's
 guide](../developers-guide/writing-sparv-plugins.md).
+
+## Limiting the Number of Threads
+
+Sparv can utilize multiple CPU cores by using the `--cores` flag when running `sparv run`. If certain processors are
+particularly resource-intensive, you can limit the maximum number of threads for these specific processors in your
+configuration file:
+
+```yaml
+threads:
+    "stanza:annotate": 2
+```
+
+The same limits are also used by `sparv preload`. For example, if you start the preloader with `sparv preload -j 8`
+and configure `"swener:annotate": 2`, Sparv starts at most two preloader worker processes for SweNER while other
+preloaded annotators can still use up to eight workers.

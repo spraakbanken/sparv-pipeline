@@ -136,7 +136,7 @@ def make_rule(
                 export_dirs=rule_info.export_dirs,
                 source_file=pipeline.make_file_getter(rule_info),
                 use_preloader=rule_info.use_preloader,
-                socket=config.get("socket"),
+                socket=rule_info.preloader_socket or config.get("socket"),
                 force_preloader=config.get("force_preloader", False),
                 compression=sparv_config.get("sparv.compression")
             resources: **resources
