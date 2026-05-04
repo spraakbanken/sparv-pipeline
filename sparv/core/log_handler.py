@@ -538,33 +538,41 @@ class SparvLogHandler:
     def info(self, msg: str) -> None:
         """Print info message.
 
+        This is used at the end of the workflow to print a user-friendly summary of the workflow execution.
+
         Args:
             msg: Message to print.
         """
         if self.json and self.logger:
-            self.logger.log(SparvLogger.FINAL, msg)
+            self.logger.info(msg, extra={"event": "final"})
         else:
             console.print(Text(msg, style="green"))
 
     def warning(self, msg: str) -> None:
         """Print warning message.
 
+        This is used at the end of the workflow to print a user-friendly warning message if the workflow finished with
+        warnings.
+
         Args:
             msg: Message to print.
         """
         if self.json and self.logger:
-            self.logger.log(SparvLogger.FINAL, msg)
+            self.logger.warning(msg, extra={"event": "final"})
         else:
             console.print(Text(msg, style="yellow"))
 
     def error(self, msg: str) -> None:
         """Print error message.
 
+        This is used at the end of the workflow to print a user-friendly error message when the workflow execution has
+        failed.
+
         Args:
             msg: Message to print.
         """
         if self.json and self.logger:
-            self.logger.log(SparvLogger.FINAL, msg)
+            self.logger.error(msg, extra={"event": "final"})
         else:
             console.print(Text(msg, style="red"))
 

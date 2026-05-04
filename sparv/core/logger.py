@@ -18,7 +18,6 @@ class SparvLogger(logging.Logger):
 
     INTERNAL = 100
     PROGRESS = 90
-    FINAL = 80
 
     def progress(
         self: SparvLogger, progress: int | None = None, advance: int | None = None, total: int | None = None
@@ -51,7 +50,6 @@ def ensure_logger_class() -> None:
 
     logging.addLevelName(SparvLogger.INTERNAL, "INTERNAL")
     logging.addLevelName(SparvLogger.PROGRESS, "PROGRESS")
-    logging.addLevelName(SparvLogger.FINAL, "FINAL")
 
 
 def get_sparv_logger(name: str) -> SparvLogger:

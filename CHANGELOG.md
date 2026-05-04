@@ -14,6 +14,8 @@
 - Dropped support for Python 3.10.
 - The default configuration file shipped with Sparv is now empty, and any changes to this file will be preserved when
   upgrading Sparv and running `sparv setup` again.
+- JSON logging no longer logs the last log message using the custom log level `FINAL`, but instead uses the standard
+  `INFO`, `WARNING` or `ERROR` log levels, with an additional field `"event": "final"`.
 
 ### Fixed
 
