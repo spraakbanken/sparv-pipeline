@@ -12,6 +12,7 @@ classes:
     "token:pos": stanford.token:stanford.pos
     "token:baseform": stanford.token:stanford.baseform
     "token:deprel": <token>:stanford.deprel
+    "token:dephead": <token>:stanford.dephead
     "token:dephead_ref": <token>:stanford.dephead_ref
     "token:ref": <token>:stanford.ref
 

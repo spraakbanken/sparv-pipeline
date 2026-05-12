@@ -44,6 +44,9 @@ def annotate(
     out_deprel: Output = Output(
         "<token>:stanford.deprel", cls="token:deprel", description="Dependency relations to the head"
     ),
+    out_dephead: Output = Output(
+        "<token>:stanford.dephead", cls="token:dephead", description="Positions of the dependency heads"
+    ),
     out_dephead_ref: Output = Output(
         "<token>:stanford.dephead_ref",
         cls="token:dephead_ref",
@@ -64,6 +67,7 @@ def annotate(
         out_pos: Output part-of-speeches from Stanford Parser.
         out_ne: Output named entity types from Stanford Parser.
         out_deprel: Output dependency relations to the head.
+        out_dephead: Output positions of the dependency heads.
         out_dephead_ref: Output sentence-relative positions of the dependency heads.
         binary: Path to directory containing Stanford executables.
     """
@@ -125,7 +129,11 @@ def annotate(
 
             for sentence in processed_sentences:
                 logger.debug("Parsed: %s", " ".join(f"{tok.baseform}/{tok.pos}" for tok in sentence))
+                token_dephead_count = len(all_tokens)
                 for token in sentence:
+                    token.dephead = (
+                        str(int(token.dephead_ref) - 1 + token_dephead_count) if token.dephead_ref else "-"
+                    )
                     all_tokens.append(token)
                     if token.word != text_data[token.start : token.end]:
                         logger.warning(
@@ -142,6 +150,7 @@ def annotate(
     out_upos.write([t.upos for t in all_tokens])
     out_pos.write([t.pos for t in all_tokens])
     out_ne.write([t.ne for t in all_tokens])
+    out_dephead.write([t.dephead for t in all_tokens])
     out_dephead_ref.write([t.dephead_ref for t in all_tokens])
     out_deprel.write([t.deprel for t in all_tokens])
 
@@ -203,7 +212,7 @@ def _parse_output(stdout: str, lang: Language, add_to_index: int) -> list:
             if dephead_ref == "0":  # 0 = empty dephead
                 dephead_ref = ""
             start, end = (add_to_index + int(i) for i in [start, end])
-            token = Token(ref, word, pos, upos, lemma, named_entity, dephead_ref, deprel, start, end)
+            token = Token(ref, word, pos, upos, lemma, named_entity, "-", dephead_ref, deprel, start, end)
             sentence.append(token)
 
     return sentences
@@ -219,6 +228,7 @@ class Token:
     upos: str
     baseform: str
     ne: str
+    dephead: str
     dephead_ref: str
     deprel: str
     start: int
