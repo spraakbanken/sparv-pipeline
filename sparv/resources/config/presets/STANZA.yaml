@@ -14,8 +14,8 @@ classes:
     "token:baseform": <token>:stanza.baseform
     "token:ufeats": <token>:stanza.ufeats
     "token:deprel": <token>:stanza.deprel
-    "token:dephead": <token>:stanza.dehead
-    "token:dephead_ref": <token>:stanza.dehead_ref
+    "token:dephead": <token>:stanza.dephead
+    "token:dephead_ref": <token>:stanza.dephead_ref
     "token:ref": <token>:stanza.ref
 
 
