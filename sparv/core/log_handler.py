@@ -128,7 +128,10 @@ class LogRecordStreamHandler(socketserver.StreamRequestHandler):
 
 
 class LogLevelCounterHandler(logging.Handler):
-    """Handler that counts the number of log messages per log level."""
+    """Handler that counts the number of log messages per log level.
+
+    Only warnings, errors and critical messages are counted.
+    """
 
     def __init__(self, count_dict: dict[str, int], *args: Any, **kwargs: Any) -> None:
         """Initialize handler.
@@ -143,7 +146,7 @@ class LogLevelCounterHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord) -> None:
         """Increment level counter for each log message."""
-        if record.levelno < SparvLogger.FINAL:
+        if logging.WARNING <= record.levelno <= logging.CRITICAL:
             self.levelcount[record.levelname] += 1
 
 
