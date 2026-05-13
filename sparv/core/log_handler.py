@@ -603,14 +603,14 @@ class SparvLogHandler:
 
     def missing_class_message(self, source: str, classes: Collection[str] = ()) -> None:
         """Create error message when class variables are missing."""
-        variables = messages["missing_classes"][source] or classes
+        classes = messages["missing_classes"].get(source) or classes
         message = "The following class{} need{} to be set:\n • {}".format(
-            *("es", "") if len(variables) > 1 else ("", "s"), "\n • ".join(variables)
+            *("es", "") if len(classes) > 1 else ("", "s"), "\n • ".join(classes)
         )
 
-        if "text" in variables:
+        if "text" in classes:
             message += (
-                "\n\nNote: The 'text' class can also be set using the configuration variable "
+                "\n\nNote: The 'text' class is preferably set using the configuration variable "
                 "'import.text_annotation', but only if it refers to an annotation from the "
                 "source files."
             )
@@ -692,6 +692,7 @@ class SparvLogHandler:
         elif isinstance(exception, MissingInputException) or (
             isinstance(exception, WorkflowError) and str(exception).startswith("MissingInputException")
         ):
+            self.build_regexes()
             # Errors due to missing config variables or binaries leading to missing input files
             msg_contents = re.search(r" for rule (\S+):\n.*affected files:\n(.+)", str(exception), flags=re.DOTALL)
             if not msg_contents:
@@ -710,6 +711,16 @@ class SparvLogHandler:
             else:
                 self.missing_annotations_or_files(display_name, filelist)
             self.handled_error = True
+        elif isinstance(exception, WorkflowError) and str(exception).startswith("UndefinedPathvarException:"):
+            self.build_regexes()
+            msg_contents = re.search(r"Undefined pathvar '(\S+)'", str(exception))
+            if not msg_contents:
+                self.messages["unhandled_error"].append((f"{type(exception).__name__}: {exception}", exception))
+                return
+            class_name = msg_contents.group(1)
+            if self.missing_classes_re and self.missing_classes_re.search(f"<{class_name}>"):
+                self.missing_class_message("", [class_name])
+                self.handled_error = True
         elif (
             isinstance(exception, WorkflowError) and str(exception) == "At least one job did not complete successfully."
         ):
@@ -933,18 +944,20 @@ class SparvLogHandler:
             if record.message:
                 self.messages["unhandled_error"].append((record.getMessage(), None))
 
-        elif snake_level == LogEvent.WORKFLOW_STARTED:
-            # Create regular expressions for searching for missing config variables or binaries
-            all_configs = {v for varlist in messages["missing_configs"].values() for v in varlist}
-            self.missing_configs_re = re.compile(r"\[({})]".format("|".join(re.escape(c) for c in all_configs)))
+    def build_regexes(self) -> None:
+        """Build regular expressions for searching for missing config variables or binaries."""
+        if self.missing_configs_re is not None:
+            return
+        all_configs = {v for varlist in messages["missing_configs"].values() for v in varlist}
+        self.missing_configs_re = re.compile(r"\[({})]".format("|".join(re.escape(c) for c in all_configs)))
 
-            all_binaries = {b for binlist in messages["missing_binaries"].values() for b in binlist}
-            self.missing_binaries_re = re.compile(
-                r"^({})$".format("|".join(re.escape(b) for b in all_binaries)), flags=re.MULTILINE
-            )
+        all_binaries = {b for binlist in messages["missing_binaries"].values() for b in binlist}
+        self.missing_binaries_re = re.compile(
+            r"^({})$".format("|".join(re.escape(b) for b in all_binaries)), flags=re.MULTILINE
+        )
 
-            all_classes = {v for varlist in messages["missing_classes"].values() for v in varlist}
-            self.missing_classes_re = re.compile(r"<({})>".format("|".join(re.escape(c) for c in all_classes)))
+        all_classes = {v for varlist in messages["missing_classes"].values() for v in varlist}
+        self.missing_classes_re = re.compile(r"<({})>".format("|".join(re.escape(c) for c in all_classes)))
 
     def stop(self) -> None:
         """Stop the progress bar and output any messages."""
