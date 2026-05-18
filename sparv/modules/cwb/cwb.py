@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import re
-from collections import OrderedDict
+import unicodedata
+from collections import OrderedDict, defaultdict
 from pathlib import Path
 
 from sparv.api import (
@@ -29,6 +30,29 @@ from sparv.modules.xml_export import xml_utils
 logger = get_logger(__name__)
 
 CWB_MAX_LINE_LEN = 65534
+CWB_VALID_CHARS = frozenset("abcdefghijklmnopqrstuvwxyz0123456789-_")
+CWB_CHAR_TRANSLATION = str.maketrans(
+    {
+        "æ": "ae",
+        "ð": "d",
+        "đ": "d",
+        "ħ": "h",
+        "\u0131": "i",
+        "ł": "l",
+        "ŋ": "n",
+        "œ": "oe",
+        "ø": "o",
+        "ß": "ss",
+        "þ": "th",
+        "\u2010": "-",
+        "\u2011": "-",
+        "\u2012": "-",
+        "\u2013": "-",
+        "\u2014": "-",
+        "\u2015": "-",
+        "\u2212": "-",
+    }
+)
 
 
 @exporter(
@@ -424,6 +448,43 @@ def cwb_encode(
     ]
     structs = parse_structural_attributes(struct_annotations)
 
+    # Make sure there are no duplicate annotation names after CWB escaping
+    duplicates: dict[str, set[tuple[str, ...]]] = defaultdict(set)
+
+    def _ann_entry(ann_name: str) -> tuple[str, ...]:
+        """Return a tuple of (ann_name,) or (ann_name, export_name) depending on whether an export name exists."""
+        export_name = export_names.get(ann_name)
+        return (ann_name, export_name) if export_name is not None else (ann_name,)
+
+    if len(set(columns)) != len(columns):
+        for i, col in enumerate(columns):
+            if columns.count(col) > 1:
+                duplicates[col].add(_ann_entry(token_attributes[i]))
+
+    if len(set(struct_annotations)) != len(struct_annotations):
+        original_struct_annotations = [
+            a.name for a in annotation_list if a.annotation_name != token_name
+        ]
+        for i, s in enumerate(struct_annotations):
+            if struct_annotations.count(s) > 1:
+                duplicates[s].add(_ann_entry(original_struct_annotations[i]))
+
+    if duplicates:
+        def _format_ann(entry: tuple[str, ...]) -> str:
+            if len(entry) == 2:  # noqa: PLR2004
+                return f"{entry[0]!r} (export name: {entry[1]!r})"
+            return f"{entry[0]!r}"
+
+        raise SparvErrorMessage(
+            "After CWB escaping, there are duplicates in the annotation names. This can happen if you have annotations "
+            "whose names only differ in characters that are not allowed in CWB names. Please check your annotation "
+            "names. The following names are duplicated after CWB escaping: {}".format(
+                ", ".join(
+                    f"{k!r} -> {', '.join(_format_ann(v) for v in vs)}" for k, vs in duplicates.items()
+                )
+            )
+        )
+
     data_dir = Path(out_marker).resolve().parent
     registry_dir = Path(out_registry).resolve().parent
     registry_file = Path(out_registry).resolve()
@@ -717,7 +778,17 @@ def parse_structural_attributes(structural_atts: list[str]) -> list[tuple[str, l
 
 
 def cwb_escape(name: str) -> str:
-    """Replace dots with "-" for CWB compatibility.
+    """Convert annotation names to a format that is compatible with CWB.
+
+    From the CWB documentation:
+
+        By convention, all attribute names must be lowercase (more precisely, they may only contain the characters
+        a-z, 0-9, -, and _, and may not start with a digit).
+
+    Any character that does not fit the above criteria will either be converted to a valid character (e.g. "æ" will be
+    converted to "ae") or replaced with an underscore, except for "." which will be replaced with "-". If a part of the
+    name starts with a digit, an underscore will be prefixed to it. If any characters are replaced with an underscore, a
+    warning will be logged.
 
     Args:
         name: The name to escape.
@@ -725,9 +796,72 @@ def cwb_escape(name: str) -> str:
     Returns:
         The escaped name.
     """
-    # From the CWB documentation: "By convention, all attribute names must be lowercase
-    # (more precisely, they may only contain the characters a-z, 0-9, -, and _, and may not start with a digit)"
-    return re.sub(r"\.", "-", name)
+    escaped_parts = []
+    unsupported_chars = set()
+    prefixed_digit = False
+
+    for part in name.split(":"):
+        escaped_part = []
+        for char in part:
+            escaped_char = _cwb_escape_char(char)
+            if escaped_char is None:
+                escaped_part.append("_")
+                unsupported_chars.add(char)
+            else:
+                escaped_part.append(escaped_char)
+
+        escaped = "".join(escaped_part) or "_"
+        if escaped[0].isdigit():
+            escaped = f"_{escaped}"
+            prefixed_digit = True
+        escaped_parts.append(escaped)
+
+    escaped_name = ":".join(escaped_parts)
+
+    if unsupported_chars:
+        logger.warning(
+            "The annotation name '%s' contains characters that could not be converted to valid CWB characters and will "
+            "be renamed to '%s'. The following characters were replaced with '_': %s",
+            name,
+            escaped_name,
+            ", ".join(repr(c) for c in sorted(unsupported_chars)),
+        )
+    if prefixed_digit:
+        logger.warning(
+            "The annotation name '%s' contains a part that starts with a digit and will be renamed to '%s'.",
+            name,
+            escaped_name,
+        )
+
+    return escaped_name
+
+
+def _cwb_escape_char(char: str) -> str | None:
+    """Convert one character to valid CWB name characters, or return `None` when no conversion exists.
+
+    Returns:
+        The converted character(s), or `None` if no valid conversion exists.
+    """
+    if char == ".":
+        return "-"
+
+    folded_char = char.casefold().translate(CWB_CHAR_TRANSLATION)
+    if all(c in CWB_VALID_CHARS for c in folded_char):
+        return folded_char
+
+    normalized_char = unicodedata.normalize("NFKD", folded_char).casefold().translate(CWB_CHAR_TRANSLATION)
+    escaped = []
+    for normalized_part in normalized_char:
+        if unicodedata.category(normalized_part) == "Mn":  # Skip non-spacing marks (e.g. accents)
+            continue
+        if normalized_part == ".":
+            escaped.append("-")
+        elif normalized_part in CWB_VALID_CHARS:
+            escaped.append(normalized_part)
+        else:
+            return None
+
+    return "".join(escaped) or None
 
 
 def truncate_set(
