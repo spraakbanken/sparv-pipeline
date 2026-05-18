@@ -197,10 +197,10 @@ overridden at the exporter module level.
 
 > [!TIP]
 >
-> You can convert a structural attribute to a token attribute, which is useful for representing structural
-> information (like named entities or phrase structures) in non-structured formats (e.g., CSV export). Use the
-> annotation `<token>:misc.from_struct_{struct}_{attr}`, replacing `{struct}` and `{attr}` with the structural
-> annotation and attribute names respectively (e.g., `<token>:misc.from_struct_swener.ne_swener.type`).
+> You can convert an attribute on a parent annotation to a token attribute, which is useful for representing structural
+> information (like named entities or phrase structures) in formats that cannot represent annotations spanning multiple
+> tokens (e.g., CSV export). Use the annotation `<token>:misc.inherit_{parent}_{attr}`, replacing `{parent}` and
+> `{attr}` with the parent annotation and attribute names respectively (e.g., `<token>:misc.inherit_article_name`).
 
 ### Default Export Formats
 

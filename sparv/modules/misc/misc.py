@@ -216,30 +216,6 @@ def ufeatstag(
 
 
 @annotator(
-    "Convert {struct}:{attr} into a token annotation",
-    wildcards=[Wildcard("struct", Wildcard.ANNOTATION), Wildcard("attr", Wildcard.ATTRIBUTE)],
-)
-def struct_to_token(
-    attr: Annotation = Annotation("{struct}:{attr}"),
-    token: Annotation = Annotation("<token>"),
-    out: Output = Output(
-        "<token>:misc.from_struct_{struct}_{attr}", description="Token attribute based on {struct}:{attr}"
-    ),
-) -> None:
-    """Convert an attribute on a structural annotation into a token attribute.
-
-    Args:
-        attr: Structural annotation with the attribute to convert.
-        token: Token annotation.
-        out: Output annotation for the token attribute.
-    """
-    token_parents = token.get_parents(attr)
-    attr_values = list(attr.read())
-    out_values = [attr_values[p] if p is not None else "" for p in token_parents]
-    out.write(out_values)
-
-
-@annotator(
     "Inherit {attr} from {parent}:{attr} to {child}",
     wildcards=[
         Wildcard("parent", Wildcard.ANNOTATION),
@@ -254,10 +230,10 @@ def inherit(
         "{child}:misc.inherit_{parent}_{attr}", description="Attribute on {child} inherited from {parent}:{attr}"
     ),
 ) -> None:
-    """Inherit attribute from a structural parent annotation to a child.
+    """Inherit attribute from a parent annotation to a child.
 
     Args:
-        parent: Structural parent annotation with the attribute to inherit.
+        parent: Parent annotation with the attribute to inherit.
         child: Child annotation.
         out: Output attribute for the child annotation, with the inherited values.
     """
