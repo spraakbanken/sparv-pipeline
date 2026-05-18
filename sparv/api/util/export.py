@@ -506,9 +506,11 @@ def _remove_duplicates(
         A list of tuples with unique annotations and their export names.
     """
     new_annotations = OrderedDict()
+    seen_names = set()
     for a, new_name in annotation_tuples:
-        if a not in new_annotations or new_name is not None:
+        if a.name not in seen_names or new_name is not None:
             new_annotations[a] = new_name
+            seen_names.add(a.name)
     return list(new_annotations.items())
 
 
