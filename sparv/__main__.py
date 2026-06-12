@@ -705,14 +705,13 @@ def main(argv: list[str] | None = None) -> bool:
             config["preloader"] = True
             config["processes"] = args.processes
             config["preload_command"] = args.preload_command
-            config["targets"] = ["preload"]
             if args.list:
                 targets = {"preload_list"}
         elif args.command == "schema":
-            config["targets"] = ["schema"]
             config["compact"] = args.compact
             # For the schema we include modules from all languages
             config["language"] = "__all__"
+        config["targets"] = targets
 
     elif args.command in {"run", "run-rule", "create-file", "install", "uninstall", "build-models"}:
         try:

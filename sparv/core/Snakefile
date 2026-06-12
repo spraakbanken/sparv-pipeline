@@ -24,18 +24,40 @@ from sparv.core.paths import paths
 rule do_nothing:
     input: []
 
-selected_rules = config.get("targets", [])  # Rule names explicitly selected by the user
+selected_rules = set(config.get("targets", set()))  # Rule names explicitly selected by the user
+
+# These targets only need the static rules below. They may still need config, module metadata, presets, classes or
+# PipelineData catalogs, but they do not need Snakemake rules for processors.
+static_only_targets = {
+    "classes",
+    "clean",
+    "config",
+    "files",
+    "languages",
+    "list_exports",
+    "list_files",
+    "list_installs",
+    "list_models",
+    "list_rules",
+    "list_uninstalls",
+    "modules",
+    "preload_list",
+    "presets",
+    "schema",
+}
+create_dynamic_rules = not selected_rules or not selected_rules.issubset(static_only_targets)
 
 # ==============================================================================
 # Dynamic Creation of Snakemake Rules
 # ==============================================================================
 
 
-def make_rules(config_missing: bool) -> None:
+def make_rules(config_missing: bool, create_snakemake_rules: bool = True) -> None:
     """Load all Sparv modules and create Snakemake rules.
 
     Args:
         config_missing: Whether the config file is missing.
+        create_snakemake_rules: Whether Snakemake rules should be created.
 
     Raises:
         SparvErrorMessage: If a connection to the preloader socket could not be established.
@@ -51,7 +73,7 @@ def make_rules(config_missing: bool) -> None:
     # Create rules for all available annotation functions
     for module_name in registry.modules:
         for f_name, f in registry.modules[module_name].functions.items():
-            make_rule(module_name, f_name, f, config_missing)
+            make_rule(module_name, f_name, f, config_missing, create_snakemake_rules=create_snakemake_rules)
 
     # Create custom rules
     for custom_rule_obj in sparv_config.get("custom_annotations", []):
@@ -66,10 +88,17 @@ def make_rules(config_missing: bool) -> None:
                 "'{custom_rule_obj['annotator']}'."
             )
         annotator = registry.modules[module_name].functions[f_name]
-        make_rule(module_name, f_name, annotator, config_missing, custom_rule_obj)
+        make_rule(
+            module_name,
+            f_name,
+            annotator,
+            config_missing,
+            custom_rule_obj,
+            create_snakemake_rules=create_snakemake_rules,
+        )
 
     # Check and set rule orders (but not when language is set to __all__ for schema purposes)
-    if config.get("language") != "__all__":
+    if create_snakemake_rules and config.get("language") != "__all__":
         ordered_rules = pipeline.resolve_rule_ordering(pipeline_data)
         for rule1, rule2 in ordered_rules:
             # ruleorder:  rule1.internal_name > rule2.internal_name
@@ -91,6 +120,7 @@ def make_rule(
     annotator_info: dict,
     config_missing: bool = False,
     custom_rule_obj: dict | None = None,
+    create_snakemake_rules: bool = True,
 ) -> None:
     """Create single Snakemake rule.
 
@@ -100,6 +130,7 @@ def make_rule(
         annotator_info: Information about the annotator.
         config_missing: Whether the config file is missing.
         custom_rule_obj: Custom rule object.
+        create_snakemake_rules: Whether the Snakemake rule should be created.
     """
     # Init rule info object
     rule_info = pipeline.RuleInfo(module_name, f_name, annotator_info)
@@ -122,7 +153,7 @@ def make_rule(
         if thread_limit:
             resources["threads"] = config["threads"] // thread_limit
 
-    if create_rule:
+    if create_rule and create_snakemake_rules:
         # Create a Snakemake rule for annotator
         rule:
             name: rule_info.internal_name
@@ -280,7 +311,7 @@ for key in registry.annotation_sources:
     )
 
 # Load modules and create automatic rules
-make_rules(config_missing)
+make_rules(config_missing, create_dynamic_rules)
 
 # Update autocompletion cache
 update_autocompletion_cache()
