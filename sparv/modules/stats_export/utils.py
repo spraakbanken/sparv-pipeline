@@ -18,4 +18,4 @@ def compress(stats_file: str, out_file: str, compression: str = "zip") -> None:
             f_out.writelines(f_in)
     else:
         with zipfile.ZipFile(out_file, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
-            z.write(stats_file, stats_file)
+            z.write(stats_file, Path(stats_file).name)
