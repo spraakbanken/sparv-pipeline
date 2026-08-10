@@ -47,5 +47,5 @@ presets:
     
     stanza-depparse:
         - <token>:stanza.deprel
-        - <token>:stanza.dephead_ref
+        - <token>:stanza.dephead_ref as dephead
         - <token>:stanza.ref

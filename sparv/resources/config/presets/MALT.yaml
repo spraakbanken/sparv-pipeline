@@ -13,5 +13,5 @@ classes:
 presets:
     all:
         - <token>:malt.deprel
-        - <token>:malt.dephead_ref
+        - <token>:malt.dephead_ref as dephead
         - <token>:malt.ref

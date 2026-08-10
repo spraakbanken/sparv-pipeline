@@ -30,7 +30,7 @@ presets:
         - <token>:stanza.upos
         - <token>:stanza.baseform
         - <token>:stanza.ufeats
-        - <token>:stanza.dephead_ref
+        - <token>:stanza.dephead_ref as dephead
         - <token>:stanza.deprel
         - <token>:stanza.ref
 

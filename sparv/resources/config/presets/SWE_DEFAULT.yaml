@@ -51,7 +51,7 @@ presets:
         - <token>:stanza.pos
         - <token>:stanza.ufeats
         - <token>:stanza.deprel
-        - <token>:stanza.dephead_ref
+        - <token>:stanza.dephead_ref as dephead
         - <token>:stanza.ref
 
     sentiment:
@@ -74,7 +74,7 @@ presets:
 
     sentence:
         - <sentence>:misc.id
-        - <sentence>:geo.geo_context as geo
+        - <sentence>:geo.geo_context
 
     text-lexical-class:
         - <text>:lexical_classes.blingbring

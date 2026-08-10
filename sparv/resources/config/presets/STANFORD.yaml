@@ -28,7 +28,7 @@ presets:
         - stanford.token:stanford.upos
         - stanford.token:stanford.baseform
         - stanford.token:stanford.ne_type
-        - stanford.token:stanford.dephead_ref
+        - stanford.token:stanford.dephead_ref as dephead
         - stanford.token:stanford.deprel
 
     sentence:

@@ -12,4 +12,4 @@ classes:
 presets:
     all:
         - <paragraph>:misc.id
-        - <paragraph>:geo.geo_context as geo
+        - <paragraph>:geo.geo_context
