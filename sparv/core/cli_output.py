@@ -15,6 +15,7 @@ from rich.rule import Rule
 from rich.syntax import Syntax
 from rich.table import Table
 
+from sparv.api.classes import BaseAnnotation
 from sparv.api.util.misc import dump_yaml
 from sparv.core import config, pipeline, registry
 from sparv.core.console import console
@@ -259,7 +260,7 @@ def print_modules_info(
                         f_data["parameters"][p] = {
                             "optional": optional,
                             "type": f"list[{get_name(typ)}]" if li else (get_name(typ)),
-                            "default": default,
+                            "default": default.name if isinstance(default, BaseAnnotation) else default,
                         }
                 module_data["functions"][f_name] = f_data
 
