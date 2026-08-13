@@ -54,9 +54,7 @@ presets:
         - <token>:stanza.dephead_ref as dephead
         - <token>:stanza.ref
 
-    sentiment:
-        - <token>:sensaldo.sentiment_score
-        - <token>:sensaldo.sentiment_label
+    sentiment: []
 
     token-lexical-class:
         - <token>:lexical_classes.swefn
