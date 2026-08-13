@@ -81,7 +81,7 @@ description:
 created: 2010-12-15
 updated: 2018-05-28
 ---
-id: sbx-swe-pos-hunpos-suc3-1800
+id: sbx-swe-pos-hunpos-suc3_1800
 language_varieties:
   - "1800"
 parent: hunpos-parent
@@ -136,7 +136,7 @@ description:
 created: 2012-10-23
 updated: 2015-09-11
 ---
-id: sbx-swe-msd-hunpos-suc3-1800
+id: sbx-swe-msd-hunpos-suc3_1800
 language_varieties:
   - "1800"
 parent: hunpos-parent
