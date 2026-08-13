@@ -1,0 +1,30 @@
+id: sbx-zxx-export-sparv-csv
+name:
+  swe: CSV-export
+  eng: CSV export
+short_description:
+  swe: Export av korpusdata i CSV-format
+  eng: Export of corpus data in CSV format
+task: export
+keywords:
+ - csv
+sparv_processor: csv_export:csv
+example_output: |-
+  ```
+  token	lemma	lex	sense	deprel	pos
+  # document.name = igelkottar
+  # text._id = b6a
+  # text.lix = 40.42
+  # text.title = Igelkott
+  # sentence.id = b6b0
+  Igelkottens	|igelkott|	|igelkott..nn.1|	|igelkott..1:-1.000|	AA	NN
+  taggar	|tagg|	|tagg..nn.1|	|tagg..1:0.562|tagg..2:0.438|	SS	NN
+  gör	|göra|	|göra..vb.1|	|göra..3:0.629|göra..1:0.321|göra..2:0.050|	ROOT	VB
+  den	|den|	|den..pn.1|	|den..2:-1.000|	SS	PN
+  unik	|unik|	|unik..av.1|	|unik..1:-1.000|	CJ	JJ
+  och	|och|	|och..kn.1|	|och..1:-1.000|	OP	KN
+  omisskännlig	|omisskännlig|	|omisskännlig..av.1|	|omisskännlig..1:-1.000|	CJ	JJ
+  .	|	|	|	IP	MAD
+  ```
+created: 2020-05-19
+updated: 2022-05-13

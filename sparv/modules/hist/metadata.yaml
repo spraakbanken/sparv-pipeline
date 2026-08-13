@@ -1,0 +1,347 @@
+id: hist-parent
+abstract: true
+language_codes:
+  - swe
+created: 2012-10-23
+updated: 2021-06-01
+---
+id: sbx-swe-lemmatization-sparv-saldo_dalin_swedberg_1800
+language_varieties:
+  - "1800"
+parent: hist-parent
+name:
+  swe: Annotering av SALDO-grundformer för 1800-talssvenska
+  eng: Annotation of SALDO citation forms (base forms, lemmas) for Swedish from the 1800s
+short_description:
+  swe: Fullformsuppslagning som ger SALDO-grundformer med hjälp av Dalin och Swedberg
+  eng: Full-form lookup of SALDO citation forms (lemmas) using Dalin and Swedberg
+task: lemmatization
+keywords:
+  - saldo
+  - dalin
+  - swedberg
+annotations:
+  - <token>:hist.baseform
+example_output: |-
+  ```xml
+  <token baseform="|låda|dalinm--låda|">Lådan</token>
+  <token baseform="|vara|">var</token>
+  <token baseform="|hänga upp|dalinm--upphänga|">upphängd</token>
+  <token baseform="|under|dalinm--under|">under</token>
+  <token baseform="|den|en|">den</token>
+  <token baseform="|">waggon</token>
+  <token baseform="|dalinm--hvari|">hvari</token>
+  <token baseform="|en|dalinm--de|">de</token>
+  <token baseform="|andra|annan|">andra</token>
+  <token baseform="|djur|dalinm--djur|">djuren</token>
+  <token baseform="|">befunno</token>
+  <token baseform="|swedbergm--sig|">sig</token>
+  <token baseform="|">.</token>
+  ```
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: swe
+    variety: "1800"
+  ```
+models:
+  - name: SALDO's morphology
+    url: "https://spraakbanken.gu.se/resurser/saldom"
+  - name: Dalin's morphology
+    url: "https://spraakbanken.gu.se/resurser/dalinm"
+  - name: Swedberg's morphology
+    url: "https://spraakbanken.gu.se/resurser/swedbergm"
+other_references:
+  - "[Borin/Forsberg/Lönngren 2013: SALDO: a touch of yin to WordNet's yang](http://dx.doi.org/10.1007/s10579-013-9233-4)"
+  - '{publication 140686}'
+description:
+  swe: |-
+    Uppslagning av grundformer för 1800-talssvenska med SALDO, Dalin och Swedberg. Kandidat-grundformer rangordnas med
+    MSD-kompatibilitet (när tillgängligt), källmärks för historiska lexikon, och en Dalin/Swedberg-fallback fyller i de
+    token som inte fått någon grundform.
+  eng: |-
+    Lookup of base forms for 19th-century Swedish using SALDO, Dalin, and Swedberg. Candidate base forms are ranked by
+    MSD compatibility (when available), source-marked for historical lexicons, and a Dalin/Swedberg fallback fills
+    tokens left without a base form.
+---
+id: sbx-swe-lemgram-sparv-saldo_dalin_swedberg_1800
+language_varieties:
+  - "1800"
+parent: hist-parent
+name:
+  swe: Annotering av SALDO-lemgram för 1800-talssvenska
+  eng: Annotation of SALDO lemgrams for Swedish from the 1800s
+short_description:
+  swe: Uppslagning av SALDO-lemgram med hjälp av Dalin och Swedberg
+  eng: Lookup of SALDO lemgrams using Dalin and Swedberg
+task: lexical lookup
+keywords:
+  - saldo
+  - dalin
+  - swedberg
+annotations:
+  - <token>:hist.lemgram
+example_output: |-
+  ```xml
+  <token lemgram="|låda..nn.1|dalinm--låda..nn.1|">Lådan</token>
+  <token lemgram="|vara..vb.1|">var</token>
+  <token lemgram="|hänga_upp..vbm.1|dalinm--upphänga..vb.1|">upphängd</token>
+  <token lemgram="|under..pp.1|dalinm--under..pp.2|">under</token>
+  <token lemgram="|den..pn.1|en..al.1|">den</token>
+  <token lemgram="|">waggon</token>
+  <token lemgram="|dalinm--hvari..ab.1|">hvari</token>
+  <token lemgram="|andra..av.1|annan..pn.1|">andra</token>
+  <token lemgram="|djur..nn.1|dalinm--djur..nn.1|">djuren</token>
+  <token lemgram="|">befunno</token>
+  <token lemgram="|swedbergm--sig..pn.1|">sig</token>
+  <token lemgram="|">.</token>
+  ```
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: swe
+    variety: "1800"
+  ```
+models:
+  - name: SALDO's morphology
+    url: "https://spraakbanken.gu.se/resurser/saldom"
+  - name: Dalin's morphology
+    url: "https://spraakbanken.gu.se/resurser/dalinm"
+  - name: Swedberg's morphology
+    url: "https://spraakbanken.gu.se/resurser/swedbergm"
+other_references:
+  - "[Borin/Forsberg/Lönngren 2013: SALDO: a touch of yin to WordNet's yang](http://dx.doi.org/10.1007/s10579-013-9233-4)"
+  - '{publication 140686}'
+description:
+  swe: |-
+    Uppslagning av SALDO-lemgram för 1800-talssvenska med hjälp av Dalin och Swedberg. Kandidat-lemgram rangordnas
+    med MSD-kompatibilitet (när tillgängligt), källmärks för historiska lexikon, och en Dalin/Swedberg-fallback fyller
+    i de token som inte fått något lemgram.
+  eng: |-
+    Lookup of lemgrams for 19th-century Swedish using SALDO, Dalin, and Swedberg. Candidate lemgrams are ranked with MSD
+    compatibility (when available), source-marked for historical lexicons, and a Dalin/Swedberg fallback fills tokens
+    left without lemgrams.
+---
+id: sbx-swe-sense-sparv-saldo_dalin_swedberg_1800
+language_varieties:
+  - "1800"
+parent: hist-parent
+name:
+  swe: Annotering av SALDO-identifierare för 1800-talssvenska
+  eng: Annotation of SALDO identifiers for Swedish from the 1800s
+short_description:
+  swe: Uppslagning av SALDO-identifierare för 1800-talssvenska med stöd av Dalin och Swedberg
+  eng: Lookup of SALDO identifiers for 19th-century Swedish using SALDO, with Dalin and Swedberg support for historical lookup coverage.
+task: lexical lookup
+keywords:
+  - saldo
+  - dalin
+  - swedberg
+annotations:
+  - <token>:hist.sense
+example_output: |-
+  ```xml
+  <token sense="|låda..1|">Lådan</token>
+  <token sense="|vara..1|">var</token>
+  <token sense="|hänga_upp..1|">upphängd</token>
+  <token sense="|under..1|under..2|">under</token>
+  <token sense="|den..2|den..1|en..2|">den</token>
+  <token sense="|">waggon</token>
+  <token sense="|">hvari</token>
+  <token sense="|den..1|en..2|">de</token>
+  <token sense="|andra..2|annan..1|">andra</token>
+  <token sense="|djur..1|">djuren</token>
+  <token sense="|">befunno</token>
+  <token sense="|">sig</token>
+  <token sense="|">.</token>
+  ```
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: swe
+    variety: "1800"
+  ```
+models:
+  - name: SALDO's morphology
+    url: "https://spraakbanken.gu.se/resurser/saldom"
+  - name: Dalin's morphology
+    url: "https://spraakbanken.gu.se/resurser/dalinm"
+  - name: Swedberg's morphology
+    url: "https://spraakbanken.gu.se/resurser/swedbergm"
+other_references:
+  - "[Borin/Forsberg/Lönngren 2013: SALDO: a touch of yin to WordNet's yang](http://dx.doi.org/10.1007/s10579-013-9233-4)"
+  - '{publication 140686}'
+description:
+  swe: |-
+    Uppslagning av SALDO-identifierare för 1800-talssvenska där kandidater rangordnas med MSD-kompatibilitet när sådan
+    information finns. Dalin och Swedberg används tillsammans med SALDO i uppslaget, men själva sense-identifierarna
+    kommer från SALDO.
+  eng: |-
+    Lookup of SALDO identifiers for 19th-century Swedish, where candidates are ranked by MSD compatibility when
+    available. Dalin and Swedberg are used together with SALDO in the lookup, but the sense identifiers themselves come
+    from SALDO.
+---
+id: sbx-swe-lemmatization-sparv-schlyter_soderwall_fsv
+language_varieties:
+  - fsv
+parent: hist-parent
+name:
+  swe: Annotering av grundformer för fornsvenska
+  eng: Annotation of citation forms (base forms, lemmas) for Old Swedish
+short_description:
+  swe: Fullformsuppslagning som ger grundformer med Schlyter och Söderwall
+  eng: Full-form lookup of citation forms (lemmas) using Schlyter and Soderwall
+task: lemmatization
+keywords:
+  - schlyter
+  - soderwall
+annotations:
+  - <token>:hist.baseform
+example_output: |-
+  ```xml
+  <token baseform="|svaka|svarlika|sværia|">Swerikis</token>
+  <token baseform="|rike|riki|">Rike</token>
+  <token baseform="|ar|æ|">ær</token>
+  <token baseform="|af|">af</token>
+  <token baseform="|hedhne|hesa|hesna|heþna|">hedne</token>
+  <token baseform="|værld|vald|værald|">værld</token>
+  <token baseform="|saman|sami|soma|somi|">saman</token>
+  <token baseform="|ko|komin|min|mit|">komith</token>
+  <token baseform="|">,</token>
+  <token baseform="|af|">af</token>
+  <token baseform="|svear|svet|sveta|sveti|">swea</token>
+  <token baseform="|akh|ok|uk|">och</token>
+  <token baseform="|godha|got|">gotha</token>
+  <token baseform="|ladh|land|lidh|">landh</token>
+  <token baseform="|">.</token>
+  ```
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: swe
+    variety: fsv
+  ```
+models:
+  - name: Old Swedish morphology
+  - url: "https://spraakbanken.gu.se/resurser/fsvm"
+other_references:
+  - '{publication 72502}'
+  - '{publication 198794}'
+  - '{publication 144291}'
+description:
+  swe: |-
+    Uppslagning av grundformer för fornsvenska med Schlyter och Söderwall. Eftersom MSD inte används i denna analys
+    rangordnas kandidater med generell precision, och resultatet bygger på ordform samt eventuella stavningsvarianter.
+  eng: |-
+    Lookup of base forms for Old Swedish using Schlyter and Soderwall. Since MSD is not used in this analysis,
+    candidates are ranked with general precision, and results are based on the token form plus optional spelling
+    variants.
+---
+id: sbx-swe-lemgram-sparv-schlyter_soderwall_fsv
+language_varieties:
+  - fsv
+parent: hist-parent
+name:
+  swe: Annotering av lemgram för fornsvenska
+  eng: Annotation of lemgrams for Old Swedish
+short_description:
+  swe: Uppslagning av lemgram med Schlyter och Söderwall
+  eng: Lookup of lemgrams using Schlyter and Soderwall
+task: lexical lookup
+keywords:
+  - schlyter
+  - soderwall
+annotations:
+  - <token>:hist.lemgram
+example_output: |-
+  ```xml
+  <token lemgram="|fsvm--svaka..vb.1|fsvm--svarlika..ab.1|fsvm--sværia..vb.1|">Swerikis</token>
+  <token lemgram="|fsvm--rike..nn.1|fsvm--riki..nn.1|">Rike</token>
+  <token lemgram="|fsvm--ar..nn.1|fsvm--ar..nn.2|fsvm--ar..nn.3|fsvm--æ..ab.1|">ær</token>
+  <token lemgram="|fsvm--af..kn.2|fsvm--af..pp.1|">af</token>
+  <token lemgram="|fsvm--hedhne..nn.1|fsvm--hesa..e.1|fsvm--hesa..nn.1|fsvm--hesna..vb.1|fsvm--heþna..nn.1|">hedne</token>
+  <token lemgram="|fsvm--værld..nn.1|fsvm--vald..nn.1|fsvm--værald..nn.1|">værld</token>
+  <token lemgram="|fsvm--saman..ab.1|fsvm--sami..pn.1|fsvm--soma..nn.1|fsvm--some..nn.1|">saman</token>
+  <token lemgram="|fsvm--ko..e.1|fsvm--ko..nn.1|fsvm--komin..nn.1|fsvm--min..e.1|fsvm--min..e.2|fsvm--min..e.3|fsvm--min..pn.1|fsvm--min..pn.2|fsvm--mit..ab.1|fsvm--mit..nn.1|">komith</token>
+  <token lemgram="|">,</token>
+  <token lemgram="|fsvm--af..kn.2|fsvm--af..pp.1|">af</token>
+  <token lemgram="|fsvm--svear..nn.1|fsvm--svet..nn.1|fsvm--sveta..vb.1|fsvm--svete..nn.1|">swea</token>
+  <token lemgram="|fsvm--akh..in.1|fsvm--ok..kn.2|fsvm--ok..nn.1|fsvm--uk..nn.1|">och</token>
+  <token lemgram="|fsvm--godha..vb.1|fsvm--got..nn.1|">gotha</token>
+  <token lemgram="|fsvm--ladh..nn.1|fsvm--ladh..nn.2|fsvm--land..nn.1|fsvm--land..nn.2|fsvm--lidh..nn.1|fsvm--lidh..nn.2|fsvm--lidh..nn.3|fsvm--lidh..nn.4|">landh</token>
+  <token lemgram="|">.</token>
+  ```
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: swe
+    variety: fsv
+  ```
+models:
+  - name: Old Swedish morphology
+    url: "https://spraakbanken.gu.se/resurser/fsvm"
+other_references:
+  - '{publication 72502}'
+  - '{publication 198794}'
+  - '{publication 144291}'
+description:
+  swe: |-
+    Uppslagning av lemgram för fornsvenska med Schlyter och Söderwall. Kandidater hämtas från det fornsvenska
+    morfologiska lexikonet och beräknas över ordform samt möjliga stavningsvarianter.
+  eng: |-
+    Lookup of lemgrams for Old Swedish using Schlyter and Soderwall. Candidates are retrieved from the Old Swedish
+    morphology lexicon and computed over token forms and possible spelling variants.
+---
+id: sbx-swe-spelling_variants-sparv-fsv
+language_varieties:
+  - fsv
+parent: hist-parent
+name:
+  swe: Stavningsvarianter för fornsvenska
+  eng: Spelling variants for Old Swedish
+short_description:
+  swe: Uppslagning som ger möjliga stavningsvarianter för token
+  eng: Lookup producing possible spelling variants for tokens
+task: lexical lookup
+annotations:
+  - <token>:hist.spelling_variants
+example_output: |-
+  ```xml
+  <token spelling_variants="|svaka|svarlika|sværia|">Swerikis</token>
+  <token spelling_variants="|rige|rike|riki|">Rike</token>
+  <token spelling_variants="|ar|æ|">ær</token>
+  <token spelling_variants="|ef|æf|">af</token>
+  <token spelling_variants="|hedhne|hesna|heþna|">hedne</token>
+  <token spelling_variants="|vald|værald|">værld</token>
+  <token spelling_variants="|sami|soman|">saman</token>
+  <token spelling_variants="|komin|mit|miþ|">komith</token>
+  <token spelling_variants="|">,</token>
+  <token spelling_variants="|ef|æf|">af</token>
+  <token spelling_variants="|svear|svet|sveta|">swea</token>
+  <token spelling_variants="|akh|ok|uk|">och</token>
+  <token spelling_variants="|godha|got|gota|">gotha</token>
+  <token spelling_variants="|ladh|land|lidh|">landh</token>
+  <token spelling_variants="|">.</token>
+  ```
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: swe
+    variety: fsv
+  ```
+models:
+  - name: Old Swedish spelling variants model
+    url: "https://github.com/spraakbanken/sparv-models/raw/master/hist/fsv-spelling-variants.txt"
+description:
+  swe: |-
+    Token slås upp i en modell med historiska stavningsvarianter för att generera alternativa stavningar som kan
+    användas i efterföljande lexikonuppslagning.
+  eng: |-
+    Tokens are looked up in a model of historical spelling variants to generate alternative spellings, which can then
+    be used in downstream lexical lookup.
