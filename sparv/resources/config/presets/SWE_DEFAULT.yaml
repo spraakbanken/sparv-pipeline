@@ -59,7 +59,6 @@ presets:
         - <token>:sensaldo.sentiment_label
 
     token-lexical-class:
-        - <token>:lexical_classes.blingbring
         - <token>:lexical_classes.swefn
 
     #====================================
@@ -77,7 +76,6 @@ presets:
         - <sentence>:geo.geo_context
 
     text-lexical-class:
-        - <text>:lexical_classes.blingbring
         - <text>:lexical_classes.swefn
 
     readability:
