@@ -377,7 +377,7 @@ def sbx_freq_list_simple_compressed(
     compress(stats_file, out_file, compression)
 
 
-@exporter("Corpus word frequency list for Swedish from the 1800's", language=["swe-1800"])
+@exporter("Corpus word frequency list for Swedish from the 1800s", language=["swe-1800"])
 def sbx_freq_list_1800(
     source_files: AllSourceFilenames = AllSourceFilenames(),
     word: AnnotationAllSourceFiles = AnnotationAllSourceFiles("<token:word>"),
@@ -430,7 +430,7 @@ def sbx_freq_list_1800(
     )
 
 
-@exporter("Corpus word frequency list for Swedish from the 1800's (compressed)", language=["swe-1800"])
+@exporter("Corpus word frequency list for Swedish from the 1800s (compressed)", language=["swe-1800"])
 def sbx_freq_list_1800_compressed(
     stats_file: ExportInput = ExportInput("stats_export.frequency_list_sbx_1800/stats_[metadata.id].csv"),
     out_file: Export = Export(
@@ -438,7 +438,7 @@ def sbx_freq_list_1800_compressed(
     ),
     compression: str = Config("stats_export.compression"),
 ) -> None:
-    """Compress 1800's Swedish statistics file.
+    """Compress 1800s Swedish statistics file.
 
     Args:
         stats_file: Path to statistics file.
@@ -533,11 +533,11 @@ for inst in (
         "description": " for Old Swedish (without part-of-speech, compressed)",
         "extension": ".[stats_export.compression]",
     },
-    {"suffix": "_1800", "description": " for Swedish from the 1800's", "extension": ""},
+    {"suffix": "_1800", "description": " for Swedish from the 1800s", "extension": ""},
     {
         "suffix": "_1800_compressed",
         "dir_suffix": "_1800",
-        "description": " for Swedish from the 1800's (compressed)",
+        "description": " for Swedish from the 1800s (compressed)",
         "extension": ".[stats_export.compression]",
     },
 ):
@@ -596,8 +596,8 @@ for uninst in (
         "description": " for Old Swedish (without part-of-speech, compressed)",
         "compressed": True,
     },
-    {"suffix": "_1800", "description": " for Swedish from the 1800's", "compressed": False},
-    {"suffix": "_1800_compressed", "description": " for Swedish from the 1800's (compressed)", "compressed": True},
+    {"suffix": "_1800", "description": " for Swedish from the 1800s", "compressed": False},
+    {"suffix": "_1800_compressed", "description": " for Swedish from the 1800s (compressed)", "compressed": True},
 ):
 
     @uninstaller(

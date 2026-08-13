@@ -211,7 +211,7 @@
 - Added support for [language
   varieties](https://spraakbanken.gu.se/sparv/#/developers-guide/writing-sparv-plugins?id=languages-and-varieties).
 - Re-introduced analyses for [Old Swedish and Swedish from the
-  1800's](https://spraakbanken.gu.se/sparv/#/developers-guide/writing-sparv-plugins?id=languages-and-varieties).
+  1800s](https://spraakbanken.gu.se/sparv/#/developers-guide/writing-sparv-plugins?id=languages-and-varieties).
 - Added a more flexible stats export which lets you choose which annotations to include in the frequency list.
 - Added installer for stats export.
 - Added Stanza support for English.

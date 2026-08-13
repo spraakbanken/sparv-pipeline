@@ -254,7 +254,7 @@ supported languages, their ISO 639-3 codes, and the tools Sparv can use for thei
 |Spanish          |spa            |FreeLing, TreeTagger|
 |Swedish          |swe            |Sparv|
 
-<!-- Swedish 1800's |sv-1800       |Sparv) -->
+<!-- Swedish 1800s |sv-1800       |Sparv) -->
 <!-- Swedish development mode |sv-dev        |Sparv) -->
 
 #### TreeTagger

@@ -87,10 +87,10 @@ language_varieties:
 parent: hunpos-parent
 name:
   swe: SUC-ordklasstaggning med Hunpos för 1800-talssvenska
-  eng: SUC part-of-speech tagging with Hunpos for Swedish from the 1800's
+  eng: SUC part-of-speech tagging with Hunpos for Swedish from the 1800s
 short_description:
   swe: Annotering av SUC-ordklasser med Hunpos för 1800-talssvenska
-  eng: Part-of-speech annotation with SUC tags by Hunpos for Swedish from the 1800's
+  eng: Part-of-speech annotation with SUC tags by Hunpos for Swedish from the 1800s
 task: part-of-speech tagging
 keywords: []
 annotations:
@@ -132,7 +132,7 @@ description:
     med böjningsformer för att kunna generera bättre ordklasstaggar för 1800-talssvenska.
   eng: |-
     Sentence segments are analysed to enrich tokens with part-of-speech tags. In addition to the pos model inflection
-    lists are provided to Hunpos to make more accurate part-of-speech predictions for Swedish from the 1800's.
+    lists are provided to Hunpos to make more accurate part-of-speech predictions for Swedish from the 1800s.
 created: 2012-10-23
 updated: 2015-09-11
 ---
@@ -142,10 +142,10 @@ language_varieties:
 parent: hunpos-parent
 name:
   swe: Morfosyntaktisk SUC-taggning med Hunpos för 1800-talssvenska
-  eng: Tagging of morphological features (SUC) by Hunpos for Swedish from the 1800's
+  eng: Tagging of morphological features (SUC) by Hunpos for Swedish from the 1800s
 short_description:
   swe: Annotering av morfosyntaktiska deskriptorer (SUC) med Hunpos för 1800-talssvenska
-  eng: Annotation of morphological features (SUC) by Hunpos for Swedish from the 1800's
+  eng: Annotation of morphological features (SUC) by Hunpos for Swedish from the 1800s
 task: morphosyntactic tagging
 keywords: []
 annotations:
@@ -189,6 +189,6 @@ description:
   eng: |-
     Sentence segments are analysed to enrich tokens with part-of-speech tags and morphosyntactic information. In
     addition to the pos model inflection lists are provided to Hunpos to make more accurate part-of-speech predictions
-    for Swedish from the 1800's.
+    for Swedish from the 1800s.
 created: 2012-10-23
 updated: 2015-09-11

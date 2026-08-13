@@ -196,7 +196,7 @@ preset](corpus-configuration.md#annotation-presets) called `SWE_DEFAULT`.
 |**Annotations**  | - `<sentence>:geo.geo_context` (places and their coordinates occurring within the sentence) <br />- `<paragraph>:geo.geo_context` (places and their coordinates occurring within the paragraph)|
 |**Annotators**   | `geo:contextual`|
 
-## Analyses for Swedish from the 1800's
+## Analyses for Swedish from the 1800s
 
 We recommend using the [annotation preset](corpus-configuration.md#annotation-presets) called `SWE_1800`. All analyses
 available for contemporary Swedish can also be applied to 19th-century Swedish. Additionally, some analyses have been
