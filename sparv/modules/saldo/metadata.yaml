@@ -18,7 +18,7 @@ name:
   eng: Annotation of SALDO citation forms (base forms, lemmas)
 short_description:
   swe: Fullformsuppslagning som ger SALDO-grundformer
-  eng: Full-form lookup for SALDO citation forms (lemmas)
+  eng: Full-form lookup of SALDO citation forms (lemmas)
 task: lemmatization
 keywords:
   - saldo
@@ -52,7 +52,7 @@ name:
   eng: Annotation of SALDO lemgrams
 short_description:
   swe: Uppslagning som ger SALDO-lemgram
-  eng: Lookup for SALDO lemgrams
+  eng: Lookup of SALDO lemgrams
 task: lexical lookup
 keywords:
   - saldo
@@ -85,7 +85,7 @@ name:
   eng: Annotation of SALDO identifiers
 short_description:
   swe: Uppslagning som ger SALDO-identifierare
-  eng: Lookup for SALDO identifiers
+  eng: Lookup of SALDO identifiers
 task: lexical lookup
 keywords:
   - saldo
@@ -197,7 +197,7 @@ name:
   eng: Annotation of SALDO citation forms (base forms, lemmas) (extended)
 short_description:
   swe: SALDO-grundformer plus analys av sammansättningar bestående av SALDO-ingångar
-  eng: Full-form lookup for SALDO citation forms (lemmas) plus analysis of compounds made up of SALDO entries
+  eng: Full-form lookup of SALDO citation forms (lemmas) plus analysis of compounds made up of SALDO entries
 task: lemmatization
 keywords:
   - saldo
