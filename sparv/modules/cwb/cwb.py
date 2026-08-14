@@ -462,14 +462,13 @@ def cwb_encode(
                 duplicates[col].add(_ann_entry(token_attributes[i]))
 
     if len(set(struct_annotations)) != len(struct_annotations):
-        original_struct_annotations = [
-            a.name for a in annotation_list if a.annotation_name != token_name
-        ]
+        original_struct_annotations = [a.name for a in annotation_list if a.annotation_name != token_name]
         for i, s in enumerate(struct_annotations):
             if struct_annotations.count(s) > 1:
                 duplicates[s].add(_ann_entry(original_struct_annotations[i]))
 
     if duplicates:
+
         def _format_ann(entry: tuple[str, ...]) -> str:
             if len(entry) == 2:  # noqa: PLR2004
                 return f"{entry[0]!r} (export name: {entry[1]!r})"
@@ -479,9 +478,7 @@ def cwb_encode(
             "After CWB escaping, there are duplicates in the annotation names. This can happen if you have annotations "
             "whose names only differ in characters that are not allowed in CWB names. Please check your annotation "
             "names. The following names are duplicated after CWB escaping: {}".format(
-                ", ".join(
-                    f"{k!r} -> {', '.join(_format_ann(v) for v in vs)}" for k, vs in duplicates.items()
-                )
+                ", ".join(f"{k!r} -> {', '.join(_format_ann(v) for v in vs)}" for k, vs in duplicates.items())
             )
         )
 
@@ -695,9 +692,22 @@ def make_attr_str(
         export_name = export_names.get(f"{annotation}:{name}", name)
         export_name = cwb_escape(export_name)
         # Escape special characters in value
-        value = annot[index].replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+        value = escape_vrt_value(annot[index])
         attrs.append(f'{export_name}="{value}"')
     return " ".join(attrs)
+
+
+def escape_vrt_value(value: str) -> str:
+    """Return a string with special characters escaped for VRT."""
+    return (
+        value.replace("&", "&amp;")
+        .replace('"', "&quot;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\r", "&#13;")
+        .replace("\n", "&#10;")
+        .replace("\t", "&#9;")
+    )
 
 
 def make_token_line(
@@ -735,9 +745,7 @@ def make_token_line(
     line = [word.replace(" ", "_").replace("\n", "_").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")]
     for attr in token_attributes:
         attr_str = util.constants.UNDEF if attr not in annotation_dict[token] else annotation_dict[token][attr][index]
-        line.append(
-            attr_str.replace(" ", "_").replace("/", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        )
+        line.append(escape_vrt_value(attr_str.replace(" ", "_").replace("/", "")))
     line_string = util.misc.remove_control_characters("\t".join(line))
 
     # Send warning if line exceeds the max line length in CWB
