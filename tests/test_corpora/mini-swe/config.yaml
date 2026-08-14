@@ -55,7 +55,6 @@ export:
         - <sentence>:misc.id
         - <token:baseform>
         - <token:pos>
-        - <token>:sensaldo.sentiment_label
     # Annotations from source files to include in the output. If nothing is specified, everything is kept.
     source_annotations:
         - dokument as document
