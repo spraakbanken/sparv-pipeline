@@ -1,0 +1,45 @@
+id: sbx-zxx-export-sparv-word_frequencies
+name:
+  swe: Ordfrekvenslista
+  eng: Word frequency list
+short_description:
+  swe: Export av korpusstatistik som ordfrekvenslista
+  eng: Export of corpus statistics as a word frequency list
+task: export
+keywords:
+  - statistics
+  - corpus-statistics
+  - word-frequencies
+sparv_processor: stats_export:freq_list
+example_output: |-
+  ```csv
+  word	lemma	deprel	pos	count
+  .	|	IP	MAD	84
+  en	|en|	DT	DT	26
+  ,	|	IK	MID	25
+  är	|vara|	ROOT	VB	21
+  ett	|en|	DT	DT	16
+  som	|	SS	HP	16
+  är	|vara|	MS	VB	14
+  har	|ha|	ROOT	VB	13
+  av	|av|	ET	PP	10
+  att	|att|	OO	SN	9
+  den	|den|	SS	PN	9
+  i	|i|	ET	PP	9
+  i	|i|	RA	PP	9
+  du	|du|	SS	PN	8
+  och	|och|	ROOT	KN	8
+  ```
+description:
+  swe: |-
+    Detta hjälpverktyg exporterar korpusstatistik som en ordfrekvenslista. Ordfrekvenslistan innehåller ordformer och de
+    annotationer som har valts i konfigurationen, samt antalet förekomster av varje rad (ordform och dess annotationer)
+    i korpusen. Ordfrekvenslistan kan bland annat användas för att analysera språkbruket i korpusen och för att
+    identifiera vanliga ord och uttryck.
+  eng: |-
+    This utility exports corpus statistics as a word frequency list. The word frequency list contains the word forms and
+    the annotations that have been selected in the configuration, as well as the number of occurrences of each row (word
+    form and its annotations) in the corpus. The word frequency list can be used, among other things, to analyze
+    language use in the corpus and to identify common words and expressions.
+created: 2020-05-20
+updated: 2026-08-10

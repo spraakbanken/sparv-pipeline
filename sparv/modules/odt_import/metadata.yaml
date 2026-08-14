@@ -1,0 +1,14 @@
+id: sbx-zxx-import-sparv-odt
+short_description:
+  eng: Import of corpus data from ODT files
+  swe: Import av korpusdata från ODT-filer
+task: import
+sparv_processor: odt_import:parse
+created: 2021-04-19
+updated: 2021-04-19
+description:
+  swe: |-
+    Detta hjälpverktyg gör det möjligt för Sparv att importera ODT-filer genom att extrahera deras text från
+    XML-strukturen inuti ODT-filen.
+  eng: |-
+    This utility enables Sparv to process ODT files by extracting their text from the XML structure inside the ODT file.

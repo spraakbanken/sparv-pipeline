@@ -1,0 +1,18 @@
+id: sbx-zxx-import-sparv-pdf
+short_description:
+  eng: Import of corpus data from PDF
+  swe: Import av korpusdata från PDF
+task: import
+tools:
+  - name: pypdfium2
+    url: "https://pypi.org/project/pypdfium2/"
+sparv_processor: pdf_import:parse
+created: 2023-05-03
+updated: 2025-04-04
+description:
+  swe: |-
+    Detta hjälpverktyg gör det möjligt för Sparv att importera PDF-filer genom att extrahera deras text med hjälp av
+    [pypdfium2](https://pypi.org/project/pypdfium2/).
+  eng: |-
+    This utility enables Sparv to process PDF files by extracting their text using
+    [pypdfium2](https://pypi.org/project/pypdfium2/).

@@ -1,0 +1,22 @@
+id: sbx-zxx-export-sparv-text
+name:
+  swe: Text-export
+  eng: Plain text export
+short_description:
+  swe: Export av korpusdata i ren text
+  eng: Export of corpus data in plain text format
+task: export
+sparv_processor: text_export:plain_text
+example_output: |-
+  ```
+  Igelkottens taggar gör den unik och omisskännlig.
+  ```
+description:
+  swe: |-
+    Detta hjälpverktyg sparar den text som Sparv analyserar som ren text. Det är särskilt användbart för indataformat
+    där textinnehållet inte är direkt tillgängligt, till exempel PDF- eller ljudfiler.
+  eng: |-
+    This utility saves the text that Sparv analyses as plain text. It is particularly useful for input formats where the
+    text content is not directly accessible, such as PDF or audio files.
+created: 2026-02-26
+updated: 2026-02-26

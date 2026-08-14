@@ -1,0 +1,18 @@
+id: sbx-zxx-import-sparv-docx
+short_description:
+  eng: Import of corpus data from DOCX files
+  swe: Import av korpusdata från DOCX-filer
+task: import
+tools:
+  - name: docx2python
+    url: "https://pypi.org/project/docx2python/"
+sparv_processor: docx_import:parse
+created: 2021-08-18
+updated: 2021-08-18
+description:
+  swe: |-
+    Detta hjälpverktyg gör det möjligt för Sparv att importera DOCX-filer genom att extrahera deras text med hjälp av
+    [docx2python](https://pypi.org/project/docx2python/).
+  eng: |-
+    This utility enables Sparv to process DOCX files by extracting their text using
+    [docx2python](https://pypi.org/project/docx2python/).

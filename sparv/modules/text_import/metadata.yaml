@@ -1,0 +1,13 @@
+id: sbx-zxx-import-sparv-text
+short_description:
+  eng: Import of corpus data from plain text format
+  swe: Import av korpusdata från ren text
+task: import
+sparv_processor: text_import:parse
+created: 2020-04-21
+updated: 2025-05-12
+description:
+  swe: |-
+    Detta hjälpverktyg gör det möjligt att importera rena textfiler till Sparv.
+  eng: |-
+    This utility allows users to import plain text files into Sparv.

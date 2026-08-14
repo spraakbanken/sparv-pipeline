@@ -1,0 +1,19 @@
+id: sbx-zxx-import-sparv-xml
+short_description:
+  eng: Import of corpus data from XML
+  swe: Import av korpusdata från XML
+task: import
+sparv_processor: xml_import:parse
+created: 2010-12-17
+updated: 2025-05-15
+description:
+  swe: |-
+    Detta hjälpverktyg importerar XML-dokument till Sparv genom att analysera XML-trädet, extrahera textinnehåll,
+    hantera element och attribut, separera brödtext från header-/metadata, eventuellt ta bort namnrymder och skapa
+    annoteringar för både korpusdata och strukturerad metadata. Importprocessen kan konfigureras för att byta namn på
+    eller hoppa över specifika element och attribut, samt för att inkludera eller exkludera header-/metadata.
+  eng: |-
+    This utility imports XML documents into Sparv by parsing the XML tree, extracting textual content, handling elements
+    and attributes, separating body text from header metadata, optionally removing namespaces, and creating annotations
+    for both corpus text and structured metadata. The import process can be configured to rename or skip specific
+    elements and attributes, and to include or exclude header metadata.
