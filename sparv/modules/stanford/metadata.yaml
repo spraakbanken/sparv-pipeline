@@ -1,0 +1,257 @@
+id: stanford-parent
+abstract: true
+language_codes:
+  - eng
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: eng
+  ```
+keywords:
+  - stanford-parser
+tools:
+  - name: "Stanford CoreNLP v 4.0.0"
+    url: "https://stanfordnlp.github.io/CoreNLP/history.html"
+    license: "GPL-2.0-only"
+standard_reference: "Manning, Christopher D., Mihai Surdeanu, John Bauer, Jenny Finkel, Steven J. Bethard, and David McClosky. 2014. [The Stanford CoreNLP Natural Language Processing Toolkit](http://nlp.stanford.edu/pubs/StanfordCoreNlp2014.pdf) In Proceedings of the 52nd Annual Meeting of the Association for Computational Linguistics: System Demonstrations, pp. 55-60."
+other_references:
+  - "Marie-Catherine de Marneffe, Bill MacCartney and Christopher D. Manning. 2006. [Generating Typed Dependency Parses from Phrase Structure Parses](http://nlp.stanford.edu/pubs/LREC06_dependencies.pdf). In LREC 2006."
+created: 2020-04-24
+updated: 2026-05-12
+---
+id: sbx-eng-tokenization-stanford
+parent: stanford-parent
+name:
+  swe: Tokenisering med Stanford CoreNLP för engelska
+  eng: Tokenization with Stanford CoreNLP for English
+short_description:
+  swe: Segmentering av text i token med Stanford CoreNLP för engelska
+  eng: English tokenization with Stanford CoreNLP
+task: tokenization
+annotations:
+  - stanford.token
+example_extra: |-
+  In order to use this annotation you need to add the following settings to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: eng
+
+  classes:
+    token: stanza.token
+  ```
+example_output: |-
+  ```xml
+  <token>Language</token>
+  <token>is</token>
+  <token>the</token>
+  <token>human</token>
+  <token>ability</token>
+  <token>to</token>
+  <token>acquire</token>
+  <token>and</token>
+  <token>use</token>
+  <token>complex</token>
+  <token>systems</token>
+  <token>of</token>
+  <token>communication</token>
+  <token>.</token>
+  ```
+---
+id: sbx-eng-sentence-stanford
+parent: stanford-parent
+name:
+  swe: Meningssegmentering för engelska med Stanford CoreNLP
+  eng: Sentence segmentation for English with Stanford CoreNLP
+short_description:
+  swe: Meningssegmentering med Stanford CoreNLP för engelska
+  eng: Sentence segmentation with Stanford CoreNLP for English
+task: sentence segmentation
+annotations:
+  - stanford.sentence
+example_output: |-
+  ```xml
+  <sentence>
+    <token>This</token>
+    <token>is</token>
+    <token>a</token>
+    <token>corpus</token>
+    <token>.</token>
+  </sentence>
+  <sentence>
+    <token>It</token>
+    <token>contains</token>
+    <token>multiple</token>
+    <token>sentences</token>
+    <token>.</token>
+  </sentence>
+  <sentence>
+    <token>Here</token>
+    <token>come</token>
+    <token>another</token>
+    <token>sentence</token>
+    <token>.</token>
+  </sentence>
+  ```
+---
+id: sbx-eng-pos-stanford
+parent: stanford-parent
+name:
+  swe: Ordklasstaggning med Stanford CoreNLP för engelska
+  eng: Part-of-speech tagging with Stanford CoreNLP for English 
+short_description:
+  swe: Annotering av Penn-ordklasser med Stanford CoreNLP för engelska
+  eng: English part-of-speech annotation with Penn tags by Stanford CoreNLP
+task: part-of-speech tagging
+tagset: "[Penn Treebank tagset](https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/Penn-Treebank-Tagset.pdf)"
+annotations:
+  - <token>:stanford.pos
+example_output: |-
+  ```xml
+  <token pos="NNP">Language</token>
+  <token pos="VBZ">is</token>
+  <token pos="DT">the</token>
+  <token pos="JJ">human</token>
+  <token pos="NN">ability</token>
+  <token pos="TO">to</token>
+  <token pos="VB">acquire</token>
+  <token pos="CC">and</token>
+  <token pos="VB">use</token>
+  <token pos="JJ">complex</token>
+  <token pos="NNS">systems</token>
+  <token pos="IN">of</token>
+  <token pos="NN">communication</token>
+  <token pos=".">.</token>
+  ```
+---
+id: sbx-eng-upos-stanford
+parent: stanford-parent
+name:
+  swe: UD-Ordklasstaggning med Stanford CoreNLP för engelska
+  eng: UD part-of-speech tagging with Stanford CoreNLP for English
+short_description:
+  swe: Annotering av UD-ordklasser (universal dependencies) för engelska som översätts från Penn-ordklasser
+  eng: Part-of-speech annotation with UD (universal dependency) tags for English translated from Penn part-of-speech tags
+task: part-of-speech tagging
+tagset: "[UD](https://universaldependencies.org/u/pos/)"
+annotations:
+  - <token>:stanford.upos
+example_output: |-
+  ```xml
+  <token upos="PROPN">Language</token>
+  <token upos="VERB">is</token>
+  <token upos="DET">the</token>
+  <token upos="ADJ">human</token>
+  <token upos="NOUN">ability</token>
+  <token upos="PART">to</token>
+  <token upos="VERB">acquire</token>
+  <token upos="CONJ">and</token>
+  <token upos="VERB">use</token>
+  <token upos="ADJ">complex</token>
+  <token upos="NOUN">systems</token>
+  <token upos="ADP">of</token>
+  <token upos="NOUN">communication</token>
+  <token upos="X">.</token>
+  ```
+---
+id: sbx-eng-lemmatization-stanford
+parent: stanford-parent
+name:
+  swe: Lemmatisering för engelska med Stanford CoreNLP
+  eng: Lemmatization for English with Stanford CoreNLP
+short_description:
+  swe: Lemmatisering med Stanford CoreNLP för engelska
+  eng: Lemmatization with Stanford CoreNLP for English
+task: lemmatization
+annotations:
+  - <token>:stanford.baseform
+example_output: |-
+  ```xml
+  <token baseform="Language">Language</token>
+  <token baseform="be">is</token>
+  <token baseform="the">the</token>
+  <token baseform="human">human</token>
+  <token baseform="ability">ability</token>
+  <token baseform="to">to</token>
+  <token baseform="acquire">acquire</token>
+  <token baseform="and">and</token>
+  <token baseform="use">use</token>
+  <token baseform="complex">complex</token>
+  <token baseform="system">systems</token>
+  <token baseform="of">of</token>
+  <token baseform="communication">communication</token>
+  <token baseform=".">.</token>
+  ```
+---
+id: sbx-eng-namedentity-stanford
+parent: stanford-parent
+name:
+  swe: Namnigenkänning för engelska med Stanford CoreNLP
+  eng: Named entity recognition for English with Stanford CoreNLP
+short_description:
+  swe: Namnigenkänning (NER) med Stanford CoreNLP för engelska
+  eng: Named entity recognition with Stanford CoreNLP for English
+description:
+  swe: |-
+    Namnigenkänning (NER) gör det möjligt att märka upp namnentiteter (som t.ex. personnamn, organisationer, ortnamn) i
+    texten. Stanford CoreNLP märker upp tokens med namn-entitetstyper som t.ex. PERSON, DATE, CITY etc. Notera att till
+    skillnad från andra namnigenkännare som används i Sparv, lägger Stanford CoreNLP inte till strukturella annotationer
+    för namn-entiteter som består av flera tokens.
+  eng: |-
+    Named entity recognition (NER) enables the detection of named entities (e.g. personal names, organizations,
+    geographical locations) in the text. Stanford CoreNLP annotates tokens with named entity types such as PERSON, DATE,
+    CITY, etc. Please note that unlike other named entity taggers used in Sparv, Stanford CoreNLP does not add
+    structural annotations for multi-word named entities.
+
+annotations:
+  - <token>:stanford.ne_type
+example_output: |-
+  ```xml
+  <token>The</token>
+  <token ne_type="NATIONALITY">Swedish</token>
+  <token ne_type="TITLE">chemist</token>
+  <token ne_type="PERSON">Alfred</token>
+  <token ne_type="PERSON">Bernhard</token>
+  <token ne_type="PERSON">Nobel</token>
+  <token>was</token>
+  <token>born</token>
+  <token>on</token>
+  <token ne_type="DATE">21</token>
+  <token ne_type="DATE">October</token>
+  <token ne_type="DATE">1833</token>
+  <token>in</token>
+  <token ne_type="CITY">Stockholm</token>
+  <token>.</token>
+  ```
+---
+id: sbx-eng-dependency-stanford
+parent: stanford-parent
+name:
+  swe: Dependensparsning för engelska med Stanford CoreNLP
+  eng: Dependency parsing for English with Stanford CoreNLP
+short_description:
+  swe: Dependensparsning med Stanford CoreNLP's standardmodell för engelska
+  eng: Dependency parsing with Stanford CoreNLP's standard model for English
+task: dependency parsing
+tagset: "[UD](https://universaldependencies.org/en/dep/)"
+annotations:
+  - <token>:stanford.ref
+  - <token>:stanford.dephead_ref
+  - <token>:stanford.deprel
+example_output: |-
+  ```xml
+  <token dephead_ref="5" deprel="nsubj" ref="1">Language</token>
+  <token dephead_ref="5" deprel="cop" ref="2">is</token>
+  <token dephead_ref="5" deprel="det" ref="3">the</token>
+  <token dephead_ref="5" deprel="amod" ref="4">human</token>
+  <token deprel="ROOT" ref="5">ability</token>
+  <token dephead_ref="7" deprel="mark" ref="6">to</token>
+  <token dephead_ref="5" deprel="acl" ref="7">acquire</token>
+  <token dephead_ref="9" deprel="cc" ref="8">and</token>
+  <token dephead_ref="7" deprel="conj" ref="9">use</token>
+  <token dephead_ref="11" deprel="amod" ref="10">complex</token>
+  <token dephead_ref="7" deprel="obj" ref="11">systems</token>
+  <token dephead_ref="13" deprel="case" ref="12">of</token>
+  <token dephead_ref="11" deprel="nmod" ref="13">communication</token>
+  <token dephead_ref="5" deprel="punct" ref="14">.</token>
+  ```

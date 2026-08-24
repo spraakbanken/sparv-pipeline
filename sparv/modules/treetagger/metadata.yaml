@@ -1,0 +1,1577 @@
+id: treetagger-parent
+abstract: true
+keywords:
+  - treetagger
+tools:
+  - name: "TreeTagger"
+    url: "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/"
+    license: "LicenseRef-Other"
+    license_other: TreeTagger License https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/Tagger-Licence
+standard_reference: "Helmut Schmid (1995): [Improvements in Part-of-Speech Tagging with an Application to German](https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/tree-tagger2.pdf). Proceedings of the ACL SIGDAT-Workshop. Dublin, Ireland."
+other_references:
+  - "Helmut Schmid (1994): [Probabilistic Part-of-Speech Tagging Using Decision Trees](https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/tree-tagger1.pdf). Proceedings of International Conference on New Methods in Language Processing, Manchester, UK."
+created: 2014-09-16
+updated: 2021-03-24
+---
+id: bul-treetagger-parent
+abstract: true
+parent: treetagger-parent
+language_codes:
+  - bul
+models:
+  - name: bulgarian.par.gz
+    url: "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/bulgarian.par.gz"
+trained_on: "[Bulgarian Treebank](http://www.bultreebank.org/)"
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: bul
+  ```
+---
+id: sbx-bul-pos-treetagger
+parent: bul-treetagger-parent
+name:
+  swe: Ordklasstaggning med TreeTagger för bulgariska 
+  eng: Part-of-speech tagging with TreeTagger for Bulgarian
+short_description:
+  swe: Annotering av BTB-TS ordklasser med TreeTagger för bulgariska
+  eng: Bulgarian part-of-speech annotation with BTB-TS tags by TreeTagger
+task: part-of-speech tagging
+tagset: "[BTB-TS](https://bultreebank.org/wp-content/uploads/2017/06/BTB-TR03.pdf)"
+annotations:
+  - <token>:treetagger.pos
+example_output: |-
+  ```xml
+  <token pos="Ncmsf">Езѝкът</token>
+  <token pos="Vxitf-r3s">е</token>
+  <token pos="Ncfsi">система</token>
+  <token pos="R">от</token>
+  <token pos="Ncmpi">знаци</token>
+  <token pos="R">за</token>
+  <token pos="Ncnsi">кодиране</token>
+  <token pos="Cp">и</token>
+  <token pos="Ncnsi">декодиране</token>
+  <token pos="R">на</token>
+  <token pos="Ncfsi">информация</token>
+  <token pos="PT_SENT">.</token>
+  ```
+---
+id: sbx-bul-upos-treetagger
+parent: bul-treetagger-parent
+name:
+  swe: UD-Ordklasstaggning med TreeTagger för bulgariska
+  eng: UD part-of-speech tagging with TreeTagger for Bulgarian
+short_description:
+  swe: Annotering av UD-ordklasser (universal dependencies) för bulgariska som översätts från BTB-TS
+  eng: Part-of-speech annotation with UD (universal dependency) tags for Bulgarian translated from BTB-TS
+task: part-of-speech tagging
+tagset: "[UD](https://universaldependencies.org/u/pos/)"
+annotations:
+  - <token>:treetagger.upos
+example_output: |-
+  ```xml
+  <token upos="NOUN">Езѝкът</token>
+  <token upos="AUX">е</token>
+  <token upos="NOUN">система</token>
+  <token upos="ADP">от</token>
+  <token upos="NOUN">знаци</token>
+  <token upos="ADP">за</token>
+  <token upos="NOUN">кодиране</token>
+  <token upos="X">и</token>
+  <token upos="NOUN">декодиране</token>
+  <token upos="ADP">на</token>
+  <token upos="NOUN">информация</token>
+  <token upos="PUNCT">.</token>
+  ```
+---
+id: sbx-bul-lemmatization-treetagger
+parent: bul-treetagger-parent
+name:
+  swe: Annotering av grundformer med TreeTagger för bulgariska
+  eng: Annotation of citation forms (base forms, lemmas) with TreeTagger for Bulgarian
+short_description:
+  swe: Annotering av grundformer (lemman) med TreeTagger för bulgariska
+  eng: Lemmatization with TreeTagger for Bulgarian
+task: lemmatization
+annotations:
+  - <token>:treetagger.baseform
+example_output: |-
+  ```xml
+  <token baseform="Езѝкът">Езѝкът</token>
+  <token baseform="е">е</token>
+  <token baseform="система">система</token>
+  <token baseform="от">от</token>
+  <token baseform="знак">знаци</token>
+  <token baseform="за">за</token>
+  <token baseform="кодиране">кодиране</token>
+  <token baseform="и">и</token>
+  <token baseform="декодиране">декодиране</token>
+  <token baseform="на">на</token>
+  <token baseform="информация">информация</token>
+  <token baseform=".">.</token>
+  ```
+---
+id: est-treetagger-parent
+abstract: true
+parent: treetagger-parent
+language_codes:
+  - est
+models:
+  - name: estonian.par.gz
+    url: "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/estonian.par.gz"
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: est
+  ```
+---
+id: sbx-est-pos-treetagger
+parent: est-treetagger-parent
+name:
+  swe: Ordklasstaggning med TreeTagger för estniska 
+  eng: Part-of-speech tagging with TreeTagger for Estonian
+short_description:
+  swe: Annotering av ordklasser med TreeTagger för estniska
+  eng: Estonian part-of-speech annotation by TreeTagger
+task: part-of-speech tagging
+annotations:
+  - <token>:treetagger.pos
+example_output: |-
+  ```xml
+  <token pos="S.com.sg.tr">Lisaks</token>
+  <token pos="A.pos.pl.all">loomulikele</token>
+  <token pos="J.crd">ja</token>
+  <token pos="A.pos.pl.all">tehislikele</token>
+  <token pos="S.com.pl.all">inimkeeltele</token>
+  <token pos="V.main.indic.pres.imps.af">räägitakse</token>
+  <token pos="D">ka</token>
+  <token pos="S.com.pl.gen">loomade</token>
+  <token pos="S.com.pl.el">märgisüsteemidest</token>
+  <token pos="J.crd">ning</token>
+  <token pos="A.pos.sg.nom">matemaatikas</token>
+  <token pos="Z.Com">,</token>
+  <token pos="A.pos.sg.nom">loogikas</token>
+  <token pos="J.crd">ja</token>
+  <token pos="S.com.sg.in">informaatikas</token>
+  <token pos="A.pos">tuntud</token>
+  <token pos="A.pos.pl.el">formaalsetest</token>
+  <token pos="S.com.pl.el">keeltest</token>
+  <token pos="Z.Sent">.</token>
+  ```
+---
+id: sbx-est-upos-treetagger
+parent: est-treetagger-parent
+name:
+  swe: UD-Ordklasstaggning med TreeTagger för estniska
+  eng: UD part-of-speech tagging with TreeTagger for Estonian
+short_description:
+  swe: Annotering av UD-ordklasser (universal dependencies) för estniska som översätts från TreeTaggers ordklasser
+  eng: Part-of-speech annotation with UD (universal dependency) tags for Estonian translated from TreeTagger's part-of-speech tags
+task: part-of-speech tagging
+tagset: "[UD](https://universaldependencies.org/u/pos/)"
+annotations:
+  - <token>:treetagger.upos
+example_output: |-
+  ```xml
+  <token upos="NOUN">Lisaks</token>
+  <token upos="ADJ">loomulikele</token>
+  <token upos="X">ja</token>
+  <token upos="ADJ">tehislikele</token>
+  <token upos="NOUN">inimkeeltele</token>
+  <token upos="VERB">räägitakse</token>
+  <token upos="ADV">ka</token>
+  <token upos="NOUN">loomade</token>
+  <token upos="NOUN">märgisüsteemidest</token>
+  <token upos="X">ning</token>
+  <token upos="ADJ">matemaatikas</token>
+  <token upos="PUNCT">,</token>
+  <token upos="ADJ">loogikas</token>
+  <token upos="X">ja</token>
+  <token upos="NOUN">informaatikas</token>
+  <token upos="ADJ">tuntud</token>
+  <token upos="ADJ">formaalsetest</token>
+  <token upos="NOUN">keeltest</token>
+  <token upos="PUNCT">.</token>
+  ```
+---
+id: sbx-est-lemmatization-treetagger
+parent: est-treetagger-parent
+name:
+  swe: Annotering av grundformer med TreeTagger för estniska
+  eng: Annotation of citation forms (base forms, lemmas) with TreeTagger for Estonian
+short_description:
+  swe: Annotering av grundformer (lemman) med TreeTagger för estniska
+  eng: Lemmatization with TreeTagger for Estonian
+task: lemmatization
+annotations:
+  - <token>:treetagger.baseform
+example_output: |-
+  ```xml
+  <token baseform="lisa">Lisaks</token>
+  <token baseform="loomulikele">loomulikele</token>
+  <token baseform="ja">ja</token>
+  <token baseform="tehislikele">tehislikele</token>
+  <token baseform="inimkeeltele">inimkeeltele</token>
+  <token baseform="rääkima">räägitakse</token>
+  <token baseform="ka">ka</token>
+  <token baseform="loom">loomade</token>
+  <token baseform="märgisüsteemidest">märgisüsteemidest</token>
+  <token baseform="ning">ning</token>
+  <token baseform="matemaatikas">matemaatikas</token>
+  <token baseform=",">,</token>
+  <token baseform="loogikas">loogikas</token>
+  <token baseform="ja">ja</token>
+  <token baseform="informaatikas">informaatikas</token>
+  <token baseform="tundtud|tuntud">tuntud</token>
+  <token baseform="formaalsetest">formaalsetest</token>
+  <token baseform="keeltest">keeltest</token>
+  <token baseform=".">.</token>
+  ```
+---
+id: fin-treetagger-parent
+abstract: true
+parent: treetagger-parent
+language_codes:
+  - fin
+models:
+  - name: finnish.par.gz
+    url: "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/finnish.par.gz"
+trained_on: "[Finnish Treebank](https://www.kielipankki.fi/wp-content/uploads/annotation_manuals/FinnTreeBankManual.pdf)"
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: fin
+  ```
+---
+id: sbx-fin-pos-treetagger
+parent: fin-treetagger-parent
+name:
+  swe: Ordklasstaggning med TreeTagger för finska 
+  eng: Part-of-speech tagging with TreeTagger for Finnish
+short_description:
+  swe: Annotering av ordklasser med TreeTagger för finska
+  eng: Finnish part-of-speech annotation by TreeTagger
+task: part-of-speech tagging
+tagset: "[FinnTreeBank](https://www.sketchengine.eu/finntreebank/)"
+annotations:
+  - <token>:treetagger.pos
+example_output: |-
+  ```xml
+  <token pos="Pron_Dem_Par_Pl">Näitä</token>
+  <token pos="N_Par_Pl">merkkejä</token>
+  <token pos="V_Prs_Pass_Pe4">nimitetään</token>
+  <token pos="A_Tra_Pl">kielellisiksi</token>
+  <token pos="N_Tra_Pl">ilmauksiksi</token>
+  <token pos="SENT">.</token>
+  ```
+---
+id: sbx-fin-upos-treetagger
+abstract: true
+parent: fin-treetagger-parent
+name:
+  swe: UD-Ordklasstaggning med TreeTagger för finska
+  eng: UD part-of-speech tagging with TreeTagger for Finnish
+short_description:
+  swe: Annotering av UD-ordklasser (universal dependencies) för finska som översätts från FinnTreeBank-ordklasser
+  eng: Part-of-speech annotation with UD (universal dependency) tags for Finnish translated from FinnTreeBank's part-of-speech tags
+task: part-of-speech tagging
+tagset: "[UD](https://universaldependencies.org/u/pos/)"
+annotations:
+  - <token>:treetagger.upos
+example_output: |-
+  ```xml
+  <token upos="PRON">Näitä</token>
+  <token upos="NOUN">merkkejä</token>
+  <token upos="VERB">nimitetään</token>
+  <token upos="ADJ">kielellisiksi</token>
+  <token upos="NOUN">ilmauksiksi</token>
+  <token upos="PUNCT">.</token>
+  ```
+---
+id: sbx-fin-lemmatization-treetagger
+parent: fin-treetagger-parent
+name:
+  swe: Annotering av grundformer med TreeTagger för finska
+  eng: Annotation of citation forms (base forms, lemmas) with TreeTagger for Finnish
+short_description:
+  swe: Annotering av grundformer (lemman) med TreeTagger för finska
+  eng: Lemmatization with TreeTagger for Finnish
+task: lemmatization
+annotations:
+  - <token>:treetagger.baseform
+example_output: |-
+  ```xml
+  <token baseform="nämä">Näitä</token>
+  <token baseform="merkki">merkkejä</token>
+  <token baseform="nimittää">nimitetään</token>
+  <token baseform="kielellisiksi">kielellisiksi</token>
+  <token baseform="ilmaus">ilmauksiksi</token>
+  <token baseform=".">.</token>
+  ```
+---
+id: lat-treetagger-parent
+abstract: true
+parent: treetagger-parent
+language_codes:
+  - lat
+models:
+  - name: latin.par.gz
+    url: "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/latin.par.gz"
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: lat
+  ```
+---
+id: sbx-lat-pos-treetagger
+parent: lat-treetagger-parent
+name:
+  swe: Ordklasstaggning med TreeTagger för latin 
+  eng: Part-of-speech tagging with TreeTagger for Latin
+short_description:
+  swe: Annotering av ordklasser med TreeTagger för latin
+  eng: Latin part-of-speech annotation by TreeTagger
+task: part-of-speech tagging
+tagset: "[Lamap TAGset](https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/Lamap-Tagset.pdf)"
+annotations:
+  - <token>:treetagger.pos
+example_output: |-
+  ```xml
+  <token pos="N:voc">Lingua</token>
+  <token pos="ESSE:IND">est</token>
+  <token pos="ADJ">humana</token>
+  <token pos="ADJ">multiplicum</token>
+  <token pos="N:gen">communicationis</token>
+  <token pos="N:gen">systematum</token>
+  <token pos="V:GED">discendorum</token>
+  <token pos="CC">et</token>
+  <token pos="V:GED">adhibendorum</token>
+  <token pos="N:nom">facultas</token>
+  <token pos="SENT">.</token>
+  ```
+---
+id: sbx-lat-upos-treetagger
+parent: lat-treetagger-parent
+name:
+  swe: UD-Ordklasstaggning med TreeTagger för latin
+  eng: UD part-of-speech tagging with TreeTagger for Latin
+short_description:
+  swe: Annotering av UD-ordklasser (universal dependencies) för latin som översätts från Lamap-ordklasser
+  eng: Part-of-speech annotation with UD (universal dependency) tags for Latin translated from Lamap's part-of-speech tags
+task: part-of-speech tagging
+tagset: "[UD](https://universaldependencies.org/u/pos/)"
+annotations:
+  - <token>:treetagger.upos
+example_output: |-
+  ```xml
+  <token upos="NOUN">Lingua</token>
+  <token upos="AUX">est</token>
+  <token upos="ADJ">humana</token>
+  <token upos="ADJ">multiplicum</token>
+  <token upos="NOUN">communicationis</token>
+  <token upos="NOUN">systematum</token>
+  <token upos="VERB">discendorum</token>
+  <token upos="CONJ">et</token>
+  <token upos="VERB">adhibendorum</token>
+  <token upos="NOUN">facultas</token>
+  <token upos="PUNCT">.</token>
+  ```
+---
+id: sbx-lat-lemmatization-treetagger
+parent: lat-treetagger-parent
+name:
+  swe: Annotering av grundformer med TreeTagger för latin
+  eng: Annotation of citation forms (base forms, lemmas) with TreeTagger for Latin
+short_description:
+  swe: Annotering av grundformer (lemman) med TreeTagger för latin
+  eng: Lemmatization with TreeTagger for Latin
+task: lemmatization
+annotations:
+  - <token>:treetagger.baseform
+example_output: |-
+  ```xml
+  <token baseform="lingua">Lingua</token>
+  <token baseform="sum">est</token>
+  <token baseform="humanus">humana</token>
+  <token baseform="multiplex|multiplicus">multiplicum</token>
+  <token baseform="communicatio">communicationis</token>
+  <token baseform="systema">systematum</token>
+  <token baseform="disco">discendorum</token>
+  <token baseform="et">et</token>
+  <token baseform="adhibeo">adhibendorum</token>
+  <token baseform="facultas">facultas</token>
+  <token baseform=".">.</token>
+  ```
+---
+id: nld-treetagger-parent
+abstract: true
+parent: treetagger-parent
+language_codes:
+  - nld
+models:
+  - name: dutch.par.gz
+    url: "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/dutch.par.gz"
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: nld
+  ```
+---
+id: sbx-nld-pos-treetagger
+parent: nld-treetagger-parent
+name:
+  swe: Ordklasstaggning med TreeTagger för nederländska
+  eng: Part-of-speech tagging with TreeTagger for Dutch
+short_description:
+  swe: Annotering av ordklasser med TreeTagger för nederländska
+  eng: Dutch part-of-speech annotation by TreeTagger
+task: part-of-speech tagging
+tagset: "[TreeTagger Dutch Tagset](https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/dutch-tagset.txt)"
+annotations:
+  - <token>:treetagger.pos
+example_output: |-
+  ```xml
+  <token pos="det__art">Het</token>
+  <token pos="nounsg">begrip</token>
+  <token pos="nounsg">taal</token>
+  <token pos="verbpressg">heeft</token>
+  <token pos="prep">in</token>
+  <token pos="det__art">het</token>
+  <token pos="adj">algemeen</token>
+  <token pos="nounsg">betrekking</token>
+  <token pos="prep">op</token>
+  <token pos="det__indef">elke</token>
+  <token pos="adj">min</token>
+  <token pos="conjcoord">of</token>
+  <token pos="adv">meer</token>
+  <token pos="adj">complexe</token>
+  <token pos="nounsg">vorm</token>
+  <token pos="prep">van</token>
+  <token pos="nounsg">communicatie</token>
+  <token pos="prep">in</token>
+  <token pos="det__art">de</token>
+  <token pos="nounsg">vorm</token>
+  <token pos="prep">van</token>
+  <token pos="nounpl">tekens</token>
+  <token pos="$.">.</token>
+  ```
+---
+id: sbx-nld-upos-treetagger
+parent: nld-treetagger-parent
+name:
+  swe: UD-Ordklasstaggning med TreeTagger för nederländska
+  eng: UD part-of-speech tagging with TreeTagger for Dutch
+short_description:
+  swe: Annotering av UD-ordklasser (universal dependencies) för nederländska som översätts från TreeTagger-ordklasser
+  eng: Part-of-speech annotation with UD (universal dependency) tags for Dutch translated from TreeTagger's part-of-speech tags
+task: part-of-speech tagging
+tagset: "[UD](https://universaldependencies.org/u/pos/)"
+annotations:
+  - <token>:treetagger.upos
+example_output: |-
+  ```xml
+  <token upos="DET">Het</token>
+  <token upos="NOUN">begrip</token>
+  <token upos="NOUN">taal</token>
+  <token upos="VERB">heeft</token>
+  <token upos="ADP">in</token>
+  <token upos="DET">het</token>
+  <token upos="ADJ">algemeen</token>
+  <token upos="NOUN">betrekking</token>
+  <token upos="ADP">op</token>
+  <token upos="DET">elke</token>
+  <token upos="ADJ">min</token>
+  <token upos="CONJ">of</token>
+  <token upos="ADV">meer</token>
+  <token upos="ADJ">complexe</token>
+  <token upos="NOUN">vorm</token>
+  <token upos="ADP">van</token>
+  <token upos="NOUN">communicatie</token>
+  <token upos="ADP">in</token>
+  <token upos="DET">de</token>
+  <token upos="NOUN">vorm</token>
+  <token upos="ADP">van</token>
+  <token upos="NOUN">tekens</token>
+  <token upos="PUNCT">.</token>
+  ```
+---
+id: sbx-nld-lemmatization-treetagger
+parent: nld-treetagger-parent
+name:
+  swe: Annotering av grundformer med TreeTagger för nederländska
+  eng: Annotation of citation forms (base forms, lemmas) with TreeTagger for Dutch
+short_description:
+  swe: Annotering av grundformer (lemman) med TreeTagger för nederländska
+  eng: Lemmatization with TreeTagger for Dutch
+task: lemmatization
+annotations:
+  - <token>:treetagger.baseform
+example_output: |-
+  ```xml
+  <token baseform="het">Het</token>
+  <token baseform="begrip">begrip</token>
+  <token baseform="taal">taal</token>
+  <token baseform="hebben">heeft</token>
+  <token baseform="in">in</token>
+  <token baseform="het">het</token>
+  <token baseform="algemeen">algemeen</token>
+  <token baseform="betrekking">betrekking</token>
+  <token baseform="op">op</token>
+  <token baseform="elk">elke</token>
+  <token baseform="min">min</token>
+  <token baseform="of">of</token>
+  <token baseform="meer">meer</token>
+  <token baseform="complex">complexe</token>
+  <token baseform="vorm">vorm</token>
+  <token baseform="van">van</token>
+  <token baseform="communicatie">communicatie</token>
+  <token baseform="in">in</token>
+  <token baseform="de">de</token>
+  <token baseform="vorm">vorm</token>
+  <token baseform="van">van</token>
+  <token baseform="teken">tekens</token>
+  <token baseform=".">.</token>
+  ```
+---
+id: pol-treetagger-parent
+abstract: true
+parent: treetagger-parent
+language_codes:
+  - pol
+models:
+  - name: polish.par.gz
+    url: "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/polish.par.gz"
+trained_on: "[National Corpus of Polish (NKJP)](https://nkjp.pl/index.php?page=0&lang=1)"
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: pol
+  ```
+---
+id: sbx-pol-pos-treetagger
+parent: pol-treetagger-parent
+name:
+  swe: Ordklasstaggning med TreeTagger för polska
+  eng: Part-of-speech tagging with TreeTagger for Polish
+short_description:
+  swe: Annotering av ordklasser med TreeTagger för polska
+  eng: Polish part-of-speech annotation by TreeTagger
+task: part-of-speech tagging
+tagset: "[NKJP Tagset](https://nkjp.pl/poliqarp/help/ense2.html)"
+annotations:
+  - <token>:treetagger.pos
+example_output: |-
+  ```xml
+  <token pos="subst:sg:nom:m3">Język</token>
+  <token pos="interp:hyphen">–</token>
+  <token pos="ppas:sg:nom:f:perf:aff">ukształtowany</token>
+  <token pos="adv:pos">społecznie</token>
+  <token pos="subst:sg:acc:m3">system</token>
+  <token pos="ger:sg:gen:n:imperf:aff">budowania</token>
+  <token pos="subst:pl:gen:f">wypowiedzi</token>
+  <token pos="interp:comma">,</token>
+  <token pos="ppas:sg:nom:m3:imperf:aff">używany</token>
+  <token pos="prep:loc:nwok">w</token>
+  <token pos="subst:sg:loc:m3">procesie</token>
+  <token pos="subst:sg:gen:f">komunikacji</token>
+  <token pos="adj:sg:gen:f:pos">interpersonalnej</token>
+  <token pos="interp:sent">.</token>
+  ```
+---
+id: sbx-pol-upos-treetagger
+parent: pol-treetagger-parent
+name:
+  swe: UD-Ordklasstaggning med TreeTagger för polska
+  eng: UD part-of-speech tagging with TreeTagger for Polish
+short_description:
+  swe: Annotering av UD-ordklasser (universal dependencies) för polska som översätts från NKJP-ordklasser
+  eng: Part-of-speech annotation with UD (universal dependency) tags for Polish translated from NKJP's part-of-speech tags
+task: part-of-speech tagging
+tagset: "[UD](https://universaldependencies.org/u/pos/)"
+annotations:
+  - <token>:treetagger.upos
+example_output: |-
+  ```xml
+  <token upos="NOUN">Język</token>
+  <token upos="PUNCT">–</token>
+  <token upos="PART">ukształtowany</token>
+  <token upos="ADV">społecznie</token>
+  <token upos="NOUN">system</token>
+  <token upos="VERB">budowania</token>
+  <token upos="NOUN">wypowiedzi</token>
+  <token upos="PUNCT">,</token>
+  <token upos="PART">używany</token>
+  <token upos="ADP">w</token>
+  <token upos="NOUN">procesie</token>
+  <token upos="NOUN">komunikacji</token>
+  <token upos="ADJ">interpersonalnej</token>
+  <token upos="PUNCT">.</token>
+  ```
+---
+id: sbx-pol-lemmatization-treetagger
+parent: pol-treetagger-parent
+name:
+  swe: Annotering av grundformer med TreeTagger för polska
+  eng: Annotation of citation forms (base forms, lemmas) with TreeTagger for Polish
+short_description:
+  swe: Annotering av grundformer (lemman) med TreeTagger för polska
+  eng: Lemmatization with TreeTagger for Polish
+task: lemmatization
+annotations:
+  - <token>:treetagger.baseform
+example_output: |-
+  ```xml
+  <token baseform="język">Język</token>
+  <token baseform="–">–</token>
+  <token baseform="ukształtowany">ukształtowany</token>
+  <token baseform="społecznie">społecznie</token>
+  <token baseform="system">system</token>
+  <token baseform="budować">budowania</token>
+  <token baseform="wypowiedź">wypowiedzi</token>
+  <token baseform=",">,</token>
+  <token baseform="używać">używany</token>
+  <token baseform="w">w</token>
+  <token baseform="proces">procesie</token>
+  <token baseform="komunikacja">komunikacji</token>
+  <token baseform="interpersonalnej">interpersonalnej</token>
+  <token baseform=".">.</token>
+  ```
+---
+id: ron-treetagger-parent
+abstract: true
+parent: treetagger-parent
+language_codes:
+  - ron
+models:
+  - name: romanian.par.gz
+    url: "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/romanian.par.gz"
+trained_on: "[MULTEXT-East](https://www.clarin.si/repository/xmlui/handle/11356/1043)"
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: ron
+  ```
+---
+id: sbx-ron-pos-treetagger
+parent: ron-treetagger-parent
+name:
+  swe: Ordklasstaggning med TreeTagger för romänska
+  eng: Part-of-speech tagging with TreeTagger for Romanian
+short_description:
+  swe: Annotering av ordklasser med TreeTagger för romänska
+  eng: Romanian part-of-speech annotation by TreeTagger
+task: part-of-speech tagging
+tagset: "[TreeTagger Romanian Tagset](https://nl.ijs.si/ME/Vault/V4/msd/tables/msd-human-ro.tbl)"
+annotations:
+  - <token>:treetagger.pos
+example_output: |-
+  ```xml
+  <token pos="Y.nominal.?">O</token>
+  <token pos="S.prop.sg.nom">limbă</token>
+  <token pos="T">reprezintă</token>
+  <token pos="T">un</token>
+  <token pos="T">sistem</token>
+  <token pos="T">abstract</token>
+  <token pos="Z.Com">,</token>
+  <token pos="T">complex</token>
+  <token pos="Z.Com">,</token>
+  <token pos="T">de</token>
+  <token pos="T">comunicare</token>
+  <token pos="S.prop.sg.nom">verbală</token>
+  <token pos="S.prop.sg.nom">între</token>
+  <token pos="S.prop.sg.gen">oameni</token>
+  <token pos="Z.Sent">.</token>
+  ```
+---
+id: sbx-ron-upos-treetagger
+parent: ron-treetagger-parent
+name:
+  swe: UD-Ordklasstaggning med TreeTagger för romänska
+  eng: UD part-of-speech tagging with TreeTagger for Romanian
+short_description:
+  swe: Annotering av UD-ordklasser (universal dependencies) för romänska som översätts från TreeTagger-ordklasser
+  eng: Part-of-speech annotation with UD (universal dependency) tags for Romanian translated from TreeTagger's part-of-speech tags
+task: part-of-speech tagging
+tagset: "[UD](https://universaldependencies.org/u/pos/)"
+annotations:
+  - <token>:treetagger.upos
+example_output: |-
+  ```xml
+  <token upos="DET">O</token>
+  <token upos="NOUN">limbă</token>
+  <token upos="VERB">reprezintă</token>
+  <token upos="DET">un</token>
+  <token upos="NOUN">sistem</token>
+  <token upos="ADJ">abstract</token>
+  <token upos="PUNCT">,</token>
+  <token upos="ADJ">complex</token>
+  <token upos="PUNCT">,</token>
+  <token upos="ADP">de</token>
+  <token upos="NOUN">comunicare</token>
+  <token upos="ADJ">verbală</token>
+  <token upos="ADP">între</token>
+  <token upos="NOUN">oameni</token>
+  <token upos="PUNCT">.</token>
+  ```
+---
+id: sbx-ron-lemmatization-treetagger
+parent: ron-treetagger-parent
+name:
+  swe: Annotering av grundformer med TreeTagger för romänska
+  eng: Annotation of citation forms (base forms, lemmas) with TreeTagger for Romanian
+short_description:
+  swe: Annotering av grundformer (lemman) med TreeTagger för romänska
+  eng: Lemmatization with TreeTagger for Romanian
+task: lemmatization
+annotations:
+  - <token>:treetagger.baseform
+example_output: |-
+  ```xml
+  <token baseform="un">O</token>
+  <token baseform="limbă">limbă</token>
+  <token baseform="reprezenta">reprezintă</token>
+  <token baseform="un">un</token>
+  <token baseform="sistem">sistem</token>
+  <token baseform="abstract">abstract</token>
+  <token baseform=",">,</token>
+  <token baseform="complex">complex</token>
+  <token baseform=",">,</token>
+  <token baseform="de">de</token>
+  <token baseform="comunicare">comunicare</token>
+  <token baseform="verbal">verbală</token>
+  <token baseform="între">între</token>
+  <token baseform="om">oameni</token>
+  <token baseform=".">.</token>
+  ```
+---
+id: slk-treetagger-parent
+abstract: true
+parent: treetagger-parent
+language_codes:
+  - slk
+models:
+  - name: slovak.par.gz
+    url: "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/slovak.par.gz"
+trained_on: "[Slovak National Corpus](https://korpus.juls.savba.sk/index_en.html)"
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: slk
+  ```
+---
+id: sbx-slk-pos-treetagger
+parent: slk-treetagger-parent
+name:
+  swe: Ordklasstaggning med TreeTagger för slovakiska
+  eng: Part-of-speech tagging with TreeTagger for Slovak
+short_description:
+  swe: Annotering av ordklasser med TreeTagger för slovakiska
+  eng: Slovak part-of-speech annotation by TreeTagger
+task: part-of-speech tagging
+tagset: "[Slovak National Corpus Tagset](https://korpus.juls.savba.sk/morpho_en.html)"
+annotations:
+  - <token>:treetagger.pos
+example_output: |-
+  ```xml
+  <token pos="Ps">Jeho</token>
+  <token pos="Asx">praktickou</token>
+  <token pos="Ss">realizáciou</token>
+  <token pos="VKsc">je</token>
+  <token pos="Ss">reč</token>
+  <token pos=".">.</token>
+  ```
+---
+id: sbx-slk-upos-treetagger
+parent: slk-treetagger-parent
+name:
+  swe: UD-Ordklasstaggning med TreeTagger för slovakiska
+  eng: UD part-of-speech tagging with TreeTagger for Slovak
+short_description:
+  swe: Annotering av UD-ordklasser (universal dependencies) för slovakiska som översätts från TreeTagger-ordklasser
+  eng: Part-of-speech annotation with UD (universal dependency) tags for Slovak translated from TreeTagger's part-of-speech tags
+task: part-of-speech tagging
+tagset: "[UD](https://universaldependencies.org/u/pos/)"
+annotations:
+  - <token>:treetagger.upos
+example_output: |-
+  ```xml
+  <token upos="PRON">Jeho</token>
+  <token upos="ADJ">praktickou</token>
+  <token upos="NOUN">realizáciou</token>
+  <token upos="VERB">je</token>
+  <token upos="NOUN">reč</token>
+  <token upos="PUNCT">.</token>
+  ```
+---
+id: sbx-slk-lemmatization-treetagger
+parent: slk-treetagger-parent
+name:
+  swe: Annotering av grundformer med TreeTagger för slovakiska
+  eng: Annotation of citation forms (base forms, lemmas) with TreeTagger for Slovak
+short_description:
+  swe: Annotering av grundformer (lemman) med TreeTagger för slovakiska
+  eng: Lemmatization with TreeTagger for Slovak
+task: lemmatization
+annotations:
+  - <token>:treetagger.baseform
+example_output: |-
+  ```xml
+  <token baseform="jeho">Jeho</token>
+  <token baseform="praktický">praktickou</token>
+  <token baseform="realizácia">realizáciou</token>
+  <token baseform="byť">je</token>
+  <token baseform="reč">reč</token>
+  <token baseform=".">.</token>
+  ```
+---
+id: deu-treetagger-parent
+abstract: true
+parent: treetagger-parent
+language_codes:
+  - deu
+models:
+  - name: german.par.gz
+    url: "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/german.par.gz"
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: deu
+  ```
+---
+id: sbx-deu-pos-treetagger
+parent: deu-treetagger-parent
+name:
+  swe: Ordklasstaggning med TreeTagger för tyska
+  eng: Part-of-speech tagging with TreeTagger for German
+short_description:
+  swe: Annotering av ordklasser med TreeTagger för tyska
+  eng: German part-of-speech annotation by TreeTagger
+task: part-of-speech tagging
+tagset: "[STTS](https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/STTS-Tagset.pdf)"
+annotations:
+  - <token>:treetagger.pos
+example_output: |-
+  ```xml
+  <token pos="APPR">Unter</token>
+  <token pos="NN">Sprache</token>
+  <token pos="VVFIN">versteht</token>
+  <token pos="PIS">man</token>
+  <token pos="ART">die</token>
+  <token pos="NN">Menge</token>
+  <token pos="$,">,</token>
+  <token pos="PRELS">die</token>
+  <token pos="KOKOM">als</token>
+  <token pos="NN">Elemente</token>
+  <token pos="PIAT">alle</token>
+  <token pos="ADJA">komplexen</token>
+  <token pos="NN">Systeme</token>
+  <token pos="ART">der</token>
+  <token pos="NN">Kommunikation</token>
+  <token pos="VVFIN">beinhaltet</token>
+  <token pos="$.">.</token>
+  ```
+---
+id: sbx-deu-upos-treetagger
+parent: deu-treetagger-parent
+name:
+  swe: UD-Ordklasstaggning med TreeTagger för tyska
+  eng: UD part-of-speech tagging with TreeTagger for German
+short_description:
+  swe: Annotering av UD-ordklasser (universal dependencies) för tyska som översätts från STTS-ordklasser
+  eng: Part-of-speech annotation with UD (universal dependency) tags for German translated from STTS part-of-speech tags
+task: part-of-speech tagging
+tagset: "[UD](https://universaldependencies.org/u/pos/)"
+annotations:
+  - <token>:treetagger.upos
+example_output: |-
+  ```xml
+  <token upos="ADP">Unter</token>
+  <token upos="NOUN">Sprache</token>
+  <token upos="VERB">versteht</token>
+  <token upos="PRON">man</token>
+  <token upos="DET">die</token>
+  <token upos="NOUN">Menge</token>
+  <token upos="PUNCT">,</token>
+  <token upos="PRON">die</token>
+  <token upos="CONJ">als</token>
+  <token upos="NOUN">Elemente</token>
+  <token upos="PRON">alle</token>
+  <token upos="ADJ">komplexen</token>
+  <token upos="NOUN">Systeme</token>
+  <token upos="DET">der</token>
+  <token upos="NOUN">Kommunikation</token>
+  <token upos="VERB">beinhaltet</token>
+  <token upos="PUNCT">.</token>
+  ```
+---
+id: sbx-deu-lemmatization-treetagger
+parent: deu-treetagger-parent
+name:
+  swe: Annotering av grundformer med TreeTagger för tyska
+  eng: Annotation of citation forms (base forms, lemmas) with TreeTagger for German
+short_description:
+  swe: Annotering av grundformer (lemman) med TreeTagger för tyska
+  eng: Lemmatization with TreeTagger for German
+task: lemmatization
+annotations:
+  - <token>:treetagger.baseform
+example_output: |-
+  ```xml
+  <token baseform="unter">Unter</token>
+  <token baseform="Sprache">Sprache</token>
+  <token baseform="verstehen">versteht</token>
+  <token baseform="man">man</token>
+  <token baseform="die">die</token>
+  <token baseform="Menge">Menge</token>
+  <token baseform=",">,</token>
+  <token baseform="die">die</token>
+  <token baseform="als">als</token>
+  <token baseform="Element">Elemente</token>
+  <token baseform="alle">alle</token>
+  <token baseform="komplex">komplexen</token>
+  <token baseform="System">Systeme</token>
+  <token baseform="die">der</token>
+  <token baseform="Kommunikation">Kommunikation</token>
+  <token baseform="beinhalten">beinhaltet</token>
+  <token baseform=".">.</token>
+  ```
+---
+id: eng-treetagger-parent
+abstract: true
+parent: treetagger-parent
+language_codes:
+  - eng
+models:
+  - name: english.par.gz
+    url: "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/english.par.gz"
+trained_on: "[Penn Treebank](https://catalog.ldc.upenn.edu/LDC99T42)"
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: eng
+  ```
+---
+id: sbx-eng-pos-treetagger
+parent: eng-treetagger-parent
+name:
+  swe: Ordklasstaggning med TreeTagger för engelska
+  eng: Part-of-speech tagging with TreeTagger for English
+short_description:
+  swe: Annotering av ordklasser med TreeTagger för engelska
+  eng: English part-of-speech annotation by TreeTagger
+task: part-of-speech tagging
+tagset: "[Penn Treebank tagset](https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/Penn-Treebank-Tagset.pdf)"
+annotations:
+  - <token>:treetagger.pos
+example_output: |-
+  ```xml
+  <token pos="NN">Language</token>
+  <token pos="VBZ">is</token>
+  <token pos="DT">the</token>
+  <token pos="JJ">human</token>
+  <token pos="NN">ability</token>
+  <token pos="TO">to</token>
+  <token pos="VV">acquire</token>
+  <token pos="CC">and</token>
+  <token pos="VV">use</token>
+  <token pos="JJ">complex</token>
+  <token pos="NNS">systems</token>
+  <token pos="IN">of</token>
+  <token pos="NN">communication</token>
+  <token pos="SENT">.</token>
+  ```
+---
+id: sbx-eng-upos-treetagger
+parent: eng-treetagger-parent
+name:
+  swe: UD-Ordklasstaggning med TreeTagger för engelska
+  eng: UD part-of-speech tagging with TreeTagger for English
+short_description:
+  swe: Annotering av UD-ordklasser (universal dependencies) för engelska som översätts från Penn-ordklasser
+  eng: Part-of-speech annotation with UD (universal dependency) tags for English translated from Penn part-of-speech tags
+task: part-of-speech tagging
+tagset: "[UD](https://universaldependencies.org/u/pos/)"
+annotations:
+  - <token>:treetagger.upos
+example_output: |-
+  ```xml
+  <token upos="NOUN">Language</token>
+  <token upos="VERB">is</token>
+  <token upos="DET">the</token>
+  <token upos="ADJ">human</token>
+  <token upos="NOUN">ability</token>
+  <token upos="PART">to</token>
+  <token upos="X">acquire</token>
+  <token upos="CONJ">and</token>
+  <token upos="X">use</token>
+  <token upos="ADJ">complex</token>
+  <token upos="NOUN">systems</token>
+  <token upos="ADP">of</token>
+  <token upos="NOUN">communication</token>
+  <token upos="X">.</token>
+  ```
+---
+id: sbx-eng-lemmatization-treetagger
+parent: eng-treetagger-parent
+name:
+  swe: Annotering av grundformer med TreeTagger för engelska
+  eng: Annotation of citation forms (base forms, lemmas) with TreeTagger for English
+short_description:
+  swe: Annotering av grundformer (lemman) med TreeTagger för engelska
+  eng: Lemmatization with TreeTagger for English
+task: lemmatization
+annotations:
+  - <token>:treetagger.baseform
+example_output: |-
+  ```xml
+  <token baseform="language">Language</token>
+  <token baseform="be">is</token>
+  <token baseform="the">the</token>
+  <token baseform="human">human</token>
+  <token baseform="ability">ability</token>
+  <token baseform="to">to</token>
+  <token baseform="acquire">acquire</token>
+  <token baseform="and">and</token>
+  <token baseform="use">use</token>
+  <token baseform="complex">complex</token>
+  <token baseform="system">systems</token>
+  <token baseform="of">of</token>
+  <token baseform="communication">communication</token>
+  <token baseform=".">.</token>
+  ```
+---
+id: fra-treetagger-parent
+abstract: true
+parent: treetagger-parent
+language_codes:
+  - fra
+models:
+  - name: french.par.gz
+    url: "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/french.par.gz"
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: fra
+  ```
+---
+id: sbx-fra-pos-treetagger
+parent: fra-treetagger-parent
+name:
+  swe: Ordklasstaggning med TreeTagger för franska
+  eng: Part-of-speech tagging with TreeTagger for French
+short_description:
+  swe: Annotering av ordklasser med TreeTagger för franska
+  eng: French part-of-speech annotation by TreeTagger
+task: part-of-speech tagging
+tagset: "[TreeTagger French tagset](https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/french-tagset.html)"
+annotations:
+  - <token>:treetagger.pos
+example_output: |-
+  ```xml
+  <token pos="DET:ART">Le</token>
+  <token pos="NOM">langage</token>
+  <token pos="VER:pres">est</token>
+  <token pos="DET:ART">la</token>
+  <token pos="NOM">capacité</token>
+  <token pos="ADJ">d</token>
+  <token pos="PUN">'</token>
+  <token pos="VER:infi">exprimer</token>
+  <token pos="DET:ART">une</token>
+  <token pos="NOM">pensée</token>
+  <token pos="KON">et</token>
+  <token pos="PRP">de</token>
+  <token pos="VER:infi">communiquer</token>
+  <token pos="PRP:det">au</token>
+  <token pos="NOM">moyen</token>
+  <token pos="ADJ">d</token>
+  <token pos="PUN">'</token>
+  <token pos="DET:ART">un</token>
+  <token pos="NOM">système</token>
+  <token pos="PRP">de</token>
+  <token pos="NOM">signes</token>
+  <token pos="SENT">.</token>
+  ```
+---
+id: sbx-fra-upos-treetagger
+parent: fra-treetagger-parent
+name:
+  swe: UD-Ordklasstaggning med TreeTagger för franska
+  eng: UD part-of-speech tagging with TreeTagger for French
+short_description:
+  swe: Annotering av UD-ordklasser (universal dependencies) för franska som översätts från TreeTagger-ordklasser
+  eng: Part-of-speech annotation with UD (universal dependency) tags for French translated from TreeTagger part-of-speech tags
+task: part-of-speech tagging
+tagset: "[UD](https://universaldependencies.org/u/pos/)"
+annotations:
+  - <token>:treetagger.upos
+example_output: |-
+  ```xml
+  <token upos="DET">Le</token>
+  <token upos="NOUN">langage</token>
+  <token upos="VERB">est</token>
+  <token upos="DET">la</token>
+  <token upos="NOUN">capacité</token>
+  <token upos="ADJ">d</token>
+  <token upos="PUNCT">'</token>
+  <token upos="VERB">exprimer</token>
+  <token upos="DET">une</token>
+  <token upos="NOUN">pensée</token>
+  <token upos="CONJ">et</token>
+  <token upos="ADP">de</token>
+  <token upos="VERB">communiquer</token>
+  <token upos="ADP">au</token>
+  <token upos="NOUN">moyen</token>
+  <token upos="ADJ">d</token>
+  <token upos="PUNCT">'</token>
+  <token upos="DET">un</token>
+  <token upos="NOUN">système</token>
+  <token upos="ADP">de</token>
+  <token upos="NOUN">signes</token>
+  <token upos="X">.</token>
+  ```
+---
+id: sbx-fra-lemmatization-treetagger
+parent: fra-treetagger-parent
+name:
+  swe: Annotering av grundformer med TreeTagger för franska
+  eng: Annotation of citation forms (base forms, lemmas) with TreeTagger for French
+short_description:
+  swe: Annotering av grundformer (lemman) med TreeTagger för franska
+  eng: Lemmatization with TreeTagger for French
+task: lemmatization
+annotations:
+  - <token>:treetagger.baseform
+example_output: |-
+  ```xml
+  <token baseform="le">Le</token>
+  <token baseform="langage">langage</token>
+  <token baseform="être">est</token>
+  <token baseform="le">la</token>
+  <token baseform="capacité">capacité</token>
+  <token baseform="d">d</token>
+  <token baseform="'">'</token>
+  <token baseform="exprimer">exprimer</token>
+  <token baseform="un">une</token>
+  <token baseform="pensée">pensée</token>
+  <token baseform="et">et</token>
+  <token baseform="de">de</token>
+  <token baseform="communiquer">communiquer</token>
+  <token baseform="au">au</token>
+  <token baseform="moyen">moyen</token>
+  <token baseform="d">d</token>
+  <token baseform="'">'</token>
+  <token baseform="un">un</token>
+  <token baseform="système">système</token>
+  <token baseform="de">de</token>
+  <token baseform="signe">signes</token>
+  <token baseform=".">.</token>
+  ```
+---
+id: spa-treetagger-parent
+abstract: true
+parent: treetagger-parent
+language_codes:
+  - spa
+models:
+  - name: spanish.par.gz
+    url: "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/spanish.par.gz"
+trained_on: "[Spanish CRATER corpus](https://eprints.lancs.ac.uk/id/eprint/130292/)"
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: spa
+  ```
+---
+id: sbx-spa-pos-treetagger
+parent: spa-treetagger-parent
+name:
+  swe: Ordklasstaggning med TreeTagger för spanska
+  eng: Part-of-speech tagging with TreeTagger for Spanish
+short_description:
+  swe: Annotering av ordklasser med TreeTagger för spanska
+  eng: Spanish part-of-speech annotation by TreeTagger
+task: part-of-speech tagging
+tagset: "[TreeTagger Spanish tagset](https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/spanish-tagset.txt)"
+annotations:
+  - <token>:treetagger.pos
+example_output: |-
+  ```xml
+  <token pos="ART">Un</token>
+  <token pos="NC">lenguaje</token>
+  <token pos="VSfin">es</token>
+  <token pos="ART">un</token>
+  <token pos="NC">sistema</token>
+  <token pos="PREP">de</token>
+  <token pos="NC">comunicación</token>
+  <token pos="VLadj">estructurado</token>
+  <token pos="PREP">para</token>
+  <token pos="ART">el</token>
+  <token pos="CQUE">que</token>
+  <token pos="VLfin">existe</token>
+  <token pos="ART">un</token>
+  <token pos="NC">contexto</token>
+  <token pos="PREP">de</token>
+  <token pos="NC">uso</token>
+  <token pos="CC">y</token>
+  <token pos="QU">ciertos</token>
+  <token pos="NC">principios</token>
+  <token pos="ADJ">combinatorios</token>
+  <token pos="ADJ">formales</token>
+  <token pos="FS">.</token>
+  ```
+---
+id: sbx-spa-upos-treetagger
+parent: spa-treetagger-parent
+name:
+  swe: UD-Ordklasstaggning med TreeTagger för spanska
+  eng: UD part-of-speech tagging with TreeTagger for Spanish
+short_description:
+  swe: Annotering av UD-ordklasser (universal dependencies) för spanska som översätts från TreeTagger-ordklasser
+  eng: Part-of-speech annotation with UD (universal dependency) tags for Spanish translated from TreeTagger part-of-speech tags
+task: part-of-speech tagging
+tagset: "[UD](https://universaldependencies.org/u/pos/)"
+annotations:
+  - <token>:treetagger.upos
+example_output: |-
+  ```xml
+  <token upos="DET">Un</token>
+  <token upos="NOUN">lenguaje</token>
+  <token upos="VERB">es</token>
+  <token upos="DET">un</token>
+  <token upos="NOUN">sistema</token>
+  <token upos="ADP">de</token>
+  <token upos="NOUN">comunicación</token>
+  <token upos="VERB">estructurado</token>
+  <token upos="ADP">para</token>
+  <token upos="DET">el</token>
+  <token upos="SCONJ">que</token>
+  <token upos="VERB">existe</token>
+  <token upos="DET">un</token>
+  <token upos="NOUN">contexto</token>
+  <token upos="ADP">de</token>
+  <token upos="NOUN">uso</token>
+  <token upos="CONJ">y</token>
+  <token upos="DET">ciertos</token>
+  <token upos="NOUN">principios</token>
+  <token upos="ADJ">combinatorios</token>
+  <token upos="ADJ">formales</token>
+  <token upos="PUNCT">.</token>
+  ```
+---
+id: sbx-spa-lemmatization-treetagger
+parent: spa-treetagger-parent
+name:
+  swe: Annotering av grundformer med TreeTagger för spanska
+  eng: Annotation of citation forms (base forms, lemmas) with TreeTagger for Spanish
+short_description:
+  swe: Annotering av grundformer (lemman) med TreeTagger för spanska
+  eng: Lemmatization with TreeTagger for Spanish
+task: lemmatization
+annotations:
+  - <token>:treetagger.baseform
+example_output: |-
+  ```xml
+  <token baseform="un">Un</token>
+  <token baseform="lenguaje">lenguaje</token>
+  <token baseform="ser">es</token>
+  <token baseform="un">un</token>
+  <token baseform="sistema">sistema</token>
+  <token baseform="de">de</token>
+  <token baseform="comunicación">comunicación</token>
+  <token baseform="estructurar">estructurado</token>
+  <token baseform="para">para</token>
+  <token baseform="el">el</token>
+  <token baseform="que">que</token>
+  <token baseform="existir">existe</token>
+  <token baseform="un">un</token>
+  <token baseform="contexto">contexto</token>
+  <token baseform="de">de</token>
+  <token baseform="uso">uso</token>
+  <token baseform="y">y</token>
+  <token baseform="cierto">ciertos</token>
+  <token baseform="principio">principios</token>
+  <token baseform="combinatorio">combinatorios</token>
+  <token baseform="formal">formales</token>
+  <token baseform=".">.</token>
+  ```
+---
+id: ita-treetagger-parent
+abstract: true
+parent: treetagger-parent
+language_codes:
+  - ita
+models:
+  - name: italian.par.gz
+    url: "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/italian.par.gz"
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: ita
+  ```
+---
+id: sbx-ita-pos-treetagger
+parent: ita-treetagger-parent
+name:
+  swe: Ordklasstaggning med TreeTagger för italienska
+  eng: Part-of-speech tagging with TreeTagger for Italian
+short_description:
+  swe: Annotering av ordklasser med TreeTagger för italienska
+  eng: Italian part-of-speech annotation by TreeTagger
+task: part-of-speech tagging
+tagset: "[TreeTagger Italian tagset](https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/italian-tagset.txt)"
+annotations:
+  - <token>:treetagger.pos
+example_output: |-
+  ```xml
+  <token pos="DET:def">Il</token>
+  <token pos="NOM">linguaggio</token>
+  <token pos="ADJ">umano</token>
+  <token pos="VER:pres">è</token>
+  <token pos="DET:def">la</token>
+  <token pos="NOM">capacità</token>
+  <token pos="NOM">dell</token>
+  <token pos="PON">'</token>
+  <token pos="NOM">Uomo</token>
+  <token pos="PRE">di</token>
+  <token pos="VER:infi">comunicare</token>
+  <token pos="PRE">per</token>
+  <token pos="NOM">mezzo</token>
+  <token pos="PRE">di</token>
+  <token pos="DET:indef">un</token>
+  <token pos="NOM">codice</token>
+  <token pos="ADJ">complesso</token>
+  <token pos="PON">,</token>
+  <token pos="ADV">cioè</token>
+  <token pos="DET:indef">una</token>
+  <token pos="NOM">lingua</token>
+  <token pos="SENT">.</token>
+  ```
+---
+id: sbx-ita-upos-treetagger
+parent: ita-treetagger-parent
+name:
+  swe: UD-Ordklasstaggning med TreeTagger för italienska
+  eng: UD part-of-speech tagging with TreeTagger for Italian
+short_description:
+  swe: Annotering av UD-ordklasser (universal dependencies) för italienska som översätts från TreeTagger-ordklasser
+  eng: Part-of-speech annotation with UD (universal dependency) tags for Italian translated from TreeTagger part-of-speech tags
+task: part-of-speech tagging
+tagset: "[UD](https://universaldependencies.org/u/pos/)"
+annotations:
+  - <token>:treetagger.upos
+example_output: |-
+  ```xml
+  <token upos="DET">Il</token>
+  <token upos="NOUN">linguaggio</token>
+  <token upos="ADJ">umano</token>
+  <token upos="VERB">è</token>
+  <token upos="DET">la</token>
+  <token upos="NOUN">capacità</token>
+  <token upos="NOUN">dell</token>
+  <token upos="PUNCT">'</token>
+  <token upos="NOUN">Uomo</token>
+  <token upos="ADP">di</token>
+  <token upos="VERB">comunicare</token>
+  <token upos="ADP">per</token>
+  <token upos="NOUN">mezzo</token>
+  <token upos="ADP">di</token>
+  <token upos="DET">un</token>
+  <token upos="NOUN">codice</token>
+  <token upos="ADJ">complesso</token>
+  <token upos="PUNCT">,</token>
+  <token upos="ADV">cioè</token>
+  <token upos="DET">una</token>
+  <token upos="NOUN">lingua</token>
+  <token upos="X">.</token>
+  ```
+---
+id: sbx-ita-lemmatization-treetagger
+parent: ita-treetagger-parent
+name:
+  swe: Annotering av grundformer med TreeTagger för italienska
+  eng: Annotation of citation forms (base forms, lemmas) with TreeTagger for Italian
+short_description:
+  swe: Annotering av grundformer (lemman) med TreeTagger för italienska
+  eng: Lemmatization with TreeTagger for Italian
+task: lemmatization
+annotations:
+  - <token>:treetagger.baseform
+example_output: |-
+  ```xml
+  <token baseform="il">Il</token>
+  <token baseform="linguaggio">linguaggio</token>
+  <token baseform="umano">umano</token>
+  <token baseform="essere">è</token>
+  <token baseform="il">la</token>
+  <token baseform="capacità">capacità</token>
+  <token baseform="dell">dell</token>
+  <token baseform="'">'</token>
+  <token baseform="uomo">Uomo</token>
+  <token baseform="di">di</token>
+  <token baseform="comunicare">comunicare</token>
+  <token baseform="per">per</token>
+  <token baseform="mezzo">mezzo</token>
+  <token baseform="di">di</token>
+  <token baseform="un">un</token>
+  <token baseform="codice">codice</token>
+  <token baseform="complesso">complesso</token>
+  <token baseform=",">,</token>
+  <token baseform="cioè">cioè</token>
+  <token baseform="una">una</token>
+  <token baseform="lingua">lingua</token>
+  <token baseform=".">.</token>
+  ```
+---
+id: rus-treetagger-parent
+abstract: true
+parent: treetagger-parent
+language_codes:
+  - rus
+models:
+  - name: russian.par.gz
+    url: "https://www.cis.uni-muenchen.de/~schmid/tools/TreeTagger/data/russian.par.gz"
+trained_on: "[Russian corpus](http://corpus.leeds.ac.uk/mocky/)"
+example_extra: |-
+  In order to use this annotation you need to add the following setting to your Sparv corpus configuration file:
+  ```yaml
+  metadata:
+    language: rus
+  ```
+---
+id: sbx-rus-pos-treetagger
+parent: rus-treetagger-parent
+name:
+  swe: Ordklasstaggning med TreeTagger för ryska
+  eng: Part-of-speech tagging with TreeTagger for Russian
+short_description:
+  swe: Annotering av ordklasser med TreeTagger för ryska
+  eng: Russian part-of-speech annotation by TreeTagger
+task: part-of-speech tagging
+tagset: "[TreeTagger Russian tagset](http://corpus.leeds.ac.uk/mocky/ru-table.tab)"
+annotations:
+  - <token>:treetagger.pos
+example_output: |-
+  ```xml
+  <token pos="Vmip3s-a-e">Существует</token>
+  <token pos="Ncmsan">ряд</token>
+  <token pos="Ncfpgn">гипотез</token>
+  <token pos="Sp-l">о</token>
+  <token pos="Ncnsln">происхождении</token>
+  <token pos="Ncmsgn">языка</token>
+  <token pos=",">,</token>
+  <token pos="C">но</token>
+  <token pos="Q">ни</token>
+  <token pos="P--fsna">одна</token>
+  <token pos="Sp-g">из</token>
+  <token pos="P-3-pgn">них</token>
+  <token pos="Q">не</token>
+  <token pos="Vmip3s-a-e">может</token>
+  <token pos="Vmn----a-e">быть</token>
+  <token pos="Vmps-sfpsp">подтверждена</token>
+  <token pos="Ncmpin">фактами</token>
+  <token pos="Ncmsgn">из-за</token>
+  <token pos="Afpfsgf">огромной</token>
+  <token pos="Ncfsgn">отдалённости</token>
+  <token pos="Ncnsgn">происхождения</token>
+  <token pos="Ncmsgn">языка</token>
+  <token pos="Sp-g">от</token>
+  <token pos="P--nsga">нашего</token>
+  <token pos="Ncnsgn">времени</token>
+  <token pos="SENT">.</token>
+  ```
+---
+id: sbx-rus-upos-treetagger
+parent: rus-treetagger-parent
+name:
+  swe: UD-Ordklasstaggning med TreeTagger för ryska
+  eng: UD part-of-speech tagging with TreeTagger for Russian
+short_description:
+  swe: Annotering av UD-ordklasser (universal dependencies) för ryska som översätts från TreeTagger-ordklasser
+  eng: Part-of-speech annotation with UD (universal dependency) tags for Russian translated from TreeTagger part-of-speech tags
+task: part-of-speech tagging
+tagset: "[UD](https://universaldependencies.org/u/pos/)"
+annotations:
+  - <token>:treetagger.upos
+example_output: |-
+  ```xml
+  <token upos="VERB">Существует</token>
+  <token upos="NOUN">ряд</token>
+  <token upos="NOUN">гипотез</token>
+  <token upos="ADP">о</token>
+  <token upos="NOUN">происхождении</token>
+  <token upos="NOUN">языка</token>
+  <token upos="X">,</token>
+  <token upos="CONJ">но</token>
+  <token upos="PART">ни</token>
+  <token upos="PRON">одна</token>
+  <token upos="ADP">из</token>
+  <token upos="PRON">них</token>
+  <token upos="PART">не</token>
+  <token upos="VERB">может</token>
+  <token upos="VERB">быть</token>
+  <token upos="VERB">подтверждена</token>
+  <token upos="NOUN">фактами</token>
+  <token upos="NOUN">из-за</token>
+  <token upos="ADJ">огромной</token>
+  <token upos="NOUN">отдалённости</token>
+  <token upos="NOUN">происхождения</token>
+  <token upos="NOUN">языка</token>
+  <token upos="ADP">от</token>
+  <token upos="PRON">нашего</token>
+  <token upos="NOUN">времени</token>
+  <token upos="ADP">.</token>
+  ```
+---
+id: sbx-rus-lemmatization-treetagger
+parent: rus-treetagger-parent
+name:
+  swe: Annotering av grundformer med TreeTagger för ryska
+  eng: Annotation of citation forms (base forms, lemmas) with TreeTagger for Russian
+short_description:
+  swe: Annotering av grundformer (lemman) med TreeTagger för ryska
+  eng: Lemmatization with TreeTagger for Russian
+task: lemmatization
+annotations:
+  - <token>:treetagger.baseform
+example_output: |-
+  ```xml
+  <token baseform="существовать">Существует</token>
+  <token baseform="ряд">ряд</token>
+  <token baseform="гипотеза">гипотез</token>
+  <token baseform="о">о</token>
+  <token baseform="происхождение">происхождении</token>
+  <token baseform="язык">языка</token>
+  <token baseform=",">,</token>
+  <token baseform="но">но</token>
+  <token baseform="ни">ни</token>
+  <token baseform="один">одна</token>
+  <token baseform="из">из</token>
+  <token baseform="они">них</token>
+  <token baseform="не">не</token>
+  <token baseform="мочь">может</token>
+  <token baseform="быть">быть</token>
+  <token baseform="подтвердить">подтверждена</token>
+  <token baseform="факт">фактами</token>
+  <token baseform="из-за">из-за</token>
+  <token baseform="огромный">огромной</token>
+  <token baseform="отдалённости">отдалённости</token>
+  <token baseform="происхождение">происхождения</token>
+  <token baseform="язык">языка</token>
+  <token baseform="от">от</token>
+  <token baseform="наш">нашего</token>
+  <token baseform="время">времени</token>
+  <token baseform=".">.</token>
+  ```
