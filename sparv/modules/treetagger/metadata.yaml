@@ -662,10 +662,10 @@ example_extra: |-
 id: sbx-ron-pos-treetagger
 parent: ron-treetagger-parent
 name:
-  swe: Ordklasstaggning med TreeTagger för romänska
+  swe: Ordklasstaggning med TreeTagger för rumänska
   eng: Part-of-speech tagging with TreeTagger for Romanian
 short_description:
-  swe: Annotering av ordklasser med TreeTagger för romänska
+  swe: Annotering av ordklasser med TreeTagger för rumänska
   eng: Romanian part-of-speech annotation by TreeTagger
 task: part-of-speech tagging
 tagset: "[TreeTagger Romanian Tagset](https://nl.ijs.si/ME/Vault/V4/msd/tables/msd-human-ro.tbl)"
@@ -693,10 +693,10 @@ example_output: |-
 id: sbx-ron-upos-treetagger
 parent: ron-treetagger-parent
 name:
-  swe: UD-Ordklasstaggning med TreeTagger för romänska
+  swe: UD-Ordklasstaggning med TreeTagger för rumänska
   eng: UD part-of-speech tagging with TreeTagger for Romanian
 short_description:
-  swe: Annotering av UD-ordklasser (universal dependencies) för romänska som översätts från TreeTagger-ordklasser
+  swe: Annotering av UD-ordklasser (universal dependencies) för rumänska som översätts från TreeTagger-ordklasser
   eng: Part-of-speech annotation with UD (universal dependency) tags for Romanian translated from TreeTagger's part-of-speech tags
 task: part-of-speech tagging
 tagset: "[UD](https://universaldependencies.org/u/pos/)"
@@ -724,10 +724,10 @@ example_output: |-
 id: sbx-ron-lemmatization-treetagger
 parent: ron-treetagger-parent
 name:
-  swe: Annotering av grundformer med TreeTagger för romänska
+  swe: Annotering av grundformer med TreeTagger för rumänska
   eng: Annotation of citation forms (base forms, lemmas) with TreeTagger for Romanian
 short_description:
-  swe: Annotering av grundformer (lemman) med TreeTagger för romänska
+  swe: Annotering av grundformer (lemman) med TreeTagger för rumänska
   eng: Lemmatization with TreeTagger for Romanian
 task: lemmatization
 annotations:
