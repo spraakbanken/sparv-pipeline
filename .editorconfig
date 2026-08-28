@@ -20,3 +20,8 @@ indent_size = 2
 [*.html]
 indent_style = space
 indent_size = 2
+
+[*.md]
+indent_style = space
+# Indentation by 4 spaces is required by Zensical
+indent_size = 4
