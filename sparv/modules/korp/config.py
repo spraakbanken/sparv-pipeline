@@ -275,10 +275,10 @@ def config(
         config_dict["within"] = []
         for v in within:
             if isinstance(v, str):
-                v = cwb_escape(v)  # noqa: PLW2901
                 n = 0
                 if " " in v:
                     n, _, v = v.partition(" ")  # noqa: PLW2901
+                v = cwb_escape(v)  # noqa: PLW2901
                 if v in LABELS:
                     i = 1 if int(n) > 1 else 0
                     label = {lang: f"{n} {val[i]}" if n else val[i] for lang, val in LABELS[v].items()}
@@ -292,10 +292,10 @@ def config(
         config_dict["context"] = []
         for v in context:
             if isinstance(v, str):
-                v = cwb_escape(v)  # noqa: PLW2901
                 n = 1
                 if " " in v:
                     n, _, v = v.partition(" ")  # noqa: PLW2901
+                v = cwb_escape(v)  # noqa: PLW2901
                 if v in LABELS:
                     i = 1 if int(n) > 1 else 0
                     label = {lang: f"{n} {val[i]}" for lang, val in LABELS[v].items()}
