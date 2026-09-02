@@ -2,7 +2,7 @@
 
 ![Sparv logo](../images/sparv_detailed.png){ align=right .intro-logo }
 Sparv is a powerful command line tool designed for annotating text with a wide range of linguistic
-annotations. Developed by [Språkbanken Text](https://spraakbanken.gu.se/), Sparv provides a comprehensive solution for
+annotations. Developed by [Språkbanken](https://spraakbanken.gu.se/), Sparv provides a comprehensive solution for
 text analysis, supporting various source formats, annotations, and export formats.
 
 Sparv comes equipped with numerous modules that facilitate the entire workflow from importing text data, annotating it

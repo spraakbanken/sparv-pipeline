@@ -3,8 +3,8 @@ name:
   swe: CoNLL-U-export
   eng: CoNLL-U export
 short_description:
-  swe: Export av korpusdata i Språkbanken Texts CoNLL-U-format
-  eng: Export of corpus data in Språkbanken Text's CoNLL-U format
+  swe: Export av korpusdata i Språkbankens CoNLL-U-format
+  eng: Export of corpus data in Språkbanken's CoNLL-U format
 task: export
 keywords:
  - conll-u

@@ -49,7 +49,7 @@ TITLEPAGE="
 ---
 title: Sparv $SPARV_VERSION - Documentation
 author: |
-  | Språkbanken Text
+  | Språkbanken
   | Institutionen för svenska, flerspråkighet och språkteknologi
   | Göteborgs universitet
   |

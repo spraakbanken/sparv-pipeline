@@ -11,7 +11,7 @@ requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [
-    { name = "Språkbanken Text", email = "sb-info@svenska.gu.se" }
+    { name = "Språkbanken", email = "sb-info@svenska.gu.se" }
 ]
 dependencies = [
     "appdirs~=1.4",

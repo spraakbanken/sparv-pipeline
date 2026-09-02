@@ -70,11 +70,11 @@ example_output: |-
 description:
   swe: |-
     Ett lemgram är ett ords eller ett flerordsuttrycks samtliga böjningsformer. Ett lemgram betecknas med tre delar: en
-    grundform, en ordklasstagg och ett urskiljande löpnummer. Mer detaljerad information finns i [Språkbanken Text
+    grundform, en ordklasstagg och ett urskiljande löpnummer. Mer detaljerad information finns i [Språkbanken
     FAQ](https://spraakbanken.gu.se/faq/vad-ar-ett-lemgram).
   eng: |-
     A lemgram in SALDO is a combination of a base form and an inflectional pattern. More information (in Swedish) is
-    found in the [Språkbanken Text FAQ](https://spraakbanken.gu.se/faq/vad-ar-ett-lemgram).
+    found in the [Språkbanken FAQ](https://spraakbanken.gu.se/faq/vad-ar-ett-lemgram).
 created: 2010-12-15
 updated: 2018-03-28
 ---
@@ -140,11 +140,11 @@ example_output: |-
 description:
   swe: |-
     Token och deras ordklasser slås upp i SALDO-lexikonet för att berikas med sammansättningsinformation. Mer
-    detaljerad information finns i [Språkbanken Text
+    detaljerad information finns i [Språkbanken
     FAQ](https://spraakbanken.gu.se/faq/hur-fungerar-sparvs-sammansattningsanalys).
   eng: |-
     Tokens and their POS tags are looked up in the SALDO lexicon in order to enrich them with compound information. More
-    information (in Swedish) is found in the [Språkbanken Text
+    information (in Swedish) is found in the [Språkbanken
     FAQ](https://spraakbanken.gu.se/faq/hur-fungerar-sparvs-sammansattningsanalys).
 created: 2018-03-28
 updated: 2020-07-09
@@ -181,11 +181,11 @@ example_output: |-
 description:
   swe: |-
     Token och deras ordklasser slås upp i SALDO-lexikonet för att berikas med sammansättningsinformation. Mer
-    detaljerad information finns i [Språkbanken Text
+    detaljerad information finns i [Språkbanken
     FAQ](https://spraakbanken.gu.se/faq/hur-fungerar-sparvs-sammansattningsanalys).
   eng: |-
     Tokens and their POS tags are looked up in the SALDO lexicon in order to enrich them with compound information. More
-    information (in Swedish) is found in the [Språkbanken Text
+    information (in Swedish) is found in the [Språkbanken
     FAQ](https://spraakbanken.gu.se/faq/hur-fungerar-sparvs-sammansattningsanalys).
 created: 2018-03-28
 updated: 2020-07-09

@@ -1,7 +1,7 @@
 # Available Analyses
 
 This section provides an overview of some of the built-in analyses available within Sparv and the Sparv plugins
-developed by Språkbanken Text. Note that this is not an exhaustive list of available annotations but rather a summary of
+developed by Språkbanken. Note that this is not an exhaustive list of available annotations but rather a summary of
 the linguistic analyses. Technical annotations (e.g., automatic assignment of IDs or calculation of whitespace
 information) are not included here. For a complete list of analyses, refer to the output of the `sparv modules` command.
 
@@ -142,7 +142,7 @@ preset](corpus-configuration.md#annotation-presets) called `SWE_DEFAULT`.
 
 |    |            |
 |:---|:-----------|
-|**Description**  | Tokens and their POS tags are looked up in the SALDO lexicon in order to enrich them with compound information. More information (in Swedish) is found in the [Språkbanken Text FAQ ("Hur fungerar Sparvs sammansättningsanalys?")](https://spraakbanken.gu.se/faq/hur-fungerar-sparvs-sammansattningsanalys). Lemmas are enriched in this analysis.|
+|**Description**  | Tokens and their POS tags are looked up in the SALDO lexicon in order to enrich them with compound information. More information (in Swedish) is found in the [Språkbanken FAQ ("Hur fungerar Sparvs sammansättningsanalys?")](https://spraakbanken.gu.se/faq/hur-fungerar-sparvs-sammansattningsanalys). Lemmas are enriched in this analysis.|
 |**Model**        | - [SALDO morphology](https://spraakbanken.gu.se/resurser/saldo) <br />- [NST pronunciation lexicon for Swedish](https://www.nb.no/sprakbanken/en/resource-catalogue/oai-nb-no-sbr-22/) <br />- [word frequency statistics from Korp](https://svn.spraakdata.gu.se/sb-arkiv/pub/frekvens/stats_all.txt.zip)|
 |**Annotations**  | - `<token>:saldo.complemgram` (compound lemgrams including a comparison score) <br />- `<token>:saldo.compwf` (compound word forms) <br />- `<token>:saldo.baseform2` (lemma)|
 |**Annotators**   | `saldo:compound`|
@@ -228,7 +228,7 @@ specifically adapted for this language variety:
 
 We recommend using the [annotation preset](corpus-configuration.md#annotation-presets) called `SWE_FSV`.
 All analyses for contemporary Swedish are available for this language variety. However, we do not recommend using them
-due to the fact that the spelling often differs too much to give satisfying results. At Språkbanken Text we use the
+due to the fact that the spelling often differs too much to give satisfying results. At Språkbanken we use the
 following analyses for texts written in Old Swedish:
 
 ### Sentence segmentation

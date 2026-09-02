@@ -136,7 +136,7 @@ software is installed correctly, Sparv will automatically download and install t
 |**License**                       |[MIT](https://opensource.org/licenses/MIT)|
 |**Dependencies**                  |[Java](https://www.java.com/en/download/)|
 
-[Sparv wsd](https://github.com/spraakbanken/sparv-wsd) is developed by Språkbanken Text and is licensed under the same
+[Sparv wsd](https://github.com/spraakbanken/sparv-wsd) is developed by Språkbanken and is licensed under the same
 terms as Sparv. To use it within Sparv, simply download the `saldowsd.jar` file from the provided GitHub link and place
 it in the `bin/wsd` directory inside your [Sparv data directory](#setting-up-sparv).
 
