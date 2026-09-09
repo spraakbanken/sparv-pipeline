@@ -48,7 +48,7 @@ def best_complemgram(
 
 @annotator("Extract the sense with the highest score", language=["swe"])
 def best_sense(
-    sense: Annotation = Annotation("<token>:wsd.sense"),
+    sense: Annotation = Annotation("<token:sense>"),
     out: Output = Output("<token>:stats_export.sense_best", description="Sense annotation with highest score"),
 ) -> None:
     """Extract the sense annotation with the highest score.
