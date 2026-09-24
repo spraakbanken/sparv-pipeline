@@ -888,7 +888,8 @@ class SparvLogHandler:
             elif NOTHING_TO_BE_DONE_MSG in record.msg:
                 self.info("Nothing to be done.")
             elif record.msg.startswith("Will exit after finishing currently running jobs") and not self.terminated:
-                self.logger.log(logging.INFO, "Will exit after finishing currently running jobs")  # type: ignore
+                if self.logger:
+                    self.logger.log(logging.INFO, "Will exit after finishing currently running jobs")
                 self.terminated = True
             if self.dry_run and "Reasons:" in record.msg:
                 # Save reasons for tasks being scheduled
