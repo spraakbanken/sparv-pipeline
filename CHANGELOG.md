@@ -8,6 +8,7 @@
 - Plugin installation/uninstallation is now possible in environments where `pip` is not available, if `uv` is
   installed.
 - Added `sparv dev inspect` command for inspecting files in the sparv-workdir.
+- Add support for scrambled plain text export, using the `text_export:scrambled` annotator.
 
 ### Changed
 
