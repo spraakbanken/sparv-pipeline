@@ -7,7 +7,7 @@ tools:
   - name: Hunpos
     url: "https://code.google.com/archive/p/hunpos/"
     license: BSD-3-Clause
-trained_on: "[SUC3](https://spraakbanken.gu.se/resurser/suc3)"
+trained_on: "[SUC3](https://sprakbanken.se/resurser/suc3)"
 tagset: "[SUC3](https://spraakbanken.gu.se/korp/markup/msdtags.html)"
 evaluation_results: ''
 ---
@@ -132,8 +132,8 @@ models:
   - name: dalinm-swedberg_saldo_suc-tags.morphtable
     description: |-
       A word list along with the words' morphosyntactic information generated from the [Dalin
-      morphology](https://spraakbanken.gu.se/resurser/dalinm) and the [Swedberg
-      morphology](https://spraakbanken.gu.se/resurser/swedbergm)
+      morphology](https://sprakbanken.se/resurser/dalinm) and the [Swedberg
+      morphology](https://sprakbanken.se/resurser/swedbergm)
 description:
   swe: |-
     Meningssegment analyseras och annoteras med ordklasstaggar. Utöver ordklasstaggningsmodellen använder Hunpos listor
@@ -193,8 +193,8 @@ models:
   - name: dalinm-swedberg_saldo_suc-tags.morphtable
     description: |-
       A word list along with the words' morphosyntactic information generated from the [Dalin
-      morphology](https://spraakbanken.gu.se/resurser/dalinm) and the [Swedberg
-      morphology](https://spraakbanken.gu.se/resurser/swedbergm)
+      morphology](https://sprakbanken.se/resurser/dalinm) and the [Swedberg
+      morphology](https://sprakbanken.se/resurser/swedbergm)
 description:
   swe: |-
     Meningssegment analyseras och annoteras med ordklasstaggar och morfosyntaktisk information. Utöver

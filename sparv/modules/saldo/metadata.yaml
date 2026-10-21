@@ -6,7 +6,7 @@ standard_reference: "[Borin/Forsberg/Lönngren 2013: SALDO: a touch of yin to Wo
 other_references: []
 models:
   - name: SALDO's morphology
-    url: "https://spraakbanken.gu.se/resurser/saldom"
+    url: "https://sprakbanken.se/resurser/saldom"
 trained_on: ''
 tagset: ''
 evaluation_results: ''
@@ -102,9 +102,9 @@ example_output: |-
   ```
 description:
   swe: |-
-    En SALDO-identifierare refererar till ett ords betydelse i [SALDO-lexikonet](https://spraakbanken.gu.se/resurser/saldo).
+    En SALDO-identifierare refererar till ett ords betydelse i [SALDO-lexikonet](https://sprakbanken.se/resurser/saldo).
   eng: |-
-    A SALDO identifier refers to a sense of a word in the [SALDO lexicon](https://spraakbanken.gu.se/resurser/saldo).
+    A SALDO identifier refers to a sense of a word in the [SALDO lexicon](https://sprakbanken.se/resurser/saldo).
 created: 2010-12-15
 updated: 2018-03-28
 ---

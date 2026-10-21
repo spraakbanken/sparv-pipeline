@@ -51,11 +51,11 @@ example_extra: |-
   ```
 models:
   - name: SALDO's morphology
-    url: "https://spraakbanken.gu.se/resurser/saldom"
+    url: "https://sprakbanken.se/resurser/saldom"
   - name: Dalin's morphology
-    url: "https://spraakbanken.gu.se/resurser/dalinm"
+    url: "https://sprakbanken.se/resurser/dalinm"
   - name: Swedberg's morphology
-    url: "https://spraakbanken.gu.se/resurser/swedbergm"
+    url: "https://sprakbanken.se/resurser/swedbergm"
 other_references:
   - "[Borin/Forsberg/Lönngren 2013: SALDO: a touch of yin to WordNet's yang](http://dx.doi.org/10.1007/s10579-013-9233-4)"
   - '{publication 140686}'
@@ -116,11 +116,11 @@ example_extra: |-
   ```
 models:
   - name: SALDO's morphology
-    url: "https://spraakbanken.gu.se/resurser/saldom"
+    url: "https://sprakbanken.se/resurser/saldom"
   - name: Dalin's morphology
-    url: "https://spraakbanken.gu.se/resurser/dalinm"
+    url: "https://sprakbanken.se/resurser/dalinm"
   - name: Swedberg's morphology
-    url: "https://spraakbanken.gu.se/resurser/swedbergm"
+    url: "https://sprakbanken.se/resurser/swedbergm"
 other_references:
   - "[Borin/Forsberg/Lönngren 2013: SALDO: a touch of yin to WordNet's yang](http://dx.doi.org/10.1007/s10579-013-9233-4)"
   - '{publication 140686}'
@@ -182,11 +182,11 @@ example_extra: |-
   ```
 models:
   - name: SALDO's morphology
-    url: "https://spraakbanken.gu.se/resurser/saldom"
+    url: "https://sprakbanken.se/resurser/saldom"
   - name: Dalin's morphology
-    url: "https://spraakbanken.gu.se/resurser/dalinm"
+    url: "https://sprakbanken.se/resurser/dalinm"
   - name: Swedberg's morphology
-    url: "https://spraakbanken.gu.se/resurser/swedbergm"
+    url: "https://sprakbanken.se/resurser/swedbergm"
 other_references:
   - "[Borin/Forsberg/Lönngren 2013: SALDO: a touch of yin to WordNet's yang](http://dx.doi.org/10.1007/s10579-013-9233-4)"
   - '{publication 140686}'
@@ -249,7 +249,7 @@ example_extra: |-
   ```
 models:
   - name: Old Swedish morphology
-  - url: "https://spraakbanken.gu.se/resurser/fsvm"
+  - url: "https://sprakbanken.se/resurser/fsvm"
 other_references:
   - '{publication 72502}'
   - '{publication 198794}'
@@ -312,7 +312,7 @@ example_extra: |-
   ```
 models:
   - name: Old Swedish morphology
-    url: "https://spraakbanken.gu.se/resurser/fsvm"
+    url: "https://sprakbanken.se/resurser/fsvm"
 other_references:
   - '{publication 72502}'
   - '{publication 198794}'

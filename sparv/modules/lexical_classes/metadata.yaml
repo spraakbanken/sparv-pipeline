@@ -5,9 +5,9 @@ language_codes:
 keywords: []
 abstract: true
 trained_on: |-
-    Reference corpora for relative frequencies: [Göteborgsposten 2008](https://spraakbanken.gu.se/resurser/gp2008), [SUC
-    3.0](https://spraakbanken.gu.se/resurser/suc3), [Bonniersromaner I
-    (1976–77)](https://spraakbanken.gu.se/resurser/romi)
+    Reference corpora for relative frequencies: [Göteborgsposten 2008](https://sprakbanken.se/resurser/gp2008), [SUC
+    3.0](https://sprakbanken.se/resurser/suc3), [Bonniersromaner I
+    (1976–77)](https://sprakbanken.se/resurser/romi)
 evaluation_results: ''
 updated: 2017-09-21
 ---
@@ -17,7 +17,7 @@ parent: lexical-classes-parent
 standard_reference: "[Lars Borin, Luis Nieto Piña, Richard Johansson (2015): Here be dragons? The perils and promises of inter-resource lexical-semantic mapping, in Linköping Electronic Conference Proceedings. Semantic resources and semantic annotation for Natural Language Processing and the Digital Humanities. Workshop at NODALIDA , May 11, 13-18 2015, Vilnius, volume 112, pages 1-11](https://gup.ub.gu.se/publication/217351)"
 other_references:
   - "[Lars Borin, Jens Allwood, Gerard de Melo (2014): Bring vs. MTRoget: Evaluating automatic thesaurus translation, in Proceedings of LREC 2014, May 26-31, 2014 Reykjavik, Iceland](https://gup.ub.gu.se/publication/198549)"
-tagset: "[Blingbring](https://spraakbanken.gu.se/resurser/blingbring)"
+tagset: "[Blingbring](https://sprakbanken.se/resurser/blingbring)"
 models:
   - name: Blingbring frequency model
     url: "https://github.com/spraakbanken/sparv-models/blob/master/lexical_classes/blingbring.freq.gp2008%2Bsuc3%2Bromi.pickle"
@@ -102,9 +102,9 @@ description:
     information om lexikala klasser baserat på vilka klasser som är relevanta för token i dem.
 
     Blingbring-frekvensmodellen](https://github.com/spraakbanken/sparv-models/blob/master/lexical_classes/blingbring.freq.gp2008%2Bsuc3%2Bromi.pickle)
-    (tränad på [Göteborgsposten 2008](https://spraakbanken.gu.se/resurser/gp2008), [SUC
-    3.0](https://spraakbanken.gu.se/resurser/suc3) och [Bonniersromaner I
-    (1976–77)](https://spraakbanken.gu.se/resurser/romi)) används som referens för att rangordna de Blingbring-klasser
+    (tränad på [Göteborgsposten 2008](https://sprakbanken.se/resurser/gp2008), [SUC
+    3.0](https://sprakbanken.se/resurser/suc3) och [Bonniersromaner I
+    (1976–77)](https://sprakbanken.se/resurser/romi)) används som referens för att rangordna de Blingbring-klasser
     som förekommer i varje text. Med hjälp av informationen om lexikala klasser på tokennivå beräknar och tilldelar
     modellen de mest relevanta klasserna för varje text. Dessa klasser filtreras och rangordnas baserat på sin
     frekvens och dominans jämfört med referensmaterialet.
@@ -123,9 +123,9 @@ description:
     
     The [Blingbring frequency
     model](https://github.com/spraakbanken/sparv-models/blob/master/lexical_classes/blingbring.freq.gp2008%2Bsuc3%2Bromi.pickle)
-    (trained on [Göteborgsposten 2008](https://spraakbanken.gu.se/resurser/gp2008), [SUC
-    3.0](https://spraakbanken.gu.se/resurser/suc3) and [Bonniersromaner I
-    (1976–77)](https://spraakbanken.gu.se/resurser/romi)) is used as reference for ranking the Blingbring classes
+    (trained on [Göteborgsposten 2008](https://sprakbanken.se/resurser/gp2008), [SUC
+    3.0](https://sprakbanken.se/resurser/suc3) and [Bonniersromaner I
+    (1976–77)](https://sprakbanken.se/resurser/romi)) is used as reference for ranking the Blingbring classes
     occurring in each text. Using token-level lexical class information, it calculates and assigns the most relevant
     classes for each text. These classes are filtered and ranked based on their frequency and dominance compared to
     the reference material.
@@ -146,7 +146,7 @@ parent: lexical-classes-parent
 standard_reference: "[Dana Dannélls, Lars Borin, Karin Friberg Heppin (2021): The Swedish FrameNet++ Harmonization, integration, method development and practical language technology applications](https://gup.ub.gu.se/publication/310036)"
 other_references:
   - "Dana Dannélls, Lars Borin, Karin Friberg Heppin (2021): The Swedish FrameNet++ Harmonization, integration, method development and practical language technology applications. John Benjamins: Amsterdam, Philadelphia. ISBN 978 90 272 5848 9."
-tagset: "[Swedish FrameNet (SweFN)](https://spraakbanken.gu.se/resurser/swefn)"
+tagset: "[Swedish FrameNet (SweFN)](https://sprakbanken.se/resurser/swefn)"
 models:
   - name: Frequency model
     url: "https://github.com/spraakbanken/sparv-models/blob/master/lexical_classes/swefn.freq.gp2008%2Bsuc3%2Bromi.pickle"
@@ -181,7 +181,7 @@ example_output: |-
   ```
 description:
   swe: |-
-    Token slås upp i [Svenskt frasnät](https://spraakbanken.gu.se/resurser/swefn) (SweFN, en lexikal-semantisk resurs
+    Token slås upp i [Svenskt frasnät](https://sprakbanken.se/resurser/swefn) (SweFN, en lexikal-semantisk resurs
     som är baserad på teorin om ramsemantik) för att berikas med information om sina lexikala klasser.
   eng: |-
     Tokens are looked up in [Swedish FrameNet](https://spraakbanken.gu.se/en/resources/swefn) (SweFN, lexical-semantic
@@ -221,14 +221,14 @@ example_output: |-
   ```
 description:
   swe: |-
-    Token slås upp i [Svenskt frasnät](https://spraakbanken.gu.se/resurser/swefn) (SweFN, en lexikal-semantisk resurs
+    Token slås upp i [Svenskt frasnät](https://sprakbanken.se/resurser/swefn) (SweFN, en lexikal-semantisk resurs
     som är baserad på teorin om ramsemantik) för att berikas med information om sina lexikala klasser. Därefter berikas
     texter med information om lexikala klasser baserat på vilka klasser som är relevanta för token i dem.
 
     [SweFN-frekvensmodellen](https://github.com/spraakbanken/sparv-models/blob/master/lexical_classes/swefn.freq.gp2008%2Bsuc3%2Bromi.pickle)
-    (tränad på [Göteborgsposten 2008](https://spraakbanken.gu.se/resurser/gp2008), [SUC
-    3.0](https://spraakbanken.gu.se/resurser/suc3) och [Bonniersromaner I
-    (1976–77)](https://spraakbanken.gu.se/resurser/romi)) används som referens för att rangordna de SweFN-klasser som
+    (tränad på [Göteborgsposten 2008](https://sprakbanken.se/resurser/gp2008), [SUC
+    3.0](https://sprakbanken.se/resurser/suc3) och [Bonniersromaner I
+    (1976–77)](https://sprakbanken.se/resurser/romi)) används som referens för att rangordna de SweFN-klasser som
     förekommer i varje text. Med hjälp av informationen om lexikala klasser på tokennivå beräknar och tilldelar
     modellen de mest relevanta klasserna för varje text. Dessa klasser filtreras och rangordnas baserat på sin
     frekvens och dominans jämfört med referensmaterialet.
@@ -244,9 +244,9 @@ description:
     
     The [SweFN frequency
     model](https://github.com/spraakbanken/sparv-models/blob/master/lexical_classes/swefn.freq.gp2008%2Bsuc3%2Bromi.pickle)
-    (trained on [Göteborgsposten 2008](https://spraakbanken.gu.se/resurser/gp2008), [SUC
-    3.0](https://spraakbanken.gu.se/resurser/suc3) and [Bonniersromaner I
-    (1976–77)](https://spraakbanken.gu.se/resurser/romi)) is used as reference for ranking the SweFN classes occurring
+    (trained on [Göteborgsposten 2008](https://sprakbanken.se/resurser/gp2008), [SUC
+    3.0](https://sprakbanken.se/resurser/suc3) and [Bonniersromaner I
+    (1976–77)](https://sprakbanken.se/resurser/romi)) is used as reference for ranking the SweFN classes occurring
     in each text. Using token-level lexical class information, it calculates and assigns the most relevant classes
     for each text. These classes are filtered and ranked based on their frequency and dominance compared to the
     reference material.

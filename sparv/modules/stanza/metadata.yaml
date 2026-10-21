@@ -8,7 +8,7 @@ tools:
   - name: "Stanza"
     url: "https://stanfordnlp.github.io/stanza/"
     license: "Apache-2.0"
-trained_on: "[SUC3](https://spraakbanken.gu.se/resurser/suc3), [TalbankenSBX](https://spraakbanken.gu.se/resurser/talbanken), [SIC2](https://spraakbanken.gu.se/resurser/sic2)"
+trained_on: "[SUC3](https://sprakbanken.se/resurser/suc3), [TalbankenSBX](https://sprakbanken.se/resurser/talbanken), [SIC2](https://sprakbanken.se/resurser/sic2)"
 other_references:
   - "Stanza: Peng Qi, Yuhao Zhang, Yuhui Zhang, Jason Bolton and Christopher D. Manning. 2020"
   - "Stanza: A Python Natural Language Processing Toolkit for Many Human Languages. In Association for Computational Linguistics (ACL) System Demonstrations. 2020"
@@ -81,7 +81,7 @@ example_output: |-
   ```
 models:
   - name: Stanzamorph
-    url: https://spraakbanken.gu.se/resurser/stanzamorph
+    url: https://sprakbanken.se/resurser/stanzamorph
     license: CC-BY-4.0
 description:
   eng: |-
@@ -119,7 +119,7 @@ other_references:
   - "SIC2: https://spraakbanken.gu.se/en/resources/sic2"
 models:
   - name: Stanzamorph
-    url: https://spraakbanken.gu.se/resurser/stanzamorph
+    url: https://sprakbanken.se/resurser/stanzamorph
     license: CC-BY-4.0
 tagset: "[UD](https://universaldependencies.org/u/feat/index.html)"
 evaluation_results: ''
@@ -155,9 +155,9 @@ other_references:
   - "SUC3: https://spraakbanken.gu.se/en/resources/suc3"
 models:
   - name: Stanzalem
-    url: https://spraakbanken.gu.se/resurser/stanzalem
+    url: https://sprakbanken.se/resurser/stanzalem
     license: CC-BY-4.0
-trained_on: "[SUC3](https://spraakbanken.gu.se/resurser/suc3)"
+trained_on: "[SUC3](https://sprakbanken.se/resurser/suc3)"
 evaluation_results: Accuracy = 0.99
 description:
   eng: |-  
@@ -190,9 +190,9 @@ example_output: |-
   ```
 models:
   - name: Stanzasynt
-    url: https://spraakbanken.gu.se/resurser/stanzasynt
+    url: https://sprakbanken.se/resurser/stanzasynt
     license: CC-BY-4.0
-trained_on: "[TalbankenSBX](https://spraakbanken.gu.se/resurser/talbanken)"
+trained_on: "[TalbankenSBX](https://sprakbanken.se/resurser/talbanken)"
 tagset: "[MambaDep](https://svn.spraakdata.gu.se/sb-arkiv/pub/mamba.html)"
 evaluation_results: |-
     A model trained on TalbankenSBX_train and validated on TalbankenSBX_dev yields Labelled Attachment Score of 84.48 on

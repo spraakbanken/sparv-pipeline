@@ -353,7 +353,7 @@ models:
   - name: bettertokenizer.sv
     url: "https://raw.githubusercontent.com/spraakbanken/sparv-models/master/segment/bettertokenizer.sv"
   - name: bettertokenizer.sv.saldo-tokens
-trained_on: "[SALDOs morphology](https://spraakbanken.gu.se/resurser/saldom)"
+trained_on: "[SALDOs morphology](https://sprakbanken.se/resurser/saldom)"
 description:
   swe: |-
     Tokeniseringen är ursprungligen baserad på NLTKs PunktWordTokenizer (som inte längre tillhandahålls av NLTK). Sparvs
@@ -401,13 +401,13 @@ example_output: |-
 models:
   - name: punkt-nltk-svenska.pickle
     url: "https://github.com/spraakbanken/sparv-models/blob/master/segment/punkt-nltk-svenska.pickle?raw=true"
-trained_on: "[StorSUC](https://spraakbanken.gu.se/resurser/storsuc)"
+trained_on: "[StorSUC](https://sprakbanken.se/resurser/storsuc)"
 description:
   swe: |-
     Meningssegmenteraren är baserad på NLTKs
     [PunktWordTokenizer](https://www.nltk.org/api/nltk.tokenize.PunktSentenceTokenizer.html). Sparvs version är
     specialanpassad för svenska genom att använda en modell byggd på
-    [StorSUC](https://spraakbanken.gu.se/resurser/storsuc). Det är dock möjligt att konfigurera meningssegmenteraren för
+    [StorSUC](https://sprakbanken.se/resurser/storsuc). Det är dock möjligt att konfigurera meningssegmenteraren för
     andra språk.
   eng: |-
     The sentence segmenter is based on NLTK's

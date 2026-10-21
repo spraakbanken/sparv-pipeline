@@ -41,7 +41,7 @@ tools:
 models:
   - name: Swemalt
     url: "https://www.maltparser.org/mco/swedish_parser/swemalt.html"
-trained_on: "[Svensk trädbank (the TalbankenSTB part)](https://spraakbanken.gu.se/resurser/sv-treebank)"
+trained_on: "[Svensk trädbank (the TalbankenSTB part)](https://sprakbanken.se/resurser/sv-treebank)"
 tagset: "[MambaDep](https://svn.spraakdata.gu.se/sb-arkiv/pub/mamba.html)"
 evaluation_results: Labelled Attachment Score 0.78 (using the TalbankenSBX train-dev-test split)
 description:

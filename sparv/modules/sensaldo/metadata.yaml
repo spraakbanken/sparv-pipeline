@@ -51,16 +51,16 @@ other_references:
   - https://gup.ub.gu.se/publication/264721?lang=sv
 models:
   - name: Sensaldo
-    url: "https://spraakbanken.gu.se/resurser/sensaldo"
+    url: "https://sprakbanken.se/resurser/sensaldo"
 trained_on: ''
 tagset: ''
 evaluation_results: ''
 description:
   swe: |-
     Token berikas med sentiment-värden genom uppslag av deras SALDO-ID:n i
-    [Sensaldo](https://spraakbanken.gu.se/resurser/sensaldo).
+    [Sensaldo](https://sprakbanken.se/resurser/sensaldo).
   eng: |-
-    Tokens and their SALDO IDs are looked up in [Sensaldo](https://spraakbanken.gu.se/resurser/sensaldo) in order to
+    Tokens and their SALDO IDs are looked up in [Sensaldo](https://sprakbanken.se/resurser/sensaldo) in order to
     enrich them with sentiments.
 created: 2018-03-28
 updated: 2018-03-28

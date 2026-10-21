@@ -27,7 +27,7 @@ preset](corpus-configuration.md#annotation-presets) called `SWE_DEFAULT`.
 |    |            |
 |:---|:-----------|
 |**Description** | Texts are split into sentences.|
-|**Model**       | [punkt-nltk-svenska.pickle](https://github.com/spraakbanken/sparv-models/blob/master/segment/punkt-nltk-svenska.pickle?raw=true) trained on [StorSUC](https://spraakbanken.gu.se/resurser/storsuc)|
+|**Model**       | [punkt-nltk-svenska.pickle](https://github.com/spraakbanken/sparv-models/blob/master/segment/punkt-nltk-svenska.pickle?raw=true) trained on [StorSUC](https://sprakbanken.se/resurser/storsuc)|
 |**Method**      | The model is built with [NLTK's PunktTrainer](https://www.nltk.org/api/nltk.tokenize.html?highlight=punkttrainer#nltk.tokenize.punkt.PunktTrainer). The segmentation is done with NLTK's [PunktSentenceTokenizer](https://www.nltk.org/api/nltk.tokenize.html?highlight=punktsentencetokenizer#nltk.tokenize.punkt.PunktSentenceTokenizer).|
 |**Annotations** | `segment.sentence` (sentence segments)|
 |**Annotators**  | `segment:sentence`|
@@ -37,7 +37,7 @@ preset](corpus-configuration.md#annotation-presets) called `SWE_DEFAULT`.
 |    |            |
 |:---|:-----------|
 |**Description** | Sentence segments are split into tokens.|
-|**Model**       | - [configuration file bettertokenizer.sv](https://raw.githubusercontent.com/spraakbanken/sparv-models/master/segment/bettertokenizer.sv) <br />- word list `bettertokenizer.sv.saldo-tokens` built upon [SALDOs morphology](https://spraakbanken.gu.se/resurser/saldo) (it is built automatically by Sparv)|
+|**Model**       | - [configuration file bettertokenizer.sv](https://raw.githubusercontent.com/spraakbanken/sparv-models/master/segment/bettertokenizer.sv) <br />- word list `bettertokenizer.sv.saldo-tokens` built upon [SALDOs morphology](https://sprakbanken.se/resurser/saldo) (it is built automatically by Sparv)|
 |**Method**      | Tokenizer using regular expressions and lists of words containing special characters and common abbreviations. Sparv's version is custom-made for Swedish but it is possible to configure it for other languages.|
 |**Annotations** | `segment.token` (token segments)|
 |**Annotators**  | `segment:tokenize`|
@@ -48,7 +48,7 @@ preset](corpus-configuration.md#annotation-presets) called `SWE_DEFAULT`.
 |:---|:-----------|
 |**Description** | Sentence segments are analysed to enrich tokens with part-of-speech tags and morphosyntactic information.|
 |**Tool**        | [Stanza](https://stanfordnlp.github.io/stanza/)|
-|**Model**       | <https://spraakbanken.gu.se/resurser/stanzamorph>|
+|**Model**       | <https://sprakbanken.se/resurser/stanzamorph>|
 |**Tagset**      | - [SUC MSD tags](https://spraakbanken.gu.se/korp/markup/msdtags.html) <br />- [Universal features](https://universaldependencies.org/u/feat/index.html)|
 |**Annotations** | - `<token>:stanza.pos` (part-of-speech tag) <br />- `<token>:stanza.msd` (morphosyntactic tag) <br />- `<token>:stanza.ufeats` (universal features)|
 |**Annotators**  | `stanza:msdtag`|
@@ -69,7 +69,7 @@ preset](corpus-configuration.md#annotation-presets) called `SWE_DEFAULT`.
 |:---|:-----------|
 |**Description**  | Sentence segments are analysed to enrich tokens with part-of-speech tags and morphosyntactic information. No longer used by default because Stanza's POS-tagging yields better results.|
 |**Tool**         | [Hunpos](https://code.google.com/archive/p/hunpos/)|
-|**Model**        | [suc3_suc-tags_default-setting_utf8.model](https://github.com/spraakbanken/sparv-models/blob/master/hunpos/suc3_suc-tags_default-setting_utf8.model?raw=true) trained on [SUC 3.0](https://spraakbanken.gu.se/resurser/suc3)|
+|**Model**        | [suc3_suc-tags_default-setting_utf8.model](https://github.com/spraakbanken/sparv-models/blob/master/hunpos/suc3_suc-tags_default-setting_utf8.model?raw=true) trained on [SUC 3.0](https://sprakbanken.se/resurser/suc3)|
 |**Tagset**       | [SUC MSD tags](https://spraakbanken.gu.se/korp/markup/msdtags.html)|
 |**Annotations**  | - `<token>:hunpos.msd` (morphosyntactic tag) <br />- `<token>:hunpos.pos` (part-of-speech tag)|
 |**Annotators**   | - `hunpos:msdtag` <br />- `hunpos:postag`|
@@ -80,7 +80,7 @@ preset](corpus-configuration.md#annotation-presets) called `SWE_DEFAULT`.
 |:---|:-----------|
 |**Description**  | Sentence segments are analysed to enrich tokens with dependency information.|
 |**Tool**         | [Stanza](https://stanfordnlp.github.io/stanza/)|
-|**Model**        | <https://spraakbanken.gu.se/resurser/stanzasynt>|
+|**Model**        | <https://sprakbanken.se/resurser/stanzasynt>|
 |**Tagset**       | [Mamba-Dep](https://svn.spraakdata.gu.se/sb-arkiv/pub/mamba.html)|
 |**Annotations**  | - `<token>:stanza.ref` (the token position within the sentence) <br />- `<token>:stanza.dephead_ref` (dependency head, the ref of the word which the current word modifies or is dependent of) <br />- `<token>:stanza.deprel` (dependency relation, the relation of the current word to its dependency head)|
 |**Annotators**   | - `stanza:dep_parse` <br />- `stanza:make_ref`|
@@ -91,7 +91,7 @@ preset](corpus-configuration.md#annotation-presets) called `SWE_DEFAULT`.
 |:---|:-----------|
 |**Description**  | Sentence segments are analysed to enrich tokens with dependency information. No longer used by default because Stanza's dependency parsing yields better results.|
 |**Tool**         | [MaltParser](https://www.maltparser.org/download.html)|
-|**Model**        | [swemalt](https://www.maltparser.org/mco/swedish_parser/swemalt.html) trained on [Svensk trädbank](https://spraakbanken.gu.se/resurser/sv-treebank)|
+|**Model**        | [swemalt](https://www.maltparser.org/mco/swedish_parser/swemalt.html) trained on [Svensk trädbank](https://sprakbanken.se/resurser/sv-treebank)|
 |**Tagset**       | [Mamba-Dep](https://svn.spraakdata.gu.se/sb-arkiv/pub/mamba.html)|
 |**Annotations**  | - `<token>:malt.ref` (the token position within the sentence) <br />- `<token>:malt.dephead_ref` (dependency head, the ref of the word which the current word modifies or is dependent of) <br />- `<token>:malt.deprel` (dependency relation, the relation of the current word to its dependency head)|
 |**Annotators**   | - `malt:annotate` <br />- `malt:make_ref`|
@@ -111,8 +111,8 @@ preset](corpus-configuration.md#annotation-presets) called `SWE_DEFAULT`.
 |    |            |
 |:---|:-----------|
 |**Description**  | Tokens and their POS tags are looked up in the SALDO lexicon in order to enrich them with more information.|
-|**Model**        | [SALDO morphology](https://spraakbanken.gu.se/resurser/saldo)|
-|**Tagset**       | [SALDO tags](https://spraakbanken.gu.se/resurser/saldo/taggmangd) for lemgrams|
+|**Model**        | [SALDO morphology](https://sprakbanken.se/resurser/saldo)|
+|**Tagset**       | [SALDO tags](https://sprakbanken.se/resurser/saldo/taggmangd) for lemgrams|
 |**Annotations**  | - `<token>:saldo.baseform` (lemma) <br />- `<token>:saldo.lemgram` (lemgrams, identifying the inflectional table) <br />- `<token>:saldo.sense` (identify senses in SALDO)|
 |**Annotators**   | `saldo:annotate`|
 
@@ -122,7 +122,7 @@ preset](corpus-configuration.md#annotation-presets) called `SWE_DEFAULT`.
 |:---|:-----------|
 |**Description**  | Sentence segments are analysed to enrich tokens with lemmas.|
 |**Tool**         | [Stanza](https://stanfordnlp.github.io/stanza/)|
-|**Model**        | <https://spraakbanken.gu.se/resurser/stanzasynt>|
+|**Model**        | <https://sprakbanken.se/resurser/stanzasynt>|
 |**Annotations**  | - `<token>:stanza.baseform` (lemma)|
 |**Annotators**   | `stanza:annotate_swe`|
 
@@ -143,7 +143,7 @@ preset](corpus-configuration.md#annotation-presets) called `SWE_DEFAULT`.
 |    |            |
 |:---|:-----------|
 |**Description**  | Tokens and their POS tags are looked up in the SALDO lexicon in order to enrich them with compound information. More information (in Swedish) is found in the [Språkbanken FAQ ("Hur fungerar Sparvs sammansättningsanalys?")](https://spraakbanken.gu.se/faq/hur-fungerar-sparvs-sammansattningsanalys). Lemmas are enriched in this analysis.|
-|**Model**        | - [SALDO morphology](https://spraakbanken.gu.se/resurser/saldo) <br />- [NST pronunciation lexicon for Swedish](https://www.nb.no/sprakbanken/en/resource-catalogue/oai-nb-no-sbr-22/) <br />- [word frequency statistics from Korp](https://svn.spraakdata.gu.se/sb-arkiv/pub/frekvens/stats_all.txt.zip)|
+|**Model**        | - [SALDO morphology](https://sprakbanken.se/resurser/saldo) <br />- [NST pronunciation lexicon for Swedish](https://www.nb.no/sprakbanken/en/resource-catalogue/oai-nb-no-sbr-22/) <br />- [word frequency statistics from Korp](https://svn.spraakdata.gu.se/sb-arkiv/pub/frekvens/stats_all.txt.zip)|
 |**Annotations**  | - `<token>:saldo.complemgram` (compound lemgrams including a comparison score) <br />- `<token>:saldo.compwf` (compound word forms) <br />- `<token>:saldo.baseform2` (lemma)|
 |**Annotators**   | `saldo:compound`|
 
@@ -152,7 +152,7 @@ preset](corpus-configuration.md#annotation-presets) called `SWE_DEFAULT`.
 |    |            |
 |:---|:-----------|
 |**Description**  | Tokens and their SALDO IDs are looked up in SenSALDO in order to enrich them with sentiments.|
-|**Model**        | [SenSALDO](https://spraakbanken.gu.se/resurser/sensaldo)|
+|**Model**        | [SenSALDO](https://sprakbanken.se/resurser/sensaldo)|
 |**Annotations**  | - `<token>:sensaldo.sentiment_label` (sentiment) <br />- `<token>:sensaldo.sentiment_score` (sentiment value)|
 |**Annotators**   | `sensaldo:annotate`|
 
@@ -183,7 +183,7 @@ preset](corpus-configuration.md#annotation-presets) called `SWE_DEFAULT`.
 |    |            |
 |:---|:-----------|
 |**Description**  | Tokens are looked up in Blingbring and SweFN in order to enrich them with information about their lexical classes. Documents are then enriched with information about lexical classes based on which classes are common for the tokens within them.|
-|**Model**        | - [Blingbring](https://spraakbanken.gu.se/resurser/blingbring) <br />- [Swedish FrameNet (SweFN)](https://spraakbanken.gu.se/resurser/swefn)|
+|**Model**        | - [Blingbring](https://sprakbanken.se/resurser/blingbring) <br />- [Swedish FrameNet (SweFN)](https://sprakbanken.se/resurser/swefn)|
 |**Annotations**  | - `<token>:lexical_classes.blingbring` (lexical class from the Blingbring resource per token <br />- `<token>:lexical_classes.swefn` (frames from Swedish FrameNet (SweFN) per token <br />- `<text>:lexical_classes.blingbring` (lexical class from the Blingbring resource per dokument) <br />- `<text>:lexical_classes.swefn` (frames from Swedish FrameNet (SweFN) per dokument)|
 |**Annotators**   | `lexical_classes:blingbring_words` `lexical_classes:swefn_words` `lexical_classes:blingbring_text` `lexical_classes:swefn_text`|
 
@@ -208,7 +208,7 @@ specifically adapted for this language variety:
 |:---|:-----------|
 |**Description**  | Sentence segments are analysed to enrich tokens with part-of-speech tags and morphosyntactic information.|
 |**Tool**         | [Hunpos](https://code.google.com/archive/p/hunpos/)|
-|**Model**        | - [suc3_suc-tags_default-setting_utf8.model](https://github.com/spraakbanken/sparv-models/blob/master/hunpos/suc3_suc-tags_default-setting_utf8.model?raw=true) trained on [SUC 3.0](https://spraakbanken.gu.se/resurser/suc3) <br />- a word list along with the words' morphosyntactic information generated from the [Dalin morphology](https://spraakbanken.gu.se/resurser/dalinm) and the [Swedberg morphology](https://spraakbanken.gu.se/resurser/swedbergm)|
+|**Model**        | - [suc3_suc-tags_default-setting_utf8.model](https://github.com/spraakbanken/sparv-models/blob/master/hunpos/suc3_suc-tags_default-setting_utf8.model?raw=true) trained on [SUC 3.0](https://sprakbanken.se/resurser/suc3) <br />- a word list along with the words' morphosyntactic information generated from the [Dalin morphology](https://sprakbanken.se/resurser/dalinm) and the [Swedberg morphology](https://sprakbanken.se/resurser/swedbergm)|
 |**Tagset**       | [SUC MSD tags](https://spraakbanken.gu.se/korp/markup/msdtags.html)|
 |**Annotations**  | - `<token>:hunpos.msd` (morphosyntactic tag) <br />- `<token>:hunpos.pos` (part-of-speech tag)|
 |**Annotators**   | - `hunpos:msdtag_hist` <br />- `hunpos:postag`|
@@ -219,8 +219,8 @@ specifically adapted for this language variety:
 |    |            |
 |:---|:-----------|
 |**Description**  | Tokens and their POS tags are looked up in different lexicons in order to enrich them with more information.|
-|**Model**        | - [SALDO morphology](https://spraakbanken.gu.se/resurser/saldo) <br />- [Dalin morphology](https://spraakbanken.gu.se/resurser/dalinm) <br />- [Swedberg morphology](https://spraakbanken.gu.se/resurser/swedbergm) <br />- [Diachronic pivot](https://spraakbanken.gu.se/resurser/diapivot)|
-|**Tagset**       | [SALDO tags](https://spraakbanken.gu.se/resurser/saldo/taggmangd) (for lemgrams)|
+|**Model**        | - [SALDO morphology](https://sprakbanken.se/resurser/saldo) <br />- [Dalin morphology](https://sprakbanken.se/resurser/dalinm) <br />- [Swedberg morphology](https://sprakbanken.se/resurser/swedbergm) <br />- [Diachronic pivot](https://sprakbanken.se/resurser/diapivot)|
+|**Tagset**       | [SALDO tags](https://sprakbanken.se/resurser/saldo/taggmangd) (for lemgrams)|
 |**Annotations**  | - `<token>:hist.baseform` (lemma) <br />- `<token>:hist.sense` (identifies senses in SALDO) <br />- `<token>:hist.lemgram` (lemgrams, identifying the inflectional table) <br />- `<token>:hist.diapivot` (SALDO lemgrams from the diapivot model) <br />- `<token>:hist.combined_lemgrams` (SALDO lemgram, combined from SALDO, Dalin, Swedberg and the diapivot model)|
 |**Annotators**   | - `hist:annotate_saldo` <br />- `hist:diapivot_annotate` <br />- `hist:combine_lemgrams`|
 
@@ -253,8 +253,8 @@ following analyses for texts written in Old Swedish:
 |    |            |
 |:---|:-----------|
 |**Description**  | Tokens and their POS tags are looked up in different lexicons in order to enrich them with more information.|
-|**Model**        | - [Fornsvensk morphology from Söderwall and Schlyter](https://spraakbanken.gu.se/resurser/fsvm) <br />- [SALDO morphology](https://spraakbanken.gu.se/resurser/saldo) <br />- [Diachronic pivot](https://spraakbanken.gu.se/resurser/diapivot)|
-|**Tagset**       | [SALDO tags](https://spraakbanken.gu.se/resurser/saldo/taggmangd) for lemgrams|
+|**Model**        | - [Fornsvensk morphology from Söderwall and Schlyter](https://sprakbanken.se/resurser/fsvm) <br />- [SALDO morphology](https://sprakbanken.se/resurser/saldo) <br />- [Diachronic pivot](https://sprakbanken.se/resurser/diapivot)|
+|**Tagset**       | [SALDO tags](https://sprakbanken.se/resurser/saldo/taggmangd) for lemgrams|
 |**Annotations**  | - `<token>:hist.baseform` (lemma) <br />- `<token>:hist.lemgram` (lemgrams, identifying the inflectional table) <br />- `<token>:hist.diapivot` (SALDO lemgrams from the diapivot model) <br />- `<token>:hist.combined_lemgrams` (SALDO lemgram, combined from SALDO, Dalin, Swedberg and the diapivot model)|
 |**Annotators**   | - `hist:annotate_saldo_fsv` <br />- `hist:diapivot_annotate` <br />- `hist:combine_lemgrams`|
 
