@@ -6,6 +6,8 @@ short_description:
   swe: Export av korpusdata i Språkbankens CoNLL-U-format
   eng: Export of corpus data in Språkbanken's CoNLL-U format
 task: export
+language_codes:
+  - swe
 keywords:
  - conll-u
 sparv_processor: conll_export:conllu
